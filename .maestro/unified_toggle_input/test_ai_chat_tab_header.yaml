@@ -52,8 +52,16 @@ name: test_ai_chat_tab_header
 - assertVisible:
     text: "Chat settings"
 - assertVisible:
-    text: "New chat"
+    text: "Close tab"
+- assertVisible:
+    text: "Recent chats"
 
 # Step 3: Verify omnibar is hidden on Duck.ai tab
 - assertNotVisible:
+    id: "searchEntry"
+
+# Step 4: Verify close-tab button dismisses the chat tab
+- tapOn:
+    text: "Close tab"
+- assertVisible:
     id: "searchEntry"

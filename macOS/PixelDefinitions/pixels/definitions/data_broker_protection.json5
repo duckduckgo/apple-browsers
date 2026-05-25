@@ -391,7 +391,8 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpActionId",
-            "dbpActionDuration"
+            "dbpActionDuration",
+            "channel"
         ]
     },
     "m_mac_dbp_service_generate-email_http-error": {

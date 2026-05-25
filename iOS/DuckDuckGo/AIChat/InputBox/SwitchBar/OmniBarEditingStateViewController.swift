@@ -230,10 +230,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-    }
-
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         aiChatHistoryManager?.tearDown()

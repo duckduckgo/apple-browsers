@@ -543,12 +543,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func setAsChatFirstPath() {
         settings.isChatFirstPath = true
-        // Reset all browsing-dialog flags so every run through the chat-first path goes through
-        // the full tracker-blocking → EOJ sequence.  Without this, a partial prior run that set
-        // browsingWithTrackersShown (or another seenBrowsingDialog flag) but did NOT reach the
-        // final dialog would leave chatPathPhase == .trackerToEOJ the moment onFirstAppear fires
-        // on the "try visiting a site" dialog, causing presentChatPathOnboardingCompletionIfNeeded
-        // to show "You've got this" immediately instead of the tracker-blocking step.
+        // Reset visit-site progress so stale state from a previous run doesn't skip straight to EOJ.
         settings.chatPathVisitSiteSeen = false
         settings.browsingWithTrackersShown = false
         settings.browsingWithoutTrackersShown = false

@@ -80,11 +80,21 @@
                                 },
                                 "session_duration_ms": {
                                     "type": "integer",
-                                    "description": "Total time in milliseconds the post-idle surface was visible, from session start until the terminal action or background. Absent when the session was orphaned (UNKNOWN / app_terminated)."
+                                    "description": "Total time in milliseconds the post-idle surface was visible, from session start until the terminal action or background. Absent when the session was orphaned (UNKNOWN / app_terminated). Emitted by pre-bucketing builds; newer builds emit session_duration_ms_bucketed instead."
                                 },
                                 "time_to_first_interaction_ms": {
                                     "type": "integer",
-                                    "description": "Time in milliseconds from session start to the first user interaction with the post-idle surface (page engagement, toggle, back, or terminal action). Absent if the session ended without any interaction."
+                                    "description": "Time in milliseconds from session start to the first user interaction with the post-idle surface (page engagement, toggle, back, or terminal action). Absent if the session ended without any interaction. Emitted by pre-bucketing builds; newer builds emit time_to_first_interaction_ms_bucketed instead."
+                                },
+                                "session_duration_ms_bucketed": {
+                                    "type": "string",
+                                    "description": "Bucketed (lower bound, in ms) total time the post-idle surface was visible. Emitted by builds that send meta.version 1.0.0 with bucketed durations; older builds emit session_duration_ms instead.",
+                                    "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                                },
+                                "time_to_first_interaction_ms_bucketed": {
+                                    "type": "string",
+                                    "description": "Bucketed (lower bound, in ms) time from session start to the first user interaction with the post-idle surface. Emitted by builds that send meta.version 1.0.0 with bucketed durations; older builds emit time_to_first_interaction_ms instead.",
+                                    "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
                                 },
                                 "page_engaged": {
                                     "type": "boolean",

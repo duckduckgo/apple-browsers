@@ -69,37 +69,37 @@ extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
     public var source: FeatureFlagSource {
         switch self {
         case .attributedMetrics:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled))
+            return .remoteReleasable(AttributedMetricsSubfeature.featureEnabled)
         case .emitAllMetrics:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.emitAllMetrics))
+            return .remoteReleasable(AttributedMetricsSubfeature.emitAllMetrics)
         case .retention:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.retention))
+            return .remoteReleasable(AttributedMetricsSubfeature.retention)
         case .canEmitRetention:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.canEmitRetention))
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitRetention)
         case .searchDaysAvg:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.searchDaysAvg))
+            return .remoteReleasable(AttributedMetricsSubfeature.searchDaysAvg)
         case .canEmitSearchDaysAvg:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.canEmitSearchDaysAvg))
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitSearchDaysAvg)
         case .searchCountAvg:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.searchCountAvg))
+            return .remoteReleasable(AttributedMetricsSubfeature.searchCountAvg)
         case .canEmitSearchCountAvg:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.canEmitSearchCountAvg))
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitSearchCountAvg)
         case .adClickCountAvg:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.adClickCountAvg))
+            return .remoteReleasable(AttributedMetricsSubfeature.adClickCountAvg)
         case .canEmitAdClickCountAvg:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.canEmitAdClickCountAvg))
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitAdClickCountAvg)
         case .aiUsageAvg:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.aiUsageAvg))
+            return .remoteReleasable(AttributedMetricsSubfeature.aiUsageAvg)
         case .canEmitAIUsageAvg:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.canEmitAIUsageAvg))
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitAIUsageAvg)
         case .subscriptionRetention:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.subscriptionRetention))
+            return .remoteReleasable(AttributedMetricsSubfeature.subscriptionRetention)
         case .canEmitSubscriptionRetention:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.canEmitSubscriptionRetention))
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitSubscriptionRetention)
         case .syncDevices:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.syncDevices))
+            return .remoteReleasable(AttributedMetricsSubfeature.syncDevices)
         case .canEmitSyncDevices:
-            return .remoteReleasable(.subfeature(AttributedMetricsSubfeature.canEmitSyncDevices))
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitSyncDevices)
         }
     }
 

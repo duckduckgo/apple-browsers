@@ -30,7 +30,9 @@ class AutoClearTests: XCTestCase {
         var burnCallCount = 0
         var burnRequest: FireRequest?
         var burnApplicationState: DataStoreWarmup.ApplicationState?
-        
+
+        var burnInProgress: Bool = false
+
         weak var delegate: FireExecutorDelegate?
         
         func prepare(for request: FireRequest) { }

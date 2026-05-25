@@ -105,6 +105,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    private let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -251,7 +252,9 @@ final class SettingsViewModel: ObservableObject {
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
 
-    @Published var afterInactivityOption: AfterInactivityOption = .lastUsedTab
+    var afterInactivityOption: AfterInactivityOption {
+        afterInactivityOptionAdapter.afterInactivityOption
+    }
     @Published var afterInactivityIdleInterval: AfterInactivityIdleInterval = .default
 
     // MARK: Bindings
@@ -402,11 +405,11 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
-        Binding<AfterInactivityOption>(
-            get: { self.afterInactivityOption },
+        let upstream = afterInactivityOptionAdapter.afterInactivityOptionBinding
+        return Binding<AfterInactivityOption>(
+            get: { upstream.wrappedValue },
             set: { newValue in
-                self.afterInactivityOption = newValue
-                try? self.afterInactivityStorage.set(newValue.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                upstream.wrappedValue = newValue
                 let pixel: Pixel.Event = newValue == .newTab
                     ? .ntpAfterIdleSettingChangedToNewTab
                     : .ntpAfterIdleSettingChangedToLastUsedTab
@@ -719,21 +722,6 @@ final class SettingsViewModel: ObservableObject {
         state.youTubeAdBlockingDisclosureHidden
     }
 
-    /// Settings-pane open hook. If the disclosure preference has never been
-    /// written, pin it to the current YouTube Ad Blocking state — existing
-    /// users (toggle already on) get the disclosure hidden, new users (toggle
-    /// off) keep the disclosure until they explicitly opt in. Always refreshes
-    /// `state.youTubeAdBlockingDisclosureHidden` so external writes (e.g. debug
-    /// menu) are picked up.
-    func markYouTubeAdBlockingDisclosureHiddenIfExistingUser() {
-        if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
-            try? youTubeAdBlockingStorage.set(state.youTubeAdBlockingEnabled,
-                                              for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
-        }
-        state.youTubeAdBlockingDisclosureHidden =
-            (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
-    }
-
       var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
@@ -952,6 +940,7 @@ final class SettingsViewModel: ObservableObject {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
@@ -991,7 +980,7 @@ final class SettingsViewModel: ObservableObject {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
-        self.afterInactivityOption = idleReturnEligibilityManager.effectiveAfterInactivityOption()
+        self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
@@ -1008,6 +997,7 @@ final class SettingsViewModel: ObservableObject {
         self.adBlockingAvailability = adBlockingAvailability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
+        startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
     }
 
     deinit {
@@ -1028,6 +1018,17 @@ extension SettingsViewModel {
     // and we can use subscribers (Currently called from the view onAppear)
     @MainActor
     private func initState() {
+        // One-time migration: pin the disclosure preference to the current
+        // YouTube Ad Blocking toggle so existing users (toggle already on)
+        // get the disclosure hidden, while new users (toggle off) keep it
+        // until they explicitly opt in. Done here — not in the destination
+        // view's `onAppear` — so the resulting `@Published` change can't
+        // race with a push transition and pop the screen on iPad.
+        if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
+            let enabled = (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
+            try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+        }
+
         self.state = SettingsState(
             appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
@@ -1089,6 +1090,17 @@ extension SettingsViewModel {
 
         setupSubscribers()
         Task { await setupSubscriptionEnvironment() }
+    }
+
+    /// Forward `AfterInactivityOptionAdapter.objectWillChange` Events:
+    /// This causes `model.afterInactivityOption` to react to `AfterInactivityOptionAdapter` changes
+    ///
+    private func startForwardingAdapterWillChangeEvents(_ adapter: AfterInactivityOptionAdapter) {
+        adapter.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     private func updateRecentlyVisitedSitesVisibility() {
@@ -1555,84 +1567,73 @@ extension SettingsViewModel {
 // MARK: Subscriptions
 extension SettingsViewModel {
 
+    /// Fetches the current subscription from the backend and updates `state.subscription` and the cache.
+    /// Handles three outcomes: active subscription (populates entitlements), nil/no subscription, and no token (unauthenticated).
     @MainActor
     private func setupSubscriptionEnvironment() async {
-        // Create a temporary subscription state to batch all updates
-        var updatedSubscription: SettingsState.Subscription
+        // 1. Start from cached state or defaults
+        var updatedSubscriptionState = subscriptionStateCache.get() ?? SettingsState.defaults.subscription
 
-        // If there's cached data use it by default
-        if let cachedSubscription = subscriptionStateCache.get() {
-            updatedSubscription = cachedSubscription
-        // Otherwise use defaults and setup purchase availability
-        } else {
-            updatedSubscription = SettingsState.defaults.subscription
-        }
-
-        // Update if can purchase based on App Store product availability
-        updatedSubscription.hasAppStoreProductsAvailable = subscriptionManager.hasAppStoreProductsAvailable
-
-        // Update if user is signed in based on the presence of token
-        updatedSubscription.isSignedIn = subscriptionManager.isUserAuthenticated
-
-        // Active subscription check
-        guard (try? await subscriptionManager.getAccessToken()) != nil else {
-            // Reset state in case cache was outdated
-            updatedSubscription.hasSubscription = false
-            updatedSubscription.hasActiveSubscription = false
-            updatedSubscription.entitlements = []
-            updatedSubscription.platform = .unknown
-            updatedSubscription.isActiveTrialOffer = false
-
-            updatedSubscription.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
-            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
-
-            state.subscription = updatedSubscription
-            // Sync cache
-            subscriptionStateCache.set(state.subscription)
-            return
-        }
+        // 2. Set store availability, auth status, and offer eligibility (independent of backend subscription)
+        updatedSubscriptionState.hasAppStoreProductsAvailable = subscriptionManager.hasAppStoreProductsAvailable
+        updatedSubscriptionState.isSignedIn = subscriptionManager.isUserAuthenticated
+        updatedSubscriptionState.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
+        updatedSubscriptionState.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            updatedSubscription.platform = subscription.platform
-            updatedSubscription.hasSubscription = true
-            updatedSubscription.hasActiveSubscription = subscription.isActive
-            updatedSubscription.isActiveTrialOffer = subscription.hasActiveTrialOffer
-            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
+            // 3. Fetch subscription from backend (returns nil if no subscription exists)
+            guard let subscription = try await subscriptionManager.getSubscription() else {
+                // 3a. No subscription on backend — reset subscription fields and exit early
+                Logger.subscription.debug("No subscription data available")
+                applyNoSubscriptionState(&updatedSubscriptionState)
+                DailyPixel.fireDailyAndCount(pixel: .settingsSubscriptionAccountWithNoSubscriptionFound)
+                state.subscription = updatedSubscriptionState
+                subscriptionStateCache.set(state.subscription)
+                return
+            }
 
-            // Check entitlements and update state
-            var currentEntitlements: [SubscriptionEntitlement] = []
-            let entitlementsToCheck: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
+            // 4. Populate subscription details from backend response
+            updatedSubscriptionState.platform = subscription.platform
+            updatedSubscriptionState.hasSubscription = true
+            updatedSubscriptionState.hasActiveSubscription = subscription.isActive
+            updatedSubscriptionState.isActiveTrialOffer = subscription.hasActiveTrialOffer
 
-            for entitlement in entitlementsToCheck {
-                if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(entitlement),
-                    hasEntitlement {
-                    currentEntitlements.append(entitlement)
+            // 5. Check which features are enabled for the user (entitlements present in the access token)
+            let featuresToCheck: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
+            var enabledFeatures: [SubscriptionEntitlement] = []
+            for feature in featuresToCheck {
+                if let isEnabled = try? await subscriptionManager.isFeatureEnabled(feature),
+                    isEnabled {
+                    enabledFeatures.append(feature)
                 }
             }
 
-            updatedSubscription.entitlements = currentEntitlements
-            updatedSubscription.subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures()
-        } catch SubscriptionEndpointServiceError.noData {
-            Logger.subscription.debug("No subscription data available")
-            updatedSubscription.hasSubscription = false
-            updatedSubscription.hasActiveSubscription = false
-            updatedSubscription.entitlements = []
-            updatedSubscription.platform = .unknown
-            updatedSubscription.isActiveTrialOffer = false
-            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
-
-            DailyPixel.fireDailyAndCount(pixel: .settingsSubscriptionAccountWithNoSubscriptionFound)
+            // 6. Set enabled features and plan-included features
+            updatedSubscriptionState.entitlements = enabledFeatures
+            updatedSubscriptionState.subscriptionFeatures = subscription.features ?? []
+        } catch SubscriptionManagerError.noTokenAvailable {
+            // 3b. User is not authenticated — reset subscription fields (no pixel: user has no account)
+            Logger.subscription.debug("No subscription data available - user not authenticated")
+            updatedSubscriptionState.isSignedIn = false
+            applyNoSubscriptionState(&updatedSubscriptionState)
         } catch {
+            // 3c. Transient error — keep cached state as-is
             Logger.subscription.error("Failed to fetch Subscription: \(error, privacy: .public)")
-            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
         }
 
-        // Apply all updates at once
-        state.subscription = updatedSubscription
-
-        // Sync Cache
+        // 7. Persist updated state
+        state.subscription = updatedSubscriptionState
         subscriptionStateCache.set(state.subscription)
+    }
+
+    /// Resets subscription-dependent fields to their "no subscription" defaults.
+    private func applyNoSubscriptionState(_ subscription: inout SettingsState.Subscription) {
+        subscription.hasSubscription = false
+        subscription.hasActiveSubscription = false
+        subscription.entitlements = []
+        subscription.platform = .unknown
+        subscription.isActiveTrialOffer = false
+        subscription.subscriptionFeatures = []
     }
     
     private func setupNotificationObservers() {
@@ -1731,6 +1732,17 @@ extension SettingsViewModel {
 // Deeplink notification handling
 extension NSNotification.Name {
     static let settingsDeepLinkNotification: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.settingsDeepLink")
+}
+
+enum SettingsDeepLinkUserInfoKey {
+    static let onPresented = "onPresented"
+}
+
+/// Typed wrapper for the post-presentation callback passed via `settingsDeepLinkNotification`
+/// userInfo. Using a concrete type instead of a bare closure makes signature mismatches a
+/// build error rather than a silent runtime nil.
+struct SettingsDeepLinkCallback {
+    let onPresented: () -> Void
 }
 
 // MARK: - AI Chat

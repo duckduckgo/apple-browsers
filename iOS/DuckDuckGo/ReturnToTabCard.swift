@@ -23,12 +23,53 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 
 struct ReturnToTabCard: View {
-    let model: EscapeHatchModel
-    let onTap: () -> Void
     @Environment(\.layoutDirection) private var layoutDirection
 
+    @ObservedObject var model: EscapeHatchModel
+
+    /// Frame of the three-dots menu button in the key window's coordinate space.
+    /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter
+    /// expects window-space coordinates because it attaches the popover to the key window.
+    @State private var menuFrameInWindow: CGRect = .zero
+
     var body: some View {
-        Button(action: onTap) {
+        Group {
+            if model.isActionsEnabled {
+                SwipeActionView(onCommit: model.primarySwipeAction.perform) {
+                    contentView
+                } actions: {
+                    swipeableActionsView
+                }
+                .contextMenu {
+                    menuContentView
+                }
+                // We're Clipping with the shape `( ]` as the `swipeableActionsView` subview is not expected to be a perfect pill, on its right hand side during Swipe
+                .clipShape(LeftCapsuleShape())
+            } else {
+                contentView
+            }
+        }
+        .frame(height: Metrics.height)
+    }
+
+    private var contentView: some View {
+        HStack(spacing: Metrics.innerSpacing) {
+            mainView
+            if model.isActionsEnabled {
+                menuView
+            }
+        }
+        .padding(.horizontal, Metrics.horizontalPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(height: Metrics.height)
+        .background(
+            Capsule()
+                .fill(Color(designSystemColor: .controlsFillSecondary))
+        )
+    }
+
+    private var mainView: some View {
+        Button(action: model.onCardTap) {
             HStack(spacing: Metrics.innerSpacing) {
                 iconView
                 VStack(alignment: .leading, spacing: Metrics.titleToSubtitleSpacing) {
@@ -45,18 +86,90 @@ struct ReturnToTabCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, Metrics.horizontalPadding)
-            .frame(maxWidth: .infinity)
-            .frame(height: Metrics.height)
-            .background(
-                Capsule()
-                    .fill(Color(designSystemColor: .controlsFillSecondary))
-            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityLabelText))
         .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
         .accessibilityIdentifier("NTP.escapeHatch.card")
+    }
+
+    private var menuView: some View {
+        Menu {
+            menuContentView
+        } label: {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal)
+                .foregroundColor(Color(designSystemColor: .icons))
+                .padding(.horizontal, Metrics.horizontalPadding)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
+        .accessibilityIdentifier("NTP.escapeHatch.moreButton")
+        .onFrameUpdate(in: .global, using: MenuFrameInWindowKey.self) { menuFrameInWindow = $0 }
+    }
+
+    @ViewBuilder
+    private var menuContentView: some View {
+        Section(header: Text(model.subtitle)) {
+            MenuActionButton(
+                text: UserText.escapeHatchMenuReturnToTab,
+                icon: DesignSystemImages.Glyphs.Size16.goBackCircle,
+                role: .none,
+                action: model.onCardTap
+            )
+            if model.isFireTab {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuBurnTab,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
+                    role: .destructive,
+                    action: model.onBurnTabImmediately
+                )
+            } else {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuCloseTab,
+                    icon: DesignSystemImages.Glyphs.Size16.closeOutline,
+                    role: .destructive,
+                    action: model.onCloseTab
+                )
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuBurnTab,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
+                    role: .destructive,
+                    action: { model.onBurnTabWithConfirmation(menuFrameInWindow) }
+                )
+            }
+            Picker(selection: model.afterInactivityOptionBinding) {
+                ForEach(AfterInactivityOption.allCases, id: \.self) { option in
+                    Text(option.description)
+                        .tag(option)
+                }
+            } label: {
+                Text(UserText.settingsAfterInactivityLabel)
+                Text(model.afterInactivityOptionBinding.wrappedValue.description)
+                    .foregroundColor(.secondary)
+                    .font(.subheadline)
+
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
+                    .foregroundColor(Color(designSystemColor: .icons))
+
+            }
+            .pickerStyle(.menu)
+        }
+    }
+
+    private var swipeableActionsView: some View {
+        ZStack(alignment: .center) {
+            Color(designSystemColor: .destructivePrimary)
+
+            Text(model.primarySwipeAction.label)
+                .daxSubheadRegular()
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .padding(.horizontal, Metrics.horizontalPadding)
+        }
     }
 
     private var accessibilityLabelText: String {
@@ -135,6 +248,34 @@ private struct DomainFaviconView: View {
     }
 }
 
+/// One-line menu row: icon glyph on the leading side, text on the trailing side (Apple's standard `Label` layout).
+/// Captures the icon-coloring asymmetry: non-destructive rows apply the `icons` design token explicitly;
+/// destructive rows inherit SwiftUI's auto-tint from `role: .destructive`.
+private struct MenuActionButton: View {
+    let text: String
+    let icon: UIImage
+    let role: ButtonRole?
+    let action: () -> Void
+
+    var body: some View {
+        Button(role: role, action: action) {
+            Label {
+                Text(text)
+            } icon: {
+                Image(uiImage: icon)
+                    .foregroundColor(role == nil ? Color(designSystemColor: .icons) : nil)
+            }
+        }
+    }
+}
+
+private struct MenuFrameInWindowKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
 private enum Metrics {
     static let height: CGFloat = 56
     static let horizontalPadding: CGFloat = 16
@@ -150,47 +291,55 @@ private enum Metrics {
 
 // MARK: - Previews
 
+#if DEBUG
+
 #Preview("Return to tab card") {
-    ReturnToTabCard(
-        model: EscapeHatchModel(
-            title: "Tokamak - Wikipedia",
-            subtitle: "en.wikipedia.org/wiki/Tokamak",
-            tabType: .regular,
-            domain: "en.wikipedia.org",
-            targetTab: Tab(fireTab: false)
-        ),
-        onTap: {}
-    )
-    .padding()
-    .frame(width: 360)
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Tokamak - Wikipedia",
+                                    subtitle: "en.wikipedia.org/wiki/Tokamak",
+                                    tabType: .regular,
+                                    domain: "en.wikipedia.org",
+                                    targetTab: target,
+                                    tabCount: 9))
+        .padding()
+        .frame(width: 360)
 }
 
 #Preview("Return to Duck.ai") {
-    ReturnToTabCard(
-        model: EscapeHatchModel(
-            title: "Good Dog Name Ideas",
-            subtitle: "Duck.ai",
-            tabType: .aiChat,
-            domain: nil,
-            targetTab: Tab(fireTab: false)
-        ),
-        onTap: {}
-    )
-    .padding()
-    .frame(width: 360)
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Good Dog Name Ideas",
+                                    subtitle: "Duck.ai",
+                                    tabType: .aiChat,
+                                    domain: nil,
+                                    targetTab: target,
+                                    tabCount: 9))
+        .padding()
+        .frame(width: 360)
 }
 
 #Preview("Return to Fire Tab") {
-    ReturnToTabCard(
-        model: EscapeHatchModel(
-            title: "Last Used Fire Tab",
-            subtitle: "",
-            tabType: .fire,
-            domain: nil,
-            targetTab: Tab(fireTab: true)
-        ),
-        onTap: {}
-    )
-    .padding()
-    .frame(width: 360)
+    let target = Tab(fireTab: true)
+    ReturnToTabCard(model: .preview(title: "Last Used Fire Tab",
+                                    subtitle: "",
+                                    tabType: .fire,
+                                    domain: nil,
+                                    targetTab: target,
+                                    tabCount: 1))
+        .padding()
+        .frame(width: 360)
 }
+
+#Preview("Return to tab — New Tab selected") {
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Tokamak - Wikipedia",
+                                    subtitle: "en.wikipedia.org/wiki/Tokamak",
+                                    tabType: .regular,
+                                    domain: "en.wikipedia.org",
+                                    targetTab: target,
+                                    tabCount: 9,
+                                    afterInactivityOption: .newTab))
+        .padding()
+        .frame(width: 360)
+}
+
+#endif

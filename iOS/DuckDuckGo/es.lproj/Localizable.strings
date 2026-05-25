@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Copiar";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Copiar enlace limpio";
+
+/* Copy link action */
+"action.title.copy.link" = "Copiar enlace";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL copiada";
 
@@ -240,7 +246,7 @@
 "aichat.toolbar.tools.imagegeneration.title" = "Crear imagen";
 
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Busca información actualizada";
+"aichat.toolbar.tools.websearch.subtitle" = "Obtener respuestas de la web";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Búsqueda en la web";
@@ -1990,6 +1996,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Última Fire Tab utilizada";
+
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Quemar pestaña";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Cerrar pestaña";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Volver a la pestaña";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Más opciones";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Volver a %@";
 
@@ -1998,6 +2017,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Volver a %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Pestañas privadas";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2407,7 +2429,7 @@
 "input.field.placeholder.duckai" = "Pregunta cualquier cosa en privado";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Haz una pregunta de seguimiento...";
+"input.field.placeholder.duckai.followup" = "Responder...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Instalar extensión";
@@ -2907,6 +2929,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Mover la barra de direcciones a la parte inferior";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Mover la barra de direcciones a la parte superior";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies gestionadas";
 
@@ -3365,6 +3393,10 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "¿Eliminar Fire Tabs y sus datos?";
+
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "¿Eliminar pestaña y datos del sitio?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "¿Eliminar pestañas y datos del sitio?";
 
@@ -3373,6 +3405,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Eliminar todo";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "Eliminar pestaña";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Borrar este chat";
@@ -4220,6 +4255,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restaurando suscripción...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Ahora no";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo también tiene una **suscripción opcional de pago**, con una **VPN** segura y una **IA privada avanzada**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eliminar de este dispositivo";
 
@@ -4913,3 +4954,8 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
 
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Añadir archivo";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Añadir imagen";

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AVFoundation
 import Combine
 import Common
 import CoreLocation
@@ -80,7 +81,9 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return geolocationAuthorizationState
         case .notification:
             return await notificationService.authorizationStatus.asSystemPermissionState
-        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
+        case .microphone:
+            return microphoneAuthorizationState
+        case .camera, .popups, .externalScheme, .autoplayPolicy:
             return .authorized
         }
     }
@@ -92,7 +95,9 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return geolocationAuthorizationState
         case .notification:
             return notificationService.cachedAuthorizationStatus.asSystemPermissionState
-        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
+        case .microphone:
+            return microphoneAuthorizationState
+        case .camera, .popups, .externalScheme, .autoplayPolicy:
             return .authorized
         }
     }
@@ -148,6 +153,23 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         case .notDetermined:
             return .notDetermined
         case .authorized, .authorizedAlways:
+            return .authorized
+        case .denied:
+            return .denied
+        case .restricted:
+            return .restricted
+        @unknown default:
+            return .notDetermined
+        }
+    }
+
+    // MARK: - Private Microphone Implementation
+
+    private var microphoneAuthorizationState: SystemPermissionAuthorizationState {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .notDetermined:
+            return .notDetermined
+        case .authorized:
             return .authorized
         case .denied:
             return .denied

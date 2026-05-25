@@ -49,6 +49,12 @@
 /* Copy action */
 "action.title.copy" = "Copy";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Copy Clean Link";
+
+/* Copy link action */
+"action.title.copy.link" = "Copy Link";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL copied";
 
@@ -202,11 +208,11 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "You can only attach %d images at a time.";
 
-/* Top-level attachment menu option to attach a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Attach File";
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Add File";
 
-/* Top-level attachment menu option to attach a photo to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Attach Photo";
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Add Image";
 
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Take Photo";
@@ -254,7 +260,7 @@
 "aichat.toolbar.tools.imagegeneration.title" = "Create Image";
 
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Find current information";
+"aichat.toolbar.tools.websearch.subtitle" = "Source answers from the web";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Web Search";
@@ -1930,6 +1936,18 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Last used Fire Tab";
 
+/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.burnTab" = "Burn Tab";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Close Tab";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Return to Tab";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "More options";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Return to %@";
 
@@ -1938,6 +1956,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Return to %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Private Tabs";
 
 /* No comment provided by engineer. */
 "favorite" = "Favorite";
@@ -2330,7 +2351,7 @@
 "input.field.placeholder.duckai" = "Ask anything privately";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Ask a follow-up question...";
+"input.field.placeholder.duckai.followup" = "Reply...";
 
 /* OK title for invite screen alert dismissal button */
 "invite.alert.ok.button" = "OK";
@@ -2761,6 +2782,12 @@ https://duckduckgo.com/mac";
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Move Address Bar to Bottom";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Move Address Bar to Top";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies Managed";
 
@@ -3175,6 +3202,9 @@ https://duckduckgo.com/mac";
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";
 
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "Delete tab and site data?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Delete tabs and site data?";
 
@@ -3183,6 +3213,9 @@ https://duckduckgo.com/mac";
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Delete All";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "Delete Tab";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Delete This Chat";
@@ -4011,6 +4044,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restoring subscription...";
+
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Not Now";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo also has an **optional paid subscription**, with a secure **VPN** and **advanced, private AI**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remove From This Device";

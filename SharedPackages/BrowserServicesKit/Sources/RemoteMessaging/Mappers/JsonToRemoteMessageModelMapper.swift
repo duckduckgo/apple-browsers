@@ -398,6 +398,8 @@ struct JsonToRemoteMessageModelMapper {
             return .subscription
         case .veryCriticalUpdate:
             return .veryCriticalUpdate
+        case .youtubeNew:
+            return .youtubeNew
         case .none:
             return .announce
         }

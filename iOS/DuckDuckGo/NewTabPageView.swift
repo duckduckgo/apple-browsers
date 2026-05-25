@@ -135,9 +135,7 @@ private extension NewTabPageView {
     @ViewBuilder
     private var emptyStateView: some View {
         if viewModel.fireTab {
-            FireModeEmptyStateView(type: .tab,
-                                   escapeHatch: viewModel.escapeHatch,
-                                   onEscapeHatchTap: viewModel.onEscapeHatchTap)
+            FireModeEmptyStateView(type: .tab, escapeHatch: viewModel.escapeHatch)
         } else {
             logoEmptyView
         }
@@ -197,15 +195,10 @@ private extension NewTabPageView {
     @ViewBuilder
     private var escapeHatchSectionView: some View {
         if let escapeHatch = viewModel.escapeHatch {
-            EscapeHatchView(
-                model: escapeHatch,
-                openTabCount: viewModel.openTabCount,
-                onCardTap: { viewModel.onEscapeHatchTap?() },
-                onTabSwitcherTap: { viewModel.onTabSwitcherTap?() }
-            )
-            .frame(maxWidth: escapeHatchMaxWidth)
-            .padding(.top, Metrics.nonGridSectionTopPadding)
-            .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
+            EscapeHatchView(model: escapeHatch)
+                .frame(maxWidth: escapeHatchMaxWidth)
+                .padding(.top, Metrics.nonGridSectionTopPadding)
+                .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
         }
     }
 

@@ -19,6 +19,8 @@
 
 import XCTest
 import AIChat
+import BrowserServicesKitTestsUtils
+import WebKit
 
 @testable import Core
 @testable import DuckDuckGo
@@ -506,6 +508,74 @@ class TabTests: XCTestCase {
         return Link(title: "title", url: URL(string: "http://example.com")!)
     }
 
+}
+
+final class TabViewControllerAIChatNewWindowDecisionTests: XCTestCase {
+
+    func testWhenNewTargetBlankFromAIChatToExternalHTTPSThenOpenInNewTab() {
+        let url = URL(string: "https://example.com/cat")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url))
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .openInNewTab(url))
+    }
+
+    func testWhenNewTargetBlankFromAIChatToAnotherAIChatURLThenLoadInSameTab() {
+        let url = URL(string: "https://duck.ai/chat?duckai=4&chatID=123")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url))
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .loadInTab(url))
+    }
+
+    func testWhenNewTargetBlankFromAIChatToNonHTTPSchemeThenIgnore() {
+        let url = URL(string: "mailto:test@example.com")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url))
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .ignore)
+    }
+
+    func testWhenNewTargetBlankFromNonAIChatTabThenIgnore() {
+        let url = URL(string: "https://example.com/cat")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url))
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: URL(string: "https://example.com")!,
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .ignore)
+    }
+
+    func testWhenLinkActivatedWithTargetFrameFromAIChatThenIgnore() {
+        let url = URL(string: "https://example.com/cat")!
+        let targetFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: targetFrame)
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .ignore)
+    }
+
+    func testWhenNavigationTypeIsNotLinkActivatedFromAIChatThenIgnore() {
+        let url = URL(string: "https://example.com/cat")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), navigationType: .other)
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .ignore)
+    }
+
+    private func aiChatURL() -> URL {
+        URL(string: "https://duck.ai/chat?duckai=4")!
+    }
 }
 
 private class CoderStub: NSCoder {

@@ -399,6 +399,30 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertFalse(mockTabManager.closeTabAndOpenNewChatCalled)
     }
 
+    func testWhenSourceIsEscapeHatchAndAITabBurnedWithRefinementsThenNavigatesToHomepage() async {
+        // Given - the conditions that would normally trigger open-new-chat:
+        // refinements on + AI tab. Escape hatch must override that.
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireButtonRefinements)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn-from-hatch")
+
+        // When
+        await executor.burn(
+            request: makeFireRequest(options: .tabs,
+                                     scope: .tab(viewModel: tabViewModel),
+                                     source: .escapeHatch),
+            applicationState: .unknown
+        )
+
+        // Then - Escape hatch short-circuits the AI+refinements path; no new chat.
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
+        XCTAssertFalse(mockTabManager.closeTabAndOpenNewChatCalled)
+    }
+
     func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {
         // Given
         let executor = makeFireExecutor()

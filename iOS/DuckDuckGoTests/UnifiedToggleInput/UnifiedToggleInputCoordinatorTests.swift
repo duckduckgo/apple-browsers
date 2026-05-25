@@ -30,17 +30,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var mockDelegate: MockUnifiedToggleInputDelegate!
     private var mockPreferences: MockAIChatPreferences!
     private var mockToggleModeStorage: MockToggleModeStorage!
+    private var mockSubmissionMetrics: MockSwitchBarSubmissionMetrics!
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
         super.setUp()
         mockPreferences = MockAIChatPreferences()
         mockToggleModeStorage = MockToggleModeStorage()
+        mockSubmissionMetrics = MockSwitchBarSubmissionMetrics()
         sut = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
-            toggleModeStorage: mockToggleModeStorage
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics
         )
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
@@ -52,6 +55,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockDelegate = nil
         mockPreferences = nil
         mockToggleModeStorage = nil
+        mockSubmissionMetrics = nil
         super.tearDown()
     }
 
@@ -275,6 +279,30 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didChangeText: "hello")
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
         XCTAssertEqual(sut.textState, .empty)
+    }
+
+    // MARK: - VC Delegate: Submit — Submission Metrics
+
+    func test_submitAIChat_processesSubmissionMetricsForAIChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
+
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.count, 1)
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.first?.text, "hello AI")
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.first?.mode, .aiChat)
+    }
+
+    func test_submitSearch_nonURL_processesSubmissionMetricsForSearch() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "best privacy browser", mode: .search)
+
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.count, 1)
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.first?.text, "best privacy browser")
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.first?.mode, .search)
+    }
+
+    func test_submitSearch_validURL_doesNotProcessSubmissionMetrics() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "https://duckduckgo.com", mode: .search)
+
+        XCTAssertTrue(mockSubmissionMetrics.processedSubmissions.isEmpty)
     }
 
     // MARK: - VC Delegate: Submit — AI Chat Mode, With Bound Script
@@ -906,6 +934,21 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.aiChatStatus = .ready
         let handler = sut.viewController.handler
         XCTAssertFalse(handler.isGenerating)
+    }
+
+    func test_aiChatStatus_ready_restoresAttachmentButtonAndMenuAfterGenerating() {
+        configureImageAttachments()
+        sut.updateImageButtonVisibility()
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+        XCTAssertNotNil(sut.viewController.attachmentMenu)
+
+        sut.aiChatStatus = .streaming
+        XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+        XCTAssertNil(sut.viewController.attachmentMenu)
+
+        sut.aiChatStatus = .ready
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+        XCTAssertNotNil(sut.viewController.attachmentMenu)
     }
 
     func test_unbind_whileGenerating_clearsIsGenerating() {
@@ -1776,13 +1819,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.handler.hasSubmittedPrompt)
     }
 
-    func test_handlerHasSubmittedPrompt_resetAfterBindWithNewChat() {
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
-        let userScript = makeTestUserScript()
-        sut.bindToTab(userScript, hasExistingChat: false)
-        XCTAssertFalse(sut.viewController.handler.hasSubmittedPrompt)
-    }
-
     func test_handlerHasSubmittedPrompt_syncedAfterUnbind() {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
         sut.unbind()
@@ -2089,6 +2125,48 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertTrue(stopButton.hitTest(CGPoint(x: -1, y: stopButton.bounds.midY), with: nil) === stopButton)
     }
 
+    func test_isGenerating_disablesToolbarConfigurationButtons() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isImageButtonEnabled = true
+        sut.selectedTool = .webSearch
+
+        let attachmentButton = findButton(accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel, in: sut)
+        let toolsButton = findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)
+        let reasoningButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Reasoning", in: sut)
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+        let selectedToolClearButton = findButton(accessibilityLabel: UserText.aiChatToolbarClearSelectedToolAccessibilityLabel, in: sut)
+
+        sut.isGenerating = true
+
+        XCTAssertFalse(attachmentButton?.isEnabled ?? true)
+        XCTAssertFalse(toolsButton?.isEnabled ?? true)
+        XCTAssertFalse(reasoningButton?.isEnabled ?? true)
+        XCTAssertFalse(modelChipButton?.isEnabled ?? true)
+        XCTAssertFalse(selectedToolClearButton?.isEnabled ?? true)
+
+        sut.isGenerating = false
+
+        XCTAssertTrue(attachmentButton?.isEnabled ?? false)
+        XCTAssertTrue(toolsButton?.isEnabled ?? false)
+        XCTAssertTrue(reasoningButton?.isEnabled ?? false)
+        XCTAssertTrue(modelChipButton?.isEnabled ?? false)
+        XCTAssertTrue(selectedToolClearButton?.isEnabled ?? false)
+    }
+
+    func test_isGenerating_doesNotReenableUnavailableAttachmentButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isImageButtonEnabled = false
+
+        let attachmentButton = findButton(accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel, in: sut)
+        let toolsButton = findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)
+
+        sut.isGenerating = true
+        sut.isGenerating = false
+
+        XCTAssertFalse(attachmentButton?.isEnabled ?? true)
+        XCTAssertTrue(toolsButton?.isEnabled ?? false)
+    }
+
     func test_reasoningButton_hasAccessibilityIdentifier() {
         let sut = UnifiedToggleInputToolbarView()
 
@@ -2232,13 +2310,17 @@ private final class FakeInputStateStore: UnifiedInputStateStoring {
 @MainActor
 final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
 
-    private func makeSUT(stateStore: UnifiedInputStateStoring) -> UnifiedToggleInputCoordinator {
+    private func makeSUT(
+        stateStore: UnifiedInputStateStoring,
+        duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil
+    ) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: MockAIChatPreferencesForPerTab(),
             toggleModeStorage: MockToggleModeStorageForPerTab(),
-            stateStore: stateStore
+            stateStore: stateStore,
+            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
         )
     }
 
@@ -2334,6 +2416,44 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.states["tab-A"]?.attachments.count, 1)
         XCTAssertEqual(sut.viewController.text, "")
         XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
+    }
+
+    // Regression: a Duck.ai tab → non-AI tab transition routes through
+    // `resetUnifiedToggleInputForTabTransition` → `coordinator.hide()`, which clears
+    // currentTabUID before the next `activateForTab` runs. Without firing the wide-event
+    // cancellation here, the matching call in `activateForTab` sees `previous == nil`
+    // and the active Duck.ai prompt flow orphans until the next app launch.
+    func test_hide_firesTabSwitchedAwayDuringGenerationForCurrentTab() {
+        let store = FakeInputStateStore()
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let sut = makeSUT(stateStore: store, duckAIWideEventInstrumentation: instrumentation)
+        sut.activateForTab("tab-A")
+
+        sut.hide()
+
+        XCTAssertEqual(instrumentation.tabSwitchedAwayCalls, ["tab-A"])
+    }
+
+    func test_hide_doesNotFireTabSwitchedAway_whenNoCurrentTab() {
+        let store = FakeInputStateStore()
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let sut = makeSUT(stateStore: store, duckAIWideEventInstrumentation: instrumentation)
+
+        sut.hide()
+
+        XCTAssertTrue(instrumentation.tabSwitchedAwayCalls.isEmpty)
+    }
+
+    func test_duckAISubmissionAfterHideUsesLastActivatedTabScope() {
+        let store = FakeInputStateStore()
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let sut = makeSUT(stateStore: store, duckAIWideEventInstrumentation: instrumentation)
+        sut.activateForTab("tab-A")
+        sut.hide()
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
     }
 
     // Regression: applyState must always sync the live model store from per-tab
@@ -2894,4 +3014,42 @@ private final class MockToggleModeStorageForPerTab: ToggleModeStoring {
     private var storedMode: TextEntryMode?
     func save(_ mode: TextEntryMode) { storedMode = mode }
     func restore() -> TextEntryMode? { storedMode }
+}
+
+final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
+    private(set) var processedSubmissions: [(text: String, mode: TextEntryMode)] = []
+
+    func process(_ text: String, for submissionMode: TextEntryMode) {
+        processedSubmissions.append((text, submissionMode))
+    }
+}
+
+@MainActor
+private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
+    private(set) var submissionStartedScopes: [DuckAIWideEventFlowScope] = []
+    private(set) var tabSwitchedAwayCalls: [TabUID] = []
+
+    func submissionStarted(scope: DuckAIWideEventFlowScope,
+                           modelId: String?,
+                           userTier: AIChatUserTier,
+                           reasoningEffort: AIChatReasoningEffort?,
+                           entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                           inputMode: DuckAIPromptWideEventData.InputMode,
+                           fireMode: Bool,
+                           isFirstPrompt: Bool,
+                           frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath,
+                           hasPageContext: Bool,
+                           toolsSelected: Bool,
+                           attachmentsSelected: Bool) {
+        submissionStartedScopes.append(scope)
+    }
+    func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {}
+    func frontendSubmissionAcknowledged(scope: DuckAIWideEventFlowScope) {}
+    func chatStatusChanged(_ status: AIChatStatusValue, scope: DuckAIWideEventFlowScope) {}
+    func stopGeneratingTapped(scope: DuckAIWideEventFlowScope) {}
+    func tabClosedDuringGeneration(tabID: TabUID) {}
+    func tabSwitchedAwayDuringGeneration(tabID: TabUID) { tabSwitchedAwayCalls.append(tabID) }
+    func fireButtonClearedTabDuringGeneration(tabID: TabUID) {}
+    func sheetDismissedDuringGeneration(scope: DuckAIWideEventFlowScope) {}
+    func pageLoadFailed(scope: DuckAIWideEventFlowScope, error: Error) {}
 }

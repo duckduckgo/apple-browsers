@@ -151,7 +151,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
         self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
         self.cancelPendingDowngradeHandler = cancelPendingDowngradeHandler
         Task {
-            await self.updateSubscription(cachePolicy: .cacheFirst)
+            await self.updateSubscription(forceRefresh: false)
         }
 
         self.email = subscriptionManager.userEmail
@@ -165,8 +165,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
                 }
 
                 await self?.fetchEmail()
-                // Use remoteFirst to ensure fresh data after subscription changes
-                await self?.updateSubscription(cachePolicy: .remoteFirst)
+                await self?.updateSubscription(forceRefresh: false)
             }
         }
 
@@ -465,7 +464,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
             }
 
             await self?.fetchEmail()
-            await self?.updateSubscription(cachePolicy: .remoteFirst)
+            await self?.updateSubscription(forceRefresh: true)
         }
     }
 
@@ -475,9 +474,22 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     }
 
     @MainActor
-    private func updateSubscription(cachePolicy: SubscriptionCachePolicy) async {
+    private func updateSubscription(forceRefresh: Bool) async {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: cachePolicy)
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: forceRefresh) else {
+                Logger.subscription.log("No subscription available")
+                subscriptionDetails = nil
+                cancelPendingDowngradeDetails = nil
+                subscriptionStatus = .unknown
+                hasActiveTrialOffer = false
+                subscriptionTier = nil
+                subscriptionPlatform = nil
+                isSubscriptionActive = false
+                availableChanges = nil
+                pendingPlans = nil
+                currentProductID = nil
+                return
+            }
             Task { @MainActor in
                 updateDescription(for: subscription)
                 subscriptionPlatform = subscription.platform
@@ -537,11 +549,13 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     private var dateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .long
+#if DEBUG || ALPHA
+        dateFormatter.timeStyle = .medium
+#else
         dateFormatter.timeStyle = .none
-
+#endif
         return dateFormatter
     }()
-
 }
 
 enum ManageSubscriptionSheet: Identifiable {

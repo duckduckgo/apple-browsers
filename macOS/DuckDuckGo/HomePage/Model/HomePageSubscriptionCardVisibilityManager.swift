@@ -98,7 +98,7 @@ final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardV
     }
 
     private func hasCachedSubscription() async -> Bool {
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         return currentSubscription != nil
     }
 

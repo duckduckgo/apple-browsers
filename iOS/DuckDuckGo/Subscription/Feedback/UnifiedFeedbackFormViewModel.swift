@@ -144,7 +144,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         Task {
             // This requires follow-up work:
             // https://app.asana.com/1/137249556945/task/1210799126744217
-            let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
+            let features = (try? await subscriptionManager.currentSubscriptionFeatures(forceRefresh: false)) ?? []
 
             if features.contains(.networkProtection) {
                 availableCategories.append(.vpn)

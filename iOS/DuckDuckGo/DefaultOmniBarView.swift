@@ -1132,7 +1132,7 @@ extension DefaultOmniBarView {
         setLayoutMode(mode, animated: false)
         tabSwitcherContainerView.subviews.forEach { $0.removeFromSuperview() }
         if mode != .compact {
-            let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
+            let button = TabSwitcherStaticButton()
             button.translatesAutoresizingMaskIntoConstraints = false
             tabSwitcherContainerView.addSubview(button)
             NSLayoutConstraint.activate([

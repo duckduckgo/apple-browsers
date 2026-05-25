@@ -25,6 +25,7 @@ import Bookmarks
 import Persistence
 import History
 import Core
+import DDGSync
 import Suggestions
 import AIChat
 import RemoteMessaging
@@ -41,6 +42,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidRequestTabSwitcher()
     func unifiedInputEditingStateDidRequestTryFireMode()
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
+    func unifiedInputEditingStateDidRequestSyncSetup()
 }
 
 final class UnifiedInputContentContainerViewController: UIViewController {
@@ -86,6 +88,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let syncService: DDGSyncing?
+    private let syncPromoManager: SyncPromoManaging?
+    private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
 
     // MARK: - Manager Components
 
@@ -111,7 +116,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         syncService: DDGSyncing? = nil,
+         aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.daxLogoManager.usesLottieTransition = true
@@ -120,6 +127,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.syncService = syncService
+        self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
+                                                                  featureFlagger: featureFlagger,
+                                                                  privacyConfigurationManager: privacyConfigurationManager) }
+        self.aiChatSyncIntroSheetPresenter = aiChatSyncIntroSheetPresenter
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -219,6 +231,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         guard active != isContentActive else { return }
         isContentActive = active
         markNeedsVisibleRefresh()
+        updateDuckAISuggestionsActiveState()
+    }
+
+    private func updateDuckAISuggestionsActiveState() {
+        duckAISuggestionsCoordinator?.setIsVisibleContent(
+            isContentActive && switchBarHandler.currentToggleState == .aiChat
+        )
     }
 
     func refreshVisibleContentIfNeeded() {
@@ -487,7 +506,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
             queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
-            layoutConfiguration: .unifiedToggleInput
+            layoutConfiguration: .unifiedToggleInput,
+            syncPromoManager: switchBarHandler.isFireTab ? nil : syncPromoManager,
+            syncService: switchBarHandler.isFireTab ? nil : syncService
         )
         coordinator.delegate = self
         coordinator.onContentChanged = { [weak self] in
@@ -504,6 +525,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         coordinator.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
 
         duckAISuggestionsCoordinator = coordinator
+        updateDuckAISuggestionsActiveState()
     }
 
     private func installDaxLogoView() {
@@ -759,6 +781,7 @@ private extension UnifiedInputContentContainerViewController {
         // Duck.ai mode now renders chats / URLs / search-DDG inline via DuckAISuggestionsCoordinator,
         // so there's no fallback toggling to do here. Search mode is unchanged — the suggestion tray
         // decides its own visibility from query state.
+        updateDuckAISuggestionsActiveState()
     }
 }
 
@@ -864,6 +887,9 @@ extension UnifiedInputContentContainerViewController: VoiceSearchViewControllerD
 extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinatorDelegate {
 
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
+        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
+        DailyPixel.fireDailyAndCount(pixel: pixel)
+
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.unifiedInputEditingStateDidSelectChatHistory(url: url)
     }
@@ -877,5 +903,11 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
         // flip toggle to Search and submit the query in one step.
         switchBarHandler.setToggleState(.search)
         delegate?.unifiedInputEditingStateDidSubmitQuery(query)
+    }
+
+    func duckAISuggestionsDidRequestSyncSetup() {
+        aiChatSyncIntroSheetPresenter.present(from: self) { [weak self] in
+            self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
+        }
     }
 }

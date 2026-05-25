@@ -715,6 +715,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         get { nil }
         set { webViewSet = true }
     }
+    var canDispatchBridgeMessages: Bool = true
 
     var delegateSet = false
     var webViewSet = false

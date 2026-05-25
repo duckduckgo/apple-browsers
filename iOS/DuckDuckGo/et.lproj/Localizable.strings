@@ -246,7 +246,7 @@
 "aichat.toolbar.tools.imagegeneration.title" = "Loo pilt";
 
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Praeguse teabe leidmine";
+"aichat.toolbar.tools.websearch.subtitle" = "Vastused veebist";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Veebiotsing";
@@ -2429,7 +2429,7 @@
 "input.field.placeholder.duckai" = "Küsi ükskõik mida privaatselt";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Küsi lisaküsimus...";
+"input.field.placeholder.duckai.followup" = "Vasta...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Paigalda laiendus";
@@ -4954,3 +4954,8 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Lisa fail";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Lisa pilt";

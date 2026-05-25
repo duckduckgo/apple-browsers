@@ -30,6 +30,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
     private var featureFlagger: MockFeatureFlagger!
     private var suggestionsReader: MockAIChatSuggestionsReader!
     private var configProvider: MockAiChatsConfigProvider!
+    private var searchPreferencesPersistorMock: MockSearchPreferencesPersistor!
     private var provider: NewTabPageOmnibarAiChatsProvider!
 
     override func setUp() {
@@ -37,19 +38,30 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         featureFlagger = MockFeatureFlagger()
         suggestionsReader = MockAIChatSuggestionsReader()
         configProvider = MockAiChatsConfigProvider()
-        provider = NewTabPageOmnibarAiChatsProvider(
-            featureFlagger: featureFlagger,
-            configProvider: configProvider,
-            suggestionsReader: suggestionsReader
-        )
+        searchPreferencesPersistorMock = MockSearchPreferencesPersistor()
+        searchPreferencesPersistorMock.showAutocompleteSuggestions = true
+        provider = makeProvider()
     }
 
     override func tearDown() {
         provider = nil
+        searchPreferencesPersistorMock = nil
         configProvider = nil
         suggestionsReader = nil
         featureFlagger = nil
         super.tearDown()
+    }
+
+    private func makeProvider() -> NewTabPageOmnibarAiChatsProvider {
+        NewTabPageOmnibarAiChatsProvider(
+            featureFlagger: featureFlagger,
+            configProvider: configProvider,
+            suggestionsReader: suggestionsReader,
+            searchPreferences: SearchPreferences(
+                persistor: searchPreferencesPersistorMock,
+                windowControllersManager: WindowControllersManagerMock()
+            )
+        )
     }
 
     // MARK: - Feature flag
@@ -72,6 +84,21 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         let result = await provider.aiChats(query: nil)
 
         XCTAssertFalse(result.chats.isEmpty)
+    }
+
+    // MARK: - Autocomplete suggestions setting
+
+    @MainActor
+    func testWhenAutocompleteSuggestionsDisabled_thenReturnsEmpty() async {
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
+        suggestionsReader.pinnedChats = [.make(chatId: "1", title: "Pinned")]
+        suggestionsReader.recentChats = [.make(chatId: "2", title: "Recent")]
+        searchPreferencesPersistorMock.showAutocompleteSuggestions = false
+        provider = makeProvider()
+
+        let result = await provider.aiChats(query: nil)
+
+        XCTAssertTrue(result.chats.isEmpty)
     }
 
     // MARK: - Query normalisation
@@ -324,6 +351,8 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Just(nil).eraseToAnyPublisher() }
     var isVoiceChatAccessEnabled: Bool = false
     var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var showAskAiSuggestion: Bool = true
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 }
 
 private extension AIChatSuggestion {

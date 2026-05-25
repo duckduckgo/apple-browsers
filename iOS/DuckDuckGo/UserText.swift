@@ -127,6 +127,14 @@ public struct UserText {
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
 
+    public static let aiChatSyncPromoTitle = NotLocalizedString("aiChat.syncPromo.title", value: "Access your chats across your devices.", comment: "Headline of the sync promo card shown above the Duck.ai recent chats list. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncPromoButton = NotLocalizedString("aiChat.syncPromo.button", value: "Turn On Sync & Backup", comment: "Primary button of the sync promo card shown above the Duck.ai recent chats list. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncPromoCloseAccessibilityLabel = NotLocalizedString("aiChat.syncPromo.close.accessibility.label", value: "Dismiss sync promotion", comment: "Accessibility label for the close button on the Duck.ai sync promo card. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncIntroSheetTitle = NotLocalizedString("aiChat.syncIntroSheet.title", value: "Open DuckDuckGo on your other device.", comment: "Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncIntroSheetBody = NotLocalizedString("aiChat.syncIntroSheet.body", value: "End-to-end encrypted. Nobody can see your chats, not even us.", comment: "Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncIntroSheetScanButton = NotLocalizedString("aiChat.syncIntroSheet.scan.button", value: "Scan QR Code", comment: "Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncIntroSheetNotNow = NotLocalizedString("aiChat.syncIntroSheet.notNow", value: "Not Now", comment: "Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. Not translated; final copy will land in a follow-up PR.")
+
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
 
@@ -2069,7 +2077,7 @@ public struct UserText {
     public static let aiChatToolbarSubmitButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.submit.button.accessibility.label", value: "Submit", comment: "Accessibility label for the submit button in the Duck.ai native input toolbar")
     public static let aiChatToolbarStopGeneratingButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.stop.button.accessibility.label", value: "Stop generating", comment: "Accessibility label for the stop generating button in the Duck.ai native input toolbar")
     public static let aiChatToolbarWebSearchToolTitle = NSLocalizedString("aichat.toolbar.tools.websearch.title", value: "Web Search", comment: "Title for the web search tool in the unified input tools menu")
-    public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Find current information", comment: "Subtitle for the web search tool in the unified input tools menu")
+    public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Source answers from the web", comment: "Subtitle for the web search tool in the unified input tools menu")
     public static let aiChatToolbarImageGenerationToolTitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.title", value: "Create Image", comment: "Title for the image generation tool in the unified input tools menu")
     public static let aiChatToolbarImageGenerationToolSubtitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.subtitle", value: "Turn text into images", comment: "Subtitle for the image generation tool in the unified input tools menu")
     public static let aiChatToolbarReasoningButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.reasoning.button.accessibility.label", value: "Reasoning mode", comment: "Accessibility label for the reasoning mode button in the Duck.ai native input toolbar")
@@ -2079,8 +2087,8 @@ public struct UserText {
     public static let aiChatReasoningModeReasoningSubtitle = NSLocalizedString("aichat.reasoning.reasoning.subtitle", value: "For complex tasks", comment: "Subtitle for the reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeExtendedTitle = NSLocalizedString("aichat.reasoning.extended.title", value: "Extended Reasoning", comment: "Title for the extended reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeExtendedSubtitle = NSLocalizedString("aichat.reasoning.extended.subtitle", value: "For analytical tasks", comment: "Subtitle for the extended reasoning mode in the Duck.ai reasoning picker")
-    public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Attach Photo", comment: "Top-level attachment menu option to attach a photo to an AI chat message")
-    public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Attach File", comment: "Top-level attachment menu option to attach a file to an AI chat message")
+    public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Add Image", comment: "Top-level attachment menu option to add an image to an AI chat message")
+    public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
@@ -2245,7 +2253,7 @@ public struct UserText {
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask anything privately", comment: "Placeholder text for the duck.ai input field")
 
-    public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Ask a follow-up question...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
+    public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Reply...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
     // MARK: - AI Chat Welcome Message
     public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green.")
@@ -2512,6 +2520,18 @@ public struct UserText {
                     "onboarding.duckai.browser.title",
                     value: "Want to make DuckDuckGo your default browser?",
                     comment: "The title of the dialog to show the privacy features that DuckDuckGo offers"
+                )
+            }
+
+            public enum Contextual {
+                static let onboardingEndOfJourneyMessage = NotLocalizedString(
+                    "onboarding.duckai.contextual.end-of-journey.message",
+                    value: "Start a private AI chat with Duck.ai or toggle to Search for protected browsing.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
+                    comment: "Message of the last screen of the onboarding to the browser app for the Duck.ai flow.")
+                static let subscriptionMessage = NotLocalizedString(
+                    "onboarding.duckai.contextual.subscription.message",
+                    value: "We also offer a paid subscription featuring advanced AI models with higher chat limits from GPT, Claude, and Llama, a secure VPN, and more.",
+                    comment: "Body text of the subscription promo for Duck.ai flow."
                 )
             }
         }

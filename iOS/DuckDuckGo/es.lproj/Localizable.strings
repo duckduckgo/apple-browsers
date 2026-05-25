@@ -246,7 +246,7 @@
 "aichat.toolbar.tools.imagegeneration.title" = "Crear imagen";
 
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Busca información actualizada";
+"aichat.toolbar.tools.websearch.subtitle" = "Obtener respuestas de la web";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Búsqueda en la web";
@@ -2429,7 +2429,7 @@
 "input.field.placeholder.duckai" = "Pregunta cualquier cosa en privado";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Haz una pregunta de seguimiento...";
+"input.field.placeholder.duckai.followup" = "Responder...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Instalar extensión";
@@ -4954,3 +4954,8 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
 
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Añadir archivo";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Añadir imagen";

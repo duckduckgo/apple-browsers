@@ -403,8 +403,8 @@ public enum FeatureFlag: String {
 
     /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
     /// Kill switch in case the new path regresses persistence reliability or hang counts.
-    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1214542891270915
-    case tabSaveDebouncing
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
+    case tabsSaveOptimization
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -705,8 +705,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
-        case .tabSaveDebouncing:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabSaveDebouncing))
+        case .tabsSaveOptimization:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabsSaveOptimization))
         }
     }
 

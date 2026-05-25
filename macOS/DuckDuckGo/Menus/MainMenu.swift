@@ -20,6 +20,7 @@ import AIChat
 import BrowserServicesKit
 import Cocoa
 import Common
+import FoundationExtensions
 import Combine
 import FeatureFlags
 import History

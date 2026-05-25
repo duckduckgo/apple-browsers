@@ -21,6 +21,7 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import Networking

@@ -20,6 +20,7 @@
 import Navigation
 import Foundation
 import Common
+import FoundationExtensions
 import WebKit
 
 public struct BrokenSiteReport {

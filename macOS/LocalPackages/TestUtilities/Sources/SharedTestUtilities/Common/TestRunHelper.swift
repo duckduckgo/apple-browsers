@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import CommonObjCExtensions
 import Foundation
 import os.log

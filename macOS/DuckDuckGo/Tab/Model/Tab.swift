@@ -19,7 +19,9 @@
 import AutoconsentStats
 import BrowserServicesKit
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import History

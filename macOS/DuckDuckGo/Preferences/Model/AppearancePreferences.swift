@@ -20,6 +20,7 @@ import AppKit
 import Bookmarks
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import NewTabPage

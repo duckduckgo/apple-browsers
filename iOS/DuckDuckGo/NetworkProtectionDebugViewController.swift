@@ -20,6 +20,7 @@
 import UIKit
 import Combine
 import Common
+import FoundationExtensions
 import Network
 import NetworkExtension
 import VPN

@@ -21,6 +21,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 
 final class PermissionManagerMock: PermissionManagerProtocol {
 

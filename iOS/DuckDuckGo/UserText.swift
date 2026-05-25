@@ -21,6 +21,7 @@
 import Core
 import Subscription
 import Common
+import FoundationExtensions
 
 public struct UserText {
 

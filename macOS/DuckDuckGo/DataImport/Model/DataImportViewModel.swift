@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import UniformTypeIdentifiers
 import PixelKit
 import os.log

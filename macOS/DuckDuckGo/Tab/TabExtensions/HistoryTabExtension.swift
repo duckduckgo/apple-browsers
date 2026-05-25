@@ -17,7 +17,9 @@
 //
 
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import ContentBlocking
 import Foundation
 import History

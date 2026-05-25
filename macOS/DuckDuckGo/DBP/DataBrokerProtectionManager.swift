@@ -23,6 +23,7 @@ import DataBrokerProtectionCore
 import PixelKit
 import LoginItems
 import Common
+import FoundationExtensions
 import Freemium
 import NetworkProtectionIPC
 import Subscription

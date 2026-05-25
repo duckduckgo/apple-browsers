@@ -17,7 +17,9 @@
 //
 
 import Common
+import FoundationExtensions
 import Combine
+import CombineExtensions
 import Foundation
 import Navigation
 import NewTabPage

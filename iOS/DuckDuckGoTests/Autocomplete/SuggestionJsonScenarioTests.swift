@@ -20,6 +20,7 @@
 import Bookmarks
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Core
 import CoreData
 import InlineSnapshotTesting

@@ -23,6 +23,7 @@ import SafariServices
 import WebKit
 import History
 import Common
+import FoundationExtensions
 import Combine
 import DesignResourcesKitIcons
 

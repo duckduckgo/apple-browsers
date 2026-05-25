@@ -22,6 +22,7 @@ import Foundation
 import BrowserServicesKit
 import History
 import Common
+import FoundationExtensions
 import Persistence
 import PixelKit
 import os.log

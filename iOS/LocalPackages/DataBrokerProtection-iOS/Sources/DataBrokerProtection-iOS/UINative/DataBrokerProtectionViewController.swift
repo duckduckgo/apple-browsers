@@ -20,6 +20,7 @@
 import UIKit
 import SwiftUI
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import WebKit

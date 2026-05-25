@@ -19,6 +19,7 @@
 import Foundation
 import DesignResourcesKitIcons
 import Common
+import FoundationExtensions
 
 public struct BrowsersComparisonModel {
 

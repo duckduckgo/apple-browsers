@@ -19,6 +19,7 @@
 import AIChat
 import AppKit
 import Combine
+import CombineExtensions
 import Foundation
 import PixelKit
 import PrivacyConfig

@@ -20,6 +20,7 @@ import Foundation
 import os.log
 import Combine
 import Common
+import FoundationExtensions
 import Persistence
 
 public extension Logger {

@@ -22,6 +22,7 @@ import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
+import FoundationExtensions
 import History
 import NetworkProtectionIPC
 import NetworkQualityMonitor

@@ -21,6 +21,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import Network
 import NetworkExtension

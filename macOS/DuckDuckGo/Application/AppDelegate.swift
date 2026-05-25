@@ -27,7 +27,9 @@ import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import Configuration
 import ContentScopeScripts
 import CoreData

@@ -20,6 +20,7 @@
 import AIChat
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Core
 import os.log
 import PrivacyConfig

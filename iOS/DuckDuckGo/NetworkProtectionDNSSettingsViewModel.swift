@@ -19,6 +19,7 @@
 
 import Foundation
 import Combine
+import CombineExtensions
 import VPN
 import Core
 import PrivacyConfig

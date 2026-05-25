@@ -20,6 +20,7 @@ import Bookmarks
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 import BrowserServicesKit
 

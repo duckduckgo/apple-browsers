@@ -25,6 +25,7 @@ import BrowserServicesKit
 import ContentScopeScripts
 import WebKit
 import Common
+import FoundationExtensions
 import Combine
 import os.log
 import PixelKit

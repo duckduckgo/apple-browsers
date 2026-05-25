@@ -20,6 +20,7 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import Navigation
 import WebKit

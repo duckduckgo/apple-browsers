@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import UserScript
 import Foundation
 import AIChat

@@ -20,6 +20,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import XCTest

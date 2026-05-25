@@ -23,6 +23,7 @@ import BrokenSitePrompt
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Configuration
 import Core
 import DataBrokerProtection_iOS

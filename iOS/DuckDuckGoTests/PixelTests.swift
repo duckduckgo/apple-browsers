@@ -23,6 +23,7 @@ import OHHTTPStubsSwift
 import Networking
 @testable import Core
 import Common
+import FoundationExtensions
 
 class PixelTests: XCTestCase {
     

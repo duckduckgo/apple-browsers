@@ -20,6 +20,7 @@ import Foundation
 import VPN
 import NetworkProtectionIPC
 import Common
+import FoundationExtensions
 import Subscription
 import BrowserServicesKit
 import Networking

@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Combine
 import BWManagementShared
 import Common
+import FoundationExtensions
 import PixelKit
 import os.log
 

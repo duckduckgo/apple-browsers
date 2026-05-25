@@ -20,6 +20,7 @@ import Foundation
 import Network
 import NetworkExtension
 import Common
+import FoundationExtensions
 import os.log
 
 /// This class takes care of testing whether the Network Protection connection is working or not.  Results are handled by

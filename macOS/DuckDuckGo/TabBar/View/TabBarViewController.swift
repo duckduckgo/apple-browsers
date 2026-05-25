@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import Lottie
 import os.log
 import PixelKit

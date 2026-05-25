@@ -20,6 +20,7 @@ import AppKit
 import AppKitExtensions
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import Persistence

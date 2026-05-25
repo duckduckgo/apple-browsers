@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import OSLog
 import PixelKit
 import PixelKitTestingUtilities

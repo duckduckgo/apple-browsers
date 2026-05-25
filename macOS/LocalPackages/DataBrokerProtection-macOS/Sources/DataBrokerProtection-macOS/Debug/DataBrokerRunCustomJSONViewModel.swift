@@ -20,6 +20,7 @@ import Foundation
 import BrowserServicesKit
 import DataBrokerProtectionCore
 import Common
+import FoundationExtensions
 import ContentScopeScripts
 import os.log
 import FeatureFlags

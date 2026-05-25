@@ -20,6 +20,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import History
 import Suggestions

@@ -34,19 +34,11 @@ protocol SuggestionRowThemeProviding {
 /// Default implementation that uses the app's theme manager.
 struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
     var accentPrimaryColor: NSColor {
-        var color: NSColor = .controlAccentColor
-        NSAppearance.withAppAppearance {
-            color = NSApp.delegateTyped.themeManager.theme.palette.accentPrimary
-        }
-        return color
+        NSApp.delegateTyped.themeManager.theme.palette.accentPrimary
     }
 
     var selectedTintColor: NSColor {
-        var color: NSColor = NSColor(designSystemColor: .accentContentPrimary)
-        NSAppearance.withAppAppearance {
-            color = NSApp.delegateTyped.themeManager.theme.palette.accentContentPrimary
-        }
-        return color
+        NSApp.delegateTyped.themeManager.theme.palette.accentContentPrimary
     }
 
     var suggestionHighlightCornerRadius: CGFloat {
@@ -224,23 +216,34 @@ final class AIChatSuggestionRowView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
-        let isHighlighted = isSelected || isHovered
-        if isHighlighted {
-            let tintColor = themeProvider.selectedTintColor
-            backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
-            titleLabel.textColor = tintColor
-            iconImageView.contentTintColor = tintColor
-            deleteButton.contentTintColor = tintColor
-        } else {
-            backgroundLayer.backgroundColor = NSColor.clear.cgColor
-            titleLabel.textColor = Constants.textColor
-            iconImageView.contentTintColor = Constants.iconColor
-            deleteButton.contentTintColor = Constants.iconColor
+        // Resolve dynamic colors under the view's effective appearance so the
+        // accent CGColor matches the active dark/light variant. Without this,
+        // `.cgColor` resolves against NSAppearance.current (defaults to .aqua),
+        // producing the light-mode accent on dark-mode windows.
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            let isHighlighted = isSelected || isHovered
+            if isHighlighted {
+                let tintColor = themeProvider.selectedTintColor
+                backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
+                titleLabel.textColor = tintColor
+                iconImageView.contentTintColor = tintColor
+                deleteButton.contentTintColor = tintColor
+            } else {
+                backgroundLayer.backgroundColor = NSColor.clear.cgColor
+                titleLabel.textColor = Constants.textColor
+                iconImageView.contentTintColor = Constants.iconColor
+                deleteButton.contentTintColor = Constants.iconColor
+            }
+
+            deleteButton.isHidden = !canDelete || !isHighlighted
         }
 
-        deleteButton.isHidden = !canDelete || !isHighlighted
-
         CATransaction.commit()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
     }
 
     @objc private func deleteButtonClicked() {

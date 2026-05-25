@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Combine
 import Common
 import Network
 import NetworkExtension
@@ -40,6 +41,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     ]
 
     enum Sections: Int, CaseIterable {
+        case vpn
         case featureVisibility
         case clearData
         case debugFeature
@@ -51,6 +53,10 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         case networkPath
         case vpnConfiguration
         case vpnMetadata
+    }
+
+    enum VPNRows: Int, CaseIterable {
+        case toggle
     }
 
     enum FeatureVisibilityRows: Int, CaseIterable {
@@ -140,6 +146,8 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     private var connectionTestResultError: String?
     private let connectionTestQueue = DispatchQueue(label: "com.duckduckgo.ios.vpnDebugConnectionTestQueue")
 
+    private var statusCancellable: AnyCancellable?
+
     // MARK: Lifecycle
 
     required init?(coder: NSCoder,
@@ -152,6 +160,19 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     required convenience init?(coder: NSCoder) {
         self.init(coder: coder, debugFeatures: NetworkProtectionDebugFeatures())
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        decorateNavigationBar()
+
+        statusCancellable = AppDependencyProvider.shared.connectionObserver.publisher
+            .removeDuplicates(by: { $0.description == $1.description })
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadSections(IndexSet(integer: Sections.vpn.rawValue), with: .none)
+                self?.loadConfigurationData()
+            }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -182,9 +203,14 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         cell.textLabel?.textColor = .label
         cell.detailTextLabel?.text = nil
         cell.accessoryType = .none
+        cell.accessoryView = nil
         cell.isUserInteractionEnabled = true
+        cell.selectionStyle = .default
 
         switch Sections(rawValue: indexPath.section) {
+
+        case .vpn:
+            configure(cell, forVPNRow: indexPath.row)
 
         case .clearData:
             switch ClearDataRows(rawValue: indexPath.row) {
@@ -233,6 +259,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch Sections(rawValue: section) {
+        case .vpn: return VPNRows.allCases.count
         case .clearData: return ClearDataRows.allCases.count
         case .debugFeature: return DebugFeatureRows.allCases.count
         case .tunnelSettings: return TunnelSettingsRows.allCases.count
@@ -251,6 +278,8 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch Sections(rawValue: indexPath.section) {
+        case .vpn:
+            break
         case .clearData:
             switch ClearDataRows(rawValue: indexPath.row) {
             case .removeVPNConfiguration: deleteVPNConfiguration()
@@ -285,6 +314,44 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         }
 
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+
+    // MARK: VPN Toggle
+
+    private func configure(_ cell: UITableViewCell, forVPNRow row: Int) {
+        switch VPNRows(rawValue: row) {
+        case .toggle:
+            cell.textLabel?.text = "VPN"
+            cell.selectionStyle = .none
+
+            let toggle = UISwitch()
+            toggle.isOn = isVPNActive(AppDependencyProvider.shared.connectionObserver.recentValue)
+            toggle.addTarget(self, action: #selector(vpnToggleChanged(_:)), for: .valueChanged)
+            cell.accessoryView = toggle
+        case .none:
+            break
+        }
+    }
+
+    private func isVPNActive(_ status: ConnectionStatus) -> Bool {
+        switch status {
+        case .connected, .connecting, .reasserting, .snoozing:
+            return true
+        case .disconnected, .disconnecting, .notConfigured:
+            return false
+        }
+    }
+
+    @objc private func vpnToggleChanged(_ sender: UISwitch) {
+        let shouldStart = sender.isOn
+        Task {
+            let controller = AppDependencyProvider.shared.networkProtectionTunnelController
+            if shouldStart {
+                await controller.start()
+            } else {
+                await controller.stop()
+            }
+        }
     }
 
     // MARK: Simulate Failures

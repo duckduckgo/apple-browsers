@@ -61,7 +61,7 @@ struct StartupOnboardingDecision {
         switch resumeStepStore.resumeStep {
         case .browserComparison, .aiComparison, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
-             .duckAIQuerySelection:
+             .duckAIQuerySelection, .interludeDuckAI:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:
@@ -179,6 +179,7 @@ class MainViewController: UIViewController {
     private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     let contextualOnboardingPixelReporter: OnboardingPixelReporting
+    var linearOnboardingContext: OnboardingIntroContext?
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
@@ -188,6 +189,7 @@ class MainViewController: UIViewController {
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
+    let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -490,6 +492,10 @@ class MainViewController: UIViewController {
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            completeOrphanedFlowsOnInit: true
+        )
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
         self.favicons = favicons
@@ -592,6 +598,7 @@ class MainViewController: UIViewController {
             subscriptionDataReporting: subscriptionDataReporter,
             newTabDialogFactory: newTabDaxDialogFactory,
             newTabDaxDialogManager: daxDialogsManager,
+            onboardingFlowProvider: onboardingManager,
             faviconLoader: faviconLoader,
             faviconsCache: favicons,
             remoteMessagingActionHandler: remoteMessagingActionHandler,
@@ -1643,6 +1650,7 @@ class MainViewController: UIViewController {
                                                   subscriptionDataReporting: subscriptionDataReporter,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   daxDialogsManager: daxDialogsManager,
+                                                  onboardingFlowProvider: onboardingManager,
                                                   faviconLoader: faviconLoader,
                                                   remoteMessagingActionHandler: remoteMessagingActionHandler,
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
@@ -1686,9 +1694,7 @@ class MainViewController: UIViewController {
         // ie remove back/forward and show bookmarks/passwords
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
-        DispatchQueue.main.async { [weak self] in
-            self?.presentChatPathOnboardingCompletionIfNeeded()
-        }
+        presentContextualOnboardingDialogIfNeeded()
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
@@ -2187,6 +2193,17 @@ class MainViewController: UIViewController {
         reconcileToolbarVisibilityForCurrentTab()
     }
 
+    private func presentContextualOnboardingDialogIfNeeded() {
+        // In Duck.ai tailored the completion dialog is presented explicitly from `MainViewController.onboardingCompleted`.
+        // Without this gate, the flow would attempt to present the completion dialog
+        // twice — once from the post-fire tab switch and again on `onboardingCompleted`.
+        guard onboardingManager.currentOnboardingFlow == .default else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.presentChatPathOnboardingCompletionIfNeeded()
+        }
+    }
+
     private func refreshMiddleButton() {
         applyCustomizationForToolbar(mobileCustomization.state)
     }
@@ -2208,8 +2225,20 @@ class MainViewController: UIViewController {
         aiChatTabChatHeaderView?.tabSwitcherButton.isFireMode = isFireMode
     }
 
-    private func displayedTextEntryMode(for tab: Tab) -> TextEntryMode {
-        tab.unifiedInputState.preferredTextEntryMode.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    private func refreshTabBar() {
+        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+    }
+
+    /// Home tabs consult the setting + app-wide last-used; existing tabs derive from URL.
+    func initialOmnibarToggleMode(for tab: Tab) -> TextEntryMode {
+        let resolved: TextEntryMode
+        if tab.isHomeTab {
+            resolved = aiChatSettings.defaultOmnibarMode
+                .resolvedTextEntryMode { self.toggleModeStorage.restore() }
+        } else {
+            resolved = tab.isAITab ? .aiChat : .search
+        }
+        return resolved.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     func refreshOmniBar() {
@@ -2223,7 +2252,7 @@ class MainViewController: UIViewController {
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             if let tabModel = tabManager.currentTabsModel.currentTab {
-                viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tabModel))
+                viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tabModel))
                 // Only activate from the model when there's no TabViewController to drive
                 // refreshUnifiedToggleInput(for:) below — otherwise it would fire activateForTab
                 // a second time for the same uid, causing redundant attachment teardown.
@@ -2268,7 +2297,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
-            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab.tabModel))
+            viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab.tabModel))
         }
 
         restorePostFireAddressBarPickerIfNeeded()
@@ -4339,7 +4368,7 @@ extension MainViewController: OmniBarDelegate {
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
         // firing (text field never becomes first responder during that flow).
         if let tab = tabManager.currentTabsModel.currentTab {
-            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab))
+            viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab))
         }
     }
 
@@ -4569,11 +4598,11 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {
-        tabManager.currentTabsModel.currentTab.map { displayedTextEntryMode(for: $0) }
+        tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) }
     }
 
-    /// Saves the current omnibar toggle state to the tab on submission,
-    /// and persists it globally so "Last Used" mode picks it up for new tabs.
+    /// Persists the current omnibar toggle state globally so "Last Used" mode picks it up
+    /// for new tabs. No per-tab persistence — existing tabs read from URL on next omnibar tap.
     private func commitToggleStateToCurrentTab() {
         guard let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else { return }
         commitToggleMode(omniBarVC.selectedTextEntryMode)
@@ -4581,7 +4610,6 @@ extension MainViewController: OmniBarDelegate {
 
     /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
     func commitToggleMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
         toggleModeStorage.save(mode)
     }
     
@@ -4693,6 +4721,7 @@ extension MainViewController: EscapeHatchActionRouter {
 
         tabManager.remove(tab: tab, in: targetTabsModel)
         refreshTabIcon()
+        refreshTabBar()
 
         if targetTabsModel.hasActiveTabs {
             return
@@ -4816,6 +4845,10 @@ extension MainViewController: TabDelegate {
         postIdleSessionInstrumentation.pageEngaged()
     }
 
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {
+        duckAIWideEventInstrumentation.pageLoadFailed(scope: .tab(tab.tabModel.uid), error: error)
+    }
+
     var isAIChatEnabled: Bool {
         return aiChatSettings.isAIChatEnabled
     }
@@ -4872,7 +4905,7 @@ extension MainViewController: TabDelegate {
         refreshControls()
         themeColorManager.updateThemeColor()
         _ = tabManager.save()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+        refreshTabBar()
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
     }
@@ -5198,6 +5231,7 @@ extension MainViewController: TabDelegate {
 extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
+        TabSwitcherDiagnosticsOverlay.recordEvent("tabSwitcher dismissed (TSVC=\(ObjectIdentifier(tabSwitcher).debugDescription), tab \(tab == nil ? "nil" : "set"))")
         defer {
             showMenuHighlighterIfNeeded()
             applyWidth()
@@ -5266,6 +5300,10 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
+        for tab in tabs {
+            reportDuckAITabClosedIfNeeded(tab)
+        }
+
         if #available(iOS 18.4, *) {
             for tab in tabs {
                 if let tabController = tabManager.controller(for: tab) {
@@ -5289,6 +5327,8 @@ extension MainViewController: TabSwitcherDelegate {
                 webExtensionEventsCoordinator?.didCloseTab(closingTabController)
             }
         }
+
+        reportDuckAITabClosedIfNeeded(tab)
 
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
@@ -5315,7 +5355,7 @@ extension MainViewController: TabSwitcherDelegate {
         }
 
         updateCurrentTab()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+        refreshTabBar()
     }
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
@@ -5325,6 +5365,10 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
+        for tab in tabSwitcher.tabsModel.tabs {
+            reportDuckAITabClosedIfNeeded(tab)
+        }
+
         Task {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
@@ -5404,6 +5448,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
     /// Not `private` because the UTI extension in `MainViewController+UnifiedToggleInput`
     /// calls it from another file.
     func requestTabSwitcher() {
+        TabSwitcherDiagnosticsOverlay.recordEvent("requestTabSwitcher entered (ts-ref=\(tabSwitcherController == nil ? "nil" : "live"), presentedVC=\(presentedViewController.map { "\(type(of: $0))" } ?? "nil"))")
+
         Pixel.fire(pixel: .tabBarTabSwitcherOpened,
                    withAdditionalParameters: [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue])
         var openedDailyParams = TabSwitcherOpenDailyPixel().parameters(with: tabManager.allTabsModel.tabs)
@@ -5545,7 +5591,7 @@ extension MainViewController {
         }
         showBars()
         attachHomeScreen()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
+        refreshTabBar()
 
         if !autoClearInProgress {
             // We don't need to refresh tabs if autoclear is in progress as nothing has happened yet
@@ -5723,6 +5769,7 @@ extension MainViewController: FireExecutorDelegate {
     func willStartBurningTabs(fireRequest: FireRequest) {
         omniBar.endEditing()
         findInPageView?.done()
+        reportDuckAIFireButtonClearedTabsIfNeeded(fireRequest)
 
         if #available(iOS 18.4, *) {
             let tabs: [Tab]
@@ -5880,19 +5927,66 @@ extension MainViewController {
 
 extension MainViewController: OnboardingDelegate {
 
+    func didStartOnboardingInterlude(_ interlude: OnboardingIntroStep.Interlude) {
+        linearOnboardingContext?.activeInterlude = interlude
+        UIView.animate(withDuration: 0.2) {
+            self.linearOnboardingContext?.onboardingViewController?.view.alpha = 0
+        } completion: { _ in
+            self.linearOnboardingContext?.onboardingViewController?.dismiss(animated: false)
+        }
+    }
+
+    func finishOnboardingInterlude(completion: @escaping () -> Void) {
+        linearOnboardingContext?.activeInterlude = nil
+        guard let viewModel = linearOnboardingContext?.onboardingViewModel else { return }
+        viewModel.resumeOnboardingFromInterlude()
+        let controller = OnboardingIntroFactory.makeController(
+            viewModel: viewModel,
+            isRebranded: featureFlagger.isFeatureOn(.onboardingRebranding),
+            delegate: self
+        )
+        linearOnboardingContext?.onboardingViewController = controller
+        linearOnboardingContext?.onboardingViewModel = viewModel
+        controller.modalPresentationStyle = .overFullScreen
+        controller.modalTransitionStyle = .crossDissolve
+        present(controller, animated: true, completion: completion)
+    }
+
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+        // Now that linear onboarding has finished, any experiment cohort
+        // enrollment that occurred is in place. Run the unified-toggle-input
+        // setup that was deferred at viewDidLoad.
+        setUpUnifiedToggleInputIfNeeded()
         if experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse {
             onboardingCompletedWithExperimentTransition(controller: controller)
             return
         }
 
+        // For Duck.ai tailored flow, the NTP completion dialog hosts inside `OmniBarEditingStateViewController`,
+        // which only installs when `shouldUseExperimentalEditingState` is true — itself gated on
+        // `aiChatSettings.isAIChatSearchInputUserSettingsEnabled`.
+        //
+        // IMPORTANT: Contrary to the Duck.ai experiment on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
+        // The full prerequisite also calls `daxDialogsManager.disableContextualDaxDialogs()`, which would set
+        // `isEnabled = false` before the tailored completion dialog is presented, breaking the subscription
+        // chain inside the dialog's `onDismiss` (`nextHomeScreenMessageNew()` would return `nil` from its
+        // `guard isEnabled` and the EOJ → subscription transition would silently drop).
+        if onboardingManager.currentOnboardingFlow == .duckAI && !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
+        }
+
         controller.modalTransitionStyle = .crossDissolve
-        controller.dismiss(animated: true)
-        newTabPageViewController?.onboardingCompleted()
+        // The Duck.ai tailored flow's NTP completion dialog presents `OmniBarEditingStateViewController`.
+        // Wait for the OnboardingIntroViewController to be dismissed before presenting `OmniBarEditingStateViewController`
+        // otherwise `OmniBarEditingStateViewController` will not be presented while the onboarding is mid-dismissal.
+        controller.dismiss(animated: true) { [weak self] in
+            self?.newTabPageViewController?.onboardingCompleted()
+        }
     }
 
     func markOnboardingSeen() {
+        linearOnboardingContext = nil
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
         clearDuckAIOnboardingResumeStepIfNeeded()
@@ -6072,6 +6166,10 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager) {
         segueToSettingsSync()
     }
+
+    func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager) {
+        reportDuckAIFrontendSubmissionAcknowledged()
+    }
 }
 
 // MARK: - AIChatContentHandlingDelegate
@@ -6102,7 +6200,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        // No action needed for full mode - notification handles metrics
+        reportDuckAIFrontendSubmissionAcknowledged()
     }
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
@@ -6495,5 +6593,45 @@ extension ConsentStatusInfo {
             consentRule: consentRule,
             consentHeuristicEnabled: consentHeuristicEnabled
         )
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension MainViewController {
+
+    fileprivate var currentDuckAIWideEventFlowScope: DuckAIWideEventFlowScope? {
+        currentTab.map { .tab($0.tabModel.uid) }
+    }
+
+    fileprivate func reportDuckAITabClosedIfNeeded(_ tab: Tab) {
+        guard let closingURL = tabManager.controller(for: tab)?.webView.url, closingURL.isDuckAIURL else { return }
+        duckAIWideEventInstrumentation.tabClosedDuringGeneration(tabID: tab.uid)
+    }
+
+    fileprivate func reportDuckAIFireButtonClearedTabsIfNeeded(_ fireRequest: FireRequest) {
+        guard fireRequest.trigger == .manualFire else { return }
+
+        for tab in tabsClearedByFireButton(fireRequest.scope) {
+            duckAIWideEventInstrumentation.fireButtonClearedTabDuringGeneration(tabID: tab.uid)
+        }
+    }
+
+    private func tabsClearedByFireButton(_ scope: FireRequest.Scope) -> [Tab] {
+        switch scope {
+        case .all:
+            return tabManager.allTabsModel.tabs
+        case .fireMode:
+            return tabManager.tabsModel(for: .fire).tabs
+        case .normalMode:
+            return tabManager.tabsModel(for: .normal).tabs
+        case .tab(let viewModel):
+            return [viewModel.tab]
+        }
+    }
+
+    fileprivate func reportDuckAIFrontendSubmissionAcknowledged() {
+        guard let scope = currentDuckAIWideEventFlowScope else { return }
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
     }
 }

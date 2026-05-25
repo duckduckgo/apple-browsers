@@ -359,8 +359,7 @@ class TabsModelTests: XCTestCase {
     func testWhenTabSnapshotTakenThenAllPersistedFieldsArePreserved() {
         let link = Link(title: "Example", url: URL(string: "https://example.com")!, localPath: URL(string: "file:///tmp/local")!)
         let date = Date(timeIntervalSince1970: 1_000_000)
-        let unifiedState = UnifiedInputTabState(preferredTextEntryMode: .aiChat,
-                                                selectedModelID: "gpt-4",
+        let unifiedState = UnifiedInputTabState(selectedModelID: "gpt-4",
                                                 selectedReasoningMode: nil,
                                                 selectedTool: nil)
         let tab = Tab(uid: "test-uid",

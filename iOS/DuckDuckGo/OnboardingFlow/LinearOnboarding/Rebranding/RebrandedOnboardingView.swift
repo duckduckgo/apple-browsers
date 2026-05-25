@@ -207,7 +207,6 @@ extension OnboardingRebranding {
             let tailDirection: BubbleTailDirection
             var additionalTopMargin: CGFloat = 0
             let isVisible: Bool
-            let showsStepCounter: Bool
         }
 
         var body: some View {
@@ -426,13 +425,8 @@ extension OnboardingRebranding {
             state: ViewState.Intro,
             configuration: BubbleBackedDialogConfiguration
         ) -> some View {
-            let stepInfo: ViewState.Intro.StepInfo = if configuration.showsStepCounter {
-                .init(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
-            } else {
-                .hidden
-            }
             let isIntroStep: Bool = if case .startOnboardingDialog = state.type { true } else { false }
-            return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
+            return makeBubbleView(configuration: configuration, stepInfo: state.step) {
                 VStack {
                     bubbleBackedDialogContent(for: state.type)
                         .opacity(showBubbleContent ? 1 : 0)
@@ -476,7 +470,7 @@ extension OnboardingRebranding {
                 tailPosition: tail,
                 currentStep: stepInfo.currentStep,
                 totalSteps: stepInfo.totalSteps,
-                isVisible: configuration.showsStepCounter
+                isVisible: stepInfo != .hidden
             ) {
                 content()
             }
@@ -513,51 +507,44 @@ extension OnboardingRebranding {
                     tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
-                    isVisible: model.introState.showIntroViewContent,
-                    showsStepCounter: false
+                    isVisible: model.introState.showIntroViewContent
                 )
             case .browsersComparisonDialog, .aiComparisonDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailTrailingOffset,
                     tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .addToDockPromoDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .chooseAppIconDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailLeadingOffset,
                     tailDirection: .trailing,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .chooseAddressBarPositionDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailTrailingOffset,
                     tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .chooseSearchExperienceDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: tailLeadingOffset,
                     tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
+                    isVisible: true
                 )
             case .duckAIQueryExperimentDialog:
                 return BubbleBackedDialogConfiguration(
                     tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
-                    isVisible: true,
-                    showsStepCounter: false
+                    isVisible: true
                 )
             }
         }

@@ -93,9 +93,9 @@ final class UnifiedToggleInputView: UIView {
         static let toggleTopPadding: CGFloat = 8
         static let toggleBottomPadding: CGFloat = 4
         /// Bottom padding between the input content and the card edge when the AI tools
-        /// toolbar is hidden, mirroring `toggleBottomPadding` so the input sits centered
-        /// inside its 64pt row per the Figma spec.
-        static let inputBottomPadding: CGFloat = 4
+        /// toolbar is hidden. Slightly larger than the matching top gap so the cursor doesn't
+        /// crowd the card's bottom curve in Search mode.
+        static let inputBottomPadding: CGFloat = 8
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25

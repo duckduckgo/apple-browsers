@@ -28,6 +28,7 @@ import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
 import SubscriptionTestingUtilities
+import Onboarding
 
 @testable import Configuration
 
@@ -42,12 +43,16 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     var variantManager: CapturingVariantManager!
     var dialogFactory: CapturingNewTabDaxDialogProvider!
     var specProvider: MockNewTabDialogSpecProvider!
+    var flowProvider: MockOnboardingFlowProvider!
+    var tutorialSettings: MockTutorialSettings!
     var hvc: NewTabPageViewController!
 
     override func setUpWithError() throws {
         variantManager = CapturingVariantManager()
         dialogFactory = CapturingNewTabDaxDialogProvider()
         specProvider = MockNewTabDialogSpecProvider()
+        flowProvider = MockOnboardingFlowProvider()
+        tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
 
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
         hvc = NewTabPageViewController(
@@ -58,6 +63,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             homePageMessagesConfiguration: homePageConfiguration,
             newTabDialogFactory: dialogFactory,
             daxDialogsManager: specProvider,
+            onboardingFlowProvider: flowProvider,
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
@@ -65,7 +71,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
             internalUserCommands: MockURLBasedDebugCommands(),
-            tutorialSettings: MockTutorialSettings(hasSeenOnboarding: true),
+            tutorialSettings: tutorialSettings,
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)
@@ -87,6 +93,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         variantManager = nil
         dialogFactory = nil
         specProvider = nil
+        flowProvider = nil
+        tutorialSettings = nil
         hvc = nil
     }
 
@@ -126,6 +134,63 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(specProvider.nextHomeScreenMessageNewCalled)
+    }
+
+    // MARK: - Duck.ai tailored flow router branches
+
+    func testWhenDuckAITailoredFlow_AndOnboardingCompleted_AndNotSkipped_ThenDoesNotPeekRegularSpec() {
+        // GIVEN
+        flowProvider.currentOnboardingFlow = .duckAI
+        tutorialSettings.hasSkippedOnboarding = false
+
+        // WHEN
+        hvc.onboardingCompleted()
+
+        // THEN
+        // Tailored completion routes to `showDuckAIOnboardingCompletionWithActiveAddressBar`, not
+        // through the regular Dax sequence — confirms the tailored branch is taken, not default.
+        XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
+    }
+
+    func testWhenDuckAITailoredFlow_AndOnboardingCompleted_AndSkipped_ThenDoesNotPeekRegularSpec() {
+        // GIVEN
+        flowProvider.currentOnboardingFlow = .duckAI
+        tutorialSettings.hasSkippedOnboarding = true
+
+        // WHEN
+        hvc.onboardingCompleted()
+
+        // THEN
+        // Skip branch only calls `omniBar.beginEditing` for AI chat; no Dax dialog should be peeked.
+        XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
+    }
+
+    func testWhenDuckAITailoredFlow_AndDialogRequested_AndSubscriptionPromoPending_ThenPeeksSpecToRenderPromo() {
+        // GIVEN
+        flowProvider.currentOnboardingFlow = .duckAI
+        specProvider.subscriptionPromotionPending = true
+
+        // WHEN
+        hvc.showNextDaxDialog()
+
+        // THEN
+        // Tailored router only proceeds to showNextDaxDialogNew (which peeks the spec) when the
+        // subscription promo is pending — confirming the gate is read and the promo path is taken.
+        XCTAssertTrue(specProvider.nextHomeScreenMessageNewCalled)
+    }
+
+    func testWhenDuckAITailoredFlow_AndDialogRequested_AndSubscriptionPromoNotPending_ThenDoesNotPeekSpec() {
+        // GIVEN
+        flowProvider.currentOnboardingFlow = .duckAI
+        specProvider.subscriptionPromotionPending = false
+
+        // WHEN
+        hvc.showNextDaxDialog()
+
+        // THEN
+        // Tailored router must NOT enter the regular Dax sequence when there is no promo — otherwise
+        // a stray `.initial`/`.subsequent` dialog could leak into the Duck.ai onboarding completion UX.
+        XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
     }
 
     private func randomDialogType() -> DaxDialogs.HomeScreenSpec {
@@ -190,6 +255,10 @@ class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, SubscriptionPromot
     func dismiss() {
         dismissCalled = true
     }
+}
+
+final class MockOnboardingFlowProvider: OnboardingFlowProviding {
+    var currentOnboardingFlow: OnboardingFlowType = .default
 }
 
 struct MockVariant: Variant {

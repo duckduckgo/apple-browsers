@@ -20,6 +20,7 @@
 import AIChat
 import Bookmarks
 import Combine
+import Core
 import DesignResourcesKit
 import Subscription
 import Suggestions
@@ -55,6 +56,11 @@ extension MainViewController {
     }
 
     func setUpUnifiedToggleInputIfNeeded() {
+        // Defer setup until linear onboarding has completed, so that any experiment
+        // cohort enrollment that happens during onboarding is reflected in
+        // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
+        // Returning users (who skip linear onboarding) fall through immediately.
+        guard !needsToShowOnboardingIntro() else { return }
         guard unifiedToggleInputFeature.isAvailable else { return }
 
         let aiChatPreferences = AIChatPreferencesPersistor()
@@ -74,7 +80,8 @@ extension MainViewController {
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
-            stateStore: stateStore
+            stateStore: stateStore,
+            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
@@ -254,12 +261,10 @@ extension MainViewController {
                 unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = rootBackgroundColor
             } else {
-                // Match Figma's `--ds-surface-tertiary` (#3D3D3D dark / white light) so the chrome
-                // is the same tone as the card. The card defines itself via its halo rim shadow.
-                rootBackgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+                rootBackgroundColor = UIColor(designSystemColor: .surface)
                 navigationBarContainerColor = .clear
-                unifiedToggleInputContainerColor = .clear
-                webViewBackgroundColor = .clear
+                unifiedToggleInputContainerColor = UIColor(designSystemColor: .surface)
+                webViewBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
             }
         }
 
@@ -699,6 +704,15 @@ private extension MainViewController {
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.tabSwitcherButton.delegate = self
         headerView.tabSwitcherButton.showMenuOnLongPress = fireModeCapability.isFireModeEnabled
+        // Catch touches at the most upstream point — before UIControl tracking, before any
+        // gesture recognizer can cancel the tap. Surfaces the unresponsive-tab-switcher
+        // diagnostic even when `.touchUpInside` never fires (which is the bug we're hunting).
+        headerView.tabSwitcherButton.onTouchDown = { [weak self] in
+            guard let self else { return }
+            if TabSwitcherDiagnosticsOverlay.recordTapAndShouldShow() {
+                TabSwitcherDiagnosticsOverlay.show(from: self)
+            }
+        }
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),
@@ -1010,13 +1024,16 @@ extension MainViewController {
 
 extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
-    func activateFromOmnibarIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision {
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool) -> UnifiedToggleInputActivationDecision {
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
             return .allowDefault
         }
+        if tapped {
+            onExperimentalAddressBarTapped()
+        }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        let inputMode = tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode ?? .search
+        let inputMode = tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) } ?? .search
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
         coordinator.contentViewController.isSwipeEnabled = isToggleEnabled
@@ -1030,7 +1047,8 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
+        // No per-tab persistence: existing tabs read from URL; new tabs read from setting + app-wide last-used.
+        // The app-wide last-used is written through `UnifiedInputStateStore.recordUserChoice` on submission.
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
@@ -1039,6 +1057,14 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
         handleUnifiedToggleInputSearchSubmission(query)
+    }
+
+    func unifiedToggleInputDidTapClearText() {
+        onExperimentalAddressBarClearPressed()
+    }
+
+    func unifiedToggleInputDidTapToActivate() {
+        onExperimentalAddressBarTapped()
     }
 
     func unifiedToggleInputDidRequestVoiceSearch() {
@@ -1154,6 +1180,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapChatList() {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarSidebarButtonTapped)
         unifiedToggleInputCoordinator?.showCollapsed()
         currentTab?.submitToggleSidebarAction()
     }

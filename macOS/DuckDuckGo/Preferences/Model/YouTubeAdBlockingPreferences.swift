@@ -82,14 +82,20 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
     /// `nil` = never set; `true` = disclosure should be hidden; `false` = explicitly shown.
     @Published private(set) var isDisclosureHidden: Bool
 
-    /// Settings-pane open hook. If the disclosure preference has never been
-    /// written, pin it to the current YouTube Ad Blocking state — existing
-    /// users (toggle already on) get the disclosure hidden, new users (toggle
-    /// off) keep the disclosure until they explicitly opt in. Always refreshes
-    /// `isDisclosureHidden` so external writes (e.g. debug menu) are picked up.
+    /// Settings-pane open hook. For users with an explicit YouTube Ad Blocking
+    /// choice (storage non-nil), pin the disclosure once and preserve it
+    /// across rollout flips — their conscious decision was made with the
+    /// disclosure at its then-current state. For users with no explicit choice
+    /// (storage nil), re-pin to the current rollout default so the disclosure
+    /// tracks the effective state. Also refreshes `isDisclosureHidden` so
+    /// external writes (e.g. debug menu) are picked up.
     func markDisclosureHiddenIfExistingUser() {
-        if settings.shouldHideYouTubeAdBlockingDisclosure == nil {
-            settings.shouldHideYouTubeAdBlockingDisclosure = youTubeAdBlockingEnabled
+        if let storageEnabled = settings.youTubeAdBlockingEnabled {
+            if settings.shouldHideYouTubeAdBlockingDisclosure == nil {
+                settings.shouldHideYouTubeAdBlockingDisclosure = storageEnabled
+            }
+        } else {
+            settings.shouldHideYouTubeAdBlockingDisclosure = adBlockingAvailability?.defaultYouTubeAdBlockingEnabled ?? false
         }
         isDisclosureHidden = settings.shouldHideYouTubeAdBlockingDisclosure == true
     }
@@ -189,8 +195,16 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.syncFromStore()
+                self?.syncDisclosureIfNoExplicitChoice()
+                self?.syncRemotelyDisabledFromAvailability()
             }
             .store(in: &cancellables)
+    }
+
+    private func syncDisclosureIfNoExplicitChoice() {
+        guard settings.youTubeAdBlockingEnabled == nil else { return }
+        settings.shouldHideYouTubeAdBlockingDisclosure = adBlockingAvailability?.defaultYouTubeAdBlockingEnabled ?? false
+        isDisclosureHidden = settings.shouldHideYouTubeAdBlockingDisclosure == true
     }
 
     /// Forwards the user-initiated Settings/popover toggle clear to the shared availability

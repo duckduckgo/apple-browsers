@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import os.signpost
 import Persistence
 import Core
 
@@ -170,17 +171,26 @@ class TabsModelPersistence: TabsModelPersisting {
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
             return .failure(error)
         }
+        // perf-1210995169065714: local measurement, strip before commit.
+        // Split signposts: `enqueued` = submit-to-start (queue wait + scheduling).
+        // `write` = work duration (disk I/O, plus any process suspension during it).
+        let sp = OSSignposter(subsystem: "com.duckduckgo.perf", category: "Tabs")
+        let id = sp.makeSignpostID()
+        let enqueuedState = sp.beginInterval("TabsModelPersistence.save.enqueued", id: id)
         persistQueue.async {
+            sp.endInterval("TabsModelPersistence.save.enqueued", enqueuedState)
+            let writeState = sp.beginInterval("TabsModelPersistence.save.write", id: id)
+            defer { sp.endInterval("TabsModelPersistence.save.write", writeState) }
             _ = self.write(data: data, into: targetStore)
         }
         return .success(())
     }
 
-    /// Always invoked from the persist queue. Asserts we are off main so a future contributor
-    /// cannot accidentally introduce the `main -> queue.sync` / `queue -> main.sync` deadlock pair.
+    /// Always invoked from the persist queue. The precondition catches any future caller that
+    /// invokes `write` outside the queue (which would race with concurrent writes).
     @discardableResult
     private func write(data: Data, into targetStore: ThrowingKeyValueStoring) -> Result<Void, Error> {
-        dispatchPrecondition(condition: .notOnQueue(.main))
+        dispatchPrecondition(condition: .onQueue(persistQueue))
         do {
             try targetStore.set(data, forKey: Constants.storageKey)
             return .success(())

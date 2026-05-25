@@ -1243,6 +1243,8 @@
 		379E877729E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379E877529E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift */; };
 		37A089FB2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A089FA2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift */; };
 		37A089FC2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A089FA2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift */; };
+		D1E601A12D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */; };
+		D1E601A22D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */; };
 		37A0BA1D2D7475BC00130447 /* HistoryViewTabOpening.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A0BA1C2D7475B900130447 /* HistoryViewTabOpening.swift */; };
 		37A0BA1E2D7475BC00130447 /* HistoryViewTabOpening.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A0BA1C2D7475B900130447 /* HistoryViewTabOpening.swift */; };
 		37A0BA202D747A9300130447 /* WindowControllersManager+URLOpening.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A0BA1F2D747A8E00130447 /* WindowControllersManager+URLOpening.swift */; };
@@ -5126,6 +5128,7 @@
 		379E4D5F2D4383CE00A901B1 /* NewTabPageCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageCoordinator.swift; sourceTree = "<group>"; };
 		379E877529E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksCleanupErrorHandling.swift; sourceTree = "<group>"; };
 		37A089FA2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingDebugMenu.swift; sourceTree = "<group>"; };
+		D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSUpgradeCapabilityOverride.swift; sourceTree = "<group>"; };
 		37A0BA1C2D7475B900130447 /* HistoryViewTabOpening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewTabOpening.swift; sourceTree = "<group>"; };
 		37A0BA1F2D747A8E00130447 /* WindowControllersManager+URLOpening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WindowControllersManager+URLOpening.swift"; sourceTree = "<group>"; };
 		37A0BA232D747B9E00130447 /* CapturingContextMenuPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturingContextMenuPresenter.swift; sourceTree = "<group>"; };
@@ -7923,6 +7926,7 @@
 				371209292C2333A0003ADF3D /* RemoteMessagingDatabase.swift */,
 				3712092B2C23383C003ADF3D /* RemoteMessagingStoreErrorHandling.swift */,
 				37A089FA2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift */,
+				D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */,
 			);
 			path = RemoteMessaging;
 			sourceTree = "<group>";
@@ -14934,6 +14938,7 @@
 				BBFE94EC2E391421000D4920 /* NotificationDotProviding.swift in Sources */,
 				BBFE94ED2E391421000D4920 /* NetworkProtectionButton.swift in Sources */,
 				37A089FC2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift in Sources */,
+				D1E601A22D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift in Sources */,
 				310E83F72ED79B1E006F80D2 /* KeyboardShortcutView.swift in Sources */,
 				B6BCC54B2AFDF24B002C5499 /* TaskWithProgress.swift in Sources */,
 				BBC90A2C2E3265D50013E52C /* ReportProblemFormViewModel.swift in Sources */,
@@ -17459,6 +17464,7 @@
 				B6F9BDDC2B45B7EE00677B33 /* WebsiteInfo.swift in Sources */,
 				4B67854A2AA8DE75008A5004 /* VPNFeatureGatekeeper.swift in Sources */,
 				37A089FB2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift in Sources */,
+				D1E601A12D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift in Sources */,
 				567A23D42C81E2180010F66C /* ContextualDaxDialogsFactory.swift in Sources */,
 				EEB617AD6A364BB6BB53BD23 /* FadeInView.swift in Sources */,
 				14B4C91EA50448BE99B64438 /* RebrandedContextualDaxDialogsFactory.swift in Sources */,

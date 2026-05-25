@@ -78,16 +78,14 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         config.baseBackgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         config.background.cornerRadius = 9
         config.cornerStyle = .fixed
-        config.contentInsets = .init(top: 0, leading: 16, bottom: 0, trailing: 16)
+        config.contentInsets = .init(top: 6, leading: 16, bottom: 6, trailing: 16)
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
-            outgoing.font = .systemFont(ofSize: 13)
+            outgoing.font = UIFont.daxBodyRegular()
             return outgoing
         }
         let button = UIButton(configuration: config)
         button.isPointerInteractionEnabled = true
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.heightAnchor.constraint(equalToConstant: 30).isActive = true
         return button
     }()
 

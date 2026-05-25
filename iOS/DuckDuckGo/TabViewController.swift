@@ -2376,6 +2376,30 @@ extension TabViewController: WKNavigationDelegate {
             break
         }
 
+        // Same-frame link taps that cross the Duck.ai ↔ web boundary open a new tab so the
+        // origin tab survives. `aiChatNewWindowDecision` above already covers cross-frame
+        // (target="_blank") link taps from a Duck.ai page; this branch covers in-frame links
+        // in both directions. Web→chat is gated on the unified input flag to keep legacy
+        // builds unchanged. Skip when Command is held so the modifier-key handler below
+        // can pick foreground vs. background tabs as usual.
+        if navigationAction.navigationType == .linkActivated,
+           navigationAction.targetFrame?.isMainFrame == true,
+           let linkURL = navigationAction.request.url,
+           let scheme = linkURL.scheme?.lowercased(),
+           scheme == "http" || scheme == "https",
+           !(delegate?.tabWillRequestNewTab(self)?.contains(.command) ?? false) {
+            let currentIsAI = webView.url?.isDuckAIURL == true
+            let targetIsAI = linkURL.isDuckAIURL
+            if currentIsAI != targetIsAI, currentIsAI || unifiedToggleInputFeature.isAvailable {
+                decisionHandler(.cancel)
+                delegate?.tab(self,
+                              didRequestNewTabForUrl: linkURL,
+                              openedByPage: true,
+                              inheritingAttribution: adClickAttributionLogic.state)
+                return
+            }
+        }
+
         // This check needs to happen before GPC checks. Otherwise the navigation type may be rewritten to `.other`
         // which would skip link rewrites.
         if navigationAction.navigationType != .backForward,

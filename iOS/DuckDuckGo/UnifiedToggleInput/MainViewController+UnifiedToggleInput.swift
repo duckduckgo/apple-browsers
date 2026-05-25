@@ -664,7 +664,12 @@ private extension MainViewController {
         tab.borderView.isBottomVisible = true
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
-        showBars()
+        // Snap chrome to revealed without animation. AI tabs share the BrowserChromeManager
+        // with the rest of the app, so the scroll inside a long chat can put barsState into
+        // .hidden while the chrome is overridden by the AI chat header (alpha=0). Without
+        // this snap, returning to a web tab makes the top omnibar fly down from off-screen
+        // as revealBars animates from -navBarTopOffset to 0.
+        chromeManager.reset(animated: false)
         if coordinator.isActive {
             coordinator.deactivateToOmnibar()
             coordinator.hide()

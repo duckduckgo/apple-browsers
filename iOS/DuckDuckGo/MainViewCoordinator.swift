@@ -388,6 +388,7 @@ class MainViewCoordinator {
     }
 
     func hideAITabChrome() {
+        cancelInFlightLayoutAnimations()
         hideAIChatTabChatHeader()
         setNavigationChromeHidden(false)
     }

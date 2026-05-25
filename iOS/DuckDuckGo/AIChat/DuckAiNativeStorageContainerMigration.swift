@@ -240,6 +240,12 @@ enum DuckAiNativeStorageContainerMigration {
             userDefaults.set(attempt, forKey: attemptsKey)
             if attempt >= maxAttempts {
                 Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] move failed (attempt \(attempt)/\(maxAttempts)); giving up: \(error.localizedDescription, privacy: .public)")
+                // Best-effort sweep: once we give up, we'll never look at the
+                // old container again, so the sensitive chat content would sit
+                // in the app-group container indefinitely under NSFileProtectionComplete.
+                // Take one last shot at removing it — it may well succeed even
+                // when moveItem couldn't (different syscall, no destination required).
+                try? fileManager.removeItem(at: oldURL)
                 userDefaults.set(true, forKey: doneKey)
                 pixelFiring.fire(.gaveUp(label: label, error: error))
                 return .proceed

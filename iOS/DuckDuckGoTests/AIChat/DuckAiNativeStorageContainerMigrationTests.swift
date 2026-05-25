@@ -191,12 +191,42 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         }
         XCTAssertTrue(userDefaults.bool(forKey: doneKey))
 
-        // Even with a non-failing FM and old data still present, we don't retry.
+        // Sanity: the doneKey gates further calls regardless of file state.
         let outcome = migrate(from: oldURL, to: newURL, maxAttempts: 3)
 
         XCTAssertEqual(outcome, .proceed)
-        XCTAssertTrue(FileManager.default.fileExists(atPath: oldURL.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: newURL.path))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "attemptFailed", "gaveUp"])
+    }
+
+    func testWhenGivingUpOnMoveFailureThenBestEffortSweepRemovesOldData() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("sensitive".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+
+        for _ in 0..<3 {
+            migrate(from: oldURL, to: newURL, fileManager: FailingMoveFileManager(), maxAttempts: 3)
+        }
+
+        XCTAssertTrue(userDefaults.bool(forKey: doneKey))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "attemptFailed", "gaveUp"])
+        // The sweep should have removed the abandoned old container so sensitive
+        // content doesn't linger in the app group under NSFileProtectionComplete.
+        XCTAssertFalse(FileManager.default.fileExists(atPath: oldURL.path))
+    }
+
+    func testWhenGivingUpAndSweepAlsoFailsThenStillMarksDoneAndFiresGaveUp() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+
+        for _ in 0..<3 {
+            migrate(from: oldURL, to: newURL, fileManager: FailingMoveAndRemoveFileManager(), maxAttempts: 3)
+        }
+
+        // Sweep failure must not undo the gave-up state — otherwise we'd retry forever.
+        XCTAssertTrue(userDefaults.bool(forKey: doneKey))
         XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "attemptFailed", "gaveUp"])
     }
 
@@ -417,6 +447,15 @@ private final class FailingMoveFileManager: FileManager {
 }
 
 private final class FailingRemoveFileManager: FileManager {
+    override func removeItem(at URL: URL) throws {
+        throw NSError(domain: "DuckAiNativeStorageContainerMigrationTests", code: -2)
+    }
+}
+
+private final class FailingMoveAndRemoveFileManager: FileManager {
+    override func moveItem(at srcURL: URL, to dstURL: URL) throws {
+        throw NSError(domain: "DuckAiNativeStorageContainerMigrationTests", code: -1)
+    }
     override func removeItem(at URL: URL) throws {
         throw NSError(domain: "DuckAiNativeStorageContainerMigrationTests", code: -2)
     }

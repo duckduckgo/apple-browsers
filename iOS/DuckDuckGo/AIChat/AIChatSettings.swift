@@ -329,6 +329,7 @@ enum LegacyAiChatUserDefaultsKeys {
     static let showAIChatAddressBarKey: String = .showAIChatAddressBarKey
     static let showAIChatVoiceSearchKey: String = .showAIChatVoiceSearchKey
     static let showAIChatTabSwitcherKey: String = .showAIChatTabSwitcherKey
+    static let showAIChatNavigationBarKey: String = .showAIChatNavigationBarKey
     static let showAIChatExperimentalSearchInputKey: String = .showAIChatExperimentalSearchInputKey
     static let defaultOmnibarModeKey: String = .defaultOmnibarModeKey
 

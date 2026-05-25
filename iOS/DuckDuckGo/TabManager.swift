@@ -647,9 +647,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     /// Cancels any pending debounced save and persists synchronously, blocking until the write
-    /// lands on disk. Used at lifecycle boundaries and the data-clearing path.
+    /// lands on disk. Used at lifecycle boundaries and the data-clearing path. Main-thread only:
+    /// the sync hops below can deadlock if invoked from a queue waiting on main.
     @discardableResult
     func flushPendingSave() -> Result<Void, Error> {
+        dispatchPrecondition(condition: .onQueue(.main))
         cancelPendingSave()
         return tabsModelProvider.flushPendingSave()
     }

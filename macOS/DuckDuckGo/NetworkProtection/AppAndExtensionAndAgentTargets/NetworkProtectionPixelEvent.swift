@@ -492,6 +492,7 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
                 .networkProtectionControllerStartCancelled,
                 .networkProtectionControllerStartFailure,
                 .networkProtectionTunnelStartAttempt,
+                .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
                 .networkProtectionTunnelStartSuccess,
                 .networkProtectionTunnelStartFailure,
                 .networkProtectionTunnelStopAttempt,

@@ -1380,7 +1380,7 @@ class MainViewController: UIViewController {
     private func initTabButton() {
         assert(tabSwitcherButton == nil)
 
-        tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
+        tabSwitcherButton = TabSwitcherStaticButton()
 
         tabSwitcherButton?.delegate = self
         viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
@@ -1391,7 +1391,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
 
         // Omnibar tab switcher button (for iPhone landscape combined bar)
-        let omniBarTabSwitcher = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
+        let omniBarTabSwitcher = TabSwitcherStaticButton()
         omniBarTabSwitcher.delegate = self
         omniBarTabSwitcher.translatesAutoresizingMaskIntoConstraints = false
         let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView
@@ -4172,20 +4172,6 @@ extension MainViewController: OmniBarDelegate {
         newTab()
     }
 
-    private func newFireTabLongPressMenuAction() {
-        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
-        performCancel()
-        newTab()
-    }
-
-    private func newNormalTabLongPressMenuAction() {
-        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
-        performCancel()
-        newTab()
-    }
-
     private var isSERPPresented: Bool {
         guard let tabURL = currentTab?.url else { return false }
         return tabURL.isDuckDuckGoSearch
@@ -5219,6 +5205,7 @@ extension MainViewController: TabDelegate {
 extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
+        TabSwitcherDiagnosticsOverlay.recordEvent("tabSwitcher dismissed (TSVC=\(ObjectIdentifier(tabSwitcher).debugDescription), tab \(tab == nil ? "nil" : "set"))")
         defer {
             showMenuHighlighterIfNeeded()
             applyWidth()
@@ -5414,14 +5401,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
     func launchNewTabWithCurrentMode(_ button: TabSwitcherButton) {
         newTabShortcutAction()
     }
-    
-    func launchNewNormalTab(_ button: any TabSwitcherButton) {
-        newNormalTabLongPressMenuAction()
-    }
-
-    func launchNewFireTab(_ button: TabSwitcherButton) {
-        newFireTabLongPressMenuAction()
-    }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {
         requestTabSwitcher()
@@ -5435,6 +5414,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
     /// Not `private` because the UTI extension in `MainViewController+UnifiedToggleInput`
     /// calls it from another file.
     func requestTabSwitcher() {
+        TabSwitcherDiagnosticsOverlay.recordEvent("requestTabSwitcher entered (ts-ref=\(tabSwitcherController == nil ? "nil" : "live"), presentedVC=\(presentedViewController.map { "\(type(of: $0))" } ?? "nil"))")
+
         Pixel.fire(pixel: .tabBarTabSwitcherOpened,
                    withAdditionalParameters: [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue])
         var openedDailyParams = TabSwitcherOpenDailyPixel().parameters(with: tabManager.allTabsModel.tabs)

@@ -198,6 +198,7 @@ extension MainViewController {
 
         // Guard against concurrent presentations
         guard tabSwitcherController == nil else {
+            TabSwitcherDiagnosticsOverlay.recordEvent("guard1 REJECTED (pre-async, ts-ref non-nil)")
             Logger.lifecycle.debug("Tab switcher presentation already in progress or active")
             return
         }
@@ -214,6 +215,7 @@ extension MainViewController {
 
         // Check again after async work in case another presentation started
         guard tabSwitcherController == nil else {
+            TabSwitcherDiagnosticsOverlay.recordEvent("guard2 REJECTED (post-async, ts-ref non-nil)")
             Logger.lifecycle.debug("Tab switcher presentation already in progress")
             return
         }
@@ -236,9 +238,11 @@ extension MainViewController {
                                       daxDialogsManager: self.daxDialogsManager,
                                       initialTrackerCountState: initialTrackerCountState)
         }) else {
+            TabSwitcherDiagnosticsOverlay.recordEvent("TSVC instantiation FAILED — storyboard returned nil")
             assertionFailure()
             return
         }
+        TabSwitcherDiagnosticsOverlay.recordEvent("TSVC instantiated \(ObjectIdentifier(controller).debugDescription)")
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
@@ -249,7 +253,11 @@ extension MainViewController {
 
         tabSwitcherController = controller
 
-        present(controller, animated: true)
+        let tsvcID = ObjectIdentifier(controller).debugDescription
+        TabSwitcherDiagnosticsOverlay.recordEvent("calling present(TSVC=\(tsvcID)) (presentedVC was \(presentedViewController.map { "\(type(of: $0))" } ?? "nil"))")
+        present(controller, animated: true) {
+            TabSwitcherDiagnosticsOverlay.recordEvent("present(TSVC=\(tsvcID)) completion fired — actually presented")
+        }
     }
 
     func segueToSettings() {

@@ -65,6 +65,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         $isVoiceChatAccessEnabled.removeDuplicates().eraseToAnyPublisher()
     }
 
+    @Published var showAskAiSuggestion: Bool = true
+
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> {
+        $showAskAiSuggestion.dropFirst().eraseToAnyPublisher()
+    }
+
     @Published var selectedModelId: String?
 
     var selectedModelIdPublisher: AnyPublisher<String?, Never> {

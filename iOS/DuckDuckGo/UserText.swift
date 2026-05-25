@@ -127,6 +127,14 @@ public struct UserText {
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
 
+    public static let aiChatSyncPromoTitle = NotLocalizedString("aiChat.syncPromo.title", value: "Access your chats across your devices.", comment: "Headline of the sync promo card shown above the Duck.ai recent chats list. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncPromoButton = NotLocalizedString("aiChat.syncPromo.button", value: "Turn On Sync & Backup", comment: "Primary button of the sync promo card shown above the Duck.ai recent chats list. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncPromoCloseAccessibilityLabel = NotLocalizedString("aiChat.syncPromo.close.accessibility.label", value: "Dismiss sync promotion", comment: "Accessibility label for the close button on the Duck.ai sync promo card. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncIntroSheetTitle = NotLocalizedString("aiChat.syncIntroSheet.title", value: "Open DuckDuckGo on your other device.", comment: "Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncIntroSheetBody = NotLocalizedString("aiChat.syncIntroSheet.body", value: "End-to-end encrypted. Nobody can see your chats, not even us.", comment: "Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncIntroSheetScanButton = NotLocalizedString("aiChat.syncIntroSheet.scan.button", value: "Scan QR Code", comment: "Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatSyncIntroSheetNotNow = NotLocalizedString("aiChat.syncIntroSheet.notNow", value: "Not Now", comment: "Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. Not translated; final copy will land in a follow-up PR.")
+
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
 

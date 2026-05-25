@@ -339,7 +339,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case remoteBrokerDelivery
     case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
-    case foregroundRunningWhenDashboardOpen
     case continuedProcessing
     case pirRollout
     case goToMarket

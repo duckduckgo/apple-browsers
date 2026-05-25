@@ -126,9 +126,9 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         guard fireModeCapability.isFireModeEnabled else { return false }
         guard hasBurnedTabs else { return false }
         guard !hasVisitedFireMode else { return false }
-        guard !isDismissed && !isEngaged else { return false }
+        guard !isDismissed && !isEngaged && ntpFirstSeenDate == nil else { return false }
 
-        if let firstSeen = firstSeenDate {
+        if let firstSeen = ntpFirstSeenDate {
             guard Date().timeIntervalSince(firstSeen) < Self.ntpExpirationInterval else { return false }
         }
 
@@ -136,8 +136,8 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
     }
 
     func markNTPPromotionShown() {
-        if firstSeenDate == nil {
-            firstSeenDate = Date()
+        if ntpFirstSeenDate == nil {
+            ntpFirstSeenDate = Date()
         }
         DailyPixel.fireDailyAndCount(pixel: .fireModeNTPPromotionShown)
     }
@@ -200,7 +200,7 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         set { storage.hasVisitedFireMode = newValue }
     }
 
-    private var firstSeenDate: Date? {
+    private var ntpFirstSeenDate: Date? {
         get { storage.ntpFirstSeenDate }
         set { storage.ntpFirstSeenDate = newValue }
     }

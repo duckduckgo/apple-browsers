@@ -240,9 +240,11 @@ extension MainViewController {
                                       daxDialogsManager: self.daxDialogsManager,
                                       initialTrackerCountState: initialTrackerCountState)
         }) else {
+            TabSwitcherDiagnosticsOverlay.recordEvent("TSVC instantiation FAILED — storyboard returned nil")
             assertionFailure()
             return
         }
+        TabSwitcherDiagnosticsOverlay.recordEvent("TSVC instantiated \(ObjectIdentifier(controller).debugDescription)")
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
@@ -253,9 +255,10 @@ extension MainViewController {
 
         tabSwitcherController = controller
 
-        TabSwitcherDiagnosticsOverlay.recordEvent("calling present(TSVC) (presentedVC was \(presentedViewController.map { "\(type(of: $0))" } ?? "nil"))")
+        let tsvcID = ObjectIdentifier(controller).debugDescription
+        TabSwitcherDiagnosticsOverlay.recordEvent("calling present(TSVC=\(tsvcID)) (presentedVC was \(presentedViewController.map { "\(type(of: $0))" } ?? "nil"))")
         present(controller, animated: true) {
-            TabSwitcherDiagnosticsOverlay.recordEvent("present(TSVC) completion fired — actually presented")
+            TabSwitcherDiagnosticsOverlay.recordEvent("present(TSVC=\(tsvcID)) completion fired — actually presented")
         }
     }
 

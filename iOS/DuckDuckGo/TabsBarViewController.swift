@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Combine
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -108,6 +109,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
+    private var cancellables = Set<AnyCancellable>()
     
     private weak var pressedCell: TabsBarCell?
     
@@ -182,20 +184,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     private func registerForAIChatSettingsChanges() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleAIChatSettingsChanged),
-            name: .aiChatSettingsChanged,
-            object: nil
-        )
-    }
-
-    @objc private func handleAIChatSettingsChanged() {
-        // Hop to main: selector-based notification observers deliver on the
-        // posting thread, and updateAIChatButtonVisibility() touches UIKit.
-        DispatchQueue.main.async { [weak self] in
-            self?.updateAIChatButtonVisibility()
-        }
+        NotificationCenter.default.publisher(for: .aiChatSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateAIChatButtonVisibility()
+            }
+            .store(in: &cancellables)
     }
 
     private func updateAIChatButtonVisibility() {

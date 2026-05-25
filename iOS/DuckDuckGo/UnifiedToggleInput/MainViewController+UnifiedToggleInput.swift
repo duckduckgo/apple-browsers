@@ -74,7 +74,8 @@ extension MainViewController {
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
-            stateStore: stateStore
+            stateStore: stateStore,
+            syncService: syncService
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
@@ -1134,6 +1135,11 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {
         unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(mode)
+    }
+
+    func unifiedInputEditingStateDidRequestSyncSetup() {
+        unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
+        segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.aiChatPromotion)
     }
 }
 

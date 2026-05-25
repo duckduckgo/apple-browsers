@@ -2123,6 +2123,7 @@
 		CB6D17B02FA2138200ECD5AE /* AIChatSyncPromoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */; };
 		CB6D17B42FB000000ECD5AE /* AIChatSyncPromoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */; };
 		CB6D17B72FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */; };
+		CB6D17B82FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B92FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift */; };
 		CB6D17B22FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */; };
 		CB6D178F2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D178E2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift */; };
 		CB6D17912FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */; };
@@ -4777,6 +4778,7 @@
 		CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoView.swift; sourceTree = "<group>"; };
 		CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoViewModel.swift; sourceTree = "<group>"; };
 		CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoViewModelTests.swift; sourceTree = "<group>"; };
+		CB6D17B92FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncIntroSheetPresenter.swift; sourceTree = "<group>"; };
 		CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncIntroSheetView.swift; sourceTree = "<group>"; };
 		CB6D178E2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+SuggestionDisplay.swift"; sourceTree = "<group>"; };
 		CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsCoordinator.swift; sourceTree = "<group>"; };
@@ -9865,6 +9867,7 @@
 				CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */,
 				CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */,
 				CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */,
+				CB6D17B92FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift */,
 				CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */,
 			);
 			path = Suggestions;
@@ -12735,6 +12738,7 @@
 				CB6D178D2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift in Sources */,
 				CB6D17B02FA2138200ECD5AE /* AIChatSyncPromoView.swift in Sources */,
 				CB6D17B42FB000000ECD5AE /* AIChatSyncPromoViewModel.swift in Sources */,
+				CB6D17B82FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift in Sources */,
 				CB6D17B22FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift in Sources */,
 				980891A52237D4F500313A70 /* FeedbackNavigator.swift in Sources */,
 				1E8AD1C927BFAD1500ABA377 /* DirectoryMonitor.swift in Sources */,

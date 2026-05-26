@@ -284,6 +284,11 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
 
+    /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
+    /// Kill switch in case the new path regresses persistence reliability or hang counts.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
+    case tabsSaveOptimization
+
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
 }

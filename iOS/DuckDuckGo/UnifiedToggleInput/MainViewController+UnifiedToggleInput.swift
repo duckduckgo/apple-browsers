@@ -101,6 +101,14 @@ extension MainViewController {
         }
 
         setUpAIChatTabChatHeader()
+
+        // If the Duck.ai fire onboarding flow armed its lock before the coordinator existed
+        // (coordinator creation is deferred until after linear onboarding completes), sync
+        // the persisted lock state to both freshly-created objects now.
+        if experimentDuckAIFireOnboardingFlow.controlsLocked {
+            coordinator.setOnboardingControlsLocked(true)
+            aiChatTabChatHeaderView?.setOnboardingLocked(true)
+        }
         installUnifiedInputContentViewController()
         installFloatingReturnKeyViewController()
         installSwipeTabsGesturesForUnifiedInput()
@@ -219,6 +227,8 @@ extension MainViewController {
             }
         case .refreshNonAITab:
             refreshNonAITab(tab: tab, coordinator: coordinator)
+        case .preserveOmnibarSession:
+            return
         }
 
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
@@ -318,6 +328,8 @@ private extension MainViewController {
         case unbindInactiveNonAITab
         case refreshAITab(AITabRefreshBehavior)
         case refreshNonAITab
+        /// The coordinator is mid-omnibar session on a non-AI tab — leave it alone.
+        case preserveOmnibarSession
     }
 
     enum AITabRefreshBehavior {
@@ -543,6 +555,14 @@ private extension MainViewController {
             if !coordinator.isActive && viewCoordinator.aiChatTabChatHeaderContainer.isHidden {
                 return .unbindInactiveNonAITab
             }
+            // The coordinator was just activated for an omnibar editing session (e.g. the
+            // visit-site onboarding dialog activates the UTI from NTP.viewDidAppear).
+            // Collapsing it here would undo that activation before the keyboard appears.
+            // Once navigation starts (tab is loading), stop preserving so refreshNonAITab
+            // can collapse the bar normally.
+            if coordinator.isOmnibarSession, !tab.isLoading {
+                return .preserveOmnibarSession
+            }
             return .refreshNonAITab
         }
 
@@ -690,15 +710,6 @@ private extension MainViewController {
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.tabSwitcherButton.delegate = self
-        // Catch touches at the most upstream point — before UIControl tracking, before any
-        // gesture recognizer can cancel the tap. Surfaces the unresponsive-tab-switcher
-        // diagnostic even when `.touchUpInside` never fires (which is the bug we're hunting).
-        headerView.tabSwitcherButton.onTouchDown = { [weak self] in
-            guard let self else { return }
-            if TabSwitcherDiagnosticsOverlay.recordTapAndShouldShow() {
-                TabSwitcherDiagnosticsOverlay.show(from: self)
-            }
-        }
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),
@@ -845,7 +856,7 @@ extension MainViewController {
     }
 }
 
-private extension MainViewController {
+extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
@@ -1181,6 +1192,9 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapUpgrade() {
+        if let subscriptionState = unifiedToggleInputCoordinator?.subscriptionState, !subscriptionState.hasActiveSubscription {
+            Pixel.fire(pixel: .unifiedToggleInputChatHeaderUpgradeTapped)
+        }
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow()

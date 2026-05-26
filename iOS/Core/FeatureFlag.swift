@@ -410,6 +410,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
 
+    /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
+    /// Kill switch in case the new path regresses persistence reliability or hang counts.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
+    case tabsSaveOptimization
+
     /// Failsafe feature flag. Routes tapped .ics calendar links through EKEventEditViewController.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214740849233380
     case icsCalendarLinks
@@ -723,6 +728,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
+        case .tabsSaveOptimization:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabsSaveOptimization))
         case .icsCalendarLinks:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.icsCalendarLinks))
         case .aiChatChromeShortcutIPad:

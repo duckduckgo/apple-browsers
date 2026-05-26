@@ -1090,7 +1090,7 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
         // is always invoked on the main thread by AppKit, so we hop onto the
         // MainActor here to touch `selectedTabViewModel` and the TabViewModel
         // zoom methods.
-        MainActor.assumeIsolated {
+        MainActor.assumeMainThread {
             guard let item = item(at: index),
                   zoomItems.contains(item),
                   let tabViewModel = tabCollectionViewModel?.selectedTabViewModel else {

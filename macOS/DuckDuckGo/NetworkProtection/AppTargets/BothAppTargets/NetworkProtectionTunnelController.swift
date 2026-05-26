@@ -210,24 +210,16 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private func handleStatusChange(_ notification: Notification) {
         Logger.networkProtection.log("VPN handle status change: \(notification.debugDescription, privacy: .public)")
         guard let session = (notification.object as? NETunnelProviderSession),
-              session.status != previousStatus,
-              let manager = session.manager as? NETunnelProviderManager else {
-
+              session.status != previousStatus else {
             return
         }
 
         Task { @MainActor in
             previousStatus = session.status
 
-            switch session.status {
-            case .connected:
-                try await enableOnDemand(tunnelManager: manager)
-            case .invalid:
+            if session.status == .invalid {
                 clearInternalManager()
-            default:
-                break
             }
-
         }
     }
 

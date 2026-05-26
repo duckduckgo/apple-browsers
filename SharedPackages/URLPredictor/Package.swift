@@ -7,7 +7,7 @@ let package = Package(
     name: "URLPredictor",
     platforms: [
         .iOS(.v15),
-        .macOS(.v11),
+        .macOS(.v12),
     ],
     products: [
         .library(name: "URLPredictor", targets: ["URLPredictor"]),

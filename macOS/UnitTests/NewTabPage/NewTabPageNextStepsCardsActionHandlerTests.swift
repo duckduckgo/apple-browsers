@@ -205,6 +205,12 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .sync)
     }
 
+    @MainActor func testWhenAskedToPerformActionForYTAdBlockingThenItFiresPixel() {
+        actionHandler.performAction(for: .youtubeAdBlocking, refreshCardsAction: nil)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .youtubeAdBlocking)
+    }
+
 }
 
 private final class MockTabOpener: NewTabPageNextStepsCardsTabOpening {

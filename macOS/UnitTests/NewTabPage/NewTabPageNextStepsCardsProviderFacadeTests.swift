@@ -281,6 +281,7 @@ private extension NewTabPageNextStepsCardsProviderFacadeTests {
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             dockCustomization: DockCustomizerMock(),
+            adBlockingAvailability: MockAdBlockingAvailability(),
             scheduler: .immediate
         )
     }

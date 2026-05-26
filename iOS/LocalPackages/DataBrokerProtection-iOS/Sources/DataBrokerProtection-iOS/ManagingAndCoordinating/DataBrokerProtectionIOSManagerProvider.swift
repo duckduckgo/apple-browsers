@@ -55,7 +55,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   eventsHandler: EventMapping<JobEvent>,
                                   freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                                   isWebViewInspectable: Bool = false,
-                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
+                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
+                                  contentBlocking: DBPWebViewContentBlocking?) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -145,6 +146,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
             wideEvent: wideEvent,
+            contentBlocking: contentBlocking,
             isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated }
         )
 

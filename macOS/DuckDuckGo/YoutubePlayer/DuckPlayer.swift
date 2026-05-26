@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
 import FoundationExtensions
 import Combine
@@ -182,13 +183,15 @@ final class DuckPlayer {
     convenience init(
         preferencesPersistor: DuckPlayerPreferencesPersistor,
         privacyConfigurationManager: PrivacyConfigurationManaging,
-        internalUserDecider: InternalUserDecider
+        internalUserDecider: InternalUserDecider,
+        featureFlagger: FeatureFlagger
     ) {
         self.init(
             preferences: DuckPlayerPreferences(
                 persistor: preferencesPersistor,
                 privacyConfigurationManager: privacyConfigurationManager,
-                internalUserDecider: internalUserDecider
+                internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger
             ),
             privacyConfigurationManager: privacyConfigurationManager
         )

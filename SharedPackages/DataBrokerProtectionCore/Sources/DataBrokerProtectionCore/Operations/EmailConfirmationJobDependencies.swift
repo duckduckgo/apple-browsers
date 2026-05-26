@@ -34,6 +34,7 @@ public protocol EmailConfirmationJobDependencyProviding {
     var featureFlagger: DBPFeatureFlagging { get }
     var applicationNameForUserAgent: String? { get }
     var wideEvent: WideEventManaging? { get }
+    var contentBlocking: DBPWebViewContentBlocking? { get }
 }
 
 public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyProviding {
@@ -48,6 +49,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
     public let featureFlagger: DBPFeatureFlagging
     public let applicationNameForUserAgent: String?
     public let wideEvent: WideEventManaging?
+    public let contentBlocking: DBPWebViewContentBlocking?
 
     public init(from brokerDependencies: BrokerProfileJobDependencyProviding) {
         self.database = brokerDependencies.database
@@ -61,6 +63,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.featureFlagger = brokerDependencies.featureFlagger
         self.applicationNameForUserAgent = brokerDependencies.applicationNameForUserAgent
         self.wideEvent = brokerDependencies.wideEvent
+        self.contentBlocking = brokerDependencies.contentBlocking
     }
 
     public init(database: DataBrokerProtectionRepository,
@@ -73,7 +76,8 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
                 vpnBypassService: VPNBypassFeatureProvider?,
                 featureFlagger: DBPFeatureFlagging,
                 applicationNameForUserAgent: String?,
-                wideEvent: WideEventManaging? = nil) {
+                wideEvent: WideEventManaging? = nil,
+                contentBlocking: DBPWebViewContentBlocking? = nil) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
         self.privacyConfig = privacyConfig
@@ -85,5 +89,6 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgent = applicationNameForUserAgent
         self.wideEvent = wideEvent
+        self.contentBlocking = contentBlocking
     }
 }

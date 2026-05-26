@@ -1688,6 +1688,16 @@ extension UnifiedToggleInputCoordinator {
         refreshToolsPresentation()
         recordUserChoiceToStore()
     }
+
+    /// Selects the image-generation tool and refreshes the toolbar to match. Idempotent —
+    /// a no-op if the active model doesn't support image generation. Mirrors the end state
+    /// of `handleToolsMenuSelection(.imageGeneration)` for FE-initiated entry points
+    /// (e.g. the Duck.ai sidebar's "New Image" action).
+    func selectImageGenerationTool() {
+        toolsController.select(.imageGeneration, for: modelStore)
+        refreshToolsPresentation()
+        recordUserChoiceToStore()
+    }
 }
 
 // MARK: - UnifiedToggleInputViewControllerDelegate

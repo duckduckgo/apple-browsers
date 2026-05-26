@@ -498,6 +498,24 @@ private extension MainViewController {
                 self?.updateVoiceSessionActive(false, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatNewImageGenerationChatStarted)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.handleNewImageGenerationChatStarted(for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+    }
+
+    /// Updates the foreground tab's UTI to reflect an FE-initiated image-generation chat.
+    /// Backgrounded tabs without a live coordinator are intentionally ignored — revisit if
+    /// the FE starts firing this for non-foreground chats.
+    private func handleNewImageGenerationChatStarted(for webView: WKWebView) {
+        guard let controller = tabManager.controller(forWebView: webView),
+              controller === currentTab,
+              let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.selectImageGenerationTool()
     }
 
     private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {

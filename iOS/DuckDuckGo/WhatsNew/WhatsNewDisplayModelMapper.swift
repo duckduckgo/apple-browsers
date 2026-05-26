@@ -67,7 +67,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
                 case let .titledSection(titleText, _):
                     return RemoteMessagingUI.CardsListDisplayModel.Item.section(title: titleText)
                     // Map Featured Two Lines Card Item
-                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, primaryActionText, primaryAction):
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, _, primaryActionText, primaryAction):
                     let featuredTwoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.FeaturedTwoLinesCard(
                         icon: placeholderImage.rawValue,
                         title: titleText,
@@ -82,7 +82,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
                     )
                     return RemoteMessagingUI.CardsListDisplayModel.Item.featuredTwoLinesCard(featuredTwoLinesCard)
                     // Map Two Lines Card Item
-                case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
+                case let .twoLinesItem(titleText, descriptionText, placeholderImage, _, action):
                     let disclosureIcon = action != nil ? Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall) : nil
                     let twoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.TwoLinesCard(
                         icon: placeholderImage.rawValue,

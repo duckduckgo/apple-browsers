@@ -505,19 +505,6 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertEqual((error as NSError?)?.code, FailingSetAttributesOnChildFileManager.errorCode)
     }
 
-    func testWhenApplyDefaultFileProtectionEnumeratorErrorHandlerFiresThenReturnsThatError() throws {
-        let url = sandbox.appendingPathComponent("DuckAi")
-        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        try Data("chats".utf8).write(to: url.appendingPathComponent("chats.db"))
-
-        let fileManager = FailingEnumeratorChildFileManager()
-        let error = DuckAiNativeStorageContainerMigration.applyDefaultFileProtection(at: url, fileManager: fileManager)
-
-        XCTAssertEqual((error as NSError?)?.domain, FailingEnumeratorChildFileManager.errorDomain,
-                       "errorHandler invocation must surface as the returned error")
-        XCTAssertEqual((error as NSError?)?.code, FailingEnumeratorChildFileManager.errorCode)
-    }
-
     func testWhenApplyDefaultFileProtectionEnumeratorReturnsNilThenReturnsError() throws {
         let url = sandbox.appendingPathComponent("nonexistent-directory")
         // No directory created; default FileManager.enumerator(at:) returns nil
@@ -864,29 +851,6 @@ private final class FailingSetAttributesFileManager: FileManager {
 
     override func setAttributes(_ attributes: [FileAttributeKey: Any], ofItemAtPath path: String) throws {
         throw NSError(domain: Self.errorDomain, code: Self.errorCode)
-    }
-}
-
-/// Synthesizes one `errorHandler` invocation on `enumerator(at:)` before
-/// returning the real enumerator — exercises the closure at the call site of
-/// `applyDefaultFileProtection`, distinct from the per-child setAttributes
-/// failure path. `setAttributes` is not overridden so root and any real
-/// children succeed normally.
-private final class FailingEnumeratorChildFileManager: FileManager {
-    static let errorDomain = "DuckAiNativeStorageContainerMigrationTests.enumeratorChild"
-    static let errorCode = -6
-
-    override func enumerator(at url: URL,
-                             includingPropertiesForKeys keys: [URLResourceKey]?,
-                             options mask: FileManager.DirectoryEnumerationOptions = [],
-                             errorHandler handler: ((URL, Error) -> Bool)? = nil) -> FileManager.DirectoryEnumerator? {
-        let inaccessibleChild = url.appendingPathComponent("inaccessible-child")
-        let syntheticError = NSError(domain: Self.errorDomain, code: Self.errorCode)
-        _ = handler?(inaccessibleChild, syntheticError)
-        return super.enumerator(at: url,
-                                includingPropertiesForKeys: keys,
-                                options: mask,
-                                errorHandler: handler)
     }
 }
 

@@ -33,6 +33,8 @@ enum OSUpgradeCapabilityOverride: String, CaseIterable {
     }
 }
 
+/// Debug-menu only. The stored value is honored only under `#if DEBUG`; production
+/// code should rely on `SupportedOSChecker` directly.
 struct OSUpgradeCapabilityOverridePersistor {
 
     enum Key: String {

@@ -177,7 +177,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
             outcomes.append(migrate(from: oldURL, to: newURL, fileManager: FailingMoveFileManager(), maxAttempts: 3))
         }
 
-        XCTAssertEqual(outcomes, [.skip, .skip, .proceed])
+        XCTAssertEqual(outcomes, [.skip, .skip, .skip])
         XCTAssertEqual(keyValueStore.integer(forKey: attemptsKey), 3,
                        "attempts must stay at the cap so the next launch detects the exhausted budget")
         XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "attemptFailed", "gaveUp"])
@@ -187,6 +187,12 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
                       "give-up sweep must not delete source data")
         XCTAssertFalse(keyValueStore.bool(forKey: migratedKey),
                        "migrated flag must NOT be set on give-up so retries can resume when conditions improve")
+        // Returning .skip on give-up is what keeps the caller from creating an
+        // empty destination DB — without that, the next launch's
+        // destinationConflict path would claim the empty destination and
+        // permanently orphan the user's pre-upgrade data at oldURL.
+        XCTAssertFalse(FileManager.default.fileExists(atPath: newURL.path),
+                       "give-up must leave destination untouched so the caller short-circuits")
     }
 
     func testWhenGaveUpAndNextLaunchSucceedsThenMigrationCompletes() throws {
@@ -314,27 +320,28 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertTrue(pixelSpy.firedEventNames.isEmpty)
     }
 
-    func testWhenGaveUpLeftPartialDestinationAndNextLaunchRunsThenDestinationConflictFires() throws {
+    func testWhenForeignDataIsPresentAtDestinationWithoutMigratedFlagThenDestinationConflictFires() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
         try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
         try Data("complete".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
-        // Simulate the post-gaveUp + partial-copy state without setting migrated:
-        // newURL has a partial chats.db, oldURL still has the complete copy,
-        // attempts left at the cap when migration gave up.
+        // The migration's own give-up path returns .skip and never leaves
+        // anything at newURL, so this state is only reachable when some external
+        // source (sibling process, OS-level sync, manual data drop) populates
+        // the destination before our migration runs. Stage that here: foreign
+        // chats.db at newURL, complete copy still at oldURL.
         try FileManager.default.createDirectory(at: newURL, withIntermediateDirectories: true)
-        try Data("partial".utf8).write(to: newURL.appendingPathComponent("chats.db"))
-        try? keyValueStore.set(3, forKey: attemptsKey)
+        try Data("foreign".utf8).write(to: newURL.appendingPathComponent("chats.db"))
 
         migrate(from: oldURL, to: newURL)
 
-        // Exhausted-budget reset clears attempts. The standard flow then takes
-        // the destinationConflict path, sets the migrated flag, and preserves
-        // both sides so the complete oldURL data remains recoverable.
+        // The standard flow takes the destinationConflict path, claims newURL
+        // going forward, and preserves oldURL so the user's pre-upgrade data
+        // remains on disk.
         XCTAssertEqual(pixelSpy.firedEventNames, ["destinationConflict"])
         XCTAssertTrue(keyValueStore.bool(forKey: migratedKey))
         XCTAssertTrue(FileManager.default.fileExists(atPath: oldURL.appendingPathComponent("chats.db").path),
-                      "post-gaveUp source must survive — newURL might be a partial copy")
+                      "oldURL must survive — the foreign destination may not be a complete copy")
         XCTAssertEqual(try Data(contentsOf: oldURL.appendingPathComponent("chats.db")), Data("complete".utf8))
     }
 
@@ -465,7 +472,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
 
         let outcome = migrate(from: oldURL, to: newURL, fileManager: FailingMoveFileManager(), maxAttempts: 0)
 
-        XCTAssertEqual(outcome, .proceed, "maxAttempts clamped to 1 triggers gaveUp on the first failure")
+        XCTAssertEqual(outcome, .skip, "maxAttempts clamped to 1 triggers gaveUp on the first failure")
         XCTAssertEqual(keyValueStore.integer(forKey: attemptsKey), 1,
                        "attempts must be left at the clamped cap so the next launch resets the budget")
         XCTAssertEqual(pixelSpy.firedEventNames, ["gaveUp"])
@@ -481,7 +488,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
 
         let outcome = migrate(from: oldURL, to: newURL, fileManager: FailingMoveFileManager(), maxAttempts: -5)
 
-        XCTAssertEqual(outcome, .proceed)
+        XCTAssertEqual(outcome, .skip)
         XCTAssertEqual(pixelSpy.firedEventNames, ["gaveUp"])
     }
 

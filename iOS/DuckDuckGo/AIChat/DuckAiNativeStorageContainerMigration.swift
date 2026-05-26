@@ -355,8 +355,7 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         if attempt >= maxAttempts {
             Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] \(operation.rawValue, privacy: .public) failed (attempt \(attempt)/\(maxAttempts)); giving up: \(error.localizedDescription, privacy: .public)")
             pixelFiring.fire(.gaveUp(label: label, error: error))
-            ensureProtection()
-            return .proceed
+            return .skip
         }
         Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] \(operation.rawValue, privacy: .public) failed (attempt \(attempt)/\(maxAttempts)); will retry next launch: \(error.localizedDescription, privacy: .public)")
         pixelFiring.fire(.attemptFailed(label: label, error: error))

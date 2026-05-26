@@ -320,6 +320,33 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertTrue(pixelSpy.firedEventNames.isEmpty)
     }
 
+    /// Fire-mode stores DBs in `<UUID>/chats.db` subdirectories rather than at
+    /// the destination root, so a regression in `destinationHasData` that only
+    /// looked for `chats.db` at the root would silently mis-classify a populated
+    /// fire-mode container as empty scaffolding and `removeItem` it before the
+    /// next move attempt.
+    func testWhenFireModeDestinationHasUUIDSubdirectoryThenDestinationConflictFires() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi-fireMode")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi-fireMode")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("complete".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+        // Stage fire-mode shape at the destination: <UUID>/chats.db, no
+        // chats.db at the root.
+        let uuidSubdir = newURL.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: uuidSubdir, withIntermediateDirectories: true)
+        try Data("foreign".utf8).write(to: uuidSubdir.appendingPathComponent("chats.db"))
+
+        migrate(from: oldURL, to: newURL, label: .fireMode)
+
+        XCTAssertEqual(pixelSpy.firedEventNames, ["destinationConflict"],
+                       "destinationHasData must detect <UUID>/chats.db, not only chats.db at the root")
+        XCTAssertTrue(keyValueStore.bool(forKey: migratedKey))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: oldURL.appendingPathComponent("chats.db").path),
+                      "oldURL must survive — the foreign fire-mode destination may not be a complete copy")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: uuidSubdir.appendingPathComponent("chats.db").path),
+                      "foreign fire-mode contents must not be wiped")
+    }
+
     func testWhenForeignDataIsPresentAtDestinationWithoutMigratedFlagThenDestinationConflictFires() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
@@ -427,6 +454,19 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
 
         XCTAssertEqual((error as NSError?)?.domain, FailingSetAttributesFileManager.errorDomain)
         XCTAssertEqual((error as NSError?)?.code, FailingSetAttributesFileManager.errorCode)
+    }
+
+    func testWhenApplyDefaultFileProtectionRootSucceedsButChildFailsThenReturnsChildError() throws {
+        let url = sandbox.appendingPathComponent("DuckAi")
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        try Data("chats".utf8).write(to: url.appendingPathComponent("chats.db"))
+
+        let fileManager = FailingSetAttributesOnChildFileManager(rootPath: url.path)
+        let error = DuckAiNativeStorageContainerMigration.applyDefaultFileProtection(at: url, fileManager: fileManager)
+
+        XCTAssertEqual((error as NSError?)?.domain, FailingSetAttributesOnChildFileManager.errorDomain,
+                       "child-only failure must surface as a non-nil error")
+        XCTAssertEqual((error as NSError?)?.code, FailingSetAttributesOnChildFileManager.errorCode)
     }
 
     func testWhenApplyDefaultFileProtectionEnumeratorReturnsNilThenReturnsError() throws {
@@ -551,6 +591,51 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "success"])
     }
 
+    func testGivenThreeFailedMoveLaunchesWhenFourthLaunchSucceedsThenNoDestinationConflict() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("user-chats".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+
+        for _ in 0..<3 {
+            let launch = runFactory(
+                oldURL: oldURL,
+                newURL: newURL,
+                fileManager: FailingMoveFileManager(),
+                createHandler: {
+                    XCTFail("createHandler must never run when the migration short-circuits on .skip")
+                }
+            )
+            XCTAssertNil(launch, "factory must short-circuit on .skip for every failing launch")
+            XCTAssertFalse(FileManager.default.fileExists(atPath: newURL.path),
+                           "destination must stay absent across all failing launches — its presence is the orphan precondition")
+        }
+        XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "attemptFailed", "gaveUp"])
+        XCTAssertEqual(keyValueStore.integer(forKey: attemptsKey), 3)
+        XCTAssertFalse(keyValueStore.bool(forKey: migratedKey))
+
+        var recoveryHandlerCreated = false
+        let recovery = runFactory(
+            oldURL: oldURL,
+            newURL: newURL,
+            fileManager: .default,
+            createHandler: {
+                recoveryHandlerCreated = true
+                DuckAiNativeStorageContainerMigration.excludeFromBackup(newURL,
+                                                                        label: .default,
+                                                                        pixelFiring: self.pixelSpy)
+            }
+        )
+
+        XCTAssertNotNil(recovery)
+        XCTAssertTrue(recoveryHandlerCreated)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["attemptFailed", "attemptFailed", "gaveUp", "success"],
+                       "recovery must take the normal success path — destinationConflict would prove the orphan bug regressed")
+        XCTAssertEqual(try Data(contentsOf: newURL.appendingPathComponent("chats.db")), Data("user-chats".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: oldURL.path),
+                       "successful recovery moves oldURL, so it is consumed normally")
+    }
+
     func testGivenProtectedDataUnavailableWhenFactoryRunsThenDestinationStaysAbsent() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
@@ -581,6 +666,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
     @discardableResult
     private func migrate(from oldURL: URL,
                          to newURL: URL,
+                         label: DuckAiNativeStorageContainerMigrationLabel? = nil,
                          fileManager: FileManager = .default,
                          isProtectedDataAvailable: @escaping () -> Bool = { true },
                          maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts) -> DuckAiNativeStorageContainerMigrationOutcome {
@@ -588,7 +674,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
             oldURL: oldURL,
             newURL: newURL,
             migrationKey: migrationKey,
-            label: label,
+            label: label ?? self.label,
             keyValueStore: keyValueStore,
             fileManager: fileManager,
             pixelFiring: pixelSpy,
@@ -662,6 +748,25 @@ private final class FailingSetAttributesFileManager: FileManager {
     static let errorCode = -3
 
     override func setAttributes(_ attributes: [FileAttributeKey: Any], ofItemAtPath path: String) throws {
+        throw NSError(domain: Self.errorDomain, code: Self.errorCode)
+    }
+}
+
+/// Succeeds on `setAttributes` for the root path and rejects it for every
+/// descendant — exercises the child-only branch of `applyDefaultFileProtection`.
+private final class FailingSetAttributesOnChildFileManager: FileManager {
+    static let errorDomain = "DuckAiNativeStorageContainerMigrationTests.setAttributesOnChild"
+    static let errorCode = -5
+
+    private let rootPath: String
+
+    init(rootPath: String) {
+        self.rootPath = rootPath
+        super.init()
+    }
+
+    override func setAttributes(_ attributes: [FileAttributeKey: Any], ofItemAtPath path: String) throws {
+        if path == rootPath { return }
         throw NSError(domain: Self.errorDomain, code: Self.errorCode)
     }
 }

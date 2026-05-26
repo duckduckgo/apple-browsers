@@ -197,9 +197,13 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     private func registerForFeatureFlagChanges() {
         // Picks up internal-debug toggles of `aiChatChromeShortcutIPad` while the tabs bar is on screen.
-        featureFlagger?.updatesPublisher
+        guard let overridesHandler = featureFlagger?.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .aiChatChromeShortcutIPad }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
+            .sink { [weak self] _ in
                 self?.updateAIChatButtonVisibility()
             }
             .store(in: &cancellables)

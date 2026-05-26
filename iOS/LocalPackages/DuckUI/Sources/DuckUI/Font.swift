@@ -76,7 +76,7 @@ private struct AppFontGallery: View {
                 .foregroundColor(.secondary)
             ForEach(sampleSizes, id: \.self) { size in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("\(Int(size))pt")
+                    Text(verbatim: "\(Int(size))pt")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(.secondary)
                         .frame(width: 36, alignment: .trailing)

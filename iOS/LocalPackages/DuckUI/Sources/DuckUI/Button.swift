@@ -313,6 +313,9 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
 
     private func rebrandedBody(configuration: Configuration) -> some View {
         let destructiveColor = Color(designSystemColor: .destructivePrimary)
+        // 0.36 alpha is applied exactly once via the foreground colour. A second
+        // view-wide `.opacity(0.36)` would multiply with this and dim the label
+        // to ~0.13, making disabled text nearly invisible.
         let foregroundColor = disabled ? destructiveColor.opacity(0.36) : destructiveColor
         let backgroundColor = Color(designSystemColor: .controlsFillSecondary)
         let pressedBackgroundColor = Color(designSystemColor: .controlsFillPrimary)
@@ -329,7 +332,6 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
             .background(configuration.isPressed ? pressedBackgroundColor : backgroundColor)
             .clipShape(Capsule())
             .contentShape(Capsule())
-            .opacity(disabled ? 0.36 : 1)
             .ddgButtonDynamicTypeCap()
     }
 }
@@ -636,13 +638,13 @@ private enum Consts {
     // Legacy
     static let legacyCornerRadius: CGFloat = 12
     static let legacyHeight: CGFloat = 50
-    static let legacyFontSize: CGFloat = 15
 
-    // Rebranded (Figma "New Design Language" iOS Buttons)
+    // Rebranded (Figma "New Design Language" iOS Buttons).
+    // Font sizes are encoded via SwiftUI text styles in `rebrandedButtonFont(compact:)`
+    // (`.subheadline` ~15 pt, `.body` ~17 pt at default Dynamic Type) and are not held
+    // as numeric constants here.
     static let rebrandedHeightLarge: CGFloat = 50
     static let rebrandedHeightSmall: CGFloat = 40
-    static let rebrandedFontSizeLarge: CGFloat = 17
-    static let rebrandedFontSizeSmall: CGFloat = 15
 
     // Shared
     static let pressedOpacity: CGFloat = 0.7

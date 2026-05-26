@@ -104,6 +104,12 @@ struct DataImportViewModel {
     var selectedProfile: BrowserProfile?
     /// selected Data Types to import (bookmarks/passwords)
     var selectedDataTypes: Set<DataType> = []
+    /// Whether the user has explicitly toggled a data-type checkbox on this flow.
+    /// Drives source-switch behaviour in `update(with:)`: when false, switching
+    /// sources defaults to all of the new source's selectable types (so a stop
+    /// at a single-type source doesn't implicitly narrow the selection); when
+    /// true, the user's explicit selection is preserved across switches.
+    var hasUserModifiedDataTypeSelection: Bool = false
     var isPickerExpanded: Bool = false
 
     enum DataTypeSelection: Equatable {
@@ -206,6 +212,7 @@ struct DataImportViewModel {
          preferredImportSources: [Source] = [.chrome, .firefox, .safari],
          summary: [DataTypeImportResult] = [],
          selectedDataTypes: Set<DataType>? = nil,
+         hasUserModifiedDataTypeSelection: Bool = false,
          isPickerExpanded: Bool = false,
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,
          syncFeatureVisibility: SyncFeatureVisibility = .hide,
@@ -263,6 +270,7 @@ struct DataImportViewModel {
             previousSelectedTypes: selectedDataTypes,
             availableTypes: availableImportTypes
         )
+        self.hasUserModifiedDataTypeSelection = hasUserModifiedDataTypeSelection
 
         self.summary = summary
         self.isPickerExpanded = isPickerExpanded
@@ -910,13 +918,14 @@ extension DataImportViewModel {
             wideEvent.discardFlow(dataImportWideEventData)
             self.dataImportWideEventData = nil
         }
-        // If every selectable type is currently selected, the user hasn't narrowed
-        // the selection — so the next source should default to all of *its* types
-        // rather than inheriting a selection that was implicitly filtered by this
-        // source's capabilities (e.g. password-manager sources only offer passwords).
-        let userNarrowedSelection = selectedDataTypes != selectableImportTypes
+        // Only forward `selectedDataTypes` if the user has explicitly toggled a
+        // checkbox. Otherwise the current selection is just a function of this
+        // source's capabilities (e.g. a password-manager source forced it to
+        // `{.passwords}`), and the next source should default to all of *its*
+        // selectable types instead of inheriting that implicit narrowing.
         self = .init(importSource: importSource,
-                     selectedDataTypes: userNarrowedSelection ? selectedDataTypes : nil,
+                     selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
+                     hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,
                      isPickerExpanded: self.isPickerExpanded,
                      isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
                      syncFeatureVisibility: syncFeatureVisibility,

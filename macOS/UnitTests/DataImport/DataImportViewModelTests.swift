@@ -429,6 +429,62 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(model.selectedDataTypes, [.passwords])
     }
 
+    @MainActor
+    func testUpdateWithSource_userNarrowingSurvivesRoundTripThroughSingleTypeSource() {
+        // GIVEN: Chrome with both types, then user unchecks passwords
+        model = DataImportViewModel(
+            importSource: .chrome,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
+                return .init(browser: browser, profiles: [defaultProfile])
+            }
+        )
+        model.setDataType(.passwords, selected: false)
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+
+        // WHEN: switch to a bookmarks-only source (e.g. Tor), then back to Chrome
+        model.update(with: .tor)
+        XCTAssertEqual(model.selectableImportTypes, [.bookmarks])
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+
+        model.update(with: .chrome)
+
+        // THEN: passwords stays deselected — the round trip through a source
+        // whose selectable set equals the user's narrowed selection doesn't
+        // erase the explicit intent.
+        XCTAssertEqual(model.selectableImportTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+    }
+
+    @MainActor
+    func testSetDataType_unchangedValue_doesNotMarkSelectionAsUserModified() {
+        // GIVEN: Chrome with both types selected by default
+        model = DataImportViewModel(
+            importSource: .chrome,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
+                return .init(browser: browser, profiles: [defaultProfile])
+            }
+        )
+        XCTAssertFalse(model.hasUserModifiedDataTypeSelection)
+
+        // WHEN: setDataType is called with values that match the current state
+        // (this happens when the type-picker sheet's Done button re-emits every
+        // item's current state)
+        model.setDataType(.bookmarks, selected: true)
+        model.setDataType(.passwords, selected: true)
+
+        // THEN: the flag stays false, and a source round trip still resets to
+        // all-of-new-source's-types
+        XCTAssertFalse(model.hasUserModifiedDataTypeSelection)
+
+        model.update(with: .bitwarden)
+        model.update(with: .chrome)
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks, .passwords])
+    }
+
     // MARK: - Button State Tests
 
     @MainActor

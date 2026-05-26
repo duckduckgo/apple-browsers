@@ -135,6 +135,10 @@ final class AIChatModelPickerButton: NSView {
 
     private func setupView() {
         wantsLayer = true
+        // The focus ring sublayer extends 1pt past the view's bounds. On macOS Monterey
+        // the hosting layer clips its sublayers to bounds by default, which would hide
+        // the ring; explicitly disable masking so the ring renders on every supported OS.
+        layer?.masksToBounds = false
         setAccessibilityRole(.popUpButton)
 
         // Setup background layer (pill shape)
@@ -143,7 +147,9 @@ final class AIChatModelPickerButton: NSView {
         layer?.insertSublayer(backgroundLayer, at: 0)
 
         // Focus ring sublayer sits above the background so it stays visible while hovered.
-        focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        NSAppearance.withAppAppearance {
+            focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        }
         layer?.addSublayer(focusRingLayer)
 
         // Add subviews
@@ -285,7 +291,9 @@ final class AIChatModelPickerButton: NSView {
         updateAppearance()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        NSAppearance.withAppAppearance {
+            focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        }
         CATransaction.commit()
     }
 

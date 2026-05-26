@@ -229,6 +229,10 @@ final class AIChatOmnibarToolButton: NSView {
 
     private func setupView() {
         wantsLayer = true
+        // The focus ring sublayer extends 1pt past the view's bounds. On macOS Monterey
+        // the hosting layer clips its sublayers to bounds by default, which would hide
+        // the ring; explicitly disable masking so the ring renders on every supported OS.
+        layer?.masksToBounds = false
         setAccessibilityRole(.button)
 
         // Setup background layer (shape updated in layout())
@@ -236,7 +240,9 @@ final class AIChatOmnibarToolButton: NSView {
         layer?.insertSublayer(backgroundLayer, at: 0)
 
         // Focus ring sublayer sits above the background so it stays visible while hovered/toggled.
-        focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        NSAppearance.withAppAppearance {
+            focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        }
         layer?.addSublayer(focusRingLayer)
 
         // Setup icon image view
@@ -440,7 +446,9 @@ final class AIChatOmnibarToolButton: NSView {
         updateAppearance()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        NSAppearance.withAppAppearance {
+            focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        }
         CATransaction.commit()
     }
 

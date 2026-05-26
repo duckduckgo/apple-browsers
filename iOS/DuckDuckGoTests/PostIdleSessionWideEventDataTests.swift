@@ -105,14 +105,6 @@ struct PostIdleSessionWideEventDataTests {
     }
 
     @available(iOS 16, *)
-    @Test("Tab switcher tapped reason emits status_reason", .timeLimit(.minutes(1)))
-    func tabSwitcherTappedReasonEmitsStatusReason() {
-        let data = PostIdleSessionWideEventData(surface: .ntp)
-        data.statusReason = .tabSwitcherTapped
-        #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "tab_switcher_tapped")
-    }
-
-    @available(iOS 16, *)
     @Test("LUT surface emits lut", .timeLimit(.minutes(1)))
     func lutSurfaceEmitsLut() {
         let data = PostIdleSessionWideEventData(surface: .lut)

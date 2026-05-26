@@ -47,7 +47,6 @@ final class PostIdleSessionWideEventData: WideEventData {
         case appBackgrounded = "app_backgrounded"
         case favoriteSelected = "favorite_selected"
         case chatSelected = "chat_selected"
-        case tabSwitcherTapped = "tab_switcher_tapped"
     }
 
     var globalData: WideEventGlobalData

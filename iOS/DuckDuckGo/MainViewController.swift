@@ -4766,7 +4766,6 @@ extension MainViewController: EscapeHatchActionRouter {
     func escapeHatchDidRequestTabSwitcher() {
         requestTabSwitcher()
         ntpAfterIdleInstrumentation.escapeHatchTabSwitcherTapped()
-        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherTapped)
     }
 
     func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {

@@ -1663,7 +1663,7 @@ class MainViewController: UIViewController {
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
-        
+
         if hasCompletedInitialLoad {
             lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
         }
@@ -5546,7 +5546,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
             ntpAfterIdleInstrumentation.tabSwitcherSelectedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        tabManager.currentTabsModel.currentTab?.openedAfterIdle = false
+        // Don't clear `openedAfterIdle` on switcher open — the after-idle session
+        // ends on actual tab transition (see `transitionTo`), not on peeking.
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()

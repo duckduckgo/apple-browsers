@@ -76,10 +76,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         manualUpdateRemovalHandler.shouldHideManualUpdateOption
     }
 
-    var shouldShowUpdateStatus: Bool {
-        true
-    }
-
     @Published var updateState = UpdateState.upToDate
 
     func runUpdate() {

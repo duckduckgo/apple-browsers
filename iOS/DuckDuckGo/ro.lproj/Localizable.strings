@@ -122,7 +122,8 @@
 "action.title.newFireTabAction" = "Nouă filă Fire";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Deschide într-o filă Fire";
+"action.title.newFireTabForUrl" = "Deschide în fila Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Filă nouă";
 
@@ -219,10 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Caracteristici AI";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Poți atașa doar %d fișiere per conversație.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Nu putem citi fișierele atașate deoarece cel puțin unul dintre ele este criptat.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Fișierele atașate depășesc limita totală de %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Fișierul acesta este prea mare. Dimensiunea maximă a fișierului este de %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Unul dintre fișierele atașate are mai multe pagini decât acceptăm. Încarcă fișiere cu %d pagini sau mai puține.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Nu putem citi unul dintre fișierele pe care le-ai atașat. Verifică dacă nu este deteriorat și încearcă din nou.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Poți atașa doar %d imagini per conversație.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Poți atașa doar %d imagini odată.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Adaugă fișier";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Adaugă imagine";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fă o fotografie";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Acel mesaj este prea lung pentru a fi trimis cu atașări.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Atașările nu sunt disponibile temporar. Încearcă din nou mai târziu.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Acest tip de fișier nu este acceptat.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Acest tip de fișier nu este acceptat, atașează un %1$@ sau un %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Acest tip de fișier nu este acceptat, atașează un %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Pentru sarcini analitice";
@@ -241,6 +285,27 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Raționament";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Găsește codul QR în aplicația DuckDuckGo de pe celălalt dispozitiv, accesând **Setări** › **Sync & Backup** › **Sincronizează cu alt dispozitiv**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Nu acum";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Scanează codul QR";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Haide să-ți sincronizăm chaturile pe toate dispozitivele!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Sincronizează cu un alt dispozitiv";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Ignoră promovarea sincronizării";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Accesează-ți chaturile pe toate dispozitivele folosind Sync & Backup.";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personalizează răspunsurile";
@@ -1532,9 +1597,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Depanează";
 
-/* No comment provided by engineer. */
-"Delete" = "Ștergere";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "dispozitiv";
 
@@ -1646,11 +1708,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funcțiile AI ale DuckDuckGo sunt private și opționale. Datele tale nu sunt folosite pentru a antrena AI.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Atașează conținutul paginii";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Întreabă despre pagină";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Atașează conținutul paginii";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Rezumă această pagină";
@@ -1719,7 +1781,7 @@
 "duckai.welcome.message" = "Toate chaturile sunt %@ private";
 
 /* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "private";
+"duckai.welcome.private.word" = "privată";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pentru iOS";
@@ -2368,6 +2430,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Filă Fire";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Curent de aer";
 
@@ -4497,6 +4560,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Închidere filă";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Închide fila de pornire";
 
@@ -4508,6 +4572,7 @@
 
 /* New tab title */
 "tab.new.title" = "Filă nouă";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Deschide fila de pornire";
 
@@ -4516,6 +4581,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Deschide o filă Fire";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Deschide \"%1$@\" la %2$@";
 
@@ -4999,8 +5065,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
-/* Top-level attachment menu option to add a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Adaugă fișier";
-
-/* Top-level attachment menu option to add an image to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Adaugă imagine";

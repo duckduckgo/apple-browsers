@@ -73,6 +73,7 @@ public extension SingleUseColor {
         case accentPrimary
         case accentPrimaryPressed
         case accentPrimaryText
+        case accentGlowPrimary
 
         case accentAltPrimary
         case accentAltGlowPrimary

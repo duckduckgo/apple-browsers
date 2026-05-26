@@ -300,7 +300,9 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
 
     private func rebrandedBody(configuration: Configuration) -> some View {
         let destructiveColor = Color(designSystemColor: .destructivePrimary)
-        let foregroundColor = disabled ? destructiveColor.opacity(0.36) : destructiveColor
+        let pressedDestructiveColor = Color(designSystemColor: .buttonsDestructivePrimaryPressed)
+        let baseForegroundColor = configuration.isPressed ? pressedDestructiveColor : destructiveColor
+        let foregroundColor = disabled ? baseForegroundColor.opacity(0.36) : baseForegroundColor
         let backgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryDefault))
         let pressedBackgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryPressed))
 
@@ -541,12 +543,13 @@ public struct GhostButtonStyle: ButtonStyle {
     }
 
     private func foregroundColor(_ isPressed: Bool) -> Color {
-        let accent = Color(singleUseColor: .rebranding(.accentPrimary))
-        return isPressed ? accent.opacity(Consts.pressedOpacity) : accent
+        isPressed
+            ? Color(singleUseColor: .rebranding(.accentPrimaryPressed))
+            : Color(singleUseColor: .rebranding(.accentPrimary))
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {
-        isPressed ? Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.2) : .clear
+        isPressed ? Color(singleUseColor: .rebranding(.accentGlowPrimary)) : .clear
     }
 }
 

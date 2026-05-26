@@ -314,11 +314,13 @@ private extension DefaultColorPalette {
         case .textLink:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
         case .accentPrimary:
-            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater50, darkColor: RebrandingColor.Pondwater.pondwater40)
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
         case .accentPrimaryPressed:
-            return DynamicColor(lightColor: .blue70, darkColor: .blue50)
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)
         case .accentPrimaryText:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.GrayScale.white)
+        case .accentGlowPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2))
         case .accentAltPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
         case .accentAltGlowPrimary:

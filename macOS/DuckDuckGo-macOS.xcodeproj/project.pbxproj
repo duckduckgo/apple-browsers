@@ -326,10 +326,10 @@
 		1EEBF9102F3E16DD00DF90F3 /* WebExtensionHandlerProvider+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEBF90E2F3E16DD00DF90F3 /* WebExtensionHandlerProvider+macOS.swift */; };
 		1EF51A7C2F89407D003ED865 /* AdBlockingNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF51A7B2F89407D003ED865 /* AdBlockingNavigationHandler.swift */; };
 		1EF51A7D2F89407D003ED865 /* AdBlockingNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF51A7B2F89407D003ED865 /* AdBlockingNavigationHandler.swift */; };
-		2026FB0CABDEF00100AA00A1 /* YouTubeAdBlockPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2026FB0CABDEF00100AA00A3 /* YouTubeAdBlockPopover.swift */; };
-		2026FB0CABDEF00100AA00A2 /* YouTubeAdBlockPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2026FB0CABDEF00100AA00A3 /* YouTubeAdBlockPopover.swift */; };
 		1EFA1A072C7C7F0E0099F508 /* SubscriptionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F188267F2BBEB58100D9AC4F /* SubscriptionPixel.swift */; };
 		1EFA1A082C7C7F0F0099F508 /* SubscriptionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F188267F2BBEB58100D9AC4F /* SubscriptionPixel.swift */; };
+		2026FB0CABDEF00100AA00A1 /* YouTubeAdBlockPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2026FB0CABDEF00100AA00A3 /* YouTubeAdBlockPopover.swift */; };
+		2026FB0CABDEF00100AA00A2 /* YouTubeAdBlockPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2026FB0CABDEF00100AA00A3 /* YouTubeAdBlockPopover.swift */; };
 		20AC3AA2FB956B8B11BCA072 /* DarkReaderFeatureSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC0C468BD3373676AC82B61 /* DarkReaderFeatureSettingsTests.swift */; };
 		28490640A8EB4AD68903FA02 /* RebrandedContextualOnboardingDialogs+Trackers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486DE4DF1E7F43229D062937 /* RebrandedContextualOnboardingDialogs+Trackers.swift */; };
 		2934D5F7ED34D21C191CFA23 /* TabSuspensionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F16A73746AF35E5F7248523 /* TabSuspensionExtension.swift */; };
@@ -461,8 +461,6 @@
 		31FBF22F2CDD068000626C17 /* AIChatUserScriptHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FBF22D2CDD068000626C17 /* AIChatUserScriptHandling.swift */; };
 		31FBF2312CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */; };
 		31FBF2322CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */; };
-		E41E58E59C4B4B578F57BE4B /* AIChatTabOpenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DF815DCDE34CFBA7F38DFA /* AIChatTabOpenerTests.swift */; };
-		6A06A7E014E04F60B399531F /* AIChatTabOpenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DF815DCDE34CFBA7F38DFA /* AIChatTabOpenerTests.swift */; };
 		31FC23512DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
 		31FC23522DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
 		3646AC402F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3646AC3F2F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift */; };
@@ -1245,8 +1243,6 @@
 		379E877729E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379E877529E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift */; };
 		37A089FB2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A089FA2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift */; };
 		37A089FC2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A089FA2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift */; };
-		D1E601A12D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */; };
-		D1E601A22D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */; };
 		37A0BA1D2D7475BC00130447 /* HistoryViewTabOpening.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A0BA1C2D7475B900130447 /* HistoryViewTabOpening.swift */; };
 		37A0BA1E2D7475BC00130447 /* HistoryViewTabOpening.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A0BA1C2D7475B900130447 /* HistoryViewTabOpening.swift */; };
 		37A0BA202D747A9300130447 /* WindowControllersManager+URLOpening.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A0BA1F2D747A8E00130447 /* WindowControllersManager+URLOpening.swift */; };
@@ -2052,6 +2048,7 @@
 		6719D31C9C755E42C73B81A4 /* WebKitVersionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFE068226C7082D005434CC /* WebKitVersionProvider.swift */; };
 		6994C93E8D134666A5772C83 /* AIChatDeleteChatsDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E61483DDA440CEAD33A5C5 /* AIChatDeleteChatsDialog.swift */; };
 		6994F07EA8764AE186F8353E /* AdBlockingAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86EE9A7B2E24D47BACF8241 /* AdBlockingAvailability.swift */; };
+		6A06A7E014E04F60B399531F /* AIChatTabOpenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DF815DCDE34CFBA7F38DFA /* AIChatTabOpenerTests.swift */; };
 		6F2449E6DE7EE721370575B9 /* QuickFeedbackDiagnosticsCollectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD3D561804AB2C73BB789AC /* QuickFeedbackDiagnosticsCollectorTests.swift */; };
 		7380BFFD4A203C992E79AD0B /* BookmarksBarMenuWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E98C31C7349D34C0C8A569A /* BookmarksBarMenuWindow.swift */; };
 		7945A2EC294548D1B77F6A23 /* TabSuspensionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590E11956C6E4C788AF09F9A /* TabSuspensionServiceTests.swift */; };
@@ -2690,7 +2687,6 @@
 		8A96290053C27B6C1245838B /* QuickFeedbackDiagnosticsCollectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD3D561804AB2C73BB789AC /* QuickFeedbackDiagnosticsCollectorTests.swift */; };
 		91A52F01ECBA4869A0042EAA /* AdBlockingAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86EE9A7B2E24D47BACF8241 /* AdBlockingAvailability.swift */; };
 		92351A6719194A9F4DD19D56 /* AIChatSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F72808BE3E5BF485C31627B8 /* AIChatSettingsTests.swift */; };
-		9C685D9290AE488FABE0EDDA /* AIChatSettingsLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE7CA3678B14EDD94FD8D76 /* AIChatSettingsLinkTests.swift */; };
 		9264F7AF4D4841749D18B650 /* RebrandedContextualOnboardingDialogs+TrySearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228E1D6E1E824085A874C175 /* RebrandedContextualOnboardingDialogs+TrySearch.swift */; };
 		93BD7FEAF65A45E5AF6465EE /* TabSuspensionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590E11956C6E4C788AF09F9A /* TabSuspensionServiceTests.swift */; };
 		9812D895276CEDA5004B6181 /* ContentBlockerRulesLists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9812D894276CEDA5004B6181 /* ContentBlockerRulesLists.swift */; };
@@ -2716,6 +2712,7 @@
 		98A95D88299A2DF900B9B81A /* BookmarkMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A95D87299A2DF900B9B81A /* BookmarkMigrationTests.swift */; };
 		98EB5D1027516A4800681FE6 /* AppPrivacyConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98EB5D0F27516A4800681FE6 /* AppPrivacyConfigurationTests.swift */; };
 		9BF66A3171D59EB4B55171ED /* AutoplayPolicyTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51FEBFD485D01E6666551201 /* AutoplayPolicyTabExtensionTests.swift */; };
+		9C685D9290AE488FABE0EDDA /* AIChatSettingsLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE7CA3678B14EDD94FD8D76 /* AIChatSettingsLinkTests.swift */; };
 		9D84E42C2CD4E66F0046CD8B /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4072CD4E66F0046CD8B /* Common */; };
 		9D84E42D2CD4E66F0046CD8B /* PixelKitTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4042CD4E66F0046CD8B /* PixelKitTestingUtilities */; };
 		9D84E42E2CD4E66F0046CD8B /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4022CD4E66F0046CD8B /* SnapshotTesting */; };
@@ -4169,6 +4166,8 @@
 		CD89DD622C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD89DD5D2C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift */; };
 		CFCB0D03ADA84A06A1B05235 /* ContextualDaxDialogsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B63E5D7F5349E0ADA3EDEA /* ContextualDaxDialogsProvider.swift */; };
 		D16140583C0346C5BE2D9B96 /* QuickFeedbackWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6323C46A8F7693E56A2AD5F8 /* QuickFeedbackWindowController.swift */; };
+		D1E601A12D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */; };
+		D1E601A22D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */; };
 		D1EC9FDAACABFE5B574FD557 /* WebViewUserAgentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAAA013D5BF54C0C260E784E /* WebViewUserAgentProvider.swift */; };
 		D52D5FB82FA16151006B1067 /* AppVersionModelDistributionLabelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52D5FB72FA16151006B1067 /* AppVersionModelDistributionLabelTests.swift */; };
 		D52D5FB92FA16151006B1067 /* AppVersionModelDistributionLabelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52D5FB72FA16151006B1067 /* AppVersionModelDistributionLabelTests.swift */; };
@@ -4202,6 +4201,7 @@
 		E274EFFA2E1E8DFF00373C41 /* NewTabPageOmnibarActionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionsHandler.swift */; };
 		E2BC1B232E210AF200F58D61 /* NewTabPageOmnibarConfigProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarConfigProvider.swift */; };
 		E2BC1B242E210AF300F58D61 /* NewTabPageOmnibarConfigProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarConfigProvider.swift */; };
+		E41E58E59C4B4B578F57BE4B /* AIChatTabOpenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DF815DCDE34CFBA7F38DFA /* AIChatTabOpenerTests.swift */; };
 		E5A6E743849E63F8101AC616 /* QuickFeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A043BAE1603803A839C0CB52 /* QuickFeedbackService.swift */; };
 		E8775A4655DE1D195717B932 /* UpdateNotificationPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD43DAF77B35315FBE6255D /* UpdateNotificationPresenterTests.swift */; };
 		E8D0D97DCB179322B9986E5A /* DarkReaderFeatureSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361EABC017D9923C4758C171 /* DarkReaderFeatureSettings.swift */; };
@@ -4979,7 +4979,6 @@
 		31F28C5228C8EECA00119F70 /* DuckURLSchemeHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DuckURLSchemeHandler.swift; sourceTree = "<group>"; };
 		31FBF22D2CDD068000626C17 /* AIChatUserScriptHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandling.swift; sourceTree = "<group>"; };
 		31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptTests.swift; sourceTree = "<group>"; };
-		49DF815DCDE34CFBA7F38DFA /* AIChatTabOpenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabOpenerTests.swift; sourceTree = "<group>"; };
 		31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarMenuButton.swift; sourceTree = "<group>"; };
 		336B39E22726B4B700C417D3 /* LocalUnprotectedDomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUnprotectedDomains.swift; sourceTree = "<group>"; };
 		361EABC017D9923C4758C171 /* DarkReaderFeatureSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkReaderFeatureSettings.swift; sourceTree = "<group>"; };
@@ -5135,7 +5134,6 @@
 		379E4D5F2D4383CE00A901B1 /* NewTabPageCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageCoordinator.swift; sourceTree = "<group>"; };
 		379E877529E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksCleanupErrorHandling.swift; sourceTree = "<group>"; };
 		37A089FA2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingDebugMenu.swift; sourceTree = "<group>"; };
-		D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSUpgradeCapabilityOverride.swift; sourceTree = "<group>"; };
 		37A0BA1C2D7475B900130447 /* HistoryViewTabOpening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewTabOpening.swift; sourceTree = "<group>"; };
 		37A0BA1F2D747A8E00130447 /* WindowControllersManager+URLOpening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WindowControllersManager+URLOpening.swift"; sourceTree = "<group>"; };
 		37A0BA232D747B9E00130447 /* CapturingContextMenuPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturingContextMenuPresenter.swift; sourceTree = "<group>"; };
@@ -5286,6 +5284,7 @@
 		4620F01533744547AD4AE7FF /* TabSuspensionExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSuspensionExtensionTests.swift; sourceTree = "<group>"; };
 		467D16662D0C98D5007C020A /* CrashReportSenderExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReportSenderExtensions.swift; sourceTree = "<group>"; };
 		486DE4DF1E7F43229D062937 /* RebrandedContextualOnboardingDialogs+Trackers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+Trackers.swift"; sourceTree = "<group>"; };
+		49DF815DCDE34CFBA7F38DFA /* AIChatTabOpenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabOpenerTests.swift; sourceTree = "<group>"; };
 		4AC1AE4AED1E4A4C95A36533 /* SubscriptionPromoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoView.swift; sourceTree = "<group>"; };
 		4B0135CD2729F1AA00D54834 /* NSPasteboardExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSPasteboardExtension.swift; sourceTree = "<group>"; };
 		4B02197F25E05FAC00ED7DEA /* FireproofingURLExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FireproofingURLExtensions.swift; sourceTree = "<group>"; };
@@ -5589,6 +5588,7 @@
 		642A608704E4BE38779B6162 /* TabSuspensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSuspensionTests.swift; sourceTree = "<group>"; };
 		6590DB542DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerTabExtensionTests.swift; sourceTree = "<group>"; };
 		65EE7C612E3297A0009FD83B /* DuckPlayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerTests.swift; sourceTree = "<group>"; };
+		6AE7CA3678B14EDD94FD8D76 /* AIChatSettingsLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsLinkTests.swift; sourceTree = "<group>"; };
 		6D9982D6BB85483191A03D2D /* FadeInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FadeInView.swift; sourceTree = "<group>"; };
 		6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+SearchCompleted.swift"; sourceTree = "<group>"; };
 		79BC7E0753A96C3B81E3BCB2 /* UnloadedTabViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnloadedTabViewModelTests.swift; sourceTree = "<group>"; };
@@ -6792,6 +6792,7 @@
 		CDE248A62C821FFE00F9399D /* phishingFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = phishingFilterSet.json; sourceTree = "<group>"; };
 		CDE248A72C821FFE00F9399D /* MaliciousSiteProtectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionState.swift; sourceTree = "<group>"; };
 		D09265BA0D784C47B9644675 /* RebrandedContextualOnboardingDialogs+Fire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+Fire.swift"; sourceTree = "<group>"; };
+		D1E601A02D510FE0003BB417 /* OSUpgradeCapabilityOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSUpgradeCapabilityOverride.swift; sourceTree = "<group>"; };
 		D4912774B0E942D597229E05 /* AutoplayPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPreferences.swift; sourceTree = "<group>"; };
 		D52D5FB72FA16151006B1067 /* AppVersionModelDistributionLabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionModelDistributionLabelTests.swift; sourceTree = "<group>"; };
 		D52D5FBD2FA26DA3006B1067 /* PinningManagerFeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinningManagerFeedbackTests.swift; sourceTree = "<group>"; };
@@ -6931,7 +6932,6 @@
 		F4A6198B283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopeFeatureFlagging.swift; sourceTree = "<group>"; };
 		F511D9CB8F68D9D9B0341314 /* QuickFeedbackDiagnosticsCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFeedbackDiagnosticsCollector.swift; sourceTree = "<group>"; };
 		F72808BE3E5BF485C31627B8 /* AIChatSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsTests.swift; sourceTree = "<group>"; };
-		6AE7CA3678B14EDD94FD8D76 /* AIChatSettingsLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsLinkTests.swift; sourceTree = "<group>"; };
 		FAC0C468BD3373676AC82B61 /* DarkReaderFeatureSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkReaderFeatureSettingsTests.swift; sourceTree = "<group>"; };
 		FB1380633D7A4C9CA3AD18CD /* AutoplayPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPreferencesTests.swift; sourceTree = "<group>"; };
 		FB37FB37FB37FB37FB37FB37 /* InternalFeedbackFormTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalFeedbackFormTabExtensionTests.swift; sourceTree = "<group>"; };
@@ -19083,6 +19083,7 @@
 					CFCopyLocalizedString,
 					"\" NSLocalizedStringWithDefaultValue\"",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19097,6 +19098,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588C295CF446002C0CC0 /* UITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19104,6 +19106,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19111,6 +19114,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19118,6 +19122,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 9D02C9012CDA4A9E001A6E78 /* PIRE2ETests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19125,6 +19130,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588D295CF447002C0CC0 /* UnitTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19132,6 +19138,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58C8295CF9A7002C0CC0 /* IntegrationTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19153,6 +19160,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B6EC37FA29B6447F001ACE79 /* TestsServer.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19174,6 +19182,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19191,6 +19200,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSPrincipalClass = Application;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19205,6 +19215,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7B6EC5E52AE2D8AF004FE6DF /* DuckDuckGoDBPAgent.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19226,6 +19237,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19233,6 +19245,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19240,6 +19253,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19247,6 +19261,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19254,6 +19269,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19261,6 +19277,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19268,6 +19285,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19275,6 +19293,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Alpha;
 		};
@@ -19282,6 +19301,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19289,6 +19309,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58C8295CF9A7002C0CC0 /* IntegrationTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19296,6 +19317,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58C8295CF9A7002C0CC0 /* IntegrationTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19315,6 +19337,7 @@
 					CFCopyLocalizedString,
 					"\" NSLocalizedStringWithDefaultValue\"",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19322,6 +19345,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588D295CF447002C0CC0 /* UnitTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19329,6 +19353,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58C8295CF9A7002C0CC0 /* IntegrationTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19336,6 +19361,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19343,6 +19369,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19350,6 +19377,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19357,6 +19385,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19367,6 +19396,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSPrincipalClass = Application;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19377,6 +19407,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSPrincipalClass = Application;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19387,6 +19418,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSPrincipalClass = Application;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19397,6 +19429,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSPrincipalClass = Application;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19460,6 +19493,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19467,6 +19501,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19474,6 +19509,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19481,6 +19517,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19516,6 +19553,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588C295CF446002C0CC0 /* UITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19523,6 +19561,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588C295CF446002C0CC0 /* UITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19530,6 +19569,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588C295CF446002C0CC0 /* UITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19565,6 +19605,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 9D02C9012CDA4A9E001A6E78 /* PIRE2ETests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19572,6 +19613,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 9D02C9012CDA4A9E001A6E78 /* PIRE2ETests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19579,6 +19621,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 9D02C9012CDA4A9E001A6E78 /* PIRE2ETests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19586,6 +19629,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 9D02C9012CDA4A9E001A6E78 /* PIRE2ETests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19593,6 +19637,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7B6EC5E52AE2D8AF004FE6DF /* DuckDuckGoDBPAgent.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19600,6 +19645,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7B6EC5E52AE2D8AF004FE6DF /* DuckDuckGoDBPAgent.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19607,6 +19653,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7B6EC5E52AE2D8AF004FE6DF /* DuckDuckGoDBPAgent.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19614,6 +19661,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7B6EC5E52AE2D8AF004FE6DF /* DuckDuckGoDBPAgent.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19668,6 +19716,7 @@
 					CFCopyLocalizedString,
 					"\" NSLocalizedStringWithDefaultValue\"",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19680,6 +19729,7 @@
 					CFCopyLocalizedString,
 					"\" NSLocalizedStringWithDefaultValue\"",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19687,6 +19737,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588D295CF447002C0CC0 /* UnitTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19694,6 +19745,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588D295CF447002C0CC0 /* UnitTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19713,6 +19765,7 @@
 					CFCopyLocalizedString,
 					"\" NSLocalizedStringWithDefaultValue\"",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19720,6 +19773,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588D295CF447002C0CC0 /* UnitTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19727,6 +19781,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58C8295CF9A7002C0CC0 /* IntegrationTests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19734,6 +19789,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B588C295CF446002C0CC0 /* UITests.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};
@@ -19769,6 +19825,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B6EC37FA29B6447F001ACE79 /* TestsServer.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Debug;
 		};
@@ -19776,6 +19833,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B6EC37FA29B6447F001ACE79 /* TestsServer.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = CI;
 		};
@@ -19783,6 +19841,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B6EC37FA29B6447F001ACE79 /* TestsServer.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Release;
 		};
@@ -19790,6 +19849,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B6EC37FA29B6447F001ACE79 /* TestsServer.xcconfig */;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 			};
 			name = Review;
 		};

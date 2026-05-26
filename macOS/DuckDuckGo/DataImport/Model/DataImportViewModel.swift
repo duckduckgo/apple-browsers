@@ -104,11 +104,9 @@ struct DataImportViewModel {
     var selectedProfile: BrowserProfile?
     /// selected Data Types to import (bookmarks/passwords)
     var selectedDataTypes: Set<DataType> = []
-    /// Whether the user has explicitly toggled a data-type checkbox on this flow.
-    /// Drives source-switch behaviour in `update(with:)`: when false, switching
-    /// sources defaults to all of the new source's selectable types (so a stop
-    /// at a single-type source doesn't implicitly narrow the selection); when
-    /// true, the user's explicit selection is preserved across switches.
+    /// True once the user explicitly toggles a data-type checkbox.
+    /// Lets `update(with:)` tell user intent apart from a selection that's
+    /// just a side-effect of the current source's supported types.
     var hasUserModifiedDataTypeSelection: Bool = false
     var isPickerExpanded: Bool = false
 
@@ -918,11 +916,8 @@ extension DataImportViewModel {
             wideEvent.discardFlow(dataImportWideEventData)
             self.dataImportWideEventData = nil
         }
-        // Only forward `selectedDataTypes` if the user has explicitly toggled a
-        // checkbox. Otherwise the current selection is just a function of this
-        // source's capabilities (e.g. a password-manager source forced it to
-        // `{.passwords}`), and the next source should default to all of *its*
-        // selectable types instead of inheriting that implicit narrowing.
+        // Only carry the user's selection forward if they actually chose it.
+        // Otherwise let the new source default to its full set of types.
         self = .init(importSource: importSource,
                      selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
                      hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,

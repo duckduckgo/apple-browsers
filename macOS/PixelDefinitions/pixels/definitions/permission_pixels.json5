@@ -7,7 +7,7 @@
         "suffixes": [
             {
                 "description": "Permission type being requested",
-                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external_scheme"]
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme"]
             },
             {
                 "description": "User's decision",
@@ -23,7 +23,7 @@
         "suffixes": [
             {
                 "description": "Permission type being changed",
-                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external_scheme", "autoplay_policy"]
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme", "autoplay-policy"]
             },
             {
                 "description": "Literal 'to' separator",
@@ -52,7 +52,7 @@
         "suffixes": [
             {
                 "description": "Permission type being reset",
-                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external_scheme", "autoplay_policy"]
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme", "autoplay-policy"]
             }
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]

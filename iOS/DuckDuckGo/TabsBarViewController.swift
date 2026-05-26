@@ -577,7 +577,12 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {
-        openAIChat()
+        // Chrome button always opens Duck.ai in a new tab unless current tab is blank — matches macOS.
+        if let currentTab, currentTab.tabModel.link != nil {
+            currentTab.openNewChatInNewTab()
+        } else {
+            openAIChat()
+        }
     }
 
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {

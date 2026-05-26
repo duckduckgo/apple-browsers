@@ -326,6 +326,8 @@
 		1EEBF9102F3E16DD00DF90F3 /* WebExtensionHandlerProvider+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEBF90E2F3E16DD00DF90F3 /* WebExtensionHandlerProvider+macOS.swift */; };
 		1EF51A7C2F89407D003ED865 /* AdBlockingNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF51A7B2F89407D003ED865 /* AdBlockingNavigationHandler.swift */; };
 		1EF51A7D2F89407D003ED865 /* AdBlockingNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF51A7B2F89407D003ED865 /* AdBlockingNavigationHandler.swift */; };
+		2026FB0CABDEF00100AA00A1 /* YouTubeAdBlockPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2026FB0CABDEF00100AA00A3 /* YouTubeAdBlockPopover.swift */; };
+		2026FB0CABDEF00100AA00A2 /* YouTubeAdBlockPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2026FB0CABDEF00100AA00A3 /* YouTubeAdBlockPopover.swift */; };
 		1EFA1A072C7C7F0E0099F508 /* SubscriptionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F188267F2BBEB58100D9AC4F /* SubscriptionPixel.swift */; };
 		1EFA1A082C7C7F0F0099F508 /* SubscriptionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F188267F2BBEB58100D9AC4F /* SubscriptionPixel.swift */; };
 		20AC3AA2FB956B8B11BCA072 /* DarkReaderFeatureSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC0C468BD3373676AC82B61 /* DarkReaderFeatureSettingsTests.swift */; };
@@ -3556,6 +3558,8 @@
 		BB3A50B42EE063E700BD4BDD /* HomePageContinueSetUpModelPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3A50B22EE063E700BD4BDD /* HomePageContinueSetUpModelPersistor.swift */; };
 		BB3A50B62EE06B6800BD4BDD /* MockHomePageContinueSetUpModelPersisting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3A50B52EE06B6800BD4BDD /* MockHomePageContinueSetUpModelPersisting.swift */; };
 		BB3A50B72EE06B6800BD4BDD /* MockHomePageContinueSetUpModelPersisting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3A50B52EE06B6800BD4BDD /* MockHomePageContinueSetUpModelPersisting.swift */; };
+		BB3A50B92EE06B6800BD4BDD /* MockAdBlockingAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3A50B82EE06B6800BD4BDD /* MockAdBlockingAvailability.swift */; };
+		BB3A50BA2EE06B6800BD4BDD /* MockAdBlockingAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3A50B82EE06B6800BD4BDD /* MockAdBlockingAvailability.swift */; };
 		BB42A37A2F3A828C00598719 /* MemoryUsageIntervalReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB42A3792F3A828C00598719 /* MemoryUsageIntervalReporterTests.swift */; };
 		BB42A37B2F3A828C00598719 /* MemoryUsageIntervalReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB42A3792F3A828C00598719 /* MemoryUsageIntervalReporterTests.swift */; };
 		BB42A37D2F3A829700598719 /* MemoryUsageIntervalReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB42A37C2F3A829700598719 /* MemoryUsageIntervalReporter.swift */; };
@@ -4902,6 +4906,7 @@
 		1ED910D42B63BFB300936947 /* IdentityTheftRestorationPagesUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityTheftRestorationPagesUserScript.swift; sourceTree = "<group>"; };
 		1EEBF90E2F3E16DD00DF90F3 /* WebExtensionHandlerProvider+macOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionHandlerProvider+macOS.swift"; sourceTree = "<group>"; };
 		1EF51A7B2F89407D003ED865 /* AdBlockingNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdBlockingNavigationHandler.swift; sourceTree = "<group>"; };
+		2026FB0CABDEF00100AA00A3 /* YouTubeAdBlockPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeAdBlockPopover.swift; sourceTree = "<group>"; };
 		228E1D6E1E824085A874C175 /* RebrandedContextualOnboardingDialogs+TrySearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+TrySearch.swift"; sourceTree = "<group>"; };
 		2644631CDBDA424A80C1127B /* AppUpdater */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = AppUpdater; path = LocalPackages/AppUpdater; sourceTree = SOURCE_ROOT; };
 		31031EB62CC94C6C00684340 /* AIChatRemoteSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatRemoteSettingsTests.swift; sourceTree = "<group>"; };
@@ -6486,6 +6491,7 @@
 		BB35FFD32F742B160090410A /* QuitSurveyReturnUserHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyReturnUserHandlerTests.swift; sourceTree = "<group>"; };
 		BB3A50B22EE063E700BD4BDD /* HomePageContinueSetUpModelPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePageContinueSetUpModelPersistor.swift; sourceTree = "<group>"; };
 		BB3A50B52EE06B6800BD4BDD /* MockHomePageContinueSetUpModelPersisting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHomePageContinueSetUpModelPersisting.swift; sourceTree = "<group>"; };
+		BB3A50B82EE06B6800BD4BDD /* MockAdBlockingAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAdBlockingAvailability.swift; sourceTree = "<group>"; };
 		BB42A3792F3A828C00598719 /* MemoryUsageIntervalReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageIntervalReporterTests.swift; sourceTree = "<group>"; };
 		BB42A37C2F3A829700598719 /* MemoryUsageIntervalReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageIntervalReporter.swift; sourceTree = "<group>"; };
 		BB4339DA2C7F9606005D7ED7 /* PinnedTabsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsTests.swift; sourceTree = "<group>"; };
@@ -9403,6 +9409,7 @@
 				37D046982C7D037500AEAA50 /* CapturingUserBackgroundImagesManager.swift */,
 				37D046A32C7DAA8900AEAA50 /* ImageProcessorMock.swift */,
 				BB3A50B52EE06B6800BD4BDD /* MockHomePageContinueSetUpModelPersisting.swift */,
+				BB3A50B82EE06B6800BD4BDD /* MockAdBlockingAvailability.swift */,
 				BB8E057C2EE1A653006CD2E6 /* MockHomePageSubscriptionCardVisibilityManaging.swift */,
 				BB8E05882EE1C1FF006CD2E6 /* MockHomePageSubscriptionCardPersisting.swift */,
 			);
@@ -9481,6 +9488,7 @@
 			children = (
 				A86EE9A7B2E24D47BACF8241 /* AdBlockingAvailability.swift */,
 				1EF51A7B2F89407D003ED865 /* AdBlockingNavigationHandler.swift */,
+				2026FB0CABDEF00100AA00A3 /* YouTubeAdBlockPopover.swift */,
 				E52B37163DD93C132713AA69 /* Debug */,
 			);
 			path = AdBlocking;
@@ -15131,6 +15139,7 @@
 				37C9F78D2CF1C776004D73A1 /* PrivacyStatsTabExtension.swift in Sources */,
 				3706FB2A293F65D500E42796 /* PasswordManagerCoordinator.swift in Sources */,
 				1EF51A7D2F89407D003ED865 /* AdBlockingNavigationHandler.swift in Sources */,
+				2026FB0CABDEF00100AA00A1 /* YouTubeAdBlockPopover.swift in Sources */,
 				3706FB2B293F65D500E42796 /* PasswordManagementIdentityModel.swift in Sources */,
 				3706FB2C293F65D500E42796 /* UserDefaultsWrapper.swift in Sources */,
 				BB53CF3F2E26CEED007F0B42 /* RequestNewFeatureFormView.swift in Sources */,
@@ -16429,6 +16438,7 @@
 				3706FE65293F661700E42796 /* ContentBlockingUpdatingTests.swift in Sources */,
 				9F872D9E2B9058D000138637 /* Bookmarks+TabTests.swift in Sources */,
 				BB3A50B62EE06B6800BD4BDD /* MockHomePageContinueSetUpModelPersisting.swift in Sources */,
+				BB3A50B92EE06B6800BD4BDD /* MockAdBlockingAvailability.swift in Sources */,
 				3706FE6A293F661700E42796 /* FirefoxKeyReaderTests.swift in Sources */,
 				1DA860732BE3AE950027B813 /* DockPositionProviderTests.swift in Sources */,
 				EEC3BD272E5897300093F638 /* SyncDialogControllerTests.swift in Sources */,
@@ -17397,6 +17407,7 @@
 				F17E63352DCCDB150072B3BC /* MainViewController+LogExporter.swift in Sources */,
 				8470EAF12F10F62C009DCEB6 /* ActiveDownloadsAppTerminationDecider.swift in Sources */,
 				1EF51A7C2F89407D003ED865 /* AdBlockingNavigationHandler.swift in Sources */,
+				2026FB0CABDEF00100AA00A2 /* YouTubeAdBlockPopover.swift in Sources */,
 				4BBC16A227C485BC00E00A38 /* DeviceIdleStateDetector.swift in Sources */,
 				319FCFF32CC81D54004F9288 /* AIChatRemoteSettings.swift in Sources */,
 				84F950B92F150E3D00863D32 /* PrivacyStatsAppTerminationDecider.swift in Sources */,
@@ -18496,6 +18507,7 @@
 				37EC31512D8C19270026C348 /* CapturingFaviconImageCache.swift in Sources */,
 				561D29C22BDA745A007B91D0 /* MockSyncPausedStateManaging.swift in Sources */,
 				BB3A50B72EE06B6800BD4BDD /* MockHomePageContinueSetUpModelPersisting.swift in Sources */,
+				BB3A50BA2EE06B6800BD4BDD /* MockAdBlockingAvailability.swift in Sources */,
 				9F180D122B69C665000D695F /* DownloadsTabExtensionMock.swift in Sources */,
 				3748428A2DD767E600A96BD9 /* NewTabPageProtectionsReportSettingsMigratorTests.swift in Sources */,
 				BB027E8D2FBB4D3A009B4FE4 /* DuckAiVoiceChatShieldScopeTests.swift in Sources */,

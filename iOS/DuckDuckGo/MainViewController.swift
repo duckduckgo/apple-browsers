@@ -320,15 +320,7 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
-    private(set) lazy var adBlockingAvailability: AdBlockingAvailabilityProviding = {
-        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
-        return AdBlockingAvailability(
-            featureFlagger: featureFlagger,
-            isEnabledByUserProvider: {
-                (try? storage.value(for: \.youTubeAdBlockingEnabled)) ?? false
-            }
-        )
-    }()
+    var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
@@ -1707,7 +1699,13 @@ class MainViewController: UIViewController {
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
         // viewDidAppear fires after this function and shows the dialog, but the editing state
         // created here would immediately cover it.
-        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !daxDialogsManager.subscriptionPromotionPending {
+        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
+        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
+        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
+            && !daxDialogsManager.subscriptionPromotionPending
+            && !chatPathCompletionPending {
             omniBar.beginEditing(animated: true)
         }
 
@@ -2261,6 +2259,12 @@ class MainViewController: UIViewController {
             if let tab = currentTab {
                 refreshUnifiedToggleInput(for: tab)
             } else if let coordinator = unifiedToggleInputCoordinator, coordinator.isActive {
+                // An active omnibar session means the address bar was just activated (e.g. by
+                // launchNewSearch after a subscription promo dismissal on a tab with no VC yet).
+                // Hiding the coordinator here would tear it down before the keyboard can appear.
+                // refreshUnifiedToggleInput carries its own preserveOmnibarSession guard; mirror
+                // that protection for this nil-tab path.
+                guard !coordinator.isOmnibarSession else { return }
                 coordinator.hide()
                 coordinator.unbind()
                 viewCoordinator.hideAITabChrome()
@@ -2900,7 +2904,7 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
                 if let redirectURLComponents = notification.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents {
-                    if redirectURLComponents.path == "/subscriptions/plans" || redirectURLComponents.path == "/pro/plans" {
+                    if SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
                         deepLinkTarget = .subscriptionPlanChangeFlow(redirectURLComponents: redirectURLComponents)
                     } else {
                         deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
@@ -2908,7 +2912,7 @@ class MainViewController: UIViewController {
                 } else {
                     deepLinkTarget = .subscriptionFlow()
                 }
-                self?.launchSettings(deepLinkTarget: deepLinkTarget)
+                self?.launchSettingsForSubscriptionInterception(deepLinkTarget)
 
             }
             .store(in: &urlInterceptorCancellables)
@@ -2934,6 +2938,13 @@ class MainViewController: UIViewController {
                 }
             }
             .store(in: &urlInterceptorCancellables)
+    }
+
+    private func launchSettingsForSubscriptionInterception(_ deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection) {
+        // If Settings is already presented, launchSettings reuses its view model; trigger the deep link explicitly.
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: deepLinkTarget)
+        }, deepLinkTarget: deepLinkTarget)
     }
 
     private func subscribeToSettingsDeeplinkNotifications() {
@@ -4869,6 +4880,115 @@ extension MainViewController: TabDelegate {
         navigateToFireMode(source: .menuPromotion)
     }
 
+    func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController) {
+        setYouTubeAdBlockingEnabled(enabled)
+        if enabled {
+            tab.reload()
+        }
+    }
+
+    func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController) {
+        let view = YouTubeAdBlockPickerView { [weak self, weak tab] mode in
+            guard let self else { return }
+            switch mode {
+            case .alwaysOn:
+                self.adBlockingAvailability.clearDisableUntilRelaunch()
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingPickerAlwaysOn,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+            case .disableUntilRelaunch:
+                self.adBlockingAvailability.disableUntilRelaunch()
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingPickerDisableUntilRelaunch,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+            case .alwaysOff:
+                self.setYouTubeAdBlockingEnabled(false)
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingPickerAlwaysOff,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+            }
+            self.dismiss(animated: true) { [weak self, weak tab] in
+                switch mode {
+                case .disableUntilRelaunch, .alwaysOff:
+                    tab?.reload()
+                    self?.presentYouTubeAdBlockBreakageReport()
+                case .alwaysOn:
+                    // No-op: the picker is only reachable when ad blocking is fully enabled,
+                    // so clearDisableUntilRelaunch() above is a no-op and no reload is needed.
+                    break
+                }
+            }
+        }
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = UIColor(designSystemColor: .surface)
+        presentYouTubeAdBlockSheet(controller, grabberVisible: true)
+    }
+
+    func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController) {
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        guard (try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)) != true else { return }
+        try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
+
+        let view = YouTubeAdBlockUnavailableView(
+            onAcknowledge: { [weak self] in self?.dismiss(animated: true) },
+            onClose: { [weak self] in self?.dismiss(animated: true) }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = UIColor(designSystemColor: .surface)
+        presentYouTubeAdBlockSheet(controller)
+    }
+
+    private func presentYouTubeAdBlockBreakageReport() {
+        let view = YouTubeAdBlockBreakageReportView(
+            onSend: { [weak self] in
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingBreakageReportEntered,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                self?.dismiss(animated: true) { [weak self] in
+                    self?.segueToReportBrokenSite()
+                }
+            },
+            onCancel: { [weak self] in self?.dismiss(animated: true) }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        presentYouTubeAdBlockSheet(controller)
+    }
+
+    private func presentYouTubeAdBlockSheet<Content: View>(_ controller: UIHostingController<Content>, grabberVisible: Bool = false) {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            controller.modalPresentationStyle = .formSheet
+            let formSheetWidth: CGFloat = 540
+            let contentHeight = controller.sizeThatFits(in: CGSize(width: formSheetWidth, height: .infinity)).height
+            controller.preferredContentSize = CGSize(width: formSheetWidth, height: contentHeight)
+        } else {
+            controller.modalPresentationStyle = .pageSheet
+            if let sheet = controller.sheetPresentationController {
+                if #available(iOS 16.0, *) {
+                    let fittingWidth = self.view.bounds.width
+                    let contentHeight = controller.sizeThatFits(in: CGSize(width: fittingWidth, height: .infinity)).height
+                    sheet.detents = [.custom { _ in contentHeight }]
+                } else {
+                    sheet.detents = [.medium()]
+                }
+                sheet.prefersGrabberVisible = grabberVisible
+                if #unavailable(iOS 26) {
+                    sheet.preferredCornerRadius = 24
+                }
+            }
+        }
+        present(controller, animated: true)
+    }
+
+    private func setYouTubeAdBlockingEnabled(_ enabled: Bool) {
+        adBlockingAvailability.clearDisableUntilRelaunch()
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        let disclosureVisibleAtToggle = (try? storage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) != true
+        try? storage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+        if !enabled {
+            try? storage.set(false, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        } else if disclosureVisibleAtToggle {
+            try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        }
+        NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+    }
+
     func tabDidEngageWithPage(_ tab: TabViewController) {
         postIdleSessionInstrumentation.pageEngaged()
     }
@@ -5259,7 +5379,6 @@ extension MainViewController: TabDelegate {
 extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
-        TabSwitcherDiagnosticsOverlay.recordEvent("tabSwitcher dismissed (TSVC=\(ObjectIdentifier(tabSwitcher).debugDescription), tab \(tab == nil ? "nil" : "set"))")
         defer {
             showMenuHighlighterIfNeeded()
             applyWidth()
@@ -5468,8 +5587,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
     /// Not `private` because the UTI extension in `MainViewController+UnifiedToggleInput`
     /// calls it from another file.
     func requestTabSwitcher() {
-        TabSwitcherDiagnosticsOverlay.recordEvent("requestTabSwitcher entered (ts-ref=\(tabSwitcherController == nil ? "nil" : "live"), presentedVC=\(presentedViewController.map { "\(type(of: $0))" } ?? "nil"))")
-
         Pixel.fire(pixel: .tabBarTabSwitcherOpened,
                    withAdditionalParameters: [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue])
         var openedDailyParams = TabSwitcherOpenDailyPixel().parameters(with: tabManager.allTabsModel.tabs)
@@ -5628,7 +5745,11 @@ extension MainViewController {
         guard let window = view.window else { return }
         
         let fireButtonView: UIView?
-        if viewCoordinator.toolbar.isHidden { // This is the iPad case
+        if let utiCoordinator = unifiedToggleInputCoordinator, !utiCoordinator.aiTabFireButton.isHidden {
+            // In the AI-tab collapsed pose the fire button is the flanking pill button on the
+            // left of the UTI input bar — use it instead of the (hidden) legacy toolbar.
+            fireButtonView = utiCoordinator.aiTabFireButton
+        } else if viewCoordinator.toolbar.isHidden { // This is the iPad case
             fireButtonView = tabsBarController?.fireButton
         } else {
             fireButtonView = findFireButton()
@@ -6213,6 +6334,13 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         reportDuckAIFrontendSubmissionAcknowledged()
+    }
+
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {
+        DispatchQueue.main.async { [weak self] in
+            self?.unifiedToggleInputCoordinator?.startNewChat()
+            self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        }
     }
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {

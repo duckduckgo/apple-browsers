@@ -27,6 +27,7 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
 import SubscriptionTestingUtilities
+import WebExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
@@ -184,7 +185,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         // Trigger card list refreshes by dismissing cards
         testProvider.dismiss(.defaultApp)
-        testProvider.dismiss(.duckplayer)
+        testProvider.dismiss(.bringStuff)
         testProvider.dismiss(.emailProtection)
 
         cancellable.cancel()
@@ -247,7 +248,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         // Trigger card list refreshes by dismissing cards
         testProvider.dismiss(.defaultApp)
-        testProvider.dismiss(.duckplayer)
+        testProvider.dismiss(.bringStuff)
         appearancePreferences.isContinueSetUpCardsViewOutdated = true
         testProvider.dismiss(.emailProtection)
 
@@ -373,34 +374,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertFalse(cards.contains(.addAppToDockMac))
     }
 
-    // DuckPlayer Card
-    func testWhenDuckPlayerModeIsNilAndOverlayNotPressedThenDuckPlayerCardIsVisible() {
-        let testProvider = createProvider(
-            duckPlayerModeBool: nil,
-            youtubeOverlayAnyButtonPressed: false
-        )
-
-        let cards = testProvider.cards
-        XCTAssertTrue(cards.contains(.duckplayer))
-    }
-
-    func testWhenDuckPlayerModeIsSetThenDuckPlayerCardIsNotVisible() {
-        let testProvider = createProvider(duckPlayerModeBool: true)
-
-        let cards = testProvider.cards
-        XCTAssertFalse(cards.contains(.duckplayer))
-    }
-
-    func testWhenDuckPlayerOverlayButtonPressedThenDuckPlayerCardIsNotVisible() {
-        let testProvider = createProvider(
-            duckPlayerModeBool: nil,
-            youtubeOverlayAnyButtonPressed: true
-        )
-
-        let cards = testProvider.cards
-        XCTAssertFalse(cards.contains(.duckplayer))
-    }
-
     // Email Protection Card
     func testWhenEmailManagerNotSignedInThenEmailProtectionCardIsVisible() {
         let testProvider = createProvider(emailManagerSignedIn: false)
@@ -520,19 +493,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.addAppToDockMac))
-    }
-
-    func testWhenDuckPlayerCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
-        let testLegacyPersistor = MockHomePageContinueSetUpModelPersisting()
-        testLegacyPersistor.shouldShowDuckPlayerSetting = false
-        let testProvider = createProvider(
-            duckPlayerModeBool: nil,
-            youtubeOverlayAnyButtonPressed: false,
-            legacyPersistor: testLegacyPersistor
-        )
-
-        let cards = testProvider.cards
-        XCTAssertFalse(cards.contains(.duckplayer))
     }
 
     func testWhenEmailProtectionCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
@@ -694,7 +654,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
         testPersistor.orderedCardIDs = nil
-        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: false)
+        let testProvider = createProvider(
+            persistor: testPersistor,
+            featureFlagger: testFeatureFlagger,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true),
+            isAppStoreBuild: false
+        )
         let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards
 
         XCTAssertEqual(testProvider.cards, expectedCards)
@@ -705,7 +670,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
         testPersistor.orderedCardIDs = nil
-        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: true)
+        let testProvider = createProvider(
+            persistor: testPersistor,
+            featureFlagger: testFeatureFlagger,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true),
+            isAppStoreBuild: true
+        )
         let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards.filter { $0 != .addAppToDockMac }
 
         XCTAssertEqual(testProvider.cards, expectedCards)
@@ -715,7 +685,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testFeatureFlagger = MockFeatureFlagger()
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
-        let persistedOrder: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync]
+        let persistedOrder: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
         testPersistor.orderedCardIDs = persistedOrder
         let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: false)
         let expectedCards = persistedOrder
@@ -727,7 +697,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testFeatureFlagger = MockFeatureFlagger()
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
-        let persistedOrder: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync]
+        let persistedOrder: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
         testPersistor.orderedCardIDs = persistedOrder
         let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: true)
         let expectedCards = persistedOrder.filter { $0 != .addAppToDockMac }
@@ -752,7 +722,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let cards = testProvider.cards
         // Level 1 cards should appear before level 2 cards
         let level1Cards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection]
-        let level2Cards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription]
+        let level2Cards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .bringStuff, .subscription]
 
         let firstLevel1Index = try XCTUnwrap(cards.firstIndex(where: { level1Cards.contains($0) }))
         let firstLevel2Index = try XCTUnwrap(cards.firstIndex(where: { level2Cards.contains($0) }))
@@ -777,7 +747,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         // Level 2 cards should appear before level 1 cards after swap
         let level1Cards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection]
-        let level2Cards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription]
+        let level2Cards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .bringStuff, .subscription]
 
         let firstLevel1Index = try XCTUnwrap(cards.firstIndex(where: { level1Cards.contains($0) }))
         let firstLevel2Index = try XCTUnwrap(cards.firstIndex(where: { level2Cards.contains($0) }))
@@ -803,7 +773,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         _ = testProvider.cards
 
-        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
+        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .youtubeAdBlocking, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
 
         XCTAssertEqual(testPersistor.orderedCardIDs, expectedCards, "Order should be persisted after swap")
     }
@@ -858,7 +828,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     // MARK: - Card Ordering Tests (nextStepsListAdvancedCardOrdering disabled)
 
     @MainActor
-    func testFirstSession_WhenAdvancedOrderingDisabled_ThenDuckplayerIsFirst() {
+    func testFirstSession_WhenAdvancedOrderingDisabled_ThenCardsFollowDefaultOrder() {
         let testFeatureFlagger = MockFeatureFlagger()
         testFeatureFlagger.enabledFeatureFlags = []
 
@@ -869,7 +839,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.isEmpty, "Should have cards")
-        XCTAssertEqual(cards.first, .duckplayer, "Duckplayer should be first in first session")
+        XCTAssertEqual(cards.first, .emailProtection, "Email protection should be first in first session under default mock state (YouTube ad-blocking hidden)")
     }
 
     @MainActor
@@ -943,6 +913,39 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(testProvider.standardCards, initialCards, "Standard card order should remain the same when window becomes key")
     }
 
+    // MARK: - YouTube Ad Blocking visibility
+
+    func testWhenYTAdBlockingFeatureUnavailableThenYTAdBlockingCardIsNotVisible() {
+        let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: false, isEnabledByUser: true))
+
+        XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
+    }
+
+    func testWhenYTAdBlockingUserNotOptedInThenYTAdBlockingCardIsNotVisible() {
+        let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: false))
+
+        XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
+    }
+
+    func testWhenYTAdBlockingFullyEnabledThenYTAdBlockingCardIsVisible() {
+        let testProvider = createProvider(adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true))
+
+        XCTAssertTrue(testProvider.cards.contains(.youtubeAdBlocking))
+    }
+
+    // MARK: - YouTube Ad Blocking permanent dismissal
+
+    func testWhenYouTubeAdBlockingCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
+        let testLegacyPersistor = MockHomePageContinueSetUpModelPersisting()
+        testLegacyPersistor.shouldShowYouTubeAdBlockingSetting = false
+        let testProvider = createProvider(
+            legacyPersistor: testLegacyPersistor,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true)
+        )
+
+        XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
+    }
+
     // MARK: - Helper Functions
 
     private func createProvider(
@@ -959,6 +962,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         legacyPersistor: MockHomePageContinueSetUpModelPersisting? = nil,
         legacySubscriptionCardPersistor: MockHomePageSubscriptionCardPersisting? = nil,
         featureFlagger: MockFeatureFlagger? = nil,
+        adBlockingAvailability: MockAdBlockingAvailability? = nil,
         isFirstSession: Bool? = nil,
         isAppStoreBuild: Bool? = nil
     ) -> NewTabPageNextStepsSingleCardProvider {
@@ -1034,6 +1038,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testLegacyPersistor = legacyPersistor ?? self.legacyPersistor!
         let testLegacySubscriptionCardPersistor = legacySubscriptionCardPersistor ?? self.legacySubscriptionCardPersistor!
         let testFeatureFlagger = featureFlagger ?? self.featureFlagger!
+        let testAdBlockingAvailability = adBlockingAvailability ?? MockAdBlockingAvailability()
         let testApplicationBuildType: MockApplicationBuildType = {
             let buildType = MockApplicationBuildType()
             if let isAppStoreBuild {
@@ -1061,6 +1066,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             duckPlayerPreferences: testDuckPlayerPreferences,
             subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager,
             syncService: testSyncService,
+            adBlockingAvailability: testAdBlockingAvailability,
             applicationBuildType: testApplicationBuildType,
             scheduler: .immediate
         )
@@ -1082,7 +1088,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 }
 
 extension NewTabPageNextStepsSingleCardProvider {
-    static let defaultStandardCards: [NewTabPageDataModel.CardID] = [.duckplayer, .emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
+    static let defaultStandardCards: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
 
-    static let defaultAdvancedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection, .defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription]
+    static let defaultAdvancedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection, .defaultApp, .addAppToDockMac, .youtubeAdBlocking, .bringStuff, .subscription]
 }

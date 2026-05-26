@@ -166,7 +166,8 @@ extension NewTabPageActionsManager {
             persistor: nextStepsCardsPersistor,
             duckPlayerPreferences: duckPlayerPreferences,
             syncService: syncService,
-            dockCustomization: dockCustomization
+            dockCustomization: dockCustomization,
+            adBlockingAvailability: NSApp.delegateTyped.adBlockingAvailability
         )
         let buildType = StandardApplicationBuildType()
 

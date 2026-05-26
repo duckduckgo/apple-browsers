@@ -276,7 +276,7 @@ final class UnifiedToggleInputView: UIView {
 
     // MARK: - Attachment Callbacks
 
-    var onAttachmentRemoved: ((UUID) -> Void)?
+    var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
 
@@ -363,6 +363,9 @@ final class UnifiedToggleInputView: UIView {
         button.addTarget(self, action: #selector(fireTapped), for: .touchUpInside)
         return button
     }()
+
+    /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
+    var aiTabFireButton: UIButton { aiTabCollapsedFireButton }
 
     private lazy var aiTabCollapsedVoiceButton: UIButton = {
         let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.voice, traitCollection: traitCollection)
@@ -518,6 +521,23 @@ final class UnifiedToggleInputView: UIView {
             config.cornerStyle = .capsule
             button.configuration = config
         }
+    }
+
+    // MARK: - Onboarding
+
+    /// Dims the input bar during the fire-education onboarding step while keeping the fire button
+    /// fully visible and the text entry non-interactive.
+    func setOnboardingDimmed(_ dimmed: Bool) {
+        // Dim all direct subviews except the fire and voice accessory buttons — both are rendered
+        // at full alpha to avoid a muddy semi-transparent shadow. The voice button's disabled
+        // appearance is handled via isEnabled below.
+        subviews.filter { $0 !== aiTabCollapsedFireButton && $0 !== aiTabCollapsedVoiceButton }.forEach {
+            $0.alpha = dimmed ? 0.5 : 1
+        }
+        // Show the voice button as cleanly disabled (design-system icon tint) rather than dimmed.
+        aiTabCollapsedVoiceButton.isEnabled = !dimmed
+        // Block the text view from directly becoming first responder when the user taps the pill.
+        textEntryView.isUserInteractionEnabled = !dimmed
     }
 
     // MARK: - Fire Mode
@@ -1234,8 +1254,8 @@ private extension UnifiedToggleInputView {
             onNeedsHierarchyLayout?()
             onAttachmentsLayoutDidChange?()
         }
-        attachmentsStrip.onAttachmentRemoved = { [weak self] id in
-            self?.onAttachmentRemoved?(id)
+        attachmentsStrip.onAttachmentRemoved = { [weak self] id, attachment, isUserInitiated in
+            self?.onAttachmentRemoved?(id, attachment, isUserInitiated)
         }
         addSubview(attachmentsStrip)
 

@@ -105,7 +105,7 @@ struct UTIAttachmentPolicy {
               let maxFileSizeBytes,
               let maxTotalFileSizeBytes,
               let maxTotalFileSizeMB else {
-            return FileValidationError(reason: .sizeExceeded, message: UserText.aiChatAttachmentUnavailable)
+            return FileValidationError(reason: .other, message: UserText.aiChatAttachmentUnavailable)
         }
 
         guard model?.supportedFileTypes.contains(mimeType) == true else {

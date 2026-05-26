@@ -197,10 +197,10 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.reason, .unsupportedType)
     }
 
-    func test_fileMetadataValidationError_whenLimitsAreMissing_returnsSizeExceededReason() {
+    func test_fileMetadataValidationError_whenLimitsAreMissing_returnsOtherReason() {
         let policy = makePolicy(includeAttachmentLimits: false)
 
-        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.reason, .sizeExceeded)
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.reason, .other)
     }
 
     func test_fileMetadataValidationError_whenMimeTypeNotSupported_returnsUnsupportedTypeReason() {
@@ -477,11 +477,11 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .unsupportedType)
     }
 
-    func test_fileValidationError_whenLimitsAreMissing_returnsSizeExceededReason() {
+    func test_fileValidationError_whenLimitsAreMissing_returnsOtherReason() {
         let policy = makePolicy(includeAttachmentLimits: false)
         let file = makeFile()
 
-        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .sizeExceeded)
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .other)
     }
 
     func test_fileValidationError_whenMimeTypeNotSupported_returnsUnsupportedTypeReason() {

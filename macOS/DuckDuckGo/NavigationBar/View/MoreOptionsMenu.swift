@@ -1082,29 +1082,31 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
         // The zoom sub-menu items are copies of main menu items with a nil
         // target (they reach `MainViewController` via the responder chain),
         // so we can't use `item.target` to route the action. Instead, look up
-        // the active `TabViewModel` directly from the tab collection and call
-        // the zoom methods that own the pixel firing. Anything else falls
-        // through to the default responder-chain dispatch.
+        // the active `MainViewController` from the `WindowControllersManager`
+        // and route through its `performZoomIn/Out/ActualSize` methods so the
+        // pixel fires with the correct entry point AND the zoom popover opens
+        // — the side effect that used to come from the responder-chain
+        // dispatch. Anything else falls through to the default dispatch.
         //
         // `NSMenu.performActionForItem` isn't formally main-actor isolated but
         // is always invoked on the main thread by AppKit, so we hop onto the
-        // MainActor here to touch `selectedTabViewModel` and the TabViewModel
-        // zoom methods.
+        // MainActor here to touch `MainViewController`.
         MainActor.assumeMainThread {
             guard let item = item(at: index),
                   zoomItems.contains(item),
-                  let tabViewModel = tabCollectionViewModel?.selectedTabViewModel else {
+                  let mainViewController = Application.appDelegate.windowControllersManager
+                    .lastKeyMainWindowController?.mainViewController else {
                 super.performActionForItem(at: index)
                 return
             }
 
             switch item.action {
             case #selector(MainViewController.zoomIn(_:)):
-                tabViewModel.zoomIn(entryPoint: .menu)
+                mainViewController.performZoomIn(entryPoint: .menu)
             case #selector(MainViewController.zoomOut(_:)):
-                tabViewModel.zoomOut(entryPoint: .menu)
+                mainViewController.performZoomOut(entryPoint: .menu)
             case #selector(MainViewController.actualSize(_:)):
-                tabViewModel.resetZoom(entryPoint: .actualSize)
+                mainViewController.performActualSize(entryPoint: .actualSize)
             default:
                 super.performActionForItem(at: index)
             }

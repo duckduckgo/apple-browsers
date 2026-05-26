@@ -47,8 +47,6 @@ final class PostIdleSessionWideEventData: WideEventData {
         case appBackgrounded = "app_backgrounded"
         case favoriteSelected = "favorite_selected"
         case chatSelected = "chat_selected"
-        case closeTabTapped = "close_tab_tapped"
-        case burnTabTapped = "burn_tab_tapped"
         case tabSwitcherTapped = "tab_switcher_tapped"
     }
 
@@ -65,6 +63,8 @@ final class PostIdleSessionWideEventData: WideEventData {
     var toggleUsed: Bool
     var backPressed: Bool
     var openingScreenChanged: Bool
+    var closeTabTapped: Bool
+    var burnTabTapped: Bool
 
     init(surface: Surface,
          startedAt: Date = Date(),
@@ -73,6 +73,8 @@ final class PostIdleSessionWideEventData: WideEventData {
          toggleUsed: Bool = false,
          backPressed: Bool = false,
          openingScreenChanged: Bool = false,
+         closeTabTapped: Bool = false,
+         burnTabTapped: Bool = false,
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
          globalData: WideEventGlobalData = WideEventGlobalData()) {
@@ -84,6 +86,8 @@ final class PostIdleSessionWideEventData: WideEventData {
         self.toggleUsed = toggleUsed
         self.backPressed = backPressed
         self.openingScreenChanged = openingScreenChanged
+        self.closeTabTapped = closeTabTapped
+        self.burnTabTapped = burnTabTapped
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -118,6 +122,8 @@ extension PostIdleSessionWideEventData {
             (WideEventParameter.PostIdleSessionFeature.toggleUsed, toggleUsed),
             (WideEventParameter.PostIdleSessionFeature.backPressed, backPressed),
             (WideEventParameter.PostIdleSessionFeature.openingScreenChanged, openingScreenChanged),
+            (WideEventParameter.PostIdleSessionFeature.closeTabTapped, closeTabTapped),
+            (WideEventParameter.PostIdleSessionFeature.burnTabTapped, burnTabTapped),
         ])
     }
 }
@@ -132,5 +138,7 @@ extension WideEventParameter {
         static let toggleUsed = "feature.data.ext.toggle_used"
         static let backPressed = "feature.data.ext.back_pressed"
         static let openingScreenChanged = "feature.data.ext.opening_screen_changed"
+        static let closeTabTapped = "feature.data.ext.close_tab_tapped"
+        static let burnTabTapped = "feature.data.ext.burn_tab_tapped"
     }
 }

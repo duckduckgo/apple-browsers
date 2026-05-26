@@ -78,6 +78,8 @@ struct PostIdleSessionInstrumentationTests {
         sut.toggleUsed()
         sut.backPressed()
         sut.openingScreenChanged()
+        sut.closeTabTapped()
+        sut.burnTabTapped()
         #expect(wideEvent.updates.isEmpty)
     }
 
@@ -166,6 +168,32 @@ struct PostIdleSessionInstrumentationTests {
 
         let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
         #expect(last?.openingScreenChanged == true)
+        #expect(last?.firstInteractionInterval.end == clock.now)
+    }
+
+    @available(iOS 16, *)
+    @Test("closeTabTapped sets closeTabTapped=true and marks first interaction", .timeLimit(.minutes(1)))
+    func closeTabTappedSetsFlagAndFirstInteraction() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(surface: .ntp)
+        clock.advance(by: 0.5)
+        sut.closeTabTapped()
+
+        let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
+        #expect(last?.closeTabTapped == true)
+        #expect(last?.firstInteractionInterval.end == clock.now)
+    }
+
+    @available(iOS 16, *)
+    @Test("burnTabTapped sets burnTabTapped=true and marks first interaction", .timeLimit(.minutes(1)))
+    func burnTabTappedSetsFlagAndFirstInteraction() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(surface: .ntp)
+        clock.advance(by: 0.75)
+        sut.burnTabTapped()
+
+        let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
+        #expect(last?.burnTabTapped == true)
         #expect(last?.firstInteractionInterval.end == clock.now)
     }
 

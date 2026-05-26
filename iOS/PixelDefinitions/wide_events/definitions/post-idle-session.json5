@@ -26,8 +26,6 @@
                             "app_backgrounded",
                             "favorite_selected",
                             "chat_selected",
-                            "close_tab_tapped",
-                            "burn_tab_tapped",
                             "tab_switcher_tapped",
                             "app_terminated"
                         ]
@@ -57,6 +55,14 @@
                     "opening_screen_changed": {
                         "type": "boolean",
                         "description": "True if the user changed the Opening Screen option from the escape hatch's settings menu during the session"
+                    },
+                    "close_tab_tapped": {
+                        "type": "boolean",
+                        "description": "True if the user closed the open tab from the escape hatch's menu during the session"
+                    },
+                    "burn_tab_tapped": {
+                        "type": "boolean",
+                        "description": "True if the user burned the open tab from the escape hatch's menu during the session"
                     }
                 }
             }

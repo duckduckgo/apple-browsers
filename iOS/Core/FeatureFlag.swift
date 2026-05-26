@@ -115,6 +115,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214085808544002
     case dbpFreemiumPIR
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215031617586670
+    case dbpContentBlocking
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -410,6 +413,10 @@ public enum FeatureFlag: String {
     /// Failsafe feature flag. Routes tapped .ics calendar links through EKEventEditViewController.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214740849233380
     case icsCalendarLinks
+
+    /// Gates the Duck.ai shortcut in the iPad browser chrome (tabs bar).
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
+    case aiChatChromeShortcutIPad
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -522,6 +529,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.continuedProcessing))
         case .dbpFreemiumPIR:
             Config(source: .remoteReleasable(DBPSubfeature.freemiumPIR))
+        case .dbpContentBlocking:
+            Config(source: .remoteReleasable(DBPSubfeature.contentBlocking))
         case .crashReportOptInStatusResetting:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting), supportsLocalOverriding: false)
         case .syncSeamlessAccountSwitching:
@@ -716,6 +725,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
         case .icsCalendarLinks:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.icsCalendarLinks))
+        case .aiChatChromeShortcutIPad:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         }
     }
 

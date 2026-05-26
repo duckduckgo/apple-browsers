@@ -14,7 +14,7 @@
                 "enum": ["allow", "deny"]
             }
         ],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_permission_center_changed": {
         "description": "Fired when user changes a permission decision in the Permission Center dropdown",
@@ -37,6 +37,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "from",
                 "type": "string",
@@ -67,6 +68,6 @@
                 "enum": ["camera", "microphone", "geolocation", "notification"]
             }
         ],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

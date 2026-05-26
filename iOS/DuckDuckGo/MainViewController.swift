@@ -937,6 +937,7 @@ class MainViewController: UIViewController {
         controller.historyManager = historyManager
         controller.fireproofing = fireproofing
         controller.aiChatSettings = aiChatSettings
+        controller.featureFlagger = featureFlagger
         controller.keyValueStore = keyValueStore
         controller.tabManager = tabManager
         controller.daxDialogsManager = daxDialogsManager
@@ -1628,7 +1629,7 @@ class MainViewController: UIViewController {
         tabModel.viewed = true
         tabModel.openedAfterIdle = openedAfterIdle
         if shouldSaveTabs {
-            _ = tabManager.save()
+            tabManager.save()
         }
 
         let newTabDaxDialogFactory = NewTabDaxDialogsProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
@@ -1663,7 +1664,7 @@ class MainViewController: UIViewController {
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
-        
+
         if hasCompletedInitialLoad {
             lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
         }
@@ -2094,7 +2095,7 @@ class MainViewController: UIViewController {
         let shouldSaveTabs = tab.tabModel.viewed == false
         tab.tabModel.viewed = true
         if shouldSaveTabs {
-            _ = tabManager.save()
+            tabManager.save()
         }
 
         if tab.link == nil {
@@ -4999,7 +5000,7 @@ extension MainViewController: TabDelegate {
         guard currentTab == tab else { return }
         refreshControls()
         themeColorManager.updateThemeColor()
-        _ = tabManager.save()
+        tabManager.save()
         refreshTabBar()
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
@@ -5009,7 +5010,7 @@ extension MainViewController: TabDelegate {
         // For the current tab, `tabLoadingStateDidChange` (called immediately before this)
         // already triggers a save, so skip here to avoid a redundant save in the same run loop.
         guard currentTab != tab else { return }
-        _ = tabManager.save()
+        tabManager.save()
         tabsBarController?.reloadCell(for: tab.tabModel)
     }
 
@@ -5467,6 +5468,7 @@ extension MainViewController: TabSwitcherDelegate {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
             case .fire:
+                fireModePromotionEligibility?.markBurnPerformed()
                 request = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .tabSwitcher)
             case .normal:
                 request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)
@@ -5555,7 +5557,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
             ntpAfterIdleInstrumentation.tabSwitcherSelectedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        tabManager.currentTabsModel.currentTab?.openedAfterIdle = false
+        // Don't clear `openedAfterIdle` on switcher open — the after-idle session
+        // ends on actual tab transition (see `transitionTo`), not on peeking.
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()
@@ -5615,6 +5618,13 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
+
+        // This needs to be done before the fire burning process starts or the race condition
+        //  results in the promo not showing at the expected time.
+        if request.trigger == .manualFire {
+            fireModePromotionEligibility?.markBurnPerformed()
+        }
+
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         
@@ -5918,10 +5928,6 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
-        if fireRequest.trigger == .manualFire {
-            fireModePromotionEligibility?.markBurnPerformed()
-        }
-
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {

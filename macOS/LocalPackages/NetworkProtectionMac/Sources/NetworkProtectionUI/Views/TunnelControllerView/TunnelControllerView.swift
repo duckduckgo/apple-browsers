@@ -225,7 +225,7 @@ public struct TunnelControllerView: View {
                             }
                         }
                     }
-                    
+
                     if isHovered {
                         Text(model.plainLocation)
                             .applyLocationAttributes()

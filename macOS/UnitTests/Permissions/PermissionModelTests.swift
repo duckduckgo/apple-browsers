@@ -524,7 +524,7 @@ final class PermissionModelTests: XCTestCase {
             XCTAssertEqual(decision, .grant)
             e.fulfill()
         }
-        
+
         wait(for: [queryExpectation], timeout: 1)
         XCTAssertEqual(model.permissions, [.geolocation: .requested(model.authorizationQuery!)])
         e = expectation(description: "permission granted")
@@ -876,7 +876,7 @@ final class PermissionModelTests: XCTestCase {
         webView.setCameraCaptureStateHandler = { _ in
             XCTFail("Unexpected call")
         }
-        
+
         model.set(.microphone, muted: true)
         waitForExpectations(timeout: 0)
         self.webView.cameraCaptureState = .muted
@@ -888,7 +888,7 @@ final class PermissionModelTests: XCTestCase {
     func testWhenCameraIsMutedThenSetMediaCaptureMutedIsCalled() {
         self.webView.cameraCaptureState = .active
         self.webView.microphoneCaptureState = .active
-        
+
         let e = expectation(description: "camera muted")
         webView.setMicCaptureStateHandler = { _ in
             XCTFail("Unexpected call")
@@ -897,7 +897,7 @@ final class PermissionModelTests: XCTestCase {
             e.fulfill()
             XCTAssertEqual($0, false)
         }
-        
+
         model.set(.camera, muted: true)
         waitForExpectations(timeout: 0)
     }

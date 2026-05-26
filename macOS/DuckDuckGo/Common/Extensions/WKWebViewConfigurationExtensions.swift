@@ -43,7 +43,7 @@ extension WKWebViewConfiguration {
 
         allowsAirPlayForMediaPlayback = true
         preferences.isElementFullscreenEnabled = true
-        
+
         if !NSApp.isSandboxed {
             preferences[.allowsPictureInPictureMediaPlayback] = true
         }

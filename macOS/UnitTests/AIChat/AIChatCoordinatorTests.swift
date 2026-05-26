@@ -1130,6 +1130,8 @@ class MockAIChatTabOpener: AIChatTabOpening {
             break
         case .mode:
             break
+        case .openSettings:
+            break
         }
 
         openMethodCalledExpectation?.fulfill()

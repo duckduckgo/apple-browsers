@@ -128,11 +128,24 @@ struct Launching: LaunchingHandling {
             }
         )
 
-        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(featureFlagger: featureFlagger)
+        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(
+            featureFlagger: featureFlagger,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
         let fireModeStorageController = FireModeNativeStorageController(
             featureFlagger: featureFlagger,
             consentSeedSource: duckAiNativeStorageHandler,
-            appConfigurationGroupName: Global.appConfigurationGroupName
+            appConfigurationGroupName: Global.appConfigurationGroupName,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
+        let adBlockingAvailabilityStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
+        let adBlockingAvailability: AdBlockingAvailabilityProviding = AdBlockingAvailability(
+            featureFlagger: featureFlagger,
+            isEnabledByUserProvider: { [featureFlagger] in
+                (try? adBlockingAvailabilityStorage.value(for: \.youTubeAdBlockingEnabled))
+                    ?? featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+            }
         )
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
@@ -145,7 +158,8 @@ struct Launching: LaunchingHandling {
                                                             keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                            fireModeStorageController: fireModeStorageController)
+                                                            fireModeStorageController: fireModeStorageController,
+                                                            adBlockingAvailability: adBlockingAvailability)
 
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
@@ -372,12 +386,47 @@ struct Launching: LaunchingHandling {
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
     }
 
-    private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger) -> DuckAiNativeStorageHandling? {
-        guard featureFlagger.isFeatureOn(.aiChatNativeStorage),
-              let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) else {
-            return nil
+    private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger,
+                                                 keyValueStore: ThrowingKeyValueStoring) -> DuckAiNativeStorageHandling? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeStorage) else { return nil }
+
+        let containerURL: URL
+        if featureFlagger.isFeatureOn(.duckAINativeStoragePathMigration) {
+            guard let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+                return nil
+            }
+            containerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
+
+            if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
+                let outcome = DuckAiNativeStorageContainerMigration(
+                    oldURL: groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName),
+                    newURL: containerURL,
+                    migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
+                    label: .default,
+                    keyValueStore: keyValueStore,
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                ).run()
+                if outcome == .skip {
+                    return nil
+                }
+            }
+
+            DuckAiNativeStorageContainerMigration.excludeFromBackup(containerURL,
+                                                                    label: .default,
+                                                                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter())
+        } else {
+            // Path migration disabled: keep the legacy App Group container.
+            guard let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) else {
+                return nil
+            }
+            containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
         }
-        let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
+
+        let dbURL = containerURL.appendingPathComponent("chats.db")
+        if !FileManager.default.fileExists(atPath: dbURL.path) {
+            Logger.aiChat.info("[NativeStorage] DB does not exist yet, will be created at: \(dbURL.path)")
+        }
+
         do {
             return try DuckAiNativeStorageHandler(
                 .disk(path: containerURL,

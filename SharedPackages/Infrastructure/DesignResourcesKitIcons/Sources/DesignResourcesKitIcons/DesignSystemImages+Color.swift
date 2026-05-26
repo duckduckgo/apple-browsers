@@ -300,6 +300,7 @@ public extension DesignSystemImages {
             }
             public static var networkProtectionVPN: DesignSystemImage { .init(resource: .networkProtectionVPN128) }
             public static var networkProtectionVPNDisabled: DesignSystemImage { .init(resource: .networkProtectionVPNDisabled128) }
+            public static var youTubeAdBlockWarning: DesignSystemImage { .init(resource: .youTubeWarningFeature128) }
         }
     }
 }

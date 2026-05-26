@@ -47,6 +47,7 @@ struct VoiceEntryPointPixelTests {
         #expect(VoiceEntryPointSource.controlCenter.rawValue == "widget.controlcenter")
         #expect(VoiceEntryPointSource.lockscreenComplication.rawValue == "widget.lockscreen.complication")
         #expect(VoiceEntryPointSource.quickActions.rawValue == "widget.quickactions")
+        #expect(VoiceEntryPointSource.quickActionsMedium.rawValue == "widget.quickactions.medium")
         #expect(VoiceEntryPointSource.siri.rawValue == "siri")
     }
 }

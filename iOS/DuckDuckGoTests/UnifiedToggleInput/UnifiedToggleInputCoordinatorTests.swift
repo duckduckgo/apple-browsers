@@ -134,6 +134,39 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.textState, .empty)
     }
 
+    // MARK: - Onboarding Lock
+
+    func test_showExpanded_whenOnboardingLocked_doesNotChangeDisplayState() {
+        sut.setOnboardingControlsLocked(true)
+        sut.showExpanded()
+        XCTAssertNotEqual(sut.displayState, .aiTab(.expanded),
+                          "showExpanded must be a no-op while the onboarding lock is active")
+    }
+
+    func test_showExpanded_whenOnboardingLocked_doesNotEmitIntent() {
+        let exp = expectation(description: "showExpanded intent must not be emitted when locked")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { if case .showExpanded = $0 { exp.fulfill() } }
+            .store(in: &cancellables)
+
+        sut.setOnboardingControlsLocked(true)
+        sut.showExpanded()
+
+        waitForExpectations(timeout: 0.3)
+    }
+
+    func test_showExpanded_afterUnlocking_changesDisplayState() {
+        sut.setOnboardingControlsLocked(true)
+        sut.showExpanded()
+        XCTAssertNotEqual(sut.displayState, .aiTab(.expanded))
+
+        sut.setOnboardingControlsLocked(false)
+        sut.showExpanded()
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded),
+                       "Unlocking must restore normal showExpanded behaviour")
+    }
+
     // MARK: - Display State: hide
 
     func test_hide_setsDisplayState() {
@@ -1091,6 +1124,41 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         toolsController.toggleSelection(for: .webSearch, modelStore: sut.modelStore)
 
         XCTAssertNil(toolsController.selectedTool)
+    }
+
+    func test_handleToolsMenuSelection_selectsWebSearchTool() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.handleToolsMenuSelection(.webSearch)
+
+        XCTAssertEqual(sut.selectedTool, .webSearch)
+        XCTAssertEqual(sut.viewController.selectedTool, .webSearch)
+    }
+
+    func test_handleToolsMenuSelection_togglesOffSelectedWebSearchTool() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleToolsMenuSelection(.webSearch)
+
+        sut.handleToolsMenuSelection(.webSearch)
+
+        XCTAssertNil(sut.selectedTool)
+        XCTAssertNil(sut.viewController.selectedTool)
+    }
+
+    func test_handleToolsMenuSelection_replacesPreviousToolSelection() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch, .imageGeneration])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleToolsMenuSelection(.webSearch)
+
+        sut.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
     }
 
     func test_updateSelectedModel_clearsSelectedToolWhenNewModelDoesNotSupportIt() {

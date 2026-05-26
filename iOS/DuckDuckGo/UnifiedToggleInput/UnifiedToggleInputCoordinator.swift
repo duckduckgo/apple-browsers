@@ -1851,9 +1851,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
     }
 
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment) {
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment, isUserInitiated: Bool) {
         removeAttachment(id: id)
-        UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment)
+        if isUserInitiated {
+            UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment)
+        }
     }
 
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController) {

@@ -30,7 +30,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     }
 
     private(set) var attachments: [UnifiedToggleInputAttachment] = []
-    var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment) -> Void)?
+    var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
 
     private let scrollView: UIScrollView = {
@@ -83,7 +83,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         onAttachmentsChanged?()
     }
 
-    func removeAttachment(id: UUID) {
+    func removeAttachment(id: UUID, isUserInitiated: Bool = false) {
         guard let index = attachments.firstIndex(where: { $0.id == id }) else { return }
         let removedAttachment = attachments[index]
         attachments.remove(at: index)
@@ -92,7 +92,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
             stackView.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
-        onAttachmentRemoved?(id, removedAttachment)
+        onAttachmentRemoved?(id, removedAttachment, isUserInitiated)
         onAttachmentsChanged?()
     }
 
@@ -130,7 +130,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     private func makeThumbnail(for attachment: UnifiedToggleInputAttachment) -> UnifiedToggleInputAttachmentThumbnailView {
         let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
         thumbnail.onRemove = { [weak self] id in
-            self?.removeAttachment(id: id)
+            self?.removeAttachment(id: id, isUserInitiated: true)
         }
         return thumbnail
     }

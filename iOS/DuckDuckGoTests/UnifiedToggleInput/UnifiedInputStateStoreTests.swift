@@ -108,33 +108,47 @@ final class UnifiedInputStateStoreTests: XCTestCase {
     func test_recordUserChoice_writesThroughToggleModeToStorage() {
         var state = TabInputState()
         state.toggleMode = .aiChat
-        sut.recordUserChoice(state, for: "tab-1")
+        sut.recordUserChoice(state, for: "tab-1", isNewChatContext: true)
         XCTAssertEqual(toggleStorage.stored, .aiChat)
-    }
-
-    func test_recordUserChoice_writesThroughSelectedModelIDToPreferences() {
-        var state = TabInputState()
-        state.selectedModelID = "claude-opus"
-        sut.recordUserChoice(state, for: "tab-1")
-        XCTAssertEqual(preferences.selectedModelId, "claude-opus")
     }
 
     func test_recordUserChoice_writesThroughReasoningModeToPreferences() {
         var state = TabInputState()
         state.selectedReasoningMode = .reasoning
-        sut.recordUserChoice(state, for: "tab-1")
+        sut.recordUserChoice(state, for: "tab-1", isNewChatContext: true)
         XCTAssertEqual(preferences.selectedReasoningMode, .reasoning)
     }
 
-    func test_recordUserChoice_updatesLastUsed() {
+    func test_recordUserChoice_doesNotWriteSelectedModelIdToPreferences() {
+        var state = TabInputState()
+        state.selectedModelID = "claude-opus"
+        sut.recordUserChoice(state, for: "tab-1", isNewChatContext: true)
+        XCTAssertNil(preferences.selectedModelId)
+    }
+
+    func test_recordUserChoice_onNewChat_updatesLastUsed() {
         var state = TabInputState()
         state.toggleMode = .aiChat
         state.selectedModelID = "claude-opus"
         state.selectedTool = .webSearch
-        sut.recordUserChoice(state, for: "tab-1")
+        sut.recordUserChoice(state, for: "tab-1", isNewChatContext: true)
         XCTAssertEqual(sut.lastUsed.toggleMode, .aiChat)
         XCTAssertEqual(sut.lastUsed.selectedModelID, "claude-opus")
         XCTAssertEqual(sut.lastUsed.selectedTool, .webSearch)
+    }
+
+    func test_recordUserChoice_onOngoingChat_preservesLastUsedModel() {
+        var newChat = TabInputState()
+        newChat.selectedModelID = "haiku"
+        sut.recordUserChoice(newChat, for: "tab-A", isNewChatContext: true)
+        XCTAssertEqual(sut.lastUsed.selectedModelID, "haiku")
+
+        var ongoing = TabInputState()
+        ongoing.selectedModelID = "mistral"
+        sut.recordUserChoice(ongoing, for: "tab-A", isNewChatContext: false)
+
+        XCTAssertEqual(sut.lastUsed.selectedModelID, "haiku",
+                       "an ongoing-chat pick must not retarget the new-tab seed")
     }
 
     // Regression for the new-tab inheritance bug: tab-flush after a user choice in another
@@ -142,7 +156,7 @@ final class UnifiedInputStateStoreTests: XCTestCase {
     func test_update_afterRecordUserChoiceElsewhere_preservesLastUsed() {
         var deliberateA = TabInputState()
         deliberateA.selectedModelID = "user-picked-A"
-        sut.recordUserChoice(deliberateA, for: "tab-A")
+        sut.recordUserChoice(deliberateA, for: "tab-A", isNewChatContext: true)
 
         // Simulate a tab-switch flush of an unrelated, never-deliberately-chosen tab.
         var driftB = TabInputState()
@@ -225,7 +239,8 @@ final class UnifiedInputStateStoreTests: XCTestCase {
 
         sut.recordUserChoice(
             TabInputState(toggleMode: .aiChat, selectedModelID: "claude-opus", selectedReasoningMode: .reasoning),
-            for: "writeback"
+            for: "writeback",
+            isNewChatContext: true
         )
 
         XCTAssertEqual(tab.unifiedInputState.selectedModelID, "claude-opus")
@@ -247,7 +262,8 @@ final class UnifiedInputStateStoreTests: XCTestCase {
 
         sut.recordUserChoice(
             TabInputState(toggleMode: .aiChat, selectedModelID: nil, selectedReasoningMode: nil),
-            for: "clear-mirror"
+            for: "clear-mirror",
+            isNewChatContext: true
         )
 
         XCTAssertNil(tab.unifiedInputState.selectedModelID)

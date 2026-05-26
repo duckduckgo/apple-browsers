@@ -444,7 +444,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToDuckAIWideEventSignals()
         viewController.isToolsButtonHidden = true
 
-        if let cachedLabel = modelStore.preferences.selectedModelShortName {
+        if let cachedLabel = modelStore.displayShortName {
             viewController.modelName = cachedLabel
         }
 
@@ -552,7 +552,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return
         }
         Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: loaded model '\(modelID, privacy: .public)'")
-        modelStore.updateSelectedModel(modelID)
+        modelStore.updateSelectedModel(modelID, isNewChatContext: false)
         handleModelsUpdated()
     }
 
@@ -667,7 +667,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// preference homes so other components (e.g. NTP omnibar) observe the change.
     private func recordUserChoiceToStore() {
         guard !isApplyingState, !isPerformingDismissCleanup, let uid = currentTabUID else { return }
-        stateStore.recordUserChoice(snapshotCurrentState(), for: uid)
+        stateStore.recordUserChoice(snapshotCurrentState(), for: uid, isNewChatContext: isNewChatContext)
+    }
+
+    private var isNewChatContext: Bool {
+        !hasSubmittedPrompt
     }
 
     private func clearStoreEntryAfterSubmission() {
@@ -678,7 +682,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cleared.text = ""
         cleared.attachments = []
         cleared.selectedTool = nil
-        stateStore.recordUserChoice(cleared, for: uid)
+        stateStore.recordUserChoice(cleared, for: uid, isNewChatContext: false)
         Logger.unifiedInputState.debug("submission cleared store text + attachments + tool for tab [\(uid)]")
     }
 
@@ -1332,7 +1336,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateSelectedModel(_ modelId: String) {
-        modelStore.updateSelectedModel(modelId)
+        modelStore.updateSelectedModel(modelId, isNewChatContext: isNewChatContext)
         handleModelsUpdated()
         recordUserChoiceToStore()
     }
@@ -1573,7 +1577,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let shortName = modelMenuFactory.selectedShortName(models: modelStore.models, selectedId: selectedId)
         if let shortName {
             viewController.modelName = shortName
-            modelStore.cacheSelectedModelShortName(shortName)
         }
         viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
             models: modelStore.models,

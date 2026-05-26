@@ -1408,6 +1408,64 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedModelId, "gpt-5")
     }
 
+    // MARK: - Model Selection: new-chat vs ongoing-chat picks
+
+    func test_updateSelectedModel_onNewChat_writesPreferredModelToPreferences() {
+        sut.modelStore.models = [makeModel(id: "haiku", access: true)]
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+
+        sut.updateSelectedModel("haiku")
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
+    }
+
+    func test_updateSelectedModel_afterPromptSubmitted_doesNotChangePreferredModel() {
+        sut.modelStore.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.updateSelectedModel("mistral")
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku",
+                       "ongoing-chat picks must not retarget the cross-platform new-chat default")
+        XCTAssertEqual(sut.modelStore.currentModelId, "mistral",
+                       "ongoing-chat pick still updates the live current-tab model")
+    }
+
+    func test_updateSelectedModel_onExistingChatBoundTab_doesNotChangePreferredModel() {
+        sut.modelStore.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.updateSelectedModel("mistral")
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
+    }
+
+    func test_persistedModelId_fallsBackToPreferredModel_onFreshTabActivation() {
+        sut.modelStore.models = [
+            makeModel(id: "gpt-5", access: true),
+            makeModel(id: "haiku", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        sut.modelStore.applyPersistedSelection(modelID: nil, reasoningMode: nil)
+
+        XCTAssertEqual(sut.persistedModelId, "haiku",
+                       "opening a new tab should return to the user's last new-chat pick")
+    }
+
     func test_handleModelSelection_whenModelHasAccess_persistsToPreferences() {
         sut.modelStore.models = [makeModel(id: "plus-model", access: true, accessTier: ["plus"])]
 
@@ -2358,11 +2416,11 @@ private final class FakeInputStateStore: UnifiedInputStateStoring {
         states[uid] = state
     }
 
-    func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID, isNewChatContext: Bool) {
         states[uid] = state
         lastUsedDefaults = LastUsedInputDefaults(
             toggleMode: state.toggleMode,
-            selectedModelID: state.selectedModelID,
+            selectedModelID: isNewChatContext ? state.selectedModelID : lastUsedDefaults.selectedModelID,
             selectedReasoningMode: state.selectedReasoningMode,
             selectedTool: state.selectedTool
         )

@@ -64,16 +64,15 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         Logger.unifiedInputState.debug("update flush for tab [\(uid)]: \(state.summary)")
     }
 
-    func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID, isNewChatContext: Bool) {
         states[uid] = state
         trackedLastUsed = LastUsedInputDefaults(
             toggleMode: state.toggleMode,
-            selectedModelID: state.selectedModelID,
+            selectedModelID: isNewChatContext ? state.selectedModelID : trackedLastUsed.selectedModelID,
             selectedReasoningMode: state.selectedReasoningMode,
             selectedTool: state.selectedTool
         )
         toggleModeStorage.save(state.toggleMode)
-        preferences.selectedModelId = state.selectedModelID
         preferences.selectedReasoningMode = state.selectedReasoningMode
         preferences.selectedTool = state.selectedTool
 
@@ -84,7 +83,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             inputState.selectedTool = state.selectedTool
             tab.unifiedInputState = inputState
         }
-        Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)]: \(state.summary)")
+        Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)] (newChat=\(isNewChatContext)): \(state.summary)")
     }
 
     func remove(for uid: TabUID) {

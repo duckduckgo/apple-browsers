@@ -54,6 +54,11 @@ enum AIChatOpenTrigger {
     /// must route to a specific flow based on the mode — same mechanism image-generation submissions use.
     /// - Parameter mode: The mode string forwarded in the native prompt payload (e.g. `AIChatNativePrompt.voiceMode`).
     case mode(String)
+
+    /// Opens duck.ai in a new tab and arms the user script to push the open-settings
+    /// action once the page's subscriptions are wired. Used by Settings → AI Features →
+    /// "Open Duck.ai Settings".
+    case openSettings
 }
 
 /// Protocol defining the interface for opening AI chat tabs.
@@ -145,6 +150,9 @@ struct AIChatTabOpener: AIChatTabOpening {
             let prompt = AIChatNativePrompt.queryPrompt("", autoSubmit: false, mode: mode)
             promptHandler.setData(prompt)
             aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true)
+
+        case .openSettings:
+            aiChatTabManaging.insertAIChatTabRequestingOpenSettings(with: aiChatRemoteSettings.aiChatURL)
         }
     }
 
@@ -197,6 +205,12 @@ protocol AIChatTabManaging {
     @MainActor
     func insertAIChatTab(with url: URL, restorationData: AIChatRestorationData)
 
+    /// Inserts a new Duck.ai tab and arms its `AIChatUserScript` to push the open-settings
+    /// action once the page's subscriptions are wired. Used by Settings → AI Features →
+    /// "Open Duck.ai Settings".
+    @MainActor
+    func insertAIChatTabRequestingOpenSettings(with url: URL)
+
     /// If a tab in `sourceCollection`'s window currently hosts an active Duck.ai voice session,
     /// focuses that window and selects the tab. When the original session was hosted in a Duck.ai
     /// sidebar, also surfaces the sidebar so the user lands on the in-progress voice UI.
@@ -247,6 +261,13 @@ extension WindowControllersManager: AIChatTabManaging {
         guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
         let newAIChatTab = Tab(content: .url(url, source: .ui), burnerMode: tabCollectionViewModel.burnerMode)
         newAIChatTab.aiChat?.setAIChatRestorationData(restorationData)
+        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
+    }
+
+    func insertAIChatTabRequestingOpenSettings(with url: URL) {
+        guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+        let newAIChatTab = Tab(content: .url(url, source: .ui), burnerMode: tabCollectionViewModel.burnerMode)
+        newAIChatTab.aiChat?.requestOpenSettings()
         tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
     }
 

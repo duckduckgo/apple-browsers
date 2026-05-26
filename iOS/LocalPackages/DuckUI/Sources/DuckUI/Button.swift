@@ -46,35 +46,42 @@ private struct PrimaryButtonColors {
         text: Color(designSystemColor: .buttonsWhite),
         textDisabled: Color(designSystemColor: .buttonsWhite).opacity(0.36)
     )
+
+    static let rebrandedPrimary = PrimaryButtonColors(
+        standard: Color(singleUseColor: .rebranding(.accentPrimary)),
+        pressed: Color(designSystemColor: .buttonsPrimaryPressed),
+        disabled: Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.36),
+        text: .white,
+        textDisabled: Color.white.opacity(0.36)
+    )
+
+    static let rebrandedDestructive = PrimaryButtonColors(
+        standard: Color(designSystemColor: .destructivePrimary),
+        pressed: Color(designSystemColor: .buttonsDestructivePrimaryPressed),
+        disabled: Color(designSystemColor: .destructivePrimary).opacity(0.36),
+        text: Color(designSystemColor: .buttonsWhite),
+        textDisabled: Color(designSystemColor: .buttonsWhite).opacity(0.36)
+    )
 }
 
 // MARK: - Typography helpers
-//
-// All button typography is Dynamic-Type-aware: the font is built from a
-// `TextStyle`, the frame uses `minHeight` (not `maxHeight`) so the button
-// grows with the label, and `.dynamicTypeSize(...accessibility3)` caps
-// runaway growth at the third accessibility step (a common UX cap).
 
 private extension View {
-    /// Cap Dynamic Type growth so button layouts don't break at the largest
-    /// accessibility sizes. Apply once per ButtonStyle body.
+    /// Caps Dynamic Type at `.accessibility3` so button layouts stay readable.
     func ddgButtonDynamicTypeCap() -> some View {
         dynamicTypeSize(...DynamicTypeSize.accessibility3)
     }
 }
 
 private func legacyButtonFont() -> Font {
-    // Bold subheadline; scales with Dynamic Type via `daxButton()`.
     Font(UIFont.daxButton())
 }
 
 private func rebrandedButtonFont(compact: Bool) -> Font {
-    // Figma "iOS Buttons" specifies SF Pro Medium 17pt (Large) / 15pt (Small).
-    // 17pt = `.body` default at .large Dynamic Type; 15pt = `.subheadline`.
     .system(compact ? .subheadline : .body).weight(.medium)
 }
 
-// MARK: - Legacy body builder
+// MARK: - Body builders
 
 @ViewBuilder
 private func makeLegacyPrimaryBody(
@@ -100,12 +107,6 @@ private func makeLegacyPrimaryBody(
         .cornerRadius(Consts.legacyCornerRadius)
         .ddgButtonDynamicTypeCap()
 }
-
-// MARK: - Rebranded body builder
-//
-// New design language: pill shape (Capsule), SF Pro Medium typography, larger 17pt label
-// for non-compact buttons (15pt for compact). Heights and tokens unchanged.
-// See Figma "Mobile - New Design Language" → "iOS Buttons" (node 888:58029).
 
 @ViewBuilder
 private func makeRebrandedPrimaryBody(
@@ -172,7 +173,7 @@ public struct PrimaryButtonStyle: ButtonStyle {
         if AppRebrand.isAppRebranded() {
             makeRebrandedPrimaryBody(
                 configuration: configuration,
-                colors: .primary,
+                colors: .rebrandedPrimary,
                 disabled: disabled,
                 compact: compact,
                 fullWidth: fullWidth
@@ -229,7 +230,7 @@ public struct PrimaryDestructiveButtonStyle: ButtonStyle {
         if AppRebrand.isAppRebranded() {
             makeRebrandedPrimaryBody(
                 configuration: configuration,
-                colors: .destructive,
+                colors: .rebrandedDestructive,
                 disabled: disabled,
                 compact: compact,
                 fullWidth: fullWidth
@@ -247,10 +248,6 @@ public struct PrimaryDestructiveButtonStyle: ButtonStyle {
 }
 
 // MARK: - Secondary Destructive
-//
-// Legacy: red 1pt stroke + transparent background.
-// Rebrand: "Destructive Secondary" — filled with the control-primary background token
-// and red text. The outline is dropped to match the new pill language.
 
 public struct SecondaryDestructiveButtonStyleLegacy: ButtonStyle {
     let disabled: Bool
@@ -313,12 +310,9 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
 
     private func rebrandedBody(configuration: Configuration) -> some View {
         let destructiveColor = Color(designSystemColor: .destructivePrimary)
-        // 0.36 alpha is applied exactly once via the foreground colour. A second
-        // view-wide `.opacity(0.36)` would multiply with this and dim the label
-        // to ~0.13, making disabled text nearly invisible.
         let foregroundColor = disabled ? destructiveColor.opacity(0.36) : destructiveColor
-        let backgroundColor = Color(designSystemColor: .controlsFillSecondary)
-        let pressedBackgroundColor = Color(designSystemColor: .controlsFillPrimary)
+        let backgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryDefault))
+        let pressedBackgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryPressed))
 
         return configuration.label
             .fixedSize(horizontal: false, vertical: true)
@@ -336,10 +330,8 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Secondary (deprecated)
+// MARK: - Secondary (deprecated, prefer SecondaryWireButtonStyle)
 
-// This style seems to be deprecated - you probably want to use SecondaryWireButtonStyle.
-// Reach out to designers.
 public struct SecondaryButtonStyleLegacy: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -395,9 +387,7 @@ public struct SecondaryButtonStyle: ButtonStyle {
     }
 
     private func rebrandedBody(configuration: Configuration) -> some View {
-        // Rebranded behaviour aligns with the design's "Ghost" treatment:
-        // transparent background, accent-primary label, pill hit area.
-        let accent = Color(designSystemColor: .accent)
+        let accent = Color(singleUseColor: .rebranding(.accentPrimary))
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(configuration.isPressed ? accent.opacity(Consts.pressedOpacity) : accent)
@@ -476,13 +466,11 @@ public struct SecondaryFillButtonStyle: ButtonStyle {
     }
 
     private func rebrandedBody(configuration: Configuration) -> some View {
-        let standardBackgroundColor = Color(designSystemColor: .buttonsSecondaryFillDefault)
-        let pressedBackgroundColor = Color(designSystemColor: .buttonsSecondaryFillPressed)
-        let disabledBackgroundColor = Color(designSystemColor: .buttonsSecondaryFillDisabled)
-        let defaultForegroundColor = Color(designSystemColor: .buttonsSecondaryFillText)
-        let disabledForegroundColor = Color(designSystemColor: .buttonsSecondaryFillTextDisabled)
-        let backgroundColor = disabled ? disabledBackgroundColor : standardBackgroundColor
-        let foregroundColor = disabled ? disabledForegroundColor : defaultForegroundColor
+        let standardBackgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryDefault))
+        let pressedBackgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryPressed))
+        let defaultForegroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryText))
+        let backgroundColor = disabled ? standardBackgroundColor.opacity(0.36) : standardBackgroundColor
+        let foregroundColor = disabled ? defaultForegroundColor.opacity(0.36) : defaultForegroundColor
 
         return configuration.label
             .fixedSize(horizontal: false, vertical: true)
@@ -520,7 +508,7 @@ public struct GhostButtonStyleLegacy: ButtonStyle {
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
             .background(backgroundColor(configuration.isPressed))
             .cornerRadius(Consts.legacyCornerRadius)
-            .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
+            .contentShape(Rectangle())
             .ddgButtonDynamicTypeCap()
     }
 
@@ -563,11 +551,12 @@ public struct GhostButtonStyle: ButtonStyle {
     }
 
     private func foregroundColor(_ isPressed: Bool) -> Color {
-        isPressed ? Color(designSystemColor: .buttonsGhostTextPressed) : Color(designSystemColor: .buttonsGhostText)
+        let accent = Color(singleUseColor: .rebranding(.accentPrimary))
+        return isPressed ? accent.opacity(Consts.pressedOpacity) : accent
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {
-        isPressed ? Color(designSystemColor: .buttonsGhostPressedFill) : .clear
+        isPressed ? Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.2) : .clear
     }
 }
 
@@ -589,7 +578,7 @@ public struct GhostAltButtonStyleLegacy: ButtonStyle {
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
             .background(backgroundColor(configuration.isPressed))
             .cornerRadius(Consts.legacyCornerRadius)
-            .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
+            .contentShape(Rectangle())
             .ddgButtonDynamicTypeCap()
     }
 
@@ -618,7 +607,7 @@ public struct GhostAltButtonStyle: ButtonStyle {
     private func rebrandedBody(configuration: Configuration) -> some View {
         configuration.label
             .font(rebrandedButtonFont(compact: compact))
-            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .foregroundColor(Color(singleUseColor: .rebranding(.textSecondary)))
             .padding()
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(backgroundColor(configuration.isPressed))
@@ -628,27 +617,18 @@ public struct GhostAltButtonStyle: ButtonStyle {
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {
-        isPressed ? Color(UIColor(designSystemColor: .controlsFillPrimary)) : .clear
+        isPressed ? Color(singleUseColor: .rebranding(.controlsFillPrimary)) : .clear
     }
 }
 
 // MARK: - Constants
 
 private enum Consts {
-    // Legacy
     static let legacyCornerRadius: CGFloat = 12
     static let legacyHeight: CGFloat = 50
-
-    // Rebranded (Figma "New Design Language" iOS Buttons).
-    // Font sizes are encoded via SwiftUI text styles in `rebrandedButtonFont(compact:)`
-    // (`.subheadline` ~15 pt, `.body` ~17 pt at default Dynamic Type) and are not held
-    // as numeric constants here.
     static let rebrandedHeightLarge: CGFloat = 50
     static let rebrandedHeightSmall: CGFloat = 40
-
-    // Shared
     static let pressedOpacity: CGFloat = 0.7
-    static let ghostPressedBackgroundOpacity: CGFloat = 0.09
 }
 
 // MARK: - Previews
@@ -660,10 +640,6 @@ private struct ButtonStylesGallery: View {
 
     init(isRebranded: Bool) {
         self.isRebranded = isRebranded
-        // Set before `body` evaluates so the ButtonStyles' `makeBody`
-        // reads the correct value on the first render. `.onAppear` fires
-        // too late — the buttons would already have rendered with the
-        // previous singleton value.
         AppRebrand.isAppRebranded = { isRebranded }
     }
 

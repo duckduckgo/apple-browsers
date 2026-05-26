@@ -147,6 +147,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         configureGestures()
         enableInteractionsWithPointer()
         registerForAIChatSettingsChanges()
+        registerForFeatureFlagChanges()
     }
 
     private func setUpSubviews() {
@@ -189,6 +190,16 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         NotificationCenter.default.publisher(for: .aiChatSettingsChanged)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.updateAIChatButtonVisibility()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func registerForFeatureFlagChanges() {
+        // Picks up internal-debug toggles of `aiChatChromeShortcutIPad` while the tabs bar is on screen.
+        featureFlagger?.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
                 self?.updateAIChatButtonVisibility()
             }
             .store(in: &cancellables)

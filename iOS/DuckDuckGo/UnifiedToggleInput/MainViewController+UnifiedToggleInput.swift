@@ -56,6 +56,11 @@ extension MainViewController {
     }
 
     func setUpUnifiedToggleInputIfNeeded() {
+        // Defer setup until linear onboarding has completed, so that any experiment
+        // cohort enrollment that happens during onboarding is reflected in
+        // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
+        // Returning users (who skip linear onboarding) fall through immediately.
+        guard !needsToShowOnboardingIntro() else { return }
         guard unifiedToggleInputFeature.isAvailable else { return }
 
         let aiChatPreferences = AIChatPreferencesPersistor()
@@ -76,6 +81,7 @@ extension MainViewController {
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
             stateStore: stateStore,
+            syncService: syncService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
         )
         coordinator.delegate = self
@@ -162,10 +168,15 @@ extension MainViewController {
     /// standard browser controls while searching. Idempotent; safe with the feature flag off.
     func reconcileToolbarVisibilityForCurrentTab() {
         let isFocusedOmnibarSession = unifiedToggleInputCoordinator?.isOmnibarSession == true
+        let wasHidden = viewCoordinator.toolbar.isHidden
         if isCurrentTabUsingUnifiedInputAIChrome && !isFocusedOmnibarSession {
             viewCoordinator.toolbar.isHidden = true
         } else {
             viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
+        }
+        // `toolbarBottom.constant` is derived from `isHidden`; recompute when it flips.
+        if wasHidden != viewCoordinator.toolbar.isHidden {
+            setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
         }
     }
 
@@ -484,21 +495,15 @@ private extension MainViewController {
     private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
         if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
-            applyVoiceSessionTransition(active: active, to: coordinator)
+            coordinator.isVoiceSessionActive = active
             return
         }
         guard let stateStore = unifiedInputStateStore else { return }
         let current = stateStore.state(for: controller.tabModel.uid)
-        let updated = current.applyingVoiceSessionTransition(active: active)
+        var updated = current
+        updated.isVoiceSessionActive = active
         if updated != current {
             stateStore.update(updated, for: controller.tabModel.uid)
-        }
-    }
-
-    private func applyVoiceSessionTransition(active: Bool, to coordinator: UnifiedToggleInputCoordinator) {
-        coordinator.isVoiceSessionActive = active
-        if !active, coordinator.aiChatInputBoxVisibility == .hidden {
-            coordinator.aiChatInputBoxVisibility = .visible
         }
     }
 
@@ -568,11 +573,13 @@ private extension MainViewController {
         let hasExistingChat = tabURL?.duckAIChatID != nil
         bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: hasExistingChat)
         // Assert input-hidden synchronously for voice-mode tabs so the bottom chrome doesn't
-        // flash visible during the FE's "Connecting…" window. The FE's `hideChatInput` is
-        // idempotent over this. Persisted per tab in `TabInputState`.
-        if tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested {
+        // flash visible during the FE's "Connecting…" window. One-shot intent — consume the
+        // flag here so later refreshes (e.g. AI→AI navigation taking the preserve-current
+        // path) don't re-hide the UTI after the FE has shown it.
+        if tab.isVoiceModeRequested, coordinator.aiChatInputBoxVisibility != .hidden {
             coordinator.aiChatInputBoxVisibility = .hidden
         }
+        tab.isVoiceModeRequested = false
         // Before the early-return so AI→AI tab transitions (`preserveCurrentPresentation`) also
         // override the `UIView`-default-visible borders on a freshly-bound tab.
         tab.borderView.isTopVisible = false
@@ -584,9 +591,6 @@ private extension MainViewController {
             syncPreservedAITabPresentation(coordinator: coordinator)
             return false
         }
-
-        // Clear after the link==nil bridge so an in-flight voice request survives the transient.
-        tab.isVoiceModeRequested = false
         ensureStandardChromeVisibleForAITabRefresh()
         tab.webView.scrollView.contentInset = .zero
         // We're swapping into AI-tab layout, not dismissing the omnibar in place.
@@ -682,7 +686,15 @@ private extension MainViewController {
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.tabSwitcherButton.delegate = self
-        headerView.tabSwitcherButton.showMenuOnLongPress = fireModeCapability.isFireModeEnabled
+        // Catch touches at the most upstream point — before UIControl tracking, before any
+        // gesture recognizer can cancel the tap. Surfaces the unresponsive-tab-switcher
+        // diagnostic even when `.touchUpInside` never fires (which is the bug we're hunting).
+        headerView.tabSwitcherButton.onTouchDown = { [weak self] in
+            guard let self else { return }
+            if TabSwitcherDiagnosticsOverlay.recordTapAndShouldShow() {
+                TabSwitcherDiagnosticsOverlay.show(from: self)
+            }
+        }
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),
@@ -1138,6 +1150,11 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {
         unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(mode)
+    }
+
+    func unifiedInputEditingStateDidRequestSyncSetup() {
+        unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
+        segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.aiChatPromotion)
     }
 }
 

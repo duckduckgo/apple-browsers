@@ -188,6 +188,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141
     case blurryAddressBarTahoeFix
 
+    /// Prevents IME composition-confirm Return from submitting the address bar.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214960575971803?focus=true
+    case addressBarIMEConfirmFix
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477623612
     case dataImportNewExperience
 
@@ -538,6 +542,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
+        case .addressBarIMEConfirmFix:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addressBarIMEConfirmFix))
         case .dataImportNewExperience:
             Config(source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
         case .attributedMetrics:

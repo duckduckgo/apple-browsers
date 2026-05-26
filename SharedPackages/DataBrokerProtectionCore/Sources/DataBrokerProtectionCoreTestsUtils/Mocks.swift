@@ -2065,7 +2065,6 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isRemoteBrokerDeliveryFeatureOn: Bool
     public let isEmailConfirmationDecouplingFeatureOn: Bool
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
-    public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
     public let isFreemiumPIREnabled: Bool
@@ -2073,14 +2072,12 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
                 isEmailConfirmationDecouplingFeatureOn: Bool = false,
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
-                isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true,
                 isContinuedProcessingFeatureOn: Bool = true,
                 isWebViewUserAgentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
-        self.isForegroundRunningWhenDashboardOpenFeatureOn = isForegroundRunningWhenDashboardOpenFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
         self.isFreemiumPIREnabled = isFreemiumPIREnabled

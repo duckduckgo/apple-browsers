@@ -30,7 +30,6 @@ public protocol EmailConfirmationDecouplingFeatureFlagging {
 
 public protocol ForegroundRunningFeatureFlagging {
     var isForegroundRunningOnAppActiveFeatureOn: Bool { get }
-    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool { get }
 }
 
 public protocol ContinuedProcessingFeatureFlagging {

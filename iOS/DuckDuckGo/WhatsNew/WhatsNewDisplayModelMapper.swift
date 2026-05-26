@@ -67,12 +67,18 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
                 case let .titledSection(titleText, _):
                     return RemoteMessagingUI.CardsListDisplayModel.Item.section(title: titleText)
                     // Map Featured Two Lines Card Item
-                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, _, primaryActionText, primaryAction):
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, imageUrl, primaryActionText, primaryAction):
+                    let imageLoading = makeCardImageLoading(itemId: remoteListItem.id, imageUrl: imageUrl, message: message)
                     let featuredTwoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.FeaturedTwoLinesCard(
                         icon: placeholderImage.rawValue,
                         title: titleText,
                         description: descriptionText,
                         actionButtonTitle: primaryActionText,
+                        preloadedImage: imageLoading.preloadedImage,
+                        imageUrl: imageUrl,
+                        loadImage: imageLoading.loadImage,
+                        onImageLoadSuccess: imageLoading.onLoadSuccess,
+                        onImageLoadFailed: imageLoading.onLoadFailed,
                         onAppear: {
                             onItemAppear(remoteListItem.id)
                         },
@@ -82,13 +88,19 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
                     )
                     return RemoteMessagingUI.CardsListDisplayModel.Item.featuredTwoLinesCard(featuredTwoLinesCard)
                     // Map Two Lines Card Item
-                case let .twoLinesItem(titleText, descriptionText, placeholderImage, _, action):
+                case let .twoLinesItem(titleText, descriptionText, placeholderImage, imageUrl, action):
                     let disclosureIcon = action != nil ? Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall) : nil
+                    let imageLoading = makeCardImageLoading(itemId: remoteListItem.id, imageUrl: imageUrl, message: message)
                     let twoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.TwoLinesCard(
                         icon: placeholderImage.rawValue,
                         title: titleText,
                         description: descriptionText,
                         disclosureIcon: disclosureIcon,
+                        preloadedImage: imageLoading.preloadedImage,
+                        imageUrl: imageUrl,
+                        loadImage: imageLoading.loadImage,
+                        onImageLoadSuccess: imageLoading.onLoadSuccess,
+                        onImageLoadFailed: imageLoading.onLoadFailed,
                         onAppear: {
                             onItemAppear(remoteListItem.id)
                         },
@@ -146,6 +158,40 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
     }
 
     // MARK: - Private
+
+    private struct CardImageLoading {
+        let preloadedImage: UIImage?
+        let loadImage: ((URL) async throws -> UIImage)?
+        let onLoadSuccess: (() -> Void)?
+        let onLoadFailed: (() -> Void)?
+    }
+
+    private func makeCardImageLoading(itemId: String, imageUrl: URL?, message: RemoteMessageModel) -> CardImageLoading {
+        guard let imageUrl else {
+            return CardImageLoading(preloadedImage: nil, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
+        }
+
+        let preloadedImage: UIImage? = imageLoader?.cachedImage(for: imageUrl)
+
+        if preloadedImage != nil {
+            pixelReporter?.measureRemoteMessageCardImageLoadSuccess(message, cardId: itemId)
+            return CardImageLoading(preloadedImage: preloadedImage, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
+        }
+
+        let loadImage: ((URL) async throws -> UIImage)? = imageLoader.map { loader in
+            { url in try await loader.loadImage(from: url) }
+        }
+        return CardImageLoading(
+            preloadedImage: nil,
+            loadImage: loadImage,
+            onLoadSuccess: { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageCardImageLoadSuccess(message, cardId: itemId)
+            },
+            onLoadFailed: { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageCardImageLoadFailed(message, cardId: itemId)
+            }
+        )
+    }
 
     // For actions without ID (primary action)
     private func makeAction(

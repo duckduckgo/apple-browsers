@@ -123,4 +123,26 @@ final class MockRemoteMessagingPixelReporter: RemoteMessagingPixelReporting {
         capturedImageLoadFailedMessage = remoteMessage
     }
 
+    // MARK: - Card Image Load Success
+    var didCallMeasureRemoteMessageCardImageLoadSuccess = false
+    var capturedCardImageLoadSuccessMessage: RemoteMessageModel?
+    var capturedCardImageLoadSuccessCardId: String?
+
+    func measureRemoteMessageCardImageLoadSuccess(_ remoteMessage: RemoteMessageModel, cardId: String) {
+        didCallMeasureRemoteMessageCardImageLoadSuccess = true
+        capturedCardImageLoadSuccessMessage = remoteMessage
+        capturedCardImageLoadSuccessCardId = cardId
+    }
+
+    // MARK: - Card Image Load Failed
+    var didCallMeasureRemoteMessageCardImageLoadFailed = false
+    var capturedCardImageLoadFailedMessage: RemoteMessageModel?
+    var capturedCardImageLoadFailedCardId: String?
+
+    func measureRemoteMessageCardImageLoadFailed(_ remoteMessage: RemoteMessageModel, cardId: String) {
+        didCallMeasureRemoteMessageCardImageLoadFailed = true
+        capturedCardImageLoadFailedMessage = remoteMessage
+        capturedCardImageLoadFailedCardId = cardId
+    }
+
 }

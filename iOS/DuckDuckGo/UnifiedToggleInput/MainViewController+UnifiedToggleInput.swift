@@ -1192,25 +1192,12 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         onMenuPressed()
     }
 
-    /// Minimize the chat tab — switch focus to the previously-positioned tab without closing
-    /// this one. Chats are preserved in Recent chats regardless of tab state, so destroying
-    /// the tab here would be redundant; use the fire button to actually clear chat data.
-    /// Falls back to the first existing home (NTP) tab, or creates one if none exists.
+    /// Close the chat tab and land on the new tab page. Reuses an existing NTP if there is one,
+    /// otherwise creates a fresh one. Tab-switcher isn't the intended re-entry path back to a
+    /// chat — Recent chats covers the full chat history regardless of tab state.
     func aiChatTabChatHeaderDidTapClose() {
-        let model = tabManager.currentTabsModel
-        if let currentIndex = model.currentIndex, currentIndex > 0,
-           let previousTab = model.get(tabAt: currentIndex - 1) {
-            selectTab(previousTab)
-            return
-        }
-        if let homeTab = tabManager.firstHomeTab() {
-            selectTab(homeTab)
-            return
-        }
-        tabManager.addHomeTab()
-        if let homeTab = tabManager.firstHomeTab() {
-            selectTab(homeTab)
-        }
+        guard let tab = currentTab?.tabModel else { return }
+        closeTab(tab, behavior: .createOrReuseEmptyTab)
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {

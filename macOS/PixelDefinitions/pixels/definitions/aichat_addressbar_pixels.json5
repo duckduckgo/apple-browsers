@@ -236,7 +236,7 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_recent_chat_delete_button_clicked": {
         "description": "Fired when user clicks the delete button on a recent chat suggestion in the address bar",

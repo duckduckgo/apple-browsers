@@ -31,6 +31,7 @@ import WebKit
 protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
+    var canDispatchBridgeMessages: Bool { get }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
@@ -59,14 +60,16 @@ protocol AIChatContentHandlingDelegate: AnyObject {
     /// Called when the content handler receives a request to close the AIChat interface.
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler: AIChatContentHandling)
 
-    /// Called when the user explicitly ends a voice session via the X button — the host should close the originating tab.
-    func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling)
-
     /// Called when the content handler receives a request to open Sync settings.
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling)
 
     /// Called when the user submits a prompt.
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling)
+
+    /// Called when the frontend signals that a new chat was created (via the `userDidCreateNewChat` metric).
+    /// Fires for both the native new-chat button and the in-webview sidebar's "New Chat" — the FE is the
+    /// single source of truth so the host can reset UTI state once, on the actual transition.
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling)
 
     /// Called when the frontend requests page context (`getAIChatPageContext`), signaling it has initialized and registered its JS message handlers.
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling)
@@ -109,6 +112,11 @@ protocol AIChatContentHandling: AnyObject {
 
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
     func fireAIChatTelemetry()
+
+    /// True when the underlying user script is bound to both a web view and a broker. Read
+    /// immediately before a `submitPrompt` call to capture whether the bridge dispatch will
+    /// actually reach the frontend.
+    var canDispatchBridgeMessages: Bool { get }
 }
 
 extension AIChatContentHandling {
@@ -119,7 +127,7 @@ extension AIChatContentHandling {
 
 extension AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {}
-    func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling) {}
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {}
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {}
 }
 
@@ -237,6 +245,10 @@ final class AIChatContentHandler: AIChatContentHandling {
         updatingNativeInputParameterIfNeeded(in: AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL))
     }
 
+    var canDispatchBridgeMessages: Bool {
+        userScript?.canDispatchBridgeMessages ?? false
+    }
+
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         if let context = pageContext {
             Logger.aiChat.debug("[PageContext] Prompt submitted with context - title: \(context.title.prefix(50))")
@@ -302,10 +314,10 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             delegate?.aiChatContentHandlerDidReceiveOpenSettingsRequest(self)
         case .closeAIChat:
             delegate?.aiChatContentHandlerDidReceiveCloseChatRequest(self)
-        case .voiceSessionUserEnded:
-            delegate?.aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(self)
         case .sendToSyncSettings, .sendToSetupSync:
             delegate?.aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(self)
+        case .newChatStarted:
+            delegate?.aiChatContentHandlerDidReceiveNewChatCreated(self)
         default:
             break
         }

@@ -847,7 +847,7 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        // Coordinator handles state transitions
+        webViewController?.notifyFrontendPromptSubmissionAcknowledged()
     }
 
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {
@@ -1094,5 +1094,18 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension AIChatContextualSheetViewController {
+
+    func notifySheetDismissed() {
+        webViewController?.notifySheetDismissed()
+    }
+
+    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
+        webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
 }

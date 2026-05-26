@@ -73,6 +73,7 @@ extension RebrandedComparisonTableModel {
         Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.blockTrackers, competitorAvailability: .partial, ddgAvailability: .available),
         Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.blockCookies, competitorAvailability: .unavailable, ddgAvailability: .available),
         Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.blockAds, competitorAvailability: .unavailable, ddgAvailability: .available),
+        Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.blockYouTubeAds, competitorAvailability: .unavailable, ddgAvailability: .available),
     ]
 
 }
@@ -85,6 +86,7 @@ extension RebrandedComparisonTableModel.Feature {
         case blockTrackers
         case blockCookies
         case blockAds
+        case blockYouTubeAds
         case eraseData
 
         var title: String {
@@ -99,6 +101,8 @@ extension RebrandedComparisonTableModel.Feature {
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopups
             case .blockAds:
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.creepyAds
+            case .blockYouTubeAds:
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.duckplayer
             case .eraseData:
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.eraseBrowsingData
             }
@@ -116,6 +120,8 @@ extension RebrandedComparisonTableModel.Feature {
                 OnboardingRebrandingImages.Comparison.blockCookiesIcon
             case .blockAds:
                 OnboardingRebrandingImages.Comparison.blockAdsIcon
+            case .blockYouTubeAds:
+                OnboardingRebrandingImages.Comparison.blockYouTubeAdsIcon
             case .eraseData:
                 OnboardingRebrandingImages.Comparison.eraseDataIcon
             }

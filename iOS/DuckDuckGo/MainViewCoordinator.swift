@@ -258,7 +258,11 @@ class MainViewCoordinator {
         if !constraints.navigationBarContainerBottom.isActive {
             constraints.navigationBarContainerBottom.isActive = true
         }
-        setNavBarContainerBottomToKeyboard()
+        // Hidden toolbars keep their 49pt frame in auto layout — pinning the UTI above an
+        // invisible toolbar (landscape minimal chrome) would leave a toolbar-sized gap, so
+        // fall back to the safe-area floor when there's no visible toolbar to respect.
+        let floor: NSLayoutYAxisAnchor? = toolbar.isHidden ? nil : toolbar.topAnchor
+        setNavBarContainerBottomToKeyboard(floorAnchor: floor)
     }
 
 
@@ -501,7 +505,7 @@ class MainViewCoordinator {
         }
     }
 
-    func setNavBarContainerBottomToKeyboard() {
+    func setNavBarContainerBottomToKeyboard(floorAnchor: NSLayoutYAxisAnchor? = nil) {
         constraints.navigationBarContainerBottom.isActive = false
         constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
 
@@ -510,9 +514,13 @@ class MainViewCoordinator {
         constraints.navigationBarContainerBottom.priority = .defaultHigh
         constraints.navigationBarContainerBottom.isActive = true
 
-        // Prevent the nav bar from going below safe area when keyboard is hidden
+        // Cap how far the nav bar can follow the keyboard guide down. Default floor is the
+        // safe-area bottom (AI tab — toolbar is hidden, so the UTI is meant to sit at the
+        // screen bottom). Callers anchored above a visible toolbar pass `toolbar.topAnchor`
+        // so the UTI doesn't slide over the toolbar when the keyboard is dragged off-screen.
+        let floor = floorAnchor ?? superview.safeAreaLayoutGuide.bottomAnchor
         let safeAreaFloor = navigationBarContainer.bottomAnchor
-            .constraint(lessThanOrEqualTo: superview.safeAreaLayoutGuide.bottomAnchor)
+            .constraint(lessThanOrEqualTo: floor)
         safeAreaFloor.isActive = true
         constraints.navigationBarContainerBottomSafeAreaFloor = safeAreaFloor
 

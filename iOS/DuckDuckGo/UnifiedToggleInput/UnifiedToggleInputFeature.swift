@@ -30,6 +30,13 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
     private static let isFeatureFlagEnabledKey = "com.duckduckgo.unifiedToggleInput.session.enabled"
 
+    private static let controlCohortID = FeatureFlag.DuckAIQueryExperimentCohort.control.rawValue
+
+    private static let nonControlCohortExcludedExperimentIDs: Set<SubfeatureID> = [
+        AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+        AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue,
+    ]
+
     /// Evaluate the feature flag once and persist the result for the session.
     /// Must be called early in the app launch sequence, before any consumer
     /// reads `isAvailable`, so that every component sees the same value.
@@ -38,9 +45,12 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
         UserDefaults.app.set(enabled, forKey: isFeatureFlagEnabledKey)
     }
 
+    private let featureFlagger: FeatureFlagger
     private let devicePlatform: DevicePlatformProviding.Type
 
-    init(devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+        self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
     }
 
@@ -49,6 +59,15 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
     }
 
     var isAvailable: Bool {
-        isFeatureFlagEnabled && devicePlatform.isIphone
+        isFeatureFlagEnabled && devicePlatform.isIphone && !isInExcludedExperimentCohort
+    }
+
+    private var isInExcludedExperimentCohort: Bool {
+        Self.nonControlCohortExcludedExperimentIDs.contains { experimentID in
+            guard let cohortID = featureFlagger.allActiveExperiments[experimentID]?.cohortID else {
+                return false
+            }
+            return cohortID != Self.controlCohortID
+        }
     }
 }

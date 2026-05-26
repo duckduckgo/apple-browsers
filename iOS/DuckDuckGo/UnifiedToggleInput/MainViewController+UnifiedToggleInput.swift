@@ -1192,12 +1192,19 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         onMenuPressed()
     }
 
-    /// Close the chat tab and land on the new tab page. Reuses an existing NTP if there is one,
-    /// otherwise creates a fresh one. Tab-switcher isn't the intended re-entry path back to a
-    /// chat — Recent chats covers the full chat history regardless of tab state.
+    /// Close the chat view by navigating to the new tab page. The chat tab itself is preserved
+    /// in the tab list — the canonical way back into a chat is via Duck.ai → Recent chats, which
+    /// covers the full chat history regardless of tab state, not the tab switcher. Reuses an
+    /// existing NTP if one exists, otherwise creates a fresh one.
     func aiChatTabChatHeaderDidTapClose() {
-        guard let tab = currentTab?.tabModel else { return }
-        closeTab(tab, behavior: .createOrReuseEmptyTab)
+        if let homeTab = tabManager.firstHomeTab() {
+            selectTab(homeTab)
+            return
+        }
+        tabManager.addHomeTab()
+        if let homeTab = tabManager.firstHomeTab() {
+            selectTab(homeTab)
+        }
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {

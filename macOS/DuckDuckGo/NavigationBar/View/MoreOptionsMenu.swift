@@ -57,9 +57,6 @@ protocol OptionsButtonMenuDelegate: AnyObject {
     func optionsButtonMenuRequestedSubscriptionPreferences(_ menu: NSMenu)
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu)
     func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu)
-    func optionsButtonMenuRequestedZoomIn(_ menu: NSMenu)
-    func optionsButtonMenuRequestedZoomOut(_ menu: NSMenu)
-    func optionsButtonMenuRequestedActualSize(_ menu: NSMenu)
 }
 
 final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
@@ -1079,37 +1076,6 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
         addItem(globalZoomSettingItem)
 
         zoomItems = [zoomInItem, zoomOutItem, actualSizeItem]
-    }
-
-    override func performActionForItem(at index: Int) {
-        // The zoom sub-menu items are copies of main menu items with a nil
-        // target, so we can't route via `item.target`. Forward to the parent
-        // `MoreOptionsMenu`'s `actionDelegate` instead — it owns the
-        // navigation-bar context (selected tab, zoom popover) needed to
-        // perform the action.
-        //
-        // `NSMenu.performActionForItem` isn't formally main-actor isolated
-        // but is always invoked on the main thread by AppKit, so we hop onto
-        // the MainActor here to touch the delegate.
-        MainActor.assumeMainThread {
-            guard let item = item(at: index),
-                  zoomItems.contains(item),
-                  let delegate = (supermenu as? MoreOptionsMenu)?.actionDelegate else {
-                super.performActionForItem(at: index)
-                return
-            }
-
-            switch item.action {
-            case #selector(MainViewController.zoomIn(_:)):
-                delegate.optionsButtonMenuRequestedZoomIn(self)
-            case #selector(MainViewController.zoomOut(_:)):
-                delegate.optionsButtonMenuRequestedZoomOut(self)
-            case #selector(MainViewController.actualSize(_:)):
-                delegate.optionsButtonMenuRequestedActualSize(self)
-            default:
-                super.performActionForItem(at: index)
-            }
-        }
     }
 
     private var zoomItems: [NSMenuItem] = []

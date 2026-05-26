@@ -2202,20 +2202,6 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.printWebView(self)
     }
 
-    func optionsButtonMenuRequestedZoomIn(_ menu: NSMenu) {
-        tabCollectionViewModel.selectedTabViewModel?.zoomIn(entryPoint: .menu)
-        addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
-    }
-
-    func optionsButtonMenuRequestedZoomOut(_ menu: NSMenu) {
-        tabCollectionViewModel.selectedTabViewModel?.zoomOut(entryPoint: .menu)
-        addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
-    }
-
-    func optionsButtonMenuRequestedActualSize(_ menu: NSMenu) {
-        tabCollectionViewModel.selectedTabViewModel?.resetZoom(entryPoint: .actualSize)
-    }
-
     func optionsButtonMenuRequestedPreferences(_ menu: NSMenu) {
         Application.appDelegate.windowControllersManager.showPreferencesTab()
     }

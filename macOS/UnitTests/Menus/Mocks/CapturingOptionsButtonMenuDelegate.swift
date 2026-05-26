@@ -116,20 +116,4 @@ class CapturingOptionsButtonMenuDelegate: OptionsButtonMenuDelegate {
     func optionsButtonMenuRequestedAccessibilityPreferences(_ menu: NSMenu) {
         optionsButtonMenuRequestedAccessibilityPreferencesCalled = true
     }
-
-    var optionsButtonMenuRequestedZoomInCalled = false
-    var optionsButtonMenuRequestedZoomOutCalled = false
-    var optionsButtonMenuRequestedActualSizeCalled = false
-
-    func optionsButtonMenuRequestedZoomIn(_ menu: NSMenu) {
-        optionsButtonMenuRequestedZoomInCalled = true
-    }
-
-    func optionsButtonMenuRequestedZoomOut(_ menu: NSMenu) {
-        optionsButtonMenuRequestedZoomOutCalled = true
-    }
-
-    func optionsButtonMenuRequestedActualSize(_ menu: NSMenu) {
-        optionsButtonMenuRequestedActualSizeCalled = true
-    }
 }

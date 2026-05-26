@@ -2126,6 +2126,11 @@
 		CB6D17892FA2106100ECD5AE /* DuckAIURLSuggestionsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17882FA2106100ECD5AE /* DuckAIURLSuggestionsLoader.swift */; };
 		CB6D178B2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D178A2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift */; };
 		CB6D178D2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D178C2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift */; };
+		CB6D17B02FA2138200ECD5AE /* AIChatSyncPromoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */; };
+		CB6D17B42FB000000ECD5AE /* AIChatSyncPromoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */; };
+		CB6D17B72FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */; };
+		CB6D17B82FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B92FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift */; };
+		CB6D17B22FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */; };
 		CB6D178F2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D178E2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift */; };
 		CB6D17912FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */; };
 		CB6D17972FA232E000ECD5AE /* Suggestion+URLFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17962FA232E000ECD5AE /* Suggestion+URLFilter.swift */; };
@@ -4780,6 +4785,11 @@
 		CB6D17882FA2106100ECD5AE /* DuckAIURLSuggestionsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIURLSuggestionsLoader.swift; sourceTree = "<group>"; };
 		CB6D178A2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIURLSuggestionsLoaderTests.swift; sourceTree = "<group>"; };
 		CB6D178C2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsViewController.swift; sourceTree = "<group>"; };
+		CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoView.swift; sourceTree = "<group>"; };
+		CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoViewModel.swift; sourceTree = "<group>"; };
+		CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoViewModelTests.swift; sourceTree = "<group>"; };
+		CB6D17B92FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncIntroSheetPresenter.swift; sourceTree = "<group>"; };
+		CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncIntroSheetView.swift; sourceTree = "<group>"; };
 		CB6D178E2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+SuggestionDisplay.swift"; sourceTree = "<group>"; };
 		CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsCoordinator.swift; sourceTree = "<group>"; };
 		CB6D17962FA232E000ECD5AE /* Suggestion+URLFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Suggestion+URLFilter.swift"; sourceTree = "<group>"; };
@@ -9396,6 +9406,7 @@
 				C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */,
 				C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */,
 				CB6D178A2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift */,
+				CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */,
 				CB6D17982FA24B9800ECD5AE /* DuckAISuggestionsViewControllerTests.swift */,
 				CB6D179A2FA2524F00ECD5AE /* EmptySuggestionLoadingDataSource.swift */,
 				CB6D17A12FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift */,
@@ -9876,6 +9887,10 @@
 				CB6D17882FA2106100ECD5AE /* DuckAIURLSuggestionsLoader.swift */,
 				CB6D178C2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift */,
 				CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */,
+				CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */,
+				CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */,
+				CB6D17B92FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift */,
+				CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -12225,7 +12240,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ $ENABLE_PREVIEWS == \"YES\" ]\nthen\n  exit 0\nelse\n  \"$SOURCE_ROOT/scripts/loc_update.sh\"\nfi\n";
+			shellScript = "\"$SOURCE_ROOT/scripts/loc_update.sh\"\n";
 		};
 		B6409DC62BC7D9BF00D66F9E /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -12745,6 +12760,10 @@
 				6FE127432C204DF700EB5724 /* FavoriteItemView.swift in Sources */,
 				C150EB202F0D814C00A98C97 /* AIChatFeatureFlagProvider.swift in Sources */,
 				CB6D178D2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift in Sources */,
+				CB6D17B02FA2138200ECD5AE /* AIChatSyncPromoView.swift in Sources */,
+				CB6D17B42FB000000ECD5AE /* AIChatSyncPromoViewModel.swift in Sources */,
+				CB6D17B82FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift in Sources */,
+				CB6D17B22FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift in Sources */,
 				980891A52237D4F500313A70 /* FeedbackNavigator.swift in Sources */,
 				1E8AD1C927BFAD1500ABA377 /* DirectoryMonitor.swift in Sources */,
 				377D80222AB48554002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */,
@@ -13672,6 +13691,7 @@
 				6F7FB8E12C660B3E00867DA7 /* NewTabPageFavoritesModelTests.swift in Sources */,
 				BBF1BDF32EA6333000358243 /* MockWinBackOfferService.swift in Sources */,
 				CB6D178B2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift in Sources */,
+				CB6D17B72FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift in Sources */,
 				C1C725B82D63810D00361B81 /* ImportArchiveReaderTests.swift in Sources */,
 				C1C725BA2D63810D00361B81 /* DataImportManagerTests.swift in Sources */,
 				D1A0B0152F92000100A1B001 /* DataImportMocks.swift in Sources */,

@@ -78,13 +78,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var daxDialogsManager: DaxDialogsManaging?
     var fireModeCapability: FireModeCapable? {
         didSet {
-            configureTabSwitcherLongPressMenu()
             configureAddTabButtonLongPressMenu()
         }
     }
     private weak var tabsModel: TabsModelManaging?
 
-    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
+    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton()
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
     
@@ -320,10 +319,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
 
-    private func configureTabSwitcherLongPressMenu() {
-        tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
-    }
-
     private func configureAddTabButtonLongPressMenu() {
         guard fireModeCapability?.isFireModeEnabled ?? false else {
             addTabButton.menu = nil
@@ -378,14 +373,6 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
     
     func launchNewTabWithCurrentMode(_ button: any TabSwitcherButton) {
         requestNewTab(type: .currentMode)
-    }
-    
-    func launchNewNormalTab(_ button: TabSwitcherButton) {
-        requestNewTab(type: .normal)
-    }
-
-    func launchNewFireTab(_ button: TabSwitcherButton) {
-        requestNewTab(type: .fire)
     }
 }
 

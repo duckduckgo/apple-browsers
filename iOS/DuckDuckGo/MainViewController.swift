@@ -1380,7 +1380,7 @@ class MainViewController: UIViewController {
     private func initTabButton() {
         assert(tabSwitcherButton == nil)
 
-        tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
+        tabSwitcherButton = TabSwitcherStaticButton()
 
         tabSwitcherButton?.delegate = self
         viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
@@ -1391,7 +1391,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
 
         // Omnibar tab switcher button (for iPhone landscape combined bar)
-        let omniBarTabSwitcher = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
+        let omniBarTabSwitcher = TabSwitcherStaticButton()
         omniBarTabSwitcher.delegate = self
         omniBarTabSwitcher.translatesAutoresizingMaskIntoConstraints = false
         let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView
@@ -1915,7 +1915,7 @@ class MainViewController: UIViewController {
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
     ///   - inheritedAttribution: The attribution state to be inherited from a parent tab, if any.
     ///   - fromExternalLink: A flag indicating if the URL is from an external link. Defaults to `false`.
-    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
+    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) {
 
         func worker() {
             allowContentUnderflow = false
@@ -1941,7 +1941,7 @@ class MainViewController: UIViewController {
             }
             // Add a new tab if no existing tab is reused.
             else {
-                addTab(url: url, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink)
+                addTab(url: url, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink, voiceMode: voiceMode)
             }
 
             refreshOmniBar()
@@ -2056,9 +2056,10 @@ class MainViewController: UIViewController {
         transitionTo(tab: tab, from: nil)
     }
 
-    private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
+    private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
+        tab.isVoiceModeRequested = voiceMode
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -2897,7 +2898,7 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
                 if let redirectURLComponents = notification.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents {
-                    if redirectURLComponents.path == "/subscriptions/plans" || redirectURLComponents.path == "/pro/plans" {
+                    if SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
                         deepLinkTarget = .subscriptionPlanChangeFlow(redirectURLComponents: redirectURLComponents)
                     } else {
                         deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
@@ -2905,7 +2906,7 @@ class MainViewController: UIViewController {
                 } else {
                     deepLinkTarget = .subscriptionFlow()
                 }
-                self?.launchSettings(deepLinkTarget: deepLinkTarget)
+                self?.launchSettingsForSubscriptionInterception(deepLinkTarget)
 
             }
             .store(in: &urlInterceptorCancellables)
@@ -2931,6 +2932,13 @@ class MainViewController: UIViewController {
                 }
             }
             .store(in: &urlInterceptorCancellables)
+    }
+
+    private func launchSettingsForSubscriptionInterception(_ deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection) {
+        // If Settings is already presented, launchSettings reuses its view model; trigger the deep link explicitly.
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: deepLinkTarget)
+        }, deepLinkTarget: deepLinkTarget)
     }
 
     private func subscribeToSettingsDeeplinkNotifications() {
@@ -3368,7 +3376,7 @@ class MainViewController: UIViewController {
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
-            loadUrlInNewTab(voiceURL, inheritedAttribution: nil)
+            loadUrlInNewTab(voiceURL, inheritedAttribution: nil, voiceMode: true)
             if fromDeepLink {
                 // Collapse the input that was auto-expanded for the restored tab.
                 // This cancels any pending async activateInput because showCollapsed
@@ -4168,20 +4176,6 @@ extension MainViewController: OmniBarDelegate {
         ])
         guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        performCancel()
-        newTab()
-    }
-
-    private func newFireTabLongPressMenuAction() {
-        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
-        performCancel()
-        newTab()
-    }
-
-    private func newNormalTabLongPressMenuAction() {
-        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         performCancel()
         newTab()
     }
@@ -5415,14 +5409,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
     func launchNewTabWithCurrentMode(_ button: TabSwitcherButton) {
         newTabShortcutAction()
     }
-    
-    func launchNewNormalTab(_ button: any TabSwitcherButton) {
-        newNormalTabLongPressMenuAction()
-    }
-
-    func launchNewFireTab(_ button: TabSwitcherButton) {
-        newFireTabLongPressMenuAction()
-    }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {
         requestTabSwitcher()
@@ -6176,10 +6162,6 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:
                                                         AIChatContentHandling) {
-        closeCurrentTab()
-    }
-
-    func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling) {
         closeCurrentTab()
     }
 

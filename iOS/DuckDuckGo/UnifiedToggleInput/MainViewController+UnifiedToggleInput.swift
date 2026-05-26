@@ -330,13 +330,8 @@ enum AITabRefreshBehavior: Equatable {
     case showCollapsed(expandAfterRefresh: Bool)
 }
 
-/// Pure-data snapshot of everything `decideRefreshAction` reads. Built from the live
-/// `TabViewController` / `UnifiedToggleInputCoordinator` / view coordinator at the call site
-/// so the decision itself stays free of UIKit dependencies and is unit-testable.
 struct UnifiedToggleInputRefreshActionInputs: Equatable {
-    let tabHasLink: Bool
     let tabIsAITab: Bool
-    let tabIsLoading: Bool
     let tabURL: URL?
     let tabLinkURL: URL?
     let tabIsVoiceModeRequested: Bool
@@ -356,7 +351,7 @@ extension MainViewController {
         // momentarily report false and route us through `refreshNonAITab` → `coordinator.hide()`,
         // tearing down the UTI we just set up. Preserve the current AI presentation through that
         // window — the next refresh, after WebView reports the URL, resolves correctly.
-        if !inputs.tabHasLink && inputs.coordinatorIsAITabState {
+        if inputs.tabLinkURL == nil && inputs.coordinatorIsAITabState {
             return .refreshAITab(.preserveCurrentPresentation(allowsEarlyReturn: true))
         }
 
@@ -364,12 +359,6 @@ extension MainViewController {
             if !inputs.coordinatorIsActive && inputs.isAITabChatHeaderContainerHidden {
                 return .unbindInactiveNonAITab
             }
-            // Preserve any active omnibar session across navigation events. Without this,
-            // chained server redirects (which fire `url didSet` → `tabLoadingStateDidChange`
-            // while `isLoading == true`) would tear down a UTI the user just opened mid-load.
-            // The user-driven submit path explicitly deactivates the coordinator *before* the
-            // nav starts, so by the time this runs after a real submission `isOmnibarSession`
-            // is already false and the bar collapses normally.
             if inputs.coordinatorIsOmnibarSession {
                 return .preserveOmnibarSession
             }
@@ -607,9 +596,7 @@ private extension MainViewController {
 
     func refreshAction(for tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) -> UnifiedToggleInputRefreshAction {
         let inputs = UnifiedToggleInputRefreshActionInputs(
-            tabHasLink: tab.link != nil,
             tabIsAITab: tab.isAITab,
-            tabIsLoading: tab.isLoading,
             tabURL: tab.url,
             tabLinkURL: tab.link?.url,
             tabIsVoiceModeRequested: tab.isVoiceModeRequested,

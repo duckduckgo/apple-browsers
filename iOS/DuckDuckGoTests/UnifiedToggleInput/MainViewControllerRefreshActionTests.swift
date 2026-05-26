@@ -22,33 +22,16 @@ import XCTest
 
 final class MainViewControllerRefreshActionTests: XCTestCase {
 
-    // MARK: - Bug regression: omnibar session + tab loading
-
-    /// JL1 regression: chained server redirects (cnn.com → www.cnn.com → edition.cnn.com) reassign
-    /// `tab.url` while `isLoading == true`, firing `tabLoadingStateDidChange` and routing through
-    /// `refreshAction`. Before the fix the action collapsed back to `.refreshNonAITab` because the
-    /// guard required `!tab.isLoading`, tearing down the UTI the user had just reopened mid-load.
-    func test_nonAITab_omnibarSession_loading_preservesSession() {
-        let inputs = makeInputs(
-            tabIsAITab: false,
-            tabIsLoading: true,
-            coordinatorIsActive: true,
-            coordinatorIsOmnibarSession: true
-        )
-        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .preserveOmnibarSession)
-    }
-
-    func test_nonAITab_omnibarSession_notLoading_preservesSession() {
-        let inputs = makeInputs(
-            tabIsAITab: false,
-            tabIsLoading: false,
-            coordinatorIsActive: true,
-            coordinatorIsOmnibarSession: true
-        )
-        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .preserveOmnibarSession)
-    }
-
     // MARK: - Non-AI tab paths
+
+    func test_nonAITab_omnibarSession_preservesSession() {
+        let inputs = makeInputs(
+            tabIsAITab: false,
+            coordinatorIsActive: true,
+            coordinatorIsOmnibarSession: true
+        )
+        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .preserveOmnibarSession)
+    }
 
     func test_nonAITab_coordinatorInactive_chatHeaderHidden_unbinds() {
         let inputs = makeInputs(
@@ -63,20 +46,6 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
     func test_nonAITab_coordinatorActive_notOmnibarSession_refreshesNonAITab() {
         let inputs = makeInputs(
             tabIsAITab: false,
-            tabIsLoading: false,
-            coordinatorIsActive: true,
-            coordinatorIsOmnibarSession: false
-        )
-        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .refreshNonAITab)
-    }
-
-    // Submitting from the UTI deactivates the coordinator *before* the new nav reaches us,
-    // so by the time `decideRefreshAction` runs after a real user submission `isOmnibarSession`
-    // is already false and the bar collapses normally.
-    func test_nonAITab_postUserSubmit_loading_refreshesNonAITab() {
-        let inputs = makeInputs(
-            tabIsAITab: false,
-            tabIsLoading: true,
             coordinatorIsActive: true,
             coordinatorIsOmnibarSession: false
         )
@@ -85,12 +54,10 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
 
     // MARK: - AI tab paths
 
-    /// During a fresh AI-tab navigation the link briefly goes nil and `isAITab` flips false;
-    /// the guard at the top of `decideRefreshAction` keeps the AI presentation in place.
     func test_nilLink_coordinatorInAITabState_preservesAIPresentation() {
         let inputs = makeInputs(
-            tabHasLink: false,
             tabIsAITab: false,
+            tabLinkURL: nil,
             coordinatorIsAITabState: true
         )
         XCTAssertEqual(
@@ -140,9 +107,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeInputs(
-        tabHasLink: Bool = true,
         tabIsAITab: Bool = false,
-        tabIsLoading: Bool = false,
         tabURL: URL? = URL(string: "https://example.com/"),
         tabLinkURL: URL? = URL(string: "https://example.com/"),
         tabIsVoiceModeRequested: Bool = false,
@@ -154,9 +119,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         isNavigationChromeHidden: Bool = false
     ) -> UnifiedToggleInputRefreshActionInputs {
         UnifiedToggleInputRefreshActionInputs(
-            tabHasLink: tabHasLink,
             tabIsAITab: tabIsAITab,
-            tabIsLoading: tabIsLoading,
             tabURL: tabURL,
             tabLinkURL: tabLinkURL,
             tabIsVoiceModeRequested: tabIsVoiceModeRequested,

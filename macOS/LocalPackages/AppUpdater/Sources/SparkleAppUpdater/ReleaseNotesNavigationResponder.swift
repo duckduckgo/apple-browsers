@@ -101,7 +101,7 @@ public final class ReleaseNotesNavigationResponder: NavigationResponder {
             return
         }
         Publishers.CombineLatest(updateController.updateProgressPublisher, updateController.latestUpdatePublisher)
-            .receive(on: DispatchQueue.main)
+            .throttle(for: .milliseconds(250), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.releaseNotesUserScript?.onUpdate()

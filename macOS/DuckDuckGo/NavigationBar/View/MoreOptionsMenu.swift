@@ -1079,22 +1079,35 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
     }
 
     override func performActionForItem(at index: Int) {
-        guard let item = item(at: index),
-              zoomItems.contains(item),
-              let mainViewController = item.target as? MainViewController else {
-            super.performActionForItem(at: index)
-            return
-        }
+        // The zoom sub-menu items are copies of main menu items with a nil
+        // target (they reach `MainViewController` via the responder chain),
+        // so we can't use `item.target` to route the action. Instead, look up
+        // the active `TabViewModel` directly from the tab collection and call
+        // the zoom methods that own the pixel firing. Anything else falls
+        // through to the default responder-chain dispatch.
+        //
+        // `NSMenu.performActionForItem` isn't formally main-actor isolated but
+        // is always invoked on the main thread by AppKit, so we hop onto the
+        // MainActor here to touch `selectedTabViewModel` and the TabViewModel
+        // zoom methods.
+        MainActor.assumeIsolated {
+            guard let item = item(at: index),
+                  zoomItems.contains(item),
+                  let tabViewModel = tabCollectionViewModel?.selectedTabViewModel else {
+                super.performActionForItem(at: index)
+                return
+            }
 
-        switch item.action {
-        case #selector(MainViewController.zoomIn(_:)):
-            mainViewController.performZoomIn(entryPoint: .menu)
-        case #selector(MainViewController.zoomOut(_:)):
-            mainViewController.performZoomOut(entryPoint: .menu)
-        case #selector(MainViewController.actualSize(_:)):
-            mainViewController.performActualSize(entryPoint: .actualSize)
-        default:
-            super.performActionForItem(at: index)
+            switch item.action {
+            case #selector(MainViewController.zoomIn(_:)):
+                tabViewModel.zoomIn(entryPoint: .menu)
+            case #selector(MainViewController.zoomOut(_:)):
+                tabViewModel.zoomOut(entryPoint: .menu)
+            case #selector(MainViewController.actualSize(_:)):
+                tabViewModel.resetZoom(entryPoint: .actualSize)
+            default:
+                super.performActionForItem(at: index)
+            }
         }
     }
 

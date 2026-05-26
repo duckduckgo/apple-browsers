@@ -1254,7 +1254,7 @@ extension MainViewController {
     }
 
     func performZoomIn(entryPoint: WebViewZoomEntryPoint) {
-        getActiveTabAndIndex()?.tab.webView.zoomIn(entryPoint: entryPoint)
+        activeTabViewModel?.zoomIn(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
@@ -1263,7 +1263,7 @@ extension MainViewController {
     }
 
     func performZoomOut(entryPoint: WebViewZoomEntryPoint) {
-        getActiveTabAndIndex()?.tab.webView.zoomOut(entryPoint: entryPoint)
+        activeTabViewModel?.zoomOut(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
@@ -1272,7 +1272,7 @@ extension MainViewController {
     }
 
     func performActualSize(entryPoint: WebViewZoomEntryPoint) {
-        getActiveTabAndIndex()?.tab.webView.resetZoomLevel(entryPoint: entryPoint)
+        activeTabViewModel?.resetZoom(entryPoint: entryPoint)
     }
 
     @objc func summarize(_ sender: Any) {

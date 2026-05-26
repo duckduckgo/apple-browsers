@@ -910,8 +910,13 @@ extension DataImportViewModel {
             wideEvent.discardFlow(dataImportWideEventData)
             self.dataImportWideEventData = nil
         }
+        // If every selectable type is currently selected, the user hasn't narrowed
+        // the selection — so the next source should default to all of *its* types
+        // rather than inheriting a selection that was implicitly filtered by this
+        // source's capabilities (e.g. password-manager sources only offer passwords).
+        let userNarrowedSelection = selectedDataTypes != selectableImportTypes
         self = .init(importSource: importSource,
-                     selectedDataTypes: self.selectedDataTypes,
+                     selectedDataTypes: userNarrowedSelection ? selectedDataTypes : nil,
                      isPickerExpanded: self.isPickerExpanded,
                      isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
                      syncFeatureVisibility: syncFeatureVisibility,

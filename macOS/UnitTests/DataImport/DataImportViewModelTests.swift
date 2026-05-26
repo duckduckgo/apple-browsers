@@ -381,6 +381,54 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(result, [.passwords])
     }
 
+    @MainActor
+    func testUpdateWithSource_roundTripThroughPasswordManager_restoresBookmarks() {
+        // GIVEN: Chrome with all selectable types selected (default state)
+        model = DataImportViewModel(
+            importSource: .chrome,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
+                return .init(browser: browser, profiles: [defaultProfile])
+            }
+        )
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks, .passwords])
+
+        // WHEN: switch to a password-manager source (which only offers passwords)
+        model.update(with: .bitwarden)
+        XCTAssertEqual(model.selectableImportTypes, [.passwords])
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+
+        // AND: switch back to a browser source
+        model.update(with: .chrome)
+
+        // THEN: both bookmarks and passwords are selected again; the narrowing
+        // from the password-manager source doesn't bleed across
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks, .passwords])
+    }
+
+    @MainActor
+    func testUpdateWithSource_userNarrowedSelection_isPreservedAcrossSourceSwitch() {
+        // GIVEN: Chrome, then user unchecks bookmarks (explicit narrowing)
+        model = DataImportViewModel(
+            importSource: .chrome,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
+                return .init(browser: browser, profiles: [defaultProfile])
+            }
+        )
+        model.setDataType(.bookmarks, selected: false)
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+
+        // WHEN: switch to another browser that also supports both types
+        model.update(with: .firefox)
+
+        // THEN: the explicit narrowing is preserved
+        XCTAssertEqual(model.selectableImportTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+    }
+
     // MARK: - Button State Tests
 
     @MainActor

@@ -28,7 +28,7 @@ struct BookmarksEmptyView: View {
 
     var body: some View {
             VStack(spacing: 0) {
-                Image(.bookmarks96)
+                Image(rebrandable: "Bookmarks-96")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 96, height: 96)

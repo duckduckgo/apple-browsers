@@ -194,7 +194,7 @@ private extension MainViewController {
         }
 
         if let omnibarPlaceholderWindowX {
-            coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+            coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
         }
 
         // For logo-to-logo: place the UTI Logo at the NTP Logo's position, swap visibility
@@ -265,7 +265,7 @@ private extension MainViewController {
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom)
             let slideUTIText: () -> Void = { [weak coordinator] in
                 guard let coordinator, let omnibarPlaceholderWindowX else { return }
-                coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+                coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
             }
             viewCoordinator.hideUnifiedToggleInputOmnibar(additionalAnimations: slideUTIText, completion: onDismissed)
             if let coordinator, let omnibarPlaceholderColor, let utiPlaceholderColor {

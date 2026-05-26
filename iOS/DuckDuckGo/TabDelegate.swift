@@ -163,6 +163,14 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
 
     func tabDidRequestFireMode(tab: TabViewController)
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error)
+
+    func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController)
+
+    func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController)
+
+    func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController)
 }
 
 extension TabDelegate {
@@ -172,5 +180,7 @@ extension TabDelegate {
     }
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 
 }

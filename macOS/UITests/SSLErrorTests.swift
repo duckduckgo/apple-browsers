@@ -18,7 +18,6 @@
 
 import Common
 import FoundationExtensions
-import SpecialErrorPages
 import XCTest
 
 final class SSLErrorTests: UITestCase {

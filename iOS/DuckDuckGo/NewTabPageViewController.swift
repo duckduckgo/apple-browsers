@@ -315,6 +315,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         // we don't repeat them here — re-setting the pending flag at this point would
         // leak past the EOJ flow and incorrectly suppress the Dax in the next-created
         // editing state (e.g. after the subscription promo's "No, Thanks").
+        setLogoHidden(true)
         chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
 
         DispatchQueue.main.async { [weak self] in
@@ -406,6 +407,7 @@ extension NewTabPageViewController {
         let presentedHostViewController = parent?.presentedViewController ?? parent
         guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
             isShowingDuckAICompletionDialog = false
+            setLogoHidden(false)
             view.alpha = 1
             return
         }

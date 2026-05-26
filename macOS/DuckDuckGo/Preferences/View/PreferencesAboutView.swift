@@ -416,37 +416,6 @@ extension Preferences {
             }
             return attributed
         }
-
-        private func appStoreLegacyAttributedText(fullText: String, linkText: String) -> NSAttributedString {
-            let attributedString = NSMutableAttributedString(string: fullText)
-
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = 0
-            paragraphStyle.paragraphSpacing = 0
-
-            let defaultAttributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
-                .foregroundColor: NSColor(Color(.greyText)),
-                .paragraphStyle: paragraphStyle
-            ]
-            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
-
-            if let range = fullText.range(of: linkText) {
-                let nsRange = NSRange(range, in: fullText)
-                attributedString.addAttribute(.link, value: URL.appStore, range: nsRange)
-                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
-                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
-            }
-
-            let boldFont = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
-            for word in Self.boldWords {
-                if let range = fullText.range(of: word) {
-                    attributedString.addAttribute(.font, value: boldFont, range: NSRange(range, in: fullText))
-                }
-            }
-
-            return attributedString
-        }
     }
 
     struct UpdatesSection: View {
@@ -548,35 +517,6 @@ extension Preferences {
                 instructions[range].link = Self.softwareUpdateURL
             }
             return instructions
-        }
-
-        private var legacyCombinedTextAttributed: NSAttributedString {
-            let fullText = combinedText
-            let attributedString = NSMutableAttributedString(string: fullText)
-
-            // Create paragraph style for consistent formatting
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = 0
-            paragraphStyle.paragraphSpacing = 0
-
-            // Apply default text styling to match SwiftUI Text
-            let defaultAttributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
-                .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: paragraphStyle
-            ]
-            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
-
-            // Find the version string to make it clickable
-            let versionText = "macOS \(versionString)"
-            if let range = fullText.range(of: versionText) {
-                let nsRange = NSRange(range, in: fullText)
-                attributedString.addAttribute(.link, value: Self.softwareUpdateURL, range: nsRange)
-                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
-                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
-            }
-
-            return attributedString
         }
     }
 }

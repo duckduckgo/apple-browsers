@@ -450,7 +450,7 @@ jobs:
 
     - name: Prepare test report
       id: prepare-test-report
-      if: always()
+      if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
         test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }})"

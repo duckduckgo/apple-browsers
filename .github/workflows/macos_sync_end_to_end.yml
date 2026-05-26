@@ -272,7 +272,7 @@ jobs:
         pixel-name: m_ci_apple_status_mac_e2e_sync_${{ matrix.os-version }}_${{ steps.run-ui-tests.outcome }}
 
     - name: Prepare test report
-      if: always()
+      if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
         xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log

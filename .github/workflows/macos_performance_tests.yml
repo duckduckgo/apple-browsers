@@ -320,7 +320,7 @@ jobs:
           runner: ${{ matrix.runner }}
 
     - name: Prepare test report
-      if: always()
+      if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
         xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log

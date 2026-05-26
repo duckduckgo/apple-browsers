@@ -545,6 +545,11 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         settings.isChatFirstPath = true
         // Reset visit-site progress so stale state from a previous run doesn't skip straight to EOJ.
         settings.chatPathVisitSiteSeen = false
+        settings.browsingWithTrackersShown = false
+        settings.browsingWithoutTrackersShown = false
+        settings.browsingMajorTrackingSiteShown = false
+        settings.browsingFinalDialogShown = false
+        settings.browsingAfterSearchShown = false
     }
 
     var chatPathPhase: ChatPathPhase {

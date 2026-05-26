@@ -54,6 +54,15 @@ final class AIChatModelPickerButton: NSView {
     }()
 
     private let backgroundLayer = CALayer()
+    private let focusRingLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.fillColor = nil
+        layer.lineWidth = 1.5
+        layer.lineCap = .round
+        layer.lineJoin = .round
+        layer.isHidden = true
+        return layer
+    }()
 
     weak var target: AnyObject?
     var action: Selector?
@@ -108,13 +117,20 @@ final class AIChatModelPickerButton: NSView {
     override var canBecomeKeyView: Bool { true }
 
     override func becomeFirstResponder() -> Bool {
-        setNeedsDisplay(bounds.insetBy(dx: -3, dy: -3))
+        setFocusRingHidden(false)
         return super.becomeFirstResponder()
     }
 
     override func resignFirstResponder() -> Bool {
-        setNeedsDisplay(bounds.insetBy(dx: -3, dy: -3))
+        setFocusRingHidden(true)
         return super.resignFirstResponder()
+    }
+
+    private func setFocusRingHidden(_ hidden: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        focusRingLayer.isHidden = hidden
+        CATransaction.commit()
     }
 
     private func setupView() {
@@ -125,6 +141,10 @@ final class AIChatModelPickerButton: NSView {
         backgroundLayer.cornerRadius = Constants.cornerRadius
         backgroundLayer.opacity = 0
         layer?.insertSublayer(backgroundLayer, at: 0)
+
+        // Focus ring sublayer sits above the background so it stays visible while hovered.
+        focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        layer?.addSublayer(focusRingLayer)
 
         // Add subviews
         addSubview(nameLabel)
@@ -147,6 +167,21 @@ final class AIChatModelPickerButton: NSView {
     override func layout() {
         super.layout()
         backgroundLayer.frame = bounds
+
+        // Focus ring sits 1pt outside the pill. Rendered as a sublayer rather than
+        // in `draw(_:)` so the 1pt overflow is not clipped by the view's backing layer
+        // (which was the cause of the broken ring on macOS Monterey).
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let ringRect = bounds.insetBy(dx: -1, dy: -1)
+        focusRingLayer.frame = ringRect
+        focusRingLayer.path = CGPath(
+            roundedRect: focusRingLayer.bounds,
+            cornerWidth: ringRect.height / 2,
+            cornerHeight: ringRect.height / 2,
+            transform: nil
+        )
+        CATransaction.commit()
     }
 
     private func updateAppearance() {
@@ -228,25 +263,6 @@ final class AIChatModelPickerButton: NSView {
         isMouseDown = false
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        guard window?.firstResponder == self else { return }
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-
-        context.saveGState()
-        context.resetClip()
-
-        NSColor.controlAccentColor.setStroke()
-        let borderRect = bounds.insetBy(dx: -1, dy: -1)
-        let focusPath = NSBezierPath(roundedRect: borderRect, xRadius: borderRect.height / 2, yRadius: borderRect.height / 2)
-        focusPath.lineWidth = 1.5
-        focusPath.lineCapStyle = .round
-        focusPath.lineJoinStyle = .round
-        focusPath.stroke()
-
-        context.restoreGState()
-    }
-
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case 48: // Tab
@@ -267,6 +283,10 @@ final class AIChatModelPickerButton: NSView {
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         updateAppearance()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
+        CATransaction.commit()
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {

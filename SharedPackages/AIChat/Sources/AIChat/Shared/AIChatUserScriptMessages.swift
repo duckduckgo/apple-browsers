@@ -54,7 +54,6 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// voice session. Native uses this to decide whether to surface a system-permission
     /// remediation prompt (e.g. when the OS has denied microphone access to the app).
     case voiceChatStartFailed
-    case voiceSessionUserEnded
 
     // Sync
     case getSyncStatus

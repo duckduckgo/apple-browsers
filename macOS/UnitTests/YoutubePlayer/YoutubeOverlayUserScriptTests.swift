@@ -35,7 +35,8 @@ final class YoutubeOverlayUserScriptTests: XCTestCase {
         let duckPlayer = DuckPlayer(
             preferencesPersistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            internalUserDecider: MockInternalUserDecider()
+            internalUserDecider: MockInternalUserDecider(),
+            featureFlagger: MockFeatureFlagger()
         )
         youtubeOverlayUserScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
     }

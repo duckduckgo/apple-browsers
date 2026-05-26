@@ -24,9 +24,7 @@ internal class SheetHostingWindow<Content: View>: NSWindow {
 
     init(rootView: Content) {
         super.init(contentRect: .zero, styleMask: [.titled, .closable, .docModalWindow], backing: .buffered, defer: false)
-        self.contentView = NSHostingView(rootView: rootView.legacyOnDismiss { [weak self] in
-            self?.performClose(nil)
-        })
+        self.contentView = NSHostingView(rootView: rootView)
     }
 
     override func performClose(_ sender: Any?) {

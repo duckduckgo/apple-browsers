@@ -36,30 +36,13 @@ public extension ModalView {
     @MainActor
     func show(in parentWindow: NSWindow? = nil) async {
 
-        var session: NSApplication.ModalSession?
-
         if let parentWindow {
             if !parentWindow.isKeyWindow {
                 parentWindow.makeKeyAndOrderFront(nil)
             }
         }
 
-        var capturedWeakWindow: NSWindow?
-
-        let rootView = self.environment(\.dismiss, {
-            guard let window = capturedWeakWindow else {
-                return
-            }
-
-            if let session {
-                NSApplication.shared.endModalSession(session)
-                window.close()
-            } else {
-                parentWindow?.endSheet(window)
-            }
-        })
-
-        let hostingView = NSHostingView(rootView: rootView)
+        let hostingView = NSHostingView(rootView: self)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         hostingView.frame.size = hostingView.intrinsicContentSize
 
@@ -99,12 +82,10 @@ public extension ModalView {
         //
         window.isReleasedWhenClosed = false
 
-        capturedWeakWindow = window
-
         if let parentWindow {
             await parentWindow.beginSheet(window)
         } else {
-            session = NSApplication.shared.beginModalSession(for: window)
+            _ = NSApplication.shared.beginModalSession(for: window)
         }
     }
 

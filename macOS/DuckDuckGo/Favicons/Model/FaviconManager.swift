@@ -92,6 +92,15 @@ extension FaviconManagement {
     }
 
     @MainActor
+    func getCachedFaviconSafeForRendering(for host: String, sizeCategory: Favicon.SizeCategory) -> Favicon? {
+        guard shouldRenderFavicon else {
+            return nil
+        }
+
+        return getCachedFavicon(for: host, sizeCategory: sizeCategory)
+    }
+
+    @MainActor
     func getCachedFavicon(forUrlOrAnySubdomain documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
         if let favicon = getCachedFavicon(for: documentUrl, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) {
             return favicon
@@ -102,6 +111,21 @@ extension FaviconManagement {
         }
 
         return nil
+    }
+
+    @MainActor
+    private var shouldRenderFavicon: Bool {
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+
+        // Workaround for favicon rendering crashes on Ventura 13.7.8 and newer 13.x patches.
+        switch (osVersion.majorVersion, osVersion.minorVersion, osVersion.patchVersion) {
+        case let (13, minor, _) where minor > 7:
+            return false
+        case let (13, 7, patch) where patch >= 8:
+            return false
+        default:
+            return true
+        }
     }
 }
 

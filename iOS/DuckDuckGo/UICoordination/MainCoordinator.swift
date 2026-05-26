@@ -210,7 +210,8 @@ final class MainCoordinator {
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                fireModePromotionEligibility: fireModePromotionsCoordinator)
+                                fireModePromotionEligibility: fireModePromotionsCoordinator,
+                                adBlockingAvailability: contentBlockingService.adBlockingAvailability)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -240,6 +241,10 @@ final class MainCoordinator {
             privacyConfigurationManager: privacyConfigurationManager,
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
+        let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
+            keyValueStore: keyValueStore,
+            idleReturnEligibilityManager: idleReturnEligibilityManager
+        )
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -261,6 +266,7 @@ final class MainCoordinator {
                                         voiceSearchHelper: voiceSearchHelper,
                                         featureFlagger: featureFlagger,
                                         idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                        afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
@@ -348,6 +354,13 @@ final class MainCoordinator {
             .removeDuplicates()
             .eraseToAnyPublisher()
 
+        let adBlockingDefaultsPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
         youTubeAdBlockingCancellable = NotificationCenter.default
             .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
             .sink { [weak self] _ in
@@ -361,6 +374,7 @@ final class MainCoordinator {
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
             onFeatureFlagEnabled: { [weak self] in
                 self?.initializeWebExtensions()
             },
@@ -371,6 +385,9 @@ final class MainCoordinator {
                 await self?.syncEmbeddedExtensions()
             },
             onAdBlockingExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            },
+            onAdBlockingDefaultsFlagChanged: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             }
         )

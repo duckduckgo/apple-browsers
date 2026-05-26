@@ -1250,17 +1250,29 @@ extension MainViewController {
     }
 
     @objc func zoomIn(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.zoomIn()
+        performZoomIn(entryPoint: .forMainMenuBarZoomAction)
+    }
+
+    func performZoomIn(entryPoint: WebViewZoomEntryPoint) {
+        activeTabViewModel?.zoomIn(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
     @objc func zoomOut(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.zoomOut()
+        performZoomOut(entryPoint: .forMainMenuBarZoomAction)
+    }
+
+    func performZoomOut(entryPoint: WebViewZoomEntryPoint) {
+        activeTabViewModel?.zoomOut(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
     @objc func actualSize(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.resetZoomLevel()
+        performActualSize(entryPoint: .actualSize)
+    }
+
+    func performActualSize(entryPoint: WebViewZoomEntryPoint) {
+        activeTabViewModel?.resetZoom(entryPoint: entryPoint)
     }
 
     @objc func summarize(_ sender: Any) {
@@ -1671,12 +1683,12 @@ extension MainViewController {
     @MainActor
     @objc func crashAllTabs() {
         let windowControllersManager = Application.appDelegate.windowControllersManager
-        let allTabViewModels = windowControllersManager.allTabViewModels
-
-        for tabViewModel in allTabViewModels {
-            let tab = tabViewModel.tab
-            if tab.canKillWebContentProcess {
-                tab.killWebContentProcess()
+        for tabCollectionViewModel in windowControllersManager.allTabCollectionViewModels {
+            for case let tabViewModel as TabViewModel in tabCollectionViewModel.tabViewModels.values {
+                let tab = tabViewModel.tab
+                if tab.canKillWebContentProcess {
+                    tab.killWebContentProcess()
+                }
             }
         }
     }

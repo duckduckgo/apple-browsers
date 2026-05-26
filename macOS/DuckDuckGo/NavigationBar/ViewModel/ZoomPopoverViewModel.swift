@@ -35,15 +35,15 @@ final class ZoomPopoverViewModel: ObservableObject {
     }
 
     func zoomIn() {
-        tabViewModel.tab.webView.zoomIn()
+        tabViewModel.zoomIn(entryPoint: .popover)
     }
 
     func zoomOut() {
-        tabViewModel.tab.webView.zoomOut()
+        tabViewModel.zoomOut(entryPoint: .popover)
     }
 
     func reset() {
-        tabViewModel.tab.webView.resetZoomLevel()
+        tabViewModel.resetZoom(entryPoint: .popover)
     }
 
 }

@@ -302,7 +302,7 @@ struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
     let subscriptionManager: SubscriptionManager
 
     func isFreeTrial() async -> Bool {
-        (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).hasActiveTrialOffer) ?? false
+        (try? await subscriptionManager.getSubscription())?.hasActiveTrialOffer ?? false
     }
 
     var isActive: Bool {

@@ -46,6 +46,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private let newTabDialogFactory: any NewTabDaxDialogProviding
     private let daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
+    private let onboardingFlowProvider: OnboardingFlowProviding
 
     private let newTabPageViewModel: NewTabPageViewModel
     private let messagesModel: NewTabPageMessagesModel
@@ -55,6 +56,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private var hostingController: UIHostingController<AnyView>?
     private var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
+    private var didHideBarsForChatPathVisitSiteDialog = false
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -72,12 +74,12 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          subscriptionDataReporting: SubscriptionDataReporting? = nil,
          newTabDialogFactory: any NewTabDaxDialogProviding,
          daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
+         onboardingFlowProvider: OnboardingFlowProviding,
          faviconLoader: FavoritesFaviconLoading,
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
-         hasEscapeHatch: Bool = false,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
@@ -90,6 +92,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.associatedTab = tab
         self.newTabDialogFactory = newTabDialogFactory
         self.daxDialogsManager = daxDialogsManager
+        self.onboardingFlowProvider = onboardingFlowProvider
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
@@ -100,13 +103,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader,
                                             faviconsCache: faviconsCache)
+        let viewModel = newTabPageViewModel
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
                                                 fireModePromotionEligibility: fireModePromotionEligibility,
-                                                isOpenedAfterIdle: hasEscapeHatch)
+                                                isOpenedAfterIdle: { [weak viewModel] in viewModel?.escapeHatch != nil })
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -125,25 +129,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         newTabPageViewModel.escapeHatch = model
-        if let model {
-            let targetTab = model.targetTab
-            newTabPageViewModel.onEscapeHatchTap = { [weak self] in
-                guard let self else { return }
-                self.delegate?.newTabPageDidRequestSwitchToTab(self, tab: targetTab)
-            }
-            newTabPageViewModel.onTabSwitcherTap = { [weak self] in
-                guard let self else { return }
-                self.delegate?.newTabPageDidRequestTabSwitcher(self)
-            }
-        } else {
-            newTabPageViewModel.onEscapeHatchTap = nil
-            newTabPageViewModel.onTabSwitcherTap = nil
-        }
+        messagesModel.refresh()
         updateBorderView()
-    }
-
-    func setOpenTabCount(_ count: Int) {
-        newTabPageViewModel.openTabCount = count
     }
 
     func setChromeLayoutContext(isBorderSuppressed: Bool) {
@@ -173,7 +160,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
         associatedTab.viewed = true
 
-        presentNextDaxDialog()
+        presentNextDaxDialog(event: .nextDialogRequested)
 
         if !favoritesModel.isEmpty {
             borderView.insertSelf(into: view)
@@ -274,12 +261,20 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private func launchNewSearch() {
         // If we are displaying a Subscription promotion on a new tab, do not activate search
         guard !daxDialogsManager.isShowingSubscriptionPromotion else { return }
-        chromeDelegate?.omniBar.beginEditing(animated: true)
+        // Duck.ai tailored flow surfaces the omnibar in AI-chat mode by default so users land in the
+        // experience the onboarding emphasised. Other flows pass `nil` to let the omnibar fall back
+        // to its default mode (search).
+        let textEntryMode: TextEntryMode? = onboardingFlowProvider.currentOnboardingFlow == .duckAI ? .aiChat : nil
+        chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
     }
 
     func dismiss() {
         notifyDuckAICompletionDismissedIfNeeded()
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+        if didHideBarsForChatPathVisitSiteDialog {
+            didHideBarsForChatPathVisitSiteDialog = false
+            chromeDelegate?.setBarsHidden(false, animated: false, customAnimationDuration: nil)
+        }
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -287,17 +282,22 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func showNextDaxDialog() {
-        presentNextDaxDialog()
+        presentNextDaxDialog(event: .nextDialogRequested)
     }
 
     func onboardingCompleted() {
-        presentNextDaxDialog()
-        // Show Keyboard when showing the first Dax tip
-        chromeDelegate?.omniBar.beginEditing(animated: true)
+        presentNextDaxDialog(event: .linearOnboardingCompleted)
     }
 
-    func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String) {
-        chromeDelegate?.omniBar.beginEditing(animated: true)
+    func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String, textEntryMode: TextEntryMode? = nil) {
+        // Note: the editing-state Dax suppression and NTP `view.alpha = 0` are pre-armed
+        // synchronously in `MainViewController.tabDidRequestNewTab` /
+        // `presentChatPathOnboardingCompletionIfNeeded` BEFORE this async hop runs, so
+        // we don't repeat them here — re-setting the pending flag at this point would
+        // leak past the EOJ flow and incorrectly suppress the Dax in the next-created
+        // editing state (e.g. after the subscription promo's "No, Thanks").
+        chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
+
         DispatchQueue.main.async { [weak self] in
             self?.showDuckAIOnboardingCompletionDialog(message: message)
         }
@@ -305,10 +305,48 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     // MARK: - Onboarding
 
-    private func presentNextDaxDialog() {
+    private func presentNextDaxDialog(event: NewTabPageOnboardingDialogEvent) {
         // If linear onboarding is not completed do not attempt to present any Dax dialog.
         guard tutorialSettings.hasSeenOnboarding else { return }
-        // Present Dax dialog if needed.
+
+        switch onboardingFlowProvider.currentOnboardingFlow {
+        case .default:
+            presentDefaultFlowDialog(for: event)
+        case .duckAI:
+            presentDuckAITailoredDialog(for: event)
+        }
+    }
+
+    private func presentDefaultFlowDialog(for event: NewTabPageOnboardingDialogEvent) {
+        switch event {
+        case .nextDialogRequested:
+            showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
+        case .linearOnboardingCompleted:
+            showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
+            // Show keyboard when surfacing the first Dax tip after linear onboarding.
+            chromeDelegate?.omniBar.beginEditing(animated: true)
+        }
+    }
+
+    private func presentDuckAITailoredDialog(for event: NewTabPageOnboardingDialogEvent) {
+        switch event {
+        case .nextDialogRequested:
+            // Tailored flow never enters the regular Dax sequence. Only the subscription promo can
+            // surface here — chained from the completion dialog's onDismiss via `showNextDaxDialog()`
+            // after `setFinalOnboardingDialogSeen()` flips `subscriptionPromotionPending` true.
+            presentSubscriptionPromotionIfPending()
+        case .linearOnboardingCompleted:
+            // Skip branch does not show Dax dialogs. Land the user in a new tab page with the AI-chat-mode address bar prompted.
+            if tutorialSettings.hasSkippedOnboarding {
+                chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
+            } else {
+                showDuckAIOnboardingCompletionWithActiveAddressBar(message: UserText.Onboarding.DuckAICPP.Contextual.onboardingEndOfJourneyMessage, textEntryMode: .aiChat)
+            }
+        }
+    }
+
+    private func presentSubscriptionPromotionIfPending() {
+        guard daxDialogsManager.subscriptionPromotionPending else { return }
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 
@@ -340,6 +378,7 @@ extension NewTabPageViewController {
         let presentedHostViewController = parent?.presentedViewController ?? parent
         guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
             isShowingDuckAICompletionDialog = false
+            view.alpha = 1
             return
         }
 
@@ -349,10 +388,30 @@ extension NewTabPageViewController {
         let onDismiss = { [weak self, weak editingController] in
             guard let self else { return }
             let finishDismissal = {
-                editingController?.setLogoHidden(false)
-                self.daxDialogsManager.dismiss()
-                self.dismissHostingController(didFinishNTPOnboarding: true)
-                ViewHighlighter.hideAll()
+                // Mark EOJ as seen before peeking the next spec so that
+                // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
+                // branch and can return .subscriptionPromotion. Without this the
+                // chat-path branch returns nil and dismiss() is called immediately,
+                // making isEnabled = false and blocking the promo forever (r3257196584).
+                self.daxDialogsManager.setFinalOnboardingDialogSeen()
+                // Check for subscription promo before ending onboarding, mirroring
+                // the same check in showNextDaxDialogNew's onDismiss.
+                let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
+                if nextSpec == .subscriptionPromotion {
+                    // Editing state is about to be dismissed for the subscription promo —
+                    // keep the suppressed Dax non-installed so the dismiss animation can't
+                    // slide it in along with the editing state's logo Y-offset animation.
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    self.chromeDelegate?.omniBar.endEditing()
+                    self.showNextDaxDialog()
+                } else {
+                    // Staying in the editing state — lazily install/restore the Dax so
+                    // it's visible normally for subsequent visibility updates.
+                    editingController?.setLogoHidden(false)
+                    self.daxDialogsManager.dismiss()
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    ViewHighlighter.hideAll()
+                }
             }
 
             guard let hostingView = self.hostingController?.view else {
@@ -440,8 +499,22 @@ extension NewTabPageViewController {
         let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
         let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
-
         hostingController.view.backgroundColor = .clear
+
+        // For the chat-path "try visiting a site" dialog, hide both the address bar and toolbar
+        // so the user can only choose from the preset suggestions. Showing the bars lets users
+        // bypass the onboarding step (by typing a search or switching tabs), causing edge-cases.
+        // Defer to the next run loop so any pending beginEditing() finishes before setBarsHidden
+        // (which calls hideKeyboard internally).
+        if spec == .subsequent,
+           (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
+            didHideBarsForChatPathVisitSiteDialog = true
+            DispatchQueue.main.async { [weak self] in
+                self?.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
+            }
+        }
+
+
         addChild(hostingController)
         view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -467,7 +540,14 @@ extension NewTabPageViewController {
             chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }
         isShowingDuckAICompletionDialog = false
+        if didHideBarsForChatPathVisitSiteDialog {
+            didHideBarsForChatPathVisitSiteDialog = false
+            chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+        }
         if didDismissDuckAICompletionDialog {
+            // Restore NTP visibility that was muted during the chat-path handoff so the
+            // empty-state Dax doesn't flash through the editing-state transition.
+            view.alpha = 1
             delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
         }
         if didFinishNTPOnboarding {
@@ -477,13 +557,34 @@ extension NewTabPageViewController {
 
     func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {
         guard isShowingDuckAICompletionDialog else { return }
-        daxDialogsManager.dismiss()
+        let promoPending = daxDialogsManager.subscriptionPromotionPending
         dismissHostingController(didFinishNTPOnboarding: true)
+        if !promoPending {
+            daxDialogsManager.dismiss()
+        }
+        // When promoPending, the state machine is left intact: the subscription promo
+        // will surface naturally on the next NTP open via viewDidAppear → presentNextDaxDialog().
+        ViewHighlighter.hideAll()
     }
 
     private func notifyDuckAICompletionDismissedIfNeeded() {
         guard isShowingDuckAICompletionDialog else { return }
         isShowingDuckAICompletionDialog = false
+        view.alpha = 1
         delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
     }
+}
+
+/// Onboarding-dialog triggers handled by `presentNextDaxDialog(event:)`.
+private enum NewTabPageOnboardingDialogEvent {
+    /// The linear-onboarding modal has just dismissed. Carries side effects that differ per flow:
+    /// - `default` → render next Dax tip + begin editing the omnibar
+    /// - `duckAi` → present the completion dialog (or begin editing in `.aiChat` mode when the user skipped onboarding).
+    case linearOnboardingCompleted
+
+    /// "Compute and surface the next dialog, if any." Fired by:
+    ///  - `viewDidAppear`
+    ///  - `forgetAllWithAnimation`'s post-fire callback
+    ///  - `showNextDaxDialog()` recursively inside the completion-dialog dismiss chain.
+    case nextDialogRequested
 }

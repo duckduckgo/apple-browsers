@@ -23,10 +23,11 @@ import Foundation
 public final class MockAIChatContentHandlingDelegate: AIChatContentHandlingDelegate {
     public var didReceiveOpenSettingsRequestCallCount = 0
     public var didReceiveCloseChatRequestCallCount = 0
-    public var didReceiveVoiceSessionUserEndedRequestCallCount = 0
     public var didReceiveOpenSyncSettingsRequestCallCount = 0
     public var didReceivePromptSubmissionCallCount = 0
     public var didReceivePageContextRequestCallCount = 0
+    public var didRequestToOpenCallCount = 0
+    public var requestedOpenURL: URL?
 
     public init() {}
 
@@ -36,10 +37,6 @@ public final class MockAIChatContentHandlingDelegate: AIChatContentHandlingDeleg
 
     public func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler: AIChatContentHandling) {
         didReceiveCloseChatRequestCallCount += 1
-    }
-
-    public func aiChatContentHandlerDidReceiveVoiceSessionUserEndedRequest(_ handler: AIChatContentHandling) {
-        didReceiveVoiceSessionUserEndedRequestCallCount += 1
     }
 
     public func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling) {
@@ -52,5 +49,10 @@ public final class MockAIChatContentHandlingDelegate: AIChatContentHandlingDeleg
 
     public func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {
         didReceivePageContextRequestCallCount += 1
+    }
+
+    public func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
+        didRequestToOpenCallCount += 1
+        requestedOpenURL = url
     }
 }

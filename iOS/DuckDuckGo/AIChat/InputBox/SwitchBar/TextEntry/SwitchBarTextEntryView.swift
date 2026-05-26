@@ -227,8 +227,8 @@ class SwitchBarTextEntryView: UIView {
     private func setupView() {
         applyFireModeAppearance(isFireTab: handler.isFireTab)
 
-        let fontMetrics = UIFontMetrics(forTextStyle: .body)
-        let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
+        // Match the omnibar's placeholder font so UTI ↔ omnibar transitions don't show a size jump.
+        let textFont = UIFont.daxBodyRegular()
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
@@ -284,15 +284,15 @@ class SwitchBarTextEntryView: UIView {
             guard let self else { return }
             self.hasBeenInteractedWith = true
             self.fireClearButtonPressedPixel()
-            
+
             self.textView.text = ""
             self.updatePlaceholderVisibility()
-            self.updateButtonState()
+            self.updateButtonState(animated: false)
             self.updateTextViewHeight()
-            
+
             self.handler.clearText()
             self.handler.clearButtonTapped()
-            
+
             self.wasTextEmptyForAutocorrection = false
             self.updateAutoCorrectionSetupForAIChat(for: "")
         }
@@ -348,21 +348,41 @@ class SwitchBarTextEntryView: UIView {
     /// reset happens at dismiss completion via the coordinator's `clearText()`.
     func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
         textView.text = snapshot.text
-        placeholderLabel.text = placeholderText(for: snapshot.placeholderMode)
+        setPlaceholderText(placeholderText(for: snapshot.placeholderMode))
         updatePlaceholderVisibility()
-        buttonsView.fadeAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration,
+        // State lags dismiss — hide non-chip buttons explicitly so they don't collide with the
+        // omnibar icons fading in. Chip stays animatable to crossfade with the omnibar's aiChat.
+        buttonsView.setNonChipButtonsAlpha(0)
+        buttonsView.setAIChatShortcutDismissed(true,
+                                                duration: Constants.buttonStateAnimationDuration,
                                                 horizontalOffset: Constants.dismissedChipHorizontalOffset)
     }
 
     /// Restore the override applied by `applyDismissSnapshot` so the reused view re-presents
-    /// in sync with the handler — chip backdrop visible, text reflecting `handler.currentText`.
+    /// in sync with the handler — chip visible at its resting position.
     func clearDismissSnapshot() {
-        buttonsView.restoreAIChatShortcutBackdrop(duration: Constants.buttonStateAnimationDuration)
-        placeholderLabel.text = placeholderText(for: currentMode)
+        buttonsView.setNonChipButtonsAlpha(1)
+        buttonsView.setAIChatShortcutDismissed(false, duration: Constants.buttonStateAnimationDuration)
+        setPlaceholderText(placeholderText(for: currentMode))
         if textView.text != handler.currentText {
             textView.text = handler.currentText
             updatePlaceholderVisibility()
         }
+    }
+
+    // Keeps in-flight color-transition overlays in sync so their captured text doesn't
+    // composite over the new text mid-animation.
+    private func setPlaceholderText(_ text: String) {
+        placeholderLabel.text = text
+        for case let overlay as UILabel in placeholderLabel.subviews {
+            overlay.text = text
+        }
+    }
+
+    // Sync hook used by the coordinator to beat the async `hasSubmittedPromptPublisher`
+    // sink before the flanked UTI first renders.
+    func refreshPlaceholderForCurrentMode() {
+        setPlaceholderText(placeholderText(for: currentMode))
     }
 
     private func placeholderText(for mode: TextEntryMode) -> String {
@@ -379,7 +399,7 @@ class SwitchBarTextEntryView: UIView {
     private func updateForCurrentMode() {
         wasTextEmptyForAutocorrection = textView.text.isEmpty
 
-        placeholderLabel.text = placeholderText(for: currentMode)
+        setPlaceholderText(placeholderText(for: currentMode))
         switch currentMode {
         case .search:
             textView.autocapitalizationType = .none
@@ -627,15 +647,11 @@ class SwitchBarTextEntryView: UIView {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self else { return }
-
-                if self.handler.isUsingFadeOutAnimation {
-                    self.window?.layoutIfNeeded()
+                // Snap — animating the buttonsView-driven width change reveals the new placeholder
+                // tail progressively. Pose Y is animated by `setInputMode`'s outer UIView.animate.
+                UIView.performWithoutAnimation {
                     self.updateForCurrentMode()
-                    UIView.animate(withDuration: 0.25) {
-                        self.window?.layoutIfNeeded()
-                    }
-                } else {
-                    self.updateForCurrentMode()
+                    self.layoutIfNeeded()
                 }
             }
             .store(in: &cancellables)
@@ -678,7 +694,7 @@ class SwitchBarTextEntryView: UIView {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self, self.currentMode == .aiChat else { return }
-                self.placeholderLabel.text = self.placeholderText(for: .aiChat)
+                self.setPlaceholderText(self.placeholderText(for: .aiChat))
                 self.updateKeyboardConfiguration()
             }
             .store(in: &cancellables)
@@ -811,14 +827,24 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.transform = transform
     }
 
+    /// Shifts text so its first glyph (not caret) lands at `windowX` — UITextView's caret sits
+    /// 1pt left of its glyph (`lineFragmentPadding`).
     @discardableResult
-    func alignPlaceholderHorizontally(toWindowX windowX: CGFloat) -> CGFloat {
+    func alignVisibleTextLeadingEdge(toWindowX windowX: CGFloat) -> CGFloat {
         setTextHorizontalShift(0)
         guard placeholderLabel.window != nil else { return 0 }
-        let currentX = placeholderLabel.convert(CGPoint.zero, to: nil).x
-        let shift = windowX - currentX
+        let shift = windowX - visibleTextLeadingWindowX
         setTextHorizontalShift(shift)
         return shift
+    }
+
+    private var visibleTextLeadingWindowX: CGFloat {
+        if placeholderLabel.isHidden,
+           let end = textView.position(from: textView.beginningOfDocument, offset: 1),
+           let range = textView.textRange(from: textView.beginningOfDocument, to: end) {
+            return textView.convert(textView.firstRect(for: range).origin, to: nil).x
+        }
+        return placeholderLabel.convert(CGPoint.zero, to: nil).x
     }
 
     private func disableAutoCorrectionAndSpellChecking() {

@@ -473,7 +473,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
         XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 2)
         XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.allSatisfy {
-            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue
+            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue
                 && $0.metric == "screen-impression"
                 && $0.value == "fire-dialog"
         })
@@ -643,7 +643,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
         XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 2)
         XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.allSatisfy {
-            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue
+            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue
                 && $0.metric == "cta-pressed"
                 && $0.value == "fire-button-pressed"
         })
@@ -661,7 +661,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
         XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 2)
         XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.allSatisfy {
-            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue
+            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue
                 && $0.metric == "screen-impression"
                 && $0.value == "final-dialog"
         })
@@ -695,7 +695,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, .onboardingIntroDuckAIExperimentToggleImpressionUnique)
         XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 2)
         XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.allSatisfy {
-            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue
+            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue
                 && $0.metric == "screen-impression"
                 && $0.value == "toggle-screen"
         })

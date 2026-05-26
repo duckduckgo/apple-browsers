@@ -26,11 +26,13 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     private let tabSwitcherView = TabSwitcherStaticView()
     private var longPressRecognizer: UILongPressGestureRecognizer!
     weak var delegate: TabSwitcherButtonDelegate?
-    var showMenuOnLongPress: Bool {
-        didSet {
-            configureLongPressBehavior()
-        }
-    }
+
+    /// Fires the moment a touch lands on the button — *before* UIControl starts tracking
+    /// and before any gesture recognizer can cancel the touch. Set by the host (currently
+    /// the AI-chat header) to feed the unresponsive-tab-switcher diagnostic overlay's tap
+    /// counter; the standard `.touchUpInside` action wouldn't fire if tracking gets
+    /// cancelled, which is exactly the case we want to surface.
+    var onTouchDown: (() -> Void)?
 
     var text: String? {
         tabSwitcherView.label.text
@@ -39,8 +41,7 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     // Just to satisfy protocol requirement
     let pointer: UIView? = nil
 
-    init(showMenuOnLongPress: Bool) {
-        self.showMenuOnLongPress = showMenuOnLongPress
+    init() {
         super.init()
         self.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
@@ -53,8 +54,7 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
         longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(onNewTabLongPressRecognizer))
         longPressRecognizer.minimumPressDuration = 0.4
-
-        configureLongPressBehavior()
+        addGestureRecognizer(longPressRecognizer)
         setUpSubviews()
         self.isPointerInteractionEnabled = true
     }
@@ -129,54 +129,15 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
         animator1.startAnimation()
     }
 
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        onTouchDown?()
+        super.touchesBegan(touches, with: event)
+    }
+
     override func tintColorDidChange() {
         super.tintColorDidChange()
 
         tabSwitcherView.tintColor = tintColor
-    }
-    
-    private func configureLongPressBehavior() {
-        if showMenuOnLongPress {
-            setLongPressMenu()
-        } else {
-            setLongPressGestureRecognizer()
-        }
-    }
-
-    private func setLongPressMenu() {
-        removeGestureRecognizer(longPressRecognizer)
-        let menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
-                    PixelParameters.source: "toolbar"
-                ])
-                completion([
-                    UIAction(title: UserText.actionNewFireTab,
-                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                                 guard let self else { return }
-                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
-                                     PixelParameters.source: "toolbar"
-                                 ])
-                                 delegate?.launchNewFireTab(self)
-                             },
-                    UIAction(title: UserText.actionNewTab,
-                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                                 guard let self else { return }
-                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
-                                     PixelParameters.source: "toolbar"
-                                 ])
-                                 delegate?.launchNewNormalTab(self)
-                             }
-                ])
-            }
-        ])
-
-        self.menu = menu
-    }
-    
-    private func setLongPressGestureRecognizer() {
-        self.menu = nil
-        addGestureRecognizer(longPressRecognizer)
     }
 
     @objc private func onNewTabLongPressRecognizer(_ recognizer: UILongPressGestureRecognizer) {

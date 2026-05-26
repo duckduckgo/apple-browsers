@@ -56,10 +56,9 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
         self.aichatIPadTabFeature = aichatIPadTabFeature ?? AIChatIPadTabFeature(featureFlagger: featureFlagger)
     }
 
-    static let interceptedURLs: [InterceptedURLInfo] = [
-        InterceptedURLInfo(id: .subscription, path: "/subscriptions"),
-        InterceptedURLInfo(id: .subscription, path: "/subscriptions/plans")
-    ]
+    static let interceptedURLs: [InterceptedURLInfo] = SubscriptionPurchaseFlowPath.allCases.map {
+        InterceptedURLInfo(id: .subscription, path: $0.rawValue)
+    }
     
     func allowsNavigatingTo(url: URL) -> Bool {
         if url.isDuckAIURL && !aichatFullModeFeature.isAvailable && !aichatIPadTabFeature.isAvailable {

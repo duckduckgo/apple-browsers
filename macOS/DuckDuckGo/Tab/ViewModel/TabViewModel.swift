@@ -571,6 +571,42 @@ extension TabViewModel: WebViewZoomLevelDelegate {
     }
 }
 
+// MARK: - Zoom actions
+
+extension TabViewModel {
+
+    /// Performs a zoom-in on the underlying WebView and fires the zoom pixel
+    /// only when the zoom level actually changes.
+    func zoomIn(entryPoint: WebViewZoomEntryPoint) {
+        let before = tab.webView.zoomLevel
+        tab.webView.zoomIn()
+        guard tab.webView.zoomLevel != before else { return }
+        WebViewZoomPixel.fire(entryPoint: entryPoint)
+    }
+
+    /// Performs a zoom-out on the underlying WebView and fires the zoom pixel
+    /// only when the zoom level actually changes.
+    func zoomOut(entryPoint: WebViewZoomEntryPoint) {
+        let before = tab.webView.zoomLevel
+        tab.webView.zoomOut()
+        guard tab.webView.zoomLevel != before else { return }
+        WebViewZoomPixel.fire(entryPoint: entryPoint)
+    }
+
+    /// Resets the underlying WebView zoom to the default value and fires the
+    /// zoom pixel only when the user-visible zoom state actually changes — i.e.
+    /// the page zoom level was non-default OR pinch magnification was non-1.
+    func resetZoom(entryPoint: WebViewZoomEntryPoint) {
+        let zoomLevelBefore = tab.webView.zoomLevel
+        let magnificationBefore = tab.webView.magnification
+        tab.webView.resetZoomLevel()
+        let zoomLevelChanged = tab.webView.zoomLevel != zoomLevelBefore
+        let magnificationChanged = magnificationBefore != 1
+        guard zoomLevelChanged || magnificationChanged else { return }
+        WebViewZoomPixel.fire(entryPoint: entryPoint)
+    }
+}
+
 private extension NSAttributedString {
 
     private typealias Component = NSAttributedString

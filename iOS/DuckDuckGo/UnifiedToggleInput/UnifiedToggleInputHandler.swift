@@ -33,7 +33,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true
-    let modeParameters: [String: String] = [:]
+    var modeParameters: [String: String] { ["mode": currentToggleState.rawValue] }
     var isFireTab: Bool
 
     // MARK: - SwitchBarHandling — Dynamic State

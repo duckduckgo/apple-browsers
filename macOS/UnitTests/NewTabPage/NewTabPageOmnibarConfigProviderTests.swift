@@ -22,6 +22,7 @@ import FeatureFlags
 import XCTest
 import Persistence
 import PersistenceTestingUtils
+import PixelKit
 import PrivacyConfig
 import NewTabPage
 @testable import DuckDuckGo_Privacy_Browser
@@ -40,6 +41,7 @@ final class MockNewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcu
     }
 }
 
+@MainActor
 final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     // Key used for persistence in the provider
@@ -58,16 +60,23 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     @MainActor
+    private func makeSearchPreferences(showAutocompleteSuggestions: Bool = true) -> SearchPreferences {
+        let persistor = MockSearchPreferencesPersistor()
+        persistor.showAutocompleteSuggestions = showAutocompleteSuggestions
+        return SearchPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock())
+    }
+
+    @MainActor
     func testDefaultModeWhenNoValueInStore() throws {
         let store = try makeStore()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         XCTAssertEqual(provider.mode, .search)
     }
 
     @MainActor
     func testModeReadsStoredValidValue() throws {
         let store = try makeStore(underlying: [storageKey: "ai"])
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         XCTAssertEqual(provider.mode, .ai)
     }
 
@@ -75,7 +84,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testModeFallBackToSearchWhenAIFeaturesAreDisabled() throws {
         let store = try makeStore(underlying: [storageKey: "ai"])
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         settingProvider.isAIChatSettingVisible = false
         XCTAssertEqual(provider.mode, .search)
     }
@@ -84,7 +93,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testModeFallBackToSearchWhenAIChatShortcutIsHidden() throws {
         let store = try makeStore(underlying: [storageKey: "ai"])
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         settingProvider.isAIChatShortcutEnabled = false
         XCTAssertEqual(provider.mode, .search)
     }
@@ -92,7 +101,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     @MainActor
     func testModeDefaultsToSearchOnInvalidRawValue() throws {
         let store = try makeStore(underlying: [storageKey: "invalid"])
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         XCTAssertEqual(provider.mode, .search)
     }
 
@@ -100,14 +109,14 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testModeDefaultsToSearchOnReadError() throws {
         let readError = NSError(domain: "test", code: 1)
         let store = try makeStore(throwOnRead: readError)
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         XCTAssertEqual(provider.mode, .search)
     }
 
     @MainActor
     func testSettingModeWritesValue() throws {
         let store = try makeStore()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         provider.mode = .ai
         // Underlying dict should contain the rawValue
         XCTAssertEqual(store.underlyingDict[storageKey] as? String, "ai")
@@ -119,7 +128,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testSettingModeHandlesWriteErrorGracefully() throws {
         let writeError = NSError(domain: "test", code: 2)
         let store = try makeStore(throwOnSet: writeError)
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
         // Should not throw on write error
         provider.mode = .ai
         // Underlying dict remains unchanged
@@ -131,7 +140,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testThatAIChatShortcutEnabledFlagIsPassedToSettingProvider() throws {
         let store = try makeStore()
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         provider.isAIChatShortcutEnabled = true
         XCTAssertEqual(settingProvider.isAIChatShortcutEnabled, true)
@@ -143,7 +152,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testThatAIChatShortcutEnabledFlagPublisherIsConnectedToSettingProvider() throws {
         let store = try makeStore()
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         var events: [Bool] = []
 
@@ -166,7 +175,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testThatAIChatSettingsVisibleFlagIsPassedToFromSettingProvider() throws {
         let store = try makeStore()
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         settingProvider.isAIChatSettingVisible = true
         XCTAssertEqual(provider.isAIChatSettingVisible, true)
@@ -178,7 +187,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testThatAIChatSettingVisibleFlagPublisherIsConnectedToSettingProvider() throws {
         let store = try makeStore()
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         var events: [Bool] = []
 
@@ -203,7 +212,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": false, "aiChatNtpViewAllChats": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         provider.configure(aiChatsProvider: excessProvider)
@@ -217,7 +226,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": false]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         provider.configure(aiChatsProvider: excessProvider)
@@ -231,7 +240,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         provider.configure(aiChatsProvider: excessProvider)
@@ -245,7 +254,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         provider.configure(aiChatsProvider: excessProvider)
@@ -258,16 +267,19 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     private let legacyModelIdKey = "newTabPageSelectedModelId"
 
+    @MainActor
     private func makeProvider(
         persistor: AIChatPreferencesPersisting,
         keyValueStore: ThrowingKeyValueStoring? = nil,
-        featureFlagger: MockFeatureFlagger = MockFeatureFlagger()
+        featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+        searchPreferences: SearchPreferences? = nil
     ) throws -> NewTabPageOmnibarConfigProvider {
         NewTabPageOmnibarConfigProvider(
             keyValueStore: try keyValueStore ?? makeStore(),
             aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: persistor,
+            searchPreferences: searchPreferences ?? makeSearchPreferences(),
             firePixel: { _ in }
         )
     }
@@ -429,7 +441,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         // Persisted value remains in storage, but the provider hides it so the web gets `nil`.
         let persistor = MockAIChatPreferencesPersisting()
         persistor.selectedReasoningEffort = "medium"
-        let provider = try makeProvider(persistor: persistor, featureFlagger: MockFeatureFlagger())
+        let provider = try makeProvider(persistor: persistor, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         XCTAssertNil(provider.selectedReasoningEffort)
     }
@@ -447,7 +459,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     func testSelectedReasoningEffort_writeIgnoredWhenDisabled() throws {
         let persistor = MockAIChatPreferencesPersisting()
-        let provider = try makeProvider(persistor: persistor, featureFlagger: MockFeatureFlagger())
+        let provider = try makeProvider(persistor: persistor, featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
         provider.selectedReasoningEffort = "low"
 
@@ -475,7 +487,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
         let excessProvider = MockAIChatExcessProvider()
 
         var events: [Bool] = []
@@ -489,6 +501,74 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         XCTAssertTrue(events.contains(true))
         XCTAssertEqual(events.last, false)
+    }
+
+    func testShowViewAllAiChats_isFalseWhenAutocompleteSuggestionsDisabled() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences(showAutocompleteSuggestions: false))
+        let excessProvider = MockAIChatExcessProvider()
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        // Stale `hasExcessChats` from a prior fetch must not surface a "View All" button when
+        // the user has turned Autocomplete suggestions off — matches the address bar behaviour
+        // and avoids the empty-chats-but-View-All inconsistency Cursor Bugbot flagged.
+        XCTAssertFalse(provider.showViewAllAiChats)
+    }
+
+    func testShowViewAllAiChatsPublisher_emitsWhenAutocompleteSuggestionsToggles() throws {
+        PixelKit.setUp(dryRun: true, appVersion: "", defaultHeaders: [:], defaults: UserDefaults()) { _, _, _, _, _, _ in }
+        defer { PixelKit.tearDown() }
+
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
+        let searchPreferences = makeSearchPreferences(showAutocompleteSuggestions: true)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: searchPreferences)
+        let excessProvider = MockAIChatExcessProvider()
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        var events: [Bool] = []
+        let cancellable = provider.showViewAllAiChatsPublisher.sink { events.append($0) }
+
+        searchPreferences.showAutocompleteSuggestions = false
+        searchPreferences.showAutocompleteSuggestions = true
+
+        cancellable.cancel()
+        XCTAssertTrue(events.contains(false))
+        XCTAssertEqual(events.last, true)
+    }
+
+    // MARK: - showAskAiSuggestion
+
+    func testShowAskAiSuggestion_mirrorsSearchPreferences() throws {
+        let store = try makeStore()
+        let onProvider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences(showAutocompleteSuggestions: true))
+        let offProvider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences(showAutocompleteSuggestions: false))
+
+        XCTAssertTrue(onProvider.showAskAiSuggestion)
+        XCTAssertFalse(offProvider.showAskAiSuggestion)
+    }
+
+    func testShowAskAiSuggestionPublisher_emitsWhenPreferenceChanges() throws {
+        PixelKit.setUp(dryRun: true, appVersion: "", defaultHeaders: [:], defaults: UserDefaults()) { _, _, _, _, _, _ in }
+        defer { PixelKit.tearDown() }
+
+        let searchPreferences = makeSearchPreferences(showAutocompleteSuggestions: true)
+        let store = try makeStore()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: searchPreferences)
+
+        var events: [Bool] = []
+        let cancellable = provider.showAskAiSuggestionPublisher.sink { events.append($0) }
+
+        searchPreferences.showAutocompleteSuggestions = false
+        searchPreferences.showAutocompleteSuggestions = true
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
     }
 
 }

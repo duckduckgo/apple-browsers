@@ -263,6 +263,7 @@ private extension OnboardingRebranding {
                 title,
                 startAnimating: $startTypingTitle,
                 alignment: Alignment(alignment),
+                playOnlyOnce: true,
                 onTypingFinished: { revealStaticMessageAndFinish() }
             )
             .font(theme.typography.contextual.title)

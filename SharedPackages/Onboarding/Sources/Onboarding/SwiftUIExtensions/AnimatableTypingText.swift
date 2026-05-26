@@ -40,15 +40,19 @@ public struct AnimatableTypingText: View {
     @StateObject private var model: AnimatableTypingTextModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// - Parameter playOnlyOnce: When `true`, the typing animation plays at most once per
+    ///   process lifetime for a given text content. Subsequent appearances (e.g. after a
+    ///   view rebuild on orientation change) jump straight to the final state.
     public init(
         _ text: NSAttributedString,
         startAnimating: Binding<Bool> = .constant(true),
         skipAnimation: Binding<Bool> = .constant(false),
         alignment: Alignment = .leading,
+        playOnlyOnce: Bool = false,
         onTypingFinished: (() -> Void)? = nil
     ) {
         self.text = text
-        _model = StateObject(wrappedValue: AnimatableTypingTextModel(text: text, onTypingFinished: onTypingFinished))
+        _model = StateObject(wrappedValue: AnimatableTypingTextModel(text: text, playOnlyOnce: playOnlyOnce, onTypingFinished: onTypingFinished))
         self.startAnimating = startAnimating
         self.skipAnimation = skipAnimation
         self.alignment = alignment
@@ -60,11 +64,12 @@ public struct AnimatableTypingText: View {
         startAnimating: Binding<Bool> = .constant(true),
         skipAnimation: Binding<Bool> = .constant(false),
         alignment: Alignment = .leading,
+        playOnlyOnce: Bool = false,
         onTypingFinished: (() -> Void)? = nil
     ) {
         let attributesText = NSAttributedString(string: text)
         self.text = attributesText
-        _model = StateObject(wrappedValue: AnimatableTypingTextModel(text: attributesText, onTypingFinished: onTypingFinished))
+        _model = StateObject(wrappedValue: AnimatableTypingTextModel(text: attributesText, playOnlyOnce: playOnlyOnce, onTypingFinished: onTypingFinished))
         self.startAnimating = startAnimating
         self.skipAnimation = skipAnimation
         self.alignment = alignment
@@ -109,6 +114,11 @@ public struct AnimatableTypingText: View {
 // MARK: - Model
 
 final class AnimatableTypingTextModel: ObservableObject {
+    /// Process-wide cache of text strings that have already completed their typing animation.
+    /// Used when callers opt in via `playOnlyOnce` so subsequent view rebuilds (e.g. on device
+    /// rotation) don't replay the animation.
+    private static var completedTexts: Set<String> = []
+
     private var timer: TimerInterface?
 
     @Published private(set) var typedAttributedText: NSAttributedString = .init(string: "")
@@ -117,12 +127,19 @@ final class AnimatableTypingTextModel: ObservableObject {
     private let text: NSAttributedString
     private let onTypingFinished: (() -> Void)?
     private let timerFactory: TimerCreating
+    private let playOnlyOnce: Bool
 
-    init(text: NSAttributedString, onTypingFinished: (() -> Void)?, timerFactory: TimerCreating = TimerFactory()) {
+    init(text: NSAttributedString, playOnlyOnce: Bool = false, onTypingFinished: (() -> Void)?, timerFactory: TimerCreating = TimerFactory()) {
         self.text = text
         self.onTypingFinished = onTypingFinished
         self.timerFactory = timerFactory
-        typedAttributedText = createAttributedString(original: text, visibleLength: 0)
+        self.playOnlyOnce = playOnlyOnce
+        if playOnlyOnce && Self.completedTexts.contains(text.string) {
+            typingIndex = text.length
+            typedAttributedText = text
+        } else {
+            typedAttributedText = createAttributedString(original: text, visibleLength: 0)
+        }
     }
 
     func skip() {
@@ -130,6 +147,7 @@ final class AnimatableTypingTextModel: ObservableObject {
         timer = nil
 
         typedAttributedText = text
+        markCompletedIfNeeded()
         onTypingFinished?()
     }
 
@@ -155,6 +173,7 @@ final class AnimatableTypingTextModel: ObservableObject {
 
     private func handleTimerEvent() {
         if typingIndex >= text.length {
+            markCompletedIfNeeded()
             onTypingFinished?()
             stopAnimating()
             return
@@ -165,9 +184,15 @@ final class AnimatableTypingTextModel: ObservableObject {
 
     private func stopTyping() {
         typedAttributedText = text
+        markCompletedIfNeeded()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.onTypingFinished?()
         }
+    }
+
+    private func markCompletedIfNeeded() {
+        guard playOnlyOnce else { return }
+        Self.completedTexts.insert(text.string)
     }
 
     private func showCharacter() {

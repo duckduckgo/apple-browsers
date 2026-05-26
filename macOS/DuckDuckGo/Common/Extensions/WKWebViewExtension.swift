@@ -92,19 +92,6 @@ extension WKWebView {
         }
     }
 
-    @nonobjc private var mediaCaptureState: _WKMediaCaptureStateDeprecated {
-        guard self.responds(to: Selector.mediaCaptureState),
-              let method = class_getInstanceMethod(object_getClass(self), Selector.mediaCaptureState) else {
-            assertionFailure("WKWebView does not respond to selector _mediaCaptureState")
-            return .none
-        }
-        let imp = method_getImplementation(method)
-        typealias MediaCaptureStateType = @convention(c) (WKWebView, ObjectiveC.Selector) -> UInt
-        let mediaCaptureStateGetter = unsafeBitCast(imp, to: MediaCaptureStateType.self)
-        let mediaCaptureState = mediaCaptureStateGetter(self, Selector.mediaCaptureState)
-        return _WKMediaCaptureStateDeprecated(rawValue: mediaCaptureState)
-    }
-
     var microphoneState: CaptureState {
         CaptureState(self.microphoneCaptureState)
     }
@@ -432,13 +419,6 @@ extension WKWebView {
         static let addsVisitedLinks = NSSelectorFromString("_addsVisitedLinks")
         static let isPlayingAudio = "_isPlayingAudio"
         static let webProcessIdentifier = NSSelectorFromString("_webProcessIdentifier")
-
-        @available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
-        static let mediaCaptureState = NSSelectorFromString("_mediaCaptureState")
-        @available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
-        static let stopMediaCapture = NSSelectorFromString("_stopMediaCapture")
-        @available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
-        static let stopAllMediaPlayback = NSSelectorFromString("_stopAllMediaPlayback")
     }
 
     // prevent exception if private API keys go missing

@@ -114,11 +114,6 @@ final class WebViewMock: WKWebView {
     var objcMediaCaptureState: UInt { mediaCaptureState.rawValue }
 
     var stopMediaCaptureHandler: (() -> Void)?
-    @objc(_stopMediaCapture)
-    func objcStopMediaCapture() {
-        mediaCaptureState = []
-        stopMediaCaptureHandler?()
-    }
 
     var mediaMutedStateValue: _WKMediaMutedState = []
     var setPageMutedHandler: ((_WKMediaMutedState) -> Void)?

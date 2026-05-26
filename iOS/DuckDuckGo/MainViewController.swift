@@ -5461,6 +5461,7 @@ extension MainViewController: TabSwitcherDelegate {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
             case .fire:
+                fireModePromotionEligibility?.markBurnPerformed()
                 request = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .tabSwitcher)
             case .normal:
                 request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)

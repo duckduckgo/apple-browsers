@@ -367,8 +367,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
     public func dashboardDidOpen() {
-        guard featureFlagger.isForegroundRunningWhenDashboardOpenFeatureOn,
-              !isInitialContinuedProcessingRunActive else { return }
+        guard !isInitialContinuedProcessingRunActive else { return }
 
         if currentRunIsFreeScan == true && canRunFreemiumScans {
             Logger.dataBrokerProtection.log("Starting scan-only operations whilst dashboard open (freemium)")
@@ -384,8 +383,6 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
     }
     
     public func dashboardDidClose() {
-        guard featureFlagger.isForegroundRunningWhenDashboardOpenFeatureOn else { return }
-
         Logger.dataBrokerProtection.log("Stopping operations as dashboard closed")
         // We don't want to stop immediate scans if they are running
         self.queueManager.stopScheduledOperationsOnly()

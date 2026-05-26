@@ -183,6 +183,12 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Description of the Ad Blocking feature in settings */
+"ad.blocking.description" = "Bloqueia os rastreadores invasivos antes de serem carregados, eliminando eficazmente os anúncios que usam rastreio";
+
+/* Section header for YouTube-specific ad blocking settings */
+"ad.blocking.youtube.section.header" = "Bloqueio de anúncios do YouTube";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Parte inferior";
 
@@ -4924,11 +4930,41 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Obtém o DuckDuckGo para Windows!";
 
-/* Explanation text for YouTube Ad Blocking feature */
-"youtube.ad.blocking.explanation" = "O DuckDuckGo remove os anúncios nos vídeos no YouTube para que possas ver vídeos sem interrupções.";
+/* Body text of the bottom sheet asking the user to send an anonymous breakage report */
+"youtube.ad.blocking.breakage-report.message" = "Envia um relatório anónimo de falha à DuckDuckGo. Ajuda a melhorar o bloqueio de anúncios para toda a gente!";
 
-/* Settings screen title for YouTube Ad Blocking */
-"youtube.ad.blocking.title" = "Bloqueio de anúncios do YouTube";
+/* Primary action sending an anonymous YouTube ad-blocking breakage report */
+"youtube.ad.blocking.breakage-report.send" = "Enviar relatório de erros";
+
+/* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
+"youtube.ad.blocking.breakage-report.title" = "Bloqueio de anúncios do YouTube não funciona?";
+
+/* Settings cell subtitle indicating YouTube ad blocking will re-enable on next app launch */
+"youtube.ad.blocking.disabled-until-relaunch" = "Desativado até ao relançamento";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "O DuckDuckGo bloqueia anúncios em vídeo no YouTube, para que possas ver vídeos sem interrupções.";
+
+/* Browsing menu row that turns YouTube ad blocking back on after the user has disabled it */
+"youtube.ad.blocking.menu.enable" = "Ativa o bloqueador de anúncios do YouTube";
+
+/* Browsing menu row that opens the YouTube ad-block mode picker */
+"youtube.ad.blocking.menu.toggle" = "Desativar bloqueio de anúncios do YouTube";
+
+/* Picker option keeping YouTube ad blocking always off */
+"youtube.ad.blocking.mode.always-off" = "Sempre desligada";
+
+/* Picker option keeping YouTube ad blocking always on */
+"youtube.ad.blocking.mode.always-on" = "Sempre ligada";
+
+/* Picker option disabling YouTube ad blocking until the next app launch */
+"youtube.ad.blocking.mode.disable-until-relaunch" = "Desativar até ao relançamento";
+
+/* Title of the YouTube ad-block mode picker bottom sheet */
+"youtube.ad.blocking.picker.title" = "Bloqueio de anúncios do YouTube";
+
+/* Settings screen title for Ad Blocking */
+"youtube.ad.blocking.title" = "Bloqueio de anúncios";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Bloquear anúncios no YouTube";
@@ -4938,6 +4974,15 @@
 
 /* Learn More link appended after the YouTube ad blocking toggle description */
 "youtube.ad.blocking.toggle.footer.learn-more" = "Sabe mais";
+
+/* Acknowledgement button on the YouTube ad-blocking unavailable bottom sheet */
+"youtube.ad.blocking.unavailable.got-it" = "Entendi";
+
+/* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.message" = "O bloqueio de anúncios foi afetado por alterações recentes ao YouTube. Estamos a trabalhar para resolver estes problemas e agradecemos a tua compreensão.";
+
+/* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.title" = "Bloqueio de anúncios do YouTube indisponível";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Marcadores";

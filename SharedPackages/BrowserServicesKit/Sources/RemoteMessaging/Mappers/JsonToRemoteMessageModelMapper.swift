@@ -49,6 +49,7 @@ private enum AttributesKey: String, CaseIterable {
     case interactedWithMessage
     case interactedWithDeprecatedMacRemoteMessage
     case installedMacAppStore
+    case canUpgradeOS
     case pinnedTabs
     case customHomePage
     case duckPlayerOnboarded
@@ -95,6 +96,7 @@ private enum AttributesKey: String, CaseIterable {
             jsonMatchingAttribute: jsonMatchingAttribute
         )
         case .installedMacAppStore: return IsInstalledMacAppStoreMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .canUpgradeOS: return OSUpgradeCapabilityMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .pinnedTabs: return PinnedTabsMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .customHomePage: return CustomHomePageMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .duckPlayerOnboarded: return DuckPlayerOnboardedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)

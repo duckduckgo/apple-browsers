@@ -115,6 +115,8 @@ extension HomePage.Models.FeatureType {
             self = .dock
         case .subscription:
             self = .subscription
+        case .youtubeAdBlocking:
+            self = .youtubeAdBlocking
         case .personalizeBrowser, .sync:
             return nil // These cards are not used with this card provider
         }
@@ -136,6 +138,8 @@ extension NewTabPageDataModel.CardID {
             self = .bringStuff
         case .subscription:
             self = .subscription
+        case .youtubeAdBlocking:
+            self = .youtubeAdBlocking
         }
     }
 }

@@ -65,7 +65,7 @@ final class SupportedOSCheckerTests: XCTestCase {
             XCTFail("Expected unsupported warning")
             return
         }
-        XCTAssertEqual(version, "11.4")
+        XCTAssertEqual(version, "12.3")
     }
 
     func testWhenCurrentVersionIsEqualToMinSupportedThenNoWarning() {
@@ -174,7 +174,7 @@ final class SupportedOSCheckerTests: XCTestCase {
             XCTFail("Expected unsupported warning")
             return
         }
-        XCTAssertEqual(version, "11.4")
+        XCTAssertEqual(version, "12.3")
     }
 
     func testWhenForceWillSoonDropSupportMessageFeatureFlagIsOnThenShowsUpcomingWarning() {

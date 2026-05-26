@@ -157,9 +157,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
-    case appStoreUpdateFlow
-
     /// Hide manual update option — always use automatic updates
     case automaticUpdatesOnly
 
@@ -525,8 +522,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
             Config(source: .remoteReleasable(SyncSubfeature.level3AllowCreateAccount))
-        case .appStoreUpdateFlow:
-            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreUpdateFlow), category: .updates)
         case .automaticUpdatesOnly:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.automaticUpdatesOnly), category: .updates)
         case .unifiedURLPredictor:

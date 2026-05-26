@@ -40,9 +40,7 @@ enum OSUpgradeCapability: String {
         }
     }
 
-    /// Boolean view used for RMF rule matching. `.unknown` is treated as `true`
-    /// to match the existing UI fallback in BigSurEndOfSupportNoticePresenter,
-    /// which shows the "Update macOS" CTA for unknown hardware.
+    /// Whether the OS can be upgraded.
     var canUpgradeOS: Bool {
         switch self {
         case .capable, .unknown: return true
@@ -106,12 +104,12 @@ extension OperatingSystemVersion: @retroactive Comparable {
 }
 
 final class SupportedOSChecker {
-    static let ddgMinBigSurVersion = OperatingSystemVersion(majorVersion: 11,
-                                                            minorVersion: 4,
-                                                            patchVersion: 0)
     static let ddgMinMonterreyVersion = OperatingSystemVersion(majorVersion: 12,
                                                                minorVersion: 3,
                                                                patchVersion: 0)
+    static let ddgMinVenturaVersion = OperatingSystemVersion(majorVersion: 13,
+                                                             minorVersion: 0,
+                                                             patchVersion: 0)
 
     /// Lookup table mapping hardware model identifiers to the major component of the maximum macOS version they support.
     ///
@@ -191,11 +189,11 @@ final class SupportedOSChecker {
             return upcomingMinSupportedOSVersionOverride
         }
 
-        guard featureFlagger.isFeatureOn(.willSoonDropBigSurSupport) else {
+        guard featureFlagger.isFeatureOn(.willSoonDropMontereySupport) else {
             return nil
         }
 
-        return Self.ddgMinMonterreyVersion
+        return Self.ddgMinVenturaVersion
     }
 
     private var maxSupportedVersionByModel: [String: Int] {

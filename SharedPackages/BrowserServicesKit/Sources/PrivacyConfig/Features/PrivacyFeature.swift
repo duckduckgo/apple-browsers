@@ -114,7 +114,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case addressBarPerformanceInstrumentation
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
-    case willSoonDropBigSurSupport
+    case willSoonDropMontereySupport
 
     /// Hang reporting feature flag
     case hangReporting

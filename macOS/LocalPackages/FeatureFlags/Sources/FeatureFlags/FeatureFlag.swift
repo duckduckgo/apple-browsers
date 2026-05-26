@@ -132,7 +132,7 @@ public enum FeatureFlag: String, CaseIterable {
     case osSupportForceWillSoonDropSupportMessage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719124742
-    case willSoonDropBigSurSupport
+    case willSoonDropMontereySupport
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
@@ -509,8 +509,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, category: .osSupportWarnings)
         case .osSupportForceWillSoonDropSupportMessage:
             Config(source: .disabled, category: .osSupportWarnings)
-        case .willSoonDropBigSurSupport:
-            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport), category: .osSupportWarnings)
+        case .willSoonDropMontereySupport:
+            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.willSoonDropMontereySupport), category: .osSupportWarnings)
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:

@@ -198,10 +198,10 @@ final class SupportedOSCheckerTests: XCTestCase {
         XCTAssertEqual(version, "12.3")
     }
 
-    func testWhenWillSoonDropBigSurSupportFeatureFlagIsOnThenShowsUpcomingWarning() {
+    func testWhenWillSoonDropMontereySupportFeatureFlagIsOnThenShowsUpcomingWarning() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.willSoonDropBigSurSupport]
+        mockFeatureFlagger.enabledFeatureFlags = [.willSoonDropMontereySupport]
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.bigSurVersion,

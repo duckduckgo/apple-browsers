@@ -874,6 +874,11 @@ extension MainCoordinator: OnboardingPresenting {
         // 1. Configure Onboarding Flow
         onboardingManager.configureOnboardingFlow(from: url)
 
+        // The flow is now known. Duck.ai tailored-flow users need UTI set up before the
+        // Duck.ai interlude runs inside their onboarding; the viewDidLoad call earlier
+        // bailed because the flow wasn't determined yet (defaulted to .default).
+        controller.setUpUnifiedToggleInputIfNeeded()
+
         // 2. Presenting Onboarding Flow if needed
         guard !hasPresentedOnboarding, controller.isStartupOnboardingPending else { return }
         hasPresentedOnboarding = true

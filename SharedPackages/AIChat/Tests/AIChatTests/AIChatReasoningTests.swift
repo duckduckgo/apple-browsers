@@ -260,6 +260,21 @@ final class AIChatReasoningTests: XCTestCase {
         XCTAssertEqual(model.reasoningEffort(for: .reasoning), .low)
         XCTAssertEqual(model.reasoningEffort(for: .fast), AIChatReasoningEffort.none)
     }
+
+    func testWhenModeMapsToMultipleEffortsWithMixedGating_AccessibleEffortIsResolved() {
+        let model = makeModel(
+            supportedReasoningEffort: [.high, .medium],
+            reasoningEffortAccess: [
+                AIChatReasoningEffortAccess(effort: .high, accessTier: ["pro", "internal"], entityHasAccess: false),
+                AIChatReasoningEffortAccess(effort: .medium, accessTier: ["plus", "pro", "internal"], entityHasAccess: true)
+            ]
+        )
+
+        XCTAssertTrue(model.accessibleReasoningModes.contains(.extendedReasoning))
+        XCTAssertEqual(model.resolvedReasoningEffort(from: .extendedReasoning), AIChatReasoningEffort.medium)
+        XCTAssertEqual(model.reasoningEffort(for: .extendedReasoning), AIChatReasoningEffort.high,
+                       "Gating-agnostic lookup still returns first supported (.high)")
+    }
 }
 
 private extension AIChatReasoningTests {

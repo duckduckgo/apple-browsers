@@ -455,6 +455,28 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
     }
 
+    func testHandleReasoningModeSelectionWhenSingleModeHasMixedGating_SelectsModeWithoutUpsell() {
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "future-model",
+                supportedReasoningEffort: [.high, .medium],
+                reasoningEffortAccess: [
+                    AIChatReasoningEffortAccess(effort: .high, accessTier: ["pro", "internal"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .medium, accessTier: ["plus", "pro", "internal"], entityHasAccess: true)
+                ]
+            )
+        ]
+        sut.updateSelectedModel("future-model")
+
+        sut.handleReasoningModeSelection(.extendedReasoning)
+
+        XCTAssertEqual(mockPreferences.selectedReasoningMode, .extendedReasoning,
+                       "Mode is reachable via accessible .medium — must be selected, not gated")
+        XCTAssertEqual(sut.persistedReasoningEffort, AIChatReasoningEffort.medium,
+                       "Payload must carry the accessible .medium effort, not the gated .high")
+    }
+
     func testBindToExistingChatWhenReasoningModelKeepsReasoningButtonAvailable() {
         sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
         mockPreferences.selectedModelId = "gpt-5.2"

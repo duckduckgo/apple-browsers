@@ -1507,6 +1507,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     
     private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
+        guard !model.accessibleReasoningModes.contains(mode) else { return nil }
         guard let effort = model.reasoningEffort(for: mode) else { return nil }
         return model.lowestPublicAccessTier(for: effort)
     }

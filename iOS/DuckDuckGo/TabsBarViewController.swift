@@ -98,7 +98,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var historyManager: HistoryManaging?
     var fireproofing: Fireproofing?
     var aiChatSettings: AIChatSettingsProvider?
-    var featureFlagger: FeatureFlagger?
+    var featureFlagger: FeatureFlagger? {
+        didSet {
+            registerForFeatureFlagChanges()
+        }
+    }
     var keyValueStore: ThrowingKeyValueStoring?
     var daxDialogsManager: DaxDialogsManaging?
     var fireModeCapability: FireModeCapable? {
@@ -147,7 +151,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         configureGestures()
         enableInteractionsWithPointer()
         registerForAIChatSettingsChanges()
-        registerForFeatureFlagChanges()
     }
 
     private func setUpSubviews() {
@@ -196,7 +199,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     private func registerForFeatureFlagChanges() {
-        // Picks up internal-debug toggles of `aiChatChromeShortcutIPad` while the tabs bar is on screen.
         guard let overridesHandler = featureFlagger?.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return
         }

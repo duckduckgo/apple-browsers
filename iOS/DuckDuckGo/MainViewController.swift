@@ -61,7 +61,7 @@ struct StartupOnboardingDecision {
         switch resumeStepStore.resumeStep {
         case .browserComparison, .aiComparison, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
-             .duckAIQuerySelection:
+             .duckAIQuerySelection, .interludeDuckAI:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:
@@ -179,6 +179,7 @@ class MainViewController: UIViewController {
     private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     let contextualOnboardingPixelReporter: OnboardingPixelReporting
+    var linearOnboardingContext: OnboardingIntroContext?
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
@@ -188,6 +189,7 @@ class MainViewController: UIViewController {
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
+    let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -318,15 +320,7 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
-    private(set) lazy var adBlockingAvailability: AdBlockingAvailabilityProviding = {
-        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
-        return AdBlockingAvailability(
-            featureFlagger: featureFlagger,
-            isEnabledByUserProvider: {
-                (try? storage.value(for: \.youTubeAdBlockingEnabled)) ?? false
-            }
-        )
-    }()
+    var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
@@ -490,6 +484,10 @@ class MainViewController: UIViewController {
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
+        self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            completeOrphanedFlowsOnInit: true
+        )
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
         self.favicons = favicons
@@ -592,6 +590,7 @@ class MainViewController: UIViewController {
             subscriptionDataReporting: subscriptionDataReporter,
             newTabDialogFactory: newTabDaxDialogFactory,
             newTabDaxDialogManager: daxDialogsManager,
+            onboardingFlowProvider: onboardingManager,
             faviconLoader: faviconLoader,
             faviconsCache: favicons,
             remoteMessagingActionHandler: remoteMessagingActionHandler,
@@ -1643,6 +1642,7 @@ class MainViewController: UIViewController {
                                                   subscriptionDataReporting: subscriptionDataReporter,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   daxDialogsManager: daxDialogsManager,
+                                                  onboardingFlowProvider: onboardingManager,
                                                   faviconLoader: faviconLoader,
                                                   remoteMessagingActionHandler: remoteMessagingActionHandler,
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
@@ -1686,9 +1686,7 @@ class MainViewController: UIViewController {
         // ie remove back/forward and show bookmarks/passwords
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
-        DispatchQueue.main.async { [weak self] in
-            self?.presentChatPathOnboardingCompletionIfNeeded()
-        }
+        presentContextualOnboardingDialogIfNeeded()
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
@@ -2179,6 +2177,17 @@ class MainViewController: UIViewController {
         // hook that fires `refreshControls` self-corrects the toolbar's hidden state without
         // the caller having to remember.
         reconcileToolbarVisibilityForCurrentTab()
+    }
+
+    private func presentContextualOnboardingDialogIfNeeded() {
+        // In Duck.ai tailored the completion dialog is presented explicitly from `MainViewController.onboardingCompleted`.
+        // Without this gate, the flow would attempt to present the completion dialog
+        // twice — once from the post-fire tab switch and again on `onboardingCompleted`.
+        guard onboardingManager.currentOnboardingFlow == .default else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.presentChatPathOnboardingCompletionIfNeeded()
+        }
     }
 
     private func refreshMiddleButton() {
@@ -4827,8 +4836,121 @@ extension MainViewController: TabDelegate {
         navigateToFireMode(source: .menuPromotion)
     }
 
+    func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController) {
+        setYouTubeAdBlockingEnabled(enabled)
+        if enabled {
+            tab.reload()
+        }
+    }
+
+    func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController) {
+        let view = YouTubeAdBlockPickerView { [weak self, weak tab] mode in
+            guard let self else { return }
+            switch mode {
+            case .alwaysOn:
+                self.adBlockingAvailability.clearDisableUntilRelaunch()
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingPickerAlwaysOn,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+            case .disableUntilRelaunch:
+                self.adBlockingAvailability.disableUntilRelaunch()
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingPickerDisableUntilRelaunch,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+            case .alwaysOff:
+                self.setYouTubeAdBlockingEnabled(false)
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingPickerAlwaysOff,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+            }
+            self.dismiss(animated: true) { [weak self, weak tab] in
+                switch mode {
+                case .disableUntilRelaunch, .alwaysOff:
+                    tab?.reload()
+                    self?.presentYouTubeAdBlockBreakageReport()
+                case .alwaysOn:
+                    // No-op: the picker is only reachable when ad blocking is fully enabled,
+                    // so clearDisableUntilRelaunch() above is a no-op and no reload is needed.
+                    break
+                }
+            }
+        }
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = UIColor(designSystemColor: .surface)
+        presentYouTubeAdBlockSheet(controller, grabberVisible: true)
+    }
+
+    func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController) {
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        guard (try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)) != true else { return }
+        try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAdBlockUnavailableNoticeShown)
+
+        let view = YouTubeAdBlockUnavailableView(
+            onAcknowledge: { [weak self] in self?.dismiss(animated: true) },
+            onClose: { [weak self] in self?.dismiss(animated: true) }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = UIColor(designSystemColor: .surface)
+        presentYouTubeAdBlockSheet(controller)
+    }
+
+    private func presentYouTubeAdBlockBreakageReport() {
+        let view = YouTubeAdBlockBreakageReportView(
+            onSend: { [weak self] in
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingBreakageReportEntered,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                self?.dismiss(animated: true) { [weak self] in
+                    self?.segueToReportBrokenSite()
+                }
+            },
+            onCancel: { [weak self] in self?.dismiss(animated: true) }
+        )
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        presentYouTubeAdBlockSheet(controller)
+    }
+
+    private func presentYouTubeAdBlockSheet<Content: View>(_ controller: UIHostingController<Content>, grabberVisible: Bool = false) {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            controller.modalPresentationStyle = .formSheet
+            let formSheetWidth: CGFloat = 540
+            let contentHeight = controller.sizeThatFits(in: CGSize(width: formSheetWidth, height: .infinity)).height
+            controller.preferredContentSize = CGSize(width: formSheetWidth, height: contentHeight)
+        } else {
+            controller.modalPresentationStyle = .pageSheet
+            if let sheet = controller.sheetPresentationController {
+                if #available(iOS 16.0, *) {
+                    let fittingWidth = self.view.bounds.width
+                    let contentHeight = controller.sizeThatFits(in: CGSize(width: fittingWidth, height: .infinity)).height
+                    sheet.detents = [.custom { _ in contentHeight }]
+                } else {
+                    sheet.detents = [.medium()]
+                }
+                sheet.prefersGrabberVisible = grabberVisible
+                if #unavailable(iOS 26) {
+                    sheet.preferredCornerRadius = 24
+                }
+            }
+        }
+        present(controller, animated: true)
+    }
+
+    private func setYouTubeAdBlockingEnabled(_ enabled: Bool) {
+        adBlockingAvailability.clearDisableUntilRelaunch()
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        let disclosureVisibleAtToggle = (try? storage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) != true
+        try? storage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+        if !enabled {
+            try? storage.set(false, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        } else if disclosureVisibleAtToggle {
+            try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        }
+        NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+    }
+
     func tabDidEngageWithPage(_ tab: TabViewController) {
         postIdleSessionInstrumentation.pageEngaged()
+    }
+
+    func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {
+        duckAIWideEventInstrumentation.pageLoadFailed(scope: .tab(tab.tabModel.uid), error: error)
     }
 
     var isAIChatEnabled: Bool {
@@ -5281,6 +5403,10 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
+        for tab in tabs {
+            reportDuckAITabClosedIfNeeded(tab)
+        }
+
         if #available(iOS 18.4, *) {
             for tab in tabs {
                 if let tabController = tabManager.controller(for: tab) {
@@ -5304,6 +5430,8 @@ extension MainViewController: TabSwitcherDelegate {
                 webExtensionEventsCoordinator?.didCloseTab(closingTabController)
             }
         }
+
+        reportDuckAITabClosedIfNeeded(tab)
 
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
@@ -5340,10 +5468,15 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
+        for tab in tabSwitcher.tabsModel.tabs {
+            reportDuckAITabClosedIfNeeded(tab)
+        }
+
         Task {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
             case .fire:
+                fireModePromotionEligibility?.markBurnPerformed()
                 request = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .tabSwitcher)
             case .normal:
                 request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)
@@ -5500,6 +5633,13 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
+
+        // This needs to be done before the fire burning process starts or the race condition
+        //  results in the promo not showing at the expected time.
+        if request.trigger == .manualFire {
+            fireModePromotionEligibility?.markBurnPerformed()
+        }
+
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         
@@ -5734,6 +5874,7 @@ extension MainViewController: FireExecutorDelegate {
     func willStartBurningTabs(fireRequest: FireRequest) {
         omniBar.endEditing()
         findInPageView?.done()
+        reportDuckAIFireButtonClearedTabsIfNeeded(fireRequest)
 
         if #available(iOS 18.4, *) {
             let tabs: [Tab]
@@ -5798,10 +5939,6 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
-        if fireRequest.trigger == .manualFire {
-            fireModePromotionEligibility?.markBurnPerformed()
-        }
-
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {
@@ -5891,6 +6028,31 @@ extension MainViewController {
 
 extension MainViewController: OnboardingDelegate {
 
+    func didStartOnboardingInterlude(_ interlude: OnboardingIntroStep.Interlude) {
+        linearOnboardingContext?.activeInterlude = interlude
+        UIView.animate(withDuration: 0.2) {
+            self.linearOnboardingContext?.onboardingViewController?.view.alpha = 0
+        } completion: { _ in
+            self.linearOnboardingContext?.onboardingViewController?.dismiss(animated: false)
+        }
+    }
+
+    func finishOnboardingInterlude(completion: @escaping () -> Void) {
+        linearOnboardingContext?.activeInterlude = nil
+        guard let viewModel = linearOnboardingContext?.onboardingViewModel else { return }
+        viewModel.resumeOnboardingFromInterlude()
+        let controller = OnboardingIntroFactory.makeController(
+            viewModel: viewModel,
+            isRebranded: featureFlagger.isFeatureOn(.onboardingRebranding),
+            delegate: self
+        )
+        linearOnboardingContext?.onboardingViewController = controller
+        linearOnboardingContext?.onboardingViewModel = viewModel
+        controller.modalPresentationStyle = .overFullScreen
+        controller.modalTransitionStyle = .crossDissolve
+        present(controller, animated: true, completion: completion)
+    }
+
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
         if experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse {
@@ -5898,12 +6060,30 @@ extension MainViewController: OnboardingDelegate {
             return
         }
 
+        // For Duck.ai tailored flow, the NTP completion dialog hosts inside `OmniBarEditingStateViewController`,
+        // which only installs when `shouldUseExperimentalEditingState` is true — itself gated on
+        // `aiChatSettings.isAIChatSearchInputUserSettingsEnabled`.
+        //
+        // IMPORTANT: Contrary to the Duck.ai experiment on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
+        // The full prerequisite also calls `daxDialogsManager.disableContextualDaxDialogs()`, which would set
+        // `isEnabled = false` before the tailored completion dialog is presented, breaking the subscription
+        // chain inside the dialog's `onDismiss` (`nextHomeScreenMessageNew()` would return `nil` from its
+        // `guard isEnabled` and the EOJ → subscription transition would silently drop).
+        if onboardingManager.currentOnboardingFlow == .duckAI && !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
+        }
+
         controller.modalTransitionStyle = .crossDissolve
-        controller.dismiss(animated: true)
-        newTabPageViewController?.onboardingCompleted()
+        // The Duck.ai tailored flow's NTP completion dialog presents `OmniBarEditingStateViewController`.
+        // Wait for the OnboardingIntroViewController to be dismissed before presenting `OmniBarEditingStateViewController`
+        // otherwise `OmniBarEditingStateViewController` will not be presented while the onboarding is mid-dismissal.
+        controller.dismiss(animated: true) { [weak self] in
+            self?.newTabPageViewController?.onboardingCompleted()
+        }
     }
 
     func markOnboardingSeen() {
+        linearOnboardingContext = nil
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
         clearDuckAIOnboardingResumeStepIfNeeded()
@@ -6083,6 +6263,10 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager) {
         segueToSettingsSync()
     }
+
+    func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager) {
+        reportDuckAIFrontendSubmissionAcknowledged()
+    }
 }
 
 // MARK: - AIChatContentHandlingDelegate
@@ -6113,7 +6297,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        // No action needed for full mode - notification handles metrics
+        reportDuckAIFrontendSubmissionAcknowledged()
     }
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
@@ -6506,5 +6690,45 @@ extension ConsentStatusInfo {
             consentRule: consentRule,
             consentHeuristicEnabled: consentHeuristicEnabled
         )
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension MainViewController {
+
+    fileprivate var currentDuckAIWideEventFlowScope: DuckAIWideEventFlowScope? {
+        currentTab.map { .tab($0.tabModel.uid) }
+    }
+
+    fileprivate func reportDuckAITabClosedIfNeeded(_ tab: Tab) {
+        guard let closingURL = tabManager.controller(for: tab)?.webView.url, closingURL.isDuckAIURL else { return }
+        duckAIWideEventInstrumentation.tabClosedDuringGeneration(tabID: tab.uid)
+    }
+
+    fileprivate func reportDuckAIFireButtonClearedTabsIfNeeded(_ fireRequest: FireRequest) {
+        guard fireRequest.trigger == .manualFire else { return }
+
+        for tab in tabsClearedByFireButton(fireRequest.scope) {
+            duckAIWideEventInstrumentation.fireButtonClearedTabDuringGeneration(tabID: tab.uid)
+        }
+    }
+
+    private func tabsClearedByFireButton(_ scope: FireRequest.Scope) -> [Tab] {
+        switch scope {
+        case .all:
+            return tabManager.allTabsModel.tabs
+        case .fireMode:
+            return tabManager.tabsModel(for: .fire).tabs
+        case .normalMode:
+            return tabManager.tabsModel(for: .normal).tabs
+        case .tab(let viewModel):
+            return [viewModel.tab]
+        }
+    }
+
+    fileprivate func reportDuckAIFrontendSubmissionAcknowledged() {
+        guard let scope = currentDuckAIWideEventFlowScope else { return }
+        duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
     }
 }

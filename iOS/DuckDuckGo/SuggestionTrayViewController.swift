@@ -29,6 +29,7 @@ import UIComponents
 import RemoteMessaging
 import AIChat
 import Subscription
+import Onboarding
 
 class SuggestionTrayViewController: UIViewController {
     
@@ -126,6 +127,7 @@ class SuggestionTrayViewController: UIViewController {
         let subscriptionDataReporting: SubscriptionDataReporting?
         let newTabDialogFactory: NewTabDaxDialogsProvider
         let newTabDaxDialogManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
+        let onboardingFlowProvider: OnboardingFlowProviding
         let faviconLoader: FavoritesFaviconLoading
         let faviconsCache: FavoritesFaviconCaching
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
@@ -374,6 +376,7 @@ class SuggestionTrayViewController: UIViewController {
             subscriptionDataReporting: dependencies.subscriptionDataReporting,
             newTabDialogFactory: dependencies.newTabDialogFactory,
             daxDialogsManager: dependencies.newTabDaxDialogManager,
+            onboardingFlowProvider: dependencies.onboardingFlowProvider,
             faviconLoader: dependencies.faviconLoader,
             remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,

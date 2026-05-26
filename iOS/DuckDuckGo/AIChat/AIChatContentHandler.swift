@@ -31,6 +31,7 @@ import WebKit
 protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
+    var canDispatchBridgeMessages: Bool { get }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
@@ -109,6 +110,11 @@ protocol AIChatContentHandling: AnyObject {
 
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
     func fireAIChatTelemetry()
+
+    /// True when the underlying user script is bound to both a web view and a broker. Read
+    /// immediately before a `submitPrompt` call to capture whether the bridge dispatch will
+    /// actually reach the frontend.
+    var canDispatchBridgeMessages: Bool { get }
 }
 
 extension AIChatContentHandling {
@@ -235,6 +241,10 @@ final class AIChatContentHandler: AIChatContentHandling {
     
     func buildVoiceModeURL() -> URL {
         updatingNativeInputParameterIfNeeded(in: AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL))
+    }
+
+    var canDispatchBridgeMessages: Bool {
+        userScript?.canDispatchBridgeMessages ?? false
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {

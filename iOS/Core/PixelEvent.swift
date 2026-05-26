@@ -1595,6 +1595,16 @@ extension Pixel {
         case duckAiNativeStorageMigrationDoneCount(key: String)
         case duckAiNativeStorageMigrationDoneBlankCount
 
+        case duckAiNativeStorageContainerMigrationNotNeeded(label: String)
+        case duckAiNativeStorageContainerMigrationSuccess(label: String)
+        case duckAiNativeStorageContainerMigrationAttemptFailed(label: String)
+        case duckAiNativeStorageContainerMigrationGaveUp(label: String)
+        case duckAiNativeStorageContainerMigrationProtectionFailed(label: String)
+        case duckAiNativeStorageContainerMigrationDestinationConflict(label: String)
+        case duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: String)
+        case duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: String)
+        case duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: String)
+
         case duckAiNativeStorageInitSuccess
         case duckAiNativeStorageInitError
         case duckAiNativeStorageMigrationStarted
@@ -1855,6 +1865,13 @@ extension Pixel {
         case webExtensionAdBlockingSettingsOpen
         case webExtensionAdBlockingEnabled
         case webExtensionAdBlockingDisabled
+
+        case webExtensionAdBlockingMenuEnableTapped
+        case webExtensionAdBlockingMenuDisableTapped
+        case webExtensionAdBlockingPickerAlwaysOn
+        case webExtensionAdBlockingPickerAlwaysOff
+        case webExtensionAdBlockingPickerDisableUntilRelaunch
+        case webExtensionAdBlockingBreakageReportEntered
 
         case webExtensionScriptletFetchSuccess
         case webExtensionScriptletFetchError
@@ -3358,6 +3375,16 @@ extension Pixel.Event {
         case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
         case .duckAiNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
 
+        case .duckAiNativeStorageContainerMigrationNotNeeded(let label): return "m_duck-ai_native-storage_container-migration_not-needed_\(label)"
+        case .duckAiNativeStorageContainerMigrationSuccess(let label): return "m_duck-ai_native-storage_container-migration_success_\(label)"
+        case .duckAiNativeStorageContainerMigrationAttemptFailed(let label): return "m_duck-ai_native-storage_container-migration_attempt-failed_\(label)"
+        case .duckAiNativeStorageContainerMigrationGaveUp(let label): return "m_duck-ai_native-storage_container-migration_gave-up_\(label)"
+        case .duckAiNativeStorageContainerMigrationProtectionFailed(let label): return "m_duck-ai_native-storage_container-migration_protection-failed_\(label)"
+        case .duckAiNativeStorageContainerMigrationDestinationConflict(let label): return "m_duck-ai_native-storage_container-migration_destination-conflict_\(label)"
+        case .duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(let label): return "m_duck-ai_native-storage_container-migration_exclude-from-backup-failed_\(label)"
+        case .duckAiNativeStorageContainerMigrationProtectedDataUnavailable(let label): return "m_duck-ai_native-storage_container-migration_protected-data-unavailable_\(label)"
+        case .duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(let label): return "m_duck-ai_native-storage_container-migration_key-value-store-read-failed_\(label)"
+
         case .duckAiNativeStorageInitSuccess: return "m_duck-ai_native-storage_init_success"
         case .duckAiNativeStorageInitError: return "m_duck-ai_native-storage_init_error"
         case .duckAiNativeStorageMigrationStarted: return "m_duck-ai_native-storage_migration_started"
@@ -3677,6 +3704,13 @@ extension Pixel.Event {
         case .webExtensionAdBlockingSettingsOpen: return "m_web_extension_ad_blocking_settings_open"
         case .webExtensionAdBlockingEnabled: return "m_web_extension_ad_blocking_enabled"
         case .webExtensionAdBlockingDisabled: return "m_web_extension_ad_blocking_disabled"
+
+        case .webExtensionAdBlockingMenuEnableTapped: return "m_web_extension_ad_blocking_menu_enable_tapped"
+        case .webExtensionAdBlockingMenuDisableTapped: return "m_web_extension_ad_blocking_menu_disable_tapped"
+        case .webExtensionAdBlockingPickerAlwaysOn: return "m_web_extension_ad_blocking_picker_always_on"
+        case .webExtensionAdBlockingPickerAlwaysOff: return "m_web_extension_ad_blocking_picker_always_off"
+        case .webExtensionAdBlockingPickerDisableUntilRelaunch: return "m_web_extension_ad_blocking_picker_disable_until_relaunch"
+        case .webExtensionAdBlockingBreakageReportEntered: return "m_web_extension_ad_blocking_breakage_report_entered"
 
         case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
         case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"

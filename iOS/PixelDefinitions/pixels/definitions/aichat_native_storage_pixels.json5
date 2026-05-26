@@ -87,6 +87,132 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorDomain", "errorCode"]
     },
+    "m_duck-ai_native-storage_container-migration_not-needed_default": {
+        "description": "Fires once when no app-group default container directory exists on launch (fresh install or already migrated previously)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_not-needed_fire-mode": {
+        "description": "Fires once when no app-group fire-mode container directory exists on launch (fresh install or already migrated previously)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_success_default": {
+        "description": "Fires once when the default Duck.ai container was successfully moved from the app-group container into Application Support",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_success_fire-mode": {
+        "description": "Fires once when the fire-mode Duck.ai container was successfully moved from the app-group container into Application Support",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_attempt-failed_default": {
+        "description": "Fires when a default-container move attempt fails and will be retried on a subsequent launch (up to 3 attempts total)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_attempt-failed_fire-mode": {
+        "description": "Fires when a fire-mode container move attempt fails and will be retried on a subsequent launch (up to 3 attempts total)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_gave-up_default": {
+        "description": "Fires once after the default-container move has failed the maximum number of attempts in a single launch. The migration is retried on subsequent launches with a fresh attempt budget; the user's pre-migration container at the old App Group path is preserved on disk in the meantime",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_gave-up_fire-mode": {
+        "description": "Fires once after the fire-mode container move has failed the maximum number of attempts in a single launch. The migration is retried on subsequent launches with a fresh attempt budget; the user's pre-migration container at the old App Group path is preserved on disk in the meantime",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_protection-failed_default": {
+        "description": "Fires alongside container-migration_success_default when at least one setAttributes call failed while applying NSFileProtectionCompleteUntilFirstUserAuthentication after the default container move — destination data may have retained the original NSFileProtectionComplete class",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_protection-failed_fire-mode": {
+        "description": "Fires alongside container-migration_success_fire-mode when at least one setAttributes call failed while applying NSFileProtectionCompleteUntilFirstUserAuthentication after the fire-mode container move — destination data may have retained the original NSFileProtectionComplete class",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_destination-conflict_default": {
+        "description": "Fires when the default Duck.ai destination directory already contains data at migration time but no migration flag is set in the key-value store — likely an external source (sibling process, OS-level sync) or a previous launch that created data while the App Group entitlement was unavailable. The new location is claimed going forward and the old App Group container is preserved on disk but not surfaced to the user",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_destination-conflict_fire-mode": {
+        "description": "Fires when the fire-mode Duck.ai destination directory already contains data at migration time but no migration flag is set in the key-value store — likely an external source (sibling process, OS-level sync) or a previous launch that created data while the App Group entitlement was unavailable. The new location is claimed going forward and the old App Group container is preserved on disk but not surfaced to the user",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_exclude-from-backup-failed_default": {
+        "description": "Fires when setting isExcludedFromBackup or creating the default container directory under Application Support failed — the database may end up in iCloud backups",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_exclude-from-backup-failed_fire-mode": {
+        "description": "Fires when setting isExcludedFromBackup or creating the fire-mode container directory under Application Support failed — the database may end up in iCloud backups",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_protected-data-unavailable_default": {
+        "description": "Fires when the default-container migration is deferred because UIApplication.isProtectedDataAvailable was false (pre-first-unlock background launch); no state is modified so the migration retries on a later launch",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_protected-data-unavailable_fire-mode": {
+        "description": "Fires when the fire-mode container migration is deferred because UIApplication.isProtectedDataAvailable was false (pre-first-unlock background launch); no state is modified so the migration retries on a later launch",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_duck-ai_native-storage_container-migration_key-value-store-read-failed_default": {
+        "description": "Fires when a sanity-check read against the key-value store at the top of the default-container migration throws — indicates the store itself is unhealthy. The migration is deferred without consuming the retry budget or mutating disk so a healthy launch can resume normally",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_key-value-store-read-failed_fire-mode": {
+        "description": "Fires when a sanity-check read against the key-value store at the top of the fire-mode container migration throws — indicates the store itself is unhealthy. The migration is deferred without consuming the retry budget or mutating disk so a healthy launch can resume normally",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
     "m_duck-ai_native-storage_settings-put_error": {
         "description": "Fires when putEntry (Settings) fails",
         "owners": ["Bunn"],

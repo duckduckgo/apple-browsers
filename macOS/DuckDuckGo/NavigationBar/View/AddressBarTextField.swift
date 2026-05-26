@@ -1279,6 +1279,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
         if commandSelector == #selector(insertNewline)
             || commandSelector == #selector(insertNewlineIgnoringFieldEditor)
             || commandSelector == Selector(("noop:")) && NSApp.isReturnOrEnterPressed {
+            // The window-level key monitor should catch the common IME flow first; keep this guard for any input path that
+            // reaches the delegate with marked text.
+            if Application.appDelegate.featureFlagger.isFeatureOn(.addressBarIMEConfirmFix),
+               textView.hasMarkedText() {
+                return false
+            }
             self.addressBarEnterPressed()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {

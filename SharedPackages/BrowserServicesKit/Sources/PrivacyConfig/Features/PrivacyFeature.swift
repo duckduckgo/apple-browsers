@@ -147,6 +147,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
 
+    /// Prevents IME composition-confirm Return from submitting the address bar.
+    case addressBarIMEConfirmFix
+
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
@@ -199,6 +202,11 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
     case onboardingRebranding
+
+    /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
+    /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
+    /// trampoline if the SPI ever misbehaves.
+    case newErrorPageReload
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -430,6 +438,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
 
+    /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
+    case settingsLinkInAiFeatures
+
     case sidebarResizable
 
     case sidebarFloating
@@ -508,6 +519,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// surfaces a "System microphone disabled" warning when the OS has denied access, and
     /// presents the Permission Center popover when the FE reports `getUserMedia` failure.
     case nativeVoicePermissionFlow
+
+    /// Enables moving the AI Chat native-storage container from the shared App
+    /// Group into the app's Application Support directory on iOS. Off keeps the
+    /// legacy App Group path.
+    case nativeStoragePathMigration
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -755,6 +771,13 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case embeddedRollout
 }
 
+public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .adBlockingExtension }
+
+    case featureEnabled
+    case featureEnabledByDefault
+}
+
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
 
@@ -829,12 +852,6 @@ public enum PageContextSubfeature: String, PrivacySubfeature {
 
 public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .tabSwitcherTrackerCount }
-
-    case featureEnabled
-}
-
-public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .adBlockingExtension }
 
     case featureEnabled
 }

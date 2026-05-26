@@ -52,6 +52,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         return duckPlayerSettings["tryDuckPlayerLink"] as? String ?? "https://www.youtube.com/watch?v=yKWIA-Pys4c"
     }
 
+    let youtubeAdBlockingURL = "https://www.youtube.com/watch?v=yKWIA-Pys4c"
+
     init(defaultBrowserProvider: DefaultBrowserProvider,
          dockCustomizer: DockCustomization,
          dataImportProvider: DataImportStatusProviding,
@@ -92,6 +94,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
             performPersonalizeBrowserAction()
         case .sync:
             performSyncAction(completion: refreshCardsAction)
+        case .youtubeAdBlocking:
+            performYoutubeAdBlockingAction()
         }
     }
 }
@@ -152,5 +156,13 @@ private extension NewTabPageNextStepsCardsActionHandler {
             return Logger.sync.error("DeviceSyncCoordinator is not available to perform Next Steps sync action")
         }
         syncLauncher.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
+    }
+
+    @MainActor
+    func performYoutubeAdBlockingAction() {
+        if let videoUrl = URL(string: youtubeAdBlockingURL) {
+            let tab = Tab(content: .url(videoUrl, source: .link), shouldLoadInBackground: true)
+            tabOpener.openTab(tab)
+        }
     }
 }

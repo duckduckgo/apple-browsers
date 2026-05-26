@@ -363,12 +363,6 @@ extension Preferences {
                 Button(configuration.title, action: configuration.action)
                     .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
                     .disabled(!configuration.enabled)
-            } else {
-                // Feature flag is OFF - show simple App Store button
-                Button(UserText.checkForUpdate) {
-                    model.checkForAppStoreUpdate()
-                }
-                .buttonStyle(UpdateButtonStyle(enabled: true))
             }
         }
     }

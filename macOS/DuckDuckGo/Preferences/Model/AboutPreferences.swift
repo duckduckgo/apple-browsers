@@ -207,11 +207,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         NSPasteboard.general.copy(value)
     }
 
-    @MainActor func checkForAppStoreUpdate() {
-        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .aboutMenu))
-        NSWorkspace.shared.open(.appStore)
-    }
-
     func checkForUpdate(userInitiated: Bool) {
         if userInitiated {
             updateController?.checkForUpdateSkippingRollout()

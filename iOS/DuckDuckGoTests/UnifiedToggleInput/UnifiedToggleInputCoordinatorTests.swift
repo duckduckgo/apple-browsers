@@ -2709,14 +2709,18 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.lastUsed, baseline)
     }
 
-    func test_updateInputMode_mutatesLastUsed() {
+    // Toggle mode is intentionally treated like a draft: in-flight changes update the
+    // per-tab state but must NOT promote to the global `lastUsed` snapshot. Promotion
+    // happens via `commitToggleMode` on submit (covered in `UnifiedInputStateStoreTests`).
+    func test_updateInputMode_doesNotMutateLastUsedToggleMode() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)
         sut.activateForTab("tab-A")
+        let baseline = store.lastUsed.toggleMode
 
         sut.updateInputMode(.aiChat, animated: false)
 
-        XCTAssertEqual(store.lastUsed.toggleMode, .aiChat)
+        XCTAssertEqual(store.lastUsed.toggleMode, baseline)
     }
 
     func test_selectTool_mutatesLastUsed() {

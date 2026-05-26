@@ -26,7 +26,6 @@
                             "app_backgrounded",
                             "favorite_selected",
                             "chat_selected",
-                            "tab_switcher_tapped",
                             "app_terminated"
                         ]
                     },

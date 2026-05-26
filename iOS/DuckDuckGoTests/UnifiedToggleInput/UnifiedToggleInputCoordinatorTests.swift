@@ -2293,10 +2293,19 @@ private final class FakeInputStateStore: UnifiedInputStateStoring {
     func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
         states[uid] = state
         lastUsedDefaults = LastUsedInputDefaults(
-            toggleMode: state.toggleMode,
+            toggleMode: lastUsedDefaults.toggleMode,
             selectedModelID: state.selectedModelID,
             selectedReasoningMode: state.selectedReasoningMode,
             selectedTool: state.selectedTool
+        )
+    }
+
+    func commitToggleMode(_ mode: TextEntryMode) {
+        lastUsedDefaults = LastUsedInputDefaults(
+            toggleMode: mode,
+            selectedModelID: lastUsedDefaults.selectedModelID,
+            selectedReasoningMode: lastUsedDefaults.selectedReasoningMode,
+            selectedTool: lastUsedDefaults.selectedTool
         )
     }
 

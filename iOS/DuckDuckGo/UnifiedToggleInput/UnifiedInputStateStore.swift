@@ -66,13 +66,15 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
 
     func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
         states[uid] = state
+        // Toggle mode is committed on submit only (see `commitToggleMode`), not on every
+        // in-flight toggle change — otherwise a non-committed toggle would leak into
+        // `toggleModeStorage` and dirty the next UTI activation on the same tab.
         trackedLastUsed = LastUsedInputDefaults(
-            toggleMode: state.toggleMode,
+            toggleMode: trackedLastUsed.toggleMode,
             selectedModelID: state.selectedModelID,
             selectedReasoningMode: state.selectedReasoningMode,
             selectedTool: state.selectedTool
         )
-        toggleModeStorage.save(state.toggleMode)
         preferences.selectedModelId = state.selectedModelID
         preferences.selectedReasoningMode = state.selectedReasoningMode
         preferences.selectedTool = state.selectedTool
@@ -85,6 +87,17 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             tab.unifiedInputState = inputState
         }
         Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)]: \(state.summary)")
+    }
+
+    func commitToggleMode(_ mode: TextEntryMode) {
+        trackedLastUsed = LastUsedInputDefaults(
+            toggleMode: mode,
+            selectedModelID: trackedLastUsed.selectedModelID,
+            selectedReasoningMode: trackedLastUsed.selectedReasoningMode,
+            selectedTool: trackedLastUsed.selectedTool
+        )
+        toggleModeStorage.save(mode)
+        Logger.unifiedInputState.debug("commitToggleMode \(String(describing: mode))")
     }
 
     func remove(for uid: TabUID) {

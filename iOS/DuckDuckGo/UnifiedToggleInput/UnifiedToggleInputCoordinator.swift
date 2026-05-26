@@ -1152,7 +1152,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func commitCurrentToggleState() {
         committedInputMode = inputMode
-        toggleModeStorage.save(inputMode)
+        stateStore.commitToggleMode(inputMode)
         delegate?.unifiedToggleInputDidCommitMode(inputMode)
     }
 

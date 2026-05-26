@@ -273,7 +273,8 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
             label: label,
             keyValueStore: failingStore,
             pixelFiring: pixelSpy,
-            isProtectedDataAvailable: { true }
+            isProtectedDataAvailable: { true },
+            protectionDispatcher: { $0() }
         ).run()
 
         XCTAssertEqual(outcome, .skip)
@@ -528,6 +529,45 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertNotNil(error, "nil enumerator must not be treated as success")
     }
 
+    // MARK: - Protection dispatch
+
+    /// Pins the contract that `ensureProtection`'s recursive setAttributes
+    /// walk is deferred off the launch thread. The synchronous return path
+    /// must complete before the protection work runs — otherwise a large
+    /// `files/` tree could push past the iOS launch watchdog.
+    func testWhenMoveSucceedsThenProtectionWorkIsDispatched() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("chats".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+
+        var capturedWork: (() -> Void)?
+        let outcome = DuckAiNativeStorageContainerMigration(
+            oldURL: oldURL,
+            newURL: newURL,
+            migrationKey: migrationKey,
+            label: label,
+            keyValueStore: keyValueStore,
+            pixelFiring: pixelSpy,
+            isProtectedDataAvailable: { true },
+            protectionDispatcher: { capturedWork = $0 }
+        ).run()
+
+        XCTAssertEqual(outcome, .proceed)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["success"],
+                       "success fires synchronously; protection pixel only fires after the dispatched work runs")
+        XCTAssertNotNil(capturedWork,
+                        "protection work must be dispatched, not executed inline on the launch thread")
+        XCTAssertEqual(keyValueStore.integer(forKey: protectionAttemptsKey), 0,
+                       "protection counter must not be touched until the dispatched work runs")
+
+        capturedWork?()
+
+        XCTAssertEqual(keyValueStore.integer(forKey: protectionAttemptsKey),
+                       DuckAiNativeStorageContainerMigration.defaultMaxAttempts,
+                       "after the dispatched work completes, the counter is set to the done sentinel")
+    }
+
     // MARK: - excludeFromBackup pixel
 
     func testWhenExcludeFromBackupSucceedsThenNoPixelFires() {
@@ -717,7 +757,8 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
                          label: DuckAiNativeStorageContainerMigrationLabel? = nil,
                          fileManager: FileManager = .default,
                          isProtectedDataAvailable: @escaping () -> Bool = { true },
-                         maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts) -> DuckAiNativeStorageContainerMigrationOutcome {
+                         maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts,
+                         protectionDispatcher: @escaping DuckAiNativeStorageContainerMigration.ProtectionDispatcher = { $0() }) -> DuckAiNativeStorageContainerMigrationOutcome {
         DuckAiNativeStorageContainerMigration(
             oldURL: oldURL,
             newURL: newURL,
@@ -727,7 +768,8 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
             fileManager: fileManager,
             pixelFiring: pixelSpy,
             isProtectedDataAvailable: isProtectedDataAvailable,
-            maxAttempts: maxAttempts
+            maxAttempts: maxAttempts,
+            protectionDispatcher: protectionDispatcher
         ).run()
     }
 

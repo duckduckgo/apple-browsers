@@ -36,6 +36,7 @@ import os.log
 struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrating {
 
     static let defaultMaxAttempts = 3
+    typealias ProtectionDispatcher = (@escaping () -> Void) -> Void
 
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo",
                                        category: "DuckAiNativeStorageContainerMigration")
@@ -49,6 +50,7 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
     let maxAttempts: Int
 
     private let stateStore: MigrationStateStore
+    private let protectionDispatcher: ProtectionDispatcher
 
     init(oldURL: URL,
          newURL: URL,
@@ -58,7 +60,10 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
          fileManager: FileManager = .default,
          pixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring = NullDuckAiNativeStorageContainerMigrationPixelFiring(),
          isProtectedDataAvailable: @escaping () -> Bool = { DuckAiNativeStorageContainerMigration.defaultIsProtectedDataAvailable() },
-         maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts) {
+         maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts,
+         protectionDispatcher: @escaping ProtectionDispatcher = { work in
+             DispatchQueue.global(qos: .utility).async(execute: work)
+         }) {
         self.oldURL = oldURL
         self.newURL = newURL
         self.label = label
@@ -68,6 +73,7 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         // 0 / negative would give up on the first failure.
         self.maxAttempts = max(1, maxAttempts)
         self.stateStore = MigrationStateStore(keyValueStore: keyValueStore, migrationKey: migrationKey)
+        self.protectionDispatcher = protectionDispatcher
     }
 
     // MARK: - Entry point
@@ -239,11 +245,14 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
             stateStore.setProtectionAttempts(maxAttempts)
             return
         }
-        if let error = Self.applyDefaultFileProtection(at: newURL, fileManager: fileManager) {
-            stateStore.setProtectionAttempts(priorAttempts + 1)
-            pixelFiring.fire(.protectionFailed(label: label, error: error))
-        } else {
-            stateStore.setProtectionAttempts(maxAttempts)
+
+        protectionDispatcher {
+            if let error = Self.applyDefaultFileProtection(at: newURL, fileManager: fileManager) {
+                stateStore.setProtectionAttempts(priorAttempts + 1)
+                pixelFiring.fire(.protectionFailed(label: label, error: error))
+            } else {
+                stateStore.setProtectionAttempts(maxAttempts)
+            }
         }
     }
 

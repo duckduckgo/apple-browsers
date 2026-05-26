@@ -23,6 +23,7 @@ import FeatureFlags
 import Foundation
 import NewTabPage
 import PrivacyConfig
+import WebExtensions
 
 final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProviding {
     private let featureFlagger: FeatureFlagger
@@ -44,6 +45,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          syncService: DDGSyncing?,
          dockCustomization: DockCustomization,
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
          scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         let singleCardProvider = NewTabPageNextStepsSingleCardProvider(
             cardActionHandler: cardActionsHandler,
@@ -59,6 +61,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
             duckPlayerPreferences: duckPlayerPreferences,
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             syncService: syncService,
+            adBlockingAvailability: adBlockingAvailability,
             scheduler: scheduler
         )
         let legacyCardsProvider = NewTabPageNextStepsCardsProvider(
@@ -68,7 +71,8 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
                 subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
                 persistor: legacyPersistor,
                 pixelHandler: pixelHandler,
-                cardActionsHandler: cardActionsHandler
+                cardActionsHandler: cardActionsHandler,
+                adBlockingAvailability: adBlockingAvailability
             ),
             appearancePreferences: appearancePreferences,
             pixelHandler: pixelHandler,

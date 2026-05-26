@@ -179,13 +179,8 @@ public struct PrimaryButtonStyle: ButtonStyle {
                 fullWidth: fullWidth
             )
         } else {
-            makeLegacyPrimaryBody(
-                configuration: configuration,
-                colors: .primary,
-                disabled: disabled,
-                compact: compact,
-                fullWidth: fullWidth
-            )
+            PrimaryButtonStyleLegacy(disabled: disabled, compact: compact, fullWidth: fullWidth)
+                .makeBody(configuration: configuration)
         }
     }
 }
@@ -236,13 +231,8 @@ public struct PrimaryDestructiveButtonStyle: ButtonStyle {
                 fullWidth: fullWidth
             )
         } else {
-            makeLegacyPrimaryBody(
-                configuration: configuration,
-                colors: .destructive,
-                disabled: disabled,
-                compact: compact,
-                fullWidth: fullWidth
-            )
+            PrimaryDestructiveButtonStyleLegacy(disabled: disabled, compact: compact, fullWidth: fullWidth)
+                .makeBody(configuration: configuration)
         }
     }
 }

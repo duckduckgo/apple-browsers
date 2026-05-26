@@ -1777,7 +1777,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 text: text,
                 selectedTool: toolsController.selectedTool,
                 attachments: viewController.currentAttachments,
-                reasoningMode: resolvedSelectedReasoningMode,
+                reasoningMode: reasoningModeForSubmitPixel,
                 modelId: modelStore.persistedModelId
             )
             UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
@@ -2294,6 +2294,19 @@ private extension UnifiedToggleInputCoordinator {
 
     var resolvedSelectedReasoningMode: AIChatReasoningMode? {
         selectedModel?.resolvedReasoningMode(from: persistedReasoningMode)
+    }
+
+    /// Reasoning mode to report in submit-time pixels.
+    /// Returns `nil` ( "none") whenever the reasoning picker is hidden in the UI:
+    /// selected tool hides it, or the model doesn't support a reasoning picker.
+    var reasoningModeForSubmitPixel: AIChatReasoningMode? {
+        if let tool = toolsController.selectedTool,
+           let identifier = UTIToolsMenu.Item.Identifier(tool: tool),
+           identifier.hidesReasoningPicker {
+            return nil
+        }
+        guard selectedModel?.supportsReasoningPicker == true else { return nil }
+        return resolvedSelectedReasoningMode
     }
 
     // MARK: - Subscriptions

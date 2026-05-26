@@ -50,7 +50,7 @@ private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
     }
 }
 
-private extension UTIToolsMenu.Item.Identifier {
+extension UTIToolsMenu.Item.Identifier {
     init?(tool: AIChatRAGTool) {
         switch tool {
         case .webSearch:
@@ -60,6 +60,14 @@ private extension UTIToolsMenu.Item.Identifier {
         case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
             assertionFailure("Unsupported UTI selected tool: \(tool.rawValue)")
             return nil
+        }
+    }
+
+    /// Whether activating this tool hides the reasoning picker in the UTI UI.
+    var hidesReasoningPicker: Bool {
+        switch self {
+        case .imageGeneration: return true
+        case .webSearch: return false
         }
     }
 }

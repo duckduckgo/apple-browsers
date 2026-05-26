@@ -231,6 +231,13 @@ extension AIChatModel {
 
     public init(remoteModel: AIChatRemoteModel, userTier: AIChatUserTier) {
         let hasAccess = remoteModel.accessTier.contains(userTier.rawValue)
+        let hasEffortAccess = remoteModel.reasoningEffortAccess?.map { entry in
+            AIChatReasoningEffortAccess(
+                effort: entry.effort,
+                accessTier: entry.accessTier,
+                entityHasAccess: entry.accessTier.contains(userTier.rawValue)
+            )
+        }
         self.init(
             id: remoteModel.id,
             name: remoteModel.name,
@@ -243,7 +250,7 @@ extension AIChatModel {
             entityHasAccess: hasAccess,
             accessTier: remoteModel.accessTier,
             supportedReasoningEffort: remoteModel.supportedReasoningEffort,
-            reasoningEffortAccess: remoteModel.reasoningEffortAccess
+            reasoningEffortAccess: hasEffortAccess
         )
     }
 }

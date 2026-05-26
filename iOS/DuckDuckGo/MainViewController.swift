@@ -2220,9 +2220,6 @@ class MainViewController: UIViewController {
         omniBarTabSwitcherButton?.tabCount = count
         omniBarTabSwitcherButton?.hasUnread = hasUnread
         omniBarTabSwitcherButton?.isFireMode = isFireMode
-        aiChatTabChatHeaderView?.tabSwitcherButton.tabCount = count
-        aiChatTabChatHeaderView?.tabSwitcherButton.hasUnread = hasUnread
-        aiChatTabChatHeaderView?.tabSwitcherButton.isFireMode = isFireMode
     }
 
     private func refreshTabBar() {

@@ -26,6 +26,7 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapUpgrade()
     func aiChatTabChatHeaderDidTapAppMenu()
     func aiChatTabChatHeaderDidTapClose()
+    func aiChatTabChatHeaderDidTapNewChat()
 }
 
 final class AIChatTabChatHeaderView: UIView {
@@ -99,7 +100,7 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     private lazy var rightPairStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [tabSwitcherButton, appMenuButton])
+        let stack = UIStackView(arrangedSubviews: [newChatButton, appMenuButton])
         stack.axis = .horizontal
         stack.alignment = .center
         stack.spacing = Constants.pillInnerIconSpacing
@@ -107,18 +108,12 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
-    let tabSwitcherButton: TabSwitcherStaticButton = {
-        let button = TabSwitcherStaticButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.tintColor = UIColor(designSystemColor: .icons)
-        // The default `tabSwitcherDefault()` config uses `UIButton.Configuration.gray()` which
-        // paints an always-visible gray pill behind the inner `TabSwitcherStaticView`. Inside
-        // our grouped glass pill we want a transparent button so it matches the other plain icons.
-        button.automaticallyUpdatesConfiguration = false
-        button.configurationUpdateHandler = nil
-        button.configuration = .plain()
-        return button
-    }()
+    private lazy var newChatButton: UIButton = makeIconButton(
+        image: DesignSystemImages.Glyphs.Size24.compose,
+        accessibilityLabel: UserText.aiChatHeaderNewChatAccessibilityLabel,
+        action: #selector(newChatTapped),
+        includeChrome: false
+    )
 
     private lazy var titleContainer: HighlightableContainerView = {
         let container = HighlightableContainerView()
@@ -303,7 +298,7 @@ final class AIChatTabChatHeaderView: UIView {
         rightStack.addArrangedSubview(rightPairPill)
         pillContentSuperview(for: rightPairPill).addSubview(rightPairStack)
 
-        for control in [closeButton, chatListButton, tabSwitcherButton, appMenuButton] as [UIControl] {
+        for control in [closeButton, chatListButton, newChatButton, appMenuButton] as [UIControl] {
             control.addGestureRecognizer(StrictBoundsTouchObserver())
         }
 
@@ -335,8 +330,8 @@ final class AIChatTabChatHeaderView: UIView {
             appMenuButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
             appMenuButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
 
-            tabSwitcherButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            tabSwitcherButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            newChatButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            newChatButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
 
             leftPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
             leftPairStack.leadingAnchor.constraint(equalTo: leftPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
@@ -496,6 +491,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     @objc private func closeTapped() { delegate?.aiChatTabChatHeaderDidTapClose() }
     @objc private func chatListTapped() { delegate?.aiChatTabChatHeaderDidTapChatList() }
+    @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
     @objc private func appMenuTapped() { delegate?.aiChatTabChatHeaderDidTapAppMenu() }
     @objc private func upgradeTapped() {
         if state.isSubscriptionActive == false {

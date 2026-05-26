@@ -685,16 +685,6 @@ private extension MainViewController {
         let headerView = AIChatTabChatHeaderView()
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
-        headerView.tabSwitcherButton.delegate = self
-        // Catch touches at the most upstream point — before UIControl tracking, before any
-        // gesture recognizer can cancel the tap. Surfaces the unresponsive-tab-switcher
-        // diagnostic even when `.touchUpInside` never fires (which is the bug we're hunting).
-        headerView.tabSwitcherButton.onTouchDown = { [weak self] in
-            guard let self else { return }
-            if TabSwitcherDiagnosticsOverlay.recordTapAndShouldShow() {
-                TabSwitcherDiagnosticsOverlay.show(from: self)
-            }
-        }
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),
@@ -1179,9 +1169,31 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         onMenuPressed()
     }
 
+    /// Minimize the chat tab — switch focus to the previously-positioned tab without closing
+    /// this one. Chats are preserved in Recent chats regardless of tab state, so destroying
+    /// the tab here would be redundant; use the fire button to actually clear chat data.
+    /// Falls back to the first existing home (NTP) tab, or creates one if none exists.
     func aiChatTabChatHeaderDidTapClose() {
-        guard let tab = currentTab?.tabModel else { return }
-        closeTab(tab)
+        let model = tabManager.currentTabsModel
+        if let currentIndex = model.currentIndex, currentIndex > 0,
+           let previousTab = model.get(tabAt: currentIndex - 1) {
+            selectTab(previousTab)
+            return
+        }
+        if let homeTab = tabManager.firstHomeTab() {
+            selectTab(homeTab)
+            return
+        }
+        tabManager.addHomeTab()
+        if let homeTab = tabManager.firstHomeTab() {
+            selectTab(homeTab)
+        }
+    }
+
+    func aiChatTabChatHeaderDidTapNewChat() {
+        unifiedToggleInputCoordinator?.startNewChat()
+        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        currentTab?.submitStartChatAction()
     }
 }
 

@@ -116,7 +116,6 @@ enum TabSwitcherDiagnosticsOverlay {
         lines.append(contentsOf: collectPresentationChain(mainVC))
         lines.append(contentsOf: collectFullVCTree(mainVC))
         lines.append(contentsOf: collectToolbarTSButton(mainVC))
-        lines.append(contentsOf: collectHeaderTSButton(mainVC))
         lines.append(contentsOf: collectFirstResponder(mainVC))
         lines.append(contentsOf: collectToolbarContainerGestures(mainVC))
         lines.append(contentsOf: collectCurrentTab(mainVC))
@@ -309,51 +308,6 @@ enum TabSwitcherDiagnosticsOverlay {
         lines.append("barButton.isEnabled: \(mainVC.viewCoordinator.toolbarTabSwitcherButton.isEnabled)")
         lines.append("")
         return lines
-    }
-
-    /// Duck.ai chrome's tab switcher button — the one the bug has been reported against.
-    /// Includes ancestry + hit-test routing to surface "touch can't reach button" cases.
-    private static func collectHeaderTSButton(_ mainVC: MainViewController) -> [String] {
-        guard let header = mainVC.aiChatTabChatHeaderView else { return [] }
-        let btn = header.tabSwitcherButton
-        var lines: [String] = ["[HEADER TS BUTTON]"]
-        lines.append("alpha: \(btn.alpha)")
-        lines.append("isHidden: \(btn.isHidden)")
-        lines.append("isEnabled: \(btn.isEnabled)")
-        lines.append("isUserInteractionEnabled: \(btn.isUserInteractionEnabled)")
-        lines.append("frame: \(stringify(btn.frame))")
-        lines.append("bounds: \(stringify(btn.bounds))")
-        lines.append("window: \(btn.window != nil ? "in-window" : "no-window")")
-        lines.append("gestureRecognizers on button: \(btn.gestureRecognizers?.count ?? 0)")
-        for r in btn.gestureRecognizers ?? [] {
-            lines.append("  - \(type(of: r)) state=\(stringify(r.state)) enabled=\(r.isEnabled)")
-        }
-        lines.append(headerHitTestLine(for: btn))
-        lines.append("button ancestry (innermost → outermost):")
-        var cursor: UIView? = btn
-        var depth = 0
-        while let v = cursor, depth < 14 {
-            lines.append(ancestryLine(for: v, depth: depth, includeGestures: true))
-            let indent = String(repeating: "  ", count: depth + 1)
-            for r in v.gestureRecognizers ?? [] {
-                lines.append("\(indent)    · \(type(of: r)) state=\(stringify(r.state)) enabled=\(r.isEnabled) cancels=\(r.cancelsTouchesInView)")
-            }
-            cursor = v.superview
-            depth += 1
-        }
-        lines.append("")
-        return lines
-    }
-
-    private static func headerHitTestLine(for btn: UIView) -> String {
-        guard let window = btn.window else { return "hitTest @ button-center: (no window)" }
-        let centerInWindow = btn.convert(CGPoint(x: btn.bounds.midX, y: btn.bounds.midY), to: window)
-        guard let hit = window.hitTest(centerInWindow, with: nil) else {
-            return "hitTest @ button-center: nil"
-        }
-        let isSelfOrDescendant = hit === btn || hit.isDescendant(of: btn)
-        let routingTag = isSelfOrDescendant ? "OK (routes to button)" : "INTERCEPTED — touch would NOT reach the button"
-        return "hitTest @ button-center: \(type(of: hit))(\(addr(hit))) — \(routingTag)"
     }
 
     /// Renders one ancestry line; `includeGestures` controls whether the gesture-count

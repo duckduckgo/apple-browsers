@@ -398,7 +398,7 @@ extension OnboardingRebranding {
         private func aiComparisonView(content: OnboardingAIComparisonContent) -> some View {
             AIComparisonContent(
                 content: content,
-                showContent: $showBubbleContent,
+                isVisible: $showBubbleContent,
                 continueAction: {
                     animateContentTransition {
                         model.aiComparisonAction()

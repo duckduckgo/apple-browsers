@@ -448,8 +448,7 @@ extension MainViewController {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
-        let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
-                                                        featureFlagger: featureFlagger)
+        let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
         let whatsNewCoordinator = WhatsNewCoordinator(
             displayContext: .onDemand,
             repository: whatsNewRepository,

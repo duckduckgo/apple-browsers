@@ -84,7 +84,6 @@ public enum PrivacyFeature: String {
     case attributedMetrics
     case dataImport
     case duckAiChatHistory
-    case serp
     case popupBlocking
     case pageContext
     case webExtensions
@@ -741,15 +740,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
-}
-
-public enum SERPSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .serp
-    }
-
-    /// Global switch to disable New Tab Page search box
-    case storeSerpSettings
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

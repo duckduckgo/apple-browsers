@@ -183,7 +183,7 @@ final class SupportedOSChecker {
             return minSupportedOSVersionOverride
         }
 
-        return Self.ddgMinBigSurVersion
+        return Self.ddgMinMonterreyVersion
     }
 
     var upcomingMinSupportedOSVersion: OperatingSystemVersion? {

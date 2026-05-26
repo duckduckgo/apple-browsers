@@ -23,6 +23,7 @@ class AIChatSettingsLinkTests: UITestCase {
 
     private enum Identifiers {
         static let duckAiSettingsLink = "Preferences.AIChat.duckAiSettingsLink"
+        static let duckAiConsentAgreeButton = "Agree and Continue"
     }
 
     override func setUpWithError() throws {
@@ -51,6 +52,14 @@ class AIChatSettingsLinkTests: UITestCase {
                       "'Open Duck.ai Settings' link should be visible when the feature flag is on and Duck.ai is enabled")
 
         settingsLink.click()
+
+        // Dismiss duck.ai's first-run consent dialog if it appears. It's gated by WebKit storage
+        // and only shows on runners with a clean profile (e.g. macOS 14 CI), where it would otherwise
+        // sit on top of and block accessibility access to the Settings modal underneath.
+        let agreeButton = app.webViews.buttons[Identifiers.duckAiConsentAgreeButton]
+        if agreeButton.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            agreeButton.click()
+        }
 
         // Duck.ai's Settings modal should be visible inside the WebView. The modal is opened
         // by the FE in response to the `submitOpenSettingsAction` push from the two-phase

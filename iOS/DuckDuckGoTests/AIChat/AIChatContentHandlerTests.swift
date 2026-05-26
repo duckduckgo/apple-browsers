@@ -602,7 +602,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockDelegate.requestedOpenURL, url)
     }
 
-    func testDidReceiveVoiceSessionUserEndedNotifiesDelegate() throws {
+    func testDidReceiveNewChatStartedNotifiesDelegate() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
         let mockWebView = WKWebView()
@@ -611,26 +611,11 @@ final class AIChatContentHandlerTests: XCTestCase {
         handler.delegate = mockDelegate
 
         // When
-        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .voiceSessionUserEnded)
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .newChatStarted)
 
         // Then
-        XCTAssertEqual(mockDelegate.didReceiveVoiceSessionUserEndedRequestCallCount, 1)
+        XCTAssertEqual(mockDelegate.didReceiveNewChatCreatedCallCount, 1)
         XCTAssertEqual(mockDelegate.didReceiveCloseChatRequestCallCount, 0)
-    }
-
-    func testDidReceiveVoiceSessionEndedDoesNotNotifyVoiceSessionUserEndedDelegate() throws {
-        // Given
-        let mockUserScript = MockAIChatUserScript()
-        let mockWebView = WKWebView()
-        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
-        let mockDelegate = MockAIChatContentHandlingDelegate()
-        handler.delegate = mockDelegate
-
-        // When
-        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .voiceSessionEnded)
-
-        // Then
-        XCTAssertEqual(mockDelegate.didReceiveVoiceSessionUserEndedRequestCallCount, 0)
     }
 
     // MARK: - fireAIChatTelemetry

@@ -76,7 +76,7 @@ class BlankSnapshotViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
+        tabSwitcherButton = TabSwitcherStaticButton()
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,

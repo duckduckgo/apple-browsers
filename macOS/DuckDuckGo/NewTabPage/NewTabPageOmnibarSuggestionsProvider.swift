@@ -23,13 +23,17 @@ import os.log
 final class NewTabPageOmnibarSuggestionsProvider: NewTabPageOmnibarSuggestionsProviding {
 
     let suggestionContainer: SuggestionContainerProtocol
+    private let searchPreferences: SearchPreferences
 
-    init(suggestionContainer: SuggestionContainerProtocol) {
+    init(suggestionContainer: SuggestionContainerProtocol, searchPreferences: SearchPreferences) {
         self.suggestionContainer = suggestionContainer
+        self.searchPreferences = searchPreferences
     }
 
     func suggestions(for term: String) async -> NewTabPageDataModel.Suggestions {
-        await withCheckedContinuation { [weak self] continuation in
+        guard searchPreferences.showAutocompleteSuggestions else { return .empty }
+
+        return await withCheckedContinuation { [weak self] continuation in
             guard let self else {
                 continuation.resume(returning: .empty)
                 return

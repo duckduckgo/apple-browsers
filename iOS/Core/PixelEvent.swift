@@ -1709,6 +1709,36 @@ extension Pixel {
         case aiChatContextualRecentChatSelected
         case aiChatContextualViewAllChatsTapped
 
+        // MARK: Unified Toggle Input (UTI)
+        case unifiedToggleInputImageGenerationSelected
+        case unifiedToggleInputImageGenerationDeselected
+        case unifiedToggleInputImageGenerationSubmitted
+        case unifiedToggleInputWebSearchSelected
+        case unifiedToggleInputWebSearchDeselected
+        case unifiedToggleInputWebSearchSubmitted
+        case unifiedToggleInputModelSelected
+        case unifiedToggleInputReasoningEffortSelected
+        case unifiedToggleInputImageAttached
+        case unifiedToggleInputImageRemoved
+        case unifiedToggleInputFileAttached
+        case unifiedToggleInputFileRemoved
+        case unifiedToggleInputFileValidationFailed
+        case unifiedToggleInputVoiceTapped
+        case unifiedToggleInputStopGenerationTapped
+        case unifiedToggleInputSubscriptionUpsellTriggered
+        case unifiedToggleInputChatHeaderUpgradeTapped
+        case unifiedToggleInputPromptSubmitted
+
+        // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
+        case autocompleteDuckAIClickWebsite
+        case autocompleteDuckAIClickBookmark
+        case autocompleteDuckAIClickFavorite
+        case autocompleteDuckAIClickHistorySearch
+        case autocompleteDuckAIClickHistorySite
+        case autocompleteDuckAIClickSwitchToTab
+        case autocompleteDuckAIClickChatHistory
+        case autocompleteDuckAIClickSearchDuckDuckGo
+
         // MARK: Customization
         case customizationAddressBarStarted
         case customizationAddressBarSelected
@@ -1850,6 +1880,13 @@ extension Pixel {
         case webExtensionAdBlockingSettingsOpen
         case webExtensionAdBlockingEnabled
         case webExtensionAdBlockingDisabled
+
+        case webExtensionAdBlockingMenuEnableTapped
+        case webExtensionAdBlockingMenuDisableTapped
+        case webExtensionAdBlockingPickerAlwaysOn
+        case webExtensionAdBlockingPickerAlwaysOff
+        case webExtensionAdBlockingPickerDisableUntilRelaunch
+        case webExtensionAdBlockingBreakageReportEntered
 
         case webExtensionScriptletFetchSuccess
         case webExtensionScriptletFetchError
@@ -3458,6 +3495,35 @@ extension Pixel.Event {
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
 
+        // MARK: Unified Toggle Input (UTI)
+        case .unifiedToggleInputImageGenerationSelected: return "m_aichat_unified_input_image_generation_selected"
+        case .unifiedToggleInputImageGenerationDeselected: return "m_aichat_unified_input_image_generation_deselected"
+        case .unifiedToggleInputImageGenerationSubmitted: return "m_aichat_unified_input_image_generation_submitted"
+        case .unifiedToggleInputWebSearchSelected: return "m_aichat_unified_input_web_search_selected"
+        case .unifiedToggleInputWebSearchDeselected: return "m_aichat_unified_input_web_search_deselected"
+        case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
+        case .unifiedToggleInputModelSelected: return "m_aichat_unified_input_model_selected"
+        case .unifiedToggleInputReasoningEffortSelected: return "m_aichat_unified_input_reasoning_effort_selected"
+        case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
+        case .unifiedToggleInputImageRemoved: return "m_aichat_unified_input_image_removed"
+        case .unifiedToggleInputFileAttached: return "m_aichat_unified_input_file_attached"
+        case .unifiedToggleInputFileRemoved: return "m_aichat_unified_input_file_removed"
+        case .unifiedToggleInputFileValidationFailed: return "m_aichat_unified_input_file_validation_failed"
+        case .unifiedToggleInputVoiceTapped: return "m_aichat_unified_input_voice_tapped"
+        case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
+        case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
+        case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
+        case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
+
+        case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
+        case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"
+        case .autocompleteDuckAIClickFavorite: return "m_autocomplete_duckai_click_favorite"
+        case .autocompleteDuckAIClickHistorySearch: return "m_autocomplete_duckai_click_history_search"
+        case .autocompleteDuckAIClickHistorySite: return "m_autocomplete_duckai_click_history_site"
+        case .autocompleteDuckAIClickSwitchToTab: return "m_autocomplete_duckai_click_switch_to_tab"
+        case .autocompleteDuckAIClickChatHistory: return "m_autocomplete_duckai_click_chat_history"
+        case .autocompleteDuckAIClickSearchDuckDuckGo: return "m_autocomplete_duckai_click_search_duckduckgo"
+
         // MARK: AI Chat Sync
 
         case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"
@@ -3667,6 +3733,13 @@ extension Pixel.Event {
         case .webExtensionAdBlockingSettingsOpen: return "m_web_extension_ad_blocking_settings_open"
         case .webExtensionAdBlockingEnabled: return "m_web_extension_ad_blocking_enabled"
         case .webExtensionAdBlockingDisabled: return "m_web_extension_ad_blocking_disabled"
+
+        case .webExtensionAdBlockingMenuEnableTapped: return "m_web_extension_ad_blocking_menu_enable_tapped"
+        case .webExtensionAdBlockingMenuDisableTapped: return "m_web_extension_ad_blocking_menu_disable_tapped"
+        case .webExtensionAdBlockingPickerAlwaysOn: return "m_web_extension_ad_blocking_picker_always_on"
+        case .webExtensionAdBlockingPickerAlwaysOff: return "m_web_extension_ad_blocking_picker_always_off"
+        case .webExtensionAdBlockingPickerDisableUntilRelaunch: return "m_web_extension_ad_blocking_picker_disable_until_relaunch"
+        case .webExtensionAdBlockingBreakageReportEntered: return "m_web_extension_ad_blocking_breakage_report_entered"
 
         case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
         case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"

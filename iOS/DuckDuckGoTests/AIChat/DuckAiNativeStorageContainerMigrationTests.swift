@@ -253,6 +253,41 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertEqual(pixelSpy.firedEventNames, ["protectedDataUnavailable"])
     }
 
+    /// Without the up-front kv-store sanity check, the `try?` computed
+    /// properties below silently fall back to defaults and the migration
+    /// proceeds — likely landing in `notNeeded` (when oldURL is absent) or
+    /// `destinationConflict` (once the destination has data). Deferring on
+    /// unhealthy reads keeps the source on disk and gives the next launch a
+    /// chance to recover with a healthy store.
+    func testWhenKeyValueStoreReadFailsThenMigrationDefersWithoutMutatingState() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("user".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+        let failingStore = FailingReadKeyValueStore()
+
+        let outcome = DuckAiNativeStorageContainerMigration(
+            oldURL: oldURL,
+            newURL: newURL,
+            migrationKey: migrationKey,
+            label: label,
+            keyValueStore: failingStore,
+            pixelFiring: pixelSpy,
+            isProtectedDataAvailable: { true }
+        ).run()
+
+        XCTAssertEqual(outcome, .skip)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["keyValueStoreReadFailed"])
+        XCTAssertEqual((pixelSpy.lastKeyValueStoreReadError as NSError?)?.domain, FailingReadKeyValueStore.errorDomain)
+        XCTAssertEqual((pixelSpy.lastKeyValueStoreReadError as NSError?)?.code, FailingReadKeyValueStore.errorCode)
+        XCTAssertTrue(failingStore.writeCalls.isEmpty,
+                      "unhealthy store must not be written to — no attempts counter increments, no migrated flag set")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: newURL.path),
+                       "destination must not be touched on a kv-store failure")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: oldURL.appendingPathComponent("chats.db").path),
+                      "source must be preserved on a kv-store failure")
+    }
+
     func testWhenProtectedDataReturnsToAvailableThenMigrationCompletes() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
@@ -723,6 +758,7 @@ private final class SpyContainerMigrationPixelFiring: DuckAiNativeStorageContain
     private(set) var firedEventNames: [String] = []
     private(set) var lastProtectionFailedError: Error?
     private(set) var lastExcludeFromBackupError: Error?
+    private(set) var lastKeyValueStoreReadError: Error?
 
     func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {
         switch event {
@@ -738,7 +774,31 @@ private final class SpyContainerMigrationPixelFiring: DuckAiNativeStorageContain
             firedEventNames.append("excludeFromBackupFailed")
             lastExcludeFromBackupError = error
         case .protectedDataUnavailable: firedEventNames.append("protectedDataUnavailable")
+        case .keyValueStoreReadFailed(_, let error):
+            firedEventNames.append("keyValueStoreReadFailed")
+            lastKeyValueStoreReadError = error
         }
+    }
+}
+
+/// Throws on every `object(forKey:)` read, accepts writes. Mirrors a
+/// genuinely-broken store at the boundary the migration uses.
+private final class FailingReadKeyValueStore: ThrowingKeyValueStoring {
+    static let errorDomain = "DuckAiNativeStorageContainerMigrationTests.kvStoreRead"
+    static let errorCode = -7
+
+    private(set) var writeCalls: [(key: String, value: Any?)] = []
+
+    func object(forKey defaultName: String) throws -> Any? {
+        throw NSError(domain: Self.errorDomain, code: Self.errorCode)
+    }
+
+    func set(_ value: Any?, forKey defaultName: String) throws {
+        writeCalls.append((defaultName, value))
+    }
+
+    func removeObject(forKey defaultName: String) throws {
+        writeCalls.append((defaultName, nil))
     }
 }
 

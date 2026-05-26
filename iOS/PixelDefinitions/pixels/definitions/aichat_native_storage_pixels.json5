@@ -199,6 +199,20 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_duck-ai_native-storage_container-migration_key-value-store-read-failed_default": {
+        "description": "Fires when a sanity-check read against the key-value store at the top of the default-container migration throws — indicates the store itself is unhealthy. The migration is deferred without consuming the retry budget or mutating disk so a healthy launch can resume normally",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_duck-ai_native-storage_container-migration_key-value-store-read-failed_fire-mode": {
+        "description": "Fires when a sanity-check read against the key-value store at the top of the fire-mode container migration throws — indicates the store itself is unhealthy. The migration is deferred without consuming the retry budget or mutating disk so a healthy launch can resume normally",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
     "m_duck-ai_native-storage_settings-put_error": {
         "description": "Fires when putEntry (Settings) fails",
         "owners": ["Bunn"],

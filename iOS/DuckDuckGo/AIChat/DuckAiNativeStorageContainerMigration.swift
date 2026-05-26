@@ -23,77 +23,6 @@ import Persistence
 import UIKit
 import os.log
 
-/// Identifies the container being migrated. Raw value is suffixed onto pixel names.
-enum DuckAiNativeStorageContainerMigrationLabel: String {
-    case `default`
-    case fireMode = "fire-mode"
-}
-
-/// Outcomes for the container relocation. Distinct from the JS→native chat-data
-/// migration pixels (`duckAiNativeStorageMigration*`).
-enum DuckAiNativeStorageContainerMigrationEvent {
-    case notNeeded(label: DuckAiNativeStorageContainerMigrationLabel)
-    case success(label: DuckAiNativeStorageContainerMigrationLabel)
-    case attemptFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
-    case gaveUp(label: DuckAiNativeStorageContainerMigrationLabel, error: Error?)
-    /// Move succeeded but `applyDefaultFileProtection` failed — the DB kept its
-    /// inherited `NSFileProtectionComplete` class (the 0xdead10cc condition).
-    case protectionFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
-    /// Destination has data but the migrated flag isn't set — could be a partial
-    /// move or a DB created while the App Group entitlement was unavailable. The
-    /// destination is claimed going forward and the source is preserved.
-    case destinationConflict(label: DuckAiNativeStorageContainerMigrationLabel)
-    /// `isExcludedFromBackup` or the destination directory creation failed.
-    /// The encrypted DB may end up in iCloud backups.
-    case excludeFromBackupFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
-    /// Deferred because protected data is unavailable (pre-first-unlock
-    /// background launch). No state is modified.
-    case protectedDataUnavailable(label: DuckAiNativeStorageContainerMigrationLabel)
-}
-
-enum DuckAiNativeStorageContainerMigrationOutcome {
-    case proceed
-    case skip
-}
-
-protocol DuckAiNativeStorageContainerMigrationPixelFiring {
-    func fire(_ event: DuckAiNativeStorageContainerMigrationEvent)
-}
-
-struct NullDuckAiNativeStorageContainerMigrationPixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring {
-    func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {}
-}
-
-struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageContainerMigrationPixelFiring {
-    func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {
-        switch event {
-        case .notNeeded(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationNotNeeded(label: label.rawValue))
-        case .success(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationSuccess(label: label.rawValue))
-        case .attemptFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationAttemptFailed(label: label.rawValue), error: error)
-        case .gaveUp(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue), error: error)
-        case .protectionFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue), error: error)
-        case .destinationConflict(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationDestinationConflict(label: label.rawValue))
-        case .excludeFromBackupFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: label.rawValue), error: error)
-        case .protectedDataUnavailable(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: label.rawValue))
-        }
-    }
-}
-
-/// Runs the one-time move of a Duck.ai container from the shared App Group into
-/// the app's Application Support directory.
-protocol DuckAiNativeStorageContainerMigrating {
-    @discardableResult
-    func run() -> DuckAiNativeStorageContainerMigrationOutcome
-}
-
 /// One-time move of a Duck.ai container from the shared App Group into the
 /// app's Application Support directory.
 ///
@@ -103,16 +32,7 @@ protocol DuckAiNativeStorageContainerMigrating {
 /// `NSFileProtectionCompleteUntilFirstUserAuthentication`, which stays readable
 /// after first unlock.
 ///
-/// State (in `keyValueStore`):
-/// - `<migrationKey>.migrated` (Bool) — set when we own the destination going
-///   forward (success / notNeeded / destinationConflict). Once set, `run()`
-///   is a no-op apart from `ensureProtection`.
-/// - `<migrationKey>.attempts` (Int) — failed move attempts. Cleared when
-///   `migrated` is set. Left at the cap on `.gaveUp` so the next launch
-///   detects the exhausted budget and resets for a fresh retry.
-/// - `<migrationKey>.protectionAttempts` (Int) — retry budget for
-///   `applyDefaultFileProtection`. `maxAttempts` is the "done" sentinel
-///   (set by success or by exhausting retries).
+/// Persistent state is owned by `MigrationStateStore`.
 struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrating {
 
     static let defaultMaxAttempts = 3
@@ -122,13 +42,13 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
 
     let oldURL: URL
     let newURL: URL
-    let migrationKey: String
     let label: DuckAiNativeStorageContainerMigrationLabel
-    let keyValueStore: ThrowingKeyValueStoring
     let fileManager: FileManager
     let pixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring
     let isProtectedDataAvailable: () -> Bool
     let maxAttempts: Int
+
+    private let stateStore: MigrationStateStore
 
     init(oldURL: URL,
          newURL: URL,
@@ -141,43 +61,54 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
          maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts) {
         self.oldURL = oldURL
         self.newURL = newURL
-        self.migrationKey = migrationKey
         self.label = label
-        self.keyValueStore = keyValueStore
         self.fileManager = fileManager
         self.pixelFiring = pixelFiring
         self.isProtectedDataAvailable = isProtectedDataAvailable
         // 0 / negative would give up on the first failure.
         self.maxAttempts = max(1, maxAttempts)
+        self.stateStore = MigrationStateStore(keyValueStore: keyValueStore, migrationKey: migrationKey)
     }
 
     // MARK: - Entry point
 
     @discardableResult
     func run() -> DuckAiNativeStorageContainerMigrationOutcome {
-        // Background launches before first unlock can't read
-        // `NSFileProtectionComplete` source bytes. Defer rather than burn
-        // retries on a transient condition.
         guard isProtectedDataAvailable() else {
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] protected data unavailable; deferring")
             pixelFiring.fire(.protectedDataUnavailable(label: label))
             return .skip
         }
 
-        resetExhaustedAttemptsIfNeeded()
+        do {
+            return try performMigration()
+        } catch let kvError as MigrationStateStore.ReadError {
+            Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] key-value store read failed; deferring: \(kvError.underlying.localizedDescription, privacy: .public)")
+            pixelFiring.fire(.keyValueStoreReadFailed(label: label, error: kvError.underlying))
+            return .skip
+        } catch {
+            assertionFailure("Unexpected throw from performMigration: \(error)")
+            Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] unexpected migration error; deferring: \(error.localizedDescription, privacy: .public)")
+            return .skip
+        }
+    }
 
-        if isMigrated {
-            ensureProtection()
+    private func performMigration() throws -> DuckAiNativeStorageContainerMigrationOutcome {
+        var state = try stateStore.load()
+        resetExhaustedAttemptsIfNeeded(&state)
+
+        if state.isMigrated {
+            ensureProtection(priorAttempts: state.protectionAttempts)
             return .proceed
         }
 
-        Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] starting (prior attempts: \(attempts)); old=\(oldURL.path, privacy: .public) new=\(newURL.path, privacy: .public)")
+        Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] starting (prior attempts: \(state.attempts)); old=\(oldURL.path, privacy: .public) new=\(newURL.path, privacy: .public)")
 
         guard fileManager.fileExists(atPath: oldURL.path) else {
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] no old directory; marking done")
-            markMigrated()
+            stateStore.markMigrated()
             pixelFiring.fire(.notNeeded(label: label))
-            ensureProtection()
+            ensureProtection(priorAttempts: state.protectionAttempts)
             return .proceed
         }
 
@@ -188,16 +119,16 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
             // `excludeFromBackup` on a skipped launch — remove and proceed.
             if destinationHasData {
                 Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] destination has data without migrated flag; claiming new and preserving old for recovery")
-                markMigrated()
+                stateStore.markMigrated()
                 pixelFiring.fire(.destinationConflict(label: label))
-                ensureProtection()
+                ensureProtection(priorAttempts: state.protectionAttempts)
                 return .proceed
             }
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] empty destination directory present; removing to clear path for move")
             do {
                 try fileManager.removeItem(at: newURL)
             } catch {
-                return handleMoveFailure(error, operation: .removingEmptyDestination)
+                return handleMoveFailure(error, operation: .removingEmptyDestination, priorAttempts: state.attempts)
             }
         }
 
@@ -206,12 +137,12 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
                                             withIntermediateDirectories: true)
             try fileManager.moveItem(at: oldURL, to: newURL)
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] moved successfully")
-            markMigrated()
+            stateStore.markMigrated()
             pixelFiring.fire(.success(label: label))
-            ensureProtection()
+            ensureProtection(priorAttempts: state.protectionAttempts)
             return .proceed
         } catch {
-            return handleMoveFailure(error, operation: .move)
+            return handleMoveFailure(error, operation: .move, priorAttempts: state.attempts)
         }
     }
 
@@ -284,24 +215,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         return firstError
     }
 
-    // MARK: - State (computed)
-
-    private var migratedKey: String { migrationKey + ".migrated" }
-    private var attemptsKey: String { migrationKey + ".attempts" }
-    private var protectionAttemptsKey: String { migrationKey + ".protectionAttempts" }
-
-    private var isMigrated: Bool {
-        (try? keyValueStore.object(forKey: migratedKey) as? Bool) ?? false
-    }
-
-    private var attempts: Int {
-        (try? keyValueStore.object(forKey: attemptsKey) as? Int) ?? 0
-    }
-
-    private var protectionAttempts: Int {
-        (try? keyValueStore.object(forKey: protectionAttemptsKey) as? Int) ?? 0
-    }
-
     /// Fire-mode stores DBs in `<UUID>/chats.db` subdirectories rather than at
     /// the root, so any non-empty `newURL` implies data that must not be wiped.
     private var destinationHasData: Bool {
@@ -311,47 +224,34 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         return !children.isEmpty
     }
 
-    // MARK: - State (mutation)
-
-    private func markMigrated() {
-        try? keyValueStore.set(true, forKey: migratedKey)
-        try? keyValueStore.removeObject(forKey: attemptsKey)
-    }
-
-    private func setAttempts(_ value: Int) {
-        try? keyValueStore.set(value, forKey: attemptsKey)
-    }
-
-    private func setProtectionAttempts(_ value: Int) {
-        try? keyValueStore.set(value, forKey: protectionAttemptsKey)
-    }
-
-    private func resetExhaustedAttemptsIfNeeded() {
-        guard !isMigrated, attempts >= maxAttempts else { return }
+    private func resetExhaustedAttemptsIfNeeded(_ state: inout MigrationStateStore.State) {
+        guard !state.isMigrated, state.attempts >= maxAttempts else { return }
         Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] prior launch exhausted retry budget; resetting attempts")
-        try? keyValueStore.removeObject(forKey: attemptsKey)
-        try? keyValueStore.removeObject(forKey: protectionAttemptsKey)
+        stateStore.resetCounters()
+        state.attempts = 0
+        state.protectionAttempts = 0
     }
 
-    private func ensureProtection() {
-        let priorAttempts = protectionAttempts
+    private func ensureProtection(priorAttempts: Int) {
         guard priorAttempts < maxAttempts else { return }
         guard fileManager.fileExists(atPath: newURL.path) else {
             // Nothing at the destination yet — no protection to enforce.
-            setProtectionAttempts(maxAttempts)
+            stateStore.setProtectionAttempts(maxAttempts)
             return
         }
         if let error = Self.applyDefaultFileProtection(at: newURL, fileManager: fileManager) {
-            setProtectionAttempts(priorAttempts + 1)
+            stateStore.setProtectionAttempts(priorAttempts + 1)
             pixelFiring.fire(.protectionFailed(label: label, error: error))
         } else {
-            setProtectionAttempts(maxAttempts)
+            stateStore.setProtectionAttempts(maxAttempts)
         }
     }
 
-    private func handleMoveFailure(_ error: Error, operation: FailingOperation) -> DuckAiNativeStorageContainerMigrationOutcome {
-        let attempt = attempts + 1
-        setAttempts(attempt)
+    private func handleMoveFailure(_ error: Error,
+                                   operation: FailingOperation,
+                                   priorAttempts: Int) -> DuckAiNativeStorageContainerMigrationOutcome {
+        let attempt = priorAttempts + 1
+        stateStore.setAttempts(attempt)
         if attempt >= maxAttempts {
             Self.logger.error("[NativeStorage] [\(label.rawValue, privacy: .public)] \(operation.rawValue, privacy: .public) failed (attempt \(attempt)/\(maxAttempts)); giving up: \(error.localizedDescription, privacy: .public)")
             pixelFiring.fire(.gaveUp(label: label, error: error))
@@ -365,5 +265,129 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
     private enum FailingOperation: String {
         case move
         case removingEmptyDestination
+    }
+}
+
+/// Identifies the container being migrated. Raw value is suffixed onto pixel names.
+enum DuckAiNativeStorageContainerMigrationLabel: String {
+    case `default`
+    case fireMode = "fire-mode"
+}
+
+/// Outcomes for the container relocation. Distinct from the JS→native chat-data
+/// migration pixels (`duckAiNativeStorageMigration*`).
+enum DuckAiNativeStorageContainerMigrationEvent {
+    case notNeeded(label: DuckAiNativeStorageContainerMigrationLabel)
+    case success(label: DuckAiNativeStorageContainerMigrationLabel)
+    case attemptFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
+    case gaveUp(label: DuckAiNativeStorageContainerMigrationLabel, error: Error?)
+    case protectionFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
+    case destinationConflict(label: DuckAiNativeStorageContainerMigrationLabel)
+    case excludeFromBackupFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
+    case protectedDataUnavailable(label: DuckAiNativeStorageContainerMigrationLabel)
+    case keyValueStoreReadFailed(label: DuckAiNativeStorageContainerMigrationLabel, error: Error)
+}
+
+enum DuckAiNativeStorageContainerMigrationOutcome {
+    case proceed
+    case skip
+}
+
+protocol DuckAiNativeStorageContainerMigrationPixelFiring {
+    func fire(_ event: DuckAiNativeStorageContainerMigrationEvent)
+}
+
+struct NullDuckAiNativeStorageContainerMigrationPixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring {
+    func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {}
+}
+
+struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageContainerMigrationPixelFiring {
+    func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {
+        switch event {
+        case .notNeeded(let label):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationNotNeeded(label: label.rawValue))
+        case .success(let label):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationSuccess(label: label.rawValue))
+        case .attemptFailed(let label, let error):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationAttemptFailed(label: label.rawValue), error: error)
+        case .gaveUp(let label, let error):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue), error: error)
+        case .protectionFailed(let label, let error):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue), error: error)
+        case .destinationConflict(let label):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationDestinationConflict(label: label.rawValue))
+        case .excludeFromBackupFailed(let label, let error):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: label.rawValue), error: error)
+        case .protectedDataUnavailable(let label):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: label.rawValue))
+        case .keyValueStoreReadFailed(let label, let error):
+            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: label.rawValue), error: error)
+        }
+    }
+}
+
+/// Runs the one-time move of a Duck.ai container from the shared App Group into
+/// the app's Application Support directory.
+protocol DuckAiNativeStorageContainerMigrating {
+    @discardableResult
+    func run() -> DuckAiNativeStorageContainerMigrationOutcome
+}
+
+private struct MigrationStateStore {
+
+    struct State {
+        let isMigrated: Bool
+        var attempts: Int
+        var protectionAttempts: Int
+    }
+
+    /// Tags errors that originate from a kv-store read so the migration's
+    /// catch can distinguish them from any other propagating throw.
+    struct ReadError: Error {
+        let underlying: Error
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let migratedKey: String
+    private let attemptsKey: String
+    private let protectionAttemptsKey: String
+
+    init(keyValueStore: ThrowingKeyValueStoring, migrationKey: String) {
+        self.keyValueStore = keyValueStore
+        self.migratedKey = migrationKey + ".migrated"
+        self.attemptsKey = migrationKey + ".attempts"
+        self.protectionAttemptsKey = migrationKey + ".protectionAttempts"
+    }
+
+    func load() throws -> State {
+        do {
+            return State(
+                isMigrated: try keyValueStore.object(forKey: migratedKey) as? Bool ?? false,
+                attempts: try keyValueStore.object(forKey: attemptsKey) as? Int ?? 0,
+                protectionAttempts: try keyValueStore.object(forKey: protectionAttemptsKey) as? Int ?? 0
+            )
+        } catch {
+            throw ReadError(underlying: error)
+        }
+    }
+
+    func markMigrated() {
+        try? keyValueStore.set(true, forKey: migratedKey)
+        try? keyValueStore.removeObject(forKey: attemptsKey)
+    }
+
+    func setAttempts(_ value: Int) {
+        try? keyValueStore.set(value, forKey: attemptsKey)
+    }
+
+    func setProtectionAttempts(_ value: Int) {
+        try? keyValueStore.set(value, forKey: protectionAttemptsKey)
+    }
+
+    /// Clears `attempts` and `protectionAttempts`. Used when the prior launch
+    /// exhausted the retry budget so this launch starts with a fresh budget.
+    func resetCounters() {
+        try? keyValueStore.removeObject(forKey: attemptsKey)
+        try? keyValueStore.removeObject(forKey: protectionAttemptsKey)
     }
 }

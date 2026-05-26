@@ -1598,6 +1598,7 @@ extension Pixel {
         case duckAiNativeStorageContainerMigrationDestinationConflict(label: String)
         case duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: String)
         case duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: String)
+        case duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: String)
 
         case duckAiNativeStorageInitSuccess
         case duckAiNativeStorageInitError
@@ -3365,6 +3366,7 @@ extension Pixel.Event {
         case .duckAiNativeStorageContainerMigrationDestinationConflict(let label): return "m_duck-ai_native-storage_container-migration_destination-conflict_\(label)"
         case .duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(let label): return "m_duck-ai_native-storage_container-migration_exclude-from-backup-failed_\(label)"
         case .duckAiNativeStorageContainerMigrationProtectedDataUnavailable(let label): return "m_duck-ai_native-storage_container-migration_protected-data-unavailable_\(label)"
+        case .duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(let label): return "m_duck-ai_native-storage_container-migration_key-value-store-read-failed_\(label)"
 
         case .duckAiNativeStorageInitSuccess: return "m_duck-ai_native-storage_init_success"
         case .duckAiNativeStorageInitError: return "m_duck-ai_native-storage_init_error"

@@ -55,17 +55,6 @@ struct TabInputState: Equatable {
         self.isVoiceSessionActive = isVoiceSessionActive
     }
 
-    /// Leaving voice also restores the chat input if it was hidden for voice, so the user isn't
-    /// left without an input bar when FE / URL teardown ends the session.
-    func applyingVoiceSessionTransition(active: Bool) -> TabInputState {
-        var copy = self
-        copy.isVoiceSessionActive = active
-        if !active, copy.aiChatInputBoxVisibility == .hidden {
-            copy.aiChatInputBoxVisibility = .visible
-        }
-        return copy
-    }
-
     static func == (lhs: TabInputState, rhs: TabInputState) -> Bool {
         lhs.text == rhs.text
             && lhs.toggleMode == rhs.toggleMode

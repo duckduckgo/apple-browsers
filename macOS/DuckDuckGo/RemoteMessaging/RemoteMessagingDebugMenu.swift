@@ -30,6 +30,8 @@ final class RemoteMessagingDebugMenu: NSMenu {
     private let configurationURLMenuItem: NSMenuItem = {
         return NSMenuItem(title: "")
     }()
+    private let osUpgradeCapabilityOverridePersistor = OSUpgradeCapabilityOverridePersistor()
+    private let osUpgradeCapabilityOverrideMenu = NSMenu(title: "")
 
     struct MessageModel: CustomStringConvertible {
         let id: String
@@ -79,6 +81,17 @@ final class RemoteMessagingDebugMenu: NSMenu {
                 .withAccessibilityIdentifier("RemoteMessagingDebugMenu.setCustomRemoteMessagingURL")
             NSMenuItem(title: "Reset Remote Messaging URL to Default", action: #selector(resetRemoteMessagingURLToDefault), target: self)
                 .withAccessibilityIdentifier("RemoteMessagingDebugMenu.resetRemoteMessagingURLToDefault")
+            NSMenuItem.separator()
+            NSMenuItem(title: "OS Upgrade Capability Override")
+                .submenu(osUpgradeCapabilityOverrideMenu)
+                .withAccessibilityIdentifier("RemoteMessagingDebugMenu.osUpgradeCapabilityOverride")
+        }
+
+        for override in OSUpgradeCapabilityOverride.allCases {
+            let item = NSMenuItem(title: override.title, action: #selector(setOSUpgradeCapabilityOverride(_:)), target: self)
+            item.representedObject = override
+            item.withAccessibilityIdentifier("RemoteMessagingDebugMenu.osUpgradeCapabilityOverride.\(override.rawValue)")
+            osUpgradeCapabilityOverrideMenu.addItem(item)
         }
     }
 
@@ -88,6 +101,7 @@ final class RemoteMessagingDebugMenu: NSMenu {
 
     override func update() {
         updateConfigurationURL()
+        updateOSUpgradeCapabilityOverrideMenu()
         populateMessages()
     }
 
@@ -95,9 +109,17 @@ final class RemoteMessagingDebugMenu: NSMenu {
         configurationURLMenuItem.title = "Configuration URL: \(configurationURLProvider.url(for: .remoteMessagingConfig).absoluteString)"
     }
 
+    private func updateOSUpgradeCapabilityOverrideMenu() {
+        let current = osUpgradeCapabilityOverridePersistor.current
+        for item in osUpgradeCapabilityOverrideMenu.items {
+            guard let override = item.representedObject as? OSUpgradeCapabilityOverride else { continue }
+            item.state = override == current ? .on : .off
+        }
+    }
+
     private func populateMessages() {
-        (8..<self.numberOfItems).forEach { _ in
-            removeItem(at: 8)
+        (10..<self.numberOfItems).forEach { _ in
+            removeItem(at: 10)
         }
 
         guard AppVersion.runType.requiresEnvironment, NSApp.delegateTyped.remoteMessagingClient.isRemoteMessagingDatabaseLoaded else {
@@ -129,6 +151,13 @@ final class RemoteMessagingDebugMenu: NSMenu {
             item.isEnabled = false
             addItem(item)
         }
+    }
+
+    @objc func setOSUpgradeCapabilityOverride(_ sender: NSMenuItem) {
+        guard let override = sender.representedObject as? OSUpgradeCapabilityOverride else { return }
+        osUpgradeCapabilityOverridePersistor.current = override
+        updateOSUpgradeCapabilityOverrideMenu()
+        NSApp.delegateTyped.remoteMessagingClient.refreshRemoteMessages()
     }
 
     @objc func fetchRemoteMessagesConfig() {

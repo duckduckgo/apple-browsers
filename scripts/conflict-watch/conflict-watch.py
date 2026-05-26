@@ -860,21 +860,28 @@ _branch_files_vs_main_cache: dict[str, set[str]] = {}
 
 
 def _branch_files_vs_main(branch: str) -> set[str]:
-    """Set of files where the branch's tip differs from main's tip.
+    """Set of files the branch added on top of its merge-base with main.
 
-    Used by probe_pair to drop "false-positive via merge-from-main"
-    conflicts: a branch that merged main in inherits main's recent
-    edits, which from an old pair-merge-base look like the branch's
-    own changes. If diff(main..branch) doesn't include a file, the
-    branch's owner isn't actually contributing changes to it — so
-    pinging them about a conflict on that file is misleading.
+    Used by probe_pair to drop "false-positive via inheritance" conflicts:
+    a branch whose apparent change to a file came from somewhere other
+    than its own commits (either an explicit merge-from-main or — far
+    more commonly — main moving ahead of the branch's base) shouldn't be
+    pinged when that file conflicts with another branch's real edit.
+
+    Uses three-dot (``main...branch``, == ``diff $(merge-base main
+    branch)..branch``) deliberately. Two-dot would also include files
+    where main moved past the branch's base — those show up in
+    ``diff main..branch`` even though the branch contributed nothing to
+    them, which re-introduces exactly the false positives this filter
+    exists to drop. (Contrast with ``_is_merged_into_default``, which
+    deliberately wants two-dot tip-tree semantics — see its docstring.)
 
     Cached per branch within a single run.
     """
     if branch in _branch_files_vs_main_cache:
         return _branch_files_vs_main_cache[branch]
     proc = git(["diff", "--name-only",
-                f"{DEFAULT_BRANCH}..{branch}"], check=False)
+                f"{DEFAULT_BRANCH}...{branch}"], check=False)
     if proc.returncode != 0:
         files: set[str] = set()
     else:
@@ -1461,6 +1468,41 @@ def run_self_test() -> int:
             ok = False
         else:
             print("PASS: pbx1 vs pbx2 → ignored by always-ignore filter")
+
+        # _branch_files_vs_main must use three-dot semantics. Reproduce
+        # the production false-positive class: a branch is created and
+        # never touches X; main then moves ahead on X (some unrelated PR
+        # lands). Two-dot would include X in the branch's "vs main"
+        # set — since the branch is now behind main on X — and the
+        # cross-reference filter in probe_pair would then keep X as a
+        # conflict candidate against any branch that does edit X. The
+        # filter must instead reflect only what the branch contributed.
+        run(["git", "-C", str(wc), "checkout", "main"])
+        run(["git", "-C", str(wc), "checkout", "-b", "feature/passive-on-X"])
+        (wc / "Side").write_text("side\n")
+        run(["git", "-C", str(wc), "add", "Side"])
+        run(["git", "-C", str(wc), "commit", "-m", "passive: edit Side, not X"])
+        run(["git", "-C", str(wc), "push", "origin", "feature/passive-on-X"])
+
+        run(["git", "-C", str(wc), "checkout", "main"])
+        (wc / "X").write_text("line1\nMAIN-MOVED-2\nline3\n")
+        run(["git", "-C", str(wc), "commit", "-am", "main: PR edits X line 2"])
+        run(["git", "-C", str(wc), "push", "origin", "main"])
+
+        _branch_files_vs_main_cache.clear()
+        passive_files = _branch_files_vs_main("feature/passive-on-X")
+        if "X" in passive_files or "Side" not in passive_files:
+            print(
+                f"FAIL: _branch_files_vs_main(passive-on-X) → {passive_files} "
+                "(expected Side present, X absent)"
+            )
+            ok = False
+        else:
+            print(
+                "PASS: _branch_files_vs_main is three-dot — branch that "
+                "didn't touch X stays out of X's vs-main set when main "
+                "moves ahead"
+            )
 
         # User-map parser
         sample = (

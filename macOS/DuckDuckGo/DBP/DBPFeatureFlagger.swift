@@ -39,11 +39,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         return false
     }
 
-    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
-        // Not relevant to macOS
-        return false
-    }
-
     var isContinuedProcessingFeatureOn: Bool {
         // Continued processing is iOS-only.
         false

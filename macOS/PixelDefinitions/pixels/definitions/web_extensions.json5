@@ -187,6 +187,48 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_web_extension_ad_blocking_addressbar_active_clicked": {
+        "description": "Fires when the user clicks the YouTube Ad Block address-bar button while ad blocking is active (feature available, user opted in, no session override).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_addressbar_inactive_clicked": {
+        "description": "Fires when the user clicks the YouTube Ad Block address-bar button while ad blocking is inactive (user disabled, disabled until relaunch, or remotely disabled).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_popover_always_on": {
+        "description": "Fires when the user selects 'Always On' in the YouTube Ad Block popover dropdown.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_popover_always_off": {
+        "description": "Fires when the user selects 'Always Off' in the YouTube Ad Block popover dropdown, persistently disabling ad blocking.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_popover_disable_until_relaunch": {
+        "description": "Fires when the user selects 'Disable Until Relaunch' in the YouTube Ad Block popover dropdown. The selection suppresses ad blocking for the current app session only and is not persisted to storage.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_breakage_report_entered": {
+        "description": "Fires when the user clicks 'Report' on the breakage report banner shown inside the YouTube Ad Block popover after disabling ad blocking.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_web_extension_scriptlet_fetch_success": {
         "description": "Fires when scriptlets are successfully fetched from the server and saved to cache.",
         "owners": ["miasma13"],

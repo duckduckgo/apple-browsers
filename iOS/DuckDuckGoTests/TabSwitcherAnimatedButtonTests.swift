@@ -34,7 +34,7 @@ class TabSwitcherAnimatedButtonTests: XCTestCase {
 
     func testStaticButtonInitialState() {
 
-        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
+        let button = TabSwitcherStaticButton()
         XCTAssertEqual(0, button.tabCount)
         XCTAssertFalse(button.hasUnread)
 

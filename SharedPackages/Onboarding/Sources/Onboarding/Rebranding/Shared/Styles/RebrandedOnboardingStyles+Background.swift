@@ -133,7 +133,7 @@ extension OnboardingRebranding.OnboardingStyles {
                             backgroundType.image
                                 .resizable()
                                 .scaledToFit()
-                                .frame(maxHeight: maxHeightMetrics)
+                                .frame(maxHeight: maxHeightMetrics, alignment: .bottom)
                                 .background(
                                     GeometryReader { proxy in
                                         Color.clear

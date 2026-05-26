@@ -21,7 +21,7 @@ import PackageDescription
 
 let package = Package(
     name: "CrashReporting",
-    platforms: [.macOS("11.4")],
+    platforms: [.macOS("12.3")],
     products: [
         .library(name: "CrashReportingShared", targets: ["CrashReportingShared"]),
         .library(name: "CrashReporting", targets: ["CrashReporting"]),

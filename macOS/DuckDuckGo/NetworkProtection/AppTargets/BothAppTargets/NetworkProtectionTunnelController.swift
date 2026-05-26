@@ -221,9 +221,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             switch session.status {
             case .connected:
-                if #unavailable(macOS 12) {
-                    try await enableOnDemand(tunnelManager: manager)
-                }
+                try await enableOnDemand(tunnelManager: manager)
             case .invalid:
                 clearInternalManager()
             default:
@@ -801,11 +799,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             Logger.networkProtection.log("🚀 Starting NetworkProtectionTunnelController, options: \(options, privacy: .public)")
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
-
-            if #available(macOS 12, *) {
-                try await startupMonitor.waitForStartSuccess(tunnelManager)
-                try await self.enableOnDemand(tunnelManager: tunnelManager)
-            }
+            try await startupMonitor.waitForStartSuccess(tunnelManager)
+            try await self.enableOnDemand(tunnelManager: tunnelManager)
 
             self.connectionWideEventData?.tunnelStartDuration?.complete()
         } catch {

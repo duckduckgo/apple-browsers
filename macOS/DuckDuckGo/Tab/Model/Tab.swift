@@ -772,11 +772,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         guard webView.url != nil else { return nil }
 
-        if #available(macOS 12.0, *) {
-            self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
-        } else {
-            self.interactionState = webView.sessionStateData().map { .webViewProvided($0) } ?? .none
-        }
+        self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
 
         return self.interactionState.data
     }
@@ -974,9 +970,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             setContent(.onboarding)
             return
         }
-        if #available(macOS 12.0, *) {
-            Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
-        }
+
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
         setContent(.onboarding)
     }
 
@@ -1067,7 +1062,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         var request = URLRequest(url: url, cachePolicy: source.cachePolicy)
-        if #available(macOS 12.0, *), content.isUserEnteredUrl {
+        if content.isUserEnteredUrl {
             request.attribution = .user
         }
 
@@ -1149,10 +1144,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     private func restoreInteractionState(with interactionStateData: Data) {
-        guard #available(macOS 12.0, *) else {
-            webView.restoreSessionState(from: interactionStateData)
-            return
-        }
         webView.interactionState = interactionStateData
     }
 

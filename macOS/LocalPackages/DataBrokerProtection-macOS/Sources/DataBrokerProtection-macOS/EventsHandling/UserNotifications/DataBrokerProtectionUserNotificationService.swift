@@ -88,10 +88,7 @@ public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataB
         let notificationContent = UNMutableNotificationContent()
         notificationContent.title = notification.title
         notificationContent.body = notification.message
-
-        if #available(macOS 12, *) {
-            notificationContent.interruptionLevel = .active
-        }
+        notificationContent.interruptionLevel = .active
 
         let request: UNNotificationRequest
 

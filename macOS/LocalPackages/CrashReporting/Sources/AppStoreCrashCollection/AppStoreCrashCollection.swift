@@ -25,7 +25,6 @@ import Foundation
 import PrivacyConfig
 
 extension CrashReportingFactory: AppStoreCrashReportingFactory {
-    @available(macOS 12.0, *)
     public static func instantiate(internalUserDecider: InternalUserDecider,
                                    featureFlagger: FeatureFlagger,
                                    crashReportSender: CrashReportSending,
@@ -40,7 +39,6 @@ extension CrashReportingFactory: AppStoreCrashReportingFactory {
     }
 }
 
-@available(macOS 12.0, *)
 public final class AppStoreCrashCollection: CrashReporting {
 
     private let crashReportSender: CrashReportSending

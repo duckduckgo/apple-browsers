@@ -23,7 +23,7 @@ import PackageDescription
 let package = Package(
     name: "TestUtilities",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "NoARCObjCTestUtilities", targets: ["NoARCObjCTestUtilities"]),

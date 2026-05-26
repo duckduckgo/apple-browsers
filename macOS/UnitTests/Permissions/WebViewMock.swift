@@ -32,7 +32,6 @@ import WebKit
                  decisionHandler: @escaping (String, Bool) -> Void)
 
     @objc(webView:requestMediaCapturePermissionForOrigin:initiatedByFrame:type:decisionHandler:)
-    @available(macOS 12.0, *)
     optional func webView(_ webView: WKWebView,
                           requestMediaCapturePermissionFor origin: WKSecurityOrigin,
                           initiatedByFrame frame: WKFrameInfo,
@@ -53,7 +52,6 @@ import WebKit
     func webView(_ webView: WKWebView, requestGeolocationPermissionFor frame: WKFrameInfo, decisionHandler: @escaping (Bool) -> Void)
 
     @objc(_webView:requestGeolocationPermissionForOrigin:initiatedByFrame:decisionHandler:)
-    @available(macOS 12, *)
     func webView(_ webView: WKWebView,
                  requestGeolocationPermissionFor origin: WKSecurityOrigin,
                  initiatedBy frame: WKFrameInfo,
@@ -78,7 +76,7 @@ final class WebViewMock: WKWebView {
     }
 
     private var microphoneStateValue: Int = 0
-    @available(macOS 12.0, *)
+
     override var microphoneCaptureState: WKMediaCaptureState {
         get {
             WKMediaCaptureState(rawValue: microphoneStateValue)!
@@ -91,7 +89,7 @@ final class WebViewMock: WKWebView {
     }
 
     private var cameraStateValue: Int = 0
-    @available(macOS 12.0, *)
+
     override var cameraCaptureState: WKMediaCaptureState {
         get {
             WKMediaCaptureState(rawValue: cameraStateValue)!
@@ -135,8 +133,6 @@ final class WebViewMock: WKWebView {
     }
 
     private static let swizzleCaptureStateHandlersOnce: Void = {
-        guard #available(macOS 12.0, *) else { return }
-
         let originalSetCameraCaptureState = class_getInstanceMethod(WKWebView.self, #selector(WKWebView.setCameraCaptureState))!
         let swizzledSetCameraCaptureState = class_getInstanceMethod(WKWebView.self, #selector(WKWebView.swizzled_setCameraCaptureState))!
         method_exchangeImplementations(originalSetCameraCaptureState, swizzledSetCameraCaptureState)
@@ -150,7 +146,6 @@ final class WebViewMock: WKWebView {
 
 extension WKWebView {
 
-    @available(macOS 12.0, *)
     @objc dynamic func swizzled_setCameraCaptureState(_ state: WKMediaCaptureState, completionHandler: (() -> Void)?) {
         guard let this = self as? WebViewMock, let setCameraCaptureStateHandler = this.setCameraCaptureStateHandler else {
             self.swizzled_setCameraCaptureState(state, completionHandler: completionHandler) // call original
@@ -166,7 +161,6 @@ extension WKWebView {
         }
     }
 
-    @available(macOS 12.0, *)
     @objc dynamic func swizzled_setMicrophoneCaptureState(_ state: WKMediaCaptureState, completionHandler: (() -> Void)?) {
         guard let this = self as? WebViewMock, let setMicCaptureStateHandler = this.setMicCaptureStateHandler else {
             self.swizzled_setMicrophoneCaptureState(state, completionHandler: completionHandler) // call original

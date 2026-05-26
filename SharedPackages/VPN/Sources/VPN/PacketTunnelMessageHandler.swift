@@ -204,7 +204,7 @@ final class PacketTunnelMessageHandler {
             // No-op since this is intended for the agent app
             break
         case .createLogSnapshot:
-            if #available(macOS 12.0, iOS 15.0, *) {
+            if #available(iOS 15.0, *) {
                 handleCreateLogSnapshot(completionHandler: completionHandler)
             }
         case .triggerLeakCheck:
@@ -338,7 +338,7 @@ final class PacketTunnelMessageHandler {
     }
 
     // Used for the iOS debug menu by DuckDuckGo VPN developers
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     private func handleCreateLogSnapshot(completionHandler: ((Data?) -> Void)? = nil) {
         Task {
             do {

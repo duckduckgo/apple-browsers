@@ -25,13 +25,6 @@ import WebKit
 
 extension WKWebView {
 
-    static var canMuteCameraAndMicrophoneSeparately: Bool {
-        if #available(macOS 12.0, *) {
-            return true
-        }
-        return false
-    }
-
     enum AudioState {
         case muted(isPlayingAudio: Bool)
         case unmuted(isPlayingAudio: Bool)
@@ -66,7 +59,6 @@ extension WKWebView {
         case active
         case muted
 
-        @available(macOS 12.0, *)
         init(_ state: WKMediaCaptureState) {
             switch state {
             case .none: self = .none
@@ -114,17 +106,11 @@ extension WKWebView {
     }
 
     var microphoneState: CaptureState {
-        guard #available(macOS 12.0, *) else {
-            return CaptureState(permissionType: .microphone, mediaCaptureState: self.mediaCaptureState)
-        }
-        return CaptureState(self.microphoneCaptureState)
+        CaptureState(self.microphoneCaptureState)
     }
 
     var cameraState: CaptureState {
-        guard #available(macOS 12.0, *) else {
-            return CaptureState(permissionType: .camera, mediaCaptureState: self.mediaCaptureState)
-        }
-        return CaptureState(self.cameraCaptureState)
+        CaptureState(self.cameraCaptureState)
     }
 
     var geolocationState: CaptureState {
@@ -212,28 +198,11 @@ extension WKWebView {
     }
 
     func stopMediaCapture() {
-        guard #available(macOS 12.0, *) else {
-            guard self.responds(to: Selector.stopMediaCapture) else {
-                assertionFailure("WKWebView does not respond to _stopMediaCapture")
-                return
-            }
-            self.perform(Selector.stopMediaCapture)
-            return
-        }
-
         setCameraCaptureState(.none)
         setMicrophoneCaptureState(.none)
     }
 
     func stopAllMediaPlayback() {
-        guard #available(macOS 12.0, *) else {
-            guard self.responds(to: Selector.stopAllMediaPlayback) else {
-                assertionFailure("WKWebView does not respond to _stopAllMediaPlayback")
-                return
-            }
-            self.perform(Selector.stopAllMediaPlayback)
-            return
-        }
         pauseAllMediaPlayback()
     }
 
@@ -241,27 +210,9 @@ extension WKWebView {
         for permission in permissions {
             switch permission {
             case .camera:
-                guard #available(macOS 12.0, *) else {
-                    if muted {
-                        self.typedMediaMutedState.insert(.captureDevicesMuted)
-                    } else {
-                        self.typedMediaMutedState.remove(.captureDevicesMuted)
-                    }
-                    return
-                }
-
                 self.setCameraCaptureState(muted ? .muted : .active, completionHandler: {})
 
             case .microphone:
-                guard #available(macOS 12.0, *) else {
-                    if muted {
-                        self.typedMediaMutedState.insert(.captureDevicesMuted)
-                    } else {
-                        self.typedMediaMutedState.remove(.captureDevicesMuted)
-                    }
-                    return
-                }
-
                 self.setMicrophoneCaptureState(muted ? .muted : .active, completionHandler: {})
             case .geolocation:
                 self.configuration.processPool.geolocationProvider?.isPaused = muted
@@ -275,17 +226,9 @@ extension WKWebView {
         for permission in permissions {
             switch permission {
             case .camera:
-                if #available(macOS 12.0, *) {
-                    self.setCameraCaptureState(.none, completionHandler: {})
-                } else {
-                    self.stopMediaCapture()
-                }
+                setCameraCaptureState(.none, completionHandler: {})
             case .microphone:
-                if #available(macOS 12.0, *) {
-                    self.setMicrophoneCaptureState(.none, completionHandler: {})
-                } else {
-                    self.stopMediaCapture()
-                }
+                setMicrophoneCaptureState(.none, completionHandler: {})
             case .geolocation:
                 self.configuration.processPool.geolocationProvider?.revoke()
             case .popups, .externalScheme, .notification, .autoplayPolicy:
@@ -306,10 +249,10 @@ extension WKWebView {
     func loadAlternateHTML(_ html: String, baseURL: URL, forUnreachableURL failingURL: URL) {
         guard responds(to: Selector.loadAlternateHTMLString),
               let method = class_getInstanceMethod(object_getClass(self), Selector.loadAlternateHTMLString) else {
-            if #available(macOS 12.0, *) {
-                Logger.navigation.error("WKWebView._loadAlternateHTMLString not available")
-                loadSimulatedRequest(URLRequest(url: failingURL), responseHTML: html)
-            }
+
+            Logger.navigation.error("WKWebView._loadAlternateHTMLString not available")
+            loadSimulatedRequest(URLRequest(url: failingURL), responseHTML: html)
+
             return
         }
 

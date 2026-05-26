@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "AppUpdater",
-    platforms: [ .macOS("11.4") ],
+    platforms: [ .macOS("12.3") ],
     products: [
         .library(name: "AppUpdaterShared", targets: ["AppUpdaterShared"]),
         .library(name: "AppStoreAppUpdater", targets: ["AppStoreAppUpdater"]),

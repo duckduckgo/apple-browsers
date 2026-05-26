@@ -47,7 +47,7 @@ public enum CrashReportPixelParameter: String {
 }
 
 @available(iOSApplicationExtension, unavailable)
-@available(iOS 13, macOS 12, *)
+@available(iOS 13, *)
 public final class CrashCollection {
 
     public init(crashReportSender: CrashReportSending,

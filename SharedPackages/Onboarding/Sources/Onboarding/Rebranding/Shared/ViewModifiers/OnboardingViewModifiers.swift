@@ -26,7 +26,7 @@ private struct OnboardingDismissButtonViewModifier: ViewModifier {
     let onDismiss: () -> Void
 
     func body(content: Content) -> some View {
-        if #available(iOS 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, *) {
             content
                 .overlay(alignment: .topTrailing) {
                     dismissButton

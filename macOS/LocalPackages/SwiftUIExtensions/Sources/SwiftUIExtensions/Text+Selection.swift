@@ -20,12 +20,12 @@ import SwiftUI
 
 public extension Text {
 
-    /// We only support text selection in `Text` views iOS 15+ and macOS 12+ right now
+    /// We only support text selection in `Text` views iOS 15+ and macOS right now
     /// as there's no simple way to offer this in lower versions.
     ///
     @ViewBuilder
     func makeSelectable() -> some View {
-        if #available(iOS 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, *) {
             textSelection(.enabled)
         } else {
             self

@@ -389,12 +389,8 @@ extension Preferences {
                 let settingsText = UserText.aboutUpdateInfoAppStoreSettings
                 let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText, menuText, settingsText)
                 HStack(spacing: 0) {
-                    if #available(macOS 12.0, *) {
-                        Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
-                            .fixedSize(horizontal: false, vertical: true)
-                    } else {
-                        NSAttributedTextView(attributedString: appStoreLegacyAttributedText(fullText: fullText, linkText: linkText))
-                    }
+                    Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
+                        .fixedSize(horizontal: false, vertical: true)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -408,7 +404,6 @@ extension Preferences {
             UserText.aboutUpdateInfoAppStoreSettings
         ]
 
-        @available(macOS 12, *)
         private func appStoreAttributedText(fullText: String, linkText: String) -> AttributedString {
             var attributed = AttributedString(fullText)
             if let range = attributed.range(of: linkText) {
@@ -526,11 +521,7 @@ extension Preferences {
             let versionText = Text(versionText)
 
             let contentView: some View = HStack(alignment: .center, spacing: 0) {
-                if #available(macOS 12.0, *) {
-                    Text(combinedTextAttributedAttributed)
-                } else {
-                    NSAttributedTextView(attributedString: legacyCombinedTextAttributed)
-                }
+                Text(combinedTextAttributedAttributed)
 
                 // Added to prevent bouncy animation when resizing the parent view
                 // caused by the text width being a bit jumpy.
@@ -551,7 +542,6 @@ extension Preferences {
             .frame(minWidth: 320, maxWidth: 510)
         }
 
-        @available(macOS 12, *)
         private var combinedTextAttributedAttributed: AttributedString {
             var instructions = AttributedString(combinedText)
             if let range = instructions.range(of: "macOS \(versionString)") {

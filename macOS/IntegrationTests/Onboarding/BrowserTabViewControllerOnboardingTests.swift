@@ -135,7 +135,6 @@ final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
     let valuesChangedPublisher = PassthroughSubject<Void, Never>()
 }
 
-@available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     var window: MockWindow!

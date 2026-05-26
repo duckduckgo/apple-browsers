@@ -143,19 +143,7 @@ public struct ViewAsyncTaskModifier: ViewModifier {
     @State private var task: Task<Void, Never>?
 
     public func body(content: Content) -> some View {
-        if #available(macOS 12.0, *) {
-            content.task(priority: priority, action)
-        } else {
-            content
-                .onAppear {
-                    self.task = Task {
-                        await action()
-                    }
-                }
-                .onDisappear {
-                    self.task?.cancel()
-                }
-        }
+        content.task(priority: priority, action)
     }
 
 }

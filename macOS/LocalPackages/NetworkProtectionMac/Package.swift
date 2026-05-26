@@ -24,7 +24,7 @@ let package = Package(
     name: "NetworkProtectionMac",
     defaultLocalization: "en",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "NetworkProtectionIPC", targets: ["NetworkProtectionIPC"]),

@@ -174,7 +174,7 @@ public struct DaxDialogView<Content: View>: View {
                 alignment: .topLeading
             )
 
-        if #available(macOS 12.0, iOS 15.0, *) {
+        if #available(iOS 15.0, *) {
             styledContent
                 .ifLet(onManualDismiss) { view, onDismiss in
                     view.overlay(alignment: .topTrailing) {

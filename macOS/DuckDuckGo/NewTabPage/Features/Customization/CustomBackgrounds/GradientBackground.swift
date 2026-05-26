@@ -41,27 +41,23 @@ enum GradientBackground: String, Equatable, Identifiable, CaseIterable, ColorSch
 
     @ViewBuilder
     private var gradientImage: some View {
-        if #available(macOS 12.0, *) {
-            switch self {
-            case .gradient01:
-                Gradient01()
-            case .gradient02:
-                Gradient02()
-            case .gradient0201:
-                Gradient0201()
-            case .gradient03:
-                Gradient03()
-            case .gradient04:
-                Gradient04()
-            case .gradient05:
-                Gradient05()
-            case .gradient06:
-                Gradient06()
-            case .gradient07:
-                Gradient07()
-            }
-        } else {
-            image.resizable().scaledToFill()
+        switch self {
+        case .gradient01:
+            Gradient01()
+        case .gradient02:
+            Gradient02()
+        case .gradient0201:
+            Gradient0201()
+        case .gradient03:
+            Gradient03()
+        case .gradient04:
+            Gradient04()
+        case .gradient05:
+            Gradient05()
+        case .gradient06:
+            Gradient06()
+        case .gradient07:
+            Gradient07()
         }
     }
 
@@ -107,7 +103,6 @@ enum GradientBackground: String, Equatable, Identifiable, CaseIterable, ColorSch
  * The code is imported from Figma, not written by hand.
  */
 
-@available(macOS 12.0, *)
 private struct Gradient01: View {
     var body: some View {
         ZStack {
@@ -151,7 +146,6 @@ private struct Gradient01: View {
     }
 }
 
-@available(macOS 12.0, *)
 private struct Gradient02: View {
     var body: some View {
         ZStack {
@@ -196,7 +190,6 @@ private struct Gradient02: View {
     }
 }
 
-@available(macOS 12.0, *)
 private struct Gradient0201: View {
     var body: some View {
         ZStack {
@@ -225,7 +218,6 @@ private struct Gradient0201: View {
     }
 }
 
-@available(macOS 12.0, *)
 private struct Gradient03: View {
     var body: some View {
         ZStack {
@@ -251,7 +243,6 @@ private struct Gradient03: View {
     }
 }
 
-@available(macOS 12.0, *)
 private struct Gradient04: View {
     var body: some View {
         ZStack {
@@ -295,7 +286,6 @@ private struct Gradient04: View {
     }
 }
 
-@available(macOS 12.0, *)
 private struct Gradient05: View {
     var body: some View {
         ZStack {
@@ -321,7 +311,6 @@ private struct Gradient05: View {
     }
 }
 
-@available(macOS 12.0, *)
 private struct Gradient06: View {
     var body: some View {
         ZStack {
@@ -355,7 +344,6 @@ private struct Gradient06: View {
     }
 }
 
-@available(macOS 12.0, *)
 private struct Gradient07: View {
     var body: some View {
         ZStack {

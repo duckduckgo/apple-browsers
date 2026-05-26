@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "BWIntegration",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "BWIntegration", targets: ["BWIntegration"]),

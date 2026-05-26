@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import FeatureFlags
 import Foundation
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -85,5 +88,70 @@ final class DuckPlayerPreferencesTests: XCTestCase {
         XCTAssertTrue(persister2.duckPlayerModeBool!)
         XCTAssertTrue(persister2.youtubeOverlayInteracted)
         XCTAssertTrue(persister2.youtubeOverlayAnyButtonPressed)
+    }
+
+    // MARK: - Rollout-aware default
+
+    func testWhenPersistorBoolIsNilAndRolloutOffThenCachedModeIsAlwaysAsk() {
+        let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .alwaysAsk)
+        let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: MockFeatureFlagger())
+
+        XCTAssertEqual(model.duckPlayerMode, .alwaysAsk)
+        XCTAssertNil(persistor.duckPlayerModeBool)
+    }
+
+    func testWhenPersistorBoolIsNilAndRolloutOnThenCachedModeIsDisabled() {
+        let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .alwaysAsk)
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true])
+        let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
+
+        XCTAssertEqual(model.duckPlayerMode, .disabled)
+        XCTAssertNil(persistor.duckPlayerModeBool, "Rollout default must not be persisted")
+    }
+
+    func testWhenPersistorBoolIsExplicitThenRolloutDoesNotChangeMode() {
+        let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .enabled)
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true])
+        let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
+
+        XCTAssertEqual(model.duckPlayerMode, .enabled)
+    }
+
+    // MARK: - refreshDefaultModeIfNeeded (publisher-triggered)
+
+    func testPublisherTriggerUpdatesCachedModeForNilPersistor() {
+        let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .alwaysAsk)
+        let featureFlagger = MockFeatureFlagger()
+        let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
+        XCTAssertEqual(model.duckPlayerMode, .alwaysAsk)
+
+        featureFlagger.featuresStub[FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue] = true
+        featureFlagger.triggerUpdate()
+        drainMainQueue()
+
+        XCTAssertEqual(model.duckPlayerMode, .disabled)
+        XCTAssertNil(persistor.duckPlayerModeBool, "Publisher-driven update must not persist")
+    }
+
+    func testPublisherTriggerDoesNotChangeModeForExplicitPersistor() {
+        let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .enabled)
+        let featureFlagger = MockFeatureFlagger()
+        let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
+        XCTAssertEqual(model.duckPlayerMode, .enabled)
+
+        featureFlagger.featuresStub[FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue] = true
+        featureFlagger.triggerUpdate()
+        drainMainQueue()
+
+        XCTAssertEqual(model.duckPlayerMode, .enabled, "Explicit user choice must be preserved")
+        XCTAssertEqual(persistor.duckPlayerModeBool, true)
+    }
+
+    // MARK: - Helpers
+
+    private func drainMainQueue() {
+        let exp = expectation(description: "main queue drained")
+        DispatchQueue.main.async { exp.fulfill() }
+        wait(for: [exp], timeout: 1.0)
     }
 }

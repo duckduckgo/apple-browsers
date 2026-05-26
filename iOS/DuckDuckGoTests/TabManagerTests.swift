@@ -408,7 +408,8 @@ final class TabManagerTests: XCTestCase {
                           privacyStats: MockPrivacyStats(),
                           voiceSearchHelper: MockVoiceSearchHelper(),
                           launchSourceManager: launchSourceManager,
-                          darkReaderFeatureSettings: MockDarkReaderFeatureSettings())
+                          darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+                          adBlockingAvailability: StubAdBlockingAvailability())
     }
 
 }

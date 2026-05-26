@@ -39,6 +39,16 @@ enum OSUpgradeCapability: String {
         case .unknown: return "unknown"
         }
     }
+
+    /// Boolean view used for RMF rule matching. `.unknown` is treated as `true`
+    /// to match the existing UI fallback in BigSurEndOfSupportNoticePresenter,
+    /// which shows the "Update macOS" CTA for unknown hardware.
+    var canUpgradeOS: Bool {
+        switch self {
+        case .capable, .unknown: return true
+        case .incapable: return false
+        }
+    }
 }
 
 protocol SupportedOSChecking {

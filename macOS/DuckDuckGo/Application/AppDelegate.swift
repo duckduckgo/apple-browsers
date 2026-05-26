@@ -104,8 +104,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let featureFlagger: FeatureFlagger
     private(set) lazy var adBlockingAvailability: AdBlockingAvailabilityProviding = AdBlockingAvailability(
         featureFlagger: featureFlagger,
-        isEnabledByUserProvider: {
-            UserDefaults.standard.object(forKey: UserDefaultsKeys.youTubeAdBlockingEnabled.rawValue) as? Bool ?? false
+        isEnabledByUserProvider: { [featureFlagger] in
+            UserDefaults.standard.object(forKey: UserDefaultsKeys.youTubeAdBlockingEnabled.rawValue) as? Bool
+                ?? featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
         }
     )
     let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
@@ -926,7 +927,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         duckPlayer = DuckPlayer(
             preferencesPersistor: DuckPlayerPreferencesUserDefaultsPersistor(),
             privacyConfigurationManager: privacyConfigurationManager,
-            internalUserDecider: internalUserDecider
+            internalUserDecider: internalUserDecider,
+            featureFlagger: featureFlagger
         )
         newTabPageCustomizationModel = NewTabPageCustomizationModel(appearancePreferences: appearancePreferences)
 
@@ -1925,6 +1927,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .removeDuplicates()
             .eraseToAnyPublisher()
 
+        let adBlockingDefaultsPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
         youTubeAdBlockingCancellable = NotificationCenter.default
             .publisher(for: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification)
             .sink { [weak self] _ in
@@ -1938,6 +1947,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
             onFeatureFlagEnabled: { [weak self] in
                 await self?.initializeWebExtensions()
             },
@@ -1948,6 +1958,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await self?.syncEmbeddedExtensions()
             },
             onAdBlockingExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            },
+            onAdBlockingDefaultsFlagChanged: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             }
         )

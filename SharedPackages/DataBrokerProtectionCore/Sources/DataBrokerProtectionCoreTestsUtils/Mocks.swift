@@ -24,6 +24,8 @@ import Foundation
 import GRDB
 import SecureStorage
 import PixelKit
+import TrackerRadarKit
+import WebKit
 
 @testable import DataBrokerProtectionCore
 
@@ -2067,6 +2069,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
+    public var isContentBlockingOn: Bool = false
     public let isFreemiumPIREnabled: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
@@ -2145,6 +2148,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var featureFlagger: DBPFeatureFlagging
     public var applicationNameForUserAgent: String?
     public var wideEvent: WideEventManaging?
+    public var contentBlocking: DBPWebViewContentBlocking?
     public var isAuthenticatedUserProvider: () async -> Bool = { true }
 
     public var mockScanRunner = MockScanSubJobWebRunner()
@@ -3222,6 +3226,18 @@ public final class MockWebViewHandler: NSObject, WebViewHandler {
     }
 
     public func setCookies(_ cookies: [HTTPCookie]) async {
+    }
+}
+
+// MARK: - DBPWebViewContentBlockingMock
+
+public final class DBPWebViewContentBlockingMock: DBPWebViewContentBlocking {
+    public var contentRuleLists: [WKContentRuleList]
+    public var surrogateTrackerData: TrackerData?
+
+    public init(contentRuleLists: [WKContentRuleList] = [], surrogateTrackerData: TrackerData? = nil) {
+        self.contentRuleLists = contentRuleLists
+        self.surrogateTrackerData = surrogateTrackerData
     }
 }
 

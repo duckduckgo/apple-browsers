@@ -71,6 +71,8 @@ public extension SingleUseColor {
         case textLink
 
         case accentPrimary
+        case accentPrimaryPressed
+        case accentPrimaryText
 
         case accentAltPrimary
         case accentAltGlowPrimary

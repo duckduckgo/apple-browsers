@@ -49,10 +49,10 @@ private struct PrimaryButtonColors {
 
     static let rebrandedPrimary = PrimaryButtonColors(
         standard: Color(singleUseColor: .rebranding(.accentPrimary)),
-        pressed: Color(designSystemColor: .buttonsPrimaryPressed),
+        pressed: Color(singleUseColor: .rebranding(.accentPrimaryPressed)),
         disabled: Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.36),
-        text: .white,
-        textDisabled: Color.white.opacity(0.36)
+        text: Color(singleUseColor: .rebranding(.accentPrimaryText)),
+        textDisabled: Color(singleUseColor: .rebranding(.accentPrimaryText)).opacity(0.36)
     )
 
     static let rebrandedDestructive = PrimaryButtonColors(
@@ -635,12 +635,33 @@ private enum Consts {
 
 #if DEBUG
 
+/// Scoped override of `AppRebrand.isAppRebranded` for the preview's lifetime.
+///
+/// Captures the previous closure at init and restores it on deinit, so the preview
+/// doesn't permanently mutate global state. Held by `@StateObject` so its lifetime
+/// matches the view's, and its mutation runs once (in `init`, before `body`) rather
+/// than on every body re-evaluation.
+private final class RebrandPreviewOverride: ObservableObject {
+    private let previous: () -> Bool
+
+    init(isRebranded: Bool) {
+        self.previous = AppRebrand.isAppRebranded
+        AppRebrand.isAppRebranded = { isRebranded }
+    }
+
+    deinit {
+        AppRebrand.isAppRebranded = previous
+    }
+}
+
 private struct ButtonStylesGallery: View {
     let isRebranded: Bool
 
+    @StateObject private var override: RebrandPreviewOverride
+
     init(isRebranded: Bool) {
         self.isRebranded = isRebranded
-        AppRebrand.isAppRebranded = { isRebranded }
+        _override = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
     }
 
     var body: some View {
@@ -693,8 +714,6 @@ private struct ButtonStylesGallery: View {
             .padding(.vertical, 24)
         }
         .background(Color(designSystemColor: .background))
-        .onAppear { AppRebrand.isAppRebranded = { isRebranded } }
-        .onDisappear { AppRebrand.isAppRebranded = { false } }
     }
 
     @ViewBuilder

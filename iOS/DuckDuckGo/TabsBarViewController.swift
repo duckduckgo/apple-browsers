@@ -39,6 +39,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController)
+    func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
@@ -72,25 +73,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         createButton(image: DesignSystemImages.Glyphs.Size24.add)
     }()
 
-    lazy var aiChatButton: UIButton = {
-        var config = UIButton.Configuration.filled()
-        config.title = UserText.actionOpenAIChat
-        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
-        config.baseBackgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-        config.background.cornerRadius = 9
-        config.cornerStyle = .fixed
-        config.contentInsets = .init(top: 6, leading: 16, bottom: 6, trailing: 16)
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = UIFont.daxBodyRegular()
-            return outgoing
-        }
-        let button = UIButton(configuration: config)
-        button.isPointerInteractionEnabled = true
+    lazy var aiChatChip: DuckAIChromeChipView = {
+        let chip = DuckAIChromeChipView()
         // Hidden until updateAIChatButtonVisibility() runs (viewWillAppear / settings change).
         // Prevents a brief visible-then-hidden flicker if the flag or per-shortcut preference is off.
-        button.isHidden = true
-        return button
+        chip.isHidden = true
+        return chip
     }()
 
     weak var delegate: TabsBarDelegate?
@@ -162,12 +150,13 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         buttonsStack.alignment = .center
 
         buttonsStack.addArrangedSubview(addTabButton)
-        buttonsStack.addArrangedSubview(aiChatButton)
+        buttonsStack.addArrangedSubview(aiChatChip)
         buttonsStack.addArrangedSubview(fireButton)
         buttonsStack.addArrangedSubview(tabSwitcherButton)
 
         addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
-        aiChatButton.addTarget(self, action: #selector(onAIChatPressed), for: .touchUpInside)
+        aiChatChip.setTextAction { [weak self] in self?.onAIChatPressed() }
+        aiChatChip.setIconAction { [weak self] in self?.onAIChatContextualSheetIconPressed() }
         fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
         tabSwitcherButton.delegate = self
 
@@ -204,7 +193,15 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         } else {
             isVisible = false
         }
-        aiChatButton.isHidden = !isVisible
+        aiChatChip.isHidden = !isVisible
+    }
+
+    /// Pushes per-tab state into the chip. Called by `MainViewController` when the
+    /// current tab changes, its URL changes (Duck.ai vs not), or its contextual sheet
+    /// is presented/dismissed.
+    func updateAIChatChipState(isCurrentTabAIChat: Bool, isContextualSheetPresented: Bool) {
+        aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
+        aiChatChip.setIconVisible(!isCurrentTabAIChat)
     }
 
     @IBAction func onFireButtonPressed() {
@@ -242,6 +239,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     @objc private func onAIChatPressed() {
         delegate?.tabsBarDidRequestAIChat(self)
+    }
+
+    @objc private func onAIChatContextualSheetIconPressed() {
+        delegate?.tabsBarDidRequestToggleAIChatContextualSheet(self)
     }
 
     func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
@@ -569,6 +570,16 @@ extension MainViewController: TabsBarDelegate {
             currentTab.openNewChatInNewTab()
         } else {
             openAIChat()
+        }
+    }
+
+    func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController) {
+        guard let currentTab else { return }
+        let coordinator = currentTab.aiChatContextualSheetCoordinator
+        if coordinator.isSheetPresented {
+            coordinator.dismissSheet()
+        } else {
+            Task { @MainActor in await coordinator.presentSheet(from: self) }
         }
     }
 

@@ -96,10 +96,10 @@ final class AIChatContextualSheetCoordinator {
     /// Session timer for auto-resetting the chat after inactivity
     private var sessionTimer: AIChatSessionTimer?
 
-    /// Returns true if the sheet is currently presented.
-    var isSheetPresented: Bool {
-        sheetViewController?.presentingViewController != nil
-    }
+    /// Whether the sheet is currently presented on screen. Tracked as `@Published`
+    /// so chrome surfaces (e.g. the iPad tabs-bar Duck.ai chip) can swap their
+    /// state-aware glyph and respond to swipe-to-dismiss.
+    @Published private(set) var isSheetPresented: Bool = false
 
     /// Whether the sheet is presented and actively observing page context updates.
     private var isActivelyObservingContext: Bool {
@@ -173,10 +173,12 @@ final class AIChatContextualSheetCoordinator {
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.
     func dismissSheet() {
         sheetViewController?.dismiss(animated: true)
+        isSheetPresented = false
     }
-    
+
     func clearActiveChat() {
         sheetViewController?.notifySheetDismissed()
+        isSheetPresented = false
         sheetViewController = nil
         stopObservingContextUpdates()
         pageContextHandler.clear()
@@ -222,6 +224,7 @@ private extension AIChatContextualSheetCoordinator {
         guard sheetVC.presentingViewController == nil else { return }
         sheetVC.configureSheetPresentation()
         presentingVC.present(sheetVC, animated: true)
+        isSheetPresented = true
     }
 
     func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?) {
@@ -247,6 +250,7 @@ private extension AIChatContextualSheetCoordinator {
         sheetViewController = sheetVC
 
         presentingVC.present(sheetVC, animated: true)
+        isSheetPresented = true
     }
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
@@ -454,6 +458,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
+        isSheetPresented = false
         stopObservingContextUpdates()
         startSessionTimer()
     }

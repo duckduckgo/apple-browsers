@@ -211,6 +211,7 @@ class MainViewController: UIViewController {
     private var vpnCancellables = Set<AnyCancellable>()
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
+    private var aiChatChromeChipCancellables = Set<AnyCancellable>()
     private var settingsCancellables = Set<AnyCancellable>()
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
@@ -945,6 +946,40 @@ class MainViewController: UIViewController {
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
+        bindAIChatChromeChipToCurrentTab()
+    }
+
+    /// Rebinds chip subscriptions to the current tab's URL + contextual sheet publishers.
+    /// Called whenever the active tab changes (transitionTo) or the tabs bar is created.
+    private func bindAIChatChromeChipToCurrentTab() {
+        aiChatChromeChipCancellables.removeAll()
+
+        guard let currentTab else {
+            refreshAIChatChromeChip()
+            return
+        }
+
+        currentTab.urlPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
+            .store(in: &aiChatChromeChipCancellables)
+
+        currentTab.aiChatContextualSheetCoordinator.$isSheetPresented
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
+            .store(in: &aiChatChromeChipCancellables)
+
+        refreshAIChatChromeChip()
+    }
+
+    private func refreshAIChatChromeChip() {
+        guard let tabsBarController else { return }
+        let isAIChat = currentTab?.tabModel.isAITab ?? false
+        let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
+        tabsBarController.updateAIChatChipState(
+            isCurrentTabAIChat: isAIChat,
+            isContextualSheetPresented: isSheetPresented
+        )
     }
 
     func startAddFavoriteFlow() {
@@ -2105,6 +2140,7 @@ class MainViewController: UIViewController {
         }
         themeColorManager.updateThemeColor()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        bindAIChatChromeChipToCurrentTab()
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()

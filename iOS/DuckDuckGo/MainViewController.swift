@@ -4594,7 +4594,7 @@ extension MainViewController: OmniBarDelegate {
     }
     
     func onTryFireModeRequested() {
-        showTabSwitcher()
+        showTabSwitcher(forceFireTabsTip: true)
     }
 
     func isCurrentTabFireTab() -> Bool {
@@ -4802,7 +4802,7 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
-        showTabSwitcher()
+        showTabSwitcher(forceFireTabsTip: true)
     }
 
 }

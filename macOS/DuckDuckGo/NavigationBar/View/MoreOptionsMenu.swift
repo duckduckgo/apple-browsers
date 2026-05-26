@@ -1080,17 +1080,14 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
 
     override func performActionForItem(at index: Int) {
         // The zoom sub-menu items are copies of main menu items with a nil
-        // target (they reach `MainViewController` via the responder chain),
-        // so we can't use `item.target` to route the action. Instead, look up
-        // the active `MainViewController` from the `WindowControllersManager`
-        // and route through its `performZoomIn/Out/ActualSize` methods so the
-        // pixel fires with the correct entry point AND the zoom popover opens
-        // — the side effect that used to come from the responder-chain
-        // dispatch. Anything else falls through to the default dispatch.
+        // target, so we can't route via `item.target`. Look up the active
+        // `MainViewController` from the `WindowControllersManager` and route
+        // through its `performZoomIn/Out/ActualSize` methods, which fire the
+        // zoom pixel with the correct entry point and open the zoom popover.
         //
-        // `NSMenu.performActionForItem` isn't formally main-actor isolated but
-        // is always invoked on the main thread by AppKit, so we hop onto the
-        // MainActor here to touch `MainViewController`.
+        // `NSMenu.performActionForItem` isn't formally main-actor isolated
+        // but is always invoked on the main thread by AppKit, so we hop onto
+        // the MainActor here to touch `MainViewController`.
         MainActor.assumeMainThread {
             guard let item = item(at: index),
                   zoomItems.contains(item),

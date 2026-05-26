@@ -57,6 +57,9 @@ protocol OptionsButtonMenuDelegate: AnyObject {
     func optionsButtonMenuRequestedSubscriptionPreferences(_ menu: NSMenu)
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu)
     func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu)
+    func optionsButtonMenuRequestedZoomIn(_ menu: NSMenu)
+    func optionsButtonMenuRequestedZoomOut(_ menu: NSMenu)
+    func optionsButtonMenuRequestedActualSize(_ menu: NSMenu)
 }
 
 final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
@@ -1080,30 +1083,29 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
 
     override func performActionForItem(at index: Int) {
         // The zoom sub-menu items are copies of main menu items with a nil
-        // target, so we can't route via `item.target`. Look up the active
-        // `MainViewController` from the `WindowControllersManager` and route
-        // through its `performZoomIn/Out/ActualSize` methods, which fire the
-        // zoom pixel with the correct entry point and open the zoom popover.
+        // target, so we can't route via `item.target`. Forward to the parent
+        // `MoreOptionsMenu`'s `actionDelegate` instead — it owns the
+        // navigation-bar context (selected tab, zoom popover) needed to
+        // perform the action.
         //
         // `NSMenu.performActionForItem` isn't formally main-actor isolated
         // but is always invoked on the main thread by AppKit, so we hop onto
-        // the MainActor here to touch `MainViewController`.
+        // the MainActor here to touch the delegate.
         MainActor.assumeMainThread {
             guard let item = item(at: index),
                   zoomItems.contains(item),
-                  let mainViewController = Application.appDelegate.windowControllersManager
-                    .lastKeyMainWindowController?.mainViewController else {
+                  let delegate = (supermenu as? MoreOptionsMenu)?.actionDelegate else {
                 super.performActionForItem(at: index)
                 return
             }
 
             switch item.action {
             case #selector(MainViewController.zoomIn(_:)):
-                mainViewController.performZoomIn(entryPoint: .menu)
+                delegate.optionsButtonMenuRequestedZoomIn(self)
             case #selector(MainViewController.zoomOut(_:)):
-                mainViewController.performZoomOut(entryPoint: .menu)
+                delegate.optionsButtonMenuRequestedZoomOut(self)
             case #selector(MainViewController.actualSize(_:)):
-                mainViewController.performActualSize(entryPoint: .actualSize)
+                delegate.optionsButtonMenuRequestedActualSize(self)
             default:
                 super.performActionForItem(at: index)
             }

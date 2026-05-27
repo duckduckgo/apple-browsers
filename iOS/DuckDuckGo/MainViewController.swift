@@ -212,6 +212,7 @@ class MainViewController: UIViewController {
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
     private var settingsCancellables = Set<AnyCancellable>()
+    private var webViewViewportRefreshCancellable: AnyCancellable?
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -1189,16 +1190,13 @@ class MainViewController: UIViewController {
                                                selector: #selector(onAppDidEnterBackground),
                                                name: UIApplication.didEnterBackgroundNotification,
                                                object: nil)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(onAppWillEnterForeground),
-                                               name: UIApplication.willEnterForegroundNotification,
-                                               object: nil)
-    }
 
-    @objc private func onAppWillEnterForeground() {
-        if AppWidthObserver.shared.isPad {
-            refreshCurrentWebViewViewportAfterForeground()
-        }
+        webViewViewportRefreshCancellable = NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard AppWidthObserver.shared.isPad else { return }
+                self?.refreshCurrentWebViewViewportAfterForeground()
+            }
     }
 
     @objc private func onAppDidEnterBackground() {

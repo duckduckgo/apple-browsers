@@ -1826,11 +1826,27 @@ extension TabViewController: WKNavigationDelegate {
                                                                    filename: navigationResponse.response.suggestedFilename,
                                                                    featureFlagger: featureFlagger) {
             // 2. For this MIME type we are able to provide a better custom preview via FilePreviewHelper so it takes priority
-            let (policy, download) = await startDownload(with: navigationResponse)
-            mostRecentAutoPreviewDownloadID = download?.id
+            let shouldPersist = FilePreviewHelper.shouldPersistInDownloads(mimeType: mimeType,
+                                                                           url: navigationResponse.response.url,
+                                                                           filename: navigationResponse.response.suggestedFilename,
+                                                                           featureFlagger: featureFlagger)
+            if shouldPersist || !featureFlagger.isFeatureOn(.walletPassDownload) {
+                // 2a. Legacy URLSession-based download. Persisted auto-preview (ICS) always takes this path so the
+                //     file lands in Downloads. Transient auto-preview (PKPass, USDZ, multipass) takes it only when
+                //     the walletPassDownload failsafe is off.
+                let (policy, download) = await startDownload(with: navigationResponse)
+                mostRecentAutoPreviewDownloadID = download?.id
+                Pixel.fire(pixel: .downloadStarted,
+                           withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "1"])
+                return policy
+            }
+            // 2b. Transient auto-preview through WKDownload. Returning .download lets WebKit continue the
+            //     in-flight response, preserving POST and session state. The didBecome download: handler then
+            //     routes via transfer() with isTemporary: true, which sets mostRecentAutoPreviewDownloadID for
+            //     the downstream preview pipeline.
             Pixel.fire(pixel: .downloadStarted,
                        withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "1"])
-            return policy
+            return .download
         } else if shouldTriggerDownloadAction(for: navigationResponse),
                   let downloadMetadata = try? AppDependencyProvider.shared.downloadManager.downloadMetaData(for: navigationResponse.response) {
             // 3a. We know it is a download, but allow WebKit handle the "data" scheme natively

@@ -1470,19 +1470,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
         if SupportedOSChecker().showsSupportWarning {
-            // Sample: Big Sur end-of-support launch notice.
             BigSurEndOfSupportNoticePresenter(keyValueStore: keyValueStore).showIfNeeded()
-
-            // Momentary preview: incapable-hardware variant of the Big Sur notice.
-            DispatchQueue.main.async {
-                let alert = NSAlert()
-                alert.alertStyle = .informational
-                alert.messageText = UserText.bigSurEndOfSupportNoticeTitle
-                alert.informativeText = UserText.bigSurEndOfSupportNoticeMessageIncapable
-                alert.addButton(withTitle: UserText.ok)
-                alert.addButton(withTitle: UserText.bigSurEndOfSupportNoticeDontShowAgain)
-                _ = alert.runModal()
-            }
         }
 
         // This messaging system has been replaced by RMF, but we need to clean up the message manifest for any users who had it stored.

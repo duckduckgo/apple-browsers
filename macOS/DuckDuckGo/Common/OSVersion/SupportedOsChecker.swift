@@ -287,7 +287,7 @@ final class BigSurEndOfSupportNoticePresenter {
         let alert = NSAlert()
         alert.alertStyle = .informational
         alert.messageText = UserText.bigSurEndOfSupportNoticeTitle
-        alert.informativeText = UserText.bigSurEndOfSupportNoticeMessage
+        alert.informativeText = bodyText()
         // First-added button is the default and sits on the right.
         // Hide the "Update macOS" call to action on hardware that can't upgrade
         // past Big Sur; fall back to a neutral OK.
@@ -296,6 +296,15 @@ final class BigSurEndOfSupportNoticePresenter {
 
         if alert.runModal() == .alertSecondButtonReturn {
             persistor.dismissed = true
+        }
+    }
+
+    private func bodyText() -> String {
+        switch osChecker.osUpgradeCapability {
+        case .incapable:
+            return UserText.bigSurEndOfSupportNoticeMessageIncapable
+        case .capable, .unknown:
+            return UserText.bigSurEndOfSupportNoticeMessage
         }
     }
 

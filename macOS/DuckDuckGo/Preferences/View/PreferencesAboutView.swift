@@ -496,7 +496,11 @@ extension Preferences {
 
         private var versionText: String { UserText.aboutUnsupportedDeviceInfo1 }
 
-        private var combinedText: String { UserText.aboutUnsupportedDeviceInfo2(version: minVersion) }
+        private var combinedText: String {
+            canUpgradeOS
+                ? UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
+                : UserText.aboutUnsupportedDeviceInfoIncapable
+        }
 
         var body: some View {
             let image = Image(.alertColor16)
@@ -506,23 +510,23 @@ extension Preferences {
 
             let versionText = Text(versionText)
 
+            let contentView: some View = HStack(alignment: .center, spacing: 0) {
+                if #available(macOS 12.0, *) {
+                    Text(combinedTextAttributedAttributed)
+                } else {
+                    NSAttributedTextView(attributedString: legacyCombinedTextAttributed)
+                }
+
+                // Added to prevent bouncy animation when resizing the parent view
+                // caused by the text width being a bit jumpy.
+                Spacer()
+            }
+
             return HStack(alignment: .top) {
                 image
                 VStack(alignment: .leading, spacing: 12) {
                     versionText
-                    if canUpgradeOS {
-                        HStack(alignment: .center, spacing: 0) {
-                            if #available(macOS 12.0, *) {
-                                Text(combinedTextAttributedAttributed)
-                            } else {
-                                NSAttributedTextView(attributedString: legacyCombinedTextAttributed)
-                            }
-
-                            // Added to prevent bouncy animation when resizing the parent view
-                            // caused by the text width being a bit jumpy.
-                            Spacer()
-                        }
-                    }
+                    contentView
                 }
             }
             .padding()

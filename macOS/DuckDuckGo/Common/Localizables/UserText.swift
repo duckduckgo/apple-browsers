@@ -1405,6 +1405,8 @@ struct UserText {
         return String(format: localized, version)
     }
 
+    static let aboutUnsupportedDeviceInfoIncapable = NSLocalizedString("preferences.about.unsupported-device-info-incapable", value: "You can also keep using your current version of the browser, but it will not receive further updates.", comment: "Copy shown when the user's hardware cannot be upgraded to a supported macOS version")
+
     static let unsupportedDeviceInfoAlertHeader = NSLocalizedString("unsupported.device.info.alert.header", value: "Your version of macOS is no longer supported.", comment: "his string represents the header for an alert informing the user that their version of macOS is no longer supported")
 
     // MARK: - Big Sur end-of-support launch notice (sample)

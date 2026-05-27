@@ -58,7 +58,7 @@ final class DuckAIChromeChipView: UIView {
         config.contentInsets = .zero
         let button = UIButton(configuration: config)
         button.isPointerInteractionEnabled = true
-        button.accessibilityLabel = UserText.actionOpenAIChat
+        button.accessibilityLabel = UserText.actionToggleAIChatContextualSheet
         return button
     }()
 
@@ -124,6 +124,9 @@ final class DuckAIChromeChipView: UIView {
             }
         }()
         iconButton.setImage(image.withRenderingMode(.alwaysTemplate), for: .normal)
+        iconButton.accessibilityValue = state == .open
+            ? UserText.accessibilityValueAIChatContextualSheetOpen
+            : UserText.accessibilityValueAIChatContextualSheetClosed
     }
 
     /// Hides only the icon half + divider when the current tab is Duck.ai. The text half stays.

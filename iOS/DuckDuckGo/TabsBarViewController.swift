@@ -86,7 +86,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var historyManager: HistoryManaging?
     var fireproofing: Fireproofing?
     var aiChatSettings: AIChatSettingsProvider?
-    var featureFlagger: FeatureFlagger?
+    var featureFlagger: FeatureFlagger? {
+        didSet {
+            registerForFeatureFlagChanges()
+        }
+    }
     var keyValueStore: ThrowingKeyValueStoring?
     var daxDialogsManager: DaxDialogsManaging?
     var fireModeCapability: FireModeCapable? {
@@ -176,6 +180,21 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     private func registerForAIChatSettingsChanges() {
         NotificationCenter.default.publisher(for: .aiChatSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateAIChatButtonVisibility()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Subscribes to local-overrides flag changes so the chip visibility refreshes live
+    /// when an internal user toggles `aiChatChromeShortcutIPad` from the debug menu.
+    private func registerForFeatureFlagChanges() {
+        guard let overridesHandler = featureFlagger?.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .aiChatChromeShortcutIPad }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateAIChatButtonVisibility()

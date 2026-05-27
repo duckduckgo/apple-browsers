@@ -942,7 +942,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
     }
 
-    public func fetchFirstEligibleJobDate() throws -> Date? {
+    public func fetchFirstEligibleJobDate(excludingScanBrokerIDs brokerIDs: [Int64], includesOptOuts: Bool) throws -> Date? {
         return nil
     }
 
@@ -1412,7 +1412,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return nil
     }
 
-    public func fetchFirstEligibleJobDate() throws -> Date? {
+    public func fetchFirstEligibleJobDate(isAuthenticatedUser: Bool) throws -> Date? {
         return nil
     }
 

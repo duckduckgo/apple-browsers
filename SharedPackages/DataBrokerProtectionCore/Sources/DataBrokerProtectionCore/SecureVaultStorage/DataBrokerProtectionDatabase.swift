@@ -87,7 +87,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
 
     func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData?
 
-    func fetchFirstEligibleJobDate() throws -> Date?
+    func fetchFirstEligibleJobDate(isAuthenticatedUser: Bool) throws -> Date?
 
     func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws
     func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
@@ -761,8 +761,16 @@ extension DataBrokerProtectionDatabase {
         }
     }
 
-    public func fetchFirstEligibleJobDate() throws -> Date? {
-        try vault.fetchFirstEligibleJobDate()
+    public func fetchFirstEligibleJobDate(isAuthenticatedUser: Bool) throws -> Date? {
+        if isAuthenticatedUser {
+            return try vault.fetchFirstEligibleJobDate(excludingScanBrokerIDs: [], includesOptOuts: true)
+        }
+
+        let brokerIDsRequiringSubscription = try vault.fetchAllNonRemovedBrokers().compactMap { broker -> Int64? in
+            guard broker.scanRequiresSubscription else { return nil }
+            return broker.id
+        }
+        return try vault.fetchFirstEligibleJobDate(excludingScanBrokerIDs: brokerIDsRequiringSubscription, includesOptOuts: false)
     }
 
     public func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws {

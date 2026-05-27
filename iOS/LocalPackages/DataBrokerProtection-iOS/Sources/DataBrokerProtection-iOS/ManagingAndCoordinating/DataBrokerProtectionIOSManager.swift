@@ -747,6 +747,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
             }
 
 #if !targetEnvironment(simulator)
+            let isAuthenticatedUser = await refreshFreeScanState()
+
             do {
                 let request = BGProcessingTaskRequest(identifier: Self.backgroundTaskIdentifier)
                 request.requiresNetworkConnectivity = true
@@ -754,7 +756,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 let earliestBeginDate: Date
 
                 do {
-                    earliestBeginDate = calculateEarliestBeginDate(firstEligibleJobDate: try database.fetchFirstEligibleJobDate())
+                    earliestBeginDate = calculateEarliestBeginDate(
+                        firstEligibleJobDate: try database.fetchFirstEligibleJobDate(isAuthenticatedUser: isAuthenticatedUser)
+                    )
                 } catch {
                     earliestBeginDate = Date().addingTimeInterval(maxBackgroundTaskWaitTime)
                 }

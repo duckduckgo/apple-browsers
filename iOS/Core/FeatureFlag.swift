@@ -246,9 +246,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472842661
     case storeSerpSettings
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715575447
-    case showHideAIGeneratedImagesSection
-
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
 
@@ -617,8 +614,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, supportsLocalOverriding: true)
         case .storeSerpSettings:
             Config(source: .remoteReleasable(SERPSubfeature.storeSerpSettings))
-        case .showHideAIGeneratedImagesSection:
-            Config(source: .remoteReleasable(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration))
         case .allowProTierPurchase:
@@ -654,7 +649,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .aiChatSyncPromo:
-            Config(source: .remoteReleasable(SyncSubfeature.aiChatSyncPromo))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.aiChatSyncPromo))
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatContextualSheetImprovements:

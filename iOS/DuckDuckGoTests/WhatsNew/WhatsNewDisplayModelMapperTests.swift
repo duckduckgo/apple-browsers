@@ -770,8 +770,8 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
     // MARK: - TwoLines Card
 
     @available(iOS 16, *)
-    @Test("When twoLines item has imageUrl and image is cached then preloadedImage is set on the card", .timeLimit(.minutes(1)))
-    func whenTwoLinesItemHasImageUrlAndCachedThenPreloadedImageSet() throws {
+    @Test("When twoLines item has imageUrl and image is cached then cachedImage closure returns the cached image", .timeLimit(.minutes(1)))
+    func whenTwoLinesItemHasImageUrlAndCachedThenCachedImageClosureReturnsImage() throws {
         let imageUrl = URL(string: "https://example.com/two-lines.png")!
         let expectedImage = UIImage()
         let imageLoader = MockRemoteMessagingImageLoader()
@@ -793,7 +793,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         )
 
         let card = try #require(displayModel.items.first?.twoLinesCard)
-        #expect(card.preloadedImage === expectedImage)
+        #expect(card.cachedImage?() === expectedImage)
         #expect(card.imageUrl == imageUrl)
     }
 
@@ -910,7 +910,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         )
 
         let card = try #require(displayModel.items.first?.twoLinesCard)
-        #expect(card.preloadedImage == nil)
+        #expect(card.cachedImage == nil)
         #expect(card.imageUrl == nil)
         #expect(card.loadImage == nil)
         #expect(!pixelReporter.didCallMeasureRemoteMessageCardImageLoadSuccess)
@@ -920,8 +920,8 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
     // MARK: - Featured Card
 
     @available(iOS 16, *)
-    @Test("When featured item has imageUrl and image is cached then preloadedImage is set on the card", .timeLimit(.minutes(1)))
-    func whenFeaturedItemHasImageUrlAndCachedThenPreloadedImageSet() throws {
+    @Test("When featured item has imageUrl and image is cached then cachedImage closure returns the cached image", .timeLimit(.minutes(1)))
+    func whenFeaturedItemHasImageUrlAndCachedThenCachedImageClosureReturnsImage() throws {
         let imageUrl = URL(string: "https://example.com/featured.png")!
         let expectedImage = UIImage()
         let imageLoader = MockRemoteMessagingImageLoader()
@@ -943,7 +943,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         )
 
         let card = try #require(displayModel.items.first?.featuredTwoLinesCard)
-        #expect(card.preloadedImage === expectedImage)
+        #expect(card.cachedImage?() === expectedImage)
         #expect(card.imageUrl == imageUrl)
     }
 

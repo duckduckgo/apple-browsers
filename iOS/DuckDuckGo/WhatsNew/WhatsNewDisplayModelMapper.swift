@@ -74,7 +74,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
                         title: titleText,
                         description: descriptionText,
                         actionButtonTitle: primaryActionText,
-                        preloadedImage: imageLoading.preloadedImage,
+                        cachedImage: imageLoading.cachedImage,
                         imageUrl: imageUrl,
                         loadImage: imageLoading.loadImage,
                         onImageLoadSuccess: imageLoading.onLoadSuccess,
@@ -96,7 +96,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
                         title: titleText,
                         description: descriptionText,
                         disclosureIcon: disclosureIcon,
-                        preloadedImage: imageLoading.preloadedImage,
+                        cachedImage: imageLoading.cachedImage,
                         imageUrl: imageUrl,
                         loadImage: imageLoading.loadImage,
                         onImageLoadSuccess: imageLoading.onLoadSuccess,
@@ -160,29 +160,31 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
     // MARK: - Private
 
     private struct CardImageLoading {
-        let preloadedImage: UIImage?
+        let cachedImage: (() -> UIImage?)?
         let loadImage: ((URL) async throws -> UIImage)?
         let onLoadSuccess: (() -> Void)?
         let onLoadFailed: (() -> Void)?
     }
 
     private func makeCardImageLoading(itemId: String, imageUrl: URL?, message: RemoteMessageModel) -> CardImageLoading {
-        guard let imageUrl else {
-            return CardImageLoading(preloadedImage: nil, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
+        guard let imageUrl, let imageLoader else {
+            return CardImageLoading(cachedImage: nil, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
         }
 
-        let preloadedImage: UIImage? = imageLoader?.cachedImage(for: imageUrl)
+        // Always pass a closure so the View can re-check the cache after LazyVStack
+        // recycling, instead of receiving a single value snapshotted here.
+        let cachedImage: () -> UIImage? = { [imageLoader] in imageLoader.cachedImage(for: imageUrl) }
 
-        if preloadedImage != nil {
+        if cachedImage() != nil {
             pixelReporter?.measureRemoteMessageCardImageLoadSuccess(message, cardId: itemId)
-            return CardImageLoading(preloadedImage: preloadedImage, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
+            return CardImageLoading(cachedImage: cachedImage, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
         }
 
-        let loadImage: ((URL) async throws -> UIImage)? = imageLoader.map { loader in
-            { url in try await loader.loadImage(from: url) }
+        let loadImage: (URL) async throws -> UIImage = { [imageLoader] url in
+            try await imageLoader.loadImage(from: url)
         }
         return CardImageLoading(
-            preloadedImage: nil,
+            cachedImage: cachedImage,
             loadImage: loadImage,
             onLoadSuccess: { [pixelReporter, message] in
                 pixelReporter?.measureRemoteMessageCardImageLoadSuccess(message, cardId: itemId)

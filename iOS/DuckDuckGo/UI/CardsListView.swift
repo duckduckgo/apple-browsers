@@ -58,7 +58,7 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
         let title: String
         let description: String
         let disclosureIcon: Image?
-        let preloadedImage: UIImage?
+        let cachedImage: (() -> UIImage?)?
         let imageUrl: URL?
         let loadImage: ((URL) async throws -> UIImage)?
         let onImageLoadSuccess: (() -> Void)?
@@ -71,7 +71,7 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
             title: String,
             description: String,
             disclosureIcon: Image? = nil,
-            preloadedImage: UIImage? = nil,
+            cachedImage: (() -> UIImage?)? = nil,
             imageUrl: URL? = nil,
             loadImage: ((URL) async throws -> UIImage)? = nil,
             onImageLoadSuccess: (() -> Void)? = nil,
@@ -83,7 +83,7 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
             self.title = title
             self.description = description
             self.disclosureIcon = disclosureIcon
-            self.preloadedImage = preloadedImage
+            self.cachedImage = cachedImage
             self.imageUrl = imageUrl
             self.loadImage = loadImage
             self.onImageLoadSuccess = onImageLoadSuccess
@@ -98,7 +98,7 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
         let title: String
         let description: String
         let actionButtonTitle: String?
-        let preloadedImage: UIImage?
+        let cachedImage: (() -> UIImage?)?
         let imageUrl: URL?
         let loadImage: ((URL) async throws -> UIImage)?
         let onImageLoadSuccess: (() -> Void)?
@@ -111,7 +111,7 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
             title: String,
             description: String,
             actionButtonTitle: String? = nil,
-            preloadedImage: UIImage? = nil,
+            cachedImage: (() -> UIImage?)? = nil,
             imageUrl: URL? = nil,
             loadImage: ((URL) async throws -> UIImage)? = nil,
             onImageLoadSuccess: (() -> Void)? = nil,
@@ -123,7 +123,7 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
             self.title = title
             self.description = description
             self.actionButtonTitle = actionButtonTitle
-            self.preloadedImage = preloadedImage
+            self.cachedImage = cachedImage
             self.imageUrl = imageUrl
             self.loadImage = loadImage
             self.onImageLoadSuccess = onImageLoadSuccess
@@ -192,7 +192,7 @@ extension RemoteMessagingUI {
                 VStack(alignment: .leading) {
                     CardIcon(
                         placeholderIcon: displayModel.icon,
-                        preloadedImage: displayModel.preloadedImage,
+                        cachedImage: displayModel.cachedImage,
                         imageUrl: displayModel.imageUrl,
                         loadImage: displayModel.loadImage,
                         onImageLoadSuccess: displayModel.onImageLoadSuccess,
@@ -242,7 +242,7 @@ extension RemoteMessagingUI {
             VStack(alignment: .center, spacing: Metrics.Card.FeaturedTwoLines.contentVerticalSpacing) {
                 CardIcon(
                     placeholderIcon: displayModel.icon,
-                    preloadedImage: displayModel.preloadedImage,
+                    cachedImage: displayModel.cachedImage,
                     imageUrl: displayModel.imageUrl,
                     loadImage: displayModel.loadImage,
                     onImageLoadSuccess: displayModel.onImageLoadSuccess,
@@ -305,7 +305,7 @@ private extension RemoteMessagingUI {
 
     struct CardIcon: View {
         let placeholderIcon: String
-        let preloadedImage: UIImage?
+        let cachedImage: (() -> UIImage?)?
         let imageUrl: URL?
         let loadImage: ((URL) async throws -> UIImage)?
         let onImageLoadSuccess: (() -> Void)?
@@ -315,7 +315,10 @@ private extension RemoteMessagingUI {
         @State private var loadedImage: UIImage?
 
         var body: some View {
-            if let displayImage = loadedImage ?? preloadedImage {
+            // Query the loader cache on every render so that views recycled by
+            // LazyVStack pick up the previously loaded image instead of restarting
+            // the load (which would flicker the placeholder and re-fire pixels).
+            if let displayImage = loadedImage ?? cachedImage?() {
                 Image(uiImage: displayImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)

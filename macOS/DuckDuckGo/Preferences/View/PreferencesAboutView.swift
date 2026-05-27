@@ -493,8 +493,7 @@ extension Preferences {
 
         private var versionString: String {
             switch warning {
-            case .unsupported(let versionString),
-                    .willDropSupportSoon(let versionString):
+            case .unsupported(let versionString):
                 return versionString
             }
         }
@@ -503,8 +502,6 @@ extension Preferences {
             switch warning {
             case .unsupported:
                 return UserText.aboutUnsupportedDeviceInfo1
-            case .willDropSupportSoon:
-                return UserText.aboutWillSoonBeUnsupportedDeviceInfo1
             }
         }
 
@@ -512,8 +509,6 @@ extension Preferences {
             switch warning {
             case .unsupported(let minVersion):
                 return UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
-            case .willDropSupportSoon(let upcomingMinVersion):
-                return UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
             }
         }
 

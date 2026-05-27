@@ -38,8 +38,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: nil)
+            minSupportedOSVersionOverride: Self.bigSurVersion)
 
         // When
         let warning = checker.supportWarning
@@ -54,8 +53,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.catalinaVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
+            minSupportedOSVersionOverride: Self.bigSurVersion)
 
         // When
         let warning = checker.supportWarning
@@ -74,78 +72,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.bigSurVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: nil)
-
-        // When
-        let warning = checker.supportWarning
-
-        // Then
-        XCTAssertNil(warning)
-    }
-
-    // MARK: - Upcoming Support Tests
-
-    func testWhenNoUpcomingVersionThenNoWarning() {
-        // Given
-        let mockFeatureFlagger = MockFeatureFlagger()
-        let checker = SupportedOSChecker(
-            featureFlagger: mockFeatureFlagger,
-            currentOSVersionOverride: Self.bigSurVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: nil)
-
-        // When
-        let warning = checker.supportWarning
-
-        // Then
-        XCTAssertNil(warning)
-    }
-
-    func testWhenCurrentVersionIsLowerThanUpcomingVersionThenShowsWarning() {
-        // Given
-        let mockFeatureFlagger = MockFeatureFlagger()
-        let checker = SupportedOSChecker(
-            featureFlagger: mockFeatureFlagger,
-            currentOSVersionOverride: Self.bigSurVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
-
-        // When
-        let warning = checker.supportWarning
-
-        // Then
-        guard case .willDropSupportSoon(let version) = warning else {
-            XCTFail("Expected will drop support soon warning")
-            return
-        }
-        XCTAssertEqual(version, "12.3")
-    }
-
-    func testWhenCurrentVersionIsHigherThanUpcomingVersionThenNoWarning() {
-        // Given
-        let mockFeatureFlagger = MockFeatureFlagger()
-        let checker = SupportedOSChecker(
-            featureFlagger: mockFeatureFlagger,
-            currentOSVersionOverride: Self.venturaVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
-
-        // When
-        let warning = checker.supportWarning
-
-        // Then
-        XCTAssertNil(warning)
-    }
-
-    func testWhenCurrentVersionEqualsUpcomingVersionThenNoWarning() {
-        // Given
-        let mockFeatureFlagger = MockFeatureFlagger()
-        let checker = SupportedOSChecker(
-            featureFlagger: mockFeatureFlagger,
-            currentOSVersionOverride: Self.montereyVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
+            minSupportedOSVersionOverride: Self.bigSurVersion)
 
         // When
         let warning = checker.supportWarning
@@ -163,8 +90,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.bigSurVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
+            minSupportedOSVersionOverride: Self.bigSurVersion)
 
         // When
         let warning = checker.supportWarning
@@ -172,48 +98,6 @@ final class SupportedOSCheckerTests: XCTestCase {
         // Then
         guard case .unsupported(let version) = warning else {
             XCTFail("Expected unsupported warning")
-            return
-        }
-        XCTAssertEqual(version, "12.3")
-    }
-
-    func testWhenForceWillSoonDropSupportMessageFeatureFlagIsOnThenShowsUpcomingWarning() {
-        // Given
-        let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.osSupportForceWillSoonDropSupportMessage]
-        let checker = SupportedOSChecker(
-            featureFlagger: mockFeatureFlagger,
-            currentOSVersionOverride: Self.bigSurVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
-
-        // When
-        let warning = checker.supportWarning
-
-        // Then
-        guard case .willDropSupportSoon(let version) = warning else {
-            XCTFail("Expected will drop support soon warning")
-            return
-        }
-        XCTAssertEqual(version, "12.3")
-    }
-
-    func testWhenWillSoonDropMontereySupportFeatureFlagIsOnThenShowsUpcomingWarning() {
-        // Given
-        let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.willSoonDropMontereySupport]
-        let checker = SupportedOSChecker(
-            featureFlagger: mockFeatureFlagger,
-            currentOSVersionOverride: Self.bigSurVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion,
-            upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
-
-        // When
-        let warning = checker.supportWarning
-
-        // Then
-        guard case .willDropSupportSoon(let version) = warning else {
-            XCTFail("Expected will drop support soon warning")
             return
         }
         XCTAssertEqual(version, "12.3")

@@ -160,9 +160,6 @@ extension NSAlert {
         case .unsupported(let minVersion):
             alert.messageText = UserText.aboutUnsupportedDeviceInfo1
             alert.informativeText = UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
-        case .willDropSupportSoon(let upcomingMinVersion):
-            alert.messageText = UserText.aboutWillSoonBeUnsupportedDeviceInfo1
-            alert.informativeText = UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
         }
 
         alert.alertStyle = .warning

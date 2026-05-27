@@ -24,7 +24,6 @@ import PrivacyConfig
 
 enum OSSupportWarning {
     case unsupported(_ minVersion: String)
-    case willDropSupportSoon(_ upcomingMinVersion: String)
 }
 
 enum OSUpgradeCapability: String {
@@ -108,9 +107,6 @@ final class SupportedOSChecker {
     static let ddgMinMonterreyVersion = OperatingSystemVersion(majorVersion: 12,
                                                                minorVersion: 3,
                                                                patchVersion: 0)
-    static let ddgMinVenturaVersion = OperatingSystemVersion(majorVersion: 13,
-                                                             minorVersion: 0,
-                                                             patchVersion: 0)
 
     /// Lookup table mapping hardware model identifiers to the major component of the maximum macOS version they support.
     ///
@@ -172,7 +168,6 @@ final class SupportedOSChecker {
     }
     private var currentOSVersionOverride: OperatingSystemVersion?
     private var minSupportedOSVersionOverride: OperatingSystemVersion?
-    private var upcomingMinSupportedOSVersionOverride: OperatingSystemVersion?
     private let hardwareModel: String?
     private var maxSupportedVersionByModelOverride: [String: Int]?
     private let featureFlagger: FeatureFlagger
@@ -185,18 +180,6 @@ final class SupportedOSChecker {
         return Self.ddgMinMonterreyVersion
     }
 
-    var upcomingMinSupportedOSVersion: OperatingSystemVersion? {
-        if let upcomingMinSupportedOSVersionOverride {
-            return upcomingMinSupportedOSVersionOverride
-        }
-
-        guard featureFlagger.isFeatureOn(.willSoonDropMontereySupport) else {
-            return nil
-        }
-
-        return Self.ddgMinVenturaVersion
-    }
-
     private var maxSupportedVersionByModel: [String: Int] {
         maxSupportedVersionByModelOverride ?? Self.maxSupportedMacOSVersionByModel
     }
@@ -204,13 +187,11 @@ final class SupportedOSChecker {
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          currentOSVersionOverride: OperatingSystemVersion? = nil,
          minSupportedOSVersionOverride: OperatingSystemVersion? = nil,
-         upcomingMinSupportedOSVersionOverride: OperatingSystemVersion? = nil,
          hardwareModel: String? = HardwareModel.model,
          maxSupportedVersionByModelOverride: [String: Int]? = nil) {
 
         self.currentOSVersionOverride = currentOSVersionOverride
         self.minSupportedOSVersionOverride = minSupportedOSVersionOverride
-        self.upcomingMinSupportedOSVersionOverride = upcomingMinSupportedOSVersionOverride
         self.hardwareModel = hardwareModel
         self.maxSupportedVersionByModelOverride = maxSupportedVersionByModelOverride
         self.featureFlagger = featureFlagger
@@ -231,20 +212,8 @@ extension SupportedOSChecker: SupportedOSChecking {
             return .unsupported(osVersionAsString(minSupportedOSVersion))
         }
 
-        if let upcomingMinSupportedOSVersion {
-            guard !featureFlagger.isFeatureOn(.osSupportForceWillSoonDropSupportMessage) else {
-                return .willDropSupportSoon(osVersionAsString(upcomingMinSupportedOSVersion))
-            }
-        }
-
         guard currentOSVersion > minSupportedOSVersion else {
             return .unsupported(osVersionAsString(minSupportedOSVersion))
-        }
-
-        if let upcomingMinSupportedOSVersion {
-            guard currentOSVersion > upcomingMinSupportedOSVersion else {
-                return .willDropSupportSoon(osVersionAsString(upcomingMinSupportedOSVersion))
-            }
         }
 
         return nil

@@ -579,9 +579,18 @@ private extension MainViewController {
     private func handleNewImageGenerationChatStarted(for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView),
               controller === currentTab,
-              let coordinator = unifiedToggleInputCoordinator else { return }
-        coordinator.selectTool(.imageGeneration)
-        coordinator.showExpanded(inputMode: .aiChat)
+              unifiedToggleInputCoordinator != nil else { return }
+        // Mirror the New-Chat-from-sidebar path (`aiChatContentHandlerDidReceiveNewChatCreated`):
+        // defer so the URL-change refresh lands first, then run `startNewChat` + `showExpanded`
+        // on a clean state. `selectTool` slots between them because `startNewChat` resets tools.
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  let coordinator = self.unifiedToggleInputCoordinator,
+                  self.tabManager.controller(forWebView: webView) === self.currentTab else { return }
+            coordinator.startNewChat()
+            coordinator.selectTool(.imageGeneration)
+            coordinator.showExpanded(inputMode: .aiChat)
+        }
     }
 
     private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {

@@ -1268,11 +1268,13 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     /// Mirrors `handleNewImageGenerationChatStarted` on the host: the FE message must leave
     /// the UTI expanded with the image-generation tool selected so the user lands in an
-    /// editing pose ready to type their prompt.
-    func test_selectTool_imageGeneration_thenShowExpanded_endsExpandedWithToolSelected() {
+    /// editing pose ready to type their prompt. `selectTool` sits between `startNewChat`
+    /// (which resets tools) and `showExpanded`.
+    func test_startNewChat_selectTool_imageGeneration_thenShowExpanded_endsExpandedWithToolSelected() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
 
+        sut.startNewChat()
         sut.selectTool(.imageGeneration)
         sut.showExpanded(inputMode: .aiChat)
 

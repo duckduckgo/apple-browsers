@@ -3386,11 +3386,13 @@ class MainViewController: UIViewController {
         // Voice mode has no on-screen input; dismiss the keyboard before either branch loads.
         unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
 
-        // Open in a new tab when the current tab has real content to preserve. NTP becomes the chat tab in-place.
-        // Gated on the unified input so legacy chrome keeps its current in-tab behavior, except for deep links
-        // which already opened new tabs over existing content.
+        // Open in a new tab when the current tab has real content AND we're actually crossing
+        // the Duck.ai ↔ web boundary. Chat → voice-chat (already on a Duck.ai tab) stays in
+        // place, mirroring the text-chat rule in `openAIChatInTab`. NTP transformations stay
+        // in place via the `link != nil` check.
         let hasContent = currentTab.tabModel.link != nil
-        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+        let isCrossingBoundary = currentTab.isAITab == false
+        let openInNewTab = hasContent && isCrossingBoundary && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
@@ -3435,12 +3437,17 @@ class MainViewController: UIViewController {
             return
         }
 
-        // Open in a new tab when the current tab has real content to preserve. NTP becomes the chat tab in-place.
-        // Gated on the unified input so legacy chrome keeps its current in-tab behavior, except for deep links
-        // which already opened new tabs over existing content.
+        // Open in a new tab when the current tab has real content to preserve AND we're actually
+        // crossing the Duck.ai ↔ web boundary. Chat → chat (e.g. browser app menu's "New Chat"
+        // tapped while already on a Duck.ai tab) stays in place — same rule the rest of the
+        // codebase enforces via `AIBoundaryNavigationDecision`. NTP transformations stay in
+        // place via the existing `link != nil` check. Gated on unified input so legacy chrome
+        // keeps its current in-tab behavior, except for deep links which already opened new
+        // tabs over existing content.
         if unifiedToggleInputFeature.isAvailable || fromDeepLink,
            let currentTab,
-           currentTab.tabModel.link != nil {
+           currentTab.tabModel.link != nil,
+           currentTab.isAITab == false {
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
             // Preserve the pre-existing instrumentation parity: the in-place `load(...)` fall-through
             // below fires this, so the new-tab branch must too — otherwise idle-session telemetry

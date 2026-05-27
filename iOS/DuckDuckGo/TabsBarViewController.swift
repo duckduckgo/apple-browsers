@@ -587,7 +587,9 @@ extension MainViewController: TabsBarDelegate {
         if isActuallyPresented {
             coordinator.dismissSheet()
         } else {
-            Task { @MainActor in await coordinator.presentSheet(from: self) }
+            // Route through TabViewController so the cold-restore `contextualChatURL`
+            // is honored — presenting the coordinator directly would skip it and open a blank chat.
+            currentTab.presentContextualAIChatSheet(from: self)
         }
     }
 

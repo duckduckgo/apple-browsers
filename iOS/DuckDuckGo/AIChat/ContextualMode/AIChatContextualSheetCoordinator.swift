@@ -173,7 +173,15 @@ final class AIChatContextualSheetCoordinator {
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.
     func dismissSheet() {
         sheetViewController?.dismiss(animated: true)
+        handleSheetDismissed()
+    }
+
+    /// Idempotent: both `presentationControllerDidDismiss` and `viewDidDisappear` route here for swipe-dismiss.
+    private func handleSheetDismissed() {
+        guard isSheetPresented else { return }
         isSheetPresented = false
+        stopObservingContextUpdates()
+        startSessionTimer()
     }
 
     func clearActiveChat() {
@@ -458,9 +466,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
-        isSheetPresented = false
-        stopObservingContextUpdates()
-        startSessionTimer()
+        handleSheetDismissed()
     }
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {

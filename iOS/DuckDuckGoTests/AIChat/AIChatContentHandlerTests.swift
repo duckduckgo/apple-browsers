@@ -685,9 +685,11 @@ final class MockAIChatRequestAuthHandler: AIChatRequestAuthorizationHandling {
 
 final class MockUnifiedToggleInputFeatureProvider: UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool
+    var isToggleHiddenOnDuckAITab: Bool
 
-    init(isAvailable: Bool = false) {
+    init(isAvailable: Bool = false, isToggleHiddenOnDuckAITab: Bool = false) {
         self.isAvailable = isAvailable
+        self.isToggleHiddenOnDuckAITab = isToggleHiddenOnDuckAITab
     }
 }
 

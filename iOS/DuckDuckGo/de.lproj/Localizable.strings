@@ -4328,7 +4328,7 @@
 "subscription.promo.reinstaller.buttons.notNow" = "Jetzt nicht";
 
 /* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
-"subscription.promo.reinstaller.message" = "DuckDuckGo bietet auch ein **optionales kostenpflichtiges Abonnement** mit einem sicheren VPN und **fortschrittlicher, privater KI**.";
+"subscription.promo.reinstaller.message" = "DuckDuckGo bietet auch ein **optionales kostenpflichtiges Abonnement** mit einem sicheren **VPN** und **fortschrittlicher, privater KI**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Von diesem Gerät entfernen";

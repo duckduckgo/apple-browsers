@@ -21,6 +21,7 @@ import Carbon.HIToolbox
 import BrowserServicesKit
 import Combine
 import Common
+import DesignResourcesKitIcons
 import DDGSync
 import Foundation
 import SecureStorage
@@ -56,8 +57,9 @@ final class PasswordManagementViewController: NSViewController {
     @IBOutlet weak var backgroundView: ColorView!
     @IBOutlet weak var lockMenuItem: NSMenuItem!
     @IBOutlet weak var importPasswordMenuItem: NSMenuItem!
-    @IBOutlet weak var settingsMenuItem: NSMenuItem!
+    @IBOutlet weak var exportLoginItem: NSMenuItem!
     @IBOutlet weak var deleteAllPasswordsMenuItem: NSMenuItem!
+    @IBOutlet weak var settingsMenuItem: NSMenuItem!
     @IBOutlet weak var unlockYourAutofillLabel: FlatButton!
     @IBOutlet weak var autofillTitleLabel: NSTextField!
     @IBOutlet weak var unlockYourAutofillInfo: NSButtonCell!
@@ -74,7 +76,6 @@ final class PasswordManagementViewController: NSViewController {
     @IBOutlet var emptyStateMessageContainer: NSView!
     @IBOutlet var emptyStateImportButton: NSButton!
     @IBOutlet var emptyStateSyncButton: NSButton!
-    @IBOutlet weak var exportLoginItem: NSMenuItem!
     @IBOutlet var lockScreen: NSView!
     @IBOutlet var lockScreenIconImageView: NSImageView! {
         didSet {
@@ -233,6 +234,12 @@ final class PasswordManagementViewController: NSViewController {
 
         subscribeToThemeChanges()
         applyThemeStyle()
+
+        lockMenuItem.image = DesignSystemImages.Glyphs.Size12.lock
+        importPasswordMenuItem.image = DesignSystemImages.Glyphs.Size12.import
+        exportLoginItem.image = DesignSystemImages.Glyphs.Size12.export
+        deleteAllPasswordsMenuItem.image = DesignSystemImages.Glyphs.Size12.trash
+        settingsMenuItem.image = DesignSystemImages.Glyphs.Size12.settings
     }
 
     private func setUpEmptyStateMessageView() {

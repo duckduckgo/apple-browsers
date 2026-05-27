@@ -54,7 +54,7 @@ extension Preferences {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
                     if let minVersion = model.unsupportedMinVersion {
-                        UnsupportedDeviceInfoBox(minVersion: minVersion)
+                        UnsupportedDeviceInfoBox(minVersion: minVersion, canUpgradeOS: model.canUpgradeOS)
                             .padding(.top, 10)
                     }
 
@@ -486,6 +486,7 @@ extension Preferences {
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
         var minVersion: String
+        var canUpgradeOS: Bool = true
 
         private var osVersion: String {
             return "\(ProcessInfo.processInfo.operatingSystemVersion)"
@@ -534,7 +535,7 @@ extension Preferences {
         @available(macOS 12, *)
         private var combinedTextAttributedAttributed: AttributedString {
             var instructions = AttributedString(combinedText)
-            if let range = instructions.range(of: "macOS \(versionString)") {
+            if canUpgradeOS, let range = instructions.range(of: "macOS \(versionString)") {
                 instructions[range].link = Self.softwareUpdateURL
             }
             return instructions
@@ -559,7 +560,7 @@ extension Preferences {
 
             // Find the version string to make it clickable
             let versionText = "macOS \(versionString)"
-            if let range = fullText.range(of: versionText) {
+            if canUpgradeOS, let range = fullText.range(of: versionText) {
                 let nsRange = NSRange(range, in: fullText)
                 attributedString.addAttribute(.link, value: Self.softwareUpdateURL, range: nsRange)
                 attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)

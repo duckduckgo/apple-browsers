@@ -229,12 +229,17 @@ private extension AIChatContextualSheetCoordinator {
     
     func presentExistingSheet(_ sheetVC: AIChatContextualSheetViewController, from presentingVC: UIViewController) {
         guard sheetVC.presentingViewController == nil else { return }
+        // UIKit silently drops present() if the presenter already has a presentedViewController;
+        // bail so isSheetPresented doesn't get stuck true.
+        guard presentingVC.presentedViewController == nil else { return }
         sheetVC.configureSheetPresentation()
         presentingVC.present(sheetVC, animated: true)
         isSheetPresented = true
     }
 
     func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?) {
+        guard presentingVC.presentedViewController == nil else { return }
+
         if let restoreURL {
             sessionState.restoreChat(with: restoreURL)
         }

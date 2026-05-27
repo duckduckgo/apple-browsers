@@ -1051,6 +1051,9 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var wasSaveOptOutOperationCalled = false
     public var wasBrokerProfileQueryDataCalled = false
     public var wasFetchAllBrokerProfileQueryDataCalled = false
+    public var wasFetchActiveBrokerProfileQueryDataCalled = false
+    public var wasFetchEligibleBrokerProfileQueryDataCalled = false
+    public var lastFetchEligibleIsAuthenticatedUser: Bool?
     public var wasFetchAllDataBrokersCalled = false
     public var wasUpdatedPreferredRunDateForScanCalled = false
     public var wasUpdatedPreferredRunDateForOptOutCalled = false
@@ -1071,7 +1074,6 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var lastHistoryEventToReturn: HistoryEvent?
     public var lastPreferredRunDateOnScan: Date?
     public var lastPreferredRunDateOnOptOut: Date?
-    public var lastShouldFilterRemovedBrokers: Bool?
     public var submittedSuccessfullyDate: Date?
     public var extractedProfileRemovedDate: Date?
     public var extractedProfilesFromBroker = [ExtractedProfile]()
@@ -1114,6 +1116,8 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasBrokerProfileQueryDataCalled,
         wasFetchAllDataBrokersCalled,
         wasFetchAllBrokerProfileQueryDataCalled,
+        wasFetchActiveBrokerProfileQueryDataCalled,
+        wasFetchEligibleBrokerProfileQueryDataCalled,
         wasUpdatedPreferredRunDateForScanCalled,
         wasUpdatedPreferredRunDateForOptOutCalled,
         wasUpdateSubmittedSuccessfullyDateForOptOutCalled,
@@ -1182,19 +1186,31 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    public func fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: Bool = true) throws -> [BrokerProfileQueryData] {
+    public func fetchAllBrokerProfileQueryData(reason: BrokerProfileQueryDataFetchReason) throws -> [BrokerProfileQueryData] {
         wasFetchAllBrokerProfileQueryDataCalled = true
-        lastShouldFilterRemovedBrokers = shouldFilterRemovedBrokers
 
         if let fetchAllBrokerProfileQueryDataError {
             throw fetchAllBrokerProfileQueryDataError
         }
 
-        if shouldFilterRemovedBrokers {
-            return brokerProfileQueryDataToReturn.filter { !$0.dataBroker.isRemoved }
-        } else {
-            return brokerProfileQueryDataToReturn
+        return brokerProfileQueryDataToReturn
+    }
+
+    public func fetchActiveBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+        wasFetchActiveBrokerProfileQueryDataCalled = true
+        if let fetchAllBrokerProfileQueryDataError {
+            throw fetchAllBrokerProfileQueryDataError
         }
+        return brokerProfileQueryDataToReturn.excludingRemovedBrokers
+    }
+
+    public func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData] {
+        wasFetchEligibleBrokerProfileQueryDataCalled = true
+        lastFetchEligibleIsAuthenticatedUser = isAuthenticatedUser
+        if let fetchAllBrokerProfileQueryDataError {
+            throw fetchAllBrokerProfileQueryDataError
+        }
+        return brokerProfileQueryDataToReturn.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
     }
 
     public func fetchAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker] {
@@ -1418,6 +1434,9 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasSaveOptOutOperationCalled = false
         wasBrokerProfileQueryDataCalled = false
         wasFetchAllBrokerProfileQueryDataCalled = false
+        wasFetchActiveBrokerProfileQueryDataCalled = false
+        wasFetchEligibleBrokerProfileQueryDataCalled = false
+        lastFetchEligibleIsAuthenticatedUser = nil
         wasFetchAllDataBrokersCalled = false
         wasUpdatedPreferredRunDateForScanCalled = false
         wasUpdatedPreferredRunDateForOptOutCalled = false
@@ -1430,7 +1449,6 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         fetchAllBrokerProfileQueryDataError = nil
         hasScanHistoryEventsResult = nil
         lastHistoryEventToReturn = nil
-        lastShouldFilterRemovedBrokers = nil
         lastPreferredRunDateOnScan = nil
         lastPreferredRunDateOnOptOut = nil
         extractedProfileRemovedDate = nil

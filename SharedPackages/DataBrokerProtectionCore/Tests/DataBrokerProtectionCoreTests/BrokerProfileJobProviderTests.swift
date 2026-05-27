@@ -112,8 +112,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                         jobDependencies: mockDependencies)
 
         // Then
-        XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
-        XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers for job scheduling")
+        XCTAssertTrue(mockDatabase.wasFetchActiveBrokerProfileQueryDataCalled, "Should fetch active broker data (removed brokers excluded)")
 
         // Should only create jobs for active broker
         XCTAssertEqual(result.count, 1, "Should only create jobs for active brokers")
@@ -204,14 +203,13 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                         jobDependencies: mockDependencies)
 
         // Then
-        XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
-        XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers")
+        XCTAssertTrue(mockDatabase.wasFetchActiveBrokerProfileQueryDataCalled, "Should fetch active broker data (removed brokers excluded)")
 
         // Should create jobs only for active brokers (removed brokers are filtered at database level)
         XCTAssertEqual(result.count, 2, "Should create jobs only for active brokers")
     }
 
-    func testProvideJobs_allFilterRemovedBrokers() throws {
+    func testProvideJobs_acrossAllJobTypes_fetchesActiveBrokerData() throws {
         // Given
         let activeBrokerData = BrokerProfileQueryData(
             dataBroker: .mock,
@@ -234,8 +232,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         // When & Then
         for jobType in jobTypes {
             // Reset call tracking flags
-            mockDatabase.wasFetchAllBrokerProfileQueryDataCalled = false
-            mockDatabase.lastShouldFilterRemovedBrokers = nil
+            mockDatabase.wasFetchActiveBrokerProfileQueryDataCalled = false
 
             let result = try sut.createJobs(with: jobType,
                                             withPriorityDate: nil,
@@ -243,8 +240,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                             statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
                                             jobDependencies: mockDependencies)
 
-            XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData for \(jobType)")
-            XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering for job type \(jobType)")
+            XCTAssertTrue(mockDatabase.wasFetchActiveBrokerProfileQueryDataCalled, "Should fetch active broker data for job type \(jobType)")
 
             // Should create at most 1 job (for active broker only)
             XCTAssertLessThanOrEqual(result.count, 1, "Should create at most 1 job for \(jobType)")

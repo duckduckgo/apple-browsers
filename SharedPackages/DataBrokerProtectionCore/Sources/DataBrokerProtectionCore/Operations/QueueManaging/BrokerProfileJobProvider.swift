@@ -37,7 +37,8 @@ public final class BrokerProfileJobProvider: BrokerProfileJobProviding {
                            statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
                            jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
 
-        let brokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
+        let brokerProfileQueryData = try jobDependencies.database
+            .fetchActiveBrokerProfileQueryData()
         var jobs: [BrokerProfileJob] = []
         var visitedDataBrokerIDs: Set<Int64> = []
 

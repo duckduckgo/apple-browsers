@@ -157,13 +157,19 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         do {
             // Jobs for removed brokers will already be prevented from being scheduled upstream and are filtered below to the specific broker ID
-            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(reason: .specificBrokerJobDispatch)
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
         }
 
         let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
+
+        let isAuthenticatedUser = await jobDependencies.isAuthenticatedUser()
+        if !isAuthenticatedUser, brokerProfileQueriesData.containsBrokersRequiringSubscription {
+            Logger.dataBrokerProtection.log("Skipping broker \(self.dataBrokerID, privacy: .public) requiring subscription on freemium scan")
+            return
+        }
 
         let filteredAndSortedJobData = Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
                                                                jobType: jobType,

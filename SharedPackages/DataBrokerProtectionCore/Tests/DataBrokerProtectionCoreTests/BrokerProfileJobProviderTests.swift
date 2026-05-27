@@ -268,7 +268,12 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             profileQuery: .mock,
             scanJobData: .mock(withBrokerId: 2)
         )
-        mockDatabase.brokerProfileQueryDataToReturn = [gatedBrokerData, eligibleBrokerData]
+        let otherEligibleBrokerData = BrokerProfileQueryData(
+            dataBroker: makeBroker(id: 3, scanActions: [MockAction(actionType: .navigate)]),
+            profileQuery: .mock,
+            scanJobData: .mock(withBrokerId: 3)
+        )
+        mockDatabase.brokerProfileQueryDataToReturn = [gatedBrokerData, eligibleBrokerData, otherEligibleBrokerData]
 
         // When
         let result = try sut.createJobs(with: .scheduledScan,
@@ -279,7 +284,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                         jobDependencies: mockDependencies)
 
         // Then
-        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.count, 2)
         XCTAssertEqual(mockDatabase.lastFetchEligibleIsAuthenticatedUser, false)
     }
 

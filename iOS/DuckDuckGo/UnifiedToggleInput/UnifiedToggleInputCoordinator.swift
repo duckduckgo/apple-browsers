@@ -236,6 +236,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private(set) var host: UnifiedToggleInputHost
     private(set) var isToggleEnabled: Bool
+    /// Snapshot of `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab` at init.
+    private let hidesToggleOnDuckAITab: Bool
     private(set) var isOnboardingLocked: Bool = false
     private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
     private(set) var textState: InputTextState = .empty
@@ -355,6 +357,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         host: UnifiedToggleInputHost,
         isToggleEnabled: Bool,
         isFireTab: Bool = false,
+        hidesToggleOnDuckAITab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         duckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter(),
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
@@ -373,6 +376,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
+        self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.toggleModeStorage = toggleModeStorage
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.aiChatSettings = aiChatSettings
@@ -1269,11 +1273,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             usesOmnibarMargins: cardPosition == .top && isOmnibarSession,
             inactiveAppearance: inactiveAppearance,
             isFloatingReturnKeyVisible: canShowFloatingReturnKey,
-            isToggleEnabled: isToggleEnabled,
             contentInputMode: inputMode,
             inputMode: inputMode,
             isAITab: isAITabState
         )
+    }
+
+    /// Whether the Search↔Duck.ai toggle row should actually appear in the omnibar UTI.
+    /// Single source of truth combining the user setting and the Duck.ai-tab hide flag.
+    private var effectiveToggleVisible: Bool {
+        isToggleEnabled && !(hidesToggleOnDuckAITab && isAITabState)
     }
 
     /// Decides which card components are visible right now, based on host + display state +
@@ -1286,11 +1295,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .contextualChat:
             return .expanded(showsToggle: false, showsToolbar: true)
         case .omnibar:
-            let showsToggle = isToggleEnabled
-            // Keep the AI-chat toolbar on Duck.ai tabs even when the toggle is user-disabled,
+            // Keep the AI-chat toolbar on Duck.ai tabs even when the toggle is hidden,
             // so the user retains the model selector / attachments / send affordances.
             let showsToolbar = inputMode == .aiChat && (isToggleEnabled || isAITabState)
-            return .expanded(showsToggle: showsToggle, showsToolbar: showsToolbar)
+            return .expanded(showsToggle: effectiveToggleVisible, showsToolbar: showsToolbar)
         }
     }
 
@@ -1916,9 +1924,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         delegate?.unifiedToggleInputDidRequestFire()
     }
 
-    func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController) {
+    func unifiedToggleInputVCDidTapAppMenu(_ vc: UnifiedToggleInputViewController) {
         guard !isOnboardingLocked else { return }
-        delegate?.unifiedToggleInputDidRequestDuckAIVoiceMode()
+        delegate?.unifiedToggleInputDidRequestAppMenu()
     }
 }
 

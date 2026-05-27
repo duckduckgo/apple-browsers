@@ -116,10 +116,6 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
 
-    var shouldShowHideAIGeneratedImagesSection: Bool {
-        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
-    }
-
     var shouldShowDuckAiSettingsLink: Bool {
         featureFlagger.isFeatureOn(.aiChatSettingsLinkInAiFeatures)
     }

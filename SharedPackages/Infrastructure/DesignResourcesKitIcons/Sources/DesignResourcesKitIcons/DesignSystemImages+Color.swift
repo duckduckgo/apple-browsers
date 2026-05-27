@@ -249,14 +249,11 @@ public extension DesignSystemImages {
             public static var vpnGrayscale: DesignSystemImage { .init(resource: .vpnGrayscaleColor24) }
         }
 
-        public enum Size42 {
-            public static var shieldUtility: DesignSystemImage { .init(resource: .shieldUtilityColor42) }
-        }
-
         public enum Size32 {
             public static var duckDuckAI: DesignSystemImage { .init(resource: .duckAIColor32) }
             public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGoColor32) }
             public static var document: DesignSystemImage { .init(resource: .documentColor32) }
+            public static var shieldUtility: DesignSystemImage { .init(resource: .shieldUtilityColor32) }
         }
 
         public enum Size72 {

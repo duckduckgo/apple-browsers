@@ -421,9 +421,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the default omnibar toggle position setting for AI Chat
     case omnibarDefaultPosition
 
-    /// Controls showing the Hide AI section in Settings -> AI Features
-    case showHideAiGeneratedImages
-
     case unifiedToggleInput
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points

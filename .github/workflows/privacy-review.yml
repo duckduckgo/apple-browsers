@@ -12,7 +12,7 @@ jobs:
       - name: Checkout native actions repo
         uses: actions/checkout@v6
         with:
-            ref: v2.1
+            ref: la/decouple-dispatch-pat
             # Do not change the below path (downstream actions expect it)
             path: native-github-asana-sync
             repository: duckduckgo/native-github-asana-sync
@@ -24,3 +24,4 @@ jobs:
           trigger-phrase: 'Issue URL:'
           asana_pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
           github_pat: ${{ secrets.APPLE_GH_RO_PAT }}
+          dispatch_pat: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}

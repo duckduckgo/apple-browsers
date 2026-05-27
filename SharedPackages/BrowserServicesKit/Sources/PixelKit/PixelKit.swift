@@ -99,6 +99,23 @@ public final class PixelKit {
                 "Sample (\(percentage)%)"
             }
         }
+
+        fileprivate var mapKey: String {
+            switch self {
+            case .standard: return "standard"
+            case .uniqueByName: return "uniqueByName"
+            case .uniqueByNameAndParameters: return "uniqueByNameAndParameters"
+            case .daily: return "daily"
+            case .monthly: return "monthly"
+            case .dailyAndCount: return "dailyAndCount"
+            case .dailyAndStandard: return "dailyAndStandard"
+            case .legacyInitial: return "legacyInitial"
+            case .legacyDailyNoSuffix: return "legacyDailyNoSuffix"
+            case .legacyDaily: return "legacyDaily"
+            case .legacyDailyAndCount: return "legacyDailyAndCount"
+            case .sample(let percentage): return "sample(\(percentage))"
+            }
+        }
     }
 
     public enum Header {
@@ -219,10 +236,10 @@ public final class PixelKit {
         let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix, doNotEnforcePrefix: doNotEnforcePrefix)
 
         if !dryRun {
-            if frequency == .daily, pixelHasBeenFiredToday(pixelName) {
+            if frequency == .daily, pixelHasBeenFiredDailyToday(pixelName) {
                 onComplete(false, nil)
                 return
-            } else if frequency == .monthly, pixelHasBeenFiredThisMonth(pixelName) {
+            } else if frequency == .monthly, pixelHasBeenFiredMonthlyThisMonth(pixelName) {
                 onComplete(false, nil)
                 return
             } else if frequency == .uniqueByName, pixelHasBeenFiredEver(pixelName) {
@@ -373,7 +390,7 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_d")
         if !pixelHasBeenFiredEver(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .uniqueByName)
                 fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyInitial, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -398,7 +415,7 @@ public final class PixelKit {
         }
         if !pixelHasBeenFiredEver(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .uniqueByName)
                 fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByName, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -418,7 +435,7 @@ public final class PixelKit {
         let pixelNameAndParams = pixelName + newParams.toString()
         if !pixelHasBeenFiredEver(pixelNameAndParams) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelNameAndParams)
+                try updatePixelLastFireDate(pixelName: pixelNameAndParams, frequency: .uniqueByName)
                 fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByNameAndParameters, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -437,9 +454,9 @@ public final class PixelKit {
                              _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_daily") // Because is added automatically
-        if !pixelHasBeenFiredToday(pixelName) {
+        if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
                 fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .daily, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -458,9 +475,9 @@ public final class PixelKit {
                                _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_monthly") // Because is added automatically
-        if !pixelHasBeenFiredThisMonth(pixelName) {
+        if !pixelHasBeenFiredMonthlyThisMonth(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .monthly)
                 fireRequestWrapper(pixelName + "_monthly", headers, newParams, allowedQueryReservedCharacters, true, .monthly, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -479,9 +496,9 @@ public final class PixelKit {
                                            _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d")
-        if !pixelHasBeenFiredToday(pixelName) {
+        if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
                 fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyNoSuffix, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -511,6 +528,7 @@ public final class PixelKit {
 
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_daily")
+        reportErrorIf(pixel: pixelName, endsWith: "_monthly")
 
         let suffix = "_sample\(percentage)"
 
@@ -530,9 +548,9 @@ public final class PixelKit {
                                    _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d") // Because is added automatically
-        if !pixelHasBeenFiredToday(pixelName) {
+        if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
                 fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDaily, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -552,9 +570,9 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d") // Because is added automatically
         reportErrorIf(pixel: pixelName, endsWith: "_c") // Because is added automatically
-        if !pixelHasBeenFiredToday(pixelName) {
+        if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
                 fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyAndCount, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -575,9 +593,9 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_daily") // Because is added automatically
         reportErrorIf(pixel: pixelName, endsWith: "_count") // Because is added automatically
-        if !pixelHasBeenFiredToday(pixelName) {
+        if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
                 fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -597,9 +615,9 @@ public final class PixelKit {
                                         _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_daily") // Because is added automatically
-        if !pixelHasBeenFiredToday(pixelName) {
+        if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
                 fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -746,23 +764,24 @@ public final class PixelKit {
         Self.shared?.cohort(from: cohortLocalDate, dateGenerator: dateGenerator) ?? ""
     }
 
-    public static func pixelLastFireDate(event: PixelKitEvent, namePrefix: String? = nil) throws -> Date? {
-        try Self.shared?.pixelLastFireDate(event: event, namePrefix: namePrefix)
+    public static func pixelLastFireDate(event: PixelKitEvent, frequency: Frequency, namePrefix: String? = nil) throws -> Date? {
+        try Self.shared?.pixelLastFireDate(event: event, frequency: frequency, namePrefix: namePrefix)
     }
 
-    public func pixelLastFireDate(pixelName: String) throws -> Date? {
-        if let date = try defaults.object(forKey: userDefaultsKeyName(forPixelName: pixelName)) as? Date {
-            return date
-        }
-        return try defaults.object(forKey: legacyUserDefaultsKeyName(forPixelName: pixelName)) as? Date
+    public func pixelLastFireDate(event: PixelKitEvent, frequency: Frequency, namePrefix: String? = nil) throws -> Date? {
+        try pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix), frequency: frequency)
     }
 
-    public func pixelLastFireDate(event: PixelKitEvent, namePrefix: String? = nil) throws -> Date? {
-        try pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix))
+    private func pixelLastFireDate(pixelName: String, frequency: Frequency) throws -> Date? {
+        let map = try defaults.object(forKey: userDefaultsKeyName(forPixelName: pixelName)) as? [String: Date]
+        return map?[frequency.mapKey]
     }
 
-    private func updatePixelLastFireDate(pixelName: String) throws {
-        try defaults.set(dateGenerator(), forKey: userDefaultsKeyName(forPixelName: pixelName))
+    private func updatePixelLastFireDate(pixelName: String, frequency: Frequency) throws {
+        let key = userDefaultsKeyName(forPixelName: pixelName)
+        var map = (try defaults.object(forKey: key) as? [String: Date]) ?? [:]
+        map[frequency.mapKey] = dateGenerator()
+        try defaults.set(map, forKey: key)
     }
 
     private func fireStorageWriteErrorPixel(suppressedPixelName: String, error: Error) {
@@ -791,9 +810,9 @@ public final class PixelKit {
         )
     }
 
-    private func pixelHasBeenFiredToday(_ name: String) -> Bool {
+    private func pixelHasBeenFiredDailyToday(_ name: String) -> Bool {
         guard !dryRun else {
-            if let lastFireDate = try? pixelLastFireDate(pixelName: name),
+            if let lastFireDate = try? pixelLastFireDate(pixelName: name, frequency: .daily),
                let twoMinsAgo = pixelCalendar.date(byAdding: .minute, value: -2, to: dateGenerator()) {
                 return lastFireDate >= twoMinsAgo
             }
@@ -803,9 +822,16 @@ public final class PixelKit {
 
         do {
             let key = userDefaultsKeyName(forPixelName: name)
-            let legacyKey = legacyUserDefaultsKeyName(forPixelName: name)
-            if let lastFireDate = try defaults.object(forKey: key) as? Date
-                ?? (try defaults.object(forKey: legacyKey) as? Date) {
+            let raw = try defaults.object(forKey: key)
+            let lastFireDate: Date?
+            if let legacyDate = raw as? Date {
+                // Migrate prior raw-Date storage to the [frequency.mapKey: Date] map format.
+                try defaults.set([Frequency.daily.mapKey: legacyDate], forKey: key)
+                lastFireDate = legacyDate
+            } else {
+                lastFireDate = (raw as? [String: Date])?[Frequency.daily.mapKey]
+            }
+            if let lastFireDate {
                 return pixelCalendar.isDate(dateGenerator(), inSameDayAs: lastFireDate)
             }
             return false
@@ -814,9 +840,9 @@ public final class PixelKit {
         }
     }
 
-    private func pixelHasBeenFiredThisMonth(_ name: String) -> Bool {
+    private func pixelHasBeenFiredMonthlyThisMonth(_ name: String) -> Bool {
         guard !dryRun else {
-            if let lastFireDate = try? pixelLastFireDate(pixelName: name),
+            if let lastFireDate = try? pixelLastFireDate(pixelName: name, frequency: .monthly),
                let twoMinsAgo = pixelCalendar.date(byAdding: .minute, value: -2, to: dateGenerator()) {
                 return lastFireDate >= twoMinsAgo
             }
@@ -825,8 +851,7 @@ public final class PixelKit {
         }
 
         do {
-            let key = userDefaultsKeyName(forPixelName: name)
-            if let lastFireDate = try defaults.object(forKey: key) as? Date {
+            if let lastFireDate = try pixelLastFireDate(pixelName: name, frequency: .monthly) {
                 return pixelCalendar.isDate(dateGenerator(), equalTo: lastFireDate, toGranularity: .month)
             }
             return false
@@ -837,10 +862,7 @@ public final class PixelKit {
 
     private func pixelHasBeenFiredEver(_ name: String) -> Bool {
         do {
-            let key = userDefaultsKeyName(forPixelName: name)
-            let legacyKey = legacyUserDefaultsKeyName(forPixelName: name)
-            return try defaults.object(forKey: key) != nil
-                || (try defaults.object(forKey: legacyKey) != nil)
+            return try defaults.object(forKey: userDefaultsKeyName(forPixelName: name)) != nil
         } catch {
             return true
         }

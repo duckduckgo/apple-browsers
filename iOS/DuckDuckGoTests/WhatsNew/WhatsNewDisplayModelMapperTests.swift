@@ -769,7 +769,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
 
     // MARK: - TwoLines Card
 
-    @Test("When twoLines item has imageUrl and image is cached then preloadedImage is set on the card")
+    @Test("When twoLines item has imageUrl and image is cached then preloadedImage is set on the card", .timeLimit(.minutes(1)))
     func whenTwoLinesItemHasImageUrlAndCachedThenPreloadedImageSet() throws {
         let imageUrl = URL(string: "https://example.com/two-lines.png")!
         let expectedImage = UIImage()
@@ -796,7 +796,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         #expect(card.imageUrl == imageUrl)
     }
 
-    @Test("When twoLines item has imageUrl and image is cached then card success pixel is fired with card id")
+    @Test("When twoLines item has imageUrl and image is cached then card success pixel is fired with card id", .timeLimit(.minutes(1)))
     func whenTwoLinesItemHasImageUrlAndCachedThenCardSuccessPixelFired() throws {
         let imageUrl = URL(string: "https://example.com/two-lines.png")!
         let imageLoader = MockRemoteMessagingImageLoader()
@@ -821,7 +821,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         #expect(pixelReporter.capturedCardImageLoadSuccessCardId == "feature-card")
     }
 
-    @Test("When twoLines item loadImage succeeds then card success pixel is fired with card id")
+    @Test("When twoLines item loadImage succeeds then card success pixel is fired with card id", .timeLimit(.minutes(1)))
     func whenTwoLinesItemLoadImageSucceedsThenCardSuccessPixelFired() async throws {
         let imageUrl = URL(string: "https://example.com/two-lines.png")!
         let expectedImage = UIImage()
@@ -853,7 +853,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         #expect(pixelReporter.capturedCardImageLoadSuccessCardId == "feature-card")
     }
 
-    @Test("When twoLines item loadImage fails then card failure pixel is fired with card id")
+    @Test("When twoLines item loadImage fails then card failure pixel is fired with card id", .timeLimit(.minutes(1)))
     func whenTwoLinesItemLoadImageFailsThenCardFailurePixelFired() async throws {
         let imageUrl = URL(string: "https://example.com/two-lines.png")!
         let imageLoader = MockRemoteMessagingImageLoader()
@@ -884,7 +884,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         #expect(pixelReporter.capturedCardImageLoadFailedCardId == "feature-card")
     }
 
-    @Test("When twoLines item has no imageUrl then loadImage is nil and no pixel fires")
+    @Test("When twoLines item has no imageUrl then loadImage is nil and no pixel fires", .timeLimit(.minutes(1)))
     func whenTwoLinesItemHasNoImageUrlThenLoadImageIsNilAndNoPixel() throws {
         let imageLoader = MockRemoteMessagingImageLoader()
         let pixelReporter = MockRemoteMessagingPixelReporter()
@@ -914,7 +914,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
 
     // MARK: - Featured Card
 
-    @Test("When featured item has imageUrl and image is cached then preloadedImage is set on the card")
+    @Test("When featured item has imageUrl and image is cached then preloadedImage is set on the card", .timeLimit(.minutes(1)))
     func whenFeaturedItemHasImageUrlAndCachedThenPreloadedImageSet() throws {
         let imageUrl = URL(string: "https://example.com/featured.png")!
         let expectedImage = UIImage()
@@ -941,7 +941,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         #expect(card.imageUrl == imageUrl)
     }
 
-    @Test("When featured item loadImage succeeds then card success pixel is fired with card id")
+    @Test("When featured item loadImage succeeds then card success pixel is fired with card id", .timeLimit(.minutes(1)))
     func whenFeaturedItemLoadImageSucceedsThenCardSuccessPixelFired() async throws {
         let imageUrl = URL(string: "https://example.com/featured.png")!
         let expectedImage = UIImage()
@@ -973,7 +973,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         #expect(pixelReporter.capturedCardImageLoadSuccessCardId == "featured-card")
     }
 
-    @Test("When featured item loadImage fails then card failure pixel is fired with card id")
+    @Test("When featured item loadImage fails then card failure pixel is fired with card id", .timeLimit(.minutes(1)))
     func whenFeaturedItemLoadImageFailsThenCardFailurePixelFired() async throws {
         let imageUrl = URL(string: "https://example.com/featured.png")!
         let imageLoader = MockRemoteMessagingImageLoader()

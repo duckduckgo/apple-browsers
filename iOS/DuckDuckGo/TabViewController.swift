@@ -1370,6 +1370,16 @@ class TabViewController: UIViewController {
         errorMessage.text = message
         error.layoutIfNeeded()
     }
+
+    private func showSafariRedirectLoopError(for url: URL) {
+        self.url = url
+        hideProgressIndicator()
+        ViewHighlighter.hideAll()
+        showError(message: UserText.xSafariHTTPSLoopTitle)
+        Pixel.fire(pixel: .webViewErrorPageShown)
+        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
+        webpageDidFailToLoad()
+    }
     
     private func hideErrorMessage() {
         error.isHidden = true
@@ -4536,15 +4546,7 @@ extension TabViewController: SafariRedirectHandlerDelegate {
         load(url: url, didUpgradeURL: false)
     }
 
-    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestOpenExternallyURL url: URL) {
-        openExternally(url: url)
-    }
-
-    func safariRedirectHandlerDidRequestGoBack(_ handler: SafariRedirectHandling) {
-        goBack()
-    }
-
-    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestPresentAlert alert: UIAlertController) {
-        delegate?.tab(self, didRequestPresentingAlert: alert)
+    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
+        showSafariRedirectLoopError(for: url)
     }
 }

@@ -1,7 +1,14 @@
 {
     "m_webview_external-scheme-navigation_x-safari-https_loop-detected": {
         "description": "Fires when a redirect loop is detected after user chose to stay in DuckDuckGo",
-        "owners": ["dus7"],
+        "owners": ["dus7", "brindy"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown": {
+        "description": "Fires when the dedicated Safari redirect loop special error page is shown",
+        "owners": ["dus7", "brindy"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]

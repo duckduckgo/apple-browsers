@@ -123,6 +123,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Åbn i en Fire-fane";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Ny fane";
 
@@ -219,10 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI-funktioner";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Du kan kun vedhæfte %d filer pr. samtale.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Vi kan ikke læse de vedhæftede filer, fordi mindst én af dem er krypteret.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "De vedhæftede filer overstiger grænsen for den samlede størrelse på %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Denne fil er for stor. Den maksimale filstørrelse er %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "En af de vedhæftede filer har flere sider, end vi understøtter. Upload filer med højst %d sider.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Vi kan ikke læse en af de vedhæftede filer. Kontroller, at den ikke er beskadiget, og prøv igen.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Du kan kun vedhæfte %d billeder pr. samtale.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Du kan kun vedhæfte %d billeder ad gangen.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Tilføj fil";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Tilføj billede";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Tag et billede";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Beskeden er for lang til at blive sendt med vedhæftede filer.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Vedhæftede filer er midlertidigt utilgængelige. Prøv igen senere.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Denne filtype understøttes ikke.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Denne filtype understøttes ikke. Vedhæft en %1$@- eller %2$@-fil.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Denne filtype understøttes ikke. Vedhæft en %@-fil.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Til analytiske opgaver";
@@ -241,6 +285,27 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Ræsonnement";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Find QR-koden i DuckDuckGo-appen på din anden enhed ved at gå til **Indstillinger** › **Sync & Backup** › **Synkroniser med en anden enhed**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Ikke nu";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Scan QR-kode";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Lad os synkronisere dine chats på tværs af dine enheder!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Synkroniser med en anden enhed";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Afvis synkroniseringskampagne";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Få adgang til dine chats på tværs af dine enheder ved hjælp af Sync & Backup.";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tilpas svar";
@@ -1532,9 +1597,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Fejlfinding";
 
-/* No comment provided by engineer. */
-"Delete" = "Slet";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "enhed";
 
@@ -1646,11 +1708,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI-funktioner er private og valgfrie. Dine data bruges ikke til at træne AI.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Vedhæft sideindhold";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Spørg om siden";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Vedhæft sideindhold";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Sammenfat denne side";
@@ -2365,6 +2427,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-fane";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
@@ -4494,6 +4557,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Luk fane";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Luk hjemmefanen";
 
@@ -4505,6 +4569,7 @@
 
 /* New tab title */
 "tab.new.title" = "Ny fane";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Åben hjemmefanen";
 
@@ -4513,6 +4578,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Åbn Fire-fane";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Åbn \"%1$@\" på %2$@";
 
@@ -4996,8 +5062,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hvad vil du importere?";
 
-/* Top-level attachment menu option to add a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Tilføj fil";
-
-/* Top-level attachment menu option to add an image to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Tilføj billede";

@@ -122,7 +122,8 @@
 "action.title.newFireTabAction" = "Νέα καρτέλα Fire";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Άνοιγμα σε καρτέλα Fire";
+"action.title.newFireTabForUrl" = "Άνοιγμα σε Καρτέλα Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Νέα καρτέλα";
 
@@ -219,10 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Λειτουργίες τεχνητής νοημοσύνης";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Μπορείτε να επισυνάψετε μόνο %d αρχεία ανά συνομιλία.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Τραβήξτε μια φωτογραφία";
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Δεν μπορούμε να διαβάσουμε τα επισυναπτόμενα αρχεία επειδή τουλάχιστον ένα από αυτά είναι κρυπτογραφημένο.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Τα συνημμένα αρχεία υπερβαίνουν το συνολικό όριο μεγέθους των %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Αυτό το αρχείο είναι πολύ μεγάλο. Το μέγιστο μέγεθος αρχείου είναι %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Ένα από τα συνημμένα αρχεία έχει περισσότερες σελίδες από όσες υποστηρίζουμε. Μεταφορτώστε αρχεία με %d σελίδες ή λιγότερες.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Δεν μπορούμε να διαβάσουμε ένα από τα συνημμένα αρχεία. Έλεγξε ότι δεν είναι κατεστραμμένο και προσπαθήστε ξανά.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Μπορείτε να επισυνάψετε μόνο %d εικόνες ανά συνομιλία.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Μπορείτε να επισυνάψετε μόνο %d εικόνες κάθε φορά.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Προσθήκη αρχείου";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Προσθήκη εικόνας";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Τραβήξτε φωτογραφία";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Αυτό το μήνυμα είναι πολύ μεγάλο για να σταλεί με συνημμένα.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Τα συνημμένα δεν είναι προσωρινά διαθέσιμα. Προσπαθήστε πάλι αργότερα.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται, επισύναψε %1$@ ή %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται, επισυνάψτε %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
@@ -241,6 +285,27 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Συλλογιστική";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Βρες τον κωδικό QR στην εφαρμογή DuckDuckGo στην άλλη συσκευή σου μεταβαίνοντας στις **Ρυθμίσεις** › **Sync & Backup** › **Συγχρονισμός με άλλη συσκευή**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Όχι τώρα";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Σάρωση κώδικα QR";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Ας συγχρονίσουμε τις συνομιλίες σου σε όλες τις συσκευές σου!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Συγχρονισμός με άλλη συσκευή";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Απόρριψη προώθησης συγχρονισμού";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Απόκτησε πρόσβαση στις συνομιλίες σου σε όλες τις συσκευές σου χρησιμοποιώντας το Sync & Backup.";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Προσαρμογή απαντήσεων";
@@ -1532,9 +1597,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Επανόρθωση σφαλμάτων";
 
-/* No comment provided by engineer. */
-"Delete" = "Διαγραφή";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "συσκευή";
 
@@ -1646,11 +1708,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Επισύναψη περιεχομένου σελίδας";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Ρώτα για τη σελίδα";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Επισύναψη περιεχομένου σελίδας";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Συνοψίστε αυτήν τη σελίδα";
@@ -2365,6 +2427,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Καρτέλα Fire";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ρεύμα αέρα";
 
@@ -4494,6 +4557,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Κλείσιμο καρτέλας";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Κλείσιμο αρχικής καρτέλας";
 
@@ -4505,6 +4569,7 @@
 
 /* New tab title */
 "tab.new.title" = "Νέα καρτέλα";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Άνοιγμα αρχικής καρτέλας";
 
@@ -4513,6 +4578,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Άνοιγμα καρτέλας Fire";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Άνοιγμα \"%1$@\" στο %2$@";
 
@@ -4996,8 +5062,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
-/* Top-level attachment menu option to add a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Προσθήκη αρχείου";
-
-/* Top-level attachment menu option to add an image to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Προσθήκη εικόνας";

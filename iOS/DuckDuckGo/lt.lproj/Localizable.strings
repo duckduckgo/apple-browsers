@@ -122,7 +122,8 @@
 "action.title.newFireTabAction" = "Nauja „Fire“ kortelė";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Atidaryk „Fire“ kortelėje";
+"action.title.newFireTabForUrl" = "Atidaryti skirtuke „Fire“";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Nauja kortelė";
 
@@ -219,10 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "DI funkcijos";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Vienu metu galima pridėti tik %d failų.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Fotografuoti";
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Negalime perskaityti pridėtų failų, nes bent vienas iš jų yra užšifruotas.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Bendras pridėtų failų dydis viršija %d MB ribą.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Šis failas yra per didelis. Didžiausias failo dydis – %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Viename iš pridėtų failų yra daugiau puslapių, nei mes palaikome. Įkelkite failus, kuriuose yra iki %d puslapių.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Negalime nuskaityti vieno iš pridėtų failų. Patikrinkite, ar jis nepažeistas, ir bandyk dar kartą.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Vienam pokalbiui galima pridėti tik %d paveikslėlių.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Vienu metu galima pridėti iki %d paveikslėlių.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Pridėti failą";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Pridėti paveikslėlį";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Padaryti nuotrauką";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Šis pranešimas yra per ilgas, kad būtų galima siųsti su priedais.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Priedai laikinai nepasiekiami. Bandykite dar kartą vėliau.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Šis failo tipas nepalaikomas.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Šis failo tipas nepalaikomas. Pridėkite %1$@ arba %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Šis failo tipas nepalaikomas. Pridėkite %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analitinėms užduotims";
@@ -241,6 +285,27 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Samprotavimas";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Jei nori rasti QR kodą kito įrenginio „DuckDuckGo“ programėlėje, atidaryk **Nuostatos** › **Sync & Backup** › **Sinchronizuoti su kitu įrenginiu**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Ne dabar";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Nuskaityti QR kodą";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Sinchronizuokime tavo pokalbius visuose įrenginiuose!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Sinchronizuoti su kitu įrenginiu";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Uždaryti sinchronizavimo pasiūlymą";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Pasiek savo pokalbius visuose įrenginiuose – naudok „Sync & Backup“.";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tinkinti atsakymus";
@@ -1532,9 +1597,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Derinimas";
 
-/* No comment provided by engineer. */
-"Delete" = "Trinti";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "įrenginys";
 
@@ -1646,11 +1708,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "„DuckDuckGo“ DI funkcijos yra privačios ir neprivalomos. Tavo duomenys nenaudojami dirbtinio intelekto mokymui.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Pridėkite puslapio turinį";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Klausti apie puslapį";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Pridėkite puslapio turinį";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Apibendrinti šį puslapį";
@@ -2365,6 +2427,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "„Fire“ kortelė";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "„Airstream“";
 
@@ -4494,6 +4557,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Uždaryti kortelę";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Uždaryti pagrindinio puslapio skirtuką";
 
@@ -4505,6 +4569,7 @@
 
 /* New tab title */
 "tab.new.title" = "Nauja kortelė";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Atidaryti pagrindinio puslapio skirtuką";
 
@@ -4513,6 +4578,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Atidaryk „Fire“ kortelę";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Atidaryti „%1$@“ adresu %2$@";
 
@@ -4996,8 +5062,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
-/* Top-level attachment menu option to add a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Pridėti failą";
-
-/* Top-level attachment menu option to add an image to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Pridėti paveikslėlį";

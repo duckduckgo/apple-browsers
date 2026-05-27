@@ -122,7 +122,8 @@
 "action.title.newFireTabAction" = "Новая Fire-вкладка";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Открыть в Fire-вкладке";
+"action.title.newFireTabForUrl" = "Открыть во вкладке Fire Tab";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Новая вкладка";
 
@@ -219,10 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Функции ИИ";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Число файлов, прикрепляемых к одной беседе, ограничено: максимум %d.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Сделать фото";
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Невозможно считать прикрепленные файлы: по крайней мере один из них зашифрован.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Размер файлов превышает лимит в %d МБ.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Файл слишком большой. Максимальный размер — %d МБ.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Один из прикрепленных файлов содержит больше страниц, чем поддерживает наш сервис. Не загружайте файлы объемом более %d стр.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Не удалось прочитать один из прикрепленных файлов. Проверьте, не поврежден ли файл, и повторите попытку.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Число изображений, прикрепляемых к одной беседе, ограничено: максимум %d.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Число изображений, прикрепляемых за один раз, ограничено: максимум %d.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Добавить файл";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Добавить изображение";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Снять фото";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Это сообщение слишком длинное для отправки с вложениями.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Вложения временно недоступны. Повторите попытку позже.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Формат не поддерживается.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Формат не поддерживается. Прикрепите файл в %1$@ или %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Формат не поддерживается. Прикрепите файл в %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Для аналитических задач";
@@ -241,6 +285,27 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Рассуждения";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Найдите QR-код в приложении DuckDuckGo на другом устройстве: для этого перейдите в **Настройки** › раздел **Sync & Backup** › **Синхронизация с другим устройством**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Не сейчас";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Сканировать QR-код";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Давайте синхронизируем ваши чаты на всех ваших устройствах!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Синхронизировать с другим устройством";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Закрыть рекламу синхронизации";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Получите доступ к своим чатам на всех устройствах благодаря опции Sync & Backup.";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Настрой ответы";
@@ -1532,9 +1597,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Отладка";
 
-/* No comment provided by engineer. */
-"Delete" = "Удалить";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "устройстве";
 
@@ -1646,11 +1708,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Добавить содержимое страницы";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Задайте вопрос о странице";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Добавить содержимое страницы";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Кратко изложи содержимое страницы";
@@ -2365,6 +2427,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-вкладка";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Воздушный поток";
 
@@ -4494,6 +4557,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Закрыть вкладку";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Закрыть домашнюю вкладку";
 
@@ -4505,6 +4569,7 @@
 
 /* New tab title */
 "tab.new.title" = "Новая вкладка";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Открыть домашнюю вкладку";
 
@@ -4513,6 +4578,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Открыть Fire-вкладку";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Открыть сайт «%1$@» по адресу %2$@";
 
@@ -4996,8 +5062,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
-/* Top-level attachment menu option to add a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Добавить файл";
-
-/* Top-level attachment menu option to add an image to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Добавить изображение";

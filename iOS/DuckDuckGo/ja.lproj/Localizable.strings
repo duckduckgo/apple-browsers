@@ -123,6 +123,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Fireタブで開く";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "新しいタブ";
 
@@ -219,10 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI機能";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "ファイルは会話ごとに点しか添付できません。";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "写真を撮影";
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "添付ファイルのうち少なくとも1つが暗号化されているため、内容を読み取ることができません。";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "添付ファイルは%dMBの総サイズ制限を超えています。";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "このファイルは大きすぎます。最大ファイルサイズは%dMBです。";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "添付ファイルの1点が対応ページ数を超えています。%dページ以下のファイルをアップロードしてください。";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "添付されたファイルの1つを読み取れません。破損していないか確認してから、もう一度お試しください。";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "画像は会話ごとに%d点しか添付できません。";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "一度に添付できる画像は枚までです。";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "ファイルを追加";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "画像を追加";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "写真を撮る";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "そのメッセージは長すぎて添付ファイル付きで送信できません。";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "添付ファイルは一時的に利用できません。時間を置いてもう一度お試しください。";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "このファイル形式はサポートされていません。";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "このファイル形式はサポートされていません。%1$@または%2$@を添付してください。";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "このファイル形式はサポートされていません。%@を添付してください。";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "分析タスク用";
@@ -241,6 +285,27 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "推論";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "**設定** › **Sync & Backup** › **別のデバイスと同期**に移動し、他のデバイスのDuckDuckGoアプリでQRコードを見つけてください。";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "後で";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "QRコードをスキャン";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "チャットをデバイス間で同期しましょう！";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "別のデバイスと同期";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "同期プロモーションを非表示";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Sync & Backupを使って、デバイス間でチャットにアクセスできます。";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "応答をカスタマイズする";
@@ -1532,9 +1597,6 @@
 /* No comment provided by engineer. */
 "Debug" = "デバッグ";
 
-/* No comment provided by engineer. */
-"Delete" = "削除";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "デバイス";
 
@@ -1646,11 +1708,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "ページの内容を添付";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "ページについてお尋ねください";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "ページの内容を添付";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "このページを要約";
@@ -2365,6 +2427,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fireタブ";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "エアストリーム";
 
@@ -4494,6 +4557,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "タブを閉じる";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "ホームタブを閉じる";
 
@@ -4505,6 +4569,7 @@
 
 /* New tab title */
 "tab.new.title" = "新しいタブ";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "ホームタブを開く";
 
@@ -4513,6 +4578,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Fireタブを開く";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "%2$@で「%1$@」を開く";
 
@@ -4996,8 +5062,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
-/* Top-level attachment menu option to add a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "ファイルを追加";
-
-/* Top-level attachment menu option to add an image to an AI chat message */
-"aichat.attachment.option.attach.photo" = "画像を追加";

@@ -290,12 +290,12 @@ final class BigSurEndOfSupportNoticePresenter {
         // First-added button is the default and sits on the right.
         // Hide the "Update macOS" call to action on hardware that can't upgrade
         // past Big Sur; fall back to a neutral OK.
-        let capability = osChecker.osUpgradeCapability
+        let canUpgrade = canUpgradeOS
         alert.addButton(withTitle: primaryButtonTitle())
         alert.addButton(withTitle: UserText.bigSurEndOfSupportNoticeDontShowAgain)
 
         switch alert.runModal() {
-        case .alertFirstButtonReturn where capability.canUpgradeOS:
+        case .alertFirstButtonReturn where canUpgrade:
             NSWorkspace.shared.open(Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL)
         case .alertSecondButtonReturn:
             persistor.dismissed = true
@@ -304,21 +304,21 @@ final class BigSurEndOfSupportNoticePresenter {
         }
     }
 
+    /// Hardware capability after applying the debug-menu override.
+    /// Release builds always see the hardware value (see `OSUpgradeCapabilityOverridePersistor`).
+    private var canUpgradeOS: Bool {
+        OSUpgradeCapabilityOverridePersistor().canUpgradeOS(default: osChecker.osUpgradeCapability.canUpgradeOS)
+    }
+
     private func bodyText() -> String {
-        switch osChecker.osUpgradeCapability {
-        case .incapable:
-            return UserText.bigSurEndOfSupportNoticeMessageIncapable
-        case .capable, .unknown:
-            return UserText.bigSurEndOfSupportNoticeMessage
-        }
+        canUpgradeOS
+            ? UserText.bigSurEndOfSupportNoticeMessage
+            : UserText.bigSurEndOfSupportNoticeMessageIncapable
     }
 
     private func primaryButtonTitle() -> String {
-        switch osChecker.osUpgradeCapability {
-        case .incapable:
-            return UserText.ok
-        case .capable, .unknown:
-            return UserText.bigSurEndOfSupportNoticeUpdateMacOS
-        }
+        canUpgradeOS
+            ? UserText.bigSurEndOfSupportNoticeUpdateMacOS
+            : UserText.ok
     }
 }

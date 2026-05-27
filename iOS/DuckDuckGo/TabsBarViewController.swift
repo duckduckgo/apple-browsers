@@ -598,10 +598,7 @@ extension MainViewController: TabsBarDelegate {
         // when currentTab was still nil (createIfNeeded: false at that time).
         bindAIChatChromeChipToCurrentTab()
         let coordinator = currentTab.aiChatContextualSheetCoordinator
-        // Trust the sheet's actual on-screen state rather than the flag — flag can lag
-        // if the sheet was dismissed by an ancestor without routing through dismissSheet().
-        let isActuallyPresented = coordinator.sheetViewController?.presentingViewController != nil
-        if isActuallyPresented {
+        if coordinator.isSheetPresented {
             coordinator.dismissSheet()
         } else {
             // Route through TabViewController so the cold-restore `contextualChatURL`

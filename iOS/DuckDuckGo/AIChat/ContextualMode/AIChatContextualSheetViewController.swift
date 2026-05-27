@@ -348,10 +348,6 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        // Catches dismissals that don't route through presentationControllerDidDismiss
-        // (e.g. programmatic dismiss by an ancestor, tab transitions). Keeps the
-        // coordinator's isSheetPresented flag in sync with reality so the chrome chip
-        // doesn't show a stale "sheet open" glyph.
         if isBeingDismissed || isMovingFromParent {
             delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
         }
@@ -1101,10 +1097,6 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
 
     func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
         isCurrentlyMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
-    }
-
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
     }
 }
 

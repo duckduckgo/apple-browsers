@@ -54,7 +54,7 @@ extension AppDelegate {
                 let canUpgradeOS = OSUpgradeCapabilityOverridePersistor()
                     .canUpgradeOS(default: checker.osUpgradeCapability.canUpgradeOS)
                 let response = NSAlert.osNotSupported(minVersion: minVersion, canUpgradeOS: canUpgradeOS).runModal()
-                if canUpgradeOS, response != .cancel {
+                if canUpgradeOS, response == .alertFirstButtonReturn {
                     let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
                     NSWorkspace.shared.open(url)
                 }

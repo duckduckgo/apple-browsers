@@ -889,16 +889,19 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
         DailyPixel.fireDailyAndCount(pixel: pixel)
+        Pixel.fire(pixel: .autocompleteDuckAIClickChatHistory)
 
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.unifiedInputEditingStateDidSelectChatHistory(url: url)
     }
 
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion) {
+        fireDuckAISuggestionClickPixel(for: suggestion)
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
+        Pixel.fire(pixel: .autocompleteDuckAIClickSearchDuckDuckGo)
         // Symmetric with Search-side "Ask privately" (which calls openAIChat with autoSend:true):
         // flip toggle to Search and submit the query in one step.
         switchBarHandler.setToggleState(.search)
@@ -908,6 +911,21 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     func duckAISuggestionsDidRequestSyncSetup() {
         aiChatSyncIntroSheetPresenter.present(from: self) { [weak self] in
             self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
+        }
+    }
+
+    private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {
+        switch suggestion {
+        case .website:
+            Pixel.fire(pixel: .autocompleteDuckAIClickWebsite)
+        case .bookmark(_, _, let isFavorite, _):
+            Pixel.fire(pixel: isFavorite ? .autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
+        case .historyEntry(_, let url, _):
+            Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
+        case .openTab:
+            Pixel.fire(pixel: .autocompleteDuckAIClickSwitchToTab)
+        case .phrase, .internalPage, .unknown, .askAIChat:
+            break
         }
     }
 }

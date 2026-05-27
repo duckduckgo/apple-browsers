@@ -450,7 +450,7 @@ jobs:
 
     - name: Prepare test report
       id: prepare-test-report
-      if: always()
+      if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
         test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }})"
@@ -464,7 +464,7 @@ jobs:
     # that publishes a combined report for all test cases
     - name: Upload test report
       uses: actions/upload-artifact@v4
-      if: always()
+      if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
         name: "testreport-${{ matrix.test }}-macos${{ matrix.os-version }}"
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"

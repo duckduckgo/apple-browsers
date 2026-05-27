@@ -290,8 +290,8 @@ class TabSwitcherViewController: UIViewController {
         }
 
         fireTabsTipTask = Task { @MainActor [weak self] in
-            guard let self else { return }
             for await shouldDisplay in tip.shouldDisplayUpdates {
+                guard let self else { return }
                 if shouldDisplay {
                     self.fireModePromotionsCoordinator?.markTabSwitcherTipShown()
                     let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)

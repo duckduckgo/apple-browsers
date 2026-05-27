@@ -40,11 +40,8 @@ final class SupportedOSCheckerTests: XCTestCase {
             currentOSVersionOverride: Self.venturaVersion,
             minSupportedOSVersionOverride: Self.bigSurVersion)
 
-        // When
-        let warning = checker.supportWarning
-
         // Then
-        XCTAssertNil(warning)
+        XCTAssertNil(checker.unsupportedMinVersion)
     }
 
     func testWhenCurrentVersionIsLowerThanMinSupportedThenShowsUnsupportedWarning() {
@@ -55,15 +52,8 @@ final class SupportedOSCheckerTests: XCTestCase {
             currentOSVersionOverride: Self.catalinaVersion,
             minSupportedOSVersionOverride: Self.bigSurVersion)
 
-        // When
-        let warning = checker.supportWarning
-
         // Then
-        guard case .unsupported(let version) = warning else {
-            XCTFail("Expected unsupported warning")
-            return
-        }
-        XCTAssertEqual(version, "12.3")
+        XCTAssertEqual(checker.unsupportedMinVersion, "12.3")
     }
 
     func testWhenCurrentVersionIsEqualToMinSupportedThenNoWarning() {
@@ -74,11 +64,8 @@ final class SupportedOSCheckerTests: XCTestCase {
             currentOSVersionOverride: Self.bigSurVersion,
             minSupportedOSVersionOverride: Self.bigSurVersion)
 
-        // When
-        let warning = checker.supportWarning
-
         // Then
-        XCTAssertNil(warning)
+        XCTAssertNil(checker.unsupportedMinVersion)
     }
 
     // MARK: - Feature Flag Tests
@@ -92,15 +79,8 @@ final class SupportedOSCheckerTests: XCTestCase {
             currentOSVersionOverride: Self.bigSurVersion,
             minSupportedOSVersionOverride: Self.bigSurVersion)
 
-        // When
-        let warning = checker.supportWarning
-
         // Then
-        guard case .unsupported(let version) = warning else {
-            XCTFail("Expected unsupported warning")
-            return
-        }
-        XCTAssertEqual(version, "12.3")
+        XCTAssertEqual(checker.unsupportedMinVersion, "12.3")
     }
 
     // MARK: - Hardware OS Support Tests

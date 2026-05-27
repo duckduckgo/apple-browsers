@@ -22,10 +22,6 @@ import FeatureFlags
 import Persistence
 import PrivacyConfig
 
-enum OSSupportWarning {
-    case unsupported(_ minVersion: String)
-}
-
 enum OSUpgradeCapability: String {
     case capable
     case incapable
@@ -55,12 +51,10 @@ protocol SupportedOSChecking {
     ///
     var showsSupportWarning: Bool { get }
 
-    /// The OS-support warning to show to the user.
+    /// The minimum supported macOS version string (e.g. `"12.3"`) when the current
+    /// OS is unsupported and a warning should be shown; `nil` otherwise.
     ///
-    /// This can be either due to the user's macOS version becoming unsupported or
-    /// to let the user know it will soon be.
-    ///
-    var supportWarning: OSSupportWarning? { get }
+    var unsupportedMinVersion: String? { get }
 
     /// The hardware's capability to upgrade to a macOS version newer than the currently running one.
     ///
@@ -81,7 +75,7 @@ protocol SupportedOSChecking {
 
 extension SupportedOSChecking {
     var showsSupportWarning: Bool {
-        supportWarning != nil
+        unsupportedMinVersion != nil
     }
 }
 
@@ -204,16 +198,16 @@ final class SupportedOSChecker {
 
 extension SupportedOSChecker: SupportedOSChecking {
 
-    var supportWarning: OSSupportWarning? {
+    var unsupportedMinVersion: String? {
 
         // It's best to check feature flags first on their own, since they act as a master
         // override for any other check
         guard !featureFlagger.isFeatureOn(.osSupportForceUnsupportedMessage) else {
-            return .unsupported(osVersionAsString(minSupportedOSVersion))
+            return osVersionAsString(minSupportedOSVersion)
         }
 
         guard currentOSVersion > minSupportedOSVersion else {
-            return .unsupported(osVersionAsString(minSupportedOSVersion))
+            return osVersionAsString(minSupportedOSVersion)
         }
 
         return nil
@@ -247,7 +241,7 @@ extension SupportedOSChecker: SupportedOSChecking {
 //
 // Self-contained sample showing an on-launch NSAlert when Big Sur support has
 // ended. Currently shows for all users — wrap the `show()` call in a
-// `SupportedOSChecker().supportWarning != nil` guard before shipping.
+// `SupportedOSChecker().showsSupportWarning` guard before shipping.
 
 struct BigSurEndOfSupportNoticePersistor {
 

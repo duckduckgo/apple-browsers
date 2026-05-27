@@ -53,8 +53,8 @@ extension Preferences {
                 VStack(alignment: .leading) {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
-                    if let warning = model.osSupportWarning {
-                        UnsupportedDeviceInfoBox(warning: warning)
+                    if let minVersion = model.unsupportedMinVersion {
+                        UnsupportedDeviceInfoBox(minVersion: minVersion)
                             .padding(.top, 10)
                     }
 
@@ -485,32 +485,17 @@ extension Preferences {
 
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
-        var warning: OSSupportWarning
+        var minVersion: String
 
         private var osVersion: String {
             return "\(ProcessInfo.processInfo.operatingSystemVersion)"
         }
 
-        private var versionString: String {
-            switch warning {
-            case .unsupported(let versionString):
-                return versionString
-            }
-        }
+        private var versionString: String { minVersion }
 
-        private var versionText: String {
-            switch warning {
-            case .unsupported:
-                return UserText.aboutUnsupportedDeviceInfo1
-            }
-        }
+        private var versionText: String { UserText.aboutUnsupportedDeviceInfo1 }
 
-        private var combinedText: String {
-            switch warning {
-            case .unsupported(let minVersion):
-                return UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
-            }
-        }
+        private var combinedText: String { UserText.aboutUnsupportedDeviceInfo2(version: minVersion) }
 
         var body: some View {
             let image = Image(.alertColor16)

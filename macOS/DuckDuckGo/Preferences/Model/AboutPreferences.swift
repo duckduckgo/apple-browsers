@@ -200,8 +200,8 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     let displayableAboutURL: String = URL.aboutDuckDuckGo
         .toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: false)
 
-    var osSupportWarning: OSSupportWarning? {
-        supportedOSChecker.supportWarning
+    var unsupportedMinVersion: String? {
+        supportedOSChecker.unsupportedMinVersion
     }
 
     @MainActor

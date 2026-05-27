@@ -1470,7 +1470,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
         // Sample: Big Sur end-of-support launch notice. Wrap in an
-        // `if SupportedOSChecker().supportWarning != nil` guard before shipping.
+        // `if SupportedOSChecker().showsSupportWarning` guard before shipping.
         BigSurEndOfSupportNoticePresenter(keyValueStore: keyValueStore).showIfNeeded()
 
         // Momentary preview: incapable-hardware variant of the Big Sur notice.

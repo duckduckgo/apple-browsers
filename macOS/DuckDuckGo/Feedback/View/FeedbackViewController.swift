@@ -307,10 +307,10 @@ final class FeedbackViewController: NSViewController {
 
     private weak var unsupportedOsChildView: NSView?
     private func showUnsupportedOsViewIfNeeded() {
-        if let warning = supportedOSChecker.supportWarning,
+        if let minVersion = supportedOSChecker.unsupportedMinVersion,
            unsupportedOsChildView == nil {
 
-            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(warning: warning).padding(.horizontal, 20))
+            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(minVersion: minVersion).padding(.horizontal, 20))
             unsupportedOsView.addAndLayout(view)
             unsupportedOsView.isHidden = false
             unsupportedOsChildView = view

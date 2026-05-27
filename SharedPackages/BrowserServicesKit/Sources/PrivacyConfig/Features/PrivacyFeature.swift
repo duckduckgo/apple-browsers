@@ -798,6 +798,7 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .duckAiChatHistory }
 
     case featureEnabled
+    case nativeChatHistory
 }
 
 public enum PromoQueueSubfeature: String, PrivacySubfeature {

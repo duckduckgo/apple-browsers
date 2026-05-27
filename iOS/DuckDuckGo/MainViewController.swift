@@ -5140,6 +5140,14 @@ extension MainViewController: TabDelegate {
         openAIChat()
     }
 
+    func tabDidRequestAIChatHistory(tab: TabViewController) {
+        openAIChatHistory()
+    }
+
+    func openAIChatHistory() {
+        present(AIChatHistoryViewController.makePresentableSheet(), animated: true)
+    }
+
     func tabDidRequestBookmarks(tab: TabViewController) {
         Pixel.fire(pixel: .bookmarksButtonPressed,
                    withAdditionalParameters: [PixelParameters.originatedFromMenu: "1"])

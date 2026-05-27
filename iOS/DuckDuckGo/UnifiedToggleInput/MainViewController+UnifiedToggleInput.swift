@@ -581,6 +581,7 @@ private extension MainViewController {
               controller === currentTab,
               let coordinator = unifiedToggleInputCoordinator else { return }
         coordinator.selectTool(.imageGeneration)
+        coordinator.showExpanded(inputMode: .aiChat)
     }
 
     private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {

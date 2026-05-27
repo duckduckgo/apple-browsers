@@ -19,6 +19,7 @@
 
 import UIKit
 import DesignResourcesKitIcons
+import DesignResourcesKit
 
 /// iPad Duck.ai chrome split-button. Left half opens a new Duck.ai tab (text);
 /// right half toggles the current tab's contextual sheet (icon). On Duck.ai
@@ -32,9 +33,10 @@ final class DuckAIChromeChipView: UIView {
 
     private enum Constants {
         static let cornerRadius: CGFloat = 9
-        static let textPadding = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
+        static let textPadding = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
         static let iconButtonWidth: CGFloat = 40
         static let dividerWidth: CGFloat = 1
+        static let dividerVerticalPadding: CGFloat = 6
     }
 
     private(set) lazy var textButton: UIButton = {
@@ -64,13 +66,26 @@ final class DuckAIChromeChipView: UIView {
 
     private lazy var divider: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .lines)
+        view.backgroundColor = UIColor(designSystemColor: .decorationSecondary)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
 
+    private lazy var dividerContainer: UIView = {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(divider)
+        NSLayoutConstraint.activate([
+            divider.topAnchor.constraint(equalTo: container.topAnchor, constant: Constants.dividerVerticalPadding),
+            divider.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -Constants.dividerVerticalPadding),
+            divider.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            divider.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+        ])
+        return container
+    }()
+
     private lazy var iconContainer: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [divider, iconButton])
+        let stack = UIStackView(arrangedSubviews: [dividerContainer, iconButton])
         stack.axis = .horizontal
         stack.alignment = .fill
         stack.distribution = .fill
@@ -107,7 +122,7 @@ final class DuckAIChromeChipView: UIView {
             stack.leadingAnchor.constraint(equalTo: leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: trailingAnchor),
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            divider.widthAnchor.constraint(equalToConstant: Constants.dividerWidth),
+            dividerContainer.widthAnchor.constraint(equalToConstant: Constants.dividerWidth),
             iconButton.widthAnchor.constraint(equalToConstant: Constants.iconButtonWidth)
         ])
 

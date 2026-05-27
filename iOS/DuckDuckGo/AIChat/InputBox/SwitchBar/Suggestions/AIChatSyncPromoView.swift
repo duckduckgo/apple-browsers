@@ -29,8 +29,10 @@ struct AIChatSyncPromoView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            VStack {
+            VStack(spacing: 16) {
                 Image(.syncAIFeature96)
+                    .resizable()
+                    .frame(width: 72, height: 72)
 
                 Text(UserText.aiChatSyncPromoTitle)
                     .daxHeadline()
@@ -43,10 +45,10 @@ struct AIChatSyncPromoView: View {
                     Text(UserText.aiChatSyncPromoButton)
                 }
                 .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: false))
-                .padding(8)
             }
             .frame(maxWidth: .infinity)
-            .padding(8)
+            .padding(.vertical, 20)
+            .padding(.horizontal, 8)
 
             Button(action: onCloseTap) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.close)

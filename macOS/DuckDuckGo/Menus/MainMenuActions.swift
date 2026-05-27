@@ -49,11 +49,9 @@ extension AppDelegate {
             PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
             NSWorkspace.shared.open(.appStore)
         } else if StandardApplicationBuildType().isSparkleBuild {
-            let checker = SupportedOSChecker()
-            if let minVersion = checker.unsupportedMinVersion {
-                let canUpgradeOS = OSUpgradeCapabilityOverridePersistor()
-                    .canUpgradeOS(default: checker.osUpgradeCapability.canUpgradeOS)
-                if NSAlert.osNotSupported(minVersion: minVersion, canUpgradeOS: canUpgradeOS).runModal() != .cancel {
+            if let minVersion = SupportedOSChecker().unsupportedMinVersion {
+                // Show not supported info
+                if NSAlert.osNotSupported(minVersion: minVersion).runModal() != .cancel {
                     let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
                     NSWorkspace.shared.open(url)
                 }

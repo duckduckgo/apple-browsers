@@ -61,6 +61,6 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

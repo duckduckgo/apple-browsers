@@ -26,7 +26,20 @@ import Foundation
 /// BYDAY/BYMONTHDAY/BYMONTH). Otherwise the rule keeps `EKRecurrenceEnd(occurrenceCount:)`.
 enum RecurrenceRuleParser {
 
-    static func parse(_ value: String, startDate: Date) throws -> EKRecurrenceRule {
+    /// Output of a successful RRULE parse: the EventKit rule plus any in-scope parts the
+    /// parser dropped (BYSETPOS, BYWEEKNO, …).
+    struct Parsed {
+        let rule: EKRecurrenceRule
+        let warnings: [ICSParser.Warning]
+    }
+
+    /// RRULE keys recognised by RFC 5545 that this parser does not honour. Their presence is
+    /// surfaced as an `unsupportedRRulePart` warning so consumers can record telemetry.
+    private static let unsupportedKeys: Set<String> = [
+        "BYSETPOS", "BYWEEKNO", "BYYEARDAY", "BYHOUR", "BYMINUTE", "BYSECOND", "WKST"
+    ]
+
+    static func parse(_ value: String, startDate: Date) throws -> Parsed {
         var freq: EKRecurrenceFrequency?
         var interval = 1
         var count: Int?
@@ -34,6 +47,7 @@ enum RecurrenceRuleParser {
         var byDay: [EKRecurrenceDayOfWeek] = []
         var byMonthDay: [Int] = []
         var byMonth: [Int] = []
+        var warnings: [ICSParser.Warning] = []
 
         for part in value.split(separator: ";") {
             let pieces = part.split(separator: "=", maxSplits: 1)
@@ -62,6 +76,10 @@ enum RecurrenceRuleParser {
                 byMonthDay = try integerList(rawValue, original: value)
             case "BYMONTH":
                 byMonth = try integerList(rawValue, original: value)
+            case let key where unsupportedKeys.contains(key):
+                if !warnings.contains(.unsupportedRRulePart) {
+                    warnings.append(.unsupportedRRulePart)
+                }
             default:
                 break
             }
@@ -82,7 +100,7 @@ enum RecurrenceRuleParser {
             startDate: startDate
         )
 
-        return EKRecurrenceRule(
+        let rule = EKRecurrenceRule(
             recurrenceWith: frequency,
             interval: interval,
             daysOfTheWeek: byDay.isEmpty ? nil : byDay,
@@ -93,6 +111,7 @@ enum RecurrenceRuleParser {
             setPositions: nil,
             end: end
         )
+        return Parsed(rule: rule, warnings: warnings)
     }
 
     private static func parseFrequency(_ raw: String, original: String) throws -> EKRecurrenceFrequency {

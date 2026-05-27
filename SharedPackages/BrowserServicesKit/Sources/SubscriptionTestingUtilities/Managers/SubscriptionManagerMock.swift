@@ -50,7 +50,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         case .failure(let failure):
             throw failure
         case nil:
-            throw SubscriptionEndpointServiceError.noData
+            throw SubscriptionManagerError.noTokenAvailable
         }
     }
 
@@ -88,7 +88,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     public var customerPortalURL: URL?
     public func getCustomerPortalURL() async throws -> URL {
         guard let customerPortalURL else {
-            throw SubscriptionEndpointServiceError.noData
+            throw SubscriptionManagerError.noTokenAvailable
         }
         return customerPortalURL
     }
@@ -131,6 +131,13 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     }
 
+    public var ingestSubscriptionCalled: Bool = false
+    public func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription {
+        ingestSubscriptionCalled = true
+        resultSubscription = .success(subscription)
+        return subscription
+    }
+
     public var confirmPurchaseResponse: Result<DuckDuckGoSubscription, Error>?
     public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
         switch confirmPurchaseResponse! {
@@ -141,14 +148,14 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         }
     }
 
-    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
+    public func getSubscription(forceRefresh: Bool) async throws -> DuckDuckGoSubscription? {
         switch resultSubscription {
         case .success(let success):
             return success
         case .failure(let failure):
             throw failure
         case nil:
-            throw SubscriptionEndpointServiceError.noData
+            return nil
         }
     }
 
@@ -174,8 +181,14 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public var resultFeatures: [SubscriptionEntitlement] = []
+    public var resultFeaturesError: Error?
+    public var currentSubscriptionFeaturesCallCount: Int = 0
     public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement] {
-        resultFeatures
+        currentSubscriptionFeaturesCallCount += 1
+        if let resultFeaturesError {
+            throw resultFeaturesError
+        }
+        return resultFeatures
     }
 
     public func isFeatureIncludedInSubscription(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {
@@ -211,9 +224,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func isSubscriptionPresent() -> Bool {
         switch resultSubscription {
-        case .success(let success):
+        case .success:
             return true
-        case .failure(let failure):
+        case .failure:
             return false
         case nil:
             return false

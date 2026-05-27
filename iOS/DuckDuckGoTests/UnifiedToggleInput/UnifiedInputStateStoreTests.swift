@@ -154,19 +154,21 @@ final class UnifiedInputStateStoreTests: XCTestCase {
 
     // MARK: - TabsModel observation
 
-    func test_observingTabsModel_seedsNewTabs() {
+    func test_observingTabsModel_seedsToggleModeFromAppWideLastUsed() {
+        toggleStorage.stored = .aiChat
+        let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
         let tabsModel = TabsModel(desktop: false)
-        let tab = Tab(uid: "tab-eager", fireTab: false, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .aiChat))
-        sut.observeTabsModel(tabsModel)
+        let tab = Tab(uid: "tab-eager", fireTab: false)
+        store.observeTabsModel(tabsModel)
         tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
-        XCTAssertEqual(sut.state(for: "tab-eager").toggleMode, .aiChat)
+        XCTAssertEqual(store.state(for: "tab-eager").toggleMode, .aiChat)
     }
 
     func test_observingTabsModel_seedsRemainingFieldsFromLastUsed() {
         preferences.selectedModelId = "gpt-5"
         let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
         let tabsModel = TabsModel(desktop: false)
-        let tab = Tab(uid: "tab-eager", fireTab: false, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .search))
+        let tab = Tab(uid: "tab-eager", fireTab: false)
         store.observeTabsModel(tabsModel)
         tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         XCTAssertEqual(store.state(for: "tab-eager").selectedModelID, "gpt-5")
@@ -193,7 +195,6 @@ final class UnifiedInputStateStoreTests: XCTestCase {
             uid: "persisted",
             fireTab: false,
             unifiedInputState: UnifiedInputTabState(
-                preferredTextEntryMode: .aiChat,
                 selectedModelID: "tab-specific-model",
                 selectedReasoningMode: .extendedReasoning
             )
@@ -209,7 +210,7 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         preferences.selectedModelId = "global-default"
         let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
         let tabsModel = TabsModel(desktop: false)
-        let tab = Tab(uid: "fresh", fireTab: false, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .aiChat))
+        let tab = Tab(uid: "fresh", fireTab: false)
         store.observeTabsModel(tabsModel)
         tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
 
@@ -261,19 +262,20 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         sut.observeTabsModel(normalModel)
         sut.observeTabsModel(fireModel)
 
-        let normalTab = Tab(uid: "normal-1", fireTab: false, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .search))
-        let fireTab = Tab(uid: "fire-1", fireTab: true, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .aiChat))
+        let normalTab = Tab(uid: "normal-1", fireTab: false)
+        let fireTab = Tab(uid: "fire-1", fireTab: true)
         normalModel.insert(tab: normalTab, placement: .atEnd, selectNewTab: true)
         fireModel.insert(tab: fireTab, placement: .atEnd, selectNewTab: true)
 
-        XCTAssertEqual(sut.state(for: "normal-1").toggleMode, .search)
-        XCTAssertEqual(sut.state(for: "fire-1").toggleMode, .aiChat)
-
+        sut.update(TabInputState(text: "normal kept"), for: "normal-1")
         sut.update(TabInputState(text: "fire kept"), for: "fire-1")
+        XCTAssertEqual(sut.state(for: "normal-1").text, "normal kept")
+        XCTAssertEqual(sut.state(for: "fire-1").text, "fire kept")
+
         fireModel.remove(tab: fireTab)
         XCTAssertEqual(sut.state(for: "fire-1").text, "")
         // Normal-tab entry must still be present.
-        XCTAssertEqual(sut.state(for: "normal-1").toggleMode, .search)
+        XCTAssertEqual(sut.state(for: "normal-1").text, "normal kept")
     }
 }
 

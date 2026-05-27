@@ -76,7 +76,7 @@ class BlankSnapshotViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
+        tabSwitcherButton = TabSwitcherStaticButton()
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -131,6 +131,7 @@ class BlankSnapshotViewController: UIViewController {
     }
 
     private func configureTabBar() {
+        // featureFlagger / aiChatSettings intentionally nil — the Duck.ai pill stays hidden on the snapshot overlay.
         let controller = TabsBarViewController.createFromXib()
         controller.view.frame = CGRect(x: 0, y: 24, width: view.frame.width, height: 40)
         controller.view.translatesAutoresizingMaskIntoConstraints = false

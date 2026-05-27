@@ -23,5 +23,8 @@ import Foundation
 final class MockTunnelStateProvider: TunnelStateProviding {
     var connectionStatus: ConnectionStatus = .disconnected
     var currentServerSelectionMethod: NetworkProtectionServerSelectionMethod = .automatic
+    var lastSelectedServer: NetworkProtectionServer?
     var lastSelectedServerInfo: NetworkProtectionServerInfo?
+    var tunnelInterfaceName: String?
+    var excludeLocalNetworks: Bool = false
 }

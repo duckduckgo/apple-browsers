@@ -80,6 +80,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
     public let applicationNameForUserAgent: String?
+    public let contentBlocking: DBPWebViewContentBlocking?
     public var fetchedEmail: String?
     public var emailData: ExtractedEmailData = [:]
     private let actionsHandlerMode: ActionsHandlerMode
@@ -99,6 +100,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
                 actionsHandlerMode: ActionsHandlerMode,
+                contentBlocking: DBPWebViewContentBlocking? = nil,
                 shouldRunNextStep: @escaping () -> Bool) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
@@ -114,6 +116,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.actionsHandlerMode = actionsHandlerMode
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgent = applicationNameForUserAgent
+        self.contentBlocking = contentBlocking
     }
 
     public func optOut(profileQuery: BrokerProfileQueryData,

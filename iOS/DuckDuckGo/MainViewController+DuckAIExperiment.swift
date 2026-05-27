@@ -70,6 +70,14 @@ private enum ExperimentDuckAIFireOnboardingMetrics {
 
 extension MainViewController {
 
+    /// True when the Duck.ai Fire onboarding (query → Fire dialog) should run for the current user.
+    ///
+    /// Both the `onboardingDuckAIQueryTrackersDemoExperiment` experiment in the default flow and the Duck.ai tailored flow
+    /// drive the same Fire-onboarding code path; either being active is sufficient.
+    var isDuckAIFireFlowEnabled: Bool {
+        featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) || onboardingManager.currentOnboardingFlow == .duckAI
+    }
+
     // MARK: Session setup
 
     func enforceSingleTabAfterOnboardingIfNeeded() {
@@ -90,7 +98,7 @@ extension MainViewController {
     // MARK: Fire dialog triggering
 
     func showExperimentFireDialogAfterAIChatResponseIfReady() {
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+        guard isDuckAIFireFlowEnabled else {
             if experimentDuckAIFireOnboardingFlow.state != .completed {
                 experimentDuckAIFireOnboardingFlow.state = .idle
             }
@@ -106,10 +114,17 @@ extension MainViewController {
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
         experimentDuckAIFireOnboardingFlow.state = .active
-        onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+        // The Duck.ai flow persists the interlude step `.interludeDuckAI` when the interlude started;
+        // The reason is that for that specific flow the Duck.ai chat happens in between the linear onboarding and the linear flow needs to resume when the interlude (Duck.ai chat) finishes
+        // Overwriting it the resume step with `.duckAIAnswerStep` would lose the signal that linear onboarding needs to resume on relaunch.
+        if linearOnboardingContext?.activeInterlude != .duckAI {
+            onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+        }
         applyExperimentDuckAIFireChromeState()
         setExperimentFireControlsLocked(true)
-        showFireButtonPulse()
+        if presentedViewController == nil {
+            showFireButtonPulse()
+        }
         currentTab?.presentExperimentContextualDaxFireDialog()
     }
 
@@ -156,6 +171,10 @@ extension MainViewController {
         swipeTabsCoordinator?.isEnabled = !locked
         viewCoordinator.omniBar.barView.isUserInteractionEnabled = !locked
         viewCoordinator.omniBar.barView.menuButton.isUserInteractionEnabled = !locked
+
+        // Lock Duck.ai unified input controls during the fire onboarding step.
+        aiChatTabChatHeaderView?.setOnboardingLocked(locked)
+        unifiedToggleInputCoordinator?.setOnboardingControlsLocked(locked)
     }
 
     // MARK: Completion
@@ -164,9 +183,15 @@ extension MainViewController {
         experimentDuckAIFireOnboardingFlow.state = .completed
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+        // The experiment path skips fireButtonPulseStarted() so no timer auto-hides the highlight.
+        // Dismiss it explicitly now that the fire step is complete.
+        ViewHighlighter.hideAll()
+        daxDialogsManager.setAsChatFirstPath()
         daxDialogsManager.setFireEducationMessageSeen()
         setExperimentFireControlsLocked(false)
-        experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
+        if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
+        }
         if let tabToClose = currentTab?.tabModel {
             closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false)
         } else {
@@ -176,29 +201,21 @@ extension MainViewController {
         restorePostFireAddressBarPickerIfNeeded()
     }
 
-    func presentPendingExperimentCompletionDialogIfNeeded() {
-        guard experimentDuckAIFireOnboardingFlow.state == .completed,
-              let message = experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage,
-              let newTabPageViewController else {
-            return
-        }
-
-        ensureExperimentCompletionDialogPresentationPrerequisites()
-        DispatchQueue.main.async {
-            newTabPageViewController.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
-        }
-    }
-
     func markSearchContextualOnboardingAsSeenForExperiment() {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
         OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
-        ensureExperimentCompletionDialogPresentationPrerequisites()
+        ensureDuckAiCompletionDialogPresentationPrerequisites()
     }
 
-    private func ensureExperimentCompletionDialogPresentationPrerequisites() {
-        daxDialogsManager.disableContextualDaxDialogs()
+    func ensureDuckAiCompletionDialogPresentationPrerequisites() {
+        // Defer disabling dialogs when a subscription promo is still pending: the NTP's
+        // showNextDaxDialogNew will call dialogProvider.dismiss() (equivalent) after the
+        // promo is dismissed, so contextual dialogs are disabled at the right time.
+        if !daxDialogsManager.subscriptionPromotionPending {
+            daxDialogsManager.disableContextualDaxDialogs()
+        }
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }
@@ -231,15 +248,19 @@ extension MainViewController {
     // MARK: App resume
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
-            // Experiment steps are stale when the flag is off, so clear them to avoid resuming into a dead screen.
-            if [.duckAIAnswerStep, .duckAIQuerySelection].contains(onboardingResumeStepStore.resumeStep) {
+        guard isDuckAIFireFlowEnabled else {
+            // Stale checkpoints — clear them so a future session doesn't try to resume into a dead path.
+            if [.duckAIAnswerStep, .duckAIQuerySelection, .interludeDuckAI].contains(onboardingResumeStepStore.resumeStep) {
                 OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
             }
             return
         }
-        guard onboardingResumeStepStore.resumeStep == .duckAIAnswerStep,
-              currentTab?.isAITab == true else {
+        // `.duckAIAnswerStep` (experiment flow) and `.interludeDuckAI` (tailored flow) describe the same
+        // physical state — the Fire onboarding is mid-flight and needs its AI tab + Fire dialog restored.
+        guard
+            [.duckAIAnswerStep, .interludeDuckAI].contains(onboardingResumeStepStore.resumeStep),
+            currentTab?.isAITab == true
+        else {
             return
         }
 
@@ -293,7 +314,14 @@ extension MainViewController {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         self?.refreshOmniBar()
                     }
-                    self?.completeExperimentDuckAIFireOnboarding()
+                    // If Duck.ai flow resume linear onboarding first and then complete duck.ai query 
+                    if self?.linearOnboardingContext?.activeInterlude == .duckAI {
+                        self?.finishOnboardingInterlude {
+                            self?.completeExperimentDuckAIFireOnboarding()
+                        }
+                    } else {
+                        self?.completeExperimentDuckAIFireOnboarding()
+                    }
                 }
             },
             onCancel: { [weak self] in
@@ -312,8 +340,26 @@ extension MainViewController {
     func onboardingCompletedWithExperimentTransition(controller: UIViewController) {
         enforceSingleTabAfterOnboardingIfNeeded()
         let onboardingTransitionSnapshotView = showOnboardingTransitionSnapshot(from: controller)
+
+        // In UTI mode the coordinator is active immediately after openAIChatFromOnboarding fires.
+        // Calling setBarsVisibility(0) would kill the UTI session via dismissOmniBar(), so we take
+        // a simpler snapshot-only path: dismiss the intro modal, let UTI manage chrome, fade snapshot.
+        let isUTIActive = unifiedToggleInputCoordinator != nil
+
         controller.dismiss(animated: false) { [weak self] in
             guard let self else { return }
+
+            if isUTIActive {
+                // UTI manages its own chrome; just fade the snapshot away.
+                UIView.animate(withDuration: 0.3) {
+                    onboardingTransitionSnapshotView?.alpha = 0
+                } completion: { _ in
+                    self.hideOnboardingTransitionSnapshot(onboardingTransitionSnapshotView)
+                }
+                self.newTabPageViewController?.onboardingCompleted()
+                return
+            }
+
             let chromeRevealDelay: TimeInterval = 0.05
             let chromeRevealDuration: CGFloat = 0.25
             let onboardingTransitionBottomFillView = self.showOnboardingTransitionBottomFill()
@@ -354,7 +400,11 @@ extension MainViewController {
 
         if shouldArmExperimentFireOnboarding {
             experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
-            onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+            // Don't overwrite the tailored flow's interlude checkpoint with .duckAIAnswerStep as it's the signal that
+            // linear onboarding needs to resume after the Fire flow.
+            if linearOnboardingContext?.activeInterlude != .duckAI {
+                onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+            }
             onboardingResumeStepStore.resumeExperimentPrompt = query
             enforceSingleTabAfterOnboardingIfNeeded()
         } else if experimentDuckAIFireOnboardingFlow.state != .completed {

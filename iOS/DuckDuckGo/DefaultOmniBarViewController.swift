@@ -38,6 +38,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private var animateNextEditingTransition = true
     private var isSuppressingKeyboardTransfer = false
+    /// Applied to the next `OmniBarEditingStateViewController` at creation so the Dax logo
+    /// is never shown between the field activating and the chat-path completion dialog appearing.
+    private var pendingHideEditingStateLogo = false
 
     weak var unifiedToggleInputOmnibarActivating: UnifiedToggleInputOmnibarActivating?
 
@@ -108,9 +111,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return false
         }
 
-        if unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
-            currentText: extractCurrentTextForEditing(textField)
-        ) == .intercept {
+        let activationDecision = unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
+            currentText: extractCurrentTextForEditing(textField),
+            tapped: textFieldTapped)
+
+        if activationDecision == .intercept {
             return false
         }
 
@@ -190,6 +195,13 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         }
         super.endEditing()
         editingStateViewController?.dismissAnimated()
+    }
+
+    override func setEditingStateLogoHidden(_ hidden: Bool) {
+        // Always update the pending flag so the next created editing-state VC picks it up,
+        // even if a stale weak `editingStateViewController` ref is currently being torn down.
+        pendingHideEditingStateLogo = hidden
+        editingStateViewController?.setLogoHidden(hidden)
     }
 
     // MARK: - Layout
@@ -307,10 +319,13 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let escapeHatchModel = omniDelegate?.escapeHatchForEditingState()
+        let initialLogoHidden = pendingHideEditingStateLogo
+        pendingHideEditingStateLogo = false
         let editingStateViewController = OmniBarEditingStateViewController(
             switchBarHandler: switchBarHandler,
             duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
-            escapeHatchModel: escapeHatchModel
+            escapeHatchModel: escapeHatchModel,
+            initialLogoHidden: initialLogoHidden
         )
         editingStateViewController.delegate = self
 

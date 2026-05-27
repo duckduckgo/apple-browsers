@@ -60,6 +60,7 @@ public extension DesignSystemImages {
             public static var download: DesignSystemImage { .init(resource: .download12) }
             public static var downloads: DesignSystemImage { .init(resource: .downloads12) }
             public static var duckAi: DesignSystemImage { .init(resource: .duckAi12) }
+            public static var edit: DesignSystemImage { .init(resource: .edit12) }
             public static var email: DesignSystemImage { .init(resource: .email12) }
             public static var emailDisabled: DesignSystemImage { .init(resource: .emailDisabled12) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid12) }

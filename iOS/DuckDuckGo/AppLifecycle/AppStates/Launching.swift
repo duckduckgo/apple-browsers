@@ -19,6 +19,7 @@
 
 import AIChat
 import Core
+import DesignResourcesKitIcons
 import DuckAiDataStore
 import Persistence
 import PrivacyConfig
@@ -43,9 +44,7 @@ struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
     private let voiceSearchHelper = VoiceSearchHelper()
-    private let fireproofing: Fireproofing = UserDefaultsFireproofing(
-        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) }
-    )
+    private let fireproofing: Fireproofing = UserDefaultsFireproofing()
     private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
@@ -66,6 +65,13 @@ struct Launching: LaunchingHandling {
 
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
+
+        // Wire the DesignSystem rebrand singleton to the live feature flag.
+        // Consumed by `DesignSystemImages` accessors and the `Image(rebrandable:)` initializer
+        // so call sites don't need to read the flag directly.
+        AppRebrand.isAppRebranded = { [featureFlagger] in
+            featureFlagger.isFeatureOn(.appRebranding)
+        }
 
         favicons = Favicons(fireproofing: fireproofing)
 
@@ -127,6 +133,15 @@ struct Launching: LaunchingHandling {
             appConfigurationGroupName: Global.appConfigurationGroupName
         )
 
+        let adBlockingAvailabilityStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
+        let adBlockingAvailability: AdBlockingAvailabilityProviding = AdBlockingAvailability(
+            featureFlagger: featureFlagger,
+            isEnabledByUserProvider: { [featureFlagger] in
+                (try? adBlockingAvailabilityStorage.value(for: \.youTubeAdBlockingEnabled))
+                    ?? featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+            }
+        )
+
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
                                                             sync: syncService.sync,
@@ -137,7 +152,8 @@ struct Launching: LaunchingHandling {
                                                             keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                            fireModeStorageController: fireModeStorageController)
+                                                            fireModeStorageController: fireModeStorageController,
+                                                            adBlockingAvailability: adBlockingAvailability)
 
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,

@@ -22,6 +22,7 @@ import Core
 @testable import DuckDuckGo
 import SubscriptionTestingUtilities
 import BrowserServicesKit
+import Persistence
 import PersistenceTestingUtils
 import BrowserServicesKitTestsUtils
 import Combine
@@ -290,14 +291,88 @@ final class TabManagerTests: XCTestCase {
         XCTAssertNil(normalModel.tabs.first?.link?.url.absoluteString)
     }
 
+    // MARK: - Save debouncing
+
+    func testSave_coalescesBurst_writesOnce() throws {
+        let countingStore = CountingThrowingKeyValueStore()
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.insert(tab: Tab(link: Link(title: "a", url: URL(string: "https://a.com")!)),
+                         placement: .atEnd, selectNewTab: false)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.tabsSaveOptimization]
+        let manager = try makeManager(tabsModel, featureFlagger: flagger, normalStore: countingStore)
+
+        for _ in 0..<10 {
+            manager.save()
+        }
+
+        // Wait for the debounce window (300 ms) + persist queue.
+        let debounceWindow = expectation(description: "debounce settle")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { debounceWindow.fulfill() }
+        wait(for: [debounceWindow], timeout: 2.0)
+
+        XCTAssertEqual(countingStore.setCount, 1, "10 rapid save() calls should coalesce into 1 disk write")
+    }
+
+    func testSave_firesWithinMaxWaitUnderSustainedActivity() throws {
+        let countingStore = CountingThrowingKeyValueStore()
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.insert(tab: Tab(link: Link(title: "a", url: URL(string: "https://a.com")!)),
+                         placement: .atEnd, selectNewTab: false)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.tabsSaveOptimization]
+        let manager = try makeManager(tabsModel, featureFlagger: flagger, normalStore: countingStore)
+
+        // Drive save() faster than the debounce window for ~1.5 s.
+        let start = Date()
+        let firingDone = expectation(description: "sustained activity loop")
+        func keepCalling() {
+            manager.save()
+            if Date().timeIntervalSince(start) < 1.5 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: keepCalling)
+            } else {
+                firingDone.fulfill()
+            }
+        }
+        keepCalling()
+        wait(for: [firingDone], timeout: 3.0)
+
+        // Allow the persist queue to drain.
+        let drain = expectation(description: "queue drain")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { drain.fulfill() }
+        wait(for: [drain], timeout: 2.0)
+
+        XCTAssertGreaterThanOrEqual(countingStore.setCount, 1,
+                                    "max-wait should force at least one write within ~1 s of sustained saves")
+    }
+
+    func testFlushPendingSave_writesImmediately() throws {
+        let countingStore = CountingThrowingKeyValueStore()
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.insert(tab: Tab(link: Link(title: "a", url: URL(string: "https://a.com")!)),
+                         placement: .atEnd, selectNewTab: false)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.tabsSaveOptimization]
+        let manager = try makeManager(tabsModel, featureFlagger: flagger, normalStore: countingStore)
+
+        manager.save()
+        // No wait. flushPendingSave should drain synchronously.
+        _ = manager.flushPendingSave()
+
+        XCTAssertGreaterThanOrEqual(countingStore.setCount, 1,
+                                    "flushPendingSave should write synchronously without waiting for debounce")
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
                      historyManager: MockHistoryManager = MockHistoryManager(),
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
-                     launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager()) throws -> TabManager {
+                     launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager(),
+                     normalStore: ThrowingKeyValueStoring? = nil) throws -> TabManager {
         FireModeCapability.resolve(using: featureFlagger)
-        let tabsPersistence = TabsModelPersistence(normalStore: MockKeyValueFileStore(),
+        let normalStore = try normalStore ?? MockKeyValueFileStore(throwOnInit: nil)
+        let tabsPersistence = TabsModelPersistence(normalStore: normalStore,
                                                    fireStore: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
         let fireModel = fireModel ?? TabsModel(tabs: [], desktop: false, mode: .fire)
@@ -333,7 +408,34 @@ final class TabManagerTests: XCTestCase {
                           privacyStats: MockPrivacyStats(),
                           voiceSearchHelper: MockVoiceSearchHelper(),
                           launchSourceManager: launchSourceManager,
-                          darkReaderFeatureSettings: MockDarkReaderFeatureSettings())
+                          darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+                          adBlockingAvailability: StubAdBlockingAvailability())
     }
 
+}
+
+/// Counts `set` calls so tests can assert how many disk writes actually landed.
+private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unchecked Sendable {
+    private(set) var setCount = 0
+    private(set) var storedValue: Any?
+    private let lock = NSLock()
+
+    func object(forKey defaultName: String) throws -> Any? {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedValue
+    }
+
+    func set(_ value: Any?, forKey defaultName: String) throws {
+        lock.lock()
+        setCount += 1
+        storedValue = value
+        lock.unlock()
+    }
+
+    func removeObject(forKey defaultName: String) throws {
+        lock.lock()
+        storedValue = nil
+        lock.unlock()
+    }
 }

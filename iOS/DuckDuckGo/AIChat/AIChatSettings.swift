@@ -122,6 +122,11 @@ final class AIChatSettings: AIChatSettingsProvider {
             && isAIChatEnabled
     }
 
+    var isAIChatNavigationBarUserSettingsEnabled: Bool {
+        keyValueStore.bool(.showAIChatNavigationBarKey, defaultValue: .showAIChatNavigationBarDefaultValue)
+            && isAIChatEnabled
+    }
+
     var isAIChatVoiceSearchUserSettingsEnabled: Bool {
         keyValueStore.bool(.showAIChatVoiceSearchKey, defaultValue: .showAIChatVoiceSearchDefaultValue)
             && isAIChatEnabled
@@ -236,6 +241,11 @@ final class AIChatSettings: AIChatSettingsProvider {
         }
     }
 
+    func enableAIChatNavigationBarUserSettings(enable: Bool) {
+        keyValueStore.set(enable, forKey: .showAIChatNavigationBarKey)
+        triggerSettingsChangedNotification()
+    }
+
     func enableChatSuggestions(enable: Bool) {
         keyValueStore.set(enable, forKey: .showChatSuggestionsKey)
         triggerSettingsChangedNotification()
@@ -305,6 +315,7 @@ private extension String {
     static let showAIChatAddressBarKey = "aichat.settings.showAIChatAddressBar"
     static let showAIChatVoiceSearchKey = "aichat.settings.showAIChatVoiceSearch"
     static let showAIChatTabSwitcherKey = "aichat.settings.showAIChatTabSwitcher"
+    static let showAIChatNavigationBarKey = "aichat.settings.showAIChatNavigationBar"
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
     static let showChatSuggestionsKey = "aichat.settings.showChatSuggestions"
     static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
@@ -318,6 +329,7 @@ enum LegacyAiChatUserDefaultsKeys {
     static let showAIChatAddressBarKey: String = .showAIChatAddressBarKey
     static let showAIChatVoiceSearchKey: String = .showAIChatVoiceSearchKey
     static let showAIChatTabSwitcherKey: String = .showAIChatTabSwitcherKey
+    static let showAIChatNavigationBarKey: String = .showAIChatNavigationBarKey
     static let showAIChatExperimentalSearchInputKey: String = .showAIChatExperimentalSearchInputKey
     static let defaultOmnibarModeKey: String = .defaultOmnibarModeKey
 
@@ -332,6 +344,7 @@ private extension Bool {
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
+    static let showAIChatNavigationBarDefaultValue = true
     static let showAIChatExperimentalSearchInputDefaultValue = false
     static let showChatSuggestionsDefaultValue = true
 

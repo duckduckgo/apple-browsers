@@ -344,7 +344,7 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_optoutjob_at-42-days_unconfirmed": {
         "description": "Fired when a successfully submitted opt-out reaches 42 days since submission and remains unconfirmed (record not removed).",
@@ -367,7 +367,8 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpActionId",
-            "dbpActionDuration"
+            "dbpActionDuration",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_condition-not-found": {
@@ -390,7 +391,8 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpActionId",
-            "dbpActionDuration"
+            "dbpActionDuration",
+            "channel"
         ]
     },
     "m_mac_dbp_service_generate-email_http-error": {

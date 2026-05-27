@@ -36,6 +36,7 @@ let package = Package(
         .package(path: "../BrowserServicesKit"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
         .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.0"),
+        .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.1.0"),
     ],
     targets: [
         .target(
@@ -48,6 +49,7 @@ let package = Package(
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 "ZIPFoundation",
                 .product(name: "Algorithms", package: "swift-algorithms"),
+                "TrackerRadarKit",
             ],
             resources: [.copy("BundleResources")],
             swiftSettings: [

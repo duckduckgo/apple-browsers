@@ -143,6 +143,75 @@ final class AIChatUserScriptTests: XCTestCase {
 
         XCTAssertTrue(mockHandler.didGetAIChatTabContent, "getAIChatTabContent should be called")
     }
+
+    // MARK: - Open Settings handshake
+
+    @MainActor func testRequestOpenSettingsActionArmsHandshake() {
+        XCTAssertFalse(userScript.pendingOpenSettingsAction, "Handshake should not be armed by default")
+
+        userScript.requestOpenSettingsAction()
+
+        XCTAssertTrue(userScript.pendingOpenSettingsAction, "requestOpenSettingsAction should arm the handshake")
+    }
+
+    @MainActor func testOpenSettingsHandshakeStaysPendingAfterFirstMessage() {
+        userScript.requestOpenSettingsAction()
+
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+
+        XCTAssertTrue(userScript.pendingOpenSettingsAction,
+                      "Single page message must not fire the push — JS subscriptions are not guaranteed wired yet")
+    }
+
+    @MainActor func testOpenSettingsHandshakeFiresAfterSecondMessage() {
+        userScript.requestOpenSettingsAction()
+
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue)
+
+        XCTAssertFalse(userScript.pendingOpenSettingsAction,
+                       "Second page message must clear the pending flag (push fired)")
+    }
+
+    @MainActor func testOpenSettingsHandshakeIgnoresUnknownMethods() {
+        userScript.requestOpenSettingsAction()
+
+        // Two unknown method names — resolveHandler returns nil, so neither should count.
+        _ = userScript.handler(forMethodNamed: "definitelyNotAKnownMethod")
+        _ = userScript.handler(forMethodNamed: "stillNotKnown")
+
+        XCTAssertTrue(userScript.pendingOpenSettingsAction,
+                      "Unknown methods must not count toward the readiness handshake")
+    }
+
+    @MainActor func testMessagesWithoutRequestDoNotArmHandshake() {
+        // Two known messages, but no requestOpenSettingsAction() — the handshake must stay unarmed
+        // so the next time it IS armed, it starts fresh from zero.
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue)
+
+        XCTAssertFalse(userScript.pendingOpenSettingsAction)
+
+        userScript.requestOpenSettingsAction()
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+
+        XCTAssertTrue(userScript.pendingOpenSettingsAction,
+                      "Pre-arm messages must not be counted: one post-arm message should still leave the handshake pending")
+    }
+
+    @MainActor func testOpenSettingsHandshakeIsOneShot() {
+        userScript.requestOpenSettingsAction()
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue)
+        XCTAssertFalse(userScript.pendingOpenSettingsAction)
+
+        // Subsequent messages must not re-fire — the next request must be explicitly armed.
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue)
+
+        XCTAssertFalse(userScript.pendingOpenSettingsAction,
+                       "Handshake must not re-arm itself after firing")
+    }
 }
 
 // swiftlint:disable inclusive_language

@@ -194,6 +194,11 @@ struct IsInstalledMacAppStoreMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct OSUpgradeCapabilityMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
 struct PinnedTabsMatchingAttribute: NumericRangeMatching {
     var min: Int = MatchingAttributeDefaults.intDefaultValue
     var max: Int = MatchingAttributeDefaults.intDefaultMaxValue

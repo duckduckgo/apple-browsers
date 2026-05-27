@@ -3438,7 +3438,7 @@ class MainViewController: UIViewController {
         // Open in a new tab when the current tab has real content to preserve. NTP becomes the chat tab in-place.
         // Gated on the unified input so legacy chrome keeps its current in-tab behavior, except for deep links
         // which already opened new tabs over existing content.
-        if (unifiedToggleInputFeature.isAvailable || fromDeepLink),
+        if unifiedToggleInputFeature.isAvailable || fromDeepLink,
            let currentTab,
            currentTab.tabModel.link != nil {
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)

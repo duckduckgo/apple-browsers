@@ -35,6 +35,15 @@ enum DuckAIChromeShortcutVisibility {
     static func isSettingsRowVisible(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
         isIPad && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
     }
+
+    /// No `isIPad` parameter — the only caller (`TabsBarViewController`) is iPad-only by construction.
+    static func isChromeButtonVisible(
+        featureFlagger: FeatureFlagger,
+        isAIChatNavigationBarUserSettingsEnabled: Bool
+    ) -> Bool {
+        featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+            && isAIChatNavigationBarUserSettingsEnabled
+    }
 }
 
 struct SettingsAIChatShortcutsView: View {

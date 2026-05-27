@@ -383,9 +383,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case duckAIVoiceShortcut
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213687255181524
-    case fireproofingETLDPlus1
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
@@ -409,6 +406,11 @@ public enum FeatureFlag: String {
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
+
+    /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
+    /// Kill switch in case the new path regresses persistence reliability or hang counts.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
+    case tabsSaveOptimization
 
     /// Failsafe feature flag. Routes tapped .ics calendar links through EKEventEditViewController.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214740849233380
@@ -705,8 +707,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:
             Config(source: .remoteReleasable(AIChatSubfeature.voiceShortcut))
-        case .fireproofingETLDPlus1:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireproofingETLDPlus1))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .aiChatContextualFireButton:
@@ -723,6 +723,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
+        case .tabsSaveOptimization:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabsSaveOptimization))
         case .icsCalendarLinks:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.icsCalendarLinks))
         case .aiChatChromeShortcutIPad:

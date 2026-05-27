@@ -44,9 +44,7 @@ struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
     private let voiceSearchHelper = VoiceSearchHelper()
-    private let fireproofing: Fireproofing = UserDefaultsFireproofing(
-        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) }
-    )
+    private let fireproofing: Fireproofing = UserDefaultsFireproofing()
     private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager

@@ -2416,7 +2416,7 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .initSuccess:
             PixelKit.fire(GeneralPixel.duckAiNativeStorageInitSuccess)
         case .initError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageInitError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageInitError, error: error), frequency: .dailyAndStandard)
         case .migrationDone(let key):
             PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneUnique(key: key), frequency: .uniqueByName)
             PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneCount(key: key))
@@ -2429,25 +2429,25 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .migrationError(let error):
             PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageMigrationError, error: error))
         case .settingsPutError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsPutError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsPutError, error: error), frequency: .dailyAndStandard)
         case .settingsGetError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsGetError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsGetError, error: error), frequency: .dailyAndStandard)
         case .settingsDeleteError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsDeleteError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsDeleteError, error: error), frequency: .dailyAndStandard)
         case .chatPutError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatPutError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatPutError, error: error), frequency: .dailyAndStandard)
         case .chatGetError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatGetError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatGetError, error: error), frequency: .dailyAndStandard)
         case .chatDeleteError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatDeleteError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatDeleteError, error: error), frequency: .dailyAndStandard)
         case .filePutError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFilePutError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFilePutError, error: error), frequency: .dailyAndStandard)
         case .fileGetError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileGetError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileGetError, error: error), frequency: .dailyAndStandard)
         case .fileListError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileListError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileListError, error: error), frequency: .dailyAndStandard)
         case .fileDeleteError(let error):
-            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileDeleteError, error: error))
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileDeleteError, error: error), frequency: .dailyAndStandard)
         case .lastUsedModelParseError:
             break
         case .lastUsedReasoningModeParseError:

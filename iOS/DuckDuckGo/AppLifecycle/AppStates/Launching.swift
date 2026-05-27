@@ -450,7 +450,9 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .initSuccess:
             Pixel.fire(pixel: .duckAiNativeStorageInitSuccess)
         case .initError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageInitError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageInitError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .migrationDone(let key):
             UniquePixel.fire(pixel: .duckAiNativeStorageMigrationDoneUnique(key: key))
             Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneCount(key: key))
@@ -463,29 +465,53 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .migrationError(let error):
             Pixel.fire(pixel: .duckAiNativeStorageMigrationError, error: error)
         case .settingsPutError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageSettingsPutError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsPutError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .settingsGetError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageSettingsGetError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsGetError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .settingsDeleteError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageSettingsDeleteError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsDeleteError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .chatPutError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageChatPutError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatPutError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .chatGetError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageChatGetError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatGetError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .chatDeleteError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageChatDeleteError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatDeleteError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .filePutError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageFilePutError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFilePutError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .fileGetError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageFileGetError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileGetError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .fileListError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageFileListError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileListError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .fileDeleteError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageFileDeleteError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileDeleteError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .lastUsedModelParseError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageLastUsedModelParseError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageLastUsedModelParseError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .lastUsedReasoningModeParseError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageLastUsedReasoningModeParseError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageLastUsedReasoningModeParseError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         }
     }
 }

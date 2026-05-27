@@ -546,6 +546,113 @@ final class PixelKitTests: XCTestCase {
         wait(for: [fireCallbackCalled], timeout: 0.5)
     }
 
+    /// We test firing a monthly pixel for the first time executes the fire request callback with the `_monthly` suffix.
+    ///
+    func testFiringMonthlyPixelForTheFirstTime() {
+        let appVersion = "1.0.5"
+        let headers = ["a": "2", "b": "3", "c": "2000"]
+        let event = TestEventV2.dailyEvent
+        let userDefaults = userDefaults()
+
+        let expectedPixelName = "m_mac_\(event.name)_monthly"
+        let fireCallbackCalled = expectation(description: "Expect the pixel firing callback to be called")
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: appVersion,
+                                source: PixelKit.Source.macDMG.rawValue,
+                                defaultHeaders: headers,
+                                dailyPixelCalendar: nil,
+                                defaults: userDefaults) { firedPixelName, _, _, _, _, _ in
+            fireCallbackCalled.fulfill()
+            XCTAssertEqual(expectedPixelName, firedPixelName)
+        }
+
+        pixelKit.fire(event, frequency: .monthly)
+
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
+    /// We test firing a monthly pixel a second time in the same calendar month does not execute the fire request callback.
+    ///
+    func testMonthlyPixelDoubleFiringFrequency() {
+        let appVersion = "1.0.5"
+        let headers = ["a": "2", "b": "3", "c": "2000"]
+        let event = TestEventV2.dailyEvent
+        let userDefaults = userDefaults()
+
+        let fireCallbackCalled = expectation(description: "Expect the pixel firing callback to be called")
+        fireCallbackCalled.expectedFulfillmentCount = 1
+        fireCallbackCalled.assertForOverFulfill = true
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: appVersion,
+                                source: PixelKit.Source.macDMG.rawValue,
+                                defaultHeaders: headers,
+                                dailyPixelCalendar: nil,
+                                defaults: userDefaults) { _, _, _, _, _, _ in
+            fireCallbackCalled.fulfill()
+        }
+
+        pixelKit.fire(event, frequency: .monthly)
+        pixelKit.fire(event, frequency: .monthly)
+
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
+    /// Test that monthly pixels fire once per calendar month (UTC), not on a rolling 30-day window.
+    ///
+    func testMonthlyPixelFrequency() {
+        let appVersion = "1.0.5"
+        let headers = ["a": "2", "b": "3", "c": "2000"]
+        let event = TestEventV2.dailyEvent
+        let userDefaults = userDefaults()
+
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.locale = Locale(identifier: "en_US_POSIX")
+        // Start on the 15th of a month so we can travel to month-end and across a year boundary.
+        let startDate = calendar.date(from: .init(year: 2025, month: 1, day: 15))!
+        let timeMachine = TimeMachine(calendar: calendar, date: startDate)
+
+        let fireCallbackCalled = expectation(description: "Expect the pixel firing callback to be called")
+        fireCallbackCalled.expectedFulfillmentCount = 3
+        fireCallbackCalled.assertForOverFulfill = true
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: appVersion,
+                                defaultHeaders: headers,
+                                dailyPixelCalendar: calendar,
+                                dateGenerator: timeMachine.now,
+                                defaults: userDefaults) { _, _, _, _, _, _ in
+            fireCallbackCalled.fulfill()
+        }
+
+        // Jan 15: first fire — Fired
+        pixelKit.fire(event, frequency: .monthly)
+
+        // Jan 16: same month — Skipped
+        timeMachine.travel(by: .day, value: 1)
+        pixelKit.fire(event, frequency: .monthly)
+
+        // Jan 31: still January — Skipped
+        timeMachine.travel(by: .day, value: 15)
+        pixelKit.fire(event, frequency: .monthly)
+
+        // Feb 1: new calendar month — Fired
+        timeMachine.travel(by: .day, value: 1)
+        pixelKit.fire(event, frequency: .monthly)
+
+        // Feb 28: still February — Skipped
+        timeMachine.travel(by: .day, value: 27)
+        pixelKit.fire(event, frequency: .monthly)
+
+        // Jan 15 next year: same month-of-year but different year — Fired
+        timeMachine.travel(by: .month, value: 11)
+        pixelKit.fire(event, frequency: .monthly)
+
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
     func testWhenChannelIsNilThenPixelOmitsChannelParameter() {
         let fireCallbackCalled = expectation(description: "Pixel fired")
 

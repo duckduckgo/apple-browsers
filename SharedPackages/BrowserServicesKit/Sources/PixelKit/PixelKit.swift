@@ -41,6 +41,9 @@ public final class PixelKit {
         /// Sent once per day. The last timestamp for this pixel is stored and compared to the current date. Pixels of this type will have `_daily` appended to their name.
         case daily
 
+        /// Sent once per calendar month (UTC). The last timestamp for this pixel is stored and compared to the current date. Pixels of this type will have `_monthly` appended to their name.
+        case monthly
+
         /// Sent once per day with a `_daily` suffix, in addition to every time it is called with a `_count` suffix.
         /// This means a pixel will get sent twice the first time it is called per-day, and subsequent calls that day will only send the `_count` variant.
         /// This is useful in situations where pixels receive spikes in volume, as the daily pixel can be used to determine how many users are actually affected.
@@ -76,6 +79,8 @@ public final class PixelKit {
                 "Unique"
             case .daily:
                 "Daily"
+            case .monthly:
+                "Monthly"
             case .dailyAndCount:
                 "Daily and Count"
             case .dailyAndStandard:
@@ -217,6 +222,9 @@ public final class PixelKit {
             if frequency == .daily, pixelHasBeenFiredToday(pixelName) {
                 onComplete(false, nil)
                 return
+            } else if frequency == .monthly, pixelHasBeenFiredThisMonth(pixelName) {
+                onComplete(false, nil)
+                return
             } else if frequency == .uniqueByName, pixelHasBeenFiredEver(pixelName) {
                 onComplete(false, nil)
                 return
@@ -325,6 +333,8 @@ public final class PixelKit {
             handleUniqueByNameAndParameters(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .daily:
             handleDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+        case .monthly:
+            handleMonthly(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .dailyAndCount:
             handleDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .dailyAndStandard:
@@ -438,6 +448,27 @@ public final class PixelKit {
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .daily, parameters: newParams, skipped: true)
+        }
+    }
+
+    private func handleMonthly(_ pixelName: String,
+                               _ headers: [String: String],
+                               _ newParams: [String: String],
+                               _ allowedQueryReservedCharacters: CharacterSet?,
+                               _ onComplete: @escaping CompletionBlock) {
+        reportErrorIf(pixel: pixelName, endsWith: "_u")
+        reportErrorIf(pixel: pixelName, endsWith: "_monthly") // Because is added automatically
+        if !pixelHasBeenFiredThisMonth(pixelName) {
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName)
+                fireRequestWrapper(pixelName + "_monthly", headers, newParams, allowedQueryReservedCharacters, true, .monthly, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName + "_monthly", frequency: .monthly, parameters: newParams, skipped: true)
+                onComplete(false, nil)
+            }
+        } else {
+            printDebugInfo(pixelName: pixelName + "_monthly", frequency: .monthly, parameters: newParams, skipped: true)
         }
     }
 
@@ -776,6 +807,29 @@ public final class PixelKit {
             if let lastFireDate = try defaults.object(forKey: key) as? Date
                 ?? (try defaults.object(forKey: legacyKey) as? Date) {
                 return pixelCalendar.isDate(dateGenerator(), inSameDayAs: lastFireDate)
+            }
+            return false
+        } catch {
+            return true
+        }
+    }
+
+    private func pixelHasBeenFiredThisMonth(_ name: String) -> Bool {
+        guard !dryRun else {
+            if let lastFireDate = try? pixelLastFireDate(pixelName: name),
+               let twoMinsAgo = pixelCalendar.date(byAdding: .minute, value: -2, to: dateGenerator()) {
+                return lastFireDate >= twoMinsAgo
+            }
+
+            return false
+        }
+
+        do {
+            let key = userDefaultsKeyName(forPixelName: name)
+            let legacyKey = legacyUserDefaultsKeyName(forPixelName: name)
+            if let lastFireDate = try defaults.object(forKey: key) as? Date
+                ?? (try defaults.object(forKey: legacyKey) as? Date) {
+                return pixelCalendar.isDate(dateGenerator(), equalTo: lastFireDate, toGranularity: .month)
             }
             return false
         } catch {

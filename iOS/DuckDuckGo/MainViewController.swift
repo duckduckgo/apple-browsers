@@ -3781,7 +3781,10 @@ extension MainViewController: OmniBarDelegate {
 
     func onChatHistorySelected(url: URL) {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
-        loadUrlInNewTab(url, inheritedAttribution: nil)
+        // Route through the boundary helper so an NTP transforms in place into the chat tab,
+        // same as a prompt submission. Web/empty tab → chat URL crossing the boundary spawns a
+        // new tab; chat → chat stays in place. Matches `onPromptSubmitted` semantics.
+        loadUrlRespectingAIBoundary(url)
     }
 
     func onAIChatQueryUpdated(_ query: String) {

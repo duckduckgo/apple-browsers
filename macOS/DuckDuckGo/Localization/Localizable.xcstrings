@@ -84310,7 +84310,7 @@
     },
     "preferences.about.will-soon-be-unsupported-device-info-alert-header" : {
       "comment" : "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84370,7 +84370,7 @@
     },
     "preferences.about.will-soon-be-unsupported-device-info1" : {
       "comment" : "This string informs the user that DuckDuckGo will soon discontinue browser updates for their version of macOS",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84430,7 +84430,7 @@
     },
     "preferences.about.will-soon-be-unsupported-device-info2" : {
       "comment" : "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

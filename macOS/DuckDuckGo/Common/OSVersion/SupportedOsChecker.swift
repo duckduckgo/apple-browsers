@@ -275,10 +275,9 @@ final class BigSurEndOfSupportNoticePresenter {
 
     func showIfNeeded() {
         guard !persistor.dismissed else { return }
-        // Strong capture intentional: the presenter is created inline at the
-        // call site and has no other owner; weak capture would let it dealloc
-        // before the async block runs and the alert would silently no-op.
-        DispatchQueue.main.async {
+        // Delay so the first window + NTP can render before the modal
+        // blocks the main runloop.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.show()
         }
     }

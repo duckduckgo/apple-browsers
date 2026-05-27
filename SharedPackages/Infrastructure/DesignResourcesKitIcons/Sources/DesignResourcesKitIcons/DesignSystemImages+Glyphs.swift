@@ -515,14 +515,14 @@ public extension DesignSystemImages {
             public static var reset: DesignSystemImage { .init(resource: .reset24) }
             public static var resetSites: DesignSystemImage { .init(resource: .resetSites24) }
             public static var settings: DesignSystemImage { .init(resource: .settings24) }
-            public static var sheet: DesignSystemImage { .init(resource: .sheet24) }
-            public static var sheetOpen: DesignSystemImage { .init(resource: .sheetOpen24) }
             public static var shapeCircle: DesignSystemImage { .init(resource: .shapeCircle24) }
             public static var shield: DesignSystemImage { .init(resource: .shield24) }
             public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked24) }
             public static var shieldCheckSolid: DesignSystemImage { .init(resource: .shieldCheckSolid24) }
             public static var shareAndroid: DesignSystemImage { .init(resource: .shareAndroid24) }
             public static var shareApple: DesignSystemImage { .init(resource: .shareApple24) }
+            public static var sheet: DesignSystemImage { .init(resource: .sheet24) }
+            public static var sheetOpen: DesignSystemImage { .init(resource: .sheetOpen24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
             public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare24) }

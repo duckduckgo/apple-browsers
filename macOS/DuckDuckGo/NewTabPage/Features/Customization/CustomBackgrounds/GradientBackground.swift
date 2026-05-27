@@ -61,27 +61,6 @@ enum GradientBackground: String, Equatable, Identifiable, CaseIterable, ColorSch
         }
     }
 
-    var image: Image {
-        switch self {
-        case .gradient01:
-            Image(nsImage: .homePageBackgroundGradient01)
-        case .gradient02:
-            Image(nsImage: .homePageBackgroundGradient02)
-        case .gradient0201:
-            Image(nsImage: .homePageBackgroundGradient0201)
-        case .gradient03:
-            Image(nsImage: .homePageBackgroundGradient03)
-        case .gradient04:
-            Image(nsImage: .homePageBackgroundGradient04)
-        case .gradient05:
-            Image(nsImage: .homePageBackgroundGradient05)
-        case .gradient06:
-            Image(nsImage: .homePageBackgroundGradient06)
-        case .gradient07:
-            Image(nsImage: .homePageBackgroundGradient07)
-        }
-    }
-
     var colorScheme: ColorScheme {
         switch self {
         case .gradient01, .gradient02, .gradient0201, .gradient03:

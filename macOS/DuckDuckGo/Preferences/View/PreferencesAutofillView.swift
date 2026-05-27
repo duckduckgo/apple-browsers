@@ -24,9 +24,7 @@ import SwiftUI
 import SwiftUIExtensions
 
 fileprivate extension Preferences.Const {
-    static let autoLockWarningOffset: CGFloat = {
-        return 18
-    }()
+    static let autoLockWarningOffset: CGFloat = 18
 }
 
 extension Preferences {

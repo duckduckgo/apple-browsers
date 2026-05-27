@@ -44,15 +44,28 @@ final class AIChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting {
         }
         if let presentation = hostingController.sheetPresentationController {
             if #available(iOS 16.0, *) {
-                let fittingSize = hostingController.view.systemLayoutSizeFitting(
-                    CGSize(width: UIScreen.main.bounds.width, height: UIView.layoutFittingCompressedSize.height)
-                )
-                presentation.detents = [.custom { _ in fittingSize.height }]
+                let targetSize = measureTargetSize(for: sheet, in: viewController)
+                presentation.detents = [.custom { _ in targetSize.height }]
             } else {
                 presentation.detents = [.medium()]
             }
             presentation.prefersGrabberVisible = true
         }
         viewController.present(hostingController, animated: true)
+    }
+
+    @available(iOS 16.0, *)
+    @MainActor
+    private func measureTargetSize(for sheet: AIChatSyncIntroSheetView, in viewController: UIViewController) -> CGSize {
+        let sizeHostingController = UIHostingController(rootView: sheet)
+        sizeHostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        viewController.view.addSubview(sizeHostingController.view)
+        NSLayoutConstraint.activate([
+            sizeHostingController.view.widthAnchor.constraint(equalToConstant: viewController.view.frame.width)
+        ])
+        sizeHostingController.view.layoutIfNeeded()
+        let targetSize = sizeHostingController.view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        sizeHostingController.view.removeFromSuperview()
+        return targetSize
     }
 }

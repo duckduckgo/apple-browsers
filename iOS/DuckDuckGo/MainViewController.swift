@@ -4704,6 +4704,7 @@ extension MainViewController: EscapeHatchActionRouter {
         refreshTabIcon()
         refreshTabBar()
         ntpAfterIdleInstrumentation.escapeHatchCloseTabTapped()
+        postIdleSessionInstrumentation.closeTabTapped()
 
         if targetTabsModel.hasActiveTabs {
             return
@@ -4733,6 +4734,7 @@ extension MainViewController: EscapeHatchActionRouter {
             onConfirm: { [weak self] fireRequest in
                 self?.forgetAllWithAnimation(request: fireRequest) {}
                 self?.clearEscapeHatch()
+                self?.postIdleSessionInstrumentation.burnTabTapped()
             },
             onCancel: { }
         )
@@ -4758,6 +4760,7 @@ extension MainViewController: EscapeHatchActionRouter {
         forgetAllWithAnimation(request: request) {}
         clearEscapeHatch()
         ntpAfterIdleInstrumentation.escapeHatchBurnTapped(requiredConfirmation: false)
+        postIdleSessionInstrumentation.burnTabTapped()
     }
 
     func escapeHatchDidRequestTabSwitcher() {
@@ -4767,6 +4770,7 @@ extension MainViewController: EscapeHatchActionRouter {
 
     func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {
         ntpAfterIdleInstrumentation.escapeHatchOptionChanged(to: option)
+        postIdleSessionInstrumentation.openingScreenChanged()
     }
 }
 

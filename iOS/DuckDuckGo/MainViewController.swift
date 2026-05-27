@@ -1959,7 +1959,14 @@ class MainViewController: UIViewController {
         }
 
         if clearInProgress {
-            postClear = worker
+            // Compose with any already-deferred worker so a second `loadUrlInNewTab` call during
+            // the same clear doesn't silently drop the first one's completion (which stages
+            // prompt data via `AIChatPromptHandler.shared.setData`).
+            let previous = postClear
+            postClear = {
+                previous?()
+                worker()
+            }
         } else {
             worker()
         }
@@ -3438,9 +3445,12 @@ class MainViewController: UIViewController {
             // Preserve the pre-existing instrumentation parity: the in-place `load(...)` fall-through
             // below fires this, so the new-tab branch must too — otherwise idle-session telemetry
             // misses prompt submissions from content tabs once the unified-input boundary kicks in.
-            // The `barUsedFromNTP` half of `load()` does not apply here (this branch only fires when
-            // the current tab has content).
-            postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+            // Gated on `!fromDeepLink` so Universal Links / widget / icon-long-press opens (which
+            // didn't fire `.barUsed` in the legacy in-place branch) don't get reclassified as
+            // address-bar submissions.
+            if !fromDeepLink {
+                postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+            }
             // Stage prompt and per-tab payload inside loadUrlInNewTab's worker so they run in
             // lockstep with tab creation. This keeps the global AIChatPromptHandler.shared write
             // tight against the URL load (avoiding an extended window when loadUrlInNewTab defers
@@ -4733,15 +4743,6 @@ extension MainViewController: AutocompleteViewControllerDelegate {
 }
 
 extension MainViewController {
-    private func handleRequestedURL(_ url: URL) {
-        showKeyboardAfterFireButton?.cancel()
-
-        if url.isBookmarklet() {
-            executeBookmarklet(url)
-        } else {
-            loadUrlRespectingAIBoundary(url)
-        }
-    }
 }
 
 extension MainViewController: EscapeHatchActionRouter {

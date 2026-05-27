@@ -131,7 +131,7 @@ public final class PixelKit {
 
     private let logger = Logger(subsystem: "PixelKit", category: "PixelKit")
 
-    private static let defaultDailyPixelCalendar: Calendar = {
+    private static let defaultPixelCalendar: Calendar = {
         var calendar = Calendar.current
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         return calendar
@@ -160,7 +160,7 @@ public final class PixelKit {
                              source: String? = nil,
                              channel: String? = nil,
                              defaultHeaders: [String: String],
-                             dailyPixelCalendar: Calendar? = nil,
+                             pixelCalendar: Calendar? = nil,
                              dateGenerator: @escaping () -> Date = Date.init,
                              defaults: ThrowingKeyValueStoring,
                              fireRequest: @escaping FireRequest) {
@@ -169,7 +169,7 @@ public final class PixelKit {
                           source: source,
                           channel: channel,
                           defaultHeaders: defaultHeaders,
-                          dailyPixelCalendar: dailyPixelCalendar,
+                          pixelCalendar: pixelCalendar,
                           dateGenerator: dateGenerator,
                           defaults: defaults,
                           fireRequest: fireRequest)
@@ -186,7 +186,7 @@ public final class PixelKit {
                 source: String? = nil,
                 channel: String? = nil,
                 defaultHeaders: [String: String],
-                dailyPixelCalendar: Calendar? = nil,
+                pixelCalendar: Calendar? = nil,
                 dateGenerator: @escaping () -> Date = Date.init,
                 defaults: ThrowingKeyValueStoring,
                 fireRequest: @escaping FireRequest) {
@@ -196,7 +196,7 @@ public final class PixelKit {
         self.source = source
         self.channel = channel
         self.defaultHeaders = defaultHeaders
-        self.pixelCalendar = dailyPixelCalendar ?? Self.defaultDailyPixelCalendar
+        self.pixelCalendar = pixelCalendar ?? Self.defaultPixelCalendar
         self.dateGenerator = dateGenerator
         self.defaults = defaults
         self.fireRequest = fireRequest

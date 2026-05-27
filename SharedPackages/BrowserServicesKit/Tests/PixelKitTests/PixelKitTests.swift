@@ -115,7 +115,7 @@ final class PixelKitTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: true,
                                 appVersion: appVersion,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 defaults: userDefaults()) { _, _, _, _, _, _ in
             XCTFail("This callback should not be executed when doing a dry run")
         }
@@ -137,7 +137,7 @@ final class PixelKitTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: appVersion,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 defaults: userDefaults) { firedPixelName, firedHeaders, parameters, _, _, _ in
 
             fireCallbackCalled.fulfill()
@@ -163,7 +163,7 @@ final class PixelKitTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: appVersion,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 defaults: userDefaults) { firedPixelName, firedHeaders, parameters, _, _, _ in
 
             fireCallbackCalled.fulfill()
@@ -189,7 +189,7 @@ final class PixelKitTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: appVersion,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 defaults: userDefaults) { firedPixelName, firedHeaders, parameters, _, _, _ in
 
             fireCallbackCalled.fulfill()
@@ -219,7 +219,7 @@ final class PixelKitTests: XCTestCase {
                                 appVersion: appVersion,
                                 source: PixelKit.Source.macDMG.rawValue,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 defaults: userDefaults) { firedPixelName, firedHeaders, parameters, _, _, _ in
 
             fireCallbackCalled.fulfill()
@@ -265,7 +265,7 @@ final class PixelKitTests: XCTestCase {
                                 appVersion: appVersion,
                                 source: PixelKit.Source.macDMG.rawValue,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 defaults: userDefaults) { firedPixelName, firedHeaders, parameters, _, _, _ in
 
             fireCallbackCalled.fulfill()
@@ -312,7 +312,7 @@ final class PixelKitTests: XCTestCase {
                                 appVersion: appVersion,
                                 source: PixelKit.Source.macDMG.rawValue,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 defaults: userDefaults) { firedPixelName, firedHeaders, parameters, _, _, _ in
 
             fireCallbackCalled.fulfill()
@@ -358,7 +358,7 @@ final class PixelKitTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: appVersion,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 dateGenerator: timeMachine.now,
                                 defaults: userDefaults) { _, _, _, _, _, _ in
             fireCallbackCalled.fulfill()
@@ -401,7 +401,7 @@ final class PixelKitTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: appVersion,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 dateGenerator: timeMachine.now,
                                 defaults: userDefaults) { _, _, _, _, _, _ in
             fireCallbackCalled.fulfill()
@@ -443,7 +443,7 @@ final class PixelKitTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: appVersion,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 dateGenerator: timeMachine.now,
                                 defaults: userDefaults) { _, _, _, _, _, _ in
             fireCallbackCalled.fulfill()
@@ -493,7 +493,7 @@ final class PixelKitTests: XCTestCase {
         PixelKit.setUp(dryRun: true,
                        appVersion: "test",
                        defaultHeaders: [:],
-                       dailyPixelCalendar: calendar,
+                       pixelCalendar: calendar,
                        dateGenerator: timeMachine.now,
                        defaults: userDefaults()) { _, _, _, _, _, _ in }
 
@@ -561,7 +561,7 @@ final class PixelKitTests: XCTestCase {
                                 appVersion: appVersion,
                                 source: PixelKit.Source.macDMG.rawValue,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 defaults: userDefaults) { firedPixelName, _, _, _, _, _ in
             fireCallbackCalled.fulfill()
             XCTAssertEqual(expectedPixelName, firedPixelName)
@@ -588,7 +588,7 @@ final class PixelKitTests: XCTestCase {
                                 appVersion: appVersion,
                                 source: PixelKit.Source.macDMG.rawValue,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: nil,
+                                pixelCalendar: nil,
                                 defaults: userDefaults) { _, _, _, _, _, _ in
             fireCallbackCalled.fulfill()
         }
@@ -621,7 +621,7 @@ final class PixelKitTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: appVersion,
                                 defaultHeaders: headers,
-                                dailyPixelCalendar: calendar,
+                                pixelCalendar: calendar,
                                 dateGenerator: timeMachine.now,
                                 defaults: userDefaults) { _, _, _, _, _, _ in
             fireCallbackCalled.fulfill()

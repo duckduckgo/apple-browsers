@@ -5,11 +5,6 @@ appId: com.duckduckgo.mobile.ios
 - runFlow:
     file: constants.yaml
 
-# Duck Player is now nested under Ad Blocking — step back one level first.
-- tapOn: ${output.adBlockingLabel}
-
-- waitForAnimationToEnd
-
 - tapOn: ${output.settingsLabel}
 
 - waitForAnimationToEnd

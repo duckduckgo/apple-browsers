@@ -33,23 +33,34 @@ struct ReturnToTabCard: View {
     @State private var menuFrameInWindow: CGRect = .zero
 
     var body: some View {
-        Group {
+        GeometryReader { proxy in
             if model.isActionsEnabled {
-                SwipeActionView(onCommit: model.primarySwipeAction.perform) {
-                    contentView
-                } actions: {
-                    swipeableActionsView
-                }
-                .contextMenu {
-                    menuContentView
-                }
-                // We're Clipping with the shape `( ]` as the `swipeableActionsView` subview is not expected to be a perfect pill, on its right hand side during Swipe
-                .clipShape(LeftCapsuleShape())
+                bodyWithActions(width: proxy.size.width)
             } else {
                 contentView
             }
         }
         .frame(height: Metrics.height)
+    }
+
+    @ViewBuilder
+    private func bodyWithActions(width: CGFloat) -> some View {
+        SwipeActionView(onCommit: model.primarySwipeAction.perform) {
+            contentView
+        } actions: {
+            swipeableActionsView
+        }
+
+        // `.contentMenu` causes the Preview View to overlap with surrounding elements.
+        // We're relying on the `.contextMenu(preview:)` API, as it allows us to fine tune the Preview dimensions.
+        .contextMenuWithPreviewIfAvailable {
+            menuContentView
+        } preview: {
+            contentView
+                .frame(width: width, height: Metrics.height)
+        }
+        // We're Clipping with the shape `( ]` as the `swipeableActionsView` subview is not expected to be a perfect pill, on its right hand side during Swipe
+        .clipShape(LeftCapsuleShape())
     }
 
     private var contentView: some View {
@@ -59,13 +70,18 @@ struct ReturnToTabCard: View {
                 menuView
             }
         }
-        .padding(.horizontal, Metrics.horizontalPadding)
+        .padding(contentPaddingEdges, Metrics.horizontalPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .frame(height: Metrics.height)
         .background(
             Capsule()
                 .fill(Color(designSystemColor: .controlsFillSecondary))
         )
+    }
+
+    private var contentPaddingEdges: Edge.Set {
+        /// Avoid trailing padding when the Menu is visible
+        model.isActionsEnabled ? .leading : .horizontal
     }
 
     private var mainView: some View {

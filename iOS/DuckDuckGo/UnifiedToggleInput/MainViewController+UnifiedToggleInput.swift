@@ -77,6 +77,7 @@ extension MainViewController {
             host: .omnibar,
             isToggleEnabled: initialToggleEnabled,
             isFireTab: isCurrentTabFireTab(),
+            hidesToggleOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
@@ -712,6 +713,7 @@ private extension MainViewController {
             headerView.trailingAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.trailingAnchor),
             headerView.bottomAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.bottomAnchor),
         ])
+        headerView.setTabCount(tabManager.currentTabsModel.count)
         self.aiChatTabChatHeaderView = headerView
     }
 
@@ -1084,8 +1086,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onFirePressed()
     }
 
-    func unifiedToggleInputDidRequestDuckAIVoiceMode() {
-        onDuckAIVoiceModeRequested()
+    func unifiedToggleInputDidRequestAppMenu() {
+        onMenuPressed()
     }
 
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
@@ -1188,29 +1190,40 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         )
     }
 
-    func aiChatTabChatHeaderDidTapAppMenu() {
-        onMenuPressed()
-    }
-
-    /// Close the chat view by navigating to the new tab page. The chat tab itself is preserved
-    /// in the tab list — the canonical way back into a chat is via Duck.ai → Recent chats, which
-    /// covers the full chat history regardless of tab state, not the tab switcher. Reuses an
-    /// existing NTP if one exists, otherwise creates a fresh one.
+    /// Close the chat tab. Reuses an existing NTP after removal, otherwise creates a fresh one.
+    /// Chat content remains recoverable via Duck.ai → Recent chats.
     func aiChatTabChatHeaderDidTapClose() {
-        if let homeTab = tabManager.firstHomeTab() {
-            selectTab(homeTab)
+        guard let tab = currentTab?.tabModel else {
+            // The X is only visible from a Duck.ai tab header, which is only attached when a
+            // current tab exists — nil here means the header outlived its tab. Surface it.
+            assertionFailure("aiChatTabChatHeaderDidTapClose fired with no currentTab")
+            newTab(reuseExisting: true, allowingKeyboard: true)
             return
         }
-        tabManager.addHomeTab()
-        if let homeTab = tabManager.firstHomeTab() {
-            selectTab(homeTab)
-        }
+        closeTab(tab, behavior: .createOrReuseEmptyTab)
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {
         unifiedToggleInputCoordinator?.startNewChat()
         unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
         currentTab?.submitStartChatAction()
+    }
+
+    func aiChatTabChatHeaderDidTapNewVoiceChat() {
+        onDuckAIVoiceModeRequested()
+    }
+
+    func aiChatTabChatHeaderDidTapNewTab() {
+        newTab(reuseExisting: false, allowingKeyboard: true)
+    }
+
+    func aiChatTabChatHeaderDidTapNewFireTab() {
+        tabManager.setBrowsingMode(.fire, source: .aiChatHeaderPlusMenu)
+        newTab(reuseExisting: false, allowingKeyboard: true)
+    }
+
+    func aiChatTabChatHeaderDidTapTabSwitcher() {
+        showTabSwitcher()
     }
 }
 

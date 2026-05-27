@@ -2215,6 +2215,7 @@ class MainViewController: UIViewController {
         tabSwitcherButton?.tabCount = count
         tabSwitcherButton?.hasUnread = hasUnread
         tabSwitcherButton?.isFireMode = isFireMode
+        aiChatTabChatHeaderView?.setTabCount(count)
         omniBarTabSwitcherButton?.tabCount = count
         omniBarTabSwitcherButton?.hasUnread = hasUnread
         omniBarTabSwitcherButton?.isFireMode = isFireMode

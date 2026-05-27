@@ -24,9 +24,12 @@ import UIKit
 protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapChatList()
     func aiChatTabChatHeaderDidTapUpgrade()
-    func aiChatTabChatHeaderDidTapAppMenu()
     func aiChatTabChatHeaderDidTapClose()
     func aiChatTabChatHeaderDidTapNewChat()
+    func aiChatTabChatHeaderDidTapNewVoiceChat()
+    func aiChatTabChatHeaderDidTapNewTab()
+    func aiChatTabChatHeaderDidTapNewFireTab()
+    func aiChatTabChatHeaderDidTapTabSwitcher()
 }
 
 final class AIChatTabChatHeaderView: UIView {
@@ -46,6 +49,9 @@ final class AIChatTabChatHeaderView: UIView {
         static let pillButtonSize: CGFloat = 36
         static let paidIconSize: CGFloat = 16
         static let paidIconTitleSpacing: CGFloat = 6
+        /// Matches `TabSwitcherAnimatedButton.Constants.maxTextTabs` and `TabCountBadge.maxTextTabs`
+        /// so the header overflow threshold stays in sync with the main toolbar tab counter.
+        static let maxTextTabs = 100
     }
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
@@ -78,29 +84,14 @@ final class AIChatTabChatHeaderView: UIView {
         includeChrome: false
     )
 
-    private lazy var appMenuButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.menuHamburger,
-        accessibilityLabel: UserText.menuButtonHint,
-        action: #selector(appMenuTapped),
-        includeChrome: false
-    )
-
-    private lazy var leftPairPill: UIView = makePillContainer()
+    private lazy var closeButtonPill: UIView = makePillContainer()
+    private lazy var chatListButtonPill: UIView = makePillContainer()
     private lazy var rightPairPill: UIView = makePillContainer()
 
     private var titleSpacingConstraints: [NSLayoutConstraint] = []
 
-    private lazy var leftPairStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [closeButton, chatListButton])
-        stack.axis = .horizontal
-        stack.alignment = .center
-        stack.spacing = Constants.pillInnerIconSpacing
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
-
     private lazy var rightPairStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [newChatButton, appMenuButton])
+        let stack = UIStackView(arrangedSubviews: [newChatButton, tabSwitcherButton])
         stack.axis = .horizontal
         stack.alignment = .center
         stack.spacing = Constants.pillInnerIconSpacing
@@ -108,12 +99,93 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
-    private lazy var newChatButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.compose,
-        accessibilityLabel: UserText.aiChatHeaderNewChatAccessibilityLabel,
-        action: #selector(newChatTapped),
-        includeChrome: false
-    )
+    private lazy var tabSwitcherButton: UIButton = {
+        let button = makeIconButton(
+            image: DesignSystemImages.Glyphs.Size24.tabMobile,
+            accessibilityLabel: UserText.tabSwitcherAccessibilityLabel,
+            action: #selector(tabSwitcherTapped),
+            includeChrome: false
+        )
+        button.addSubview(tabCountLabel)
+        NSLayoutConstraint.activate([
+            tabCountLabel.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+            tabCountLabel.centerYAnchor.constraint(equalTo: button.centerYAnchor, constant: 1),
+        ])
+        return button
+    }()
+
+    private lazy var tabCountLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 11, weight: .semibold)
+        label.textColor = UIColor(designSystemColor: .icons)
+        label.textAlignment = .center
+        label.isUserInteractionEnabled = false
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.7
+        return label
+    }()
+
+    /// Updates the tab-counter glyph's displayed count. Call when the tab list changes.
+    /// Mirrors the threshold used by `TabSwitcherStaticView` so the header and the main
+    /// toolbar render the same overflow symbol when there are many tabs.
+    func setTabCount(_ count: Int) {
+        assert(count > 0, "Duck.ai chat header is only visible inside a tab, so tab count should be ≥ 1; got \(count)")
+        guard count > 0 else {
+            tabCountLabel.text = nil
+            return
+        }
+        tabCountLabel.text = count >= Constants.maxTextTabs ? "∞" : "\(count)"
+    }
+
+    private lazy var newChatButton: UIButton = {
+        // Selector is kept only to satisfy `makeIconButton`'s non-optional `action:` parameter;
+        // `showsMenuAsPrimaryAction = true` means the menu opens on tap and the selector
+        // never fires at runtime.
+        let button = makeIconButton(
+            image: DesignSystemImages.Glyphs.Size24.add,
+            accessibilityLabel: UserText.aiChatHeaderPlusMenuAccessibilityLabel,
+            action: #selector(newChatTapped),
+            includeChrome: false
+        )
+        button.menu = makeNewChatPlusMenu()
+        button.showsMenuAsPrimaryAction = true
+        // Clip the button itself to the pill shape — without this, UIKit's transient
+        // highlight on menu dismiss renders as a rectangle against the surrounding pill.
+        button.layer.cornerRadius = Constants.pillButtonSize / 2
+        button.clipsToBounds = true
+        return button
+    }()
+
+    private func makeNewChatPlusMenu() -> UIMenu {
+        let newChat = UIAction(
+            title: UserText.aiChatHeaderNewChatTitle,
+            image: DesignSystemImages.Glyphs.Size24.compose
+        ) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewChat()
+        }
+        let newVoiceChat = UIAction(
+            title: UserText.aiChatHeaderNewVoiceChatTitle,
+            image: DesignSystemImages.Glyphs.Size24.voice
+        ) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewVoiceChat()
+        }
+        let newTab = UIAction(
+            title: UserText.aiChatHeaderNewTabTitle,
+            image: DesignSystemImages.Glyphs.Size24.tabNew
+        ) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewTab()
+        }
+        let newFireTab = UIAction(
+            title: UserText.aiChatHeaderNewFireTabTitle,
+            image: DesignSystemImages.Glyphs.Size24.fireTabs
+        ) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewFireTab()
+        }
+        let inTabGroup = UIMenu(options: .displayInline, children: [newChat, newVoiceChat])
+        let newTabGroup = UIMenu(options: .displayInline, children: [newTab, newFireTab])
+        return UIMenu(children: [inTabGroup, newTabGroup])
+    }
 
     private lazy var titleContainer: HighlightableContainerView = {
         let container = HighlightableContainerView()
@@ -272,7 +344,6 @@ final class AIChatTabChatHeaderView: UIView {
     /// When locked, the settings, new-chat, upgrade, and chats-list buttons are disabled until
     /// the fire step passes.
     func setOnboardingLocked(_ locked: Bool) {
-        appMenuButton.isEnabled = !locked
         newChatButton.isEnabled = !locked
         chatListButton.isEnabled = !locked
         chatListButton.alpha = locked ? 0.5 : 1
@@ -285,6 +356,9 @@ final class AIChatTabChatHeaderView: UIView {
         paidTitleStack.isHidden = state.isSubscriptionActive != true
         let voiceActive = state.isVoiceSessionActive
         titleHolder.isHidden = voiceActive
+        // Hide the chat-list pill (and its button inside it) together so the surrounding
+        // glass pill background also disappears during voice sessions.
+        chatListButtonPill.isHidden = voiceActive
         chatListButton.isHidden = voiceActive
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }
@@ -305,12 +379,14 @@ final class AIChatTabChatHeaderView: UIView {
         titleHolder.addSubview(titleContainer)
         addSubview(bottomSeparator)
 
-        leftStack.addArrangedSubview(leftPairPill)
-        pillContentSuperview(for: leftPairPill).addSubview(leftPairStack)
+        leftStack.addArrangedSubview(closeButtonPill)
+        leftStack.addArrangedSubview(chatListButtonPill)
+        pillContentSuperview(for: closeButtonPill).addSubview(closeButton)
+        pillContentSuperview(for: chatListButtonPill).addSubview(chatListButton)
         rightStack.addArrangedSubview(rightPairPill)
         pillContentSuperview(for: rightPairPill).addSubview(rightPairStack)
 
-        for control in [closeButton, chatListButton, newChatButton, appMenuButton] as [UIControl] {
+        for control in [closeButton, chatListButton, newChatButton, tabSwitcherButton] as [UIControl] {
             control.addGestureRecognizer(StrictBoundsTouchObserver())
         }
 
@@ -339,17 +415,21 @@ final class AIChatTabChatHeaderView: UIView {
             chatListButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
             chatListButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
 
-            appMenuButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            appMenuButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-
             newChatButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
             newChatButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
 
-            leftPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-            leftPairStack.leadingAnchor.constraint(equalTo: leftPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
-            leftPairStack.trailingAnchor.constraint(equalTo: leftPairPill.trailingAnchor, constant: -Constants.pillInnerHorizontalPadding),
-            leftPairStack.topAnchor.constraint(equalTo: leftPairPill.topAnchor),
-            leftPairStack.bottomAnchor.constraint(equalTo: leftPairPill.bottomAnchor),
+            tabSwitcherButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            tabSwitcherButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+
+            closeButtonPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            closeButtonPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            closeButton.centerXAnchor.constraint(equalTo: closeButtonPill.centerXAnchor),
+            closeButton.centerYAnchor.constraint(equalTo: closeButtonPill.centerYAnchor),
+
+            chatListButtonPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            chatListButtonPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            chatListButton.centerXAnchor.constraint(equalTo: chatListButtonPill.centerXAnchor),
+            chatListButton.centerYAnchor.constraint(equalTo: chatListButtonPill.centerYAnchor),
 
             rightPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
             rightPairStack.leadingAnchor.constraint(equalTo: rightPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
@@ -478,14 +558,14 @@ final class AIChatTabChatHeaderView: UIView {
     private func updateGlassPillEffects() {
         guard #available(iOS 26, *) else { return }
 
-        for pill in [leftPairPill, rightPairPill] {
+        for pill in [closeButtonPill, chatListButtonPill, rightPairPill] {
             guard let effectView = pill.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView else { continue }
             effectView.effect = makeGlassPillEffect()
         }
     }
 
     private func updateButtonShadows() {
-        let chromedViews: [UIView] = [leftPairPill, rightPairPill]
+        let chromedViews: [UIView] = [closeButtonPill, chatListButtonPill, rightPairPill]
         for view in chromedViews {
             applyGlassChromeShadow(to: view)
         }
@@ -504,7 +584,7 @@ final class AIChatTabChatHeaderView: UIView {
     @objc private func closeTapped() { delegate?.aiChatTabChatHeaderDidTapClose() }
     @objc private func chatListTapped() { delegate?.aiChatTabChatHeaderDidTapChatList() }
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
-    @objc private func appMenuTapped() { delegate?.aiChatTabChatHeaderDidTapAppMenu() }
+    @objc private func tabSwitcherTapped() { delegate?.aiChatTabChatHeaderDidTapTabSwitcher() }
     @objc private func upgradeTapped() {
         if state.isSubscriptionActive == false {
             delegate?.aiChatTabChatHeaderDidTapUpgrade()

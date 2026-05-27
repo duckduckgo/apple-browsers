@@ -50,7 +50,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.catalinaVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion)
+            minSupportedOSVersionOverride: Self.montereyVersion)
 
         // Then
         XCTAssertEqual(checker.unsupportedMinVersion, "12.3")
@@ -77,7 +77,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.bigSurVersion,
-            minSupportedOSVersionOverride: Self.bigSurVersion)
+            minSupportedOSVersionOverride: Self.montereyVersion)
 
         // Then
         XCTAssertEqual(checker.unsupportedMinVersion, "12.3")

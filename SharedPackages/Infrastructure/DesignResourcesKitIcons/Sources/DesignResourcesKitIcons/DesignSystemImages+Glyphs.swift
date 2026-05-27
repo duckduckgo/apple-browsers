@@ -261,7 +261,6 @@ public extension DesignSystemImages {
             public static var shieldAlertAlt: DesignSystemImage { .init(resource: .shieldAlertAlt16) }
             public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked16) }
             public static var sidebar: DesignSystemImage { .init(resource: .sidebar16) }
-            public static var sidebarOpen: DesignSystemImage { .init(resource: .sidebarOpen16) }
             public static var sidebarSearch: DesignSystemImage { .init(resource: .sidebarSearch16) }
             public static var siteBreakage: DesignSystemImage { .init(resource: .siteBreakage16) }
             public static var skipRecolorable: DesignSystemImage { .init(resource: .skipRecolorable16) }
@@ -516,6 +515,8 @@ public extension DesignSystemImages {
             public static var reset: DesignSystemImage { .init(resource: .reset24) }
             public static var resetSites: DesignSystemImage { .init(resource: .resetSites24) }
             public static var settings: DesignSystemImage { .init(resource: .settings24) }
+            public static var sheet: DesignSystemImage { .init(resource: .sheet24) }
+            public static var sheetOpen: DesignSystemImage { .init(resource: .sheetOpen24) }
             public static var shapeCircle: DesignSystemImage { .init(resource: .shapeCircle24) }
             public static var shield: DesignSystemImage { .init(resource: .shield24) }
             public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked24) }

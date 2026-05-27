@@ -951,7 +951,7 @@ class MainViewController: UIViewController {
 
     /// Rebinds chip subscriptions to the current tab's URL + contextual sheet publishers.
     /// Called whenever the active tab changes (transitionTo) or the tabs bar is created.
-    private func bindAIChatChromeChipToCurrentTab() {
+    func bindAIChatChromeChipToCurrentTab() {
         aiChatChromeChipCancellables.removeAll()
 
         guard let currentTab else {
@@ -974,7 +974,8 @@ class MainViewController: UIViewController {
 
     private func refreshAIChatChromeChip() {
         guard let tabsBarController else { return }
-        let isAIChat = currentTab?.tabModel.isAITab ?? false
+        // Read isAITab from the Tab model (always available); the VC may not be instantiated yet.
+        let isAIChat = tabManager.currentTabsModel.currentTab?.isAITab ?? false
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
         tabsBarController.updateAIChatChipState(
             isCurrentTabAIChat: isAIChat,

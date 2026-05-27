@@ -33,10 +33,8 @@ final class DuckAIChromeChipView: UIView {
     private enum Constants {
         static let cornerRadius: CGFloat = 9
         static let textPadding = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
-        static let iconButtonWidth: CGFloat = 36
+        static let iconButtonWidth: CGFloat = 40
         static let dividerWidth: CGFloat = 1
-        static let dividerVerticalInset: CGFloat = 6
-        static let iconRotation: CGFloat = -.pi / 2
     }
 
     private(set) lazy var textButton: UIButton = {
@@ -119,17 +117,13 @@ final class DuckAIChromeChipView: UIView {
     /// Swaps the icon glyph based on whether the contextual sheet is open.
     func setSheetState(_ state: SheetState) {
         sheetState = state
-        let resource: UIImage = {
+        let image: UIImage = {
             switch state {
-            case .closed: return DesignSystemImages.Glyphs.Size16.sidebar
-            case .open:   return DesignSystemImages.Glyphs.Size16.sidebarOpen
+            case .closed: return DesignSystemImages.Glyphs.Size24.sheet
+            case .open:   return DesignSystemImages.Glyphs.Size24.sheetOpen
             }
         }()
-        // Rotate -90° so the sidebar's thin panel sits at the bottom (bottom-sheet metaphor).
-        let image = resource
-            .rotated(by: Constants.iconRotation)
-            .withRenderingMode(.alwaysTemplate)
-        iconButton.setImage(image, for: .normal)
+        iconButton.setImage(image.withRenderingMode(.alwaysTemplate), for: .normal)
     }
 
     /// Hides only the icon half + divider when the current tab is Duck.ai. The text half stays.
@@ -137,33 +131,4 @@ final class DuckAIChromeChipView: UIView {
         iconContainer.isHidden = !visible
     }
 
-    func setTextAction(_ action: @escaping () -> Void) {
-        textButton.removeTarget(nil, action: nil, for: .allEvents)
-        textButton.addAction(UIAction { _ in action() }, for: .touchUpInside)
-    }
-
-    func setIconAction(_ action: @escaping () -> Void) {
-        iconButton.removeTarget(nil, action: nil, for: .allEvents)
-        iconButton.addAction(UIAction { _ in action() }, for: .touchUpInside)
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        // Re-render the icon so the rotated image picks up dark/light template tint correctly.
-        setSheetState(sheetState)
-    }
-}
-
-private extension UIImage {
-    /// Returns a copy rotated by `radians` (image size preserved; 90° rotations on a square image stay clean).
-    func rotated(by radians: CGFloat) -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { ctx in
-            let cg = ctx.cgContext
-            cg.translateBy(x: size.width / 2, y: size.height / 2)
-            cg.rotate(by: radians)
-            cg.translateBy(x: -size.width / 2, y: -size.height / 2)
-            draw(in: CGRect(origin: .zero, size: size))
-        }
-    }
 }

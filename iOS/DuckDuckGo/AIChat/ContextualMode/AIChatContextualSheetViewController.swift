@@ -346,6 +346,17 @@ final class AIChatContextualSheetViewController: UIViewController {
         hideDimmingView(animated: animated)
     }
 
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // Catches dismissals that don't route through presentationControllerDidDismiss
+        // (e.g. programmatic dismiss by an ancestor, tab transitions). Keeps the
+        // coordinator's isSheetPresented flag in sync with reality so the chrome chip
+        // doesn't show a stale "sheet open" glyph.
+        if isBeingDismissed || isMovingFromParent {
+            delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateShadowPath()

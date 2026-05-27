@@ -155,8 +155,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         buttonsStack.addArrangedSubview(tabSwitcherButton)
 
         addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
-        aiChatChip.setTextAction { [weak self] in self?.onAIChatPressed() }
-        aiChatChip.setIconAction { [weak self] in self?.onAIChatContextualSheetIconPressed() }
+        aiChatChip.textButton.addTarget(self, action: #selector(onAIChatPressed), for: .touchUpInside)
+        aiChatChip.iconButton.addTarget(self, action: #selector(onAIChatContextualSheetIconPressed), for: .touchUpInside)
         fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
         tabSwitcherButton.delegate = self
 
@@ -574,9 +574,17 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController) {
-        guard let currentTab else { return }
+        // Materialize the focused tab's view controller if it hasn't been instantiated yet
+        // (multi-tab restoration / cache eviction can leave currentTab nil even with a focused tab).
+        guard let currentTab = tabManager.current(createIfNeeded: true) else { return }
+        // Subscribe to the coordinator now that the VC exists — bind may have skipped earlier
+        // when currentTab was still nil (createIfNeeded: false at that time).
+        bindAIChatChromeChipToCurrentTab()
         let coordinator = currentTab.aiChatContextualSheetCoordinator
-        if coordinator.isSheetPresented {
+        // Trust the sheet's actual on-screen state rather than the flag — flag can lag
+        // if the sheet was dismissed by an ancestor without routing through dismissSheet().
+        let isActuallyPresented = coordinator.sheetViewController?.presentingViewController != nil
+        if isActuallyPresented {
             coordinator.dismissSheet()
         } else {
             Task { @MainActor in await coordinator.presentSheet(from: self) }

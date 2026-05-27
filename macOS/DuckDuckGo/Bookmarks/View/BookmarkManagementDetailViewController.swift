@@ -491,6 +491,10 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         menu.popUpAtMouseLocation(in: sortItemsButton)
     }
 
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.alignItemTextWithIconsRecursively()
+    }
+
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
         case #selector(BookmarkManagementDetailViewController.delete(_:)):

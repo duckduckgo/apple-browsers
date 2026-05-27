@@ -53,12 +53,14 @@ public extension DesignSystemImages {
             public static var closeSmall: DesignSystemImage { .init(resource: .closeSmall12) }
             public static var compose: DesignSystemImage { .init(resource: .compose12) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie12) }
+            public static var copy: DesignSystemImage { .init(resource: .copy12) }
             public static var creditCard: DesignSystemImage { .init(resource: .creditCard12) }
             public static var currency: DesignSystemImage { .init(resource: .currency12) }
             public static var deviceMobile: DesignSystemImage { .init(resource: .deviceMobile12) }
             public static var download: DesignSystemImage { .init(resource: .download12) }
             public static var downloads: DesignSystemImage { .init(resource: .downloads12) }
             public static var duckAi: DesignSystemImage { .init(resource: .duckAi12) }
+            public static var edit: DesignSystemImage { .init(resource: .edit12) }
             public static var email: DesignSystemImage { .init(resource: .email12) }
             public static var emailDisabled: DesignSystemImage { .init(resource: .emailDisabled12) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid12) }
@@ -88,6 +90,7 @@ public extension DesignSystemImages {
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin12) }
             public static var list: DesignSystemImage { .init(resource: .list12) }
             public static var location: DesignSystemImage { .init(resource: .location12) }
+            public static var lock: DesignSystemImage { .init(resource: .lock12) }
             public static var lockSolid: DesignSystemImage { .init(resource: .lockSolid12) }
             public static var maps: DesignSystemImage { .init(resource: .maps12) }
             public static var network: DesignSystemImage { .init(resource: .network12) }
@@ -104,6 +107,7 @@ public extension DesignSystemImages {
             public static var profile: DesignSystemImage { .init(resource: .profile12) }
             public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked12) }
             public static var qr: DesignSystemImage { .init(resource: .QR_12) }
+            public static var reload: DesignSystemImage { .init(resource: .reload12) }
             public static var save: DesignSystemImage { .init(resource: .save12) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind12) }
             public static var sendPlane: DesignSystemImage { .init(resource: .sendPlane12) }
@@ -133,8 +137,10 @@ public extension DesignSystemImages {
             public static var vpnUnlock: DesignSystemImage { .init(resource: .vpnUnlock12) }
             public static var wand: DesignSystemImage { .init(resource: .wand12) }
             public static var wifi: DesignSystemImage { .init(resource: .wifi12) }
+            public static var window: DesignSystemImage { .init(resource: .window12) }
             public static var windowDuplicate: DesignSystemImage { .init(resource: .windowDuplicate12) }
             public static var windowNew: DesignSystemImage { .init(resource: .windowNew12) }
+            public static var zoomActualSize: DesignSystemImage { .init(resource: .zoomActualSize12) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn12) }
             public static var zoomOut: DesignSystemImage { .init(resource: .zoomOut12) }
         }

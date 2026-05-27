@@ -33,7 +33,9 @@ final class HistoryMenu: NSMenu {
     }
 
     let backMenuItem = NSMenuItem(title: UserText.navigateBack, action: #selector(MainViewController.back), keyEquivalent: "[")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowLeft)
     let forwardMenuItem = NSMenuItem(title: UserText.navigateForward, action: #selector(MainViewController.forward), keyEquivalent: "]")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowRight)
 
     private let recentlyClosedMenuItem = NSMenuItem(title: UserText.mainMenuHistoryRecentlyClosed)
     private let reopenLastClosedMenuItem = NSMenuItem(title: UserText.reopenLastClosedTab, action: #selector(AppDelegate.reopenLastClosedTab))

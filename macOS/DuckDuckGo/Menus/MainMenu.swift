@@ -113,10 +113,13 @@ final class MainMenu: NSMenu {
 
     // MARK: View
     let stopMenuItem = NSMenuItem(title: UserText.mainMenuViewStop, action: #selector(MainViewController.stopLoadingPage), keyEquivalent: ".")
+        .withImage(DesignSystemImages.Glyphs.Size12.close)
     let reloadMenuItem = NSMenuItem(title: UserText.mainMenuViewReloadPage, action: #selector(MainViewController.reloadPage), keyEquivalent: "r")
+        .withImage(DesignSystemImages.Glyphs.Size12.reload)
 
     let toggleFullscreenMenuItem = NSMenuItem(title: UserText.mainMenuViewEnterFullScreen, action: #selector(NSWindow.toggleFullScreen), keyEquivalent: [.control, .command, "f"])
     let actualSizeMenuItem = NSMenuItem(title: UserText.mainMenuViewActualSize, action: #selector(MainViewController.actualSize), keyEquivalent: "0")
+        .withImage(DesignSystemImages.Glyphs.Size12.zoomActualSize)
     let zoomInMenuItem = NSMenuItem(title: UserText.mainMenuViewZoomIn, action: #selector(MainViewController.zoomIn), keyEquivalent: "+")
         .withImage(DesignSystemImages.Glyphs.Size12.zoomIn)
     let zoomOutMenuItem = NSMenuItem(title: UserText.mainMenuViewZoomOut, action: #selector(MainViewController.zoomOut), keyEquivalent: "-")
@@ -443,6 +446,7 @@ final class MainMenu: NSMenu {
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.mainMenuViewHome, action: #selector(MainViewController.home), keyEquivalent: "H")
+                .withImage(DesignSystemImages.Glyphs.Size12.home)
             NSMenuItem.separator()
 
             toggleDuckAIChromeButtonMenuItem

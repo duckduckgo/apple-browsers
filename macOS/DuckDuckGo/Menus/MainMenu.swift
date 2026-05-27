@@ -155,6 +155,7 @@ final class MainMenu: NSMenu {
 
     var homeButtonMenuItem = NSMenuItem(title: "HomeButtonPlaceholder")
     var showTabsAndBookmarksBarOnFullScreenMenuItem = NSMenuItem(title: "ShowTabsAndBookmarksBarOnFullScreenMenuItem")
+        .withImage(DesignSystemImages.Glyphs.Size12.window)
     let toggleShareShortcutMenuItem = NSMenuItem(title: UserText.shareMenuItem, action: #selector(MainViewController.toggleShareShortcut), keyEquivalent: "")
         .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
     let toggleDownloadsShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowDownloadsShortcut, action: #selector(MainViewController.toggleDownloadsShortcut), keyEquivalent: "J")

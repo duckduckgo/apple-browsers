@@ -137,6 +137,7 @@ public extension DesignSystemImages {
             public static var vpnUnlock: DesignSystemImage { .init(resource: .vpnUnlock12) }
             public static var wand: DesignSystemImage { .init(resource: .wand12) }
             public static var wifi: DesignSystemImage { .init(resource: .wifi12) }
+            public static var window: DesignSystemImage { .init(resource: .window12) }
             public static var windowDuplicate: DesignSystemImage { .init(resource: .windowDuplicate12) }
             public static var windowNew: DesignSystemImage { .init(resource: .windowNew12) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn12) }

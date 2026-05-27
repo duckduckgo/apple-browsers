@@ -38,6 +38,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
 
     func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData?
     /// Includes removed brokers. Prefer `fetchActiveBrokerProfileQueryData()` unless your caller genuinely needs them.
+    /// The `reason` parameter is intentionally required so callers document why removed brokers are needed at the call site.
     func fetchAllBrokerProfileQueryData(reason: BrokerProfileQueryDataFetchReason) throws -> [BrokerProfileQueryData]
     func fetchActiveBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
     func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData]

@@ -42,7 +42,6 @@ struct CrashCollectionOnboardingView: View {
                 .padding(16)
         }
         .padding(0)
-        .ignoresSafeArea()
         .background(Color(designSystemColor: .backgroundTertiary))
     }
 

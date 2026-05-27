@@ -38,10 +38,34 @@ final class AIChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting {
             }
         )
         let hostingController = UIHostingController(rootView: sheet)
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
+        if #available(iOS 16.4, *) {
+            hostingController.sizingOptions = .intrinsicContentSize
+        }
         if let presentation = hostingController.sheetPresentationController {
-            presentation.detents = [.medium()]
+            if #available(iOS 16.0, *) {
+                let targetSize = measureTargetSize(for: sheet, in: viewController)
+                presentation.detents = [.custom { _ in targetSize.height }]
+            } else {
+                presentation.detents = [.medium()]
+            }
             presentation.prefersGrabberVisible = true
         }
         viewController.present(hostingController, animated: true)
+    }
+
+    @available(iOS 16.0, *)
+    @MainActor
+    private func measureTargetSize(for sheet: AIChatSyncIntroSheetView, in viewController: UIViewController) -> CGSize {
+        let sizeHostingController = UIHostingController(rootView: sheet)
+        sizeHostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        viewController.view.addSubview(sizeHostingController.view)
+        NSLayoutConstraint.activate([
+            sizeHostingController.view.widthAnchor.constraint(equalToConstant: viewController.view.frame.width)
+        ])
+        sizeHostingController.view.layoutIfNeeded()
+        let targetSize = sizeHostingController.view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        sizeHostingController.view.removeFromSuperview()
+        return targetSize
     }
 }

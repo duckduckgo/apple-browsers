@@ -53,6 +53,7 @@ struct CrashCollectionOnboardingView: View {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
         .buttonStyle(CloseButtonStyle())
+        .accessibilityLabel(UserText.keyCommandClose)
     }
 
     var contents: some View {

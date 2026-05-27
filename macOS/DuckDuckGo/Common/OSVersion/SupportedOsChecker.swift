@@ -291,11 +291,17 @@ final class BigSurEndOfSupportNoticePresenter {
         // First-added button is the default and sits on the right.
         // Hide the "Update macOS" call to action on hardware that can't upgrade
         // past Big Sur; fall back to a neutral OK.
+        let capability = osChecker.osUpgradeCapability
         alert.addButton(withTitle: primaryButtonTitle())
         alert.addButton(withTitle: UserText.bigSurEndOfSupportNoticeDontShowAgain)
 
-        if alert.runModal() == .alertSecondButtonReturn {
+        switch alert.runModal() {
+        case .alertFirstButtonReturn where capability.canUpgradeOS:
+            NSWorkspace.shared.open(Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL)
+        case .alertSecondButtonReturn:
             persistor.dismissed = true
+        default:
+            break
         }
     }
 

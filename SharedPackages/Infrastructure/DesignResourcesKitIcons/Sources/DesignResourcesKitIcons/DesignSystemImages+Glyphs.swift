@@ -140,6 +140,7 @@ public extension DesignSystemImages {
             public static var window: DesignSystemImage { .init(resource: .window12) }
             public static var windowDuplicate: DesignSystemImage { .init(resource: .windowDuplicate12) }
             public static var windowNew: DesignSystemImage { .init(resource: .windowNew12) }
+            public static var zoomActualSize: DesignSystemImage { .init(resource: .zoomActualSize12) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn12) }
             public static var zoomOut: DesignSystemImage { .init(resource: .zoomOut12) }
         }

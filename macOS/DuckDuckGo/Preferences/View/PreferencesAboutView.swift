@@ -54,7 +54,7 @@ extension Preferences {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
                     if let minVersion = model.unsupportedMinVersion {
-                        UnsupportedDeviceInfoBox(minVersion: minVersion, canUpgradeOS: model.canUpgradeOS)
+                        UnsupportedDeviceInfoBox(minVersion: minVersion)
                             .padding(.top, 10)
                     }
 
@@ -486,7 +486,6 @@ extension Preferences {
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
         var minVersion: String
-        var canUpgradeOS: Bool = true
 
         private var osVersion: String {
             return "\(ProcessInfo.processInfo.operatingSystemVersion)"
@@ -496,11 +495,7 @@ extension Preferences {
 
         private var versionText: String { UserText.aboutUnsupportedDeviceInfo1 }
 
-        private var combinedText: String {
-            canUpgradeOS
-                ? UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
-                : UserText.aboutUnsupportedDeviceInfoIncapable
-        }
+        private var combinedText: String { UserText.aboutUnsupportedDeviceInfo2(version: minVersion) }
 
         var body: some View {
             let image = Image(.alertColor16)

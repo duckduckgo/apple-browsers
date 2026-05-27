@@ -826,9 +826,7 @@ public final class PixelKit {
 
         do {
             let key = userDefaultsKeyName(forPixelName: name)
-            let legacyKey = legacyUserDefaultsKeyName(forPixelName: name)
-            if let lastFireDate = try defaults.object(forKey: key) as? Date
-                ?? (try defaults.object(forKey: legacyKey) as? Date) {
+            if let lastFireDate = try defaults.object(forKey: key) as? Date {
                 return pixelCalendar.isDate(dateGenerator(), equalTo: lastFireDate, toGranularity: .month)
             }
             return false

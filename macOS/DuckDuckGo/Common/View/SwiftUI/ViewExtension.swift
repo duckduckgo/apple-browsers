@@ -41,14 +41,7 @@ extension View {
             // hacky way to set the @Environment.presentationMode.
             // here we downcast a (non-writable) \.presentationMode KeyPath to a WritableKeyPath
             self.environment(presentationModeKey, Binding<PresentationMode>(onDismiss: onDismiss))
-        } else {
-            legacyMacOS11OnDismiss(onDismiss)
         }
-    }
-
-    @available(macOS, obsoleted: 14.0, message: "This needs to be removed when macOS 11 support is dropped.")
-    private func legacyMacOS11OnDismiss(_ onDismiss: @escaping () -> Void) -> some View {
-        self.environment(\.legacyDismiss, onDismiss)
     }
 }
 
@@ -73,7 +66,7 @@ extension Binding where Value == PresentationMode {
 
 }
 
-@available(macOS, obsoleted: 14.0, message: "This needs to be removed when macOS 11 support is dropped.")
+@available(macOS, obsoleted: 14.0, message: "This needs to be removed as it‘s no longer necessary.")
 struct DismissAction {
     let dismiss: () -> Void
     public func callAsFunction() {
@@ -81,13 +74,13 @@ struct DismissAction {
     }
 }
 
-@available(macOS, obsoleted: 14.0, message: "This needs to be removed when macOS 11 support is dropped.")
+@available(macOS, obsoleted: 14.0, message: "This needs to be removed as it‘s no longer necessary.")
 struct LegacyDismissAction: EnvironmentKey {
     static var defaultValue: () -> Void { { } }
 }
 
 extension EnvironmentValues {
-    @available(macOS, obsoleted: 14.0, message: "This extension needs to be removed when macOS 11 support is dropped.")
+    @available(macOS, obsoleted: 14.0, message: "This needs to be removed as it‘s no longer necessary.")
     var dismiss: DismissAction {
         DismissAction {
             if \EnvironmentValues.presentationMode is WritableKeyPath {
@@ -97,7 +90,7 @@ extension EnvironmentValues {
             }
         }
     }
-    @available(macOS, obsoleted: 14.0, message: "This extension needs to be removed when macOS 11 support is dropped.")
+    @available(macOS, obsoleted: 14.0, message: "This needs to be removed as it‘s no longer necessary.")
     fileprivate var legacyDismiss: () -> Void {
         get {
             self[LegacyDismissAction.self]

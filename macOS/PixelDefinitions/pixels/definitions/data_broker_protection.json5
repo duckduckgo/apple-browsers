@@ -968,7 +968,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with an HTTP error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -989,7 +989,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with a non-HTTP, non-action error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",

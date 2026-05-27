@@ -105,35 +105,77 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         XCTAssertEqual(sut.lastUsed, initialLastUsed)
     }
 
-    func test_recordUserChoice_writesThroughToggleModeToStorage() {
+    // Toggle mode is intentionally excluded from `recordUserChoice` — it only commits to
+    // the global last-used on submit (via `commitToggleMode`). An in-flight toggle that the
+    // user dismisses without submitting must not leak into `toggleModeStorage`.
+    func test_recordUserChoice_doesNotWriteToggleModeToStorage() {
         var state = TabInputState()
         state.toggleMode = .aiChat
-        sut.recordUserChoice(state, for: "tab-1")
-        XCTAssertEqual(toggleStorage.stored, .aiChat)
-    }
-
-    func test_recordUserChoice_writesThroughSelectedModelIDToPreferences() {
-        var state = TabInputState()
-        state.selectedModelID = "claude-opus"
-        sut.recordUserChoice(state, for: "tab-1")
-        XCTAssertEqual(preferences.selectedModelId, "claude-opus")
+        sut.recordUserChoice(state, for: "tab-1", isNewChatContext: true)
+        XCTAssertNil(toggleStorage.stored)
     }
 
     func test_recordUserChoice_writesThroughReasoningModeToPreferences() {
         var state = TabInputState()
         state.selectedReasoningMode = .reasoning
-        sut.recordUserChoice(state, for: "tab-1")
+        sut.recordUserChoice(state, for: "tab-1", isNewChatContext: true)
         XCTAssertEqual(preferences.selectedReasoningMode, .reasoning)
     }
 
-    func test_recordUserChoice_updatesLastUsed() {
+    func test_recordUserChoice_doesNotWriteSelectedModelIdToPreferences() {
+        var state = TabInputState()
+        state.selectedModelID = "claude-opus"
+        sut.recordUserChoice(state, for: "tab-1", isNewChatContext: true)
+        XCTAssertNil(preferences.selectedModelId)
+    }
+
+    func test_recordUserChoice_updatesLastUsedExceptToggleMode() {
+        let initialToggleMode = sut.lastUsed.toggleMode
         var state = TabInputState()
         state.toggleMode = .aiChat
         state.selectedModelID = "claude-opus"
         state.selectedTool = .webSearch
-        sut.recordUserChoice(state, for: "tab-1")
-        XCTAssertEqual(sut.lastUsed.toggleMode, .aiChat)
+        sut.recordUserChoice(state, for: "tab-1", isNewChatContext: true)
+        XCTAssertEqual(sut.lastUsed.toggleMode, initialToggleMode)
         XCTAssertEqual(sut.lastUsed.selectedModelID, "claude-opus")
+        XCTAssertEqual(sut.lastUsed.selectedTool, .webSearch)
+    }
+
+    func test_recordUserChoice_onOngoingChat_preservesLastUsedModel() {
+        var newChat = TabInputState()
+        newChat.selectedModelID = "haiku"
+        sut.recordUserChoice(newChat, for: "tab-A", isNewChatContext: true)
+        XCTAssertEqual(sut.lastUsed.selectedModelID, "haiku")
+
+        var ongoing = TabInputState()
+        ongoing.selectedModelID = "mistral"
+        sut.recordUserChoice(ongoing, for: "tab-A", isNewChatContext: false)
+
+        XCTAssertEqual(sut.lastUsed.selectedModelID, "haiku",
+                       "an ongoing-chat pick must not retarget the new-tab seed")
+    }
+
+    // MARK: - commitToggleMode
+
+    func test_commitToggleMode_writesThroughToStorage() {
+        sut.commitToggleMode(.aiChat)
+        XCTAssertEqual(toggleStorage.stored, .aiChat)
+    }
+
+    func test_commitToggleMode_updatesLastUsedToggleMode() {
+        sut.commitToggleMode(.aiChat)
+        XCTAssertEqual(sut.lastUsed.toggleMode, .aiChat)
+    }
+
+    func test_commitToggleMode_preservesOtherLastUsedFields() {
+        var state = TabInputState()
+        state.selectedModelID = "claude-opus"
+        state.selectedReasoningMode = .reasoning
+        state.selectedTool = .webSearch
+        sut.recordUserChoice(state, for: "tab-1", isNewChatContext: true)
+        sut.commitToggleMode(.aiChat)
+        XCTAssertEqual(sut.lastUsed.selectedModelID, "claude-opus")
+        XCTAssertEqual(sut.lastUsed.selectedReasoningMode, .reasoning)
         XCTAssertEqual(sut.lastUsed.selectedTool, .webSearch)
     }
 
@@ -142,7 +184,7 @@ final class UnifiedInputStateStoreTests: XCTestCase {
     func test_update_afterRecordUserChoiceElsewhere_preservesLastUsed() {
         var deliberateA = TabInputState()
         deliberateA.selectedModelID = "user-picked-A"
-        sut.recordUserChoice(deliberateA, for: "tab-A")
+        sut.recordUserChoice(deliberateA, for: "tab-A", isNewChatContext: true)
 
         // Simulate a tab-switch flush of an unrelated, never-deliberately-chosen tab.
         var driftB = TabInputState()
@@ -225,7 +267,8 @@ final class UnifiedInputStateStoreTests: XCTestCase {
 
         sut.recordUserChoice(
             TabInputState(toggleMode: .aiChat, selectedModelID: "claude-opus", selectedReasoningMode: .reasoning),
-            for: "writeback"
+            for: "writeback",
+            isNewChatContext: true
         )
 
         XCTAssertEqual(tab.unifiedInputState.selectedModelID, "claude-opus")
@@ -247,7 +290,8 @@ final class UnifiedInputStateStoreTests: XCTestCase {
 
         sut.recordUserChoice(
             TabInputState(toggleMode: .aiChat, selectedModelID: nil, selectedReasoningMode: nil),
-            for: "clear-mirror"
+            for: "clear-mirror",
+            isNewChatContext: true
         )
 
         XCTAssertNil(tab.unifiedInputState.selectedModelID)

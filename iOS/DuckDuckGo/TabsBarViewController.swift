@@ -187,8 +187,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
             .store(in: &cancellables)
     }
 
-    /// Subscribes to local-overrides flag changes so the chip visibility refreshes live
-    /// when an internal user toggles `aiChatChromeShortcutIPad` from the debug menu.
     private func registerForFeatureFlagChanges() {
         guard let overridesHandler = featureFlagger?.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return

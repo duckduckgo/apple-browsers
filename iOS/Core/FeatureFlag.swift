@@ -317,6 +317,7 @@ public enum FeatureFlag: String {
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
     /// default; ship a privacy-config entry to roll back. See
     /// `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab`.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214995978971487?focus=true
     case aiChatTabHideToggle
 
     /// Failsafe flag for whether the free trial conversion wide event is enabled

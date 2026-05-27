@@ -2182,6 +2182,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         }
         return nil
     }
+
+    // MARK: - App-menu forwarding (Duck.ai tab UTI bottom-right)
+
+    func test_appMenuTap_forwardsThroughChainToDelegate() {
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
+        sut.unifiedToggleInputVCDidTapAppMenu(sut.viewController)
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 1)
+    }
+
+    func test_appMenuTap_suppressedWhileOnboardingLocked() {
+        sut.setOnboardingControlsLocked(true)
+        sut.unifiedToggleInputVCDidTapAppMenu(sut.viewController)
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
+    }
 }
 
 // MARK: - Toolbar Layout
@@ -2337,20 +2351,6 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
             }
         }
         return nil
-    }
-
-    // MARK: - App-menu forwarding (Duck.ai tab UTI bottom-right)
-
-    func test_appMenuTap_forwardsThroughChainToDelegate() {
-        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
-        sut.unifiedToggleInputVCDidTapAppMenu(sut.viewController)
-        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 1)
-    }
-
-    func test_appMenuTap_suppressedWhileOnboardingLocked() {
-        sut.setOnboardingLocked(true)
-        sut.unifiedToggleInputVCDidTapAppMenu(sut.viewController)
-        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
     }
 
     // MARK: - aiChatTabHideToggle truth table

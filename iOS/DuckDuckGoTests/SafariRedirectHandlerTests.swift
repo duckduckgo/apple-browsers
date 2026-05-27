@@ -28,7 +28,6 @@ final class SafariRedirectHandlerTests: XCTestCase {
     private var delegate: MockSafariRedirectHandlerDelegate!
 
     private let xSafariHTTPSURL = URL(string: "x-safari-https://example.com/page")!
-    private let xSafariHTTPURL = URL(string: "x-safari-http://example.com/page")!
     private let httpsURL = URL(string: "https://example.com/page")!
     private let regularURL = URL(string: "https://example.com/other")!
 
@@ -58,15 +57,6 @@ final class SafariRedirectHandlerTests: XCTestCase {
 
         XCTAssertEqual(delegate.loadedURLs.count, 1)
         XCTAssertEqual(delegate.loadedURLs.first?.scheme, "https")
-        XCTAssertEqual(delegate.loadedURLs.first?.host, "example.com")
-        XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
-    }
-
-    func testFirstHTTPRedirectConvertsToHTTPAndLoads() {
-        XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPURL))
-
-        XCTAssertEqual(delegate.loadedURLs.count, 1)
-        XCTAssertEqual(delegate.loadedURLs.first?.scheme, "http")
         XCTAssertEqual(delegate.loadedURLs.first?.host, "example.com")
         XCTAssertTrue(handler.isAfterSuppressedXSafariRedirect(for: httpsURL))
     }

@@ -42,7 +42,6 @@ final class SafariRedirectHandler: SafariRedirectHandling {
 
     private enum Constants {
         static let safariHTTPSRedirectScheme = "x-safari-https"
-        static let safariHTTPRedirectScheme = "x-safari-http"
     }
 
     private struct HostState {
@@ -121,8 +120,6 @@ final class SafariRedirectHandler: SafariRedirectHandling {
         }
 
         switch url.scheme {
-        case Constants.safariHTTPRedirectScheme:
-            components.scheme = "http"
         case Constants.safariHTTPSRedirectScheme:
             components.scheme = "https"
         default:
@@ -133,6 +130,6 @@ final class SafariRedirectHandler: SafariRedirectHandling {
     }
 
     private func isSafariRedirectScheme(_ scheme: String?) -> Bool {
-        scheme == Constants.safariHTTPSRedirectScheme || scheme == Constants.safariHTTPRedirectScheme
+        scheme == Constants.safariHTTPSRedirectScheme
     }
 }

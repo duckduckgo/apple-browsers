@@ -2773,29 +2773,6 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.lastUsed.selectedTool, .webSearch)
     }
 
-    func test_selectImageGenerationTool_setsImageGenerationAsSelectedTool() {
-        let store = FakeInputStateStore()
-        let sut = makeSUT(stateStore: store)
-        sut.modelStore.models = [makeModelWithTools(id: "gpt-5", supportedTools: [.imageGeneration])]
-        sut.activateForTab("tab-A")
-
-        sut.selectImageGenerationTool()
-
-        XCTAssertEqual(sut.selectedTool, .imageGeneration)
-        XCTAssertEqual(store.states["tab-A"]?.selectedTool, .imageGeneration)
-    }
-
-    func test_selectImageGenerationTool_isNoOp_whenModelDoesNotSupportImageGeneration() {
-        let store = FakeInputStateStore()
-        let sut = makeSUT(stateStore: store)
-        sut.modelStore.models = [makeModelWithTools(id: "gpt-5", supportedTools: [.webSearch])]
-        sut.activateForTab("tab-A")
-
-        sut.selectImageGenerationTool()
-
-        XCTAssertNil(sut.selectedTool)
-    }
-
     // MARK: - Tool selection cleared on submit (P1)
 
     func test_submitAIChat_withSelectedTool_clearsToolFromStore() {

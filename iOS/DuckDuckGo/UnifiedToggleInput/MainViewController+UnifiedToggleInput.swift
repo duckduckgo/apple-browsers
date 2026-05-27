@@ -515,7 +515,7 @@ private extension MainViewController {
         guard let controller = tabManager.controller(forWebView: webView),
               controller === currentTab,
               let coordinator = unifiedToggleInputCoordinator else { return }
-        coordinator.selectImageGenerationTool()
+        coordinator.selectTool(.imageGeneration)
     }
 
     private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {

@@ -29,6 +29,22 @@ extension View {
 
 }
 
+extension View {
+
+    @available(macOS, obsoleted: 14.0, message: "This needs to be removed as it‘s no longer necessary.")
+    @ViewBuilder
+    func legacyOnDismiss(_ onDismiss: @escaping () -> Void) -> some View {
+        if #available(macOS 14.0, *) {
+            self
+
+        } else if let presentationModeKey = \EnvironmentValues.presentationMode as? WritableKeyPath {
+            // hacky way to set the @Environment.presentationMode.
+            // here we downcast a (non-writable) \.presentationMode KeyPath to a WritableKeyPath
+            self.environment(presentationModeKey, Binding<PresentationMode>(onDismiss: onDismiss))
+        }
+    }
+}
+
 extension Binding where Value == PresentationMode {
 
     init(isPresented: Bool = true, onDismiss: @escaping () -> Void) {

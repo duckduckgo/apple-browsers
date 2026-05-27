@@ -12106,6 +12106,66 @@
         }
       }
     },
+    "big-sur-end-of-support.dont-show-again" : {
+      "comment" : "Button that permanently dismisses the Big Sur end-of-support alert",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t Show Again"
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.message" : {
+      "comment" : "Body of the on-launch alert shown to users running macOS Big Sur after support has ended",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update macOS to Monterey or later to keep getting new DuckDuckGo features, fixes, and security improvements."
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.message-incapable" : {
+      "comment" : "Body of the on-launch alert shown to users whose Mac cannot upgrade past Big Sur — does not prompt the user to update.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo updates have ended for macOS Big Sur. Your browser will keep working as it does today."
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.title" : {
+      "comment" : "Title of the on-launch alert shown to users running macOS Big Sur after support has ended",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Big Sur support has ended"
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.update-macos" : {
+      "comment" : "Primary button on the Big Sur end-of-support alert; matches the RMF message’s primaryActionText",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update macOS"
+          }
+        }
+      }
+    },
     "Birthday" : {
       "comment" : "Title of the section of the Identities manager where the user can add/modify a date of birth",
       "localizations" : {

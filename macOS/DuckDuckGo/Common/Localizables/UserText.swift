@@ -1417,6 +1417,14 @@ struct UserText {
 
     static let aboutWillSoonBeUnsupportedDeviceInfoAlertHeader = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info-alert-header", value: "Your version of macOS will soon be unsupported.", comment: "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported")
 
+    // MARK: - Big Sur end-of-support launch notice (sample)
+
+    static let bigSurEndOfSupportNoticeTitle = NSLocalizedString("big-sur-end-of-support.title", value: "Big Sur support has ended", comment: "Title of the on-launch alert shown to users running macOS Big Sur after support has ended")
+    static let bigSurEndOfSupportNoticeMessage = NSLocalizedString("big-sur-end-of-support.message", value: "Update macOS to Monterey or later to keep getting new DuckDuckGo features, fixes, and security improvements.", comment: "Body of the on-launch alert shown to users running macOS Big Sur after support has ended")
+    static let bigSurEndOfSupportNoticeDontShowAgain = NSLocalizedString("big-sur-end-of-support.dont-show-again", value: "Don’t Show Again", comment: "Button that permanently dismisses the Big Sur end-of-support alert")
+    static let bigSurEndOfSupportNoticeUpdateMacOS = NSLocalizedString("big-sur-end-of-support.update-macos", value: "Update macOS", comment: "Primary button on the Big Sur end-of-support alert; matches the RMF message’s primaryActionText")
+    static let bigSurEndOfSupportNoticeMessageIncapable = NSLocalizedString("big-sur-end-of-support.message-incapable", value: "DuckDuckGo updates have ended for macOS Big Sur. Your browser will keep working as it does today.", comment: "Body of the on-launch alert shown to users whose Mac cannot upgrade past Big Sur — does not prompt the user to update.")
+
     static func moreAt(url: String) -> String {
         let localized = NSLocalizedString("preferences.about.more-at", value: "More at %@", comment: "Link to the about page")
         return String(format: localized, url)

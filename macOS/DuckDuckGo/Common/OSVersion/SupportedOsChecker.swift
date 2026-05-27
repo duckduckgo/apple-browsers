@@ -19,6 +19,7 @@
 import AppKit
 import Foundation
 import FeatureFlags
+import Persistence
 import PrivacyConfig
 
 enum OSSupportWarning {
@@ -270,5 +271,77 @@ extension SupportedOSChecker: SupportedOSChecking {
             return "latest"
         }
         return "\(maxVersion)"
+    }
+}
+
+// MARK: - Sample: Big Sur end-of-support launch notice
+//
+// Self-contained sample showing an on-launch NSAlert when Big Sur support has
+// ended. Currently shows for all users — wrap the `show()` call in a
+// `SupportedOSChecker().supportWarning != nil` guard before shipping.
+
+struct BigSurEndOfSupportNoticePersistor {
+
+    enum Key: String {
+        case dismissed = "big-sur-end-of-support-notice.dismissed"
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var dismissed: Bool {
+        get { (try? keyValueStore.object(forKey: Key.dismissed.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.dismissed.rawValue) }
+    }
+}
+
+@MainActor
+final class BigSurEndOfSupportNoticePresenter {
+
+    private var persistor: BigSurEndOfSupportNoticePersistor
+    private let osChecker: SupportedOSChecking
+
+    init(keyValueStore: ThrowingKeyValueStoring,
+         osChecker: SupportedOSChecking = SupportedOSChecker()) {
+        self.persistor = BigSurEndOfSupportNoticePersistor(keyValueStore: keyValueStore)
+        self.osChecker = osChecker
+    }
+
+    func showIfNeeded() {
+        guard !persistor.dismissed else { return }
+        // Strong capture intentional: the presenter is created inline at the
+        // call site and has no other owner; weak capture would let it dealloc
+        // before the async block runs and the alert would silently no-op.
+        DispatchQueue.main.async {
+            self.show()
+        }
+    }
+
+    private func show() {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = UserText.bigSurEndOfSupportNoticeTitle
+        alert.informativeText = UserText.bigSurEndOfSupportNoticeMessage
+        // First-added button is the default and sits on the right.
+        // Hide the "Update macOS" call to action on hardware that can't upgrade
+        // past Big Sur; fall back to a neutral OK.
+        alert.addButton(withTitle: primaryButtonTitle())
+        alert.addButton(withTitle: UserText.bigSurEndOfSupportNoticeDontShowAgain)
+
+        if alert.runModal() == .alertSecondButtonReturn {
+            persistor.dismissed = true
+        }
+    }
+
+    private func primaryButtonTitle() -> String {
+        switch osChecker.osUpgradeCapability {
+        case .incapable:
+            return UserText.ok
+        case .capable, .unknown:
+            return UserText.bigSurEndOfSupportNoticeUpdateMacOS
+        }
     }
 }

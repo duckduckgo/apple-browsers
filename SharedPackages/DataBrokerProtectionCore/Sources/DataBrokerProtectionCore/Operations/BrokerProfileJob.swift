@@ -170,24 +170,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             .filter { $0.dataBroker.id == dataBrokerID }
             .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
-        var didFireFreemiumMaintenanceScanSkippedPixel = false
-        let filteredAndSortedJobData = Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
-                                                               jobType: jobType,
-                                                               priorityDate: priorityDate,
-                                                               sortPredicate: jobDependencies.jobSortPredicate)
-            .filter { jobData in
-                guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
-                    return true
-                }
-
-                let scanType = scanJobData.scanType()
-                didFireFreemiumMaintenanceScanSkippedPixel = fireFreemiumMaintenanceScanSkippedPixelIfNeeded(
-                    for: scanType,
-                    didFirePixel: didFireFreemiumMaintenanceScanSkippedPixel
-                )
-
-                return scanType != .maintenance
-            }
+        let filteredAndSortedJobData = makeFilteredAndSortedJobData(for: brokerProfileQueriesData, isFreeScan: isFreeScan)
 
         Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
 
@@ -278,6 +261,27 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                                                      isFreeScan: isFreeScan)
             }
         }
+    }
+
+    private func makeFilteredAndSortedJobData(for brokerProfileQueriesData: [BrokerProfileQueryData], isFreeScan: Bool) -> [BrokerJobData] {
+        var didFireFreemiumMaintenanceScanSkippedPixel = false
+        return Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
+                                       jobType: jobType,
+                                       priorityDate: priorityDate,
+                                       sortPredicate: jobDependencies.jobSortPredicate)
+            .filter { jobData in
+                guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
+                    return true
+                }
+
+                let scanType = scanJobData.scanType()
+                didFireFreemiumMaintenanceScanSkippedPixel = fireFreemiumMaintenanceScanSkippedPixelIfNeeded(
+                    for: scanType,
+                    didFirePixel: didFireFreemiumMaintenanceScanSkippedPixel
+                )
+
+                return scanType != .maintenance
+            }
     }
 
     private func fireFreemiumMaintenanceScanSkippedPixelIfNeeded(for scanType: ScanJobData.ScanType, didFirePixel: Bool) -> Bool {

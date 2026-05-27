@@ -170,7 +170,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             .filter { $0.dataBroker.id == dataBrokerID }
             .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
-        let filteredAndSortedJobData = makeFilteredAndSortedJobData(for: brokerProfileQueriesData, isFreeScan: isFreeScan)
+        let filteredAndSortedJobData = makeFilteredAndSortedJobData(brokerProfileQueriesData, isFreeScan: isFreeScan)
 
         Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
 
@@ -263,7 +263,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         }
     }
 
-    private func makeFilteredAndSortedJobData(for brokerProfileQueriesData: [BrokerProfileQueryData], isFreeScan: Bool) -> [BrokerJobData] {
+    private func makeFilteredAndSortedJobData(_ brokerProfileQueriesData: [BrokerProfileQueryData], isFreeScan: Bool) -> [BrokerJobData] {
         var didFireFreemiumMaintenanceScanSkippedPixel = false
         return Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
                                        jobType: jobType,

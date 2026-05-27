@@ -1084,8 +1084,7 @@
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel"],
-        "expires": "2026-08-31"
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "dbp-free_newtab_scan_impression_u": {
         "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, in the pre-scan state (no scan results available yet).",

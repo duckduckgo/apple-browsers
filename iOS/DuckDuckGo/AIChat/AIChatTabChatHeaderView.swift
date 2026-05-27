@@ -519,31 +519,59 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func pillContentSuperview(for pill: UIView) -> UIView {
+        // Pill is the shadow host; first subview is the clip host that holds the visual chrome.
+        let clipHost = pill.subviews.first(where: { $0.accessibilityIdentifier == Self.pillClipHostIdentifier }) ?? pill
         if #available(iOS 26, *),
-           let effectView = pill.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView {
+           let effectView = clipHost.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView {
             return effectView.contentView
         }
-        return pill
+        return clipHost
     }
 
+    private static let pillClipHostIdentifier = "aiChatHeader.pillClipHost"
+
+    /// Two-view pill: an outer `shadowHost` (no clipping, drop shadow on layer) wrapping an
+    /// inner `clipHost` (`cornerRadius` + `clipsToBounds = true`). The split is intentional —
+    /// any transient UIKit rendering at the source area of a `showsMenuAsPrimaryAction` menu
+    /// dismiss is contained by the clip host, while the shadow still renders outside via the
+    /// shadow host. Putting both on one layer would force either a rectangular flash on menu
+    /// dismiss (if `clipsToBounds = false`) or no shadow at all (if `clipsToBounds = true`).
     private func makePillContainer() -> UIView {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.layer.cornerRadius = Constants.buttonSize / 2
+        let shadowHost = UIView()
+        shadowHost.translatesAutoresizingMaskIntoConstraints = false
+
+        let clipHost = UIView()
+        clipHost.translatesAutoresizingMaskIntoConstraints = false
+        clipHost.accessibilityIdentifier = Self.pillClipHostIdentifier
+        clipHost.layer.cornerRadius = Constants.buttonSize / 2
+        clipHost.clipsToBounds = true
+
+        shadowHost.addSubview(clipHost)
+        NSLayoutConstraint.activate([
+            clipHost.topAnchor.constraint(equalTo: shadowHost.topAnchor),
+            clipHost.leadingAnchor.constraint(equalTo: shadowHost.leadingAnchor),
+            clipHost.trailingAnchor.constraint(equalTo: shadowHost.trailingAnchor),
+            clipHost.bottomAnchor.constraint(equalTo: shadowHost.bottomAnchor),
+        ])
+
         if #available(iOS 26, *) {
             let effectView = makeGlassPillEffectView()
-            view.addSubview(effectView)
+            clipHost.addSubview(effectView)
             NSLayoutConstraint.activate([
-                effectView.topAnchor.constraint(equalTo: view.topAnchor),
-                effectView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                effectView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                effectView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                effectView.topAnchor.constraint(equalTo: clipHost.topAnchor),
+                effectView.leadingAnchor.constraint(equalTo: clipHost.leadingAnchor),
+                effectView.trailingAnchor.constraint(equalTo: clipHost.trailingAnchor),
+                effectView.bottomAnchor.constraint(equalTo: clipHost.bottomAnchor),
             ])
         } else {
-            view.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+            clipHost.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
         }
-        applyGlassChromeShadow(to: view)
-        return view
+
+        // Shadow on the outer host so it renders outside the capsule bounds. Corner radius is
+        // mirrored here too so the shadow itself follows the capsule shape.
+        shadowHost.layer.cornerRadius = Constants.buttonSize / 2
+        applyGlassChromeShadow(to: shadowHost)
+        return shadowHost
     }
 
     @available(iOS 26, *)
@@ -567,7 +595,10 @@ final class AIChatTabChatHeaderView: UIView {
         guard #available(iOS 26, *) else { return }
 
         for pill in [closeButtonPill, chatListButtonPill, rightPairPill] {
-            guard let effectView = pill.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView else { continue }
+            // Pill is the shadow host; the effect view lives inside the clip host one level in.
+            let clipHost = pill.subviews.first(where: { $0.accessibilityIdentifier == Self.pillClipHostIdentifier })
+            let searchRoot = clipHost ?? pill
+            guard let effectView = searchRoot.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView else { continue }
             effectView.effect = makeGlassPillEffect()
         }
     }

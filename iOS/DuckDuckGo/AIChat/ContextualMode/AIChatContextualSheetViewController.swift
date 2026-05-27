@@ -348,7 +348,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        if isBeingDismissed || isMovingFromParent {
+        if isBeingDismissed {
             delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
         }
     }

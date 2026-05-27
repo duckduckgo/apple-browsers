@@ -183,6 +183,9 @@ final class AIChatContextualSheetCoordinator {
         startSessionTimer()
     }
 
+    // Mirrors handleSheetDismissed but deliberately skips startSessionTimer — a fire-button
+    // clear nukes the chat and doesn't want a pending timer firing afterwards. Keep aligned
+    // when adding side effects to handleSheetDismissed.
     func clearActiveChat() {
         sheetViewController?.notifySheetDismissed()
         isSheetPresented = false
@@ -421,10 +424,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL) {
         delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url)
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.startSessionTimer()
-        }
-        stopObservingContextUpdates()
+        viewController.dismiss(animated: true)
         sessionState.cancelManualAttach()
     }
 

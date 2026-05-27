@@ -131,6 +131,7 @@ final class DuckAIChromeChipView: UIView {
 
     /// Swaps the icon glyph based on whether the contextual sheet is open.
     func setSheetState(_ state: SheetState) {
+        guard state != sheetState else { return }
         sheetState = state
         let image: UIImage = {
             switch state {
@@ -142,6 +143,7 @@ final class DuckAIChromeChipView: UIView {
         iconButton.accessibilityValue = state == .open
             ? UserText.accessibilityValueAIChatContextualSheetOpen
             : UserText.accessibilityValueAIChatContextualSheetClosed
+        iconButton.accessibilityTraits = state == .open ? [.button, .selected] : [.button]
     }
 
     /// Hides only the icon half + divider when the current tab is Duck.ai. The text half stays.

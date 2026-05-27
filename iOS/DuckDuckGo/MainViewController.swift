@@ -2204,6 +2204,7 @@ class MainViewController: UIViewController {
         } else {
             showTabSwitcher()
         }
+        bindAIChatChromeChipToCurrentTab()
     }
 
     fileprivate func refreshControls() {

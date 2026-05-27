@@ -82,6 +82,16 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
         expectation?.fulfill()
     }
 
+    private(set) var didCallSetChatPathVisitSiteSeen = false
+
+    func setChatPathVisitSiteSeen() {
+        didCallSetChatPathVisitSiteSeen = true
+    }
+
+    var chatPathPhase: DaxDialogs.ChatPathPhase = .none
+    var isChatFirstPath: Bool = false
+    var isAIChatEnabled: Bool = true
+
     func setSearchMessageSeen() {
         didCallSetSearchMessageSeen = true
     }
@@ -108,6 +118,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     }
 
     var subscriptionPromotionDialogSeen: Bool = false
+    var subscriptionPromotionPending: Bool = false
 
     func disableContextualDaxDialogs() {
         didCallDisableDaxDialogs = true
@@ -124,6 +135,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     func resumeRegularFlow() {
 
     }
+
+    func setAsChatFirstPath() {}
 
     func clearHeldURLData() -> Result<Void, Error> {
         return .success(())
@@ -160,6 +173,7 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     var isShowingSubscriptionPromotion: Bool = false
     var subscriptionPromotionDialogSeen: Bool = false
+    var subscriptionPromotionPending: Bool = false
 
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
@@ -176,6 +190,13 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     func clearedBrowserData() {}
 
     func setFinalOnboardingDialogSeen() {}
+
+    func setChatPathVisitSiteSeen() {}
+    func setAsChatFirstPath() {}
+
+    var chatPathPhase: DaxDialogs.ChatPathPhase { .none }
+    var isChatFirstPath: Bool { false }
+    var isAIChatEnabled: Bool { true }
 
     func setPrivacyButtonPulseSeen() { }
 

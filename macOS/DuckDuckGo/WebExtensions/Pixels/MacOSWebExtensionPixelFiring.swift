@@ -60,6 +60,13 @@ enum WebExtensionPixel: PixelKitEvent {
     case adBlockingExtensionEnabled
     case adBlockingExtensionDisabled
 
+    case adBlockingExtensionAddressBarActiveClicked
+    case adBlockingExtensionAddressBarInactiveClicked
+    case adBlockingExtensionPopoverAlwaysOn
+    case adBlockingExtensionPopoverAlwaysOff
+    case adBlockingExtensionPopoverDisableUntilRelaunch
+    case adBlockingExtensionBreakageReportEntered
+
     // MARK: - Scriptlet Lifecycle
 
     case scriptletFetchSuccess(extensionType: String, version: String, count: Int)
@@ -126,6 +133,18 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_ad_blocking_enabled"
         case .adBlockingExtensionDisabled:
             return "m_mac_web_extension_ad_blocking_disabled"
+        case .adBlockingExtensionAddressBarActiveClicked:
+            return "m_mac_web_extension_ad_blocking_addressbar_active_clicked"
+        case .adBlockingExtensionAddressBarInactiveClicked:
+            return "m_mac_web_extension_ad_blocking_addressbar_inactive_clicked"
+        case .adBlockingExtensionPopoverAlwaysOn:
+            return "m_mac_web_extension_ad_blocking_popover_always_on"
+        case .adBlockingExtensionPopoverAlwaysOff:
+            return "m_mac_web_extension_ad_blocking_popover_always_off"
+        case .adBlockingExtensionPopoverDisableUntilRelaunch:
+            return "m_mac_web_extension_ad_blocking_popover_disable_until_relaunch"
+        case .adBlockingExtensionBreakageReportEntered:
+            return "m_mac_web_extension_ad_blocking_breakage_report_entered"
         case .scriptletFetchSuccess:
             return "m_mac_web_extension_scriptlet_fetch_success"
         case .scriptletFetchError:

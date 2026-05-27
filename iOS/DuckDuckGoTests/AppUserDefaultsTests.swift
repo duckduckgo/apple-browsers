@@ -245,6 +245,70 @@ class AppUserDefaultsTests: XCTestCase {
         XCTAssertTrue(appUserDefaults.showTrackersBlockedAnimation)
     }
 
+    // MARK: - duckPlayerMode rollout-aware default
+
+    func testWhenDuckPlayerModeStorageIsNilAndRolloutOffThenReturnsAlwaysAsk() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
+
+        XCTAssertEqual(appUserDefaults.duckPlayerMode, .alwaysAsk)
+    }
+
+    func testWhenDuckPlayerModeStorageIsNilAndRolloutOnThenReturnsDisabled() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .adBlockingExtensionEnabledByDefault)
+
+        XCTAssertEqual(appUserDefaults.duckPlayerMode, .disabled)
+    }
+
+    func testWhenDuckPlayerModeStorageIsExplicitEnabledThenRolloutDoesNotChangeReturnValue() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .adBlockingExtensionEnabledByDefault)
+        appUserDefaults.duckPlayerMode = .enabled
+
+        XCTAssertEqual(appUserDefaults.duckPlayerMode, .enabled)
+    }
+
+    func testWhenDuckPlayerModeStorageIsExplicitDisabledThenRolloutOffDoesNotChangeReturnValue() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
+        appUserDefaults.duckPlayerMode = .disabled
+
+        XCTAssertEqual(appUserDefaults.duckPlayerMode, .disabled)
+    }
+
+    // MARK: - duckPlayerNativeYoutubeMode rollout-aware default
+
+    func testWhenDuckPlayerNativeYoutubeModeStorageIsNilAndRolloutOffThenReturnsAsk() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
+
+        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .ask)
+    }
+
+    func testWhenDuckPlayerNativeYoutubeModeStorageIsNilAndRolloutOnThenReturnsNever() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .adBlockingExtensionEnabledByDefault)
+
+        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .never)
+    }
+
+    func testWhenDuckPlayerNativeYoutubeModeStorageIsExplicitAutoThenRolloutDoesNotChangeReturnValue() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .adBlockingExtensionEnabledByDefault)
+        appUserDefaults.duckPlayerNativeYoutubeMode = .auto
+
+        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .auto)
+    }
+
+    func testWhenDuckPlayerNativeYoutubeModeStorageIsExplicitNeverThenRolloutOffDoesNotChangeReturnValue() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
+        appUserDefaults.duckPlayerNativeYoutubeMode = .never
+
+        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .never)
+    }
+
     // MARK: - Mock Creation
 
     private func mockConfiguration(subfeatureEnabled: Bool) -> PrivacyConfiguration {

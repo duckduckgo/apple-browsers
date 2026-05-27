@@ -140,14 +140,14 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     var isUsingFadeOutAnimation: Bool {
-        guard unifiedToggleInputFeature.isFeatureFlagEnabled else {
+        guard unifiedToggleInputFeature.isAvailable else {
             return devicePlatform.isIphone
         }
         return false
     }
 
     var shouldDisableAutocorrectOnEmpty: Bool {
-        unifiedToggleInputFeature.isFeatureFlagEnabled || devicePlatform.isIphone
+        devicePlatform.isIphone
     }
 
     var isVoiceSearchEnabled: Bool {

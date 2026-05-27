@@ -148,7 +148,7 @@ struct DesktopDownloadView: View {
     @ViewBuilder
     private var headerView: some View {
             VStack(spacing: 18) {
-                Image(viewModel.browserDetails.imageName)
+                Image(rebrandable: viewModel.browserDetails.imageName)
 
                 Text(viewModel.browserDetails.title)
                     .daxTitle3()

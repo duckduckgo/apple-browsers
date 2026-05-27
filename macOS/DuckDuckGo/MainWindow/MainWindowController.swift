@@ -352,6 +352,15 @@ extension MainWindowController: ThemeUpdateListening {
     func applyThemeStyle(theme: ThemeStyleProviding) {
         // Prevent a 2px white line from appearing above the tab bar on macOS 26
         window?.backgroundColor = theme.colorsProvider.baseBackgroundColor
+
+        // The tab bar is added to the titlebarView with a 2pt top padding on Liquid Glass,
+        // leaving a thin strip above it that shows through to whatever is behind the titlebarView.
+        // In fullscreen the titlebarView lives in an auxiliary window whose contentView is opaque
+        // white, so coloring the titlebarView's layer itself is the only way to fill that strip.
+        if AppVersion.isLiquidGlassSupported, let titlebarView = window?.titlebarView {
+            titlebarView.wantsLayer = true
+            titlebarView.layer?.backgroundColor = theme.colorsProvider.baseBackgroundColor.cgColor
+        }
     }
 }
 
@@ -433,6 +442,12 @@ extension MainWindowController: NSWindowDelegate {
 
     func windowDidEnterFullScreen(_ notification: Notification) {
         guard let window = self.window else { return }
+
+        // Color the auxiliary fullscreen toolbar window's background to match the theme,
+        // hiding the white line above the title bar that appears on macOS 26 Liquid Glass UI.
+        if AppVersion.isLiquidGlassSupported {
+            applyThemeStyle()
+        }
 
         // Detect split screen vs regular fullscreen mode
         if window.isApproximatelyHalfScreenWide {

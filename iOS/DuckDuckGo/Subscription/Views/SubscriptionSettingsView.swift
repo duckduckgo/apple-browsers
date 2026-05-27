@@ -370,7 +370,7 @@ struct SubscriptionSettingsViewV2: View {
                 featureFlagger: settingsViewModel.featureFlagger,
                 onDisappear: {
                     Task {
-                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
+                        await viewModel.fetchAndUpdateAccountEmail(forceRefresh: true)
                     }
                 }),
             isActive: $isShowingManageEmailView
@@ -391,7 +391,7 @@ struct SubscriptionSettingsViewV2: View {
                 featureFlagger: settingsViewModel.featureFlagger,
                 onDisappear: {
                     Task {
-                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
+                        await viewModel.fetchAndUpdateAccountEmail(forceRefresh: true)
                     }
                 }),
             isActive: $isShowingActivationView

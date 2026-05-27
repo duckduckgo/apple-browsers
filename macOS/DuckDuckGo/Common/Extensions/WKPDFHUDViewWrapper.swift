@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import WebKit
 
@@ -65,9 +66,11 @@ struct WKPDFHUDViewWrapper {
     static func getPdfHudView(in webView: WKWebView, at location: NSPoint? = nil) -> Self? {
         guard let hudView = webView.subviews.last(where: { type(of: $0) == Self.WKPDFHUDViewClass && $0.frame.contains(location ?? $0.frame.origin) }) else {
 #if DEBUG
-            Task {
-                if await webView.mimeType == "application/pdf" {
-                    assertionFailure("WebView doesn‘t have PDF HUD View")
+            if AppVersion.runType == .normal {
+                Task {
+                    if await webView.mimeType == "application/pdf" {
+                        assertionFailure("WebView doesn‘t have PDF HUD View")
+                    }
                 }
             }
 #endif

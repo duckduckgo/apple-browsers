@@ -33,6 +33,8 @@ final class UTIModelStore {
     private let subscriptionManager: any SubscriptionManager
     private var modelsFetchTask: Task<Void, Never>?
 
+    private var liveModelId: String?
+
     var onModelsUpdated: (() -> Void)?
 
     init(
@@ -46,18 +48,13 @@ final class UTIModelStore {
     }
 
     var persistedModelId: String? {
-        let id = preferences.selectedModelId
-        if let id, !models.isEmpty {
-            if let model = models.first(where: { $0.id == id }) {
-                return model.entityHasAccess ? id : firstAccessibleModelId
-            }
-            return firstAccessibleModelId
-        }
-        return id ?? firstAccessibleModelId
+        if let resolved = resolve(modelId: liveModelId) { return resolved }
+        if let resolved = resolve(modelId: preferences.selectedModelId) { return resolved }
+        return firstAccessibleModelId
     }
 
     var currentModelId: String? {
-        preferences.selectedModelId
+        liveModelId
     }
 
     var selectedReasoningMode: AIChatReasoningMode? {
@@ -67,6 +64,14 @@ final class UTIModelStore {
     var selectedModel: AIChatModel? {
         guard let persistedModelId else { return nil }
         return models.first(where: { $0.id == persistedModelId })
+    }
+
+    var displayShortName: String? {
+        if let liveModelId,
+           let shortName = models.first(where: { $0.id == liveModelId })?.shortName {
+            return shortName
+        }
+        return preferences.selectedModelShortName
     }
 
     var selectedModelSupportsImageUpload: Bool {
@@ -88,6 +93,13 @@ final class UTIModelStore {
 
     private var firstAccessibleModelId: String? {
         models.first(where: { $0.entityHasAccess })?.id
+    }
+
+    private func resolve(modelId id: String?) -> String? {
+        guard let id else { return nil }
+        guard !models.isEmpty else { return id }
+        guard let model = models.first(where: { $0.id == id }) else { return nil }
+        return model.entityHasAccess ? id : nil
     }
 
     func fetchModels() {
@@ -114,9 +126,12 @@ final class UTIModelStore {
         }
     }
 
-    func updateSelectedModel(_ modelId: String) {
-        preferences.selectedModelId = modelId
-        preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+    func updateSelectedModel(_ modelId: String, isNewChatContext: Bool) {
+        liveModelId = modelId
+        if isNewChatContext {
+            preferences.selectedModelId = modelId
+            preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        }
         clearStaleReasoningModeIfNeeded()
     }
 
@@ -134,17 +149,8 @@ final class UTIModelStore {
         preferences.selectedReasoningMode = mode
     }
 
-    /// Used by per-tab restoration to mirror a tab's stored selection into preferences,
-    /// including nil values. Bypasses the validity checks of `updateSelectedModel`/
-    /// `updateSelectedReasoningMode` so the live state matches the stored state exactly.
     func applyPersistedSelection(modelID: String?, reasoningMode: AIChatReasoningMode?) {
-        preferences.selectedModelId = modelID
-        // Always assign — including nil when the model isn't (yet) in `models` —
-        // otherwise the previous tab's cached short name lingers in preferences
-        // until handleModelsUpdated() corrects it.
-        preferences.selectedModelShortName = modelID.flatMap { id in
-            models.first(where: { $0.id == id })?.shortName
-        }
+        liveModelId = modelID
         preferences.selectedReasoningMode = reasoningMode
     }
 
@@ -187,17 +193,15 @@ final class UTIModelStore {
         }
     }
 
-    func cacheSelectedModelShortName(_ shortName: String) {
-        preferences.selectedModelShortName = shortName
-    }
-
     func clearStaleModelSelectionIfNeeded() {
-        guard let selectedId = preferences.selectedModelId, !models.isEmpty else { return }
+        guard !models.isEmpty else { return }
 
-        let selectedModel = models.first(where: { $0.id == selectedId })
-        let isStale = selectedModel == nil || selectedModel?.entityHasAccess == false
+        if let id = liveModelId, !models.contains(where: { $0.id == id && $0.entityHasAccess }) {
+            liveModelId = nil
+        }
 
-        if isStale {
+        if let preferredId = preferences.selectedModelId,
+           !models.contains(where: { $0.id == preferredId && $0.entityHasAccess }) {
             preferences.selectedModelId = nil
             preferences.selectedModelShortName = nil
         }

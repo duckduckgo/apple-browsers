@@ -256,8 +256,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
-    case fireproofingETLDPlus1
-
     case screenTimeCleaning
 
     case minimalChromeInLandscape
@@ -283,6 +281,11 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
+
+    /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
+    /// Kill switch in case the new path regresses persistence reliability or hang counts.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
+    case tabsSaveOptimization
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
@@ -418,9 +421,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the default omnibar toggle position setting for AI Chat
     case omnibarDefaultPosition
 
-    /// Controls showing the Hide AI section in Settings -> AI Features
-    case showHideAiGeneratedImages
-
     case unifiedToggleInput
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
@@ -522,6 +522,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Displays the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     case iPadChromeShortcut
+
+    /// Enables moving the AI Chat native-storage container from the shared App
+    /// Group into the app's Application Support directory on iOS. Off keeps the
+    /// legacy App Group path.
+    case nativeStoragePathMigration
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

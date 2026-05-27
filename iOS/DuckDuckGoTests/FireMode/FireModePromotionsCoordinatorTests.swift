@@ -99,27 +99,13 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    // MARK: - NTP Promotion: Expiration
+    // MARK: - NTP Promotion: Show At Most Once
 
-    func testWhenPromotionShownWithinThreeDaysThenEligible() {
+    func testWhenPromotionShownThenNotEligibleAgain() {
         setNTPEligibleState()
         sut.markNTPPromotionShown()
 
-        XCTAssertTrue(sut.isNTPPromotionEligible)
-    }
-
-    func testWhenPromotionShownMoreThanThreeDaysAgoThenNotEligible() {
-        setNTPEligibleState()
-        let fourDaysAgo = Date().addingTimeInterval(-4 * 24 * 60 * 60)
-        storage.ntpFirstSeenDate = fourDaysAgo
-
         XCTAssertFalse(sut.isNTPPromotionEligible)
-    }
-
-    func testWhenPromotionNeverShownAndConditionsMetThenEligible() {
-        setNTPEligibleState()
-
-        XCTAssertTrue(sut.isNTPPromotionEligible)
     }
 
     // MARK: - NTP Promotion: markNTPPromotionShown

@@ -201,10 +201,6 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    var shouldShowHideAIGeneratedImagesSection: Bool {
-        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
-    }
-
     var isDefaultOmnibarModeEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
     }
@@ -735,7 +731,7 @@ final class SettingsViewModel: ObservableObject {
         adBlockingAvailability.isRemotelyDisabled
     }
 
-      var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
+    var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
                 return self.state.duckPlayerNativeYoutubeMode

@@ -54,7 +54,7 @@ extension Preferences {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
                     if let minVersion = model.unsupportedMinVersion {
-                        UnsupportedDeviceInfoBox(minVersion: minVersion)
+                        UnsupportedDeviceInfoBox(minVersion: minVersion, canUpgradeOS: model.canUpgradeOS)
                             .padding(.top, 10)
                     }
 
@@ -486,6 +486,7 @@ extension Preferences {
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
         var minVersion: String
+        var canUpgradeOS: Bool = true
 
         private var osVersion: String {
             return "\(ProcessInfo.processInfo.operatingSystemVersion)"
@@ -505,23 +506,23 @@ extension Preferences {
 
             let versionText = Text(versionText)
 
-            let contentView: some View = HStack(alignment: .center, spacing: 0) {
-                if #available(macOS 12.0, *) {
-                    Text(combinedTextAttributedAttributed)
-                } else {
-                    NSAttributedTextView(attributedString: legacyCombinedTextAttributed)
-                }
-
-                // Added to prevent bouncy animation when resizing the parent view
-                // caused by the text width being a bit jumpy.
-                Spacer()
-            }
-
             return HStack(alignment: .top) {
                 image
                 VStack(alignment: .leading, spacing: 12) {
                     versionText
-                    contentView
+                    if canUpgradeOS {
+                        HStack(alignment: .center, spacing: 0) {
+                            if #available(macOS 12.0, *) {
+                                Text(combinedTextAttributedAttributed)
+                            } else {
+                                NSAttributedTextView(attributedString: legacyCombinedTextAttributed)
+                            }
+
+                            // Added to prevent bouncy animation when resizing the parent view
+                            // caused by the text width being a bit jumpy.
+                            Spacer()
+                        }
+                    }
                 }
             }
             .padding()

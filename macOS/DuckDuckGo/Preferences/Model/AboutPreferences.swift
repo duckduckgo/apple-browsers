@@ -204,6 +204,11 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         supportedOSChecker.unsupportedMinVersion
     }
 
+    var canUpgradeOS: Bool {
+        OSUpgradeCapabilityOverridePersistor()
+            .canUpgradeOS(default: supportedOSChecker.osUpgradeCapability.canUpgradeOS)
+    }
+
     @MainActor
     func openFeedbackForm() {
         NSApp.delegateTyped.openFeedback(nil)

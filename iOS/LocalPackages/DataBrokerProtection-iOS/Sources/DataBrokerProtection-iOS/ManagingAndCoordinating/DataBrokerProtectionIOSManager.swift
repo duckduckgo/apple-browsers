@@ -370,12 +370,18 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
 
         if currentRunIsFreeScan == true && canRunFreemiumScans {
             Logger.dataBrokerProtection.log("Starting scan-only operations whilst dashboard open (freemium)")
-            queueManager.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+            queueManager.startScheduledScanOperationsIfPermitted(showWebView: false,
+                                                                 isAuthenticatedUser: false,
+                                                                 jobDependencies: jobDependencies,
+                                                                 errorHandler: nil) {
                 Logger.dataBrokerProtection.log("Scan operations completed whilst dashboard open")
             }
         } else {
             Logger.dataBrokerProtection.log("Starting all operations whilst dashboard open")
-            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false,
+                                                               isAuthenticatedUser: true,
+                                                               jobDependencies: jobDependencies,
+                                                               errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed whilst dashboard open")
             }
         }
@@ -510,7 +516,7 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
         }
 
         do {
-            let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
+            let hasCompletedInitialScans = try database.haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: currentRunIsFreeScan != true)
             if hasCompletedInitialScans {
                 let profile = try database.fetchProfile()
                 eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0, isFreeScan: currentRunIsFreeScan)
@@ -553,6 +559,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         case .scheduledScan:
             queueManager.startScheduledScanOperationsIfPermitted(
                 showWebView: true,
+                isAuthenticatedUser: currentRunIsFreeScan != true,
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completionHandler
@@ -560,6 +567,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         case .optOut:
             queueManager.startImmediateOptOutOperationsIfPermitted(
                 showWebView: true,
+                isAuthenticatedUser: true,
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completionHandler
@@ -567,6 +575,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         case .all:
             queueManager.startScheduledAllOperationsIfPermitted(
                 showWebView: true,
+                isAuthenticatedUser: true,
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completionHandler
@@ -821,10 +830,18 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 guard let self else { return }
                 if isAuthenticated {
                     Logger.dataBrokerProtection.log("Starting all operations in background task")
-                    self.queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: self.jobDependencies, errorHandler: nil, completion: completion)
+                    self.queueManager.startScheduledAllOperationsIfPermitted(showWebView: false,
+                                                                            isAuthenticatedUser: true,
+                                                                            jobDependencies: self.jobDependencies,
+                                                                            errorHandler: nil,
+                                                                            completion: completion)
                 } else if self.canRunFreemiumScans {
                     Logger.dataBrokerProtection.log("Starting scan-only operations in background task (freemium)")
-                    self.queueManager.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: self.jobDependencies, errorHandler: nil, completion: completion)
+                    self.queueManager.startScheduledScanOperationsIfPermitted(showWebView: false,
+                                                                             isAuthenticatedUser: false,
+                                                                             jobDependencies: self.jobDependencies,
+                                                                             errorHandler: nil,
+                                                                             completion: completion)
                 } else {
                     Logger.dataBrokerProtection.log("No operations to start in background task")
                     completion()
@@ -939,10 +956,12 @@ extension DataBrokerProtectionIOSManager {
         }
 
         await checkForEmailConfirmationData()
+        let isAuthenticatedUser = await refreshFreeScanState()
         // Completion also runs for interrupted scans; the error handler is the normal-finish signal.
         var scanCompletedNormally = false
         queueManager.startImmediateScanOperationsIfPermitted(
             showWebView: false,
+            isAuthenticatedUser: isAuthenticatedUser,
             jobDependencies: jobDependencies,
             errorHandler: { [weak self] errors in
                 if errors?.oneTimeError == nil {
@@ -985,7 +1004,7 @@ extension DataBrokerProtectionIOSManager {
     }
 
     private func makeContinuedProcessingInitialRunPlan() throws -> DBPContinuedProcessingPlans.InitialScanPlan? {
-        let brokerProfileQueryData = try database.fetchActiveBrokerProfileQueryData()
+        let brokerProfileQueryData = try database.fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: currentRunIsFreeScan != true)
         let eligibleScanJobs = BrokerProfileJob.sortedEligibleJobs(
             brokerProfileQueriesData: brokerProfileQueryData,
             jobType: .manualScan,
@@ -1045,10 +1064,12 @@ extension DataBrokerProtectionIOSManager: DBPContinuedProcessingDelegate {
         }
 
         await checkForEmailConfirmationData()
+        let isAuthenticatedUser = await refreshFreeScanState()
         // Same completion semantics as `startImmediateScanOperations()`.
         var scanCompletedNormally = false
         queueManager.startImmediateScanOperationsIfPermitted(
             showWebView: false,
+            isAuthenticatedUser: isAuthenticatedUser,
             jobDependencies: jobDependencies,
             errorHandler: { [weak self] errors in
                 if errors?.oneTimeError == nil {
@@ -1074,6 +1095,7 @@ extension DataBrokerProtectionIOSManager: DBPContinuedProcessingDelegate {
         Logger.dataBrokerProtection.log("Continued processing: delegating to immediate opt-out operations")
         queueManager.startImmediateOptOutOperationsIfPermitted(
             showWebView: false,
+            isAuthenticatedUser: true,
             jobDependencies: jobDependencies,
             errorHandler: nil
         ) {

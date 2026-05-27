@@ -93,7 +93,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
     func deleteBackgroundTaskEvents(olderThan date: Date) throws
 
-    func haveAllScansRunAtLeastOnce() throws -> Bool
+    func haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: Bool) throws -> Bool
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -881,14 +881,14 @@ extension DataBrokerProtectionDatabase {
         }
     }
 
-    public func haveAllScansRunAtLeastOnce() throws -> Bool {
+    public func haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: Bool) throws -> Bool {
         do {
-            let data = try fetchActiveBrokerProfileQueryData()
+            let data = try fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: isAuthenticatedUser)
             let scans = data.compactMap { $0.scanJobData }
             let scansNotRun = scans.filter { $0.lastRunDate == nil }
             return scansNotRun.count == 0
         } catch {
-            handleError(error, context: "DataBrokerProtectionDatabase.haveAllScansRunAtLeastOnce")
+            handleError(error, context: "DataBrokerProtectionDatabase.haveAllEligibleScansRunAtLeastOnce")
             throw error
         }
     }

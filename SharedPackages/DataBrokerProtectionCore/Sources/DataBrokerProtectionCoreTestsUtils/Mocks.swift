@@ -1500,7 +1500,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return []
     }
 
-    public func haveAllScansRunAtLeastOnce() throws -> Bool {
+    public func haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: Bool) throws -> Bool {
         return true
     }
 }
@@ -1860,34 +1860,62 @@ public final class MockJobQueueManager: JobQueueManaging {
     public var startImmediateOptOutOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
+    public var lastStartImmediateScanIsAuthenticatedUser: Bool?
+    public var lastStartImmediateOptOutIsAuthenticatedUser: Bool?
+    public var lastStartScheduledAllIsAuthenticatedUser: Bool?
+    public var lastStartScheduledScanIsAuthenticatedUser: Bool?
 
-    public init(jobQueue: BrokerProfileJobQueue, jobProvider: BrokerProfileJobProviding, emailConfirmationJobProvider: EmailConfirmationJobProviding, mismatchCalculator: MismatchCalculator, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
+    public init(jobQueue: BrokerProfileJobQueue,
+                jobProvider: BrokerProfileJobProviding,
+                emailConfirmationJobProvider: EmailConfirmationJobProviding,
+                mismatchCalculator: MismatchCalculator,
+                pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
 
     }
 
-    public func startImmediateScanOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+    public func startImmediateScanOperationsIfPermitted(showWebView: Bool,
+                                                        isAuthenticatedUser: Bool,
+                                                        jobDependencies: BrokerProfileJobDependencyProviding,
+                                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                        completion: (() -> Void)?) {
         didCallStartImmediateScanOperationsIfPermitted = true
+        lastStartImmediateScanIsAuthenticatedUser = isAuthenticatedUser
         errorHandler?(startImmediateScanOperationsIfPermittedCompletionError)
         completion?()
         startImmediateScanOperationsIfPermittedCalledCompletion?()
     }
 
-    public func startImmediateOptOutOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+    public func startImmediateOptOutOperationsIfPermitted(showWebView: Bool,
+                                                          isAuthenticatedUser: Bool,
+                                                          jobDependencies: BrokerProfileJobDependencyProviding,
+                                                          errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                          completion: (() -> Void)?) {
         didCallStartImmediateOptOutOperationsIfPermitted = true
+        lastStartImmediateOptOutIsAuthenticatedUser = isAuthenticatedUser
         errorHandler?(startImmediateOptOutOperationsIfPermittedCompletionError)
         completion?()
         startImmediateOptOutOperationsIfPermittedCalledCompletion?()
     }
 
-    public func startScheduledAllOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+    public func startScheduledAllOperationsIfPermitted(showWebView: Bool,
+                                                       isAuthenticatedUser: Bool,
+                                                       jobDependencies: BrokerProfileJobDependencyProviding,
+                                                       errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                       completion: (() -> Void)?) {
         didCallStartScheduledAllOperationsIfPermitted = true
+        lastStartScheduledAllIsAuthenticatedUser = isAuthenticatedUser
         errorHandler?(startScheduledAllOperationsIfPermittedCompletionError)
         completion?()
         startScheduledAllOperationsIfPermittedCalledCompletion?()
     }
 
-    public func startScheduledScanOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+    public func startScheduledScanOperationsIfPermitted(showWebView: Bool,
+                                                        isAuthenticatedUser: Bool,
+                                                        jobDependencies: BrokerProfileJobDependencyProviding,
+                                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                        completion: (() -> Void)?) {
         didCallStartScheduledScanOperationsIfPermitted = true
+        lastStartScheduledScanIsAuthenticatedUser = isAuthenticatedUser
         errorHandler?(startScheduledScanOperationsIfPermittedCompletionError)
         completion?()
         startScheduledScanOperationsIfPermittedCalledCompletion?()
@@ -1919,6 +1947,10 @@ public final class MockJobQueueManager: JobQueueManaging {
         startImmediateOptOutOperationsIfPermittedCalledCompletion = nil
         startScheduledAllOperationsIfPermittedCalledCompletion = nil
         startScheduledScanOperationsIfPermittedCalledCompletion = nil
+        lastStartImmediateScanIsAuthenticatedUser = nil
+        lastStartImmediateOptOutIsAuthenticatedUser = nil
+        lastStartScheduledAllIsAuthenticatedUser = nil
+        lastStartScheduledScanIsAuthenticatedUser = nil
 
         delegate = nil
     }
@@ -2209,6 +2241,7 @@ public final class MockDataBrokerOperationsCreator: BrokerProfileJobProviding {
     public var shouldError = false
     public var priorityDate: Date?
     public var createdType: JobType = .manualScan
+    public var isAuthenticatedUser: Bool?
 
     public init(operationCollections: [BrokerProfileJob] = []) {
         self.operationCollections = operationCollections
@@ -2218,10 +2251,12 @@ public final class MockDataBrokerOperationsCreator: BrokerProfileJobProviding {
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
                            statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
+                           isAuthenticatedUser: Bool,
                            jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
         guard !shouldError else { throw DataBrokerProtectionError.unknown("")}
         self.createdType = jobType
         self.priorityDate = priorityDate
+        self.isAuthenticatedUser = isAuthenticatedUser
         return operationCollections
     }
 }

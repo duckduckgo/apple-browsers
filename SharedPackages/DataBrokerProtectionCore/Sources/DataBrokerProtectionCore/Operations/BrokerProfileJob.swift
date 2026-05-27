@@ -163,13 +163,10 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             return
         }
 
-        let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
-
         let isAuthenticatedUser = await jobDependencies.isAuthenticatedUser()
-        if !isAuthenticatedUser, brokerProfileQueriesData.containsBrokersRequiringSubscription {
-            Logger.dataBrokerProtection.log("Skipping broker \(self.dataBrokerID, privacy: .public) requiring subscription on freemium scan")
-            return
-        }
+        let brokerProfileQueriesData = allBrokerProfileQueryData
+            .filter { $0.dataBroker.id == dataBrokerID }
+            .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
         let filteredAndSortedJobData = Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
                                                                jobType: jobType,
@@ -194,7 +191,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
             Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
 
-            let isFreeScan = !(await jobDependencies.isAuthenticatedUser())
+            let isFreeScan = !isAuthenticatedUser
             let stepType: StepType? = {
                 switch jobData {
                 case is ScanJobData:

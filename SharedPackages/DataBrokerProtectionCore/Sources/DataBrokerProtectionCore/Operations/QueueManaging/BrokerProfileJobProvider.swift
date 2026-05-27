@@ -24,6 +24,7 @@ public protocol BrokerProfileJobProviding {
                     withPriorityDate priorityDate: Date?,
                     showWebView: Bool,
                     statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
+                    isAuthenticatedUser: Bool,
                     jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob]
 }
 
@@ -35,10 +36,11 @@ public final class BrokerProfileJobProvider: BrokerProfileJobProviding {
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
                            statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
+                           isAuthenticatedUser: Bool,
                            jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
 
         let brokerProfileQueryData = try jobDependencies.database
-            .fetchActiveBrokerProfileQueryData()
+            .fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: isAuthenticatedUser)
         var jobs: [BrokerProfileJob] = []
         var visitedDataBrokerIDs: Set<Int64> = []
 

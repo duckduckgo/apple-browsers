@@ -111,6 +111,11 @@ final class AIChatTabChatHeaderView: UIView {
             tabCountLabel.centerXAnchor.constraint(equalTo: button.centerXAnchor),
             tabCountLabel.centerYAnchor.constraint(equalTo: button.centerYAnchor, constant: 1),
         ])
+        // Match the Plus button's capsule clipping so any transient highlight from the
+        // adjacent Plus menu dismissal doesn't render the tab-switcher as a rectangle
+        // inside the surrounding pill.
+        button.layer.cornerRadius = Constants.pillButtonSize / 2
+        button.clipsToBounds = true
         return button
     }()
 

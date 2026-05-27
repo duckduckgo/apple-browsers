@@ -1090,6 +1090,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         let inputMode = textEntryMode
             ?? tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) }
             ?? .search
+        coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
         coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible

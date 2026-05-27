@@ -44,6 +44,7 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var executionConfig: BrokerJobExecutionConfig { get }
     var featureFlagger: DBPFeatureFlagging { get }
     var applicationNameForUserAgent: String? { get }
+    var contentBlocking: DBPWebViewContentBlocking? { get }
 
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
@@ -374,7 +375,14 @@ public extension SubJobWebRunning {
             self.webViewHandler = handler
         } else {
             let applicationName: String? = featureFlagger.isWebViewUserAgentOn ? applicationNameForUserAgent : nil
-            self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig, shouldContinueActionHandler: shouldRunNextStep, applicationNameForUserAgent: applicationName)
+            self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig,
+                                                                               prefs: prefs,
+                                                                               delegate: self,
+                                                                               isFakeBroker: isFakeBroker,
+                                                                               executionConfig: executionConfig,
+                                                                               shouldContinueActionHandler: shouldRunNextStep,
+                                                                               applicationNameForUserAgent: applicationName,
+                                                                               contentBlocking: contentBlocking)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

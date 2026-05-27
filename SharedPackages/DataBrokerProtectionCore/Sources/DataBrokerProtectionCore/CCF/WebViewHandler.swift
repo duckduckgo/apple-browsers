@@ -58,11 +58,23 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     private var timer: Timer?
 
-    public init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, isFakeBroker: Bool = false, executionConfig: BrokerJobExecutionConfig, shouldContinueActionHandler: @escaping () -> Bool, applicationNameForUserAgent: String?) throws {
+    public init(privacyConfig: PrivacyConfigurationManaging,
+                prefs: ContentScopeProperties,
+                delegate: CCFCommunicationDelegate,
+                isFakeBroker: Bool = false,
+                executionConfig: BrokerJobExecutionConfig,
+                shouldContinueActionHandler: @escaping () -> Bool,
+                applicationNameForUserAgent: String?,
+                contentBlocking: DBPWebViewContentBlocking? = nil) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         let configuration = WKWebViewConfiguration()
-        try configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig, prefs: prefs, delegate: delegate, executionConfig: executionConfig, shouldContinueActionHandler: shouldContinueActionHandler)
+        try configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig,
+                                                       prefs: prefs,
+                                                       delegate: delegate,
+                                                       executionConfig: executionConfig,
+                                                       shouldContinueActionHandler: shouldContinueActionHandler,
+                                                       contentBlocking: contentBlocking)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
         if let applicationNameForUserAgent {

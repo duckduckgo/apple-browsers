@@ -40,7 +40,7 @@ protocol UnifiedInputStateStoring: AnyObject {
     /// Records a user-deliberate choice. Updates the entry for `uid`, the `lastUsed`
     /// snapshot used to seed new tabs, and writes through the seedable fields to
     /// their canonical global homes.
-    func recordUserChoice(_ state: TabInputState, for uid: TabUID)
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID, isNewChatContext: Bool)
 
     /// Removes the entry for `uid`. No-op if absent.
     func remove(for uid: TabUID)

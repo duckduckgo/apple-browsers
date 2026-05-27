@@ -21,6 +21,30 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
+import PrivacyConfig
+
+/// Visibility logic for the Duck.ai chrome shortcut surfaces.
+///
+/// The chrome shortcut (the Duck.ai pill in the iPad tabs bar and its matching
+/// row in Settings → AI Features → Manage Duck.ai Shortcuts) is iPad-only and
+/// gated behind the `aiChatChromeShortcutIPad` feature flag.
+///
+/// Extracted as a free type so the platform check can be exercised in tests
+/// without depending on `UIDevice.current`.
+enum DuckAIChromeShortcutVisibility {
+    static func isSettingsRowVisible(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
+        isIPad && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+    }
+
+    /// No `isIPad` parameter — the only caller (`TabsBarViewController`) is iPad-only by construction.
+    static func isChromeButtonVisible(
+        featureFlagger: FeatureFlagger,
+        isAIChatNavigationBarUserSettingsEnabled: Bool
+    ) -> Bool {
+        featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+            && isAIChatNavigationBarUserSettingsEnabled
+    }
+}
 
 struct SettingsAIChatShortcutsView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -33,6 +57,12 @@ struct SettingsAIChatShortcutsView: View {
 
                 SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
                                  accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+
+                if shouldShowNavigationBarShortcut {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableNavigationBarToggle,
+                                     subtitle: UserText.aiChatSettingsEnableNavigationBarSubtitle,
+                                     accessory: .toggle(isOn: viewModel.aiChatNavigationBarEnabledBinding))
+                }
 
                 if viewModel.state.voiceSearchEnabled {
                     SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
@@ -109,6 +139,13 @@ struct SettingsAIChatShortcutsView: View {
 
     private var shouldShowAddressBarShortcut: Bool {
         !(viewModel.featureFlagger.isFeatureOn(.iPadAIToggle) && UIDevice.current.userInterfaceIdiom == .pad)
+    }
+
+    private var shouldShowNavigationBarShortcut: Bool {
+        DuckAIChromeShortcutVisibility.isSettingsRowVisible(
+            isIPad: UIDevice.current.userInterfaceIdiom == .pad,
+            featureFlagger: viewModel.featureFlagger
+        )
     }
 }
 

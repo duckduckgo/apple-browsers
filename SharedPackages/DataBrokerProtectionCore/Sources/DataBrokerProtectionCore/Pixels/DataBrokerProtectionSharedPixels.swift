@@ -166,6 +166,9 @@ public enum DataBrokerProtectionSharedPixels {
     // freemium → paid upsell
     case freemiumUpsell
 
+    // Temporary Freemium PIR monitoring
+    case freemiumPIRMaintenanceScanSkipped
+
     // events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
     case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
@@ -284,6 +287,9 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
             // freemium upsell
         case .freemiumUpsell: return "dbp_freemium_upsell_u"
+
+            // Temporary Freemium PIR monitoring
+        case .freemiumPIRMaintenanceScanSkipped: return "dbp_freemium_pir_maintenance_scan_skipped"
 
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
         case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
@@ -526,7 +532,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .dashboardOpen(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
                 .firstScan(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
             return addingFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
-        case .freemiumUpsell:
+        case .freemiumUpsell,
+                .freemiumPIRMaintenanceScanSkipped:
             return [:]
         case .scanningEventNewMatch(let dataBrokerURL),
                 .scanningEventReAppearance(let dataBrokerURL):
@@ -674,6 +681,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .dashboardOpen,
                 .firstScan,
                 .freemiumUpsell,
+                .freemiumPIRMaintenanceScanSkipped,
                 .weeklyReportBackgroundTaskSession,
                 .weeklyReportStalledScans,
                 .weeklyReportStalledOptOuts,
@@ -801,6 +809,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .weeklyReportBackgroundTaskSession,
                     .weeklyReportStalledScans,
                     .weeklyReportStalledOptOuts,
+                    .freemiumPIRMaintenanceScanSkipped,
                     .optOutJobAt7DaysConfirmed,
                     .optOutJobAt7DaysUnconfirmed,
                     .optOutJobAt14DaysConfirmed,

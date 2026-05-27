@@ -170,6 +170,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             .filter { $0.dataBroker.id == dataBrokerID }
             .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
+        var didFireFreemiumMaintenanceScanSkippedPixel = false
         let filteredAndSortedJobData = Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
                                                                jobType: jobType,
                                                                priorityDate: priorityDate,
@@ -179,8 +180,13 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                     return true
                 }
 
-                // Do not execute maintenance scans for Freemium users
-                return scanJobData.scanType() != .maintenance
+                let scanType = scanJobData.scanType()
+                didFireFreemiumMaintenanceScanSkippedPixel = fireFreemiumMaintenanceScanSkippedPixelIfNeeded(
+                    for: scanType,
+                    didFirePixel: didFireFreemiumMaintenanceScanSkippedPixel
+                )
+
+                return scanType != .maintenance
             }
 
         Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
@@ -272,6 +278,15 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                                                      isFreeScan: isFreeScan)
             }
         }
+    }
+
+    private func fireFreemiumMaintenanceScanSkippedPixelIfNeeded(for scanType: ScanJobData.ScanType, didFirePixel: Bool) -> Bool {
+        guard scanType == .maintenance, !didFirePixel else {
+            return didFirePixel
+        }
+
+        jobDependencies.pixelHandler.fire(.freemiumPIRMaintenanceScanSkipped)
+        return true
     }
 
     private func finish() {

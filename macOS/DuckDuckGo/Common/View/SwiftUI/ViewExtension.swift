@@ -76,22 +76,3 @@ private struct RoundedCorner: Shape {
         return Path(path.asCGPath())
     }
 }
-
-public struct ViewAsyncTaskModifier: ViewModifier {
-
-    private let priority: TaskPriority
-    private let action: @Sendable () async -> Void
-
-    public init(priority: TaskPriority, action: @escaping @Sendable () async -> Void) {
-        self.priority = priority
-        self.action = action
-        self.task = nil
-    }
-
-    @State private var task: Task<Void, Never>?
-
-    public func body(content: Content) -> some View {
-        content.task(priority: priority, action)
-    }
-
-}

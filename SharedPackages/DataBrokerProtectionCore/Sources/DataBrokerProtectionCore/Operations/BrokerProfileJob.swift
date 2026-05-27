@@ -165,6 +165,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         }
 
         let isAuthenticatedUser = await jobDependencies.isAuthenticatedUser()
+        let isFreeScan = !isAuthenticatedUser
         let brokerProfileQueriesData = allBrokerProfileQueryData
             .filter { $0.dataBroker.id == dataBrokerID }
             .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
@@ -173,6 +174,14 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                                                jobType: jobType,
                                                                priorityDate: priorityDate,
                                                                sortPredicate: jobDependencies.jobSortPredicate)
+            .filter { jobData in
+                guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
+                    return true
+                }
+
+                // Do not execute maintenance scans for Freemium users
+                return scanJobData.scanType() != .maintenance
+            }
 
         Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
 
@@ -192,7 +201,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
             Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
 
-            let isFreeScan = !isAuthenticatedUser
             let stepType: StepType? = {
                 switch jobData {
                 case is ScanJobData:

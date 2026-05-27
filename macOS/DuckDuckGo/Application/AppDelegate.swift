@@ -771,13 +771,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     isInternalUserEnabled: isInternalUserEnabled)
 
         // Expired refresh token recovery
-        if #available(iOS 15.0, *) {
-            let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
-                                                         storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
-                                                         pendingTransactionHandler: pendingTransactionHandler)
-            defaultSubscriptionManager.tokenRecoveryHandler = {
-                try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
-            }
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
+                                                     storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
+                                                     pendingTransactionHandler: pendingTransactionHandler)
+        defaultSubscriptionManager.tokenRecoveryHandler = {
+            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
         }
 
         subscriptionManager = defaultSubscriptionManager

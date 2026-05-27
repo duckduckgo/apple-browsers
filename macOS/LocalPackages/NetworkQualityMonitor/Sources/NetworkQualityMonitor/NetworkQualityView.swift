@@ -24,18 +24,16 @@ public struct NetworkQualityView: View {
     public init() {}
 
     public var body: some View {
-        if #available(iOS 15.0, *) {
-            VStack(spacing: 0) {
-                if let results = viewModel.results {
-                    resultsView(results)
-                } else if viewModel.isRunning {
-                    progressView
-                } else {
-                    startView
-                }
+        VStack(spacing: 0) {
+            if let results = viewModel.results {
+                resultsView(results)
+            } else if viewModel.isRunning {
+                progressView
+            } else {
+                startView
             }
-            .frame(width: 680, height: 650)
         }
+        .frame(width: 680, height: 650)
     }
 
     @available(iOS 15.0, *)

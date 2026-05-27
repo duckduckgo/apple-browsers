@@ -131,7 +131,6 @@ final class DuckAIChromeChipView: UIView {
 
     /// Swaps the icon glyph based on whether the contextual sheet is open.
     func setSheetState(_ state: SheetState) {
-        guard state != sheetState else { return }
         sheetState = state
         let image: UIImage = {
             switch state {

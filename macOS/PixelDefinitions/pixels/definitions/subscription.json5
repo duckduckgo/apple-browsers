@@ -758,7 +758,7 @@
         "description": "Fired when a user starts a free trial subscription (App Store distribution). Used to measure total trialists independent of trial completion.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_store_privacy-pro_freetrial_vpn_activation": {
         "description": "Fired when a user activates VPN for the first time during a free trial (App Store distribution). Includes activation day to distinguish D1 vs D2-D7 activators.",
@@ -767,6 +767,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "activation_day",
                 "type": "string",
@@ -782,6 +783,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "activation_day",
                 "type": "string",
@@ -797,6 +799,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "activation_day",
                 "type": "string",
@@ -820,6 +823,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "activation_day",
                 "type": "string",
@@ -835,6 +839,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "activation_day",
                 "type": "string",
@@ -850,6 +855,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "activation_day",
                 "type": "string",

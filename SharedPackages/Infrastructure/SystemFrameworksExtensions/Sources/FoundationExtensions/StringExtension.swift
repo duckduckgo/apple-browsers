@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import Punycode
 import Network
 
 public typealias RegEx = NSRegularExpression
@@ -558,14 +557,6 @@ public extension StringProtocol {
     func removingCharacters(in set: CharacterSet) -> String {
         let filtered = unicodeScalars.filter { !set.contains($0) }
         return String(String.UnicodeScalarView(filtered))
-    }
-
-    // MARK: Punycode
-    var punycodeEncodedHostname: String {
-        return self.split(separator: ".")
-            .map { String($0) }
-            .map { $0.idnaEncoded ?? $0 }
-            .joined(separator: ".")
     }
 
     // MARK: Prefix/Suffix

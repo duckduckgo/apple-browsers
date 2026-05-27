@@ -41,15 +41,11 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
     ],
     targets: [
         // MARK: - Shared Targets
         .target(
             name: "FoundationExtensions",
-            dependencies: [
-                .product(name: "Punycode", package: "PunycodeSwift"),
-            ],
             exclude: ["README.md"]
         ),
         .target(

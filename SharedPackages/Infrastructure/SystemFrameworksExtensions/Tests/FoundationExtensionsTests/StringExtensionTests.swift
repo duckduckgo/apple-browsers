@@ -66,13 +66,6 @@ final class StringExtensionTests: XCTestCase {
         XCTAssertEqual(normalizedString, "dax")
     }
 
-    func testWhenEmojisArePresentInDomains_ThenTheseCanBePunycoded() {
-
-        XCTAssertEqual("example.com".punycodeEncodedHostname, "example.com")
-        XCTAssertEqual("Dax🤔.com".punycodeEncodedHostname, "xn--dax-v153b.com")
-        XCTAssertEqual("🤔.com".punycodeEncodedHostname, "xn--wp9h.com")
-    }
-
     func testHashedSuffix() {
         XCTAssertEqual("http://localhost:8084/#navlink".hashedSuffix, "#navlink")
         XCTAssertEqual("http://localhost:8084/#navlink#1".hashedSuffix, "#navlink#1")

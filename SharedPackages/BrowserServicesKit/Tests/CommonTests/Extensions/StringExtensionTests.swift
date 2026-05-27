@@ -1,7 +1,7 @@
 //
-//  String+Punycode.swift
+//  StringExtensionTests.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,15 +17,16 @@
 //
 
 import Foundation
-import Punycode
+import XCTest
 
-extension String {
+@testable import Common
 
-    public var punycodeEncodedHostname: String {
-        return self.split(separator: ".")
-            .map { String($0) }
-            .map { $0.idnaEncoded ?? $0 }
-            .joined(separator: ".")
+final class StringExtensionTests: XCTestCase {
+
+    func testWhenEmojisArePresentInDomains_ThenTheseCanBePunycoded() {
+        XCTAssertEqual("example.com".punycodeEncodedHostname, "example.com")
+        XCTAssertEqual("Dax🤔.com".punycodeEncodedHostname, "xn--dax-v153b.com")
+        XCTAssertEqual("🤔.com".punycodeEncodedHostname, "xn--wp9h.com")
     }
 
 }

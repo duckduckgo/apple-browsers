@@ -1780,9 +1780,6 @@
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Všetky chaty sú %@ súkromné";
 
-/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "súkromná";
-
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pre iOS";
 

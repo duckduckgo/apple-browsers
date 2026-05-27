@@ -1779,9 +1779,6 @@
 
 "duckai.welcome.message" = "Visas tērzēšanas sarunas ir %@ privātas";
 
-/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "privāta";
-
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo operētājsistēmai iOS";
 

@@ -153,10 +153,12 @@ extension NSAlert {
         return alert
     }
 
-    static func osNotSupported(minVersion: String) -> NSAlert {
+    static func osNotSupported(minVersion: String, canUpgradeOS: Bool = true) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.aboutUnsupportedDeviceInfo1
-        alert.informativeText = UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
+        if canUpgradeOS {
+            alert.informativeText = UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
+        }
         alert.alertStyle = .warning
 
         alert.addButton(withTitle: UserText.checkForUpdate)

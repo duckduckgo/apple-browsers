@@ -1034,7 +1034,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         // No per-tab persistence: existing tabs read from URL; new tabs read from setting + app-wide last-used.
-        // The app-wide last-used is written through `UnifiedInputStateStore.recordUserChoice` on submission.
+        // The app-wide last-used is written through `UnifiedInputStateStore.commitToggleMode` on submit, which fires this delegate.
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {

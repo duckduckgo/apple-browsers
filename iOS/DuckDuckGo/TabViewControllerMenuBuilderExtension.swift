@@ -542,11 +542,13 @@ extension TabViewController {
     }
     
     /// Glyph deliberately matches the chat-history pill in `AIChatTabChatHeaderView` so the
-    /// header tile and the top-chrome pill read as the same action.
+    /// header tile and the top-chrome pill read as the same action. Forced to `.alwaysTemplate`
+    /// so the menu cell's tint colour wins in dark mode — the asset's default rendering mode
+    /// renders dark in dark mode without it.
     private func buildAIChatHistoryHeaderTile() -> BrowsingMenuEntry {
         .regular(name: UserText.aiChatAppMenuHeaderChatHistory,
                  accessibilityLabel: UserText.aiChatAppMenuHeaderChatHistory,
-                 image: DesignSystemImages.Glyphs.Size24.chats,
+                 image: DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate),
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
             self?.submitToggleSidebarAction()

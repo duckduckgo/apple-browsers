@@ -18,8 +18,9 @@
 
 import BrowserServicesKit
 import Common
-import FoundationExtensions
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import OSLog
 import PrivacyConfig
 import WebKit

@@ -36,6 +36,10 @@ let package = Package(
             targets: ["CombineExtensions"]
         ),
         .library(
+            name: "ConcurrencyExtensions",
+            targets: ["ConcurrencyExtensions"]
+        ),
+        .library(
             name: "UIKitExtensions",
             targets: ["UIKitExtensionsProxy"]
         ),
@@ -50,6 +54,12 @@ let package = Package(
         ),
         .target(
             name: "CombineExtensions"
+        ),
+        .target(
+            name: "ConcurrencyExtensions",
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
         ),
 
         // MARK: - Platform Specific Targets
@@ -70,6 +80,10 @@ let package = Package(
         .testTarget(
             name: "FoundationExtensionsTests",
             dependencies: ["FoundationExtensions"]
+        ),
+        .testTarget(
+            name: "ConcurrencyExtensionsTests",
+            dependencies: ["ConcurrencyExtensions"]
         ),
     ]
 )

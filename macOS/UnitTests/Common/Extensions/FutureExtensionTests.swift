@@ -18,8 +18,9 @@
 
 import Combine
 import Common
-import FoundationExtensions
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

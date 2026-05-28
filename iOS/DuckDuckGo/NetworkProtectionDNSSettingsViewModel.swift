@@ -17,12 +17,13 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Combine
 import CombineExtensions
-import VPN
+import ConcurrencyExtensions
 import Core
+import Foundation
 import PrivacyConfig
+import VPN
 
 final class NetworkProtectionDNSSettingsViewModel: ObservableObject {
     private let settings: VPNSettings

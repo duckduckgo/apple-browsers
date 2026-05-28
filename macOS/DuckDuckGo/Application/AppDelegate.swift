@@ -21,15 +21,15 @@ import AppKitExtensions
 import AppUpdaterShared
 import AttributedMetric
 import AutoconsentStats
-import BWManagementShared
 import Bookmarks
 import BrokenSitePrompt
 import BrowserServicesKit
+import BWManagementShared
 import Cocoa
 import Combine
 import CombineExtensions
 import Common
-import FoundationExtensions
+import ConcurrencyExtensions
 import Configuration
 import ContentScopeScripts
 import CoreData
@@ -40,6 +40,7 @@ import DataBrokerProtectionCore
 import DDGSync
 import DuckAiDataStore
 import FeatureFlags
+import FoundationExtensions
 import Freemium
 import History
 import HistoryView

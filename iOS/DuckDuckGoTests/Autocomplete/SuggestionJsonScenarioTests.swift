@@ -20,11 +20,12 @@
 import Bookmarks
 import BrowserServicesKit
 import Common
-import FoundationExtensions
+import ConcurrencyExtensions
 import Core
 import CoreData
-import InlineSnapshotTesting
+import FoundationExtensions
 import History
+import InlineSnapshotTesting
 import os.log
 import Persistence
 import PixelKit

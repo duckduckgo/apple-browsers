@@ -25,6 +25,7 @@ let package = Package(
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Networking", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),

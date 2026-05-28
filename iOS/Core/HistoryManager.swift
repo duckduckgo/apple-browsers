@@ -17,15 +17,16 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Common
+import ConcurrencyExtensions
 import CoreData
 import Foundation
-import BrowserServicesKit
-import History
-import Common
 import FoundationExtensions
+import History
+import os.log
 import Persistence
 import PixelKit
-import os.log
 
 public protocol HistoryManaging {
 

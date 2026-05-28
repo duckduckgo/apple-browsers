@@ -19,7 +19,9 @@
 import BrowserServicesKit
 import Cocoa
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import FeatureFlags
 import MaliciousSiteProtection
 import PrivacyConfig

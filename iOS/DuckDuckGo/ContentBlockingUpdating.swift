@@ -22,6 +22,7 @@ import Foundation
 import BrowserServicesKit
 import Core
 import Combine
+import CombineExtensions
 import Persistence
 import WebExtensions
 import WebKit

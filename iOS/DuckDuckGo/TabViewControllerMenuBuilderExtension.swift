@@ -24,6 +24,7 @@ import Bookmarks
 import simd
 import WidgetKit
 import Common
+import FoundationExtensions
 import PrivacyDashboard
 import PixelExperimentKit
 import DesignResourcesKit

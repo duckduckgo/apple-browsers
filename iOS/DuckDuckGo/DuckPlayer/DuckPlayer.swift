@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import ContentScopeScripts
 import Core
 import Foundation

@@ -20,6 +20,7 @@ import NewTabPage
 import AppKit
 import Suggestions
 import Common
+import FoundationExtensions
 import AIChat
 import os.log
 import PixelKit

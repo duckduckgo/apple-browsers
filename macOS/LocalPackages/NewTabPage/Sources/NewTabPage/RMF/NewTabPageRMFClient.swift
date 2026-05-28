@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import RemoteMessaging
 import UserScriptActionsManager
 import WebKit

@@ -23,6 +23,7 @@ import Core
 import Bookmarks
 import Persistence
 import Common
+import FoundationExtensions
 
 public extension BoolFileMarker.Name {
     static let hasSuccessfullySetupBookmarksDatabaseBefore = BoolFileMarker.Name(rawValue: "bookmarks-db-setup-successfully-3")

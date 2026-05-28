@@ -20,7 +20,9 @@ import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import DesignResourcesKitIcons
 import Freemium
 import History

@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import UserScript
 import WebKit
 import Combine

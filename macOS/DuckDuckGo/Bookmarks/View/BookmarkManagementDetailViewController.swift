@@ -20,6 +20,7 @@ import AppKit
 import Carbon
 import Combine
 import Common
+import FoundationExtensions
 import SwiftUI
 import PixelKit
 

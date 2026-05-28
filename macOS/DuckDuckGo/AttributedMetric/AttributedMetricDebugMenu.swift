@@ -19,6 +19,7 @@
 import AppKit
 import AttributedMetric
 import Common
+import FoundationExtensions
 import Foundation
 import Persistence
 

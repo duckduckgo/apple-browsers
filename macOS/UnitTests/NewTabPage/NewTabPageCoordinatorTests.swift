@@ -19,6 +19,7 @@
 import AutoconsentStats
 import Combine
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import NewTabPage

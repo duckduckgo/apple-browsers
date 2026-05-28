@@ -22,6 +22,7 @@ import AppKitExtensions
 import AutoconsentStats
 import Persistence
 import Common
+import FoundationExtensions
 import SwiftUIExtensions
 import PixelKit
 import os.log

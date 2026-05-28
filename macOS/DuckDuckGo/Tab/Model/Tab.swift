@@ -19,9 +19,12 @@
 import AutoconsentStats
 import BrowserServicesKit
 import Combine
+import CombineExtensions
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
 import Foundation
+import FoundationExtensions
 import History
 import MaliciousSiteProtection
 import Navigation

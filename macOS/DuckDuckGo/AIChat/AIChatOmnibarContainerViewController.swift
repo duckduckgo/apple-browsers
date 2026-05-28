@@ -1698,22 +1698,33 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateSubmitButtonState(for: omnibarController.currentText)
 
         let toolButtonTintColor = NSColor(designSystemColor: .textPrimary)
+        // Focus-ring colour follows the active theme's primary accent, the same source the
+        // search/AI toggle uses, so all controls in the duck.ai address bar agree on the glow.
+        // (The submit button is excluded — it uses AppKit's native focus ring, which can't
+        // be themed without a deeper rewrite.)
+        let focusRingColor = colorsProvider.accentPrimaryColor
         toolsButton.tintColor = toolButtonTintColor
         toolsButton.hoverBackgroundColor = .buttonMouseOver
         toolsButton.pressedBackgroundColor = .buttonMouseDown
+        toolsButton.focusRingColor = focusRingColor
         imageGenActiveButton.tintColor = toolButtonTintColor
         imageGenActiveButton.hoverBackgroundColor = .buttonMouseOver
         imageGenActiveButton.pressedBackgroundColor = .buttonMouseDown
+        imageGenActiveButton.focusRingColor = focusRingColor
         webSearchActiveButton.tintColor = toolButtonTintColor
         webSearchActiveButton.hoverBackgroundColor = .buttonMouseOver
         webSearchActiveButton.pressedBackgroundColor = .buttonMouseDown
+        webSearchActiveButton.focusRingColor = focusRingColor
         imageUploadButton.tintColor = toolButtonTintColor
         imageUploadButton.hoverBackgroundColor = .buttonMouseOver
         imageUploadButton.pressedBackgroundColor = .buttonMouseDown
+        imageUploadButton.focusRingColor = focusRingColor
         reasoningPickerButton.tintColor = toolButtonTintColor
         reasoningPickerButton.hoverBackgroundColor = .buttonMouseOver
         reasoningPickerButton.pressedBackgroundColor = .buttonMouseDown
+        reasoningPickerButton.focusRingColor = focusRingColor
         modelPickerButton.tintColor = toolButtonTintColor
+        modelPickerButton.focusRingColor = focusRingColor
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")
@@ -1778,6 +1789,11 @@ final class AIChatSubmitButton: MouseOverButton {
     // AppKit's default focus ring fits the image content, which makes it hug the icon instead
     // of the rounded button frame. Overriding the mask + bounds makes the focus ring match the
     // button's actual shape.
+    //
+    // Note: the ring colour is the system `controlAccentColor`, so it does *not* follow the
+    // in-app theme switcher (Pink etc.) the way the other AIChat controls do. AppKit's focus
+    // ring colour can't be overridden without taking ownership of the entire focus-ring render
+    // path on an NSButton subclass — left as a known limitation for a separate PR.
     override var focusRingMaskBounds: NSRect {
         bounds
     }

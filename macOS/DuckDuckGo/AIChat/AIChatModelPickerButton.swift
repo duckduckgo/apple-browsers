@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 import DesignResourcesKitIcons
 
 /// A pill-shaped button that displays the current AI model name with a dropdown chevron.
@@ -78,6 +79,22 @@ final class AIChatModelPickerButton: NSView {
         didSet {
             updateAppearance()
         }
+    }
+
+    /// Stroke colour for the keyboard-focus ring. Defaults to the design-system primary
+    /// accent; the container VC re-assigns this from `theme.colorsProvider.accentPrimaryColor`
+    /// via `applyTheme(theme:)` so the ring follows in-app theme switches (Pink, Blue, etc.).
+    var focusRingColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
+        didSet { updateFocusRingStrokeColor() }
+    }
+
+    private func updateFocusRingStrokeColor() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            focusRingLayer.strokeColor = focusRingColor.cgColor
+        }
+        CATransaction.commit()
     }
 
     var hoverBackgroundColor: NSColor = .clear
@@ -147,10 +164,10 @@ final class AIChatModelPickerButton: NSView {
         layer?.insertSublayer(backgroundLayer, at: 0)
 
         // Focus ring sublayer sits above the background so it stays visible while hovered.
-        NSAppearance.withAppAppearance {
-            focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
-        }
+        // Stroke colour follows `focusRingColor` and re-resolves against the view's effective
+        // appearance — see `updateFocusRingStrokeColor()`.
         layer?.addSublayer(focusRingLayer)
+        updateFocusRingStrokeColor()
 
         // Add subviews
         addSubview(nameLabel)
@@ -289,12 +306,7 @@ final class AIChatModelPickerButton: NSView {
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         updateAppearance()
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        NSAppearance.withAppAppearance {
-            focusRingLayer.strokeColor = NSColor.controlAccentColor.cgColor
-        }
-        CATransaction.commit()
+        updateFocusRingStrokeColor()
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {

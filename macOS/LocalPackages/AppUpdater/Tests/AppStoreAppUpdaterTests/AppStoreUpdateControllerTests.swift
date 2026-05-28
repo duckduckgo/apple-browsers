@@ -561,6 +561,107 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             wait(for: [expectation], timeout: 1.0)
         }
     }
+
+    // MARK: - Onboarding Suppression Tests
+
+    /// Asana: https://app.asana.com/0/0/1208754999490080
+    /// Regression: clean install + onboarding showed the "update available" notification mid-flow.
+    /// The notification dot must be suppressed while onboarding is in progress.
+    func testUpdateAvailable_OnboardingFinished_SetsNotificationDot() async {
+        // Given — feature flag on, update available, onboarding finished
+        let controller = makeControllerForOnboardingTest(
+            remoteVersion: "999.0.0",
+            remoteBuild: 99999,
+            isOnboardingFinished: true
+        )
+
+        // When — automatic update check finds an update
+        await runUpdateCheckAndWait(on: controller)
+
+        // Then — pending update is recorded and notification dot is set
+        XCTAssertTrue(controller.hasPendingUpdate, "Pending update should be recorded")
+        XCTAssertTrue(controller.needsNotificationDot, "Notification dot should be set when onboarding is finished")
+    }
+
+    func testUpdateAvailable_OnboardingInProgress_SuppressesNotificationDot() async {
+        // Given — feature flag on, update available, onboarding NOT finished
+        let controller = makeControllerForOnboardingTest(
+            remoteVersion: "999.0.0",
+            remoteBuild: 99999,
+            isOnboardingFinished: false
+        )
+
+        // When — automatic update check finds an update
+        await runUpdateCheckAndWait(on: controller)
+
+        // Then — pending update is still recorded (so subsequent checks can surface the dot),
+        // but the notification dot is suppressed to avoid disrupting onboarding.
+        XCTAssertTrue(controller.hasPendingUpdate, "Pending update should still be recorded for later")
+        XCTAssertFalse(controller.needsNotificationDot, "Notification dot must be suppressed during onboarding")
+    }
+
+    // MARK: - Onboarding Suppression Test Helpers
+
+    private func makeControllerForOnboardingTest(
+        remoteVersion: String,
+        remoteBuild: Int,
+        isOnboardingFinished: Bool
+    ) -> AppStoreUpdateController {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+
+        MockURLProtocol.requestHandler = { request in
+            let json = """
+            {
+                "latest_appstore_version": {
+                    "latest_version": "\(remoteVersion)",
+                    "build_number": \(remoteBuild),
+                    "release_date": "2026-04-29T10:00:00Z",
+                    "is_critical": false
+                }
+            }
+            """
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, json.data(using: .utf8)!)
+        }
+
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledUpdateFeatureFlags = [.appStoreUpdateFlow]
+
+        return AppStoreUpdateController(
+            appStoreOpener: MockAppStoreOpener(),
+            featureFlagger: mockFeatureFlagger,
+            notificationPresenter: MockNotificationPresenter(),
+            releaseChecker: LatestReleaseChecker(
+                baseURL: "https://test.example.com/",
+                urlSession: session
+            ),
+            isOnboardingFinished: { isOnboardingFinished }
+        )
+    }
+
+    /// Triggers an automatic update check and waits until `hasPendingUpdate` becomes `true`,
+    /// using a publisher-driven expectation rather than arbitrary delays.
+    private func runUpdateCheckAndWait(on controller: AppStoreUpdateController) async {
+        let exp = expectation(description: "hasPendingUpdate becomes true")
+        let cancellable = controller.hasPendingUpdatePublisher
+            .filter { $0 }
+            .first()
+            .sink { _ in exp.fulfill() }
+
+        controller.checkForUpdateAutomatically()
+
+        await fulfillment(of: [exp], timeout: 5.0)
+        cancellable.cancel()
+        MockURLProtocol.requestHandler = nil
+    }
+
 }
 
 // MARK: - Mock Objects

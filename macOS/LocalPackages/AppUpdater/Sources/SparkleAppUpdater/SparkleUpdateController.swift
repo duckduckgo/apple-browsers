@@ -368,7 +368,21 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     // MARK: - Update Indicators (Dot + Notification + Menu Item)
 
     /// Shows update UI: blue dot, banner notification, and enables menu item visibility.
+    ///
+    /// Suppressed entirely while onboarding is in progress so the update flow doesn't
+    /// disrupt first-run UX. Sparkle re-checks every 30-60 minutes and the App's
+    /// progress publisher fires on each subsequent cycle, so indicators surface naturally
+    /// after onboarding completes — no explicit re-trigger required.
+    ///
+    /// When suppressed for onboarding, `pendingNotificationTask` is cleared so the next
+    /// `handleUpdateNotification` call (driven by the next Sparkle check) is free to
+    /// schedule a fresh notification rather than being short-circuited by the guard
+    /// against an already-fired task.
     private func showUpdateIndicators() {
+        guard isOnboardingFinished() else {
+            pendingNotificationTask = nil
+            return
+        }
         mustShowUpdateIndicators = true
         needsNotificationDot = true
         showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)

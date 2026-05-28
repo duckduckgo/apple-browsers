@@ -131,11 +131,12 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
          featureFlagger: FeatureFlagger? = nil,
          pixelFiring: PixelFiring? = nil,
          notificationPresenter: any UpdateNotificationPresenting,
+         releaseChecker: LatestReleaseChecker? = nil,
          isOnboardingFinished: @escaping () -> Bool = { true }) {
         self.updateCheckState = UpdateCheckState()
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.notificationPresenter = notificationPresenter
-        self.releaseChecker = LatestReleaseChecker()
+        self.releaseChecker = releaseChecker ?? LatestReleaseChecker()
         self.featureFlagger = featureFlagger ?? MockFeatureFlagger()
         self.pixelFiring = pixelFiring
         self.internalUserDecider = internalUserDecider ?? MockInternalUserDecider(isInternalUser: false)
@@ -227,7 +228,10 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                     let update = Update(releaseMetadata: releaseMetadata, isInstalled: false)
                     self.latestUpdate = update
                     self.hasPendingUpdate = true
-                    self.needsNotificationDot = true
+                    // Suppress the notification dot while onboarding is in progress to avoid
+                    // disrupting first-run UX. Subsequent automatic checks (on window-resign-key)
+                    // will set the dot once onboarding completes.
+                    self.needsNotificationDot = self.isOnboardingFinished()
 
                     Logger.updates.log("App Store update available: \(releaseMetadata.latestVersion)")
                     updateProgress = .updateCycleDone(.finishedWithNoError)

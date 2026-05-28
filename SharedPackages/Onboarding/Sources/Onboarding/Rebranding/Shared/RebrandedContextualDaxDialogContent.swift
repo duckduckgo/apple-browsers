@@ -19,25 +19,6 @@
 import SwiftUI
 import UIComponents
 
-/// Process-wide cache of dialogs that have completed their entrance animation. Keyed by
-/// `(title? + message)` so a view rebuild (e.g. device rotation) skips re-animation and
-/// renders the final state on the first frame.
-private enum RebrandedContextualDaxDialogCache {
-    static var completed: Set<String> = []
-
-    static func key(title: NSAttributedString?, message: NSAttributedString) -> String {
-        (title?.string ?? "") + "|" + message.string
-    }
-
-    static func isCompleted(title: NSAttributedString?, message: NSAttributedString) -> Bool {
-        completed.contains(key(title: title, message: message))
-    }
-
-    static func markCompleted(title: NSAttributedString?, message: NSAttributedString) {
-        completed.insert(key(title: title, message: message))
-    }
-}
-
 extension OnboardingRebranding {
 
     public enum ContextualDaxDialogOrientation: Equatable {
@@ -58,9 +39,10 @@ extension OnboardingRebranding {
         private let titleBodyVerticalSpacingOverride: CGFloat?
         private let content: Content
 
-        @State private var startTypingTitle: Bool
-        @State private var startTypingMessage: Bool
-        @State private var shouldShowContent: Bool
+        @State private var startTypingTitle = false
+        @State private var startTypingMessage = false
+        @State private var shouldShowContent = false
+        @State private var alreadyRevealed = false
 
         #if os(iOS)
         public init(
@@ -72,19 +54,13 @@ extension OnboardingRebranding {
             titleBodyVerticalSpacingOverride: CGFloat? = nil,
             @ViewBuilder content: () -> Content
         ) {
-            let nsTitle = title.map(NSAttributedString.init)
-            let nsMessage = NSAttributedString(message)
             self.orientation = orientation
-            self.title = nsTitle
+            self.title = title.map(NSAttributedString.init)
             self.titleTextAlignment = titleTextAlignment
-            self.message = nsMessage
+            self.message = NSAttributedString(message)
             self.messageTextAlignment = messageTextAlignment
             self.titleBodyVerticalSpacingOverride = titleBodyVerticalSpacingOverride
             self.content = content()
-            let cached = RebrandedContextualDaxDialogCache.isCompleted(title: nsTitle, message: nsMessage)
-            _startTypingTitle = State(initialValue: cached)
-            _startTypingMessage = State(initialValue: cached)
-            _shouldShowContent = State(initialValue: cached)
         }
 
         public init(
@@ -124,15 +100,10 @@ extension OnboardingRebranding {
             self.messageTextAlignment = messageTextAlignment
             self.titleBodyVerticalSpacingOverride = titleBodyVerticalSpacingOverride
             self.content = content()
-            let cached = RebrandedContextualDaxDialogCache.isCompleted(title: title, message: message)
-            _startTypingTitle = State(initialValue: cached)
-            _startTypingMessage = State(initialValue: cached)
-            _shouldShowContent = State(initialValue: cached)
         }
         #endif
 
         public var body: some View {
-            let cached = RebrandedContextualDaxDialogCache.isCompleted(title: title, message: message)
             Group {
                 switch orientation {
                 case .verticalStack:
@@ -145,7 +116,7 @@ extension OnboardingRebranding {
                             messageTextAlignment: messageTextAlignment,
                             startTypingTitle: $startTypingTitle,
                             startTypingMessage: $startTypingMessage,
-                            initiallyRevealed: cached,
+                            alreadyRevealed: $alreadyRevealed,
                             onTypingFinished: animateContentIn
                         )
                         content
@@ -161,7 +132,7 @@ extension OnboardingRebranding {
                             messageTextAlignment: messageTextAlignment,
                             startTypingTitle: $startTypingTitle,
                             startTypingMessage: $startTypingMessage,
-                            initiallyRevealed: cached,
+                            alreadyRevealed: $alreadyRevealed,
                             onTypingFinished: animateContentIn
                         )
                         Spacer(minLength: theme.contentSpacing)
@@ -171,7 +142,7 @@ extension OnboardingRebranding {
                 }
             }
             .onAppear {
-                guard !RebrandedContextualDaxDialogCache.isCompleted(title: title, message: message) else { return }
+                guard !alreadyRevealed else { return }
                 Task { @MainActor in
                     try await Task.sleep(interval: theme.contentFadeInDelay)
                     if title != nil {
@@ -184,7 +155,7 @@ extension OnboardingRebranding {
         }
 
         private func animateContentIn() {
-            RebrandedContextualDaxDialogCache.markCompleted(title: title, message: message)
+            alreadyRevealed = true
             if reduceMotion {
                 shouldShowContent = true
             } else {
@@ -265,7 +236,7 @@ private extension OnboardingRebranding {
 
         @Binding var startTypingTitle: Bool
         @Binding var startTypingMessage: Bool
-        let initiallyRevealed: Bool
+        @Binding var alreadyRevealed: Bool
         let onTypingFinished: () -> Void
 
         #if os(iOS)
@@ -280,7 +251,7 @@ private extension OnboardingRebranding {
             messageTextAlignment: TextAlignment? = nil,
             startTypingTitle: Binding<Bool>,
             startTypingMessage: Binding<Bool>,
-            initiallyRevealed: Bool,
+            alreadyRevealed: Binding<Bool>,
             onTypingFinished: @escaping () -> Void
         ) {
             self.title = title
@@ -290,10 +261,10 @@ private extension OnboardingRebranding {
             self.messageTextAlignment = messageTextAlignment
             self._startTypingTitle = startTypingTitle
             self._startTypingMessage = startTypingMessage
-            self.initiallyRevealed = initiallyRevealed
+            self._alreadyRevealed = alreadyRevealed
             self.onTypingFinished = onTypingFinished
             #if os(iOS)
-            _showStaticMessage = State(initialValue: initiallyRevealed)
+            _showStaticMessage = State(initialValue: alreadyRevealed.wrappedValue)
             #endif
         }
 
@@ -316,7 +287,7 @@ private extension OnboardingRebranding {
             AnimatableTypingText(
                 title,
                 startAnimating: $startTypingTitle,
-                skipAnimation: .constant(initiallyRevealed),
+                skipAnimation: $alreadyRevealed,
                 alignment: Alignment(alignment),
                 onTypingFinished: { revealStaticMessageAndFinish() }
             )
@@ -357,7 +328,7 @@ private extension OnboardingRebranding {
             AnimatableTypingText(
                 title,
                 startAnimating: $startTypingTitle,
-                skipAnimation: .constant(initiallyRevealed),
+                skipAnimation: $alreadyRevealed,
                 alignment: Alignment(alignment),
                 onTypingFinished: { startTypingMessage = true }
             )
@@ -371,7 +342,7 @@ private extension OnboardingRebranding {
             AnimatableTypingText(
                 message,
                 startAnimating: $startTypingMessage,
-                skipAnimation: .constant(initiallyRevealed),
+                skipAnimation: $alreadyRevealed,
                 alignment: Alignment(alignment),
                 onTypingFinished: onTypingFinished
             )

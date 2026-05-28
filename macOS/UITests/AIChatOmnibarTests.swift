@@ -294,32 +294,35 @@ class AIChatOmnibarTests: UITestCase {
     /// Duck.ai, submitting another prompt via the omnibar must open a fresh chat in a new tab
     /// instead of injecting the prompt into the loaded conversation. Pins the behavior change
     /// in `WindowControllersManager.openAIChat` (`.currentTab + isDuckAIURL + hasPrompt`).
+    ///
+    /// The test submits twice from NTP back-to-back. The first submission navigates the
+    /// current tab to Duck.ai (`.currentTab + NOT isDuckAIURL` path — unchanged by the fix).
+    /// The second runs after `enterDuckAIModeWithPrompt` has activated the bar, typed a new
+    /// prompt, pressed Shift+Enter, and waited for the panel — enough natural delay for the
+    /// prior navigation to commit. With the fix in place the second submission opens a new
+    /// tab; without it, it reloads the loaded chat and the tab count stays at 1.
+    ///
+    /// We avoid observing `addressBarTextField.value` between submissions to detect "we've
+    /// reached Duck.ai": in focused Duck.ai mode the bar value is the draft prompt, not the
+    /// URL, and the panel doesn't release it on submit.
     func test_omnibarSubmit_whenCurrentTabIsDuckAI_opensNewTab() throws {
-        // Step 1: navigate the current tab to Duck.ai directly via the address bar. We can't use
-        // a focused-omnibar submission to reach Duck.ai because that leaves the panel up and the
-        // bar's `.value` keeps reflecting the draft prompt rather than the URL — no reliable
-        // signal that the navigation actually committed.
-        addressBarTextField.typeURL(URL(string: "https://duck.ai")!)
-        waitForAddressBarValue(matching: "value CONTAINS[c] 'duck'",
-                               timeout: UITests.Timeouts.elementExistence * 3)
+        // First submission — navigates the current (NTP) tab to Duck.ai. Tab count stays 1.
+        enterDuckAIModeWithPrompt("first prompt")
+        app.typeKey(.return, modifierFlags: [])
 
-        let tabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
-        let tabsBefore = tabs.count
-        XCTAssertEqual(tabsBefore, 1,
-                       "Setup precondition: one tab (now on Duck.ai) before the omnibar submission")
-
-        // Step 2: submit a prompt via the focused omnibar. Current tab is Duck.ai, so the
-        // routing change must open a new selected tab rather than reloading the loaded chat.
-        enterDuckAIModeWithPrompt("test prompt")
+        // Second submission — current tab is now Duck.ai (or about to be by the time this
+        // helper finishes), so the routing change must open a new selected tab.
+        enterDuckAIModeWithPrompt("second prompt")
         app.typeKey(.return, modifierFlags: [])
 
         // Tab insertion is async wrt the keystroke — poll the count via predicate.
-        let predicate = NSPredicate(format: "count == \(tabsBefore + 1)")
+        let tabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
+        let predicate = NSPredicate(format: "count == 2")
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: tabs)
         let result = XCTWaiter().wait(for: [expectation],
-                                      timeout: UITests.Timeouts.elementExistence * 3)
+                                      timeout: UITests.Timeouts.elementExistence * 4)
         XCTAssertEqual(result, .completed,
-                       "Submitting a prompt via the omnibar while Duck.ai is the current tab must open a new tab (expected \(tabsBefore + 1) tabs, got \(tabs.count))")
+                       "Two omnibar submissions starting from NTP should end with 2 tabs (first loaded Duck.ai in current tab; second opened a new tab). Got \(tabs.count).")
     }
 
 }

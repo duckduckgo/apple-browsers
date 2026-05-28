@@ -51,7 +51,7 @@ MainMenuActions (Action Handlers)
 
 ### Menu Item Extensions
 
-- `NSMenuItem+Common` — builder pattern extensions providing a fluent API for menu construction and keyboard shortcut helpers.
+- `NSMenuItemExtension` — builder pattern extensions providing a fluent API for menu construction and keyboard shortcut helpers.
 
 ## Common Tasks
 

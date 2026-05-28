@@ -57,15 +57,15 @@ AddressBarTextField
 
 ### Getting/Setting Address Bar Content
 
-Use `AddressBarTextField` methods: `setUrl(_:cacheExisting:)` to display a URL, `setStringValue(_:userTyped:)` for text/search queries, `clear()` to reset, and `stringValue` to read current content.
+The text field's content mirrors the selected tab's `addressBarString` and updates automatically as the tab navigates. Use `clearValue()` to reset, and read `stringValue` for the current content.
 
 ### Navigating to a URL
 
-Navigation happens when the user presses Enter. The address bar converts the input (text, URL, or suggestion) using `URL.makeUrl()` and delegates to `addressBar(_:navigate:newTab:)`.
+Navigation happens when the user presses Enter via `addressBarEnterPressed()`. The address bar resolves the input through `URL.makeUrl(suggestion:stringValueWithoutSuffix:completion:)` and updates the selected tab via `Tab.setUrl(_:source:)`.
 
 ### Showing Suggestions
 
-As the user types, `addressBarTextDidChange(_:)` updates `SuggestionContainerViewModel` and displays the suggestion window positioned below the address bar.
+As the user types, `controlTextDidChange(_:)` triggers `handleTextDidChange()`, which updates `SuggestionContainerViewModel` and displays the suggestion window positioned below the address bar.
 
 ### URL vs. Search Detection
 

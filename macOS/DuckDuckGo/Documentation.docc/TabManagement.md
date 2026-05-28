@@ -15,7 +15,7 @@ The tab architecture follows a composition pattern where core functionality is e
 ```
 Tab
 ├── WKWebView (WebKit integration)
-├── NavigationDelegate (navigation coordination)
+├── DistributedNavigationDelegate (navigation coordination)
 ├── TabExtensions (feature composition)
 │   ├── ContentBlockingTabExtension
 │   ├── PrivacyDashboardTabExtension
@@ -38,7 +38,7 @@ Tab
 ### Extension System
 
 The ``TabExtension`` protocol enables modular functionality. Each extension:
-- Has a defined ``PublicProtocol`` interface
+- Defines its own public protocol via the `PublicProtocol` associated type
 - Receives ``TabExtensionDependencies`` on initialization
 - Can subscribe to tab events (navigation, page load, etc.)
 - Exposes functionality through its public protocol

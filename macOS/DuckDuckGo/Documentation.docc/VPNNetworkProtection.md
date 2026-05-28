@@ -78,7 +78,7 @@ The system extension provides the actual VPN functionality:
 ### Management
 
 - Extensions auto-update with app updates
-- Uninstall via `deactivateSystemExtension()`
+- Uninstall via `SystemExtensionManager.deactivate()`
 - Status monitoring via `SystemExtensions` framework
 
 ## VPN Features
@@ -96,12 +96,11 @@ The `NetworkProtectionControllerTabExtension` allows excluding specific domains 
 
 ### State Management
 
-`VPNAppState` persists user preferences:
-- `vpnEnabled` - VPN on/off state
-- `connectOnLogin` - Auto-connect setting
-- Other VPN configuration options
+VPN state and preferences are split across two stores:
+- `VPNAppState` — app-side state in shared `UserDefaults` (`isUsingSystemExtension`, `dontAskAgainExclusionSuggestion`).
+- `VPNSettings` — the broader settings store shared across processes, including `connectOnLogin`, selected location/server, DNS preferences, and exclusions.
 
-State is synchronized across processes and persists across launches.
+Both back onto shared defaults so values are synchronized across the main app, the VPN agent, and the system extension, and persist across launches.
 
 ## Entry Points
 

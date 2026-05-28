@@ -25,7 +25,7 @@ Fire (Data Clearing Engine)
     ├── DownloadListCoordinator (Downloads list)
     ├── FaviconManagement (Favicons)
     ├── AutoconsentManagement (Cookie consent state)
-    ├── SecureVaultFactory (Autofill data)
+    ├── AutofillVaultFactory (Autofill data)
     └── AIChatHistoryCleaning (AI Chat history)
 ```
 
@@ -104,7 +104,7 @@ Fire uses a dispatch group to coordinate multiple async operations across differ
 
 ### Data Clearing Order
 
-Operations happen in a specific order: prepare tabs → burn tabs → web cache → history → favicons → permissions → downloads → zoom levels → autoconsent → chat history → completion.
+Clearing roughly follows: prepare tabs → burn tabs → web cache → history → favicons → permissions → downloads → zoom levels → autoconsent → chat history → completion. Several steps run concurrently via a dispatch group, so the order above is the logical flow, not a strict sequential one — see `Fire.burnAll` for the exact orchestration.
 
 ### Fire Animation
 

@@ -3595,9 +3595,6 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Timer di inattività";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Schermata di apertura";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ultima scheda usata";
 

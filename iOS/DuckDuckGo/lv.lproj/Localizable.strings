@@ -3594,9 +3594,6 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Neaktivitātes taimeris";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Ekrāna atvēršana";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Pēdējā lietotā cilne";
 

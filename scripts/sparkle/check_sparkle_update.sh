@@ -24,11 +24,17 @@ get_current_version() {
     sed -nE 's/.*\.package\(url:.*Sparkle\.git",[[:space:]]*exact:[[:space:]]*"([^"]+)".*/\1/p' "$PACKAGE_SWIFT"
 }
 
-# Query GitHub for the latest Sparkle release tag (strips leading "v" if present)
+# Query GitHub once for Sparkle releases. Callers derive both latest version and notes from this payload.
+fetch_releases() {
+    gh api "repos/${SPARKLE_REPO}/releases" --paginate
+}
+
+# Extract the latest non-draft, non-prerelease Sparkle version from a releases payload.
 get_latest_version() {
-    local tag
-    tag=$(gh api "repos/${SPARKLE_REPO}/releases/latest" --jq '.tag_name') || die "Failed to query GitHub API"
-    echo "${tag#v}"
+    jq -r '
+        [ .[] | select(.draft == false and .prerelease == false) ][0].tag_name
+        | sub("^v"; "")
+    '
 }
 
 # Parse semver into components: "2.8.1" -> "2 8 1"
@@ -67,37 +73,20 @@ collect_release_notes() {
     local current="$1"
     local latest="$2"
 
-    # Fetch non-prerelease tags in order (newest first, the API default)
-    local tags
-    tags=$(gh api "repos/${SPARKLE_REPO}/releases" --paginate --jq \
-        '[.[] | select(.prerelease == false) | .tag_name] | .[]') || return 0
-
-    local notes=""
-    local found_latest=false
-
-    while IFS= read -r tag; do
-        local ver="${tag#v}"
-
-        if [[ "$found_latest" == false ]]; then
-            [[ "$ver" == "$latest" ]] && found_latest=true || continue
-        fi
-
-        # Stop when we reach the current version (exclusive)
-        [[ "$ver" == "$current" ]] && break
-
-        # Fetch individual release details
-        local release_json name body
-        release_json=$(gh api "repos/${SPARKLE_REPO}/releases/tags/${tag}") || true
-        name=$(echo "$release_json" | jq -r '.name // empty')
-        body=$(echo "$release_json" | jq -r '.body // empty')
-
-        notes+="## ${name:-$tag}"$'\n\n'
-        if [[ -n "$body" ]]; then
-            notes+="$body"$'\n\n'
-        fi
-    done <<< "$tags"
-
-    echo "$notes"
+    jq -r --arg current "$current" --arg latest "$latest" '
+        [ .[] | select(.draft == false and .prerelease == false) ] as $releases
+        | ($releases | map(.tag_name | sub("^v"; "")) | index($latest)) as $latest_index
+        | ($releases | map(.tag_name | sub("^v"; "")) | index($current)) as $current_index
+        | if $latest_index == null then
+            empty
+          else
+            $releases[$latest_index:($current_index // ($releases | length))]
+            | map(
+                "## \(if ((.name // "") == "") then .tag_name else .name end)\n\n\(.body // "")\n"
+              )
+            | join("\n")
+          end
+    '
 }
 
 # ---------------------------------------------------------------------------
@@ -107,11 +96,12 @@ collect_release_notes() {
 main() {
     [[ -f "$PACKAGE_SWIFT" ]] || die "Package.swift not found at ${PACKAGE_SWIFT}. Run from repo root."
 
-    local current latest bump_type
+    local current releases_json latest bump_type
     current=$(get_current_version)
     [[ -n "$current" ]] || die "Could not parse current Sparkle version from ${PACKAGE_SWIFT}"
 
-    latest=$(get_latest_version)
+    releases_json=$(fetch_releases) || die "Failed to query GitHub API"
+    latest=$(echo "$releases_json" | get_latest_version)
     [[ -n "$latest" ]] || die "Could not determine latest Sparkle release"
 
     echo "Current Sparkle version: ${current}"
@@ -133,7 +123,7 @@ main() {
 
     # Collect release notes
     local release_notes
-    release_notes=$(collect_release_notes "$current" "$latest")
+    release_notes=$(echo "$releases_json" | collect_release_notes "$current" "$latest")
 
     # Export outputs for the workflow
     local output="${GITHUB_OUTPUT:-/dev/null}"

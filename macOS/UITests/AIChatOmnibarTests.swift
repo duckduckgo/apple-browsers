@@ -310,8 +310,13 @@ class AIChatOmnibarTests: UITestCase {
         enterDuckAIModeWithPrompt("first prompt")
         app.typeKey(.return, modifierFlags: [])
 
-        // Second submission — current tab is now Duck.ai (or about to be by the time this
-        // helper finishes), so the routing change must open a new selected tab.
+        // The focused Duck.ai panel persists after submit and replaces the address bar in the
+        // XCUI hierarchy, so the next `enterDuckAIModeWithPrompt` can't find it via accessibility
+        // identifier. ESC collapses the panel so Cmd+L can re-acquire the bar.
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Second submission — current tab is Duck.ai by now, so the routing change must open a
+        // new selected tab.
         enterDuckAIModeWithPrompt("second prompt")
         app.typeKey(.return, modifierFlags: [])
 

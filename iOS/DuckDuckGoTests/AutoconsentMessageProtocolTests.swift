@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import WebExtensions
 @testable import DuckDuckGo
 @testable import Core
 import BrowserServicesKitTestsUtils
@@ -264,7 +265,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
 }
 
 class MockAutoconsentPreferences: AutoconsentPreferences {
-    var autoconsentEnabled: Bool = true
+    var cookiePopupPreference: CookiePopupPreference = .default
 }
 
 final class AutoconsentDashboardStateRefreshTests: XCTestCase {

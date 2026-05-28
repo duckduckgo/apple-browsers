@@ -689,7 +689,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canShowV2ConnectCode
 }
 
-public enum AutoconsentSubfeature: String, PrivacySubfeature {
+public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .autoconsent
     }
@@ -697,6 +697,7 @@ public enum AutoconsentSubfeature: String, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
+    case cookiePopupPreferenceSetting
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {

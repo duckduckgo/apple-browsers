@@ -309,7 +309,7 @@ extension AutoconsentUserScript {
             return
         }
 
-        if preferences.isAutoconsentEnabled == false {
+        if preferences.cookiePopupPreference == .off {
             // this will only happen if the user has just declined a prompt in this tab
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
             return
@@ -362,7 +362,7 @@ extension AutoconsentUserScript {
 #endif
 
         var autoAction: String?
-        if preferences.isAutoconsentEnabled == true {
+        if preferences.cookiePopupPreference.isBlockingEnabled {
             // Check for reload loop and disable autoAction if needed
             if reloadLoopDetected {
                 // prevent further reloads
@@ -372,6 +372,19 @@ extension AutoconsentUserScript {
                 autoAction = "optOut"
             }
         }
+        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
+        let heuristicMode = {
+            if !(self.consentHeuristicEnabled ?? false) {
+                return "off"
+            }
+            if self.preferences.cookiePopupPreference == .max {
+                return "tier2"
+            }
+            if self.preferences.cookiePopupPreference == .default {
+                return self.config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+            }
+            return "off"
+        }()
 
         let autoconsentConfig = [
             "type": "initResp",
@@ -387,8 +400,7 @@ extension AutoconsentUserScript {
                 "detectRetries": 20,
                 "isMainWorld": false,
                 "enableFilterList": enableFilterList,
-                "enableHeuristicDetection": true,
-                "enableHeuristicAction": consentHeuristicEnabled ?? false // default to false if not enrolled
+                "heuristicMode": heuristicMode
             ] as [String: Any?]
         ] as [String: Any?]
 

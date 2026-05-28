@@ -18,6 +18,7 @@
 //
 
 import Core
+import WebExtensions
 import BrowserServicesKit
 import Persistence
 import PrivacyConfig
@@ -36,7 +37,6 @@ import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
-import WebExtensions
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
@@ -518,12 +518,27 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var cookiePopupPreferenceBinding: Binding<CookiePopupPreference> {
+        Binding<CookiePopupPreference>(
+            get: { self.state.cookiePopupPreference },
+            set: {
+                self.appSettings.cookiePopupPreference = $0
+                self.state.cookiePopupPreference = $0
+                if $0.isBlockingEnabled {
+                    Pixel.fire(pixel: .settingsAutoconsentOn)
+                } else {
+                    Pixel.fire(pixel: .settingsAutoconsentOff)
+                }
+            }
+        )
+    }
+
     var autoconsentBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.autoconsentEnabled },
+            get: { self.state.cookiePopupPreference.isBlockingEnabled },
             set: {
                 self.appSettings.autoconsentEnabled = $0
-                self.state.autoconsentEnabled = $0
+                self.state.cookiePopupPreference = self.appSettings.cookiePopupPreference
                 if $0 {
                     Pixel.fire(pixel: .settingsAutoconsentOn)
                 } else {
@@ -922,7 +937,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var cookiePopUpProtectionStatus: StatusIndicator {
-        return appSettings.autoconsentEnabled ? .on : .off
+        return appSettings.cookiePopupPreference.isBlockingEnabled ? .on : .off
     }
     
     var emailProtectionStatus: StatusIndicator {
@@ -1084,7 +1099,7 @@ extension SettingsViewModel {
             mobileCustomization: mobileCustomization.state,
             forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
-            autoconsentEnabled: appSettings.autoconsentEnabled,
+            cookiePopupPreference: appSettings.cookiePopupPreference,
             autoClearAIChatHistory: appSettings.autoClearAIChatHistory,
             applicationLock: privacyStore.authenticationEnabled,
             autocomplete: appSettings.autocomplete,

@@ -9,11 +9,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -26,11 +22,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -43,11 +35,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -60,11 +48,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -77,11 +61,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -94,11 +74,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -111,11 +87,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -128,11 +100,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -145,11 +113,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -162,11 +126,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -179,11 +139,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -196,11 +152,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -213,11 +165,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+                "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -230,11 +178,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -247,11 +191,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -264,11 +204,7 @@
             "appVersion",
             "pixelSource",
             "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },
@@ -361,11 +297,7 @@
                 "description": "Number of autoconsent error-reload-loop pixels fired.",
                 "type": "number"
             },
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "Whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },

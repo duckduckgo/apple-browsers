@@ -21,6 +21,7 @@ import Foundation
 import Bookmarks
 import Core
 import Onboarding
+import WebExtensions
 import WidgetKit
 
 public class AppUserDefaults: AppSettings {
@@ -421,29 +422,56 @@ public class AppUserDefaults: AppSettings {
         }
     }
 
-    var autoconsentEnabled: Bool {
+    var cookiePopupPreference: CookiePopupPreference {
         get {
-            // Use settings value if present
-            if let isEnabled = autoconsentEnabledSetting {
-                return isEnabled
+            migrateCookiePopupPreferenceIfNeeded()
+            guard let rawValue = cookiePopupPreferenceSetting,
+                  let preference = CookiePopupPreference(rawValue: rawValue) else {
+                return .default
             }
-
-            // Use onByDefault rollout otherwise
-            return featureFlagger.isFeatureOn(.autoconsentOnByDefault)
+            return preference
         }
 
         set {
-            autoconsentEnabledSetting = newValue
+            migrateCookiePopupPreferenceIfNeeded()
+            cookiePopupPreferenceSetting = newValue.rawValue
         }
+    }
+
+    var autoconsentEnabled: Bool {
+        get { cookiePopupPreference.isBlockingEnabled }
+        set { cookiePopupPreference = newValue ? .default : .off }
     }
 
     // Only for testing and `DebugViewController` purposes
     func clearAutoconsentUserSetting() {
         autoconsentEnabledSetting = nil
+        cookiePopupPreferenceSetting = nil
+        didMigrateCookiePopupPreferenceSetting = false
     }
 
     @UserDefaultsWrapper(key: .autoconsentEnabled, defaultValue: false)
     private var autoconsentEnabledSetting: Bool?
+
+    @UserDefaultsWrapper(key: .cookiePopupPreference, defaultValue: nil)
+    private var cookiePopupPreferenceSetting: String?
+
+    @UserDefaultsWrapper(key: .didMigrateCookiePopupPreference, defaultValue: false)
+    private var didMigrateCookiePopupPreferenceSetting: Bool
+
+    private func migrateCookiePopupPreferenceIfNeeded() {
+        guard !didMigrateCookiePopupPreferenceSetting else { return }
+
+        let migratedPreference: CookiePopupPreference
+        if autoconsentEnabledSetting == false {
+            migratedPreference = .off
+        } else {
+            migratedPreference = .default
+        }
+
+        cookiePopupPreferenceSetting = migratedPreference.rawValue
+        didMigrateCookiePopupPreferenceSetting = true
+    }
 
     var inspectableWebViewEnabled: Bool {
         get {

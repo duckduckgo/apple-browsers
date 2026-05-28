@@ -21,9 +21,12 @@ import AppKit
 import Bookmarks
 import Common
 import FoundationExtensions
+import WebExtensions
 
 protocol CookiePopupProtectionPreferencesPersistor {
     var autoconsentEnabled: Bool { get set }
+    var cookiePopupPreferenceRawValue: String? { get set }
+    var didMigrateCookiePopupPreference: Bool { get set }
 }
 
 struct CookiePopupProtectionPreferencesUserDefaultsPersistor: CookiePopupProtectionPreferencesPersistor {
@@ -31,15 +34,26 @@ struct CookiePopupProtectionPreferencesUserDefaultsPersistor: CookiePopupProtect
     @UserDefaultsWrapper(key: .autoconsentEnabled, defaultValue: true)
     var autoconsentEnabled: Bool
 
+    @UserDefaultsWrapper(key: .cookiePopupPreference, defaultValue: nil)
+    var cookiePopupPreferenceRawValue: String?
+
+    @UserDefaultsWrapper(key: .didMigrateCookiePopupPreference, defaultValue: false)
+    var didMigrateCookiePopupPreference: Bool
+
 }
 
 final class CookiePopupProtectionPreferences: ObservableObject, PreferencesTabOpening {
 
     @Published
-    var isAutoconsentEnabled: Bool {
+    var cookiePopupPreference: CookiePopupPreference {
         didSet {
-            persistor.autoconsentEnabled = isAutoconsentEnabled
+            persistor.cookiePopupPreferenceRawValue = cookiePopupPreference.rawValue
         }
+    }
+
+    var isAutoconsentEnabled: Bool {
+        get { cookiePopupPreference.isBlockingEnabled }
+        set { cookiePopupPreference = newValue ? .default : .off }
     }
 
     init(
@@ -48,9 +62,21 @@ final class CookiePopupProtectionPreferences: ObservableObject, PreferencesTabOp
     ) {
         self.persistor = persistor
         self.windowControllersManager = windowControllersManager
-        isAutoconsentEnabled = persistor.autoconsentEnabled
+
+        if persistor.didMigrateCookiePopupPreference,
+           let rawValue = persistor.cookiePopupPreferenceRawValue,
+           let preference = CookiePopupPreference(rawValue: rawValue) {
+            cookiePopupPreference = preference
+        } else {
+            let migratedPreference: CookiePopupPreference = persistor.autoconsentEnabled ? .default : .off
+            cookiePopupPreference = migratedPreference
+            self.persistor.cookiePopupPreferenceRawValue = migratedPreference.rawValue
+            self.persistor.didMigrateCookiePopupPreference = true
+        }
     }
 
     let windowControllersManager: WindowControllersManagerProtocol
     private var persistor: CookiePopupProtectionPreferencesPersistor
 }
+
+extension CookiePopupProtectionPreferences: AutoconsentPreferencesProviding {}

@@ -293,7 +293,7 @@ final class DownloadsViewController: NSViewController {
             NSMenuItem(title: UserText.downloadsStopItem, action: #selector(cancelDownloadAction), target: self)
                 .withImage(DesignSystemImages.Glyphs.Size12.close)
             NSMenuItem(title: UserText.downloadsRestartItem, action: #selector(restartDownloadAction), target: self)
-                .withImage(DesignSystemImages.Glyphs.Size12.reload)
+                .withImage(DesignSystemImages.Glyphs.Size12.reloadSmall)
             NSMenuItem(title: UserText.downloadsClearAllItem, action: #selector(clearDownloadsAction), target: self)
                 .withImage(DesignSystemImages.Glyphs.Size12.trash)
         }

@@ -108,6 +108,7 @@ public extension DesignSystemImages {
             public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked12) }
             public static var qr: DesignSystemImage { .init(resource: .QR_12) }
             public static var reload: DesignSystemImage { .init(resource: .reload12) }
+            public static var reloadSmall: DesignSystemImage { .init(resource: .reloadSmall12) }
             public static var save: DesignSystemImage { .init(resource: .save12) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind12) }
             public static var sendPlane: DesignSystemImage { .init(resource: .sendPlane12) }

@@ -32,6 +32,7 @@ public protocol UserAgentManaging {
     func update(webView: WKWebView, isDesktop: Bool, url: URL?)
     func userAgent(isDesktop: Bool) -> String
     func userAgent(isDesktop: Bool, url: URL?) -> String
+    func safariOnlyUserAgent(isDesktop: Bool) -> String
 
 }
 
@@ -72,6 +73,10 @@ public class DefaultUserAgentManager: UserAgentManaging {
 
     public func userAgent(isDesktop: Bool, url: URL?) -> String {
         userAgent.agent(forUrl: url, isDesktop: isDesktop)
+    }
+
+    public func safariOnlyUserAgent(isDesktop: Bool) -> String {
+        userAgent.safariOnlyAgent(isDesktop: isDesktop)
     }
 
     public func update(request: inout URLRequest, isDesktop: Bool) {
@@ -275,6 +280,12 @@ struct UserAgent {
             ua.append(" \(brandComponent)")
             return ua
         }
+    }
+
+    func safariOnlyAgent(isDesktop: Bool,
+                         deviceVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
+                         privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig) -> String {
+        closestLogic(forUrl: nil, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
     }
 
     private func oldLogic(forUrl url: URL?,

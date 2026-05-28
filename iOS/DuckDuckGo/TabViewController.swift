@@ -114,6 +114,7 @@ class TabViewController: UIViewController {
     }
 
     var preventUniversalLinksOnce = false
+    private var shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
 
     var openedByPage = false
     weak var openingTab: TabViewController? {
@@ -1053,6 +1054,7 @@ class TabViewController: UIViewController {
         webView.stopLoading()
         dismissJSAlertIfNeeded()
         safariRedirectHandler.reset()
+        shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
 
         load(url: url, didUpgradeURL: false)
     }
@@ -1372,6 +1374,7 @@ class TabViewController: UIViewController {
     }
 
     private func showSafariRedirectLoopError(for url: URL) {
+        shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
         self.url = url
         hideProgressIndicator()
         ViewHighlighter.hideAll()
@@ -2645,7 +2648,12 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         if allowPolicy != WKNavigationActionPolicy.cancel && navigationAction.isTargetingMainFrame() {
-            userAgentManager.update(webView: webView, isDesktop: tabModel.isDesktop, url: url)
+            if shouldUseSafariOnlyUserAgentForNextMainFrameNavigation {
+                webView.customUserAgent = userAgentManager.safariOnlyUserAgent(isDesktop: tabModel.isDesktop)
+                shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
+            } else {
+                userAgentManager.update(webView: webView, isDesktop: tabModel.isDesktop, url: url)
+            }
         }
 
         if !privacyConfigurationManager.privacyConfig.isProtected(domain: url.host) {
@@ -4543,6 +4551,7 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
 extension TabViewController: SafariRedirectHandlerDelegate {
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestLoadURL url: URL) {
+        shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = true
         load(url: url, didUpgradeURL: false)
     }
 

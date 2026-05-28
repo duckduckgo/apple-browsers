@@ -66,6 +66,20 @@ final class AIChatSettings: AIChatSettingsProvider {
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.switchBarFunnel = switchBarFunnel
+
+        migrateAddressBarSettingIfNeeded()
+    }
+
+    /// One-shot: if a user had the legacy Address Bar toggle off, carry that into the
+    /// Navigation Bar toggle so the iPad chrome shortcut doesn't silently re-enable
+    /// the surface under a new name.
+    private func migrateAddressBarSettingIfNeeded() {
+        guard keyValueStore.object(forKey: .showAIChatNavigationBarKey) == nil,
+              let legacyAddressBarValue = keyValueStore.object(forKey: .showAIChatAddressBarKey) as? Bool,
+              legacyAddressBarValue == false else {
+            return
+        }
+        keyValueStore.set(false, forKey: .showAIChatNavigationBarKey)
     }
 
     // MARK: - Public

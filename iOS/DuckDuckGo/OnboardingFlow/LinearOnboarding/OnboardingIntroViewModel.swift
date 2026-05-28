@@ -267,11 +267,13 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func selectDuckAIQueryExperimentAction(selection: DuckAIQueryMode) {
-        switch selection {
-        case .duckAI:
-            pixelReporter.measureDuckAIQueryExperimentChooseAIChat()
-        case .search:
-            pixelReporter.measureDuckAIQueryExperimentChooseSearchOnly()
+        if resolveDuckAIQueryExperimentCohortID() != nil {
+            switch selection {
+            case .duckAI:
+                pixelReporter.measureDuckAIQueryExperimentChooseAIChat()
+            case .search:
+                pixelReporter.measureDuckAIQueryExperimentChooseSearchOnly()
+            }
         }
         makeNextViewState()
     }

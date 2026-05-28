@@ -77,6 +77,7 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var capturedDuckAIQuerySubmissionPromptSourceValue: String?
     private(set) var capturedDuckAIQuerySubmissionSelection: DuckAIQueryMode?
     private(set) var didCallMeasureDuckAIExperimentFireButtonCTAAction = false
+    private(set) var didCallMeasureDuckAIExperimentFireDialogImpression = false
     private(set) var didCallMeasureDuckAIExperimentFinalDialogImpression = false
     private(set) var didCallMeasureDuckAIExperimentFinalDialogCTAAction = false
 
@@ -327,6 +328,10 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureDuckAIExperimentFireButtonCTAAction() {
         didCallMeasureDuckAIExperimentFireButtonCTAAction = true
+    }
+
+    func measureDuckAIExperimentFireDialogImpression() {
+        didCallMeasureDuckAIExperimentFireDialogImpression = true
     }
 
     func measureDuckAIExperimentFinalDialogImpression() {

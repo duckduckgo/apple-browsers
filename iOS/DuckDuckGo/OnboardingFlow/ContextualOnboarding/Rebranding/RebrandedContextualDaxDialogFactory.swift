@@ -283,8 +283,16 @@ private extension RebrandedContextualDaxDialogFactory {
         }
         .applyAnimatedContextualOnboardingBackground(backgroundType: backgroundType)
         .onFirstAppear { [weak self] in
-            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
-            self?.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
+            guard let self else { return }
+            switch fireVariant {
+            case .standard:
+                self.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+            case .duckAIOnboarding:
+                if self.onboardingManager.currentOnboardingFlow == .default {
+                    self.contextualOnboardingPixelReporter.measureDuckAIExperimentFireDialogImpression()
+                }
+            }
+            self.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
         }
     }
 

@@ -130,6 +130,7 @@ protocol OnboardingDaxDialogsReporting {
     func measureTrackersDialogDismissButtonTapped()
     func measureFireDialogDismissButtonTapped()
     func measureDuckAIExperimentFireButtonCTAAction()
+    func measureDuckAIExperimentFireDialogImpression()
     func measureDuckAIExperimentFinalDialogImpression()
     func measureDuckAIExperimentFinalDialogCTAAction()
     func measureEndOfJourneyDialogNewTabDismissButtonTapped()
@@ -519,9 +520,6 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureScreenImpression(event: Pixel.Event) {
         fire(event: event, unique: true)
-        if case .onboardingDuckAIExperimentFireDialogShownUnique = event {
-            fireExperimentScreenImpressionPixel(value: .fireDialog)
-        }
     }
 
     func measureScreenImpression(_ event: OnboardingSharedPixelEvent) {
@@ -638,6 +636,11 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     func measureDuckAIExperimentFireButtonCTAAction() {
         fire(event: .onboardingDuckAIExperimentFireButtonCTAPressed, unique: false)
         fireExperimentCTAPressedPixel(value: .fireButtonPressed)
+    }
+
+    func measureDuckAIExperimentFireDialogImpression() {
+        fire(event: .onboardingDuckAIExperimentFireDialogShownUnique, unique: true)
+        fireExperimentScreenImpressionPixel(value: .fireDialog)
     }
 
     func measureDuckAIExperimentFinalDialogImpression() {

@@ -496,13 +496,12 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
     }
 
-    func testWhenMeasureScreenImpressionWithDuckAIFireDialogEventThenLegacyFireDialogShownUniqueAndExperimentPixelsFireWithoutSharedPixels() {
+    func testWhenMeasureDuckAIExperimentFireDialogImpressionThenLegacyFireDialogShownUniqueAndExperimentPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingDuckAIExperimentFireDialogShownUnique
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
-        sut.measureScreenImpression(event: expectedPixel)
+        sut.measureDuckAIExperimentFireDialogImpression()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)

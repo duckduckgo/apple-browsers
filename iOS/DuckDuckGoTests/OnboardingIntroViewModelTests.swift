@@ -1156,10 +1156,12 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     // MARK: Pixels
 
-    func testWhenSelectDuckAIQueryExperimentChooseDuckAIThenCorrectPixelFires() {
+    func testWhenSelectDuckAIQueryExperimentChooseDuckAI_AndCohortEnrolled_ThenCorrectPixelFires() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
-        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
+        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection, featureFlagger: featureFlagger)
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
 
         // WHEN
@@ -1170,10 +1172,12 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
     }
 
-    func testWhenSelectDuckAIQueryExperimentChooseSearchThenCorrectPixelFires() {
+    func testWhenSelectDuckAIQueryExperimentChooseSearch_AndCohortEnrolled_ThenCorrectPixelFires() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
-        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryTrackersDemoExperiment])
+        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
+        let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection, featureFlagger: featureFlagger)
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
 
         // WHEN

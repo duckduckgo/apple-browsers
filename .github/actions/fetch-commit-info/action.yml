@@ -25,11 +25,12 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
         head_commit=$(git rev-parse HEAD)
-        author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
+        commit_json=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit})
+        author=$(echo "$commit_json" | jq -r .author.login)
         echo "commit_author=${author}" >> $GITHUB_OUTPUT
 
         # Check if this is a merge commit from a PR
-        commit_message=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .commit.message)
+        commit_message=$(echo "$commit_json" | jq -r .commit.message)
 
         # Extract PR number from commit message
         # Format 1: "Merge pull request #123 from ..." (merge commits)

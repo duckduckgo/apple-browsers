@@ -162,7 +162,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
         aiChatChip.textButton.addTarget(self, action: #selector(onAIChatPressed), for: .touchUpInside)
         aiChatChip.iconButton.addTarget(self, action: #selector(onAIChatContextualSheetIconPressed), for: .touchUpInside)
-        configureAIChatChipLongPressMenu()
+        configureAIChatChipMenu()
         fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
         tabSwitcherButton.delegate = self
 
@@ -442,8 +442,17 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         addTabButton.showsMenuAsPrimaryAction = false
     }
 
-    private func configureAIChatChipLongPressMenu() {
-        let menu = UIMenu(children: [
+    private func configureAIChatChipMenu() {
+        let menu = makeAIChatChipMenu()
+        aiChatChip.textButton.menu = menu
+        aiChatChip.textButton.showsMenuAsPrimaryAction = false
+        aiChatChip.iconButton.menu = menu
+        aiChatChip.iconButton.showsMenuAsPrimaryAction = false
+        aiChatChip.addInteraction(UIContextMenuInteraction(delegate: self))
+    }
+
+    private func makeAIChatChipMenu() -> UIMenu {
+        UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
                 completion([
                     UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
@@ -456,11 +465,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 ])
             }
         ])
-
-        aiChatChip.textButton.menu = menu
-        aiChatChip.textButton.showsMenuAsPrimaryAction = false
-        aiChatChip.iconButton.menu = menu
-        aiChatChip.iconButton.showsMenuAsPrimaryAction = false
     }
 
     private func createButton(image: UIImage) -> UIButton {
@@ -473,6 +477,17 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         super.viewDidLayoutSubviews()
         NotificationCenter.default.post(name: TabsBarViewController.viewDidLayoutNotification, object: self)
     }
+}
+
+extension TabsBarViewController: UIContextMenuInteractionDelegate {
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            self?.makeAIChatChipMenu()
+        }
+    }
+
 }
 
 extension TabsBarViewController: TabSwitcherButtonDelegate {

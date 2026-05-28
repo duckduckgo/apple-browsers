@@ -39,8 +39,24 @@ class PassKitPreviewHelper: FilePreview {
     }
 
     func preview() {
+        let data: Data
         do {
-            let data = try Data(contentsOf: self.filePath)
+            data = try Data(contentsOf: self.filePath)
+        } catch {
+            Logger.general.error("Can't present passkit: \(error.localizedDescription, privacy: .public)")
+            pixelFiring.fire(.walletPassPreviewFailed,
+                             withAdditionalParameters: [Self.reasonParameterKey: "no_data_supplied"])
+            return
+        }
+
+        guard !data.isEmpty else {
+            Logger.general.error("Can't present passkit: empty pass data")
+            pixelFiring.fire(.walletPassPreviewFailed,
+                             withAdditionalParameters: [Self.reasonParameterKey: "no_data_supplied"])
+            return
+        }
+
+        do {
             let pass = try PKPass(data: data)
             if let controller = PKAddPassesViewController(pass: pass) {
                 viewController?.present(controller, animated: true)
@@ -48,24 +64,25 @@ class PassKitPreviewHelper: FilePreview {
         } catch {
             Logger.general.error("Can't present passkit: \(error.localizedDescription, privacy: .public)")
             pixelFiring.fire(.walletPassPreviewFailed,
-                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: Self.failureReason(for: error)])
+                             withAdditionalParameters: [Self.reasonParameterKey: Self.failureReason(for: error)])
         }
     }
 
     static let reasonParameterKey = "reason"
 
-    /// Categorises the localized error string returned by `PKPass` or `Data(contentsOf:)` into one of the
-    /// `wallet_pass_preview_failed` reason enum values. Best-effort matching on observed PassKit messages.
-    /// Locale-dependent: PassKit localises its error strings, so non-English devices fall through to
-    /// `parse_error`. The matchers avoid apostrophes, which PassKit emits as the curly U+2019 form.
+    /// Maps a `PKPass(data:)` error to one of the `wallet_pass_preview_failed` reasons using the
+    /// `PKPassKitErrorDomain` NSError code so the categorisation works in all locales.
+    /// Callers handle `no_data_supplied` (empty / unreadable input) before reaching this function.
     static func failureReason(for error: Error) -> String {
-        let message = error.localizedDescription.lowercased()
-        if message.contains("no data") {
-            return "no_data_supplied"
+        let nsError = error as NSError
+        guard nsError.domain == PKPassKitErrorDomain else {
+            return "parse_error"
         }
-        if message.contains("signature") || message.contains("cannot be read") {
+        switch PKPassKitError.Code(rawValue: nsError.code) {
+        case .invalidSignature:
             return "signature_invalid"
+        default:
+            return "parse_error"
         }
-        return "parse_error"
     }
 }

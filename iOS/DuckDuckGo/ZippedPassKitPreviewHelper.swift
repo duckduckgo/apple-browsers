@@ -41,21 +41,32 @@ class ZippedPassKitPreviewHelper: FilePreview {
     }
 
     func preview() {
+        let entries: [Data]
         do {
-            let passes: [PKPass] = try extractDataEntriesFromZipAtFilePath(self.filePath).compactMap({ try? PKPass(data: $0) })
-            if passes.count > 0,
-               let controller = PKAddPassesViewController(passes: passes) {
-                viewController?.present(controller, animated: true)
-            } else {
-                Logger.general.error("Can't present passkit: No valid passes in passes file")
-                pixelFiring.fire(.walletPassPreviewFailed,
-                                 withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "parse_error"])
-            }
+            entries = try extractDataEntriesFromZipAtFilePath(self.filePath)
         } catch {
             Logger.general.error("Can't present passkit: \(error.localizedDescription, privacy: .public)")
             pixelFiring.fire(.walletPassPreviewFailed,
                              withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: PassKitPreviewHelper.failureReason(for: error)])
+            return
         }
+
+        guard !entries.isEmpty else {
+            Logger.general.error("Can't present passkit: empty passes archive")
+            pixelFiring.fire(.walletPassPreviewFailed,
+                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "no_data_supplied"])
+            return
+        }
+
+        let passes: [PKPass] = entries.compactMap({ try? PKPass(data: $0) })
+        guard !passes.isEmpty, let controller = PKAddPassesViewController(passes: passes) else {
+            Logger.general.error("Can't present passkit: No valid passes in passes file")
+            pixelFiring.fire(.walletPassPreviewFailed,
+                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "parse_error"])
+            return
+        }
+
+        viewController?.present(controller, animated: true)
     }
 
     func extractDataEntriesFromZipAtFilePath(_ zipPath: URL) throws -> [Data] {

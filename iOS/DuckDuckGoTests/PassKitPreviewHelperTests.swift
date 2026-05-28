@@ -19,6 +19,7 @@
 
 import Core
 import Foundation
+import PassKit
 import Testing
 import UIKit
 @testable import DuckDuckGo
@@ -33,29 +34,12 @@ struct PassKitPreviewHelperTests {
     // MARK: - failureReason categorisation
 
     @available(iOS 16, *)
-    @Test("Categorises 'No data supplied' as no_data_supplied", .timeLimit(.minutes(1)))
-    func categorisesNoDataSupplied() {
+    @Test("Categorises PKInvalidSignature as signature_invalid", .timeLimit(.minutes(1)))
+    func categorisesInvalidSignatureAsSignatureInvalid() {
         // GIVEN
-        let error = NSError(domain: "PKPassKitErrorDomain",
-                            code: 0,
-                            userInfo: [NSLocalizedDescriptionKey: "No data supplied"])
-
-        // WHEN
-        let reason = PassKitPreviewHelper.failureReason(for: error)
-
-        // THEN
-        #expect(reason == "no_data_supplied")
-    }
-
-    @available(iOS 16, *)
-    @Test("Categorises 'The pass cannot be read because it isn't valid' as signature_invalid", .timeLimit(.minutes(1)))
-    func categorisesPassCannotBeReadAsSignatureInvalid() {
-        // GIVEN
-        // PassKit emits this message with a curly apostrophe (U+2019). The matcher in failureReason
-        // intentionally relies on "cannot be read" rather than the apostrophe-containing substring.
-        let error = NSError(domain: "PKPassKitErrorDomain",
-                            code: 0,
-                            userInfo: [NSLocalizedDescriptionKey: "The pass cannot be read because it isn’t valid."])
+        let error = NSError(domain: PKPassKitErrorDomain,
+                            code: PKPassKitError.Code.invalidSignature.rawValue,
+                            userInfo: nil)
 
         // WHEN
         let reason = PassKitPreviewHelper.failureReason(for: error)
@@ -65,27 +49,42 @@ struct PassKitPreviewHelperTests {
     }
 
     @available(iOS 16, *)
-    @Test("Categorises a signature error as signature_invalid", .timeLimit(.minutes(1)))
-    func categorisesSignatureErrorAsSignatureInvalid() {
+    @Test("Categorises PKInvalidDataError as parse_error", .timeLimit(.minutes(1)))
+    func categorisesInvalidDataAsParseError() {
         // GIVEN
-        let error = NSError(domain: "PKPassKitErrorDomain",
-                            code: 0,
-                            userInfo: [NSLocalizedDescriptionKey: "Invalid signature on pass"])
+        // PassKit's PKInvalidDataError covers "data is present but not a valid pass". The empty-data
+        // case is handled in preview() before PKPass is called, so this stays in the parse_error bucket.
+        let error = NSError(domain: PKPassKitErrorDomain,
+                            code: PKPassKitError.Code.invalidDataError.rawValue,
+                            userInfo: nil)
 
         // WHEN
         let reason = PassKitPreviewHelper.failureReason(for: error)
 
         // THEN
-        #expect(reason == "signature_invalid")
+        #expect(reason == "parse_error")
     }
 
     @available(iOS 16, *)
-    @Test("Categorises an unrelated error as parse_error", .timeLimit(.minutes(1)))
-    func categorisesUnrelatedErrorAsParseError() {
+    @Test("Categorises PKUnsupportedVersionError as parse_error", .timeLimit(.minutes(1)))
+    func categorisesUnsupportedVersionAsParseError() {
         // GIVEN
-        let error = NSError(domain: "SomeOtherDomain",
-                            code: 0,
-                            userInfo: [NSLocalizedDescriptionKey: "Something else went wrong"])
+        let error = NSError(domain: PKPassKitErrorDomain,
+                            code: PKPassKitError.Code.unsupportedVersionError.rawValue,
+                            userInfo: nil)
+
+        // WHEN
+        let reason = PassKitPreviewHelper.failureReason(for: error)
+
+        // THEN
+        #expect(reason == "parse_error")
+    }
+
+    @available(iOS 16, *)
+    @Test("Categorises a non-PassKit error as parse_error", .timeLimit(.minutes(1)))
+    func categorisesNonPassKitErrorAsParseError() {
+        // GIVEN
+        let error = NSError(domain: "SomeOtherDomain", code: 0, userInfo: nil)
 
         // WHEN
         let reason = PassKitPreviewHelper.failureReason(for: error)
@@ -97,11 +96,10 @@ struct PassKitPreviewHelperTests {
     // MARK: - preview() integration
 
     @available(iOS 16, *)
-    @Test("Fires wallet_pass_preview_failed when the file does not exist", .timeLimit(.minutes(1)))
-    func firesWalletPassPreviewFailedForMissingFile() {
+    @Test("Fires wallet_pass_preview_failed with no_data_supplied when the file does not exist", .timeLimit(.minutes(1)))
+    @MainActor
+    func firesNoDataSuppliedForMissingFile() {
         // GIVEN
-        // Data(contentsOf:) on a missing file throws an NSCocoa "couldn't be opened" error, which is
-        // neither a no-data nor a signature/cannot-be-read message, so it falls to parse_error.
         let nonExistent = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString + ".pkpass")
         let helper = PassKitPreviewHelper(nonExistent,
@@ -113,6 +111,28 @@ struct PassKitPreviewHelperTests {
 
         // THEN
         #expect(PixelFiringMock.lastPixelName == Pixel.Event.walletPassPreviewFailed.name)
-        #expect(PixelFiringMock.lastParams?[PassKitPreviewHelper.reasonParameterKey] == "parse_error")
+        #expect(PixelFiringMock.lastParams?[PassKitPreviewHelper.reasonParameterKey] == "no_data_supplied")
+    }
+
+    @available(iOS 16, *)
+    @Test("Fires wallet_pass_preview_failed with no_data_supplied when the file is empty", .timeLimit(.minutes(1)))
+    @MainActor
+    func firesNoDataSuppliedForEmptyFile() throws {
+        // GIVEN
+        let emptyFile = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".pkpass")
+        try Data().write(to: emptyFile)
+        defer { try? FileManager.default.removeItem(at: emptyFile) }
+
+        let helper = PassKitPreviewHelper(emptyFile,
+                                          viewController: UIViewController(),
+                                          pixelFiring: PixelFiringMock.self)
+
+        // WHEN
+        helper.preview()
+
+        // THEN
+        #expect(PixelFiringMock.lastPixelName == Pixel.Event.walletPassPreviewFailed.name)
+        #expect(PixelFiringMock.lastParams?[PassKitPreviewHelper.reasonParameterKey] == "no_data_supplied")
     }
 }

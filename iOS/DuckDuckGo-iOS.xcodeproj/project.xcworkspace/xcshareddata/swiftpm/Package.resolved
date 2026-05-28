@@ -1,4 +1,5 @@
 {
+  "originHash" : "4e1f0a150487ed2f2fbe12115363fdbc72b80623cd116728b254527b505794f2",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -25,6 +26,15 @@
       "state" : {
         "revision" : "dcccb979a2183b8df3334237e3dc1ae2b4116a86",
         "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "content-scope-scripts",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
+      "state" : {
+        "branch" : "pr-releases/brindy/special-error-page-for-x-safari-https-scheme-loop",
+        "revision" : "2fc5c43f16fdf3ce16089929acc8d5d06459b240"
       }
     },
     {
@@ -271,5 +281,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

@@ -2015,12 +2015,19 @@ extension TabViewController: WKNavigationDelegate {
     private func showDuckPlayerToastIfNeeded() {
         guard let url = webView.url,
               url.isYoutube,
-              let youTubeAppLink = url.replacing(scheme: "youtube"),
-              UIApplication.shared.canOpenURL(youTubeAppLink),
               webView?.canGoBack == false else { return }
 
+        let sanitizedURL = url.removingParameters(named: [
+            WebDuckPlayerNavigationHandler.Constants.newTabParameter,
+            WebDuckPlayerNavigationHandler.Constants.duckPlayerReferrerParameter,
+            WebDuckPlayerNavigationHandler.Constants.allowFirstVideoParameter
+        ])
+
+        guard let youTubeAppLink = sanitizedURL.replacing(scheme: "youtube"),
+              UIApplication.shared.canOpenURL(youTubeAppLink) else { return }
+
         ActionMessageView.present(message: UserText.duckPlayerOpenInYouTubeApp, actionTitle: UserText.actionOpen, onAction: {
-            UIApplication.shared.open(url)
+            UIApplication.shared.open(youTubeAppLink)
         })
 
     }

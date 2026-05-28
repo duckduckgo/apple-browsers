@@ -24,7 +24,7 @@ public enum SpecialErrorKind: String, Encodable {
     case phishing
     case malware
     case scam
-    case safariRedirectLoop
+    case generalPageProblem
 }
 
 public enum SpecialErrorData: Encodable, Equatable {
@@ -35,11 +35,14 @@ public enum SpecialErrorData: Encodable, Equatable {
         case domain
         case eTldPlus1
         case url
+        case title
+        case message
+        case button
     }
 
     case ssl(type: SSLErrorType, domain: String, eTldPlus1: String)
     case maliciousSite(kind: MaliciousSiteProtection.ThreatKind, url: URL)
-    case safariRedirectLoop(url: URL)
+    case generalPageProblem(url: URL, title: String?, message: String?, button: String?)
 
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -61,9 +64,12 @@ public enum SpecialErrorData: Encodable, Equatable {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(kind.errorPageKind, forKey: .kind)
             try container.encode(url, forKey: .url)
-        case .safariRedirectLoop(url: let url):
-            try container.encode(SpecialErrorKind.safariRedirectLoop, forKey: .kind)
+        case .generalPageProblem(url: let url, title: let title, message: let message, button: let button):
+            try container.encode(SpecialErrorKind.generalPageProblem, forKey: .kind)
             try container.encode(url, forKey: .url)
+            try container.encodeIfPresent(title, forKey: .title)
+            try container.encodeIfPresent(message, forKey: .message)
+            try container.encodeIfPresent(button, forKey: .button)
         }
     }
 

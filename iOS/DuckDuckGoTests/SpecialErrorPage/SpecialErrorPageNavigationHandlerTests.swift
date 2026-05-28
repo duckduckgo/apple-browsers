@@ -198,8 +198,8 @@ final class SpecialErrorPageNavigationHandlerTests {
     }
 
     @MainActor
-    @Test("When Safari Redirect Loop Error Page is requested then special error page is loaded")
-    func whenLoadSafariRedirectLoopErrorPageIsCalledThenSpecialErrorPageIsLoaded() throws {
+    @Test("When General Page Problem Error Page is requested then special error page is loaded")
+    func whenLoadGeneralPageProblemErrorPageIsCalledThenSpecialErrorPageIsLoaded() throws {
         // GIVEN
         sut.attachWebView(webView)
         let url = try #require(URL(string: "https://www.example.com"))
@@ -209,12 +209,18 @@ final class SpecialErrorPageNavigationHandlerTests {
         }
 
         // WHEN
-        sut.loadSafariRedirectLoopErrorPage(for: url)
+        sut.loadGeneralPageProblemErrorPage(for: url,
+                                            title: "Open this page in your default browser",
+                                            message: "This page can’t be shown in private mode here.",
+                                            button: "Open in Browser")
 
         // THEN
         #expect(sut.isSpecialErrorPageRequest)
         #expect(sut.failedURL == url)
-        #expect(sut.errorData == .safariRedirectLoop(url: url))
+        #expect(sut.errorData == .generalPageProblem(url: url,
+                                                     title: "Open this page in your default browser",
+                                                     message: "This page can’t be shown in private mode here.",
+                                                     button: "Open in Browser"))
         #expect(didCallLoadSimulatedRequest)
     }
 
@@ -410,21 +416,21 @@ final class SpecialErrorPageNavigationHandlerTests {
     }
 
     @MainActor
-    @Test("Visit Site opens Safari for Safari Redirect Loop special error")
-    func whenVisitSite_AndSafariRedirectLoopError_ThenAskDelegateToOpenInSafari() throws {
+    @Test("Open In Browser opens external browser for General Page Problem special error")
+    func whenOpenInBrowser_AndGeneralPageProblemError_ThenAskDelegateToOpenInBrowser() throws {
         // GIVEN
         let url = try #require(URL(string: "https://www.example.com"))
         let delegate = SpySpecialErrorPageNavigationDelegate()
         sut.delegate = delegate
         sut.attachWebView(webView)
         webView.setCurrentURL(url)
-        sut.loadSafariRedirectLoopErrorPage(for: url)
+        sut.loadGeneralPageProblemErrorPage(for: url, title: nil, message: nil, button: nil)
 
         // WHEN
-        sut.visitSiteAction()
+        sut.openInBrowserAction()
 
         // THEN
-        #expect(delegate.openedSafariURL == url)
+        #expect(delegate.openedBrowserURL == url)
     }
 
     @MainActor

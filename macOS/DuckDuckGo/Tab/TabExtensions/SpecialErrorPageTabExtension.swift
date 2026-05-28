@@ -219,7 +219,7 @@ extension SpecialErrorPageTabExtension: SpecialErrorPageUserScriptDelegate {
             } else {
                 closeAndOpenNewTab()
             }
-        case .safariRedirectLoop:
+        case .generalPageProblem:
             if webView.canGoBack {
                 _=webView.goBack()
             } else {
@@ -237,6 +237,10 @@ extension SpecialErrorPageTabExtension: SpecialErrorPageUserScriptDelegate {
 
     // Special error page "Visit site" button action
     func visitSiteAction() {
+        openInBrowserAction()
+    }
+
+    func openInBrowserAction() {
         defer {
             webView?.reloadPageFromErrorPage()
         }
@@ -251,7 +255,7 @@ extension SpecialErrorPageTabExtension: SpecialErrorPageUserScriptDelegate {
 
         case .ssl:
             shouldBypassSSLError = true
-        case .safariRedirectLoop:
+        case .generalPageProblem:
             break
         }
     }

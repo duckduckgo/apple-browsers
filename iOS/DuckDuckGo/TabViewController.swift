@@ -4367,7 +4367,7 @@ extension TabViewController: SpecialErrorPageNavigationDelegate {
         delegate?.tabDidRequestClose(tabModel, behavior: behavior, clearTabHistory: true)
     }
 
-    func openSpecialErrorPageURLInSafari(_ url: URL) {
+    func openSpecialErrorPageURLInBrowser(_ url: URL) {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             openExternally(url: url)
             return
@@ -4560,6 +4560,10 @@ extension TabViewController: SafariRedirectHandlerDelegate {
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
-        specialErrorPageNavigationHandler.loadSafariRedirectLoopErrorPage(for: url)
+        specialErrorPageNavigationHandler.loadGeneralPageProblemErrorPage(
+            for: url,
+            title: "This site only loads in Safari",
+            message: "We tried to load it privately, but it won't display.",
+            button: "Open in Safari")
     }
 }

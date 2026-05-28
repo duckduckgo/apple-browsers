@@ -129,10 +129,13 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
     }
 
     @MainActor
-    func test_WhenHandlerForInitialSetUpCalledForSafariRedirectLoop_ThenRightParameterReturned() async {
+    func test_WhenHandlerForInitialSetUpCalledForGeneralPageProblem_ThenRightParameterReturned() async {
         // GIVEN
         let expectedURL = URL(string: "https://example.com")!
-        let expectedData = SpecialErrorData.safariRedirectLoop(url: expectedURL)
+        let expectedData = SpecialErrorData.generalPageProblem(url: expectedURL,
+                                                               title: "Open this page in your default browser",
+                                                               message: "This page can’t be shown in private mode here.",
+                                                               button: "Open in Browser")
         var encodable: Encodable?
         userScript.isEnabled = true
         delegate.errorData = expectedData
@@ -170,13 +173,13 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
     }
 
     @MainActor
-    func test_WhenHandlerForVisitSiteCalled_AndIsEnabledTrue_ThenVisitSiteCalled() async {
+    func test_WhenHandlerForOpenInBrowserCalled_AndIsEnabledTrue_ThenOpenInBrowserCalled() async {
         // GIVEN
         var encodable: Encodable?
         userScript.isEnabled = true
 
         // WHEN
-        let handler = userScript.handler(forMethodNamed: "visitSite")
+        let handler = userScript.handler(forMethodNamed: "openInBrowser")
         if let handler {
             encodable = try? await handler(Data(), WKScriptMessage.mock())
         }
@@ -184,7 +187,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         // THEN
         XCTAssertNotNil(handler)
         XCTAssertNil(encodable)
-        XCTAssertTrue(delegate.visitSiteCalled)
+        XCTAssertTrue(delegate.openInBrowserCalled)
         XCTAssertFalse(delegate.leaveSiteCalled)
     }
 
@@ -212,6 +215,7 @@ class CapturingSpecialErrorPageUserScriptDelegate: SpecialErrorPageUserScriptDel
     var errorData: SpecialErrorData?
     var leaveSiteCalled = false
     var visitSiteCalled = false
+    var openInBrowserCalled = false
     var advancedInfoPresentedCalled = false
 
     func leaveSiteAction() {
@@ -220,6 +224,10 @@ class CapturingSpecialErrorPageUserScriptDelegate: SpecialErrorPageUserScriptDel
 
     func visitSiteAction() {
         visitSiteCalled = true
+    }
+
+    func openInBrowserAction() {
+        openInBrowserCalled = true
     }
 
     func advancedInfoPresented() {

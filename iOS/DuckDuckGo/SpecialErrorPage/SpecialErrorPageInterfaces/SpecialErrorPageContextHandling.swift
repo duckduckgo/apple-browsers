@@ -38,7 +38,7 @@ protocol SpecialErrorPageContextHandling: SpecialErrorPageThreatProvider {
     /// Sets the user script for the special error page.
     func setUserScript(_ userScript: SpecialErrorPageUserScript?)
 
-    /// Loads the special error page for a Safari redirect loop.
+    /// Loads the special error page for a general page problem.
     @MainActor
-    func loadSafariRedirectLoopErrorPage(for url: URL)
+    func loadGeneralPageProblemErrorPage(for url: URL, title: String?, message: String?, button: String?)
 }

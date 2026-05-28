@@ -28,6 +28,7 @@ public protocol SpecialErrorPageUserScriptDelegate: AnyObject {
 
     @MainActor func leaveSiteAction()
     @MainActor func visitSiteAction()
+    @MainActor func openInBrowserAction()
     @MainActor func advancedInfoPresented()
 
 }
@@ -45,6 +46,7 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
         case reportInitException
         case leaveSite
         case visitSite
+        case openInBrowser
         case advancedInfo
         case onThemeUpdate
     }
@@ -90,7 +92,7 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
         case .reportPageException: return reportPageException
         case .reportInitException: return reportInitException
         case .leaveSite: return handleLeaveSiteAction
-        case .visitSite: return handleVisitSiteAction
+        case .visitSite, .openInBrowser: return handleOpenInBrowserAction
         case .advancedInfo: return handleAdvancedInfoPresented
         default:
             assertionFailure("SpecialErrorPageUserScript: Failed to parse User Script message: \(methodName)")
@@ -128,8 +130,8 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
     }
 
     @MainActor
-    func handleVisitSiteAction(params: Any, message: UserScriptMessage) -> Encodable? {
-        delegate?.visitSiteAction()
+    func handleOpenInBrowserAction(params: Any, message: UserScriptMessage) -> Encodable? {
+        delegate?.openInBrowserAction()
         return nil
     }
 

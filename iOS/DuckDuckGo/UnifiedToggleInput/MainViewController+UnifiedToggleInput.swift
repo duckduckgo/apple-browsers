@@ -658,9 +658,7 @@ private extension MainViewController {
 
         updateUnifiedInputContentVisibility(for: coordinator)
         refreshAIChatTabChatHeaderSubscriptionState()
-        // `isSwipeEnabled` is set at install-time from `isToggleVisible`, but `isToggleVisible`
-        // depends on `isAITabState` (kill-switch term). Re-evaluate now that the AI-tab
-        // transition has completed so the content swipe gesture matches the hidden toggle.
+        // `isToggleVisible` flipped with the AI-tab transition — re-gate swipe to match.
         coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
         return true
     }
@@ -735,9 +733,7 @@ private extension MainViewController {
             coordinator.hide()
             coordinator.unbind()
         }
-        // `isToggleVisible` depends on `isAITabState`; leaving an AI tab can re-reveal the
-        // toggle (kill-switch term drops out on non-AI tabs), so the content swipe must
-        // be re-enabled to match.
+        // Leaving an AI tab can re-reveal the toggle (kill-switch term drops on non-AI tabs) — re-gate swipe.
         coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
     }
 
@@ -1245,9 +1241,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         )
     }
 
-    /// Close the chat tab. Selection follows the tab-switcher rule (previous tab, or next when
-    /// current was the first). A fresh NTP is only created when the chat was the only tab.
-    /// Chat content remains recoverable via Duck.ai → Recent chats.
+    /// Close the chat tab. Selection follows the tab-switcher rule; chat is recoverable via Duck.ai → Recent chats.
     func aiChatTabChatHeaderDidTapClose() {
         guard let tab = currentTab?.tabModel else {
             // The X is only visible from a Duck.ai tab header, which is only attached when a

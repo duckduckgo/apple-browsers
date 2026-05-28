@@ -881,10 +881,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             inputMode = effective
             syncInputBehaviorToHandler()
         }
-        // Re-apply render state outside the inputMode-changed gate so a visibility-only flip
-        // propagates `showsToggle: isToggleVisible` to the view layer. Required on Duck.ai
-        // tabs when the kill switch hides the toggle — a raw-setting flip doesn't change
-        // effective inputMode (already `.aiChat`) but does change visibility.
+        // Apply outside the inputMode gate so visibility-only flips (kill switch on Duck.ai
+        // tabs) still propagate `showsToggle: isToggleVisible` to the view.
         viewController.apply(computeRenderState().viewConfig, animated: false)
         if inputModeChanged {
             refreshToolsPresentation()

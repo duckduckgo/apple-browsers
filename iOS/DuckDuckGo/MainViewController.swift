@@ -1909,6 +1909,8 @@ class MainViewController: UIViewController {
 
     /// Load URL in a new tab, with option to reuse an existing tab.
     ///
+    /// - Note: New user-initiated entry paths should route through `loadUrlRespectingAIBoundary` first so the Duck.ai ↔ web boundary rule is honored. Direct callers must justify the bypass.
+    ///
     /// - Parameters:
     ///   - url: The URL to be loaded.
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.

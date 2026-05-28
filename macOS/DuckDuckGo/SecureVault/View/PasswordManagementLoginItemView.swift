@@ -17,7 +17,6 @@
 //
 
 import Foundation
-
 import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
@@ -376,15 +375,18 @@ private struct PasswordView: View {
 
                     HiddenText(isVisible: isPasswordVisible, text: model.password, hiddenTextLength: 12)
 
-                    if (isHovering || isPasswordVisible) && model.password != "" {
+                    if model.password != "" {
+                        let showEyeButton = isHovering || isPasswordVisible
                         SecureTextFieldButton(isVisible: $isPasswordVisible, toolTipHideText: UserText.hidePasswordTooltip, toolTipShowText: UserText.showPasswordTooltip)
-                    }
+                            .opacity(showEyeButton ? 1 : 0)
+                            .allowsHitTesting(showEyeButton)
 
-                    if isHovering && model.password != "" {
                         CopyButton {
                             model.copy(model.password, fieldType: .password)
                         }
                         .tooltip(UserText.copyPasswordTooltip)
+                        .opacity(isHovering ? 1 : 0)
+                        .allowsHitTesting(isHovering)
                     }
 
                     Spacer()
@@ -394,6 +396,7 @@ private struct PasswordView: View {
             }
 
         }
+        .contentShape(Rectangle())
         .onHover {
             isHovering = $0
         }

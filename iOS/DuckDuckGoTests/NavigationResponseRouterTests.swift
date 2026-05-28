@@ -413,6 +413,96 @@ struct NavigationResponseRouterTests {
         #expect(PixelFiringMock.allPixelsFired.isEmpty)
     }
 
+    // MARK: - Wallet pass preview pixel
+
+    @available(iOS 16, *)
+    @Test("Fires wallet_pass_preview_requested for pkpass on the transient branch", .timeLimit(.minutes(1)))
+    func firesWalletPassPreviewRequestedForPKPassTransient() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true)
+        let shape = makeShape(mimeType: .passbook)
+
+        // WHEN
+        _ = router.decide(for: shape)
+
+        // THEN
+        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+    }
+
+    @available(iOS 16, *)
+    @Test("Fires wallet_pass_preview_requested for pkpass on the persist branch", .timeLimit(.minutes(1)))
+    func firesWalletPassPreviewRequestedForPKPassPersist() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: false)
+        let shape = makeShape(mimeType: .passbook)
+
+        // WHEN
+        _ = router.decide(for: shape)
+
+        // THEN
+        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+    }
+
+    @available(iOS 16, *)
+    @Test("Fires wallet_pass_preview_requested for multipass", .timeLimit(.minutes(1)))
+    func firesWalletPassPreviewRequestedForMultipass() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true)
+        let shape = makeShape(mimeType: .multipass)
+
+        // WHEN
+        _ = router.decide(for: shape)
+
+        // THEN
+        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+    }
+
+    @available(iOS 16, *)
+    @Test("Does not fire wallet_pass_preview_requested for USDZ", .timeLimit(.minutes(1)))
+    func doesNotFireWalletPassPreviewRequestedForUSDZ() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true)
+        let shape = makeShape(mimeType: .usdz)
+
+        // WHEN
+        _ = router.decide(for: shape)
+
+        // THEN
+        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+    }
+
+    @available(iOS 16, *)
+    @Test("Does not fire wallet_pass_preview_requested for ICS", .timeLimit(.minutes(1)))
+    func doesNotFireWalletPassPreviewRequestedForICS() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let shape = makeShape(mimeType: .calendar)
+
+        // WHEN
+        _ = router.decide(for: shape)
+
+        // THEN
+        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+    }
+
+    @available(iOS 16, *)
+    @Test("Does not fire wallet_pass_preview_requested for ICS routed via URL extension", .timeLimit(.minutes(1)))
+    func doesNotFireWalletPassPreviewRequestedForICSByURLExtension() {
+        // GIVEN
+        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let shape = makeShape(
+            url: URL(string: "https://example.com/event.ics"),
+            mimeType: .octetStream,
+            suggestedFilename: "event.ics"
+        )
+
+        // WHEN
+        _ = router.decide(for: shape)
+
+        // THEN
+        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+    }
+
     // MARK: - Helpers
 
     private func makeRouter(walletPassDownload: Bool = true, icsCalendarLinks: Bool = false) -> NavigationResponseRouter {

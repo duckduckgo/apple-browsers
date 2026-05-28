@@ -88,6 +88,11 @@ struct NavigationResponseRouter {
             pixelFiring.fire(.downloadStarted,
                              withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "1"])
 
+            if shape.mimeType == .passbook || shape.mimeType == .multipass {
+                pixelFiring.fire(.walletPassPreviewRequested,
+                                 withAdditionalParameters: [:])
+            }
+
             let shouldPersist = FilePreviewHelper.shouldPersistInDownloads(mimeType: shape.mimeType,
                                                                            url: shape.url,
                                                                            filename: shape.suggestedFilename,

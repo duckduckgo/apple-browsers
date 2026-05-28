@@ -1072,6 +1072,18 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+        // Match the production omnibar toggle: from a search/NTP/web origin (anything other than
+        // a Duck.ai tab), a URL-shaped submission lands as a URL load even when the toggle is set
+        // to Duck.ai. Attachments suppress the heuristic — there's no sensible URL-load with
+        // attachments. Already on a Duck.ai tab, keep prompt semantics so users can ask the model
+        // about a URL by name.
+        if currentTab?.isAITab != true,
+           (images?.isEmpty ?? true), (files?.isEmpty ?? true),
+           let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
+           url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
+            loadUrlRespectingAIBoundary(url)
+            return
+        }
         openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
 
@@ -1236,7 +1248,22 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
             newTab(reuseExisting: true, allowingKeyboard: true)
             return
         }
+        // Snapshot the chat tab view before swapping tabs and fade it out on top of the
+        // destination so chrome + content transition feels gradual instead of an instant pop.
+        let snapshot = view.snapshotView(afterScreenUpdates: false)
+        if let snapshot {
+            snapshot.isUserInteractionEnabled = false
+            snapshot.frame = view.bounds
+            snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            view.addSubview(snapshot)
+        }
         closeTab(tab, behavior: .onlyClose)
+        guard let snapshot else { return }
+        UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
+            snapshot.alpha = 0
+        }, completion: { _ in
+            snapshot.removeFromSuperview()
+        })
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {

@@ -3707,7 +3707,7 @@ extension MainViewController: BrowserChromeDelegate {
         showHomeRowReminder()
     }
 
-    private func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false) {
+    func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false) {
         let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
             currentIsAI: currentTab?.isAITab == true,
             currentHasContent: currentTab?.tabModel.link != nil,

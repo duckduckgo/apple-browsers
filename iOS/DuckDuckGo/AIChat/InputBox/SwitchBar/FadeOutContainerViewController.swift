@@ -49,7 +49,6 @@ final class FadeOutContainerViewController: UIViewController {
 
     private var displayLink: CADisplayLink?
     private var targetProgress: CGFloat = 0.0
-    private var visibleMode: TextEntryMode?
 
     init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
@@ -147,20 +146,16 @@ final class FadeOutContainerViewController: UIViewController {
     }
 
     private func configureInitialState() {
-        let currentMode = switchBarHandler.currentToggleState
-        let isSearchMode = currentMode == .search
+        let isSearchMode = switchBarHandler.currentToggleState == .search
         searchPageContainer.alpha = isSearchMode ? 1.0 : 0.0
         chatPageContainer.alpha = isSearchMode ? 0.0 : 1.0
         transitionProgress = isSearchMode ? 0.0 : 1.0
-        visibleMode = currentMode
     }
 
     private func updateVisibility(animated: Bool) {
         guard searchPageContainer != nil, chatPageContainer != nil else { return }
 
         let newMode = switchBarHandler.currentToggleState
-        guard visibleMode != newMode else { return }
-
         let isSearchMode = newMode == .search
         targetProgress = isSearchMode ? 0.0 : 1.0
 
@@ -187,7 +182,6 @@ final class FadeOutContainerViewController: UIViewController {
             guard let self, finished else { return }
 
             self.updateTransitionProgress(self.targetProgress)
-            self.visibleMode = newMode
             self.delegate?.fadeOutContainerViewController(self, didTransitionToMode: newMode)
         }
 

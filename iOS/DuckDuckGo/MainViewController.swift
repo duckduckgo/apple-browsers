@@ -974,11 +974,14 @@ class MainViewController: UIViewController {
 
     private func refreshAIChatChromeChip() {
         guard let tabsBarController else { return }
-        // Read isAITab from the Tab model (always available); the VC may not be instantiated yet.
-        let isAIChat = tabManager.currentTabsModel.currentTab?.isAITab ?? false
+        // Read from the Tab model (always available); the VC may not be instantiated yet.
+        let currentTabModel = tabManager.currentTabsModel.currentTab
+        let isAIChat = currentTabModel?.isAITab ?? false
+        let isHome = currentTabModel?.isHomeTab ?? false
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
         tabsBarController.updateAIChatChipState(
             isCurrentTabAIChat: isAIChat,
+            isCurrentTabHome: isHome,
             isContextualSheetPresented: isSheetPresented
         )
     }

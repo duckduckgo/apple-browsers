@@ -188,6 +188,16 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     private func registerForFeatureFlagChanges() {
+        // The chrome shortcut flag is .internalOnly, so flipping internal-user state at runtime
+        // (debug menu) changes visibility — react to it without requiring an app restart.
+        featureFlagger?.internalUserDecider.isInternalUserPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateAIChatButtonVisibility()
+            }
+            .store(in: &cancellables)
+
         guard let overridesHandler = featureFlagger?.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return
         }
@@ -216,9 +226,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     /// Pushes per-tab state into the chip. Called by `MainViewController` when the
     /// current tab changes, its URL changes (Duck.ai vs not), or its contextual sheet
     /// is presented/dismissed.
-    func updateAIChatChipState(isCurrentTabAIChat: Bool, isContextualSheetPresented: Bool) {
+    func updateAIChatChipState(isCurrentTabAIChat: Bool, isCurrentTabHome: Bool, isContextualSheetPresented: Bool) {
         aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
-        aiChatChip.setIconVisible(!isCurrentTabAIChat)
+        // The icon half toggles the page-context sheet; hide it where there's no page to attach
+        // — Duck.ai tabs and the New Tab Page.
+        aiChatChip.setIconVisible(!isCurrentTabAIChat && !isCurrentTabHome)
     }
 
     @IBAction func onFireButtonPressed() {

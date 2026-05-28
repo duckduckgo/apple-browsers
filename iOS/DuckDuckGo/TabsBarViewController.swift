@@ -40,6 +40,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController)
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
+    func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController)
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
@@ -161,6 +162,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
         aiChatChip.textButton.addTarget(self, action: #selector(onAIChatPressed), for: .touchUpInside)
         aiChatChip.iconButton.addTarget(self, action: #selector(onAIChatContextualSheetIconPressed), for: .touchUpInside)
+        configureAIChatChipLongPressMenu()
         fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
         tabSwitcherButton.delegate = self
 
@@ -440,6 +442,27 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         addTabButton.showsMenuAsPrimaryAction = false
     }
 
+    private func configureAIChatChipLongPressMenu() {
+        let menu = UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                completion([
+                    UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
+                        self?.aiChatSettings?.enableAIChatNavigationBarUserSettings(enable: false)
+                    },
+                    UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
+                        guard let self else { return }
+                        self.delegate?.tabsBarDidRequestOpenAISettings(self)
+                    }
+                ])
+            }
+        ])
+
+        aiChatChip.textButton.menu = menu
+        aiChatChip.textButton.showsMenuAsPrimaryAction = false
+        aiChatChip.iconButton.menu = menu
+        aiChatChip.iconButton.showsMenuAsPrimaryAction = false
+    }
+
     private func createButton(image: UIImage) -> UIButton {
         let button = BrowserChromeButton()
         button.setImage(image)
@@ -617,6 +640,10 @@ extension MainViewController: TabsBarDelegate {
             // is honored — presenting the coordinator directly would skip it and open a blank chat.
             currentTab.presentContextualAIChatSheet(from: self)
         }
+    }
+
+    func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {
+        segueToSettingsAIChat()
     }
 
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {

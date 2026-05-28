@@ -20,6 +20,7 @@
 import Foundation
 import Bookmarks
 import Common
+import FoundationExtensions
 import Persistence
 
 public class BookmarksCleanupErrorHandling: EventMapping<BookmarksCleanupError> {

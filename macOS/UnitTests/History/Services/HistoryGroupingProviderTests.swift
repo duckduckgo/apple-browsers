@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import History
 import PrivacyConfig
 import XCTest

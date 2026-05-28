@@ -25,6 +25,7 @@ import BrowserServicesKit
 import SyncUI_iOS
 import Persistence
 import Common
+import FoundationExtensions
 import Configuration
 import SystemSettingsPiPTutorial
 import AIChat

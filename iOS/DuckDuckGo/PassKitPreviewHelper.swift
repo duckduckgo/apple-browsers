@@ -19,6 +19,7 @@
 
 import Common
 import Core
+import FoundationExtensions
 import UIKit
 import PassKit
 import os.log

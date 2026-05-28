@@ -18,6 +18,7 @@
 
 import AIChat
 import Common
+import FoundationExtensions
 import PrivacyConfig
 import UserScript
 

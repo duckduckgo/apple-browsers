@@ -20,6 +20,7 @@ import AppKit
 import AVFoundation
 import Combine
 import Common
+import FoundationExtensions
 import CoreLocation
 import PixelKit
 import UserNotifications

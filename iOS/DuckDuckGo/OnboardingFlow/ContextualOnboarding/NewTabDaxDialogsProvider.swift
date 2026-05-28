@@ -23,6 +23,7 @@ import SwiftUI
 import Onboarding
 import Subscription
 import Common
+import FoundationExtensions
 
 final class NewTabDaxDialogsProvider: NewTabDaxDialogProviding {
     private let featureFlagger: FeatureFlagger

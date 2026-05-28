@@ -21,6 +21,7 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Cocoa
 import Common
+import FoundationExtensions
 import Configuration
 import Networking
 import Crashes

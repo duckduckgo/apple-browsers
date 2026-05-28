@@ -24,6 +24,7 @@ import Networking
 @testable import Core
 @testable import DuckDuckGo
 import Common
+import FoundationExtensions
 import Subscription
 import PixelKit
 

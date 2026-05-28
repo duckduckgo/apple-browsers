@@ -20,6 +20,7 @@ import Bookmarks
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import PrivacyConfig
 import SecureStorage
 import XCTest

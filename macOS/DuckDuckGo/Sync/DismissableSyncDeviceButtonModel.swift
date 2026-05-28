@@ -17,6 +17,7 @@
 //
 
 import Combine
+import CombineExtensions
 import Persistence
 import AppKit
 import DDGSync

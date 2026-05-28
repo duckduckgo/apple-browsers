@@ -16,19 +16,21 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
+import NetworkingTestingUtils
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
+import PreferencesUI_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-import SubscriptionUI
 import SubscriptionTestingUtilities
-import PreferencesUI_macOS
+import SubscriptionUI
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
-import NetworkingTestingUtils
 
 @MainActor
 final class PreferencesSidebarModelTests: XCTestCase {

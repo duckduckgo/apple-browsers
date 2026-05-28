@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Carbon.HIToolbox
 import Combine
 import Common
+import FoundationExtensions
 import PixelKit
 import Suggestions
 import Subscription

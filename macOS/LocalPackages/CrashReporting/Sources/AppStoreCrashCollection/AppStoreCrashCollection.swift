@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Crashes
 import CrashReportingShared
 import FeatureFlags

@@ -68,6 +68,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import MachO
 import os.log
 

@@ -21,6 +21,7 @@ import Foundation
 import XCTest
 import Combine
 import Common
+import FoundationExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
 class SetExtensionTests: XCTestCase {

@@ -3601,6 +3601,9 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nov zavihek";
 
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Po neaktivnosti";
+
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Preizkusite novo možnost preklopa med iskanjem in Duck.ai v naslovni vrstici.";
 

@@ -3601,6 +3601,9 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nueva pestaña";
 
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Después de inactividad";
+
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Prueba la nueva opción para alternar entre la búsqueda y Duck.ai en la barra de direcciones.";
 

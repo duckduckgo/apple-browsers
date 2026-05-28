@@ -3601,6 +3601,9 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Filă nouă";
 
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "După inactivitate";
+
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Încearcă noua opțiune de a comuta între căutare și Duck.ai în bara de adrese.";
 

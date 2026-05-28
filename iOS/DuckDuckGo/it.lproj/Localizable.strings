@@ -3601,6 +3601,9 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nuova scheda";
 
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Dopo l'inattività";
+
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Prova la nuova opzione per passare dalla ricerca a Duck.ai nella barra degli indirizzi.";
 
@@ -4322,7 +4325,7 @@
 "subscription.promo.reinstaller.buttons.notNow" = "Non adesso";
 
 /* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
-"subscription.promo.reinstaller.message" = "DuckDuckGo offre anche un **abbonamento a pagamento facoltativo**, con **VPN** sicura e **AI avanzata e privata**.";
+"subscription.promo.reinstaller.message" = "DuckDuckGo offre anche un **abbonamento a pagamento facoltativo**, con **VPN ** sicura e **AI avanzata e privata**.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Rimuovi da questo dispositivo";

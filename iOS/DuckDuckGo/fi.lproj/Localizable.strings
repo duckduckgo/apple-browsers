@@ -287,7 +287,7 @@
 "aichat.reasoning.reasoning.title" = "Perustelut";
 
 /* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Etsi QR-koodi toisen laitteen DuckDuckGo-sovelluksesta valitsemalla **Asetukset** › **Synkronointi ja varmuuskopiointi** › **Synkronoi toisen laitteen kanssa**.";
+"aiChat.syncIntroSheet.body" = "Etsi QR-koodi toisen laitteen DuckDuckGo-sovelluksesta valitsemalla **Asetukset** › **Synkronointi ja varmuuskopiointi ** ›**Synkronoi toisen laitteen kanssa**.";
 
 /* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
 "aiChat.syncIntroSheet.notNow" = "Ei nyt";
@@ -3600,6 +3600,9 @@
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Uusi välilehti";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Käyttämättömyyden jälkeen";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Kokeile uutta vaihtoehtoa vaihtaa haun ja Duck.ai:n välillä osoitekentällä.";

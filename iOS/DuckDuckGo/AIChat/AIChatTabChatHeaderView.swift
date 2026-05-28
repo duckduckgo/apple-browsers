@@ -28,6 +28,7 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapNewChat()
     func aiChatTabChatHeaderDidTapNewVoiceChat()
     func aiChatTabChatHeaderDidTapNewTab()
+    func aiChatTabChatHeaderDidTapNewSearch()
     func aiChatTabChatHeaderDidTapNewFireTab()
     func aiChatTabChatHeaderDidTapTabSwitcher()
 }
@@ -181,6 +182,12 @@ final class AIChatTabChatHeaderView: UIView {
         ) { [weak self] _ in
             self?.delegate?.aiChatTabChatHeaderDidTapNewTab()
         }
+        let newSearch = UIAction(
+            title: UserText.aiChatHeaderNewSearchTitle,
+            image: DesignSystemImages.Glyphs.Size24.findSearchSmall
+        ) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewSearch()
+        }
         let newFireTab = UIAction(
             title: UserText.aiChatHeaderNewFireTabTitle,
             image: DesignSystemImages.Glyphs.Size24.fireTabs
@@ -188,7 +195,7 @@ final class AIChatTabChatHeaderView: UIView {
             self?.delegate?.aiChatTabChatHeaderDidTapNewFireTab()
         }
         let inTabGroup = UIMenu(options: .displayInline, children: [newChat, newVoiceChat])
-        let newTabGroup = UIMenu(options: .displayInline, children: [newTab, newFireTab])
+        let newTabGroup = UIMenu(options: .displayInline, children: [newTab, newSearch, newFireTab])
         return UIMenu(children: [inTabGroup, newTabGroup])
     }
 

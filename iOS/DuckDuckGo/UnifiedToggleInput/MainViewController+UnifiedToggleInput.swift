@@ -1219,7 +1219,8 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         )
     }
 
-    /// Close the chat tab. Reuses an existing NTP after removal, otherwise creates a fresh one.
+    /// Close the chat tab. Selection follows the tab-switcher rule (previous tab, or next when
+    /// current was the first). A fresh NTP is only created when the chat was the only tab.
     /// Chat content remains recoverable via Duck.ai → Recent chats.
     func aiChatTabChatHeaderDidTapClose() {
         guard let tab = currentTab?.tabModel else {
@@ -1229,7 +1230,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
             newTab(reuseExisting: true, allowingKeyboard: true)
             return
         }
-        closeTab(tab, behavior: .createOrReuseEmptyTab)
+        closeTab(tab, behavior: .onlyClose)
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {
@@ -1243,7 +1244,13 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewTab() {
+        newTab(reuseExisting: false, allowingKeyboard: false)
+    }
+
+    /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.
+    func aiChatTabChatHeaderDidTapNewSearch() {
         newTab(reuseExisting: false, allowingKeyboard: true)
+        unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(.search)
     }
 
     func aiChatTabChatHeaderDidTapNewFireTab() {

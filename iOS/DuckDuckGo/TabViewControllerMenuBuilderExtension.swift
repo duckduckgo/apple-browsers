@@ -135,46 +135,39 @@ extension TabViewController {
     }
     
     func buildAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
-        var entries = [BrowsingMenuEntry]()
-
-        entries.append(buildNewTabEntry())
-
-        entries.append(buildNewAIChatEntry())
-
-        return entries
+        return [
+            buildNewAIChatEntry(),
+            buildAIChatHistoryHeaderTile(),
+            buildAIChatSettingsHeaderTile(),
+        ]
     }
-    
+
     func buildAITabMenu(useSmallIcon: Bool = true,
                         includeSettings: Bool = true,
                         separateUtilityItems: Bool = false,
                         useDetailTextForZoom: Bool = false) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
-        
+
+        if includeSettings {
+            entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
+            entries.append(.separator)
+        }
+
         entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtilityItems, useDetailTextForZoom: useDetailTextForZoom))
 
         entries.append(.separator)
-        
+
         entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
-        
+
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
             entries.append(buildAutoFillEntry(useSmallIcon: useSmallIcon))
         }
-        
+
         entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
-        
-        entries.append(buildAIChatSidebarEntry(useSmallIcon: useSmallIcon))
 
         if separateUtilityItems {
             entries.append(.separator)
             entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
-        }
-
-        entries.append(.separator)
-        
-        entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon))
-
-        if includeSettings {
-            entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
         }
 
         return entries
@@ -509,20 +502,22 @@ extension TabViewController {
         })
     }
     
-    private func buildAIChatSidebarEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionAIChatHistory,
-                 accessibilityLabel: UserText.actionAIChatHistory,
-                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatHistory : DesignSystemImages.Glyphs.Size24.aiChatHistory,
+    /// Glyph deliberately matches the chat-history pill in `AIChatTabChatHeaderView` so the
+    /// header tile and the top-chrome pill read as the same action.
+    private func buildAIChatHistoryHeaderTile() -> BrowsingMenuEntry {
+        .regular(name: UserText.aiChatAppMenuHeaderChatHistory,
+                 accessibilityLabel: UserText.aiChatAppMenuHeaderChatHistory,
+                 image: DesignSystemImages.Glyphs.Size24.chats,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
             self?.submitToggleSidebarAction()
         })
     }
-    
-    private func buildAIChatSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionAIChatSettings,
-                 accessibilityLabel: UserText.actionAIChatSettings,
-                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatSettings : DesignSystemImages.Glyphs.Size24.settings,
+
+    private func buildAIChatSettingsHeaderTile() -> BrowsingMenuEntry {
+        .regular(name: UserText.aiChatAppMenuHeaderChatSettings,
+                 accessibilityLabel: UserText.aiChatAppMenuHeaderChatSettings,
+                 image: DesignSystemImages.Glyphs.Size24.settings,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
             self?.submitOpenSettingsAction()
@@ -859,13 +854,11 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeAITabMenu() -> [BrowsingMenuEntry] {
-        buildAITabMenu(useSmallIcon: false, includeSettings: false, separateUtilityItems: true, useDetailTextForZoom: true)
+        buildAITabMenu(useSmallIcon: false, includeSettings: true, separateUtilityItems: true, useDetailTextForZoom: true)
     }
-    
+
     func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
-        // Add settings to the header.
-        // It'll be filtered out in `makeAITabMenu`
-        buildAITabMenuHeaderContent() + [makeSettingsEntry()]
+        buildAITabMenuHeaderContent()
     }
     
     func makeBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,

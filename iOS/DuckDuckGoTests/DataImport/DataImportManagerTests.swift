@@ -21,6 +21,7 @@ import XCTest
 @testable import Core
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Persistence
 import SecureStorage
 

@@ -391,6 +391,9 @@ public enum FeatureFlag: String {
 
     case aiChatNativeStorage
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215106459483563?focus=true
+    case duckAINativeStoragePathMigration
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
 
@@ -710,6 +713,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.minimalChromeInLandscape))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage))
+        case .duckAINativeStoragePathMigration:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeStoragePathMigration))
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess))
         case .omniBarLongPressMenu:

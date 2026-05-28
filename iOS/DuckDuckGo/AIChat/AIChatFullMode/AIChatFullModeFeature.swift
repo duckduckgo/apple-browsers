@@ -20,6 +20,7 @@
 import Foundation
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import UIKit
 
 /// Provides access to full Duck AI chat mode availability.

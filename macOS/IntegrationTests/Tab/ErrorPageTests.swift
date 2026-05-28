@@ -18,6 +18,8 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest

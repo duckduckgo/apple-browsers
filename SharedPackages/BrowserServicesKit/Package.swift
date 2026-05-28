@@ -66,6 +66,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
         .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "14.13.0"),
         .package(path: "../URLPredictor"),
+        .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [
         .binaryTarget(
@@ -88,6 +89,9 @@ let package = Package(
                 "TrackerRadarKit",
                 "BloomFilterWrapper",
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "UserScript",
                 "ContentBlocking",
                 "SecureStorage",
@@ -119,6 +123,9 @@ let package = Package(
             name: "Persistence",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -128,6 +135,9 @@ let package = Package(
             name: "DuckAiDataStore",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence",
                 "SecureStorage",
                 "GRDB",
@@ -149,6 +159,9 @@ let package = Package(
             name: "PrivacyConfig",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "ContentBlocking",
                 "Persistence",
             ],
@@ -169,6 +182,9 @@ let package = Package(
             name: "Bookmarks",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence",
             ],
             resources: [
@@ -182,7 +198,10 @@ let package = Package(
             name: "History",
             dependencies: [
                 "Persistence",
-                "Common"
+                "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             resources: [
                 .process("CoreData/BrowsingHistory.xcdatamodeld")
@@ -194,7 +213,10 @@ let package = Package(
         .target(
             name: "Suggestions",
             dependencies: [
-                "Common"
+                "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -236,6 +258,9 @@ let package = Package(
             name: "Crashes",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "CxxCrashHandler",
                 "Persistence"
             ]),
@@ -247,6 +272,9 @@ let package = Package(
             name: "DDGSync",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
                 .product(name: "Gzip", package: "GzipSwift"),
                 "Networking",
@@ -273,6 +301,9 @@ let package = Package(
             dependencies: [
                 .product(name: "Punycode", package: "PunycodeSwift"),
                 .product(name: "URLPredictor", package: "URLPredictor"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -291,6 +322,9 @@ let package = Package(
             name: "Navigation",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug)),
@@ -311,6 +345,9 @@ let package = Package(
             name: "UserScript",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -320,6 +357,9 @@ let package = Package(
             name: "PrivacyDashboard",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "TrackerRadarKit",
                 "UserScript",
                 "ContentBlocking",
@@ -338,6 +378,9 @@ let package = Package(
             name: "Configuration",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Networking",
                 "PrivacyConfig",
             ],
@@ -349,7 +392,10 @@ let package = Package(
             name: "Networking",
             dependencies: [
                 .product(name: "JWTKit", package: "jwt-kit"),
-                "Common"
+                "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -366,6 +412,9 @@ let package = Package(
             dependencies: [
                 "BrowserServicesKit",
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Configuration",
                 "Networking",
                 "Persistence",
@@ -390,6 +439,9 @@ let package = Package(
                 "Bookmarks",
                 "BrowserServicesKit",
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "DDGSync",
                 "GRDB",
                 "Persistence",
@@ -403,6 +455,9 @@ let package = Package(
             name: "SecureStorage",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "PixelKit",
                 "GRDB",
             ],
@@ -421,6 +476,9 @@ let package = Package(
             name: "Subscription",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Networking",
                 "UserScript",
                 "PixelKit",
@@ -437,6 +495,9 @@ let package = Package(
                 "BrowserServicesKitTestsUtils",
                 "Subscription",
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "NetworkingTestingUtils",
             ]
         ),
@@ -444,6 +505,9 @@ let package = Package(
             name: "PixelKit",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence"
             ],
             exclude: [
@@ -463,6 +527,9 @@ let package = Package(
             name: "SpecialErrorPages",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "UserScript",
                 "BrowserServicesKit",
                 "MaliciousSiteProtection",
@@ -476,6 +543,9 @@ let package = Package(
             name: "DuckPlayer",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "ContentBlocking",
                 "PrivacyConfig",
             ],
@@ -487,6 +557,9 @@ let package = Package(
             name: "MaliciousSiteProtection",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Networking",
                 "PixelKit",
                 "PrivacyConfig",
@@ -528,6 +601,9 @@ let package = Package(
             name: "PrivacyStats",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence",
                 "TrackerRadarKit"
             ],
@@ -542,6 +618,9 @@ let package = Package(
             name: "AutoconsentStats",
             dependencies: [
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Persistence",
             ],
             swiftSettings: [
@@ -664,6 +743,9 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "Common",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ]
         ),
         .testTarget(
@@ -678,6 +760,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "Navigation",
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Swifter", package: "swifter"),
             ],
             resources: [

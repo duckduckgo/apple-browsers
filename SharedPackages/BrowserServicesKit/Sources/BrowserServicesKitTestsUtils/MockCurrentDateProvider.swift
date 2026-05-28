@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 public class MockCurrentDateProvider: CurrentDateProviding {
     public var currentDate: Date

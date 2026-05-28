@@ -19,6 +19,7 @@
 import Foundation
 import XCTest
 import Common
+import FoundationExtensions
 
 @testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore

@@ -227,6 +227,52 @@ struct NTPAfterIdleInstrumentationTests {
         #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle.name])
     }
 
+    // MARK: - escapeHatchCloseTabTapped
+
+    @available(iOS 16, *)
+    @Test("When escape hatch close tab tapped then fires the close_tab pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchCloseTabTappedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchCloseTabTapped()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchCloseTabTapped.name])
+    }
+
+    // MARK: - escapeHatchBurnTapped
+
+    @available(iOS 16, *)
+    @Test("When escape hatch burn tapped with confirmation then fires the with_confirmation pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchBurnTappedWithConfirmationThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTapped(requiredConfirmation: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnWithConfirmationTapped.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When escape hatch burn tapped immediately then fires the immediately pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchBurnTappedImmediatelyThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTapped(requiredConfirmation: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnImmediatelyTapped.name])
+    }
+
+    // MARK: - escapeHatchOptionChanged
+
+    @available(iOS 16, *)
+    @Test("When escape hatch option changed to newTab then fires the new_tab pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchOptionChangedToNewTabThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchOptionChanged(to: .newTab)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When escape hatch option changed to lastUsedTab then fires the last_used_tab pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchOptionChangedToLastUsedTabThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchOptionChanged(to: .lastUsedTab)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab.name])
+    }
+
     // MARK: - Multiple calls accumulate
 
     @Test("When multiple methods called then all pixels are recorded")

@@ -21,6 +21,7 @@ import AppKit
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import OSLog
 import PrivacyConfig

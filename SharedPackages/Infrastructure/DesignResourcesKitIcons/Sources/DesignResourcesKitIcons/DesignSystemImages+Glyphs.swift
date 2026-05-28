@@ -521,6 +521,8 @@ public extension DesignSystemImages {
             public static var shieldCheckSolid: DesignSystemImage { .init(resource: .shieldCheckSolid24) }
             public static var shareAndroid: DesignSystemImage { .init(resource: .shareAndroid24) }
             public static var shareApple: DesignSystemImage { .init(resource: .shareApple24) }
+            public static var sheet: DesignSystemImage { .init(resource: .sheet24) }
+            public static var sheetOpen: DesignSystemImage { .init(resource: .sheetOpen24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
             public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare24) }

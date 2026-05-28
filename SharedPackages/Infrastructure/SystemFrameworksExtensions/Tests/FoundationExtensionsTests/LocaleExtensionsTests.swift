@@ -18,7 +18,7 @@
 
 import Foundation
 import XCTest
-@testable import Common
+@testable import FoundationExtensions
 
 final class LocaleExtensionsTests: XCTest {
 

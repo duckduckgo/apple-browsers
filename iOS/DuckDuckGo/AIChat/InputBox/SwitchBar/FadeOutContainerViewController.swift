@@ -19,7 +19,6 @@
 
 import UIKit
 import Combine
-import PrivacyConfig
 
 protocol FadeOutContainerViewControllerDelegate: AnyObject {
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode)
@@ -35,11 +34,14 @@ final class FadeOutContainerViewController: UIViewController {
     @Published private(set) var transitionProgress: CGFloat = 0.0
 
     private let switchBarHandler: SwitchBarHandling
-    private let featureFlagger: FeatureFlagger
     private var cancellables = Set<AnyCancellable>()
 
     private(set) var searchPageContainer: UIView!
     private(set) var chatPageContainer: UIView!
+
+    var isSwipeEnabled: Bool = true {
+        didSet { panGestureRecognizer?.isEnabled = isSwipeEnabled }
+    }
 
     private var panGestureRecognizer: UIPanGestureRecognizer!
     private let swipeVelocityThreshold: CGFloat = 500
@@ -48,10 +50,8 @@ final class FadeOutContainerViewController: UIViewController {
     private var displayLink: CADisplayLink?
     private var targetProgress: CGFloat = 0.0
 
-    init(switchBarHandler: SwitchBarHandling,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+    init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
-        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -74,8 +74,8 @@ final class FadeOutContainerViewController: UIViewController {
         setupBindings()
     }
 
-    func setMode(_ mode: TextEntryMode) {
-        updateVisibility(animated: true)
+    func setMode(_ mode: TextEntryMode, animated: Bool = true) {
+        updateVisibility(animated: animated)
     }
 
     // MARK: - Private
@@ -85,7 +85,7 @@ final class FadeOutContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
-                guard let self, switchBarHandler.isUsingFadeOutAnimation else { return }
+                guard let self else { return }
                 self.updateVisibility(animated: true)
             }
             .store(in: &cancellables)
@@ -119,6 +119,7 @@ final class FadeOutContainerViewController: UIViewController {
     private func setupSwipeGestures() {
         panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
         panGestureRecognizer.delegate = self
+        panGestureRecognizer.isEnabled = isSwipeEnabled
         view.addGestureRecognizer(panGestureRecognizer)
     }
 

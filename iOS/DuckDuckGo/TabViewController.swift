@@ -1373,17 +1373,6 @@ class TabViewController: UIViewController {
         error.layoutIfNeeded()
     }
 
-    private func showSafariRedirectLoopError(for url: URL) {
-        shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
-        self.url = url
-        hideProgressIndicator()
-        ViewHighlighter.hideAll()
-        showError(message: UserText.xSafariHTTPSLoopTitle)
-        Pixel.fire(pixel: .webViewErrorPageShown)
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
-        webpageDidFailToLoad()
-    }
-    
     private func hideErrorMessage() {
         error.isHidden = true
         webView.isHidden = false
@@ -4378,6 +4367,20 @@ extension TabViewController: SpecialErrorPageNavigationDelegate {
         delegate?.tabDidRequestClose(tabModel, behavior: behavior, clearTabHistory: true)
     }
 
+    func openSpecialErrorPageURLInSafari(_ url: URL) {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            openExternally(url: url)
+            return
+        }
+
+        components.scheme = "x-safari-https"
+        if let safariURL = components.url {
+            openExternally(url: safariURL)
+        } else {
+            openExternally(url: url)
+        }
+    }
+
 }
 
 // MARK: - DuckPlayerTabNavigationHandling
@@ -4556,6 +4559,7 @@ extension TabViewController: SafariRedirectHandlerDelegate {
     }
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
-        showSafariRedirectLoopError(for: url)
+        shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
+        specialErrorPageNavigationHandler.loadSafariRedirectLoopErrorPage(for: url)
     }
 }

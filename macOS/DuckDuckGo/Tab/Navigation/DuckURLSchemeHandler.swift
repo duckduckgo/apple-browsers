@@ -358,6 +358,10 @@ private extension DuckURLSchemeHandler {
             assertionFailure("SSL error page is handled with NSURLError: NSURLErrorServerCertificateUntrusted error")
             return .phishing
         }()
+        case .safariRedirectLoop: {
+            assertionFailure("Safari redirect loop error page is not handled by malicious site flow")
+            return .phishing
+        }()
         }
 
         let error = MaliciousSiteError(threat: threatKind, failingUrl: failingUrl)

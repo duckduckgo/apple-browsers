@@ -219,6 +219,12 @@ extension SpecialErrorPageTabExtension: SpecialErrorPageUserScriptDelegate {
             } else {
                 closeAndOpenNewTab()
             }
+        case .safariRedirectLoop:
+            if webView.canGoBack {
+                _=webView.goBack()
+            } else {
+                closeAndOpenNewTab()
+            }
         }
     }
 
@@ -245,6 +251,8 @@ extension SpecialErrorPageTabExtension: SpecialErrorPageUserScriptDelegate {
 
         case .ssl:
             shouldBypassSSLError = true
+        case .safariRedirectLoop:
+            break
         }
     }
 

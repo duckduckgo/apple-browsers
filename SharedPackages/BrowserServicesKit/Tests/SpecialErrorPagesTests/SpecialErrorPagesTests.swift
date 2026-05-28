@@ -129,6 +129,28 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
     }
 
     @MainActor
+    func test_WhenHandlerForInitialSetUpCalledForSafariRedirectLoop_ThenRightParameterReturned() async {
+        // GIVEN
+        let expectedURL = URL(string: "https://example.com")!
+        let expectedData = SpecialErrorData.safariRedirectLoop(url: expectedURL)
+        var encodable: Encodable?
+        userScript.isEnabled = true
+        delegate.errorData = expectedData
+
+        // WHEN
+        let handler = userScript.handler(forMethodNamed: "initialSetup")
+        if let handler {
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
+        }
+
+        // THEN
+        XCTAssertNotNil(handler)
+        XCTAssertNotNil(encodable)
+        let data = encodable as? SpecialErrorPageUserScript.InitialSetupResult
+        XCTAssertEqual(data?.errorData, expectedData)
+    }
+
+    @MainActor
     func test_WhenHandlerForLeaveSiteCalled_AndIsEnabledTrue_ThenLeaveSiteCalled() async {
         // GIVEN
         var encodable: Encodable?

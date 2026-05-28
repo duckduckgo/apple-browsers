@@ -58,6 +58,15 @@ final class SpecialErrorPageNavigationHandler: SpecialErrorPageContextHandling {
         self.userScript = userScript
         userScript?.delegate = self
     }
+
+    @MainActor
+    func loadSafariRedirectLoopErrorPage(for url: URL) {
+        failedURL = url
+        errorData = .safariRedirectLoop(url: url)
+        isSpecialErrorPageRequest = true
+        loadSpecialErrorPage(url: url)
+        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
+    }
 }
 
 // MARK: - WebViewNavigationHandling
@@ -157,23 +166,26 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
         case .maliciousSite:
             maliciousSiteProtectionNavigationHandler.leaveSite()
             closeTab(shouldCreateNewTab: true)
+        case .safariRedirectLoop:
+            navigateBackIfPossible()
         }
     }
 
     @MainActor
     func visitSiteAction() {
-        defer {
-            isSpecialErrorPageVisible = false
-            _ = webView?.reload()
-        }
-
         guard let errorData, let url = webView?.url else { return }
 
         switch errorData {
         case .ssl:
             sslErrorPageNavigationHandler.visitSite()
+            isSpecialErrorPageVisible = false
+            _ = webView?.reload()
         case .maliciousSite:
             maliciousSiteProtectionNavigationHandler.visitSite(url: url, errorData: errorData)
+            isSpecialErrorPageVisible = false
+            _ = webView?.reload()
+        case .safariRedirectLoop:
+            delegate?.openSpecialErrorPageURLInSafari(url)
         }
     }
 
@@ -186,6 +198,8 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
             sslErrorPageNavigationHandler.advancedInfoPresented()
         case .maliciousSite:
             maliciousSiteProtectionNavigationHandler.advancedInfoPresented()
+        case .safariRedirectLoop:
+            break
         }
     }
 }
@@ -217,6 +231,8 @@ private extension SpecialErrorData {
         case .ssl:
             return nil
         case let .maliciousSite(_, url):
+            return url
+        case let .safariRedirectLoop(url):
             return url
         }
     }

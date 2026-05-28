@@ -23,9 +23,14 @@ import Foundation
 final class SpySpecialErrorPageNavigationDelegate: SpecialErrorPageNavigationDelegate {
     private(set) var didCallCloseSpecialErrorPageTab: Bool = false
     private(set) var capturedShouldCreateNewEmptyTab: Bool = false
+    private(set) var openedSafariURL: URL?
 
     func closeSpecialErrorPageTab(shouldCreateNewEmptyTab: Bool) {
         didCallCloseSpecialErrorPageTab = true
         capturedShouldCreateNewEmptyTab = shouldCreateNewEmptyTab
+    }
+
+    func openSpecialErrorPageURLInSafari(_ url: URL) {
+        openedSafariURL = url
     }
 }

@@ -198,6 +198,27 @@ final class SpecialErrorPageNavigationHandlerTests {
     }
 
     @MainActor
+    @Test("When Safari Redirect Loop Error Page is requested then special error page is loaded")
+    func whenLoadSafariRedirectLoopErrorPageIsCalledThenSpecialErrorPageIsLoaded() throws {
+        // GIVEN
+        sut.attachWebView(webView)
+        let url = try #require(URL(string: "https://www.example.com"))
+        var didCallLoadSimulatedRequest = false
+        webView.loadRequestHandler = { _, _ in
+            didCallLoadSimulatedRequest = true
+        }
+
+        // WHEN
+        sut.loadSafariRedirectLoopErrorPage(for: url)
+
+        // THEN
+        #expect(sut.isSpecialErrorPageRequest)
+        #expect(sut.failedURL == url)
+        #expect(sut.errorData == .safariRedirectLoop(url: url))
+        #expect(didCallLoadSimulatedRequest)
+    }
+
+    @MainActor
     @Test("Receive Challenge forwards event to SSL Error Page Navigation Handler")
     func whenDidHandleWebViewReceiveChallengeIsCalledAskSSLErrorPageNavigationHandlerToHandleTheChallenge() {
         // GIVEN
@@ -386,6 +407,24 @@ final class SpecialErrorPageNavigationHandlerTests {
         // THEN
         #expect(!sut.isSpecialErrorPageVisible)
         #expect(webView.didCallReload)
+    }
+
+    @MainActor
+    @Test("Visit Site opens Safari for Safari Redirect Loop special error")
+    func whenVisitSite_AndSafariRedirectLoopError_ThenAskDelegateToOpenInSafari() throws {
+        // GIVEN
+        let url = try #require(URL(string: "https://www.example.com"))
+        let delegate = SpySpecialErrorPageNavigationDelegate()
+        sut.delegate = delegate
+        sut.attachWebView(webView)
+        webView.setCurrentURL(url)
+        sut.loadSafariRedirectLoopErrorPage(for: url)
+
+        // WHEN
+        sut.visitSiteAction()
+
+        // THEN
+        #expect(delegate.openedSafariURL == url)
     }
 
     @MainActor

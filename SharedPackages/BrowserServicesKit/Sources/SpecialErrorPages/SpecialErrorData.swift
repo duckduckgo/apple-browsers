@@ -24,6 +24,7 @@ public enum SpecialErrorKind: String, Encodable {
     case phishing
     case malware
     case scam
+    case safariRedirectLoop
 }
 
 public enum SpecialErrorData: Encodable, Equatable {
@@ -38,6 +39,7 @@ public enum SpecialErrorData: Encodable, Equatable {
 
     case ssl(type: SSLErrorType, domain: String, eTldPlus1: String)
     case maliciousSite(kind: MaliciousSiteProtection.ThreatKind, url: URL)
+    case safariRedirectLoop(url: URL)
 
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -58,6 +60,9 @@ public enum SpecialErrorData: Encodable, Equatable {
             // https://app.asana.com/0/1206594217596623/1208824527069247/f
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(kind.errorPageKind, forKey: .kind)
+            try container.encode(url, forKey: .url)
+        case .safariRedirectLoop(url: let url):
+            try container.encode(SpecialErrorKind.safariRedirectLoop, forKey: .kind)
             try container.encode(url, forKey: .url)
         }
     }

@@ -83890,7 +83890,7 @@
     },
     "preferences.about.unsupported-device-info1" : {
       "comment" : "This string represents a message informing the user that DuckDuckGo is no longer providing browser updates for their version of macOS",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -83950,7 +83950,7 @@
     },
     "preferences.about.unsupported-device-info2" : {
       "comment" : "Copy in section that tells the user to update their macOS version since their current version is unsupported",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

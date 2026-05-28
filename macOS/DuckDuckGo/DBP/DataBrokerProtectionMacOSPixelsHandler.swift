@@ -20,6 +20,7 @@ import Foundation
 import DataBrokerProtection_macOS
 import PixelKit
 import Common
+import FoundationExtensions
 
 public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProtectionMacOSPixels> {
 

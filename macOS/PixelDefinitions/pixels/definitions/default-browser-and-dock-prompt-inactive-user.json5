@@ -6,6 +6,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "contentType",
                 "description": "Indicates the type of prompt shown",
@@ -20,6 +21,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "contentType",
                 "description": "Indicates the type of prompt shown",
@@ -34,6 +36,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "contentType",
                 "description": "Indicates the type of prompt shown",
@@ -46,27 +49,27 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-save-modal-shown": {
         "description": "Fired when we fail to save the flag to indicate we have already shown the modal prompt for inactive users.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-retrieve-current-activity": {
         "description": "Fired when we fail to retrieve the current user activity, used to determine a user's eligibility for the inactive user prompt.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-save-current-activity": {
         "description": "Fired when we fail to save the current user activity, used to determine a user's eligibility for the inactive user prompt.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

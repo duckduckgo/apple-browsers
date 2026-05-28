@@ -22,6 +22,7 @@ import Combine
 import Foundation
 import NetworkExtension
 import Common
+import FoundationExtensions
 
 /// Observes the server info through Distributed Notifications and an IPC connection.
 ///

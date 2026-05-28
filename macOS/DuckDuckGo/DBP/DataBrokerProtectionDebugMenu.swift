@@ -22,6 +22,7 @@ import Foundation
 import AppKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import LoginItems
 import NetworkProtectionProxy
 import os.log

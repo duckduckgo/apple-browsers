@@ -20,6 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 
 public extension Array where Element == SecureVaultModels.WebsiteAccount {
 

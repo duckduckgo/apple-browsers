@@ -19,6 +19,7 @@
 import Foundation
 import os.log
 import Common
+import FoundationExtensions
 
 public enum OAuthClientError: DDGError {
     case internalError(String)

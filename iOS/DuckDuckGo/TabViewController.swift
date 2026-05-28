@@ -21,6 +21,7 @@ import AVFoundation
 import WebKit
 import Core
 import Combine
+import CombineExtensions
 import StoreKit
 import LocalAuthentication
 import BrowserServicesKit
@@ -28,6 +29,7 @@ import SwiftUI
 import Bookmarks
 import Persistence
 import Common
+import FoundationExtensions
 import DDGSync
 import PrivacyDashboard
 import UserScript

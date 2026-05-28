@@ -21,6 +21,7 @@ import RemoteMessaging
 import AppKitExtensions
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Configuration
 import os.log
 

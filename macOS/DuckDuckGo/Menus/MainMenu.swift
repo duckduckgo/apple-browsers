@@ -19,20 +19,22 @@
 import AIChat
 import BrowserServicesKit
 import Cocoa
-import Common
 import Combine
+import Common
+import ConcurrencyExtensions
+import Configuration
 import FeatureFlags
+import FoundationExtensions
 import History
 import OSLog
-import SwiftUI
-import WebKit
-import Configuration
-import VPN
+import PixelKit
 import PrivacyConfig
 import Subscription
 import SubscriptionUI
+import SwiftUI
 import Utilities
-import PixelKit
+import VPN
+import WebKit
 
 // MARK: - LazyBookmarkFolderMenuDelegate
 

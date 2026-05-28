@@ -19,6 +19,7 @@
 import Foundation
 import VPN
 import Common
+import FoundationExtensions
 
 extension Bundle {
 

@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Configuration
 import Foundation
 import Core

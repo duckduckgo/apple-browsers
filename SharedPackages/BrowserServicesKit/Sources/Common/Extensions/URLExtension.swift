@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Network
 import URLPredictor
 

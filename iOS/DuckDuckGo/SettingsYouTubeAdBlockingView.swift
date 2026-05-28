@@ -34,7 +34,7 @@ struct SettingsYouTubeAdBlockingView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: SettingsDescription {
-        SettingsDescription(imageName: "SettingsYoutubeHero",
+        SettingsDescription(imageName: "SettingsDuckPlayerHero",
                             title: UserText.youTubeAdBlockingTitle,
                             status: .alwaysOn,
                             explanation: UserText.adBlockingDescription)

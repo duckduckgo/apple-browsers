@@ -22,6 +22,7 @@ import SecureStorage
 import PixelKit
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import UniformTypeIdentifiers
 
 /// A DataImporter that can import Safari archives as well as standalone Safari exports

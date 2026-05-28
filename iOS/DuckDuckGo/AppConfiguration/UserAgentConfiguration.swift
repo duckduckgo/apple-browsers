@@ -20,6 +20,7 @@
 import Core
 import Persistence
 import Common
+import FoundationExtensions
 
 struct CachedUserAgent: Codable {
 

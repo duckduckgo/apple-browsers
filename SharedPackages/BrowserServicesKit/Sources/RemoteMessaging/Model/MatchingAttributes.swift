@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 struct LocaleMatchingAttribute: SingleValueMatching {
     var value: [String]? = []

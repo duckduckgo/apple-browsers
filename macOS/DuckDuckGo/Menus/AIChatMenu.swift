@@ -19,6 +19,7 @@
 import AIChat
 import AppKit
 import Common
+import FoundationExtensions
 import DesignResourcesKitIcons
 import OSLog
 import PixelKit

@@ -18,7 +18,9 @@
 
 import AppKit
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import DesignResourcesKitIcons
 import FeatureFlags
 import PrivacyConfig

@@ -23,6 +23,7 @@ import BrokenSitePrompt
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Configuration
 import Core
 import DataBrokerProtection_iOS
@@ -212,6 +213,7 @@ class MainViewController: UIViewController {
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
     private var settingsCancellables = Set<AnyCancellable>()
+    private var webViewViewportRefreshCancellable: AnyCancellable?
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -1189,6 +1191,13 @@ class MainViewController: UIViewController {
                                                selector: #selector(onAppDidEnterBackground),
                                                name: UIApplication.didEnterBackgroundNotification,
                                                object: nil)
+
+        webViewViewportRefreshCancellable = NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard AppWidthObserver.shared.isPad else { return }
+                self?.refreshCurrentWebViewViewportAfterForeground()
+            }
     }
 
     @objc private func onAppDidEnterBackground() {
@@ -1868,6 +1877,24 @@ class MainViewController: UIViewController {
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
         if daxDialogsManager.shouldShowFireButtonPulse && !daxDialogsManager.shouldShowPrivacyButtonPulse {
             showFireButtonPulse()
+        }
+    }
+
+    /// Forces a viewport-size IPC to the WebContent process after foreground. Works around a
+    /// WKWebView bug where iOS's iPad multitasking snapshot cycle can leave the page stuck on a
+    /// stale `window.outerWidth` / `innerHeight`, breaking `vh`/`vw`-based layouts.
+    /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1214469654462812?focus=true
+    private func refreshCurrentWebViewViewportAfterForeground() {
+        guard let webView = currentTab?.webView else { return }
+        let originalFrame = webView.frame
+        guard originalFrame.width > 0, originalFrame.height > 1 else { return }
+
+        var nudged = originalFrame
+        nudged.size.height -= 1
+        webView.frame = nudged
+
+        DispatchQueue.main.async { [weak webView] in
+            webView?.frame = originalFrame
         }
     }
 
@@ -4696,6 +4723,7 @@ extension MainViewController: EscapeHatchActionRouter {
             clearEscapeHatch()
             return
         }
+
         onSwitchToTab(tab)
     }
 
@@ -4709,6 +4737,8 @@ extension MainViewController: EscapeHatchActionRouter {
         tabManager.remove(tab: tab, in: targetTabsModel)
         refreshTabIcon()
         refreshTabBar()
+        ntpAfterIdleInstrumentation.escapeHatchCloseTabTapped()
+        postIdleSessionInstrumentation.closeTabTapped()
 
         if targetTabsModel.hasActiveTabs {
             return
@@ -4738,9 +4768,12 @@ extension MainViewController: EscapeHatchActionRouter {
             onConfirm: { [weak self] fireRequest in
                 self?.forgetAllWithAnimation(request: fireRequest) {}
                 self?.clearEscapeHatch()
+                self?.postIdleSessionInstrumentation.burnTabTapped()
             },
             onCancel: { }
         )
+
+        ntpAfterIdleInstrumentation.escapeHatchBurnTapped(requiredConfirmation: true)
     }
 
     func escapeHatchDidRequestBurnImmediately(_ tab: Tab) {
@@ -4760,10 +4793,18 @@ extension MainViewController: EscapeHatchActionRouter {
 
         forgetAllWithAnimation(request: request) {}
         clearEscapeHatch()
+        ntpAfterIdleInstrumentation.escapeHatchBurnTapped(requiredConfirmation: false)
+        postIdleSessionInstrumentation.burnTabTapped()
     }
 
     func escapeHatchDidRequestTabSwitcher() {
         requestTabSwitcher()
+        ntpAfterIdleInstrumentation.escapeHatchTabSwitcherTapped()
+    }
+
+    func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {
+        ntpAfterIdleInstrumentation.escapeHatchOptionChanged(to: option)
+        postIdleSessionInstrumentation.openingScreenChanged()
     }
 }
 
@@ -5468,6 +5509,7 @@ extension MainViewController: TabSwitcherDelegate {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
             case .fire:
+                fireModePromotionEligibility?.markBurnPerformed()
                 request = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .tabSwitcher)
             case .normal:
                 request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)
@@ -5617,6 +5659,13 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
+
+        // This needs to be done before the fire burning process starts or the race condition
+        //  results in the promo not showing at the expected time.
+        if request.trigger == .manualFire {
+            fireModePromotionEligibility?.markBurnPerformed()
+        }
+
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         
@@ -5920,10 +5969,6 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
-        if fireRequest.trigger == .manualFire {
-            fireModePromotionEligibility?.markBurnPerformed()
-        }
-
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {

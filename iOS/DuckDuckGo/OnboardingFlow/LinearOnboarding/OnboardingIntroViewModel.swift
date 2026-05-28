@@ -19,6 +19,7 @@
 
 import class UIKit.UIApplication
 import Common
+import FoundationExtensions
 import Core
 import Foundation
 import Onboarding

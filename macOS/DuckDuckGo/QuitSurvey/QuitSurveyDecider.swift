@@ -18,6 +18,7 @@
 
 import Carbon.OpenScripting
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import os.log

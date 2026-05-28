@@ -21,6 +21,9 @@ import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
 import DesignResourcesKit
+#if DEBUG
+import Common
+#endif
 
 private let interItemSpacing: CGFloat = 20
 private let itemSpacing: CGFloat = 6
@@ -578,3 +581,44 @@ extension NSTextView {
     }
   }
 }
+
+#if DEBUG
+private extension PasswordManagementLoginModel {
+    static func preview(password: String = "MyStrongPassw0rd!",
+                        username: String = "user@example.com",
+                        domain: String = "example.com") -> PasswordManagementLoginModel {
+        let model = PasswordManagementLoginModel(
+            onSaveRequested: { _ in },
+            onDeleteRequested: { _ in },
+            urlMatcher: AutofillDomainNameUrlMatcher(),
+            emailManager: EmailManager(),
+            tld: TLD(),
+            urlSort: AutofillDomainNameUrlSort()
+        )
+        model.credentials = .init(
+            account: .init(id: "preview",
+                           title: nil,
+                           username: username,
+                           domain: domain,
+                           created: Date(),
+                           lastUpdated: Date()),
+            password: password.data(using: .utf8)
+        )
+        return model
+    }
+}
+
+#Preview("Password row — valid website") {
+    PasswordView()
+        .environmentObject(PasswordManagementLoginModel.preview())
+        .frame(width: 400)
+        .padding()
+}
+
+#Preview("Password row — empty website (bug repro)") {
+    PasswordView()
+        .environmentObject(PasswordManagementLoginModel.preview(domain: ""))
+        .frame(width: 400)
+        .padding()
+}
+#endif

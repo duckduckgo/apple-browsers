@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Core
 import Foundation
+import PrivacyConfig
 
 /// Decides which routing branch should fire for a given navigation response.
 ///
@@ -62,7 +63,8 @@ struct NavigationResponseRouter {
         case userPromptDownload
         /// WebView can render the MIME inline (HTML and similar).
         case webViewPreview
-        /// Nothing else matched; allow the load.
+        /// Defensive fallback. Unreachable in current logic because `shouldTriggerDownload` returns true
+        /// whenever `canLoadOrPreview` is false, but kept so a future change cannot accidentally drop a path.
         case allowDefault
     }
 

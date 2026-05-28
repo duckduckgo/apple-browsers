@@ -1,9 +1,5 @@
 # ``DuckDuckGo_Privacy_Browser``
 
-@Metadata {
-    @TechnologyRoot
-}
-
 Privacy-focused web browser for macOS with advanced tracking protection and privacy features.
 
 ## Overview
@@ -27,26 +23,6 @@ Core functionality is organized into focused packages and modules:
 - **LocalPackages**: macOS-specific local packages
 - **Tab Architecture**: Extension-based tab functionality
 - **Feature Coordination**: MVVM + Coordinators pattern
-
-## Essential Guides
-
-Essential guides for understanding and working with the macOS browser:
-
-- <doc:FireButton> - Data clearing and fireproofing
-- <doc:TabManagement> - Tab lifecycle, extensions, and WebView management
-- <doc:VPNNetworkProtection> - VPN system extension architecture and IPC communication
-
-### User Interface
-
-- <doc:MenuSystem> - macOS menu bar and menu item management
-- <doc:NavigationBar> - Address bar, suggestions, and navigation controls
-
-## Package Documentation
-
-For reusable package APIs, see the respective package documentation:
-
-- **VPN Package** - `TunnelController` protocol for VPN control
-- **Other Shared Packages** - See package-specific documentation
 
 ## Development Patterns
 
@@ -90,3 +66,16 @@ The browser includes comprehensive privacy protection:
 - **VPN**: System-wide VPN for IP hiding and privacy protection
 - **Fire Button**: Quickly clear browsing data
 - **Private Search**: DuckDuckGo Search by default
+
+## Topics
+
+### Essentials
+
+- <doc:FireButton>
+- <doc:TabManagement>
+- <doc:VPNNetworkProtection>
+
+### User Interface
+
+- <doc:MenuSystem>
+- <doc:NavigationBar>

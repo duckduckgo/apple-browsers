@@ -45,8 +45,7 @@ AddressBarTextField
 
 ### Address Bar Input
 
-- ``AddressBarTextField`` — core URL/search input field; handles suggestion integration and navigation logic.
-- ``AddressBarTextFieldViewModel`` — text field state management, value parsing, and validation.
+- ``AddressBarTextField`` — core URL/search input field; handles suggestion integration, value parsing, validation, and navigation logic.
 
 ### Suggestions
 
@@ -115,11 +114,24 @@ Address bar maintains state (displaying URL, editing, showing suggestion, empty)
 
 Test address bar functionality using unit tests to verify URL detection, search query detection, HTTPS upgrading, and state transitions.
 
-## Related Topics
+## Topics
 
-- ``NavigationBarViewController`` - Navigation bar container
-- ``AddressBarTextField`` - URL input field
-- ``SuggestionViewController`` - Suggestion dropdown
-- ``PrivacyIconViewModel`` - Privacy grade indicator
-- <doc:TabManagement> - Tab navigation integration
+### Controllers
+
+- ``NavigationBarViewController``
+- ``AddressBarViewController``
+- ``SuggestionViewController``
+
+### Address Bar
+
+- ``AddressBarTextField``
+- ``PrivacyIconViewModel``
+
+### Suggestions
+
+- ``SuggestionContainerViewModel``
+
+### Related
+
+- <doc:TabManagement>
 

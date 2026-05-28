@@ -1,4 +1,4 @@
-# Tunnel Controller
+# ``TunnelController``
 
 Control VPN tunnel connections through a unified protocol interface.
 
@@ -28,7 +28,6 @@ let isConnected = await tunnelController.isConnected
 
 ### Protocols
 
-- ``TunnelController``
 - ``TunnelSessionProvider``
 
 ### Commands
@@ -38,8 +37,3 @@ let isConnected = await tunnelController.isConnected
 ### Status
 
 - ``ConnectionStatus``
-
-## See Also
-
-- `PacketTunnelProvider` - The system extension that handles actual VPN traffic
-- `VPNSettings` - Configuration for VPN tunnel behavior

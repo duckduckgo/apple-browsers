@@ -42,11 +42,11 @@ MainMenuActions (Action Handlers)
 ### Core Implementation
 
 - ``MainMenu`` — main menu construction and management; menu item lifecycle, updates, and feature flag integration. The bookmarks menu is constructed inside ``MainMenu`` via a `buildBookmarksMenu` method rather than a separate type, and the resulting `NSMenu` is updated in place as bookmarks change.
-- ``MainMenuActions`` — action method implementations; responder chain integration and coordination with ``FireCoordinator``, ``TabCollectionViewModel``, and other app components.
+- `MainMenuActions.swift` — `@objc` action methods declared as extensions on `AppDelegate`; responder chain integration and coordination with ``FireCoordinator``, ``TabCollectionViewModel``, and other app components.
 
 ### Dynamic Menus
 
-- ``HistoryMenu`` — history menu construction from ``HistoryCoordinator`` data; grouped by date with submenus and clear-history options.
+- ``HistoryMenu`` — history menu construction from `HistoryCoordinator` data; grouped by date with submenus and clear-history options.
 - Bookmarks menu — constructed within ``MainMenu`` from ``BookmarkManager``; folders become submenus and favorites appear in a dedicated section. The menu rebuilds itself in response to bookmark store changes.
 
 ### Menu Item Extensions
@@ -57,11 +57,11 @@ MainMenuActions (Action Handlers)
 
 ### Adding a New Menu Item
 
-Add menu items in ``MainMenu`` within the appropriate menu-building method (such as `buildFileMenu` or `buildEditMenu`). Use the builder pattern with `NSMenuItem` and assign actions with selectors targeting ``MainMenuActions``.
+Add menu items in ``MainMenu`` within the appropriate menu-building method (such as `buildFileMenu` or `buildEditMenu`). Use the builder pattern with `NSMenuItem` and assign actions with selectors targeting methods in `MainMenuActions.swift`.
 
 ### Implementing Menu Actions
 
-Implement action methods in ``MainMenuActions`` as `@objc` functions taking an `Any?` sender. Access the window controller and tab collection through the responder chain.
+Implement action methods as `@objc` functions on `AppDelegate` extensions in `MainMenuActions.swift`, taking an `Any?` sender. Access the window controller and tab collection through the responder chain.
 
 ### Adding Submenus
 
@@ -69,7 +69,7 @@ Create submenus by attaching an `NSMenu` to a parent `NSMenuItem`, building its 
 
 ### Feature-Flagged Menu Items
 
-Check the relevant feature flag through ``FeatureFlagger`` and return the menu item or `nil` to conditionally include items in the menu structure.
+Check the relevant feature flag through `FeatureFlagger` and return the menu item or `nil` to conditionally include items in the menu structure.
 
 ### Dynamic Menu Updates
 
@@ -79,7 +79,7 @@ Override ``MainMenu``'s `update()` to refresh menu-item state (hidden, enabled, 
 
 Implement `validateMenuItem(_:)` in your view controller or action handler to enable or disable menu items based on current state.
 
-Refer to ``MainMenu`` and ``MainMenuActions`` for implementation patterns.
+Refer to ``MainMenu`` and `MainMenuActions.swift` for implementation patterns.
 
 ## Patterns & Best Practices
 
@@ -93,7 +93,7 @@ Actions route through the responder chain using selectors. The action is sent to
 
 ### Bookmark and History Menus
 
-These menus rebuild dynamically by subscribing to data-change publishers from ``BookmarkManager`` and ``HistoryCoordinator``. The bookmarks menu is built inline within ``MainMenu``; the history menu lives in ``HistoryMenu``.
+These menus rebuild dynamically by subscribing to data-change publishers from `BookmarkManager` and `HistoryCoordinator`. The bookmarks menu is built inline within ``MainMenu``; the history menu lives in ``HistoryMenu``.
 
 ## Common Menu Structure
 
@@ -147,11 +147,10 @@ These menus rebuild dynamically by subscribing to data-change publishers from ``
 - Feature flags
 - Testing tools
 
-## Related Topics
+## Topics
 
-- ``MainMenuActions`` - Action implementations
-- ``HistoryMenu`` - Dynamic history menu
-- ``MainMenu`` - Hosts the inline bookmarks menu construction
-- ``NSMenuItem`` - AppKit menu item class
-- ``NSMenu`` - AppKit menu class
+### Core
+
+- ``MainMenu``
+- ``HistoryMenu``
 

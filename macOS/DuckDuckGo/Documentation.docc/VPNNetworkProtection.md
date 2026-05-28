@@ -14,15 +14,17 @@ The VPN runs across three processes: the main browser (`DuckDuckGo.app`), a dedi
 
 ### Key Components
 
-- ``NetworkProtectionIPCClient`` — IPC client used by the main app. Communicates with the VPN agent via XPC or Unix Domain Sockets and implements the ``TunnelController`` protocol so callers can drive the tunnel without knowing where it lives.
+- `NetworkProtectionIPCClient` — protocol abstracting the IPC transport the main app uses to talk to the VPN agent. The concrete implementation is `VPNControllerXPCClient`.
 
-- ``NetworkProtectionTunnelController`` — Shared tunnel controller built into both the main app and the VPN agent targets. Manages `NETunnelProviderManager` and the system extension lifecycle.
+- `NetworkProtectionIPCTunnelController` — the `TunnelController`-conforming class the main app actually uses. Wraps a `NetworkProtectionIPCClient` so callers can drive the tunnel without knowing where it lives.
 
-- ``DuckDuckGoVPN.app`` — Standalone VPN agent application. Runs as a login item for persistent VPN and hosts the IPC servers (XPC + UDS).
+- `NetworkProtectionTunnelController` — the underlying tunnel controller running inside the VPN agent. Manages `NETunnelProviderManager` and the system extension lifecycle.
 
-- ``PacketTunnelProvider`` — System extension that routes network traffic. WireGuard-based.
+- `DuckDuckGoVPN.app` — standalone VPN agent application. Runs as a login item for persistent VPN and hosts the IPC servers (XPC + UDS).
 
-- ``SystemExtensionManager`` — Wrapper around macOS `SystemExtensions` that handles installation, uninstallation, and upgrades.
+- `PacketTunnelProvider` — system extension that routes network traffic. WireGuard-based.
+
+- `SystemExtensionManager` — wrapper around macOS `SystemExtensions` that handles installation, uninstallation, and upgrades.
 
 ## IPC Communication
 
@@ -42,7 +44,7 @@ The main app communicates with the VPN agent through two IPC mechanisms:
 - Used for specific commands (uninstall, quit)
 - Shared file system location
 
-The `NetworkProtectionIPCClient` abstracts these mechanisms and implements the `TunnelController` protocol, allowing the main app to control VPN without knowing implementation details.
+`NetworkProtectionIPCClient` abstracts the IPC transport; `NetworkProtectionIPCTunnelController` wraps a client conforming to it and exposes the `TunnelController` interface, so call sites in the main app don't need to know whether XPC or UDS is in use.
 
 ## VPN Agent as Login Item
 
@@ -89,10 +91,10 @@ The `NetworkProtectionControllerTabExtension` allows excluding specific domains 
 
 ### Connection Monitoring
 
-- ``NetworkProtectionStatusReporter`` — Publishes connection status changes
-- ``NetworkProtectionLatencyMonitor`` — Tracks connection latency
-- ``NetworkProtectionConnectionBandwidthAnalyzer`` — Monitors data usage
-- ``NetworkProtectionTunnelFailureMonitor`` — Detects and reports failures
+- `NetworkProtectionStatusReporter` — publishes connection status changes
+- `NetworkProtectionLatencyMonitor` — tracks connection latency
+- `NetworkProtectionConnectionBandwidthAnalyzer` — monitors data usage
+- `NetworkProtectionTunnelFailureMonitor` — detects and reports failures
 
 ### State Management
 
@@ -104,9 +106,9 @@ Both back onto shared defaults so values are synchronized across the main app, t
 
 ## Entry Points
 
-- ``TunnelControllerProvider`` — Vends a ``NetworkProtectionIPCClient`` to the main app; the app's entry point for VPN control.
-- ``NetworkProtectionControllerTabExtension`` — Per-tab VPN exclusion management, integrated into the Tab architecture.
-- ``DuckDuckGoVPNAppDelegate`` — The VPN agent's delegate; owns IPC server setup and the tunnel controller lifecycle inside the agent process.
+- ``TunnelControllerProvider`` — vends the app's `NetworkProtectionIPCTunnelController` instance; the main app's entry point for VPN control.
+- ``NetworkProtectionControllerTabExtension`` — per-tab VPN exclusion management, integrated into the Tab architecture.
+- `DuckDuckGoVPNAppDelegate` — the VPN agent's delegate; owns IPC server setup and the tunnel controller lifecycle inside the agent process.
 
 ## Common Tasks
 
@@ -114,8 +116,13 @@ Both back onto shared defaults so values are synchronized across the main app, t
 
 Use the tab extension to exclude specific sites from VPN routing. See `NetworkProtectionControllerTabExtension` for implementation.
 
-## Related Topics
+## Topics
 
-- `TunnelController` (VPN package) - Protocol API documentation
-- <doc:TabManagement> - Tab extensions integration
-- `SystemExtensionManager` - System extension management
+### Entry Points
+
+- ``TunnelControllerProvider``
+- ``NetworkProtectionControllerTabExtension``
+
+### Related
+
+- <doc:TabManagement>

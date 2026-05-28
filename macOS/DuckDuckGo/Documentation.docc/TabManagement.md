@@ -72,7 +72,7 @@ To add a new tab extension:
 1. Create your extension class conforming to `TabExtension` protocol
 2. Define a public protocol for your extension's interface
 3. Add an accessor in `TabExtensions` using `resolve(_:)`
-4. Register the extension in `TabExtensions` initialization
+4. Register the extension by adding an `add { }` block inside `TabExtensionsBuilder.registerExtensions(with:dependencies:)` in `TabExtensions.swift`
 5. Access from Tab using dynamic member lookup (e.g., `tab.myFeature`)
 
 Reference existing implementations like `ContentBlockingTabExtension` or `HistoryTabExtension` for implementation patterns.
@@ -83,7 +83,7 @@ Extensions can subscribe to tab publishers like `navigationDidEndPublisher` usin
 
 ### Accessing Tab State
 
-The ``Tab`` class exposes state through its public interface: `title`, `isLoading`, `canGoBack`, `canGoForward`, and other navigation flags as published properties. The current URL is read from the underlying web view (`tab.webView.url`) rather than as a direct stored property on Tab. Privacy-related state — such as the current ``PrivacyInfo`` — is exposed by the privacy dashboard extension and reached through dynamic member lookup on the Tab. Other per-feature state is similarly surfaced through extensions rather than stored directly on Tab itself.
+The ``Tab`` class exposes state through its public interface: `title`, `isLoading`, `canGoBack`, `canGoForward`, and other navigation flags as published properties. The current URL is read from the underlying web view (`tab.webView.url`) rather than as a direct stored property on Tab. Privacy-related state — such as the current `PrivacyInfo` — is exposed by the privacy dashboard extension and reached through dynamic member lookup on the Tab. Other per-feature state is similarly surfaced through extensions rather than stored directly on Tab itself.
 
 ## Patterns & Best Practices
 
@@ -95,9 +95,12 @@ The ``Tab`` class exposes state through its public interface: `title`, `isLoadin
 4. **Weak References**: Extensions hold weak references to Tab to avoid retain cycles
 5. **Combine Integration**: Use publishers for event-driven communication
 
-## Related Topics
+## Topics
 
-- ``MainViewController`` - Tab coordination and UI integration
-- ``TabCollection`` - Managing multiple tabs
-- ``WKWebView`` - WebKit integration patterns
+### Core
+
+- ``Tab``
+- ``TabExtensions``
+- ``TabCollection``
+- ``MainViewController``
 

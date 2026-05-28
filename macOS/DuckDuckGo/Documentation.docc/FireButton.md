@@ -112,7 +112,7 @@ Fire animation is controlled by user preferences via ``VisualizeFireSettingsDeci
 
 ### Testing
 
-Test Fire functionality using mock implementations of dependencies like ``HistoryCoordinating`` and ``WebCacheManager`` to verify clearing behavior.
+Test Fire functionality using mock implementations of dependencies like `HistoryCoordinating` and `WebCacheManager` to verify clearing behavior.
 
 ## Fire Dialog (Feature-Flagged)
 
@@ -120,11 +120,21 @@ The new Fire Dialog provides enhanced UX with visual options (clear current tab,
 
 See ``FireDialogViewModel`` for the clearing options enum and result structure.
 
-## Related Topics
+## Topics
 
-- <doc:TabManagement> - Tab lifecycle and closure
-- ``FireproofDomains`` - Trusted domain management
-- ``HistoryCoordinator`` - History clearing
-- ``WebCacheManager`` - WebKit data clearing
-- ``PermissionManager`` - Site permission management
+### Core
+
+- ``Fire``
+- ``FireCoordinator``
+- ``FireproofDomains``
+
+### UI
+
+- ``FireViewController``
+- ``FirePopoverViewController``
+- ``FireDialogViewModel``
+
+### Related
+
+- <doc:TabManagement>
 

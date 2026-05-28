@@ -1,5 +1,6 @@
 ---
-alwaysApply: true
+description: How to organize DocC documentation between package and app level; the entry point for any task that creates or updates DocC articles.
+alwaysApply: false
 ---
 ## Documentation Organization
 

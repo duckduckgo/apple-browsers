@@ -94,14 +94,18 @@ public final class CustomToggleControl: NSControl {
 
     public var focusBorderColor: NSColor = NSColor.controlAccentColor {
         didSet {
-            focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
+            effectiveAppearance.performAsCurrentDrawingAppearance {
+                focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
+            }
             needsDisplay = true
         }
     }
 
     public var outerBorderColor: NSColor = NSColor.controlAccentColor {
         didSet {
-            focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
+            effectiveAppearance.performAsCurrentDrawingAppearance {
+                focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
+            }
             needsDisplay = true
         }
     }
@@ -380,8 +384,10 @@ public final class CustomToggleControl: NSControl {
         wantsLayer = true
         layer?.masksToBounds = false
 
-        focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
-        focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
+            focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
+        }
         focusOuterRingLayer.lineWidth = outerBorderWidth
         layer?.addSublayer(focusInnerRingLayer)
         layer?.addSublayer(focusOuterRingLayer)
@@ -434,10 +440,14 @@ public final class CustomToggleControl: NSControl {
 
     public override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
-        // NSColor → CGColor resolves against the current appearance at conversion time,
-        // so re-resolve when the effective appearance changes (e.g. dark mode toggle).
-        focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
-        focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
+        // NSColor → CGColor resolves against `NSAppearance.current` at conversion time,
+        // which isn't guaranteed to match this view's effective appearance here. Pin
+        // resolution to the view's drawing appearance so dynamic colours (e.g. a
+        // `designSystemColor`) refresh correctly after a light/dark switch.
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
+            focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
+        }
     }
 
     // MARK: - Drawing

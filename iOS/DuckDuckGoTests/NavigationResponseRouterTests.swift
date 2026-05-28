@@ -348,8 +348,9 @@ struct NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.downloadStarted.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.canAutoPreviewMIMEType] == "1")
+        let downloadStarted = PixelFiringMock.allPixelsFired.first { $0.pixelName == Pixel.Event.downloadStarted.name }
+        #expect(downloadStarted != nil)
+        #expect(downloadStarted?.params?[PixelParameters.canAutoPreviewMIMEType] == "1")
     }
 
     @available(iOS 16, *)
@@ -363,8 +364,9 @@ struct NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.downloadStarted.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.canAutoPreviewMIMEType] == "1")
+        let downloadStarted = PixelFiringMock.allPixelsFired.first { $0.pixelName == Pixel.Event.downloadStarted.name }
+        #expect(downloadStarted != nil)
+        #expect(downloadStarted?.params?[PixelParameters.canAutoPreviewMIMEType] == "1")
     }
 
     @available(iOS 16, *)

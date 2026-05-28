@@ -94,28 +94,45 @@ public final class CustomToggleControl: NSControl {
 
     public var focusBorderColor: NSColor = NSColor.controlAccentColor {
         didSet {
-            effectiveAppearance.performAsCurrentDrawingAppearance {
-                focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
-            }
+            updateFocusRingStrokeColors()
             needsDisplay = true
         }
     }
 
     public var outerBorderColor: NSColor = NSColor.controlAccentColor {
         didSet {
-            effectiveAppearance.performAsCurrentDrawingAppearance {
-                focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
-            }
+            updateFocusRingStrokeColors()
             needsDisplay = true
         }
     }
 
     public var outerBorderWidth: CGFloat = 2.0 {
         didSet {
-            focusOuterRingLayer.lineWidth = outerBorderWidth
+            withoutImplicitAnimation {
+                focusOuterRingLayer.lineWidth = outerBorderWidth
+            }
             needsLayout = true
             needsDisplay = true
         }
+    }
+
+    /// Suppresses Core Animation's default 0.25s implicit transition on animatable layer
+    /// properties — without this, a theme switch or light/dark flip would cross-fade the
+    /// focus ring colour instead of snapping to it.
+    private func updateFocusRingStrokeColors() {
+        withoutImplicitAnimation {
+            effectiveAppearance.performAsCurrentDrawingAppearance {
+                focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
+                focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
+            }
+        }
+    }
+
+    private func withoutImplicitAnimation(_ block: () -> Void) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        block()
+        CATransaction.commit()
     }
 
     /// Inner half of the focus ring. Rendered as a sublayer so it can extend past the
@@ -384,11 +401,10 @@ public final class CustomToggleControl: NSControl {
         wantsLayer = true
         layer?.masksToBounds = false
 
-        effectiveAppearance.performAsCurrentDrawingAppearance {
-            focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
-            focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
+        updateFocusRingStrokeColors()
+        withoutImplicitAnimation {
+            focusOuterRingLayer.lineWidth = outerBorderWidth
         }
-        focusOuterRingLayer.lineWidth = outerBorderWidth
         layer?.addSublayer(focusInnerRingLayer)
         layer?.addSublayer(focusOuterRingLayer)
 
@@ -411,31 +427,29 @@ public final class CustomToggleControl: NSControl {
         let innerRect = bounds.insetBy(dx: innerInset, dy: innerInset)
         let outerRect = bounds.insetBy(dx: outerInset, dy: outerInset)
 
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        focusInnerRingLayer.frame = innerRect
-        focusInnerRingLayer.path = CGPath(
-            roundedRect: focusInnerRingLayer.bounds,
-            cornerWidth: innerRect.height / 2,
-            cornerHeight: innerRect.height / 2,
-            transform: nil
-        )
-        focusOuterRingLayer.frame = outerRect
-        focusOuterRingLayer.path = CGPath(
-            roundedRect: focusOuterRingLayer.bounds,
-            cornerWidth: outerRect.height / 2,
-            cornerHeight: outerRect.height / 2,
-            transform: nil
-        )
-        CATransaction.commit()
+        withoutImplicitAnimation {
+            focusInnerRingLayer.frame = innerRect
+            focusInnerRingLayer.path = CGPath(
+                roundedRect: focusInnerRingLayer.bounds,
+                cornerWidth: innerRect.height / 2,
+                cornerHeight: innerRect.height / 2,
+                transform: nil
+            )
+            focusOuterRingLayer.frame = outerRect
+            focusOuterRingLayer.path = CGPath(
+                roundedRect: focusOuterRingLayer.bounds,
+                cornerWidth: outerRect.height / 2,
+                cornerHeight: outerRect.height / 2,
+                transform: nil
+            )
+        }
     }
 
     private func setFocusRingHidden(_ hidden: Bool) {
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        focusInnerRingLayer.isHidden = hidden
-        focusOuterRingLayer.isHidden = hidden
-        CATransaction.commit()
+        withoutImplicitAnimation {
+            focusInnerRingLayer.isHidden = hidden
+            focusOuterRingLayer.isHidden = hidden
+        }
     }
 
     public override func viewDidChangeEffectiveAppearance() {
@@ -443,11 +457,9 @@ public final class CustomToggleControl: NSControl {
         // NSColor → CGColor resolves against `NSAppearance.current` at conversion time,
         // which isn't guaranteed to match this view's effective appearance here. Pin
         // resolution to the view's drawing appearance so dynamic colours (e.g. a
-        // `designSystemColor`) refresh correctly after a light/dark switch.
-        effectiveAppearance.performAsCurrentDrawingAppearance {
-            focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
-            focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
-        }
+        // `designSystemColor`) refresh correctly after a light/dark switch — and suppress
+        // the implicit 0.25s CA transition so the ring snaps rather than cross-fades.
+        updateFocusRingStrokeColors()
     }
 
     // MARK: - Drawing

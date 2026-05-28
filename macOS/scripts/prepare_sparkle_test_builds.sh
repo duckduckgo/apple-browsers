@@ -190,91 +190,11 @@ push_branches() {
     echo "✅ Builds triggered successfully!"
 }
 
-sparkle_build_run_branches=()
-sparkle_build_run_ids=()
-sparkle_build_s3_urls=()
-
-find_build_cache_index() {
-    local branch="$1"
-    local i
-
-    for i in "${!sparkle_build_run_branches[@]}"; do
-        if [[ "${sparkle_build_run_branches[$i]}" == "${branch}" ]]; then
-            echo "$i"
-            return 0
-        fi
-    done
-
-    return 1
-}
-
-get_build_run_id() {
-    local branch="$1"
-    local index
-    local run_id
-
-    if index=$(find_build_cache_index "$branch"); then
-        run_id="${sparkle_build_run_ids[$index]}"
-        if [[ -n "${run_id}" ]]; then
-            echo "${run_id}"
-            return 0
-        fi
-    fi
-
-    echo "Getting run ID for ${branch}..." >&2
-    run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json databaseId --jq '.[0].databaseId')
-    if [[ -z "${run_id}" || "${run_id}" == "null" ]]; then
-        echo "❌ Failed to get run ID for ${branch}" >&2
-        return 1
-    fi
-
-    if [[ -n "${index:-}" ]]; then
-        sparkle_build_run_ids[$index]="${run_id}"
-    else
-        sparkle_build_run_branches+=("${branch}")
-        sparkle_build_run_ids+=("${run_id}")
-        sparkle_build_s3_urls+=("")
-    fi
-
-    echo "${run_id}"
-}
-
-get_build_s3_url() {
-    local branch="$1"
-    local index
-    local run_id
-    local s3_url
-
-    if index=$(find_build_cache_index "$branch"); then
-        s3_url="${sparkle_build_s3_urls[$index]}"
-        if [[ -n "${s3_url}" ]]; then
-            echo "${s3_url}"
-            return 0
-        fi
-    fi
-
-    run_id=$(get_build_run_id "$branch")
-    echo "Getting S3 URL for ${branch}..." >&2
-    s3_url=$(gh run view "${run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
-    if [[ -z "${s3_url}" ]]; then
-        echo "❌ Failed to get S3 URL for ${branch}" >&2
-        return 1
-    fi
-
-    if index=$(find_build_cache_index "$branch"); then
-        sparkle_build_s3_urls[$index]="${s3_url}"
-    fi
-
-    echo "${s3_url}"
-}
-
 wait_for_builds() {
     local run_ids=()
     local branches=("${branch_release}" "${branch_phased}")
     local all_completed
     local failed_builds=()
-    local run_id
-    local run_json
     local status
     local conclusion
 
@@ -283,7 +203,8 @@ wait_for_builds() {
     echo "  - ${branch_phased}"
 
     for branch in "${branches[@]}"; do
-        run_id=$(get_build_run_id "${branch}")
+        echo "Getting run ID for ${branch}..."
+        run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json databaseId --jq '.[0].databaseId')
         run_ids+=("${run_id}")
     done
 
@@ -292,11 +213,10 @@ wait_for_builds() {
         failed_builds=()
 
         for i in "${!run_ids[@]}"; do
-            run_json=$(gh run view "${run_ids[$i]}" --json status,conclusion)
-            status=$(echo "${run_json}" | jq -r '.status')
+            status=$(gh run view "${run_ids[$i]}" --json status --jq '.status')
 
             if [[ "$status" == "completed" ]]; then
-                conclusion=$(echo "${run_json}" | jq -r '.conclusion')
+                conclusion=$(gh run view "${run_ids[$i]}" --json conclusion --jq '.conclusion')
                 if [[ "$conclusion" != "success" ]]; then
                     failed_builds+=("${branches[$i]}")
                 fi
@@ -334,13 +254,16 @@ wait_for_builds() {
 
 download_builds() {
     local updates_dir="$1"
+    local run_id
     local s3_url
     local https_url
     local output_file
 
     # Get S3 URLs for RELEASE and PHASED builds
     for branch in "${branch_release}" "${branch_phased}"; do
-        s3_url=$(get_build_s3_url "${branch}")
+        echo "Getting S3 URL for ${branch}..."
+        run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json databaseId --jq '.[0].databaseId')
+        s3_url=$(gh run view "${run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
 
         if [[ -z "${s3_url}" ]]; then
             echo "❌ Failed to get S3 URL for ${branch}"
@@ -421,16 +344,19 @@ generate_appcast_xml() {
 
     echo "Updating enclosure URLs in appcast.xml..."
 
-    release_s3_url=$(get_build_s3_url "${branch_release}")
+    release_run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch_release}" --limit=1 --json databaseId --jq '.[0].databaseId')
+    release_s3_url=$(gh run view "${release_run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
     release_https_url="https://staticcdn.duckduckgo.com/${release_s3_url#s3://ddg-staticcdn/}"
 
-    phased_s3_url=$(get_build_s3_url "${branch_phased}")
+    phased_run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch_phased}" --limit=1 --json databaseId --jq '.[0].databaseId')
+    phased_s3_url=$(gh run view "${phased_run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
     phased_https_url="https://staticcdn.duckduckgo.com/${phased_s3_url#s3://ddg-staticcdn/}"
 
     update_appcast_xml "${output_dir}/appcast.xml" "${phased_https_url}" "${release_https_url}"
 
     echo "Getting URL for outdated build..."
-    s3_url=$(get_build_s3_url "${branch_outdated}")
+    run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch_outdated}" --limit=1 --json databaseId --jq '.[0].databaseId')
+    s3_url=$(gh run view "${run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
     outdated_url="https://staticcdn.duckduckgo.com/${s3_url#s3://ddg-staticcdn/}"
 
     echo "✅ Appcast generated successfully at ${output_dir}/appcast.xml"

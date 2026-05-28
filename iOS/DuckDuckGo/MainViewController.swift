@@ -3459,27 +3459,26 @@ class MainViewController: UIViewController {
             if !fromDeepLink {
                 postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
             }
-            // Stage prompt and per-tab payload inside loadUrlInNewTab's worker so they run in
-            // lockstep with tab creation. This keeps the global AIChatPromptHandler.shared write
-            // tight against the URL load (avoiding an extended window when loadUrlInNewTab defers
-            // via postClear during clearInProgress) and ensures setPayload targets the freshly
-            // selected chat tab rather than the origin tab.
+            // Stage the prompt singleton BEFORE `loadUrlInNewTab` so it's in place before the
+            // WebView starts loading the chat URL. Matches the legacy in-place pattern in
+            // `TabViewControllerAIChatExtension.load` (setData → load). Per-tab payload still
+            // runs in the completion because it targets `currentTab`, which is only the newly-
+            // selected chat tab after `addTab` has run.
+            if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let prompt = AIChatNativePrompt.queryPrompt(
+                    query,
+                    autoSubmit: autoSend,
+                    toolChoice: tools?.map(\.rawValue),
+                    images: images,
+                    files: files,
+                    modelId: modelId,
+                    reasoningEffort: reasoningEffort
+                )
+                AIChatPromptHandler.shared.setData(prompt)
+            }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] in
-                guard let self else { return }
-                if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    let prompt = AIChatNativePrompt.queryPrompt(
-                        query,
-                        autoSubmit: autoSend,
-                        toolChoice: tools?.map(\.rawValue),
-                        images: images,
-                        files: files,
-                        modelId: modelId,
-                        reasoningEffort: reasoningEffort
-                    )
-                    AIChatPromptHandler.shared.setData(prompt)
-                }
                 if let payload {
-                    self.currentTab?.aiChatContentHandler.setPayload(payload: payload)
+                    self?.currentTab?.aiChatContentHandler.setPayload(payload: payload)
                 }
             }
             return

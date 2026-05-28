@@ -308,6 +308,7 @@ struct OnboardingSecondaryCTAButton: View {
                         .stroke(strokeColor, lineWidth: 1)
                 }
             }
+                .allowsHitTesting(false)
         )
     }
 

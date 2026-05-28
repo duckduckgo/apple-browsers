@@ -97,6 +97,8 @@ final class NavigationBarBadgeAnimator: NSObject {
                             self?.delegate?.didFinishAnimating(type: finishedType)
                         }
 
+                        notificationBadgeContainer.removeAnimation()
+
                         // Only auto-process next animation if flag is set
                         // (tracker notifications will manually process after shield animation)
                         if self?.shouldAutoProcessNextAnimation == true {

@@ -2635,7 +2635,7 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         if allowPolicy != WKNavigationActionPolicy.cancel && navigationAction.isTargetingMainFrame() {
-            userAgentManager.update(webView: webView, isDesktop: tabModel.isDesktop, url: url)
+            userAgentManager.update(webView: webView, isDesktop: tabModel.isDesktopForUserAgent, url: url)
         }
 
         if !privacyConfigurationManager.privacyConfig.isProtected(domain: url.host) {

@@ -72,7 +72,19 @@ public class Tab: NSObject, NSCoding {
             notifyObservers()
         }
     }
-    
+
+    /// Whether to present a desktop identity in the User-Agent string.
+    ///
+    /// AI Chat tabs always identify as mobile (iPad) regardless of the tab's
+    /// desktop-mode setting. This matches the behaviour of the old dedicated
+    /// AIChat WebView, which hardcoded `isDesktop: false`, and ensures that
+    /// server-side UA classification reports `ddg_ios` instead of
+    /// `ddg_mac_desktop` for iPad users in desktop mode.
+    var isDesktopForUserAgent: Bool {
+        if isAITab { return false }
+        return isDesktop
+    }
+
     var link: Link? {
         didSet {
             notifyObservers()

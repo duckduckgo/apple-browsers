@@ -563,6 +563,34 @@ private extension MainViewController {
                 self?.updateVoiceSessionActive(false, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatNewImageGenerationChatStarted)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.handleNewImageGenerationChatStarted(for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+    }
+
+    /// Updates the foreground tab's UTI to reflect an FE-initiated image-generation chat.
+    /// Backgrounded tabs without a live coordinator are intentionally ignored — revisit if
+    /// the FE starts firing this for non-foreground chats.
+    private func handleNewImageGenerationChatStarted(for webView: WKWebView) {
+        guard let controller = tabManager.controller(forWebView: webView),
+              controller === currentTab,
+              unifiedToggleInputCoordinator != nil else { return }
+        // Mirror the New-Chat-from-sidebar path (`aiChatContentHandlerDidReceiveNewChatCreated`):
+        // defer so the URL-change refresh lands first, then run `startNewChat` + `showExpanded`
+        // on a clean state. `selectTool` slots between them because `startNewChat` resets tools.
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  let coordinator = self.unifiedToggleInputCoordinator,
+                  self.tabManager.controller(forWebView: webView) === self.currentTab else { return }
+            coordinator.startNewChat()
+            coordinator.selectTool(.imageGeneration)
+            coordinator.showExpanded(inputMode: .aiChat)
+        }
     }
 
     private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {

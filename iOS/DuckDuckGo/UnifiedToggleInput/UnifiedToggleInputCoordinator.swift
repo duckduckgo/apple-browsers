@@ -714,7 +714,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isAwaitingTopOmnibarKeyboardPresentation = false
         let previousDisplayState = displayState
         displayState = .aiTab(.expanded)
-        if host == .omnibar {
+        // Only fire the switch-bar / experimental-omnibar pixels on a genuine transition INTO
+        // the expanded state. Header-driven re-entries (e.g. Plus → "New Chat" from an already-
+        // expanded chat tab) call this method too, but they don't actually display either UI.
+        if host == .omnibar, previousDisplayState != .aiTab(.expanded) {
             DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
             DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
         }
@@ -883,9 +886,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     /// Without a toggle UI the user can't switch mode, so omnibar locks to `.search` and
-    /// AI tabs to `.aiChat`.
+    /// AI tabs to `.aiChat`. Keyed on `isToggleVisible` (not raw `isToggleEnabled`) so the
+    /// clamp also fires when the kill-switch hides the toggle on a Duck.ai tab — matching
+    /// what the user actually sees rather than just the underlying setting.
     private func effectiveInputMode(for requestedMode: TextEntryMode) -> TextEntryMode {
-        guard !isToggleEnabled else { return requestedMode }
+        guard !isToggleVisible else { return requestedMode }
         if isOmnibarSession { return .search }
         if isAITabState { return .aiChat }
         return requestedMode
@@ -1281,9 +1286,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
     }
 
-    /// Whether the Search↔Duck.ai toggle row should actually appear in the omnibar UTI.
-    /// Single source of truth combining the user setting and the Duck.ai-tab hide flag.
-    private var effectiveToggleVisible: Bool {
+    /// Whether the Search↔Duck.ai toggle row should actually appear in the omnibar UTI, and
+    /// equivalently whether the swipe-between-modes gesture should be active. Single source of
+    /// truth combining the user setting and the Duck.ai-tab hide flag — the kill-switch term
+    /// drops out on non-AI tabs because `isAITabState` is false there.
+    var isToggleVisible: Bool {
         isToggleEnabled && !(hidesToggleOnDuckAITab && isAITabState)
     }
 
@@ -1300,7 +1307,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             // Keep the AI-chat toolbar on Duck.ai tabs even when the toggle is hidden,
             // so the user retains the model selector / attachments / send affordances.
             let showsToolbar = inputMode == .aiChat && (isToggleEnabled || isAITabState)
-            return .expanded(showsToggle: effectiveToggleVisible, showsToolbar: showsToolbar)
+            return .expanded(showsToggle: isToggleVisible, showsToolbar: showsToolbar)
         }
     }
 

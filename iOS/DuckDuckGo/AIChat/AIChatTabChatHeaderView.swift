@@ -50,9 +50,6 @@ final class AIChatTabChatHeaderView: UIView {
         static let pillButtonSize: CGFloat = 36
         static let paidIconSize: CGFloat = 16
         static let paidIconTitleSpacing: CGFloat = 6
-        /// Matches `TabSwitcherAnimatedButton.Constants.maxTextTabs` and `TabCountBadge.maxTextTabs`
-        /// so the header overflow threshold stays in sync with the main toolbar tab counter.
-        static let maxTextTabs = 100
     }
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
@@ -85,8 +82,8 @@ final class AIChatTabChatHeaderView: UIView {
         includeChrome: false
     )
 
-    private lazy var closeButtonPill: UIView = makePillContainer()
-    private lazy var chatListButtonPill: UIView = makePillContainer()
+    lazy var closeButtonPill: UIView = makePillContainer()
+    lazy var chatListButtonPill: UIView = makePillContainer()
     private lazy var rightPairPill: UIView = makePillContainer()
 
     private var titleSpacingConstraints: [NSLayoutConstraint] = []
@@ -100,17 +97,27 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
+    /// Reuses the toolbar's tab-switcher renderer so count formatting (incl. the ∞ overflow
+    /// threshold), unread-dot, and fire-mode tint stay defined in a single place.
+    lazy var tabSwitcherView: TabSwitcherStaticView = {
+        let view = TabSwitcherStaticView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+
     private lazy var tabSwitcherButton: UIButton = {
-        let button = makeIconButton(
-            image: DesignSystemImages.Glyphs.Size24.tabMobile,
-            accessibilityLabel: UserText.tabSwitcherAccessibilityLabel,
-            action: #selector(tabSwitcherTapped),
-            includeChrome: false
-        )
-        button.addSubview(tabCountLabel)
+        let button = UIButton(type: .custom)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = UIColor(designSystemColor: .icons)
+        button.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
+        button.addTarget(self, action: #selector(tabSwitcherTapped), for: .touchUpInside)
+        button.addSubview(tabSwitcherView)
         NSLayoutConstraint.activate([
-            tabCountLabel.centerXAnchor.constraint(equalTo: button.centerXAnchor),
-            tabCountLabel.centerYAnchor.constraint(equalTo: button.centerYAnchor, constant: 1),
+            tabSwitcherView.topAnchor.constraint(equalTo: button.topAnchor),
+            tabSwitcherView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            tabSwitcherView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+            tabSwitcherView.bottomAnchor.constraint(equalTo: button.bottomAnchor),
         ])
         // Match the Plus button's capsule clipping so any transient highlight from the
         // adjacent Plus menu dismissal doesn't render the tab-switcher as a rectangle
@@ -120,28 +127,12 @@ final class AIChatTabChatHeaderView: UIView {
         return button
     }()
 
-    private lazy var tabCountLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 11, weight: .semibold)
-        label.textColor = UIColor(designSystemColor: .icons)
-        label.textAlignment = .center
-        label.isUserInteractionEnabled = false
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.7
-        return label
-    }()
-
-    /// Updates the tab-counter glyph's displayed count. Call when the tab list changes.
-    /// Mirrors the threshold used by `TabSwitcherStaticView` so the header and the main
-    /// toolbar render the same overflow symbol when there are many tabs.
-    func setTabCount(_ count: Int) {
-        assert(count > 0, "Duck.ai chat header is only visible inside a tab, so tab count should be ≥ 1; got \(count)")
-        guard count > 0 else {
-            tabCountLabel.text = nil
-            return
-        }
-        tabCountLabel.text = count >= Constants.maxTextTabs ? "∞" : "\(count)"
+    /// Pushes the tab-icon state from `refreshTabIcon` into the header's renderer in one call,
+    /// keeping the count, unread-dot, and fire-mode tint in lock-step with the toolbar button.
+    func setTabIconState(count: Int, hasUnread: Bool, isFireMode: Bool) {
+        tabSwitcherView.updateCount(count)
+        tabSwitcherView.hasUnread = hasUnread
+        tabSwitcherView.isFireMode = isFireMode
     }
 
     private lazy var newChatButton: UIButton = {
@@ -165,7 +156,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     private func makeNewChatPlusMenu() -> UIMenu {
         let newChat = UIAction(
-            title: UserText.aiChatHeaderNewChatTitle,
+            title: UserText.actionNewAIChat,
             image: DesignSystemImages.Glyphs.Size24.compose
         ) { [weak self] _ in
             self?.delegate?.aiChatTabChatHeaderDidTapNewChat()
@@ -214,7 +205,7 @@ final class AIChatTabChatHeaderView: UIView {
     /// so the entire title slot can be hidden via a single `isHidden` toggle on this wrapper
     /// (used during voice mode), leaving `configure(isSubscriptionActive:)` to swap just the
     /// two children inside.
-    private lazy var titleHolder: UIView = {
+    lazy var titleHolder: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
@@ -346,8 +337,9 @@ final class AIChatTabChatHeaderView: UIView {
         state.isSubscriptionActive = isSubscriptionActive
     }
 
-    /// Hides the title and the chat-list button while a voice session is in progress for this tab.
-    /// The close button stays visible so the user can always exit the tab.
+    /// Hides the title, chat-list pill, and close button while a voice session is in progress.
+    /// Voice mode owns its own dismiss UI, so the header chrome is fully suppressed to match
+    /// the frontend's voice-session presentation.
     func setVoiceSessionActive(_ active: Bool) {
         state.isVoiceSessionActive = active
     }
@@ -355,15 +347,21 @@ final class AIChatTabChatHeaderView: UIView {
     /// Locks or unlocks the header controls during the Duck.ai onboarding experiment path.
     /// When locked, the close, new-chat, upgrade, chats-list, and tab-switcher buttons are
     /// disabled until the fire step passes — the close button included because it would
-    /// otherwise let users escape the onboarding flow via the NTP.
+    /// otherwise let users escape the onboarding flow via the NTP. Visual dimming is applied
+    /// to the enclosing pills so the glass background and any non-button subviews (e.g. the
+    /// tab-count label inside the tab-switcher pill) fade uniformly with their icons.
     func setOnboardingLocked(_ locked: Bool) {
         closeButton.isEnabled = !locked
         newChatButton.isEnabled = !locked
         chatListButton.isEnabled = !locked
-        chatListButton.alpha = locked ? 0.5 : 1
         tabSwitcherButton.isEnabled = !locked
         titleContainer.isUserInteractionEnabled = !locked
-        titleContainer.alpha = locked ? 0.5 : 1
+
+        let dimmedAlpha: CGFloat = locked ? 0.5 : 1
+        closeButtonPill.alpha = dimmedAlpha
+        chatListButtonPill.alpha = dimmedAlpha
+        rightPairPill.alpha = dimmedAlpha
+        titleContainer.alpha = dimmedAlpha
     }
 
     private func applyState() {
@@ -371,10 +369,12 @@ final class AIChatTabChatHeaderView: UIView {
         paidTitleStack.isHidden = state.isSubscriptionActive != true
         let voiceActive = state.isVoiceSessionActive
         titleHolder.isHidden = voiceActive
-        // Hide the chat-list pill (and its button inside it) together so the surrounding
-        // glass pill background also disappears during voice sessions.
+        // Hide each pill (and its button inside it) together so the surrounding glass pill
+        // background also disappears during voice sessions. Voice mode owns its own dismiss UI.
         chatListButtonPill.isHidden = voiceActive
         chatListButton.isHidden = voiceActive
+        closeButtonPill.isHidden = voiceActive
+        closeButton.isHidden = voiceActive
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }
 

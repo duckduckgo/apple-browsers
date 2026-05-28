@@ -247,9 +247,6 @@
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "New";
 
-/* Title for the New Chat row in the Duck.ai tab header Plus (+) menu */
-"aichat.header.plusMenu.newChat" = "New Chat";
-
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "New Fire Tab";
 

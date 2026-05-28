@@ -50,13 +50,11 @@ name: test_ai_chat_tab_header
 - assertVisible:
     text: "Upgrade"
 - assertVisible:
-    text: "Chat settings"
-- assertVisible:
     text: "Close tab"
 - assertVisible:
     text: "Recent chats"
 - assertVisible:
-    text: "New chat"
+    text: "New"
 
 # Step 3: Verify omnibar is hidden on Duck.ai tab
 - assertNotVisible:

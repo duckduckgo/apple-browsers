@@ -2405,8 +2405,11 @@ extension TabViewController: WKNavigationDelegate {
            let scheme = linkURL.scheme?.lowercased(),
            scheme == "http" || scheme == "https",
            !(delegate?.tabWillRequestNewTab(self)?.contains(.command) ?? false) {
+            // Source-side check uses `self.isAITab` (backed by `tabModel.type == .aiChat`) rather
+            // than `webView.url?.isDuckAIURL` because `webView.url` can be transiently nil during
+            // in-flight navigations — losing the boundary protection in that window.
             let decision = AIBoundaryNavigationDecision.forSameFrameLinkTap(
-                currentIsAI: webView.url?.isDuckAIURL == true,
+                currentIsAI: isAITab,
                 targetIsAI: linkURL.isDuckAIURL,
                 unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
             )

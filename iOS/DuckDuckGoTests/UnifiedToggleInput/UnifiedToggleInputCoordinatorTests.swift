@@ -2390,6 +2390,71 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertFalse(coord.isAITabState)
         XCTAssertTrue(coord.computeRenderState().cardLayout.showsToggle)
     }
+
+    // MARK: - isToggleVisible (drives swipe-between-modes gating alongside the toggle row)
+
+    func test_isToggleVisible_returnsFalse_whenUserSettingOff() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: false,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertFalse(coord.isToggleVisible, "Swipe must follow the user setting when off")
+    }
+
+    func test_isToggleVisible_returnsTrue_onAITab_whenKillSwitchOff() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertTrue(coord.isToggleVisible, "AI tab with kill-switch off must keep swipe enabled when user setting is on")
+    }
+
+    func test_isToggleVisible_returnsFalse_onAITab_whenKillSwitchOn() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertFalse(coord.isToggleVisible, "Kill-switch on an AI tab must also disable the swipe gesture, not just the toggle row")
+    }
+
+    func test_isToggleVisible_returnsTrue_offAITab_whenKillSwitchOn() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertFalse(coord.isAITabState)
+        XCTAssertTrue(coord.isToggleVisible, "Kill-switch only applies on Duck.ai tabs — non-AI tabs follow the user setting")
+    }
+
+    /// Mirrors `test_syncInputModeFromExternalSource_toggleDisabled_forcesAIChatInAITabSession`
+    /// for the kill-switch path: the toggle row is hidden by the remote flag (not by the user
+    /// setting), so the user has no way to flip back — `effectiveInputMode` must clamp.
+    func test_syncInputModeFromExternalSource_killSwitchOn_forcesAIChatOnAITab() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        coord.syncInputModeFromExternalSource(.search)
+        XCTAssertEqual(coord.inputMode, .aiChat, "Programmatic .search on a kill-switched Duck.ai tab must clamp to .aiChat")
+    }
 }
 
 // MARK: - Mock Delegate

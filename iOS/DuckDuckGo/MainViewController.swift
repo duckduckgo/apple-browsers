@@ -2223,7 +2223,7 @@ class MainViewController: UIViewController {
         tabSwitcherButton?.tabCount = count
         tabSwitcherButton?.hasUnread = hasUnread
         tabSwitcherButton?.isFireMode = isFireMode
-        aiChatTabChatHeaderView?.setTabCount(count)
+        aiChatTabChatHeaderView?.setTabIconState(count: count, hasUnread: hasUnread, isFireMode: isFireMode)
         omniBarTabSwitcherButton?.tabCount = count
         omniBarTabSwitcherButton?.hasUnread = hasUnread
         omniBarTabSwitcherButton?.isFireMode = isFireMode
@@ -3386,13 +3386,13 @@ class MainViewController: UIViewController {
         // Voice mode has no on-screen input; dismiss the keyboard before either branch loads.
         unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
 
-        // Open in a new tab when the current tab has real content AND we're actually crossing
-        // the Duck.ai ↔ web boundary. Chat → voice-chat (already on a Duck.ai tab) stays in
-        // place, mirroring the text-chat rule in `openAIChatInTab`. NTP transformations stay
-        // in place via the `link != nil` check.
+        // Voice mode always opens in a new tab when the current tab has real content — Duck.ai
+        // tabs included. Text-chat applies a chat→chat in-place rule via `openAIChatInTab`,
+        // but voice does NOT: starting a voice session over an existing chat would replace
+        // the prior conversation inside the same WebView. NTP transformations stay in place
+        // via the `link != nil` check.
         let hasContent = currentTab.tabModel.link != nil
-        let isCrossingBoundary = currentTab.isAITab == false
-        let openInNewTab = hasContent && isCrossingBoundary && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
@@ -3446,9 +3446,12 @@ class MainViewController: UIViewController {
         //     "New Chat" while already on a Duck.ai tab) stays in place — same rule the rest of the
         //     codebase enforces via `AIBoundaryNavigationDecision`.
         // NTP transformations stay in place via the existing `link != nil` check.
-        if let currentTab,
-           currentTab.tabModel.link != nil,
-           fromDeepLink || (unifiedToggleInputFeature.isAvailable && currentTab.isAITab == false) {
+        let shouldOpenInNewTab: Bool = {
+            guard let currentTab, currentTab.tabModel.link != nil else { return false }
+            if fromDeepLink { return true }
+            return unifiedToggleInputFeature.isAvailable && currentTab.isAITab == false
+        }()
+        if shouldOpenInNewTab, let currentTab {
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
             // Preserve the pre-existing instrumentation parity: the in-place `load(...)` fall-through
             // below fires this, so the new-tab branch must too — otherwise idle-session telemetry

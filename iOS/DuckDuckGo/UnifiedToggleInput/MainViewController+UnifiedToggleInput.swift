@@ -580,7 +580,9 @@ private extension MainViewController {
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 let enabled = self.isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
                 coordinator.updateToggleEnabled(enabled)
-                coordinator.contentViewController.isSwipeEnabled = enabled
+                // Swipe follows the actual toggle visibility — the kill-switch term drops out on
+                // non-AI tabs, so behavior there matches the raw user setting as before.
+                coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
             }
             .store(in: &unifiedToggleInputCancellables)
@@ -742,7 +744,11 @@ private extension MainViewController {
             headerView.trailingAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.trailingAnchor),
             headerView.bottomAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.bottomAnchor),
         ])
-        headerView.setTabCount(tabManager.currentTabsModel.count)
+        headerView.setTabIconState(
+            count: tabManager.currentTabsModel.count,
+            hasUnread: tabManager.currentTabsModel.hasUnread,
+            isFireMode: tabManager.currentBrowsingMode == .fire
+        )
         self.aiChatTabChatHeaderView = headerView
     }
 
@@ -825,7 +831,7 @@ extension MainViewController {
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             coordinator.dismissOmnibarKeyboard()
         }
-        contentVC.isSwipeEnabled = coordinator.isToggleEnabled
+        contentVC.isSwipeEnabled = coordinator.isToggleVisible
 
         addChild(contentVC)
         contentVC.view.translatesAutoresizingMaskIntoConstraints = false
@@ -1050,7 +1056,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         let inputMode = tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) } ?? .search
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
-        coordinator.contentViewController.isSwipeEnabled = isToggleEnabled
+        coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept
     }
@@ -1259,7 +1265,10 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapTabSwitcher() {
-        showTabSwitcher()
+        // Use `requestTabSwitcher()` rather than `showTabSwitcher()` so the header tap fires
+        // the same pixels as every other tab-switcher entry point: `.tabBarTabSwitcherOpened`,
+        // `.tabSwitcherOpenedDaily`, and `.aiChatTabSwitcherOpened` (when current is AI).
+        requestTabSwitcher()
     }
 }
 

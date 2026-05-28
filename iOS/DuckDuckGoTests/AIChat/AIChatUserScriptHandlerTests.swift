@@ -382,6 +382,27 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         await fulfillment(of: [expectation])
     }
 
+    @MainActor
+    func testNewImageGenerationChatStartedPostsNotificationCarryingSourceWebView() async {
+        // Given
+        let webView = WKWebView()
+        let expectation = expectation(forNotification: .aiChatNewImageGenerationChatStarted, object: webView)
+        let message = MockUserScriptMessage(
+            messageName: "test",
+            messageBody: [:],
+            messageHost: "duck.ai",
+            isMainFrame: true,
+            messageWebView: webView
+        )
+
+        // When
+        let result = await aiChatUserScriptHandler.newImageGenerationChatStarted(params: [:], message: message)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [expectation])
+    }
+
     func testResponseReceivedPostsPayloadInUserInfo() async {
         // Given
         let payload: [String: Any] = ["messageId": "123", "text": "hello"]

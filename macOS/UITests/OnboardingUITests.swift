@@ -50,7 +50,9 @@ final class OnboardingUITests: UITestCase {
         // Get Started
         XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Ready for a faster browser that keeps you protected?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        let getStartedButton = welcomeWindow.webViews["Welcome"].buttons["Let’s do it!"]
+        let getStartedButton = welcomeWindow.webViews["Welcome"].buttons
+            .matching(NSPredicate(format: "label ==[c] %@", "Let’s do it!"))
+            .firstMatch
         XCTAssertTrue(getStartedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Use coordinate tap to avoid overlay/hittability quirks
         let centerCoordinate = getStartedButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))

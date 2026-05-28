@@ -256,8 +256,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
-    case fireproofingETLDPlus1
-
     case screenTimeCleaning
 
     case minimalChromeInLandscape
@@ -423,9 +421,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the default omnibar toggle position setting for AI Chat
     case omnibarDefaultPosition
 
-    /// Controls showing the Hide AI section in Settings -> AI Features
-    case showHideAiGeneratedImages
-
     case unifiedToggleInput
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
@@ -527,6 +522,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Displays the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     case iPadChromeShortcut
+
+    /// Enables moving the AI Chat native-storage container from the shared App
+    /// Group into the app's Application Support directory on iOS. Off keeps the
+    /// legacy App Group path.
+    case nativeStoragePathMigration
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

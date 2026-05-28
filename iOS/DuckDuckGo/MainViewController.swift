@@ -3437,17 +3437,18 @@ class MainViewController: UIViewController {
             return
         }
 
-        // Open in a new tab when the current tab has real content to preserve AND we're actually
-        // crossing the Duck.ai ↔ web boundary. Chat → chat (e.g. browser app menu's "New Chat"
-        // tapped while already on a Duck.ai tab) stays in place — same rule the rest of the
-        // codebase enforces via `AIBoundaryNavigationDecision`. NTP transformations stay in
-        // place via the existing `link != nil` check. Gated on unified input so legacy chrome
-        // keeps its current in-tab behavior, except for deep links which already opened new
-        // tabs over existing content.
-        if unifiedToggleInputFeature.isAvailable || fromDeepLink,
-           let currentTab,
+        // Open in a new tab when the current tab has real content to preserve. Two paths qualify:
+        //   - Deep links (Universal Links / widget / app-icon long-press) always open a new tab over
+        //     existing content — preserves the legacy external-entry behavior regardless of whether
+        //     the current tab is web or chat.
+        //   - Under unified input, a user-initiated chat-open from a web tab is a boundary cross and
+        //     spawns a new tab. Chat → chat from non-deep-link entry points (e.g. browser app menu's
+        //     "New Chat" while already on a Duck.ai tab) stays in place — same rule the rest of the
+        //     codebase enforces via `AIBoundaryNavigationDecision`.
+        // NTP transformations stay in place via the existing `link != nil` check.
+        if let currentTab,
            currentTab.tabModel.link != nil,
-           currentTab.isAITab == false {
+           fromDeepLink || (unifiedToggleInputFeature.isAvailable && currentTab.isAITab == false) {
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
             // Preserve the pre-existing instrumentation parity: the in-place `load(...)` fall-through
             // below fires this, so the new-tab branch must too — otherwise idle-session telemetry

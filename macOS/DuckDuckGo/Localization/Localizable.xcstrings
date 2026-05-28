@@ -112949,6 +112949,18 @@
         }
       }
     },
+    "vpn.setting.description.strict.routing" : {
+      "comment" : "Strict routing setting description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We recommend keeping this on when using networks you don't trust. If you're having trouble reaching local devices or other networks, try turning it off."
+          }
+        }
+      }
+    },
     "vpn.setting.description.secure.dns" : {
       "comment" : "Secure DNS description",
       "extractionState" : "extracted_with_value",
@@ -113245,6 +113257,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Исключить локальные сети"
+          }
+        }
+      }
+    },
+    "vpn.setting.title.strict.routing" : {
+      "comment" : "Strict routing setting title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Strict routing"
           }
         }
       }

@@ -54,6 +54,20 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
+    @Published var enforceRoutes: Bool {
+        didSet {
+            guard settings.enforceRoutes != enforceRoutes else {
+                return
+            }
+            settings.enforceRoutes = enforceRoutes
+            reloadVPN()
+        }
+    }
+
+    var isStrictRoutingAvailable: Bool {
+        featureFlagger.isFeatureOn(.vpnStrictRouting)
+    }
+
     @Published var showInMenuBar: Bool {
         didSet {
             settings.showInMenuBar = showInMenuBar
@@ -143,10 +157,17 @@ final class VPNPreferencesModel: ObservableObject {
         self.pinningManager = pinningManager
         self.featureFlagger = featureFlagger
 
+        // If the feature flag is off, force the stored value back to its default so the
+        // tunnel never honors a value set while the flag was on for this user.
+        if !featureFlagger.isFeatureOn(.vpnStrictRouting), settings.enforceRoutes != UserDefaults.enforceRoutesDefaultValue {
+            settings.enforceRoutes = UserDefaults.enforceRoutesDefaultValue
+        }
+
         connectOnLogin = settings.connectOnLogin
         excludedAppsCount = proxySettings.excludedAppsMinusDBPAgent.count
         excludedDomainsCount = proxySettings.excludedDomains.count
         excludeLocalNetworks = settings.excludeLocalNetworks
+        enforceRoutes = settings.enforceRoutes
         notifyStatusChanges = settings.notifyStatusChanges
         showInMenuBar = settings.showInMenuBar
         showInBrowserToolbar = pinningManager.isPinned(.networkProtection)
@@ -163,6 +184,7 @@ final class VPNPreferencesModel: ObservableObject {
         subscribeToConnectOnLoginSettingChanges()
         subscribeToExcludedDomainsCountChanges()
         subscribeToExcludeLocalNetworksSettingChanges()
+        subscribeToEnforceRoutesSettingChanges()
         subscribeToShowInMenuBarSettingChanges()
         subscribeToShowInBrowserToolbarSettingsChanges()
         subscribeToLocationSettingChanges()
@@ -206,6 +228,12 @@ final class VPNPreferencesModel: ObservableObject {
     private func subscribeToExcludeLocalNetworksSettingChanges() {
         settings.excludeLocalNetworksPublisher
             .assign(to: \.excludeLocalNetworks, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToEnforceRoutesSettingChanges() {
+        settings.enforceRoutesPublisher
+            .assign(to: \.enforceRoutes, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 

@@ -43,6 +43,16 @@ struct NetworkProtectionVPNSettingsView: View {
                     Toggle("", isOn: $viewModel.excludeLocalNetworks)
                 }
 
+                if viewModel.isStrictRoutingAvailable {
+                    toggleSection(
+                        text: UserText.netPStrictRoutingSettingTitle,
+                        headerText: UserText.netPExcludeLocalNetworksSettingHeader,
+                        footerText: UserText.netPStrictRoutingSettingFooter
+                    ) {
+                        Toggle("", isOn: $viewModel.enforceRoutes)
+                    }
+                }
+
                 dnsSection()
             }
         }

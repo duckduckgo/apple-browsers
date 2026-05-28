@@ -1222,9 +1222,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     reassert: true,
                     attemptSource: .locationChange)
             }
+        case .setEnforceRoutes:
+            // Re-apply tunnel network settings so NECP re-evaluates enforceRoutes against
+            // the manager's updated NETunnelProviderProtocol without a full session restart.
+            if case .connected = connectionStatus {
+                try await handleRestartAdapter()
+            }
         case .setConnectOnLogin,
                 .setDNSSettings,
-                .setEnforceRoutes,
                 .setExcludeLocalNetworks,
                 .setExcludeAPNs,
                 .setExcludeCellularServices,

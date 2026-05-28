@@ -572,6 +572,11 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Risky Domain Protection for VPN
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case riskyDomainsProtection
+
+    /// Surfaces the "Strict routing" VPN toggle so users can disable
+    /// NETunnelProviderProtocol.enforceRoutes if they're having trouble
+    /// reaching local devices or other networks.
+    case strictRouting
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {

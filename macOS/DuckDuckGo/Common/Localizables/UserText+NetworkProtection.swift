@@ -321,6 +321,10 @@ extension UserText {
 
     static let vpnExcludeLocalNetworksSettingDescription = NSLocalizedString("vpn.setting.description.exclude.local.networks", value: "Bypass the VPN for local network connections, like to a printer.", comment: "Exclude Local Networks setting description")
 
+    static let vpnStrictRoutingSettingTitle = NSLocalizedString("vpn.setting.title.strict.routing", value: "Strict routing", comment: "Strict routing setting title")
+
+    static let vpnStrictRoutingSettingDescription = NSLocalizedString("vpn.setting.description.strict.routing", value: "We recommend keeping this on when using networks you don't trust. If you're having trouble reaching local devices or other networks, try turning it off.", comment: "Strict routing setting description")
+
     static let openVPNButtonTitle = NSLocalizedString("vpn.button.title.open.vpn", value: "Open VPN…", comment: "Uninstall VPN button title")
 
     static let uninstallVPNButtonTitle = NSLocalizedString("vpn.button.title.uninstall.vpn", value: "Uninstall DuckDuckGo VPN…", comment: "Open VPN button title")

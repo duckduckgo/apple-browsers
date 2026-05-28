@@ -21,6 +21,8 @@ import Foundation
 import UserNotifications
 import VPN
 import Combine
+import BrowserServicesKit
+import Core
 
 enum NetworkProtectionNotificationsViewKind: Equatable {
     case loading
@@ -31,7 +33,12 @@ enum NetworkProtectionNotificationsViewKind: Equatable {
 final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
     private let controller: TunnelController
     private let settings: VPNSettings
+    private let featureFlagger: FeatureFlagger
     private var cancellables: Set<AnyCancellable> = []
+
+    var isStrictRoutingAvailable: Bool {
+        featureFlagger.isFeatureOn(.vpnStrictRouting)
+    }
 
     private var notificationsAuthorization: NotificationsAuthorizationControlling
     @Published var viewKind: NetworkProtectionNotificationsViewKind = .loading
@@ -57,21 +64,50 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
         }
     }
 
+    @Published public var enforceRoutes: Bool {
+        didSet {
+            guard oldValue != enforceRoutes else {
+                return
+            }
+
+            settings.enforceRoutes = enforceRoutes
+
+            Task {
+                try await Task.sleep(interval: 0.1)
+                try await controller.command(.restartAdapter)
+            }
+        }
+    }
+
     @Published public var usesCustomDNS = false
     @Published public var dnsServers: String = UserText.vpnSettingDNSServerDefaultValue
 
     init(notificationsAuthorization: NotificationsAuthorizationControlling,
          controller: TunnelController,
-         settings: VPNSettings) {
+         settings: VPNSettings,
+         featureFlagger: FeatureFlagger) {
 
         self.controller = controller
+        self.featureFlagger = featureFlagger
+
+        // If the feature flag is off, force the stored value back to its default so the
+        // tunnel never honors a value set while the flag was on for this user.
+        if !featureFlagger.isFeatureOn(.vpnStrictRouting), settings.enforceRoutes != UserDefaults.enforceRoutesDefaultValue {
+            settings.enforceRoutes = UserDefaults.enforceRoutesDefaultValue
+        }
+
         self.excludeLocalNetworks = settings.excludeLocalNetworks
+        self.enforceRoutes = settings.enforceRoutes
         self.settings = settings
         self.notificationsAuthorization = notificationsAuthorization
-        
+
         settings.excludeLocalNetworksPublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.excludeLocalNetworks, onWeaklyHeld: self)
+            .store(in: &cancellables)
+        settings.enforceRoutesPublisher
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.enforceRoutes, onWeaklyHeld: self)
             .store(in: &cancellables)
         settings.dnsSettingsPublisher
             .receive(on: DispatchQueue.main)

@@ -69,6 +69,17 @@ extension Preferences {
                             spacing: 12
                         )
                     }
+
+                    if model.isStrictRoutingAvailable {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.vpnStrictRoutingSettingTitle,
+                                UserText.vpnStrictRoutingSettingDescription,
+                                isOn: $model.enforceRoutes,
+                                spacing: 12
+                            )
+                        }
+                    }
                 }
                 .padding(.bottom, 12)
 

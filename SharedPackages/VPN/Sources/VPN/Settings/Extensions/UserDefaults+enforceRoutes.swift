@@ -24,7 +24,7 @@ extension UserDefaults {
         "networkProtectionSettingEnforceRoutes"
     }
 
-    static let enforceRoutesDefaultValue = true
+    public static let enforceRoutesDefaultValue = true
 
     @objc
     dynamic var networkProtectionSettingEnforceRoutes: Bool {

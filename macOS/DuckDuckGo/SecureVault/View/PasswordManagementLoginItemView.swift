@@ -21,9 +21,7 @@ import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
 import DesignResourcesKit
-#if DEBUG
 import Common
-#endif
 
 private let interItemSpacing: CGFloat = 20
 private let itemSpacing: CGFloat = 6
@@ -382,14 +380,18 @@ private struct PasswordView: View {
                         let showEyeButton = isHovering || isPasswordVisible
                         SecureTextFieldButton(isVisible: $isPasswordVisible, toolTipHideText: UserText.hidePasswordTooltip, toolTipShowText: UserText.showPasswordTooltip)
                             .opacity(showEyeButton ? 1 : 0)
+                            .disabled(!showEyeButton)
                             .allowsHitTesting(showEyeButton)
+                            .accessibilityHidden(!showEyeButton)
 
                         CopyButton {
                             model.copy(model.password, fieldType: .password)
                         }
                         .tooltip(UserText.copyPasswordTooltip)
                         .opacity(isHovering ? 1 : 0)
+                        .disabled(!isHovering)
                         .allowsHitTesting(isHovering)
+                        .accessibilityHidden(!isHovering)
                     }
 
                     Spacer()
@@ -608,17 +610,9 @@ private extension PasswordManagementLoginModel {
     }
 }
 
-#Preview("Password row — valid website") {
-    PasswordView()
+#Preview("Login item view") {
+    PasswordManagementLoginItemView()
         .environmentObject(PasswordManagementLoginModel.preview())
-        .frame(width: 400)
-        .padding()
-}
-
-#Preview("Password row — empty website (bug repro)") {
-    PasswordView()
-        .environmentObject(PasswordManagementLoginModel.preview(domain: ""))
-        .frame(width: 400)
-        .padding()
+        .frame(width: 480, height: 600)
 }
 #endif

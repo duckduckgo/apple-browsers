@@ -4562,8 +4562,8 @@ extension TabViewController: SafariRedirectHandlerDelegate {
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
         specialErrorPageNavigationHandler.loadGeneralPageProblemErrorPage(
             for: url,
-            title: "This site only loads in Safari",
-            message: "We tried to load it privately, but it won't display.",
-            button: "Open in Safari")
+            title: UserText.generalPageProblemTitle,
+            message: UserText.generalPageProblemMessage,
+            button: UserText.generalPageProblemOpenInBrowserButton)
     }
 }

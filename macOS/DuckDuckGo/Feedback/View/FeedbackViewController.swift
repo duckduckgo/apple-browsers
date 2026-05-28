@@ -307,12 +307,12 @@ final class FeedbackViewController: NSViewController {
 
     private weak var unsupportedOsChildView: NSView?
     private func showUnsupportedOsViewIfNeeded() {
-        if let minVersion = supportedOSChecker.unsupportedMinVersion,
+        if supportedOSChecker.showsSupportWarning,
            unsupportedOsChildView == nil {
 
             let canUpgradeOS = OSUpgradeCapabilityOverridePersistor()
                 .canUpgradeOS(default: supportedOSChecker.osUpgradeCapability.canUpgradeOS)
-            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(minVersion: minVersion, canUpgradeOS: canUpgradeOS).padding(.horizontal, 20))
+            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(canUpgradeOS: canUpgradeOS).padding(.horizontal, 20))
             unsupportedOsView.addAndLayout(view)
             unsupportedOsView.isHidden = false
             unsupportedOsChildView = view

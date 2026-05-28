@@ -507,6 +507,169 @@ _login_cache: dict[str, Optional[str]] = {}
 _pr_status_cache: dict[str, BranchPRStatus] = {}
 
 
+def _repo_owner_name() -> tuple[str, str]:
+    owner, _, name = REPO.partition("/")
+    return owner, name
+
+
+def _branch_pr_status_from_prs(prs: list[dict]) -> BranchPRStatus:
+    status = BranchPRStatus()
+    if not prs:
+        return status
+    status.has_any_pr = True
+    prs_sorted = sorted(prs, key=lambda p: p.get("createdAt", ""), reverse=True)
+    most_recent = prs_sorted[0]
+    status.most_recent_state = most_recent.get("state")
+    status.most_recent_merged_at = most_recent.get("mergedAt")
+    status.most_recent_pr_number = most_recent.get("number")
+    for pr in prs_sorted:
+        if pr.get("state") == "OPEN":
+            status.has_open_pr = True
+            status.open_pr_url = pr.get("url")
+            break
+    return status
+
+
+def _prefetch_github_refs(branch_names: list[str]) -> None:
+    """Populate PR-status cache for many branches with one GraphQL call.
+
+    The old fallback path uses ``gh pr list`` once per branch. Batched refs
+    keep the scheduled run away from GitHub API limits when many active
+    branches are in the recency window.
+    """
+    missing = [name for name in dict.fromkeys(branch_names)
+               if name not in _pr_status_cache]
+    if not missing or not have_command("gh"):
+        return
+
+    owner, repo_name = _repo_owner_name()
+    if not owner or not repo_name:
+        logger.warning("Cannot batch GitHub PR lookup for invalid repo %r", REPO)
+        return
+
+    for start in range(0, len(missing), 25):
+        batch = missing[start:start + 25]
+        fields = []
+        for idx, branch_name in enumerate(batch):
+            fields.append(f"""
+              b{idx}: ref(qualifiedName: {json.dumps(branch_name)}) {{
+                associatedPullRequests(first: 10, states: [OPEN, CLOSED, MERGED]) {{
+                  nodes {{
+                    state
+                    url
+                    mergedAt
+                    createdAt
+                    number
+                  }}
+                }}
+              }}
+            """)
+        query = f"""
+          query {{
+            repository(owner: {json.dumps(owner)}, name: {json.dumps(repo_name)}) {{
+              {''.join(fields)}
+            }}
+          }}
+        """
+        proc = run(["gh", "api", "graphql", "-f", f"query={query}"], check=False)
+        if proc.returncode != 0:
+            logger.warning("Batched GitHub PR lookup failed: %s",
+                           (proc.stderr or "").strip())
+            return
+        try:
+            payload = json.loads(proc.stdout or "{}")
+            repo_payload = payload["data"]["repository"]
+        except (KeyError, TypeError, json.JSONDecodeError) as exc:
+            logger.warning("Batched GitHub PR lookup returned bad JSON: %s", exc)
+            return
+        for idx, branch_name in enumerate(batch):
+            node = repo_payload.get(f"b{idx}") or {}
+            pr_nodes = (
+                node.get("associatedPullRequests", {}).get("nodes", [])
+                if isinstance(node, dict) else []
+            )
+            _pr_status_cache[branch_name] = _branch_pr_status_from_prs(pr_nodes)
+
+
+def prefetch_github_metadata(branches: list[Branch]) -> None:
+    """Populate GitHub login and PR-status caches for active branches.
+
+    This replaces two per-branch REST/CLI calls with a small number of
+    GraphQL requests. The individual lookup helpers below remain as a
+    fallback for local runs without GraphQL access or for cache misses.
+    """
+    missing = [b for b in branches
+               if b.sha not in _login_cache or b.name not in _pr_status_cache]
+    if not missing or not have_command("gh"):
+        return
+
+    owner, repo_name = _repo_owner_name()
+    if not owner or not repo_name:
+        logger.warning("Cannot batch GitHub metadata lookup for invalid repo %r",
+                       REPO)
+        return
+
+    for start in range(0, len(missing), 25):
+        batch = missing[start:start + 25]
+        fields = []
+        for idx, branch in enumerate(batch):
+            fields.append(f"""
+              b{idx}: ref(qualifiedName: {json.dumps(branch.name)}) {{
+                target {{
+                  ... on Commit {{
+                    oid
+                    author {{
+                      user {{
+                        login
+                      }}
+                    }}
+                  }}
+                }}
+                associatedPullRequests(first: 10, states: [OPEN, CLOSED, MERGED]) {{
+                  nodes {{
+                    state
+                    url
+                    mergedAt
+                    createdAt
+                    number
+                  }}
+                }}
+              }}
+            """)
+        query = f"""
+          query {{
+            repository(owner: {json.dumps(owner)}, name: {json.dumps(repo_name)}) {{
+              {''.join(fields)}
+            }}
+          }}
+        """
+        proc = run(["gh", "api", "graphql", "-f", f"query={query}"], check=False)
+        if proc.returncode != 0:
+            logger.warning("Batched GitHub metadata lookup failed: %s",
+                           (proc.stderr or "").strip())
+            return
+        try:
+            payload = json.loads(proc.stdout or "{}")
+            repo_payload = payload["data"]["repository"]
+        except (KeyError, TypeError, json.JSONDecodeError) as exc:
+            logger.warning("Batched GitHub metadata lookup returned bad JSON: %s",
+                           exc)
+            return
+        for idx, branch in enumerate(batch):
+            node = repo_payload.get(f"b{idx}") or {}
+            target = node.get("target", {}) if isinstance(node, dict) else {}
+            author = target.get("author", {}) if isinstance(target, dict) else {}
+            user = author.get("user", {}) if isinstance(author, dict) else {}
+            login = user.get("login") if isinstance(user, dict) else None
+            _login_cache[branch.sha] = login or None
+
+            pr_nodes = (
+                node.get("associatedPullRequests", {}).get("nodes", [])
+                if isinstance(node, dict) else []
+            )
+            _pr_status_cache[branch.name] = _branch_pr_status_from_prs(pr_nodes)
+
+
 def lookup_github_login(sha: str) -> Optional[str]:
     if sha in _login_cache:
         return _login_cache[sha]
@@ -560,20 +723,7 @@ def lookup_branch_pr_status(branch_name: str) -> BranchPRStatus:
         logger.warning("gh pr list failed for %s: %s", branch_name, exc)
         _pr_status_cache[branch_name] = status
         return status
-    if not prs:
-        _pr_status_cache[branch_name] = status
-        return status
-    status.has_any_pr = True
-    prs_sorted = sorted(prs, key=lambda p: p.get("createdAt", ""), reverse=True)
-    most_recent = prs_sorted[0]
-    status.most_recent_state = most_recent.get("state")
-    status.most_recent_merged_at = most_recent.get("mergedAt")
-    status.most_recent_pr_number = most_recent.get("number")
-    for pr in prs_sorted:
-        if pr.get("state") == "OPEN":
-            status.has_open_pr = True
-            status.open_pr_url = pr.get("url")
-            break
+    status = _branch_pr_status_from_prs(prs)
     _pr_status_cache[branch_name] = status
     return status
 
@@ -1231,6 +1381,7 @@ def sweep_existing_tasks(asana: AsanaClient, summary: RunSummary) -> None:
         logger.warning("Sweep prefetch failed: %s", exc)
         return
 
+    task_items: list[tuple[str, dict, str, str]] = []
     for title, task in tasks.items():
         if task.get("completed"):
             continue
@@ -1245,7 +1396,14 @@ def sweep_existing_tasks(asana: AsanaClient, summary: RunSummary) -> None:
         gid = task.get("gid", "")
         if not gid:
             continue
+        task_items.append((title, task, a_name, b_name))
 
+    _prefetch_github_refs(
+        [name for _, _, a_name, b_name in task_items for name in (a_name, b_name)]
+    )
+
+    for title, task, a_name, b_name in task_items:
+        gid = task.get("gid", "")
         # Path 1: did a branch merge?
         merged_branches: list[tuple[str, Optional[str]]] = []
         for name in (a_name, b_name):
@@ -1587,6 +1745,7 @@ def run_report(top_n: int) -> int:
     branches = list_active_branches(RECENCY_HOURS, summary)
     logger.info("Active branches in last %dh (post-merged-filter): %d",
                 RECENCY_HOURS, len(branches))
+    prefetch_github_metadata(branches)
 
     kept: list[Branch] = []
     for b in branches:
@@ -1747,6 +1906,7 @@ def main() -> int:
     branches = list_active_branches(RECENCY_HOURS, summary)
     logger.info("Active branches in last %dh (post-merged-filter): %d",
                 RECENCY_HOURS, len(branches))
+    prefetch_github_metadata(branches)
 
     user_map = load_user_map()
     if user_map:

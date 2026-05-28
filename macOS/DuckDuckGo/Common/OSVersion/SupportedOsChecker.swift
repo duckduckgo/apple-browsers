@@ -278,11 +278,15 @@ final class BigSurEndOfSupportNoticePresenter {
         // Delay so the first window + NTP can render before the modal
         // blocks the main runloop.
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            self.show()
+            self.show(persistsDismissal: true)
         }
     }
 
-    private func show() {
+    /// Shows the alert. When `persistsDismissal` is true (launch path) the secondary
+    /// button is "Don't show again" and writes to the persistor; otherwise (menu path)
+    /// the secondary button is a neutral "OK" that just dismisses, and the persistor
+    /// is neither checked nor mutated.
+    func show(persistsDismissal: Bool = false) {
         let alert = NSAlert()
         alert.alertStyle = .informational
         alert.messageText = UserText.bigSurEndOfSupportNoticeTitle
@@ -292,12 +296,17 @@ final class BigSurEndOfSupportNoticePresenter {
         // past Big Sur; fall back to a neutral OK.
         let canUpgrade = canUpgradeOS
         alert.addButton(withTitle: primaryButtonTitle())
-        alert.addButton(withTitle: UserText.bigSurEndOfSupportNoticeDontShowAgain)
+        if persistsDismissal {
+            alert.addButton(withTitle: UserText.bigSurEndOfSupportNoticeDontShowAgain)
+        } else if canUpgrade {
+            // Avoid an [OK] [OK] pair when the primary is already OK.
+            alert.addButton(withTitle: UserText.ok)
+        }
 
         switch alert.runModal() {
         case .alertFirstButtonReturn where canUpgrade:
             NSWorkspace.shared.open(Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL)
-        case .alertSecondButtonReturn:
+        case .alertSecondButtonReturn where persistsDismissal:
             persistor.dismissed = true
         default:
             break

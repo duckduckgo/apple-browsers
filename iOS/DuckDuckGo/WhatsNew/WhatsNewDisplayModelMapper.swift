@@ -166,6 +166,16 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
         let onLoadFailed: (() -> Void)?
     }
 
+    private final class ImageLoadReportGuard {
+        private var hasReported = false
+
+        func markReportedIfNeeded() -> Bool {
+            guard !hasReported else { return false }
+            hasReported = true
+            return true
+        }
+    }
+
     private func makeCardImageLoading(itemId: String, imageUrl: URL?, message: RemoteMessageModel) -> CardImageLoading {
         guard let imageUrl, let imageLoader else {
             return CardImageLoading(cachedImage: nil, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
@@ -174,22 +184,20 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
         // Always pass a closure so the View can re-check the cache after LazyVStack
         // recycling, instead of receiving a single value snapshotted here.
         let cachedImage: () -> UIImage? = { [imageLoader] in imageLoader.cachedImage(for: imageUrl) }
-
-        if cachedImage() != nil {
-            pixelReporter?.measureRemoteMessageCardImageLoadSuccess(message, cardId: itemId)
-            return CardImageLoading(cachedImage: cachedImage, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
-        }
-
         let loadImage: (URL) async throws -> UIImage = { [imageLoader] url in
             try await imageLoader.loadImage(from: url)
         }
+
+        let reportGuard = ImageLoadReportGuard()
         return CardImageLoading(
             cachedImage: cachedImage,
             loadImage: loadImage,
             onLoadSuccess: { [pixelReporter, message] in
+                guard reportGuard.markReportedIfNeeded() else { return }
                 pixelReporter?.measureRemoteMessageCardImageLoadSuccess(message, cardId: itemId)
             },
             onLoadFailed: { [pixelReporter, message] in
+                guard reportGuard.markReportedIfNeeded() else { return }
                 pixelReporter?.measureRemoteMessageCardImageLoadFailed(message, cardId: itemId)
             }
         )

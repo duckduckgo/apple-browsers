@@ -798,8 +798,8 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
     }
 
     @available(iOS 16, *)
-    @Test("When twoLines item has imageUrl and image is cached then card success pixel is fired with card id", .timeLimit(.minutes(1)))
-    func whenTwoLinesItemHasImageUrlAndCachedThenCardSuccessPixelFired() throws {
+    @Test("When twoLines item image is cached then no pixel fires until the View reports the image is shown", .timeLimit(.minutes(1)))
+    func whenTwoLinesItemImageIsCachedThenSuccessPixelFiresOnDisplayOnce() throws {
         let imageUrl = URL(string: "https://example.com/two-lines.png")!
         let imageLoader = MockRemoteMessagingImageLoader()
         imageLoader.cachedImageToReturn = UIImage()
@@ -809,18 +809,31 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
         let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "feature-card", imageUrl: imageUrl)
         let message = RemoteMessageModel.makeCardsListMessage(items: [item])
 
-        _ = sut.makeDisplayModel(
-            from: message,
-            onMessageAppear: { },
-            onItemAppear: { _ in },
-            onItemAction: { _, _ in },
-            onPrimaryAction: { _ in },
-            onDismiss: { }
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
         )
+
+        // Cached images report on display - not eagerly at model-build time - so the
+        // pixel matches the non-cached path's lifecycle.
+        #expect(!pixelReporter.didCallMeasureRemoteMessageCardImageLoadSuccess)
+
+        let card = try #require(displayModel.items.first?.twoLinesCard)
+        card.onImageLoadSuccess?()
 
         #expect(pixelReporter.didCallMeasureRemoteMessageCardImageLoadSuccess)
         #expect(pixelReporter.capturedCardImageLoadSuccessMessage?.id == message.id)
         #expect(pixelReporter.capturedCardImageLoadSuccessCardId == "feature-card")
+
+        // LazyVStack recycling re-renders the card; the pixel must not fire again.
+        card.onImageLoadSuccess?()
+        #expect(pixelReporter.measureRemoteMessageCardImageLoadSuccessCount == 1)
     }
 
     @available(iOS 16, *)

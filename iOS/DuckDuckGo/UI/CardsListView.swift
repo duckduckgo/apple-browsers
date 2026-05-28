@@ -323,6 +323,9 @@ private extension RemoteMessagingUI {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: size.width, height: size.height)
+                    .task {
+                        onImageLoadSuccess?()
+                    }
             } else {
                 Image(placeholderIcon)
                     .resizable()
@@ -338,7 +341,6 @@ private extension RemoteMessagingUI {
             guard let imageUrl, let loadImage else { return }
             do {
                 loadedImage = try await loadImage(imageUrl)
-                onImageLoadSuccess?()
             } catch is CancellationError {
                 // Task was cancelled - no-op
             } catch {

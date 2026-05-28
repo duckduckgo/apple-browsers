@@ -125,11 +125,13 @@ final class MockRemoteMessagingPixelReporter: RemoteMessagingPixelReporting {
 
     // MARK: - Card Image Load Success
     var didCallMeasureRemoteMessageCardImageLoadSuccess = false
+    var measureRemoteMessageCardImageLoadSuccessCount = 0
     var capturedCardImageLoadSuccessMessage: RemoteMessageModel?
     var capturedCardImageLoadSuccessCardId: String?
 
     func measureRemoteMessageCardImageLoadSuccess(_ remoteMessage: RemoteMessageModel, cardId: String) {
         didCallMeasureRemoteMessageCardImageLoadSuccess = true
+        measureRemoteMessageCardImageLoadSuccessCount += 1
         capturedCardImageLoadSuccessMessage = remoteMessage
         capturedCardImageLoadSuccessCardId = cardId
     }

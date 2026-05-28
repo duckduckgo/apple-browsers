@@ -29,6 +29,7 @@ final class RemoteMessagingPixelReporterTests {
     private let sut: RemoteMessagePixelReporter
 
     init() {
+        PixelFiringMock.tearDown()
         let mockParameterRandomiser = MockParameterRandomiser()
         self.mockParameterRandomiser = mockParameterRandomiser
         sut = RemoteMessagePixelReporter(

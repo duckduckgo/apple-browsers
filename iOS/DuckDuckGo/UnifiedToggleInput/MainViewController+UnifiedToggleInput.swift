@@ -658,6 +658,10 @@ private extension MainViewController {
 
         updateUnifiedInputContentVisibility(for: coordinator)
         refreshAIChatTabChatHeaderSubscriptionState()
+        // `isSwipeEnabled` is set at install-time from `isToggleVisible`, but `isToggleVisible`
+        // depends on `isAITabState` (kill-switch term). Re-evaluate now that the AI-tab
+        // transition has completed so the content swipe gesture matches the hidden toggle.
+        coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
         return true
     }
 
@@ -731,6 +735,10 @@ private extension MainViewController {
             coordinator.hide()
             coordinator.unbind()
         }
+        // `isToggleVisible` depends on `isAITabState`; leaving an AI tab can re-reveal the
+        // toggle (kill-switch term drops out on non-AI tabs), so the content swipe must
+        // be re-enabled to match.
+        coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
     }
 
     func setUpAIChatTabChatHeader() {

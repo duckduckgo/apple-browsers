@@ -874,14 +874,23 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // recomputing from `inputMode == .aiChat && enabled` alone would strip the AI toolbar
         // on a Duck.ai tab when the user disables the toggle.
         viewController.updateToggleEnabled(enabled, showsToolbar: computeRenderState().cardLayout.showsToolbar)
+        contentViewController.isSwipeEnabled = isToggleVisible
         let effective = effectiveInputMode(for: inputMode)
-        guard effective != inputMode else { return }
-        inputMode = effective
-        syncInputBehaviorToHandler()
+        let inputModeChanged = effective != inputMode
+        if inputModeChanged {
+            inputMode = effective
+            syncInputBehaviorToHandler()
+        }
+        // Re-apply render state outside the inputMode-changed gate so a visibility-only flip
+        // propagates `showsToggle: isToggleVisible` to the view layer. Required on Duck.ai
+        // tabs when the kill switch hides the toggle — a raw-setting flip doesn't change
+        // effective inputMode (already `.aiChat`) but does change visibility.
         viewController.apply(computeRenderState().viewConfig, animated: false)
-        refreshToolsPresentation()
-        modeChangeSubject.send(effective)
-        syncAttachmentValidationErrorForCurrentMode()
+        if inputModeChanged {
+            refreshToolsPresentation()
+            modeChangeSubject.send(effective)
+            syncAttachmentValidationErrorForCurrentMode()
+        }
         updateFloatingReturnKeyState()
     }
 

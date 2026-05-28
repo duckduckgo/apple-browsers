@@ -19,7 +19,6 @@
 
 import BrowserServicesKit
 import Persistence
-import PersistenceTestingUtils
 import BrowserServicesKitTestsUtils
 import Combine
 import ConcurrencyExtensions

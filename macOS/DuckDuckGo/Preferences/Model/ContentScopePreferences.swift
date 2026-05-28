@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 protocol ContentScopePreferencesPersistor {
     var debugStateEnabled: Bool { get set }

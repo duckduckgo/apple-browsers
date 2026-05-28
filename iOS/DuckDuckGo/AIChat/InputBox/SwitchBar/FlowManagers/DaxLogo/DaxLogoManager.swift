@@ -75,8 +75,7 @@ final class DaxLogoManager {
     func installInViewController(_ parentController: UIViewController,
                                  asSubviewOf parentView: UIView,
                                  anchorView: UIView? = nil,
-                                 isTopBarPosition: Bool,
-                                 escapeHatch: EscapeHatchModel? = nil) {
+                                 isTopBarPosition: Bool) {
 
         if !isFireTab && isTopBarPosition && anchorView == nil {
             assertionFailure("Non-fire top-bar Dax logo install requires an anchor view.")
@@ -88,7 +87,7 @@ final class DaxLogoManager {
         parentView.addSubview(logoContainerView)
 
         if isFireTab {
-            installFireTabContent(in: parentController, escapeHatch: escapeHatch)
+            installFireTabContent(in: parentController)
             installFireTabConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
         } else {
             installDaxLogoContent()
@@ -289,10 +288,10 @@ final class DaxLogoManager {
         ])
     }
 
-    private func installFireTabContent(in parentController: UIViewController, escapeHatch: EscapeHatchModel?) {
-        let hostingController = UIHostingController(
-            rootView: FireModeEmptyStateView(type: .tab,
-                                             escapeHatch: escapeHatch))
+    private func installFireTabContent(in parentController: UIViewController) {
+        let rootView = FireModeEmptyStateView(type: .tab)
+        let hostingController = UIHostingController(rootView: rootView)
+
         // Opaque NTP background so the fire empty state fully covers any favorites/suggestion tray content layered beneath.
         hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false

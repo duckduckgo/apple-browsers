@@ -41,6 +41,13 @@
         "suffixes": ["legacy_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "connectionAttemptSource"]
     },
+    "m_netp_tunnel_start_attempt_on_demand_without_access_token": {
+        "description": "Fired when an on-demand VPN start attempt fails before reaching the actual tunnel start, due to a prerequisite failure such as a missing or unfetchable subscription token, missing settings, or other startup errors. Error parameters identify the underlying cause.",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211597559231997
     "m_ios_wide_vpn_connection": {
         "description": "Wide pixel sent at the end of a vpn connection flow",

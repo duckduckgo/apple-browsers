@@ -22,6 +22,7 @@ import WebKit
 import os.log
 import Combine
 import Common
+import FoundationExtensions
 
 // MARK: - Delegate Protocol
 

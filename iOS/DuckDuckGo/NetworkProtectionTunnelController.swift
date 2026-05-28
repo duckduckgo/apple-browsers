@@ -20,6 +20,7 @@
 import PrivacyConfig
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import Foundation
 import NetworkExtension

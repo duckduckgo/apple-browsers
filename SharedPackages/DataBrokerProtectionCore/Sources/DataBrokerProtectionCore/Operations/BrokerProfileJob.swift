@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
-import os.log
 import BrowserServicesKit
+import Common
+import ConcurrencyExtensions
+import Foundation
+import os.log
 
 public enum JobType {
     case manualScan

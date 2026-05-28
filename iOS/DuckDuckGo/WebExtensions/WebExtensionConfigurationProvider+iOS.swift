@@ -21,6 +21,7 @@ import Foundation
 import WebExtensions
 import Core
 import Common
+import FoundationExtensions
 
 @available(iOS 18.4, *)
 struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {

@@ -19,6 +19,7 @@
 import AppKitExtensions
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import SharedSandboxTestUtilities
 import XCTest

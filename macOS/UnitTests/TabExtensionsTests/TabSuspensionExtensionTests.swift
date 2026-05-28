@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 @testable import Navigation
 import PrivacyConfig
 import PrivacyConfigTestsUtils

@@ -19,6 +19,7 @@
 import XCTest
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import NewTabPage
 import PixelKit
 import PrivacyConfigTestsUtils

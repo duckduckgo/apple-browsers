@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 
 @testable import DuckDuckGo_Privacy_Browser

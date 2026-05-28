@@ -19,6 +19,7 @@
 import Carbon
 import Combine
 import Common
+import FoundationExtensions
 import History
 import Navigation
 import PrivacyConfig

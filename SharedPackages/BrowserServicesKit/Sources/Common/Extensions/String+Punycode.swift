@@ -19,9 +19,9 @@
 import Foundation
 import Punycode
 
-extension String {
+public extension StringProtocol {
 
-    public var punycodeEncodedHostname: String {
+    var punycodeEncodedHostname: String {
         return self.split(separator: ".")
             .map { String($0) }
             .map { $0.idnaEncoded ?? $0 }

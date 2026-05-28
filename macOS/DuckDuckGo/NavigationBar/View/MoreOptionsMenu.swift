@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DesignResourcesKitIcons

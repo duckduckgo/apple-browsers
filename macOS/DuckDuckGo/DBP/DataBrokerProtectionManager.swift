@@ -16,15 +16,17 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
+import Common
+import ConcurrencyExtensions
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
-import PixelKit
-import LoginItems
-import Common
+import Foundation
+import FoundationExtensions
 import Freemium
+import LoginItems
 import NetworkProtectionIPC
+import PixelKit
 import Subscription
 
 public final class DataBrokerProtectionManager {

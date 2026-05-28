@@ -22,6 +22,7 @@ import Combine
 import ContentScopeScripts
 import UserScript
 import Common
+import FoundationExtensions
 
 public final class SpecialPagesUserScript: NSObject, UserScript, UserScriptMessaging {
     public var source: String = ""

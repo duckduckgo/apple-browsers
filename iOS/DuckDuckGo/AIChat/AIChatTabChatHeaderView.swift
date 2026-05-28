@@ -119,9 +119,7 @@ final class AIChatTabChatHeaderView: UIView {
             tabSwitcherView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
             tabSwitcherView.bottomAnchor.constraint(equalTo: button.bottomAnchor),
         ])
-        // Match the Plus button's capsule clipping so any transient highlight from the
-        // adjacent Plus menu dismissal doesn't render the tab-switcher as a rectangle
-        // inside the surrounding pill.
+        // Capsule-clip the button so the adjacent Plus menu dismissal can't flash a rectangle highlight.
         button.layer.cornerRadius = Constants.pillButtonSize / 2
         button.clipsToBounds = true
         return button
@@ -136,9 +134,7 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private lazy var newChatButton: UIButton = {
-        // Selector is kept only to satisfy `makeIconButton`'s non-optional `action:` parameter;
-        // `showsMenuAsPrimaryAction = true` means the menu opens on tap and the selector
-        // never fires at runtime.
+        // Selector only satisfies `makeIconButton`'s non-optional `action:` — `showsMenuAsPrimaryAction = true` means the menu opens on tap and the selector never fires.
         let button = makeIconButton(
             image: DesignSystemImages.Glyphs.Size24.add,
             accessibilityLabel: UserText.aiChatHeaderPlusMenuAccessibilityLabel,
@@ -201,10 +197,7 @@ final class AIChatTabChatHeaderView: UIView {
         return container
     }()
 
-    /// Wraps both `titleContainer` (free upgrade plate) and `paidTitleStack` (paid icon + title)
-    /// so the entire title slot can be hidden via a single `isHidden` toggle on this wrapper
-    /// (used during voice mode), leaving `configure(isSubscriptionActive:)` to swap just the
-    /// two children inside.
+    /// Wraps `titleContainer` (free upgrade plate) and `paidTitleStack` (paid icon + title) so the slot can be hidden via one `isHidden` toggle (voice mode).
     lazy var titleHolder: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -337,19 +330,13 @@ final class AIChatTabChatHeaderView: UIView {
         state.isSubscriptionActive = isSubscriptionActive
     }
 
-    /// Hides the title, chat-list pill, and close button while a voice session is in progress.
-    /// Voice mode owns its own dismiss UI, so the header chrome is fully suppressed to match
-    /// the frontend's voice-session presentation.
+    /// Hide title, chat-list pill, and close button during voice — voice owns its own dismiss UI.
     func setVoiceSessionActive(_ active: Bool) {
         state.isVoiceSessionActive = active
     }
 
-    /// Locks or unlocks the header controls during the Duck.ai onboarding experiment path.
-    /// When locked, the close, new-chat, upgrade, chats-list, and tab-switcher buttons are
-    /// disabled until the fire step passes — the close button included because it would
-    /// otherwise let users escape the onboarding flow via the NTP. Visual dimming is applied
-    /// to the enclosing pills so the glass background and any non-button subviews (e.g. the
-    /// tab-count label inside the tab-switcher pill) fade uniformly with their icons.
+    /// Lock/unlock header controls during onboarding (close included — would otherwise let users escape via the NTP).
+    /// Dimming is applied to the enclosing pills so the glass background and tab-count label fade uniformly with the icons.
     func setOnboardingLocked(_ locked: Bool) {
         closeButton.isEnabled = !locked
         newChatButton.isEnabled = !locked
@@ -537,12 +524,8 @@ final class AIChatTabChatHeaderView: UIView {
 
     private static let pillClipHostIdentifier = "aiChatHeader.pillClipHost"
 
-    /// Two-view pill: an outer `shadowHost` (no clipping, drop shadow on layer) wrapping an
-    /// inner `clipHost` (`cornerRadius` + `clipsToBounds = true`). The split is intentional —
-    /// any transient UIKit rendering at the source area of a `showsMenuAsPrimaryAction` menu
-    /// dismiss is contained by the clip host, while the shadow still renders outside via the
-    /// shadow host. Putting both on one layer would force either a rectangular flash on menu
-    /// dismiss (if `clipsToBounds = false`) or no shadow at all (if `clipsToBounds = true`).
+    /// Two-view pill: outer `shadowHost` (drop shadow, no clip) wrapping inner `clipHost` (rounded, clipped).
+    /// The split contains menu-dismiss rendering inside the clip host while letting the shadow render outside — one layer can't do both.
     private func makePillContainer() -> UIView {
         let shadowHost = UIView()
         shadowHost.translatesAutoresizingMaskIntoConstraints = false

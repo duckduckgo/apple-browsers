@@ -19,21 +19,13 @@
 
 import Foundation
 
-/// Pure decision of whether a navigation that crosses (or doesn't cross) the
-/// Duck.ai ↔ web boundary should open in a new tab or load into the current one.
-///
-/// Extracted so the boundary rules can be exercised by unit tests without dragging
-/// in `MainViewController` / `TabViewController`'s full dependency surface.
+/// Pure decision for whether a Duck.ai ↔ web boundary crossing should open a new tab or load in place. Extracted for unit-test isolation from `MainViewController`/`TabViewController`.
 enum AIBoundaryNavigationDecision: Equatable {
     case loadInPlace
     case openInNewTab
 
     /// Programmatic loads (favorites, bookmarks, suggestions, query submits).
-    ///
-    /// Rule: when unified input is on and the current tab has content, any cross of the
-    /// Duck.ai ↔ web boundary opens in a new tab so the origin tab survives. NTP/empty
-    /// tabs always load in place; legacy mode (feature off) keeps the pre-existing
-    /// in-place behavior.
+    /// Rule: with UTI on and the current tab having content, a boundary cross spawns a new tab. NTP/empty stays in-place; legacy mode (feature off) stays in-place.
     static func forProgrammaticNavigation(currentIsAI: Bool,
                                           currentHasContent: Bool,
                                           targetIsAI: Bool,
@@ -44,11 +36,8 @@ enum AIBoundaryNavigationDecision: Equatable {
         return .openInNewTab
     }
 
-    /// Same-frame in-page link taps (i.e. `<a href="...">` without `target="_blank"`).
-    ///
-    /// Rule: chat→web link taps always intercept (Duck.ai tabs are preserved across
-    /// outbound links). Web→chat link taps intercept only when unified input is on.
-    /// Same-side taps (web→web, chat→chat) load in place.
+    /// Same-frame link taps (no `target="_blank"`).
+    /// Rule: chat→web always intercepts (preserve chat); web→chat intercepts only with UTI on; same-side stays in-place.
     static func forSameFrameLinkTap(currentIsAI: Bool,
                                     targetIsAI: Bool,
                                     unifiedToggleInputAvailable: Bool) -> AIBoundaryNavigationDecision {

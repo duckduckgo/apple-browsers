@@ -1961,9 +1961,7 @@ class MainViewController: UIViewController {
         }
 
         if clearInProgress {
-            // Compose with any already-deferred worker so a second `loadUrlInNewTab` call during
-            // the same clear doesn't silently drop the first one's completion (which stages
-            // prompt data via `AIChatPromptHandler.shared.setData`).
+            // Compose with any already-deferred worker — back-to-back `loadUrlInNewTab` during the same clear must not drop the first's completion.
             let previous = postClear
             postClear = {
                 previous?()
@@ -3388,11 +3386,7 @@ class MainViewController: UIViewController {
         // Voice mode has no on-screen input; dismiss the keyboard before either branch loads.
         unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
 
-        // Voice mode always opens in a new tab when the current tab has real content — Duck.ai
-        // tabs included. Text-chat applies a chat→chat in-place rule via `openAIChatInTab`,
-        // but voice does NOT: starting a voice session over an existing chat would replace
-        // the prior conversation inside the same WebView. NTP transformations stay in place
-        // via the `link != nil` check.
+        // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
         let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
 
@@ -3439,15 +3433,8 @@ class MainViewController: UIViewController {
             return
         }
 
-        // Open in a new tab when the current tab has real content to preserve. Two paths qualify:
-        //   - Deep links (Universal Links / widget / app-icon long-press) always open a new tab over
-        //     existing content — preserves the legacy external-entry behavior regardless of whether
-        //     the current tab is web or chat.
-        //   - Under unified input, a user-initiated chat-open from a web tab is a boundary cross and
-        //     spawns a new tab. Chat → chat from non-deep-link entry points (e.g. browser app menu's
-        //     "New Chat" while already on a Duck.ai tab) stays in place — same rule the rest of the
-        //     codebase enforces via `AIBoundaryNavigationDecision`.
-        // NTP transformations stay in place via the existing `link != nil` check.
+        // New tab when current has content: deep links always cross; UTI crosses only on web→chat (chat→chat from non-deep-link stays in-place, same rule as `AIBoundaryNavigationDecision`).
+        // NTP stays in-place via `link != nil`.
         let shouldOpenInNewTab: Bool = {
             guard let currentTab, currentTab.tabModel.link != nil else { return false }
             if fromDeepLink { return true }
@@ -3455,20 +3442,13 @@ class MainViewController: UIViewController {
         }()
         if shouldOpenInNewTab, let currentTab {
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
-            // Preserve the pre-existing instrumentation parity: the in-place `load(...)` fall-through
-            // below fires this, so the new-tab branch must too — otherwise idle-session telemetry
-            // misses prompt submissions from content tabs once the unified-input boundary kicks in.
-            // Gated on `!fromDeepLink` so Universal Links / widget / icon-long-press opens (which
-            // didn't fire `.barUsed` in the legacy in-place branch) don't get reclassified as
-            // address-bar submissions.
+            // Mirror the in-place `.barUsed` so the new-tab branch keeps idle-session parity.
+            // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
             if !fromDeepLink {
                 postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
             }
-            // Stage the prompt singleton BEFORE `loadUrlInNewTab` so it's in place before the
-            // WebView starts loading the chat URL. Matches the legacy in-place pattern in
-            // `TabViewControllerAIChatExtension.load` (setData → load). Per-tab payload still
-            // runs in the completion because it targets `currentTab`, which is only the newly-
-            // selected chat tab after `addTab` has run.
+            // Stage prompt singleton before `loadUrlInNewTab` — matches legacy `setData → load` order.
+            // Per-tab payload runs in completion since it targets the newly-selected chat tab.
             if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 let prompt = AIChatNativePrompt.queryPrompt(
                     query,
@@ -3793,9 +3773,7 @@ extension MainViewController: OmniBarDelegate {
 
     func onChatHistorySelected(url: URL) {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
-        // Route through the boundary helper so an NTP transforms in place into the chat tab,
-        // same as a prompt submission. Web/empty tab → chat URL crossing the boundary spawns a
-        // new tab; chat → chat stays in place. Matches `onPromptSubmitted` semantics.
+        // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
         loadUrlRespectingAIBoundary(url)
     }
 

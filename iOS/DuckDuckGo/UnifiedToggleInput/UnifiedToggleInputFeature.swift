@@ -44,10 +44,7 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
         AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue,
     ]
 
-    /// Evaluate the feature flags once and persist the results for the session.
-    /// Must be called early in the app launch sequence, before any consumer
-    /// reads `isAvailable` / `isToggleHiddenOnDuckAITab`, so every component
-    /// sees the same value for the lifetime of the session.
+    /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads `isAvailable` / `isToggleHiddenOnDuckAITab`.
     static func resolve(using featureFlagger: FeatureFlagger) {
         UserDefaults.app.set(featureFlagger.isFeatureOn(.unifiedToggleInput), forKey: isFeatureFlagEnabledKey)
         UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatTabHideToggle), forKey: isToggleHiddenOnDuckAITabKey)

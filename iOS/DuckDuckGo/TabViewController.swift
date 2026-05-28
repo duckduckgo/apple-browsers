@@ -2386,28 +2386,15 @@ extension TabViewController: WKNavigationDelegate {
             break
         }
 
-        // Same-frame link taps that cross the Duck.ai ↔ web boundary open a new tab so the
-        // origin tab survives. `aiChatNewWindowDecision` above already covers cross-frame
-        // (target="_blank") link taps from a Duck.ai page; this branch covers in-frame links
-        // in both directions. Skip when Command is held so the modifier-key handler below
-        // can pick foreground vs. background tabs as usual.
-        //
-        // Ordering trade-off: this lands before `linkProtection.requestTrackingLinkRewrite`,
-        // `referrerTrimming.trimReferrer`, and `requestForDoNotSell` for the original navigation
-        // action. The new tab re-runs the full policy pipeline on its initial request, so the
-        // rewrites still apply — they just lose the originating frame's context (initiator URL,
-        // referrer chain). For our boundary-crossing use case (a chat citation outbound, or a
-        // SERP link inbound) this is acceptable: there is no upstream tracking history to lose
-        // because the boundary cross severs the origin/destination relationship anyway.
+        // Same-frame boundary-cross link taps spawn a new tab (cross-frame is handled by `aiChatNewWindowDecision` above). Skip when ⌘ is held.
+        // Runs before tracking-link/referrer/DNS rewrites — acceptable since the new tab re-runs the full policy pipeline; only originating-frame context is lost, which a boundary cross severs anyway.
         if navigationAction.navigationType == .linkActivated,
            navigationAction.targetFrame?.isMainFrame == true,
            let linkURL = navigationAction.request.url,
            let scheme = linkURL.scheme?.lowercased(),
            scheme == "http" || scheme == "https",
            !(delegate?.tabWillRequestNewTab(self)?.contains(.command) ?? false) {
-            // Source-side check uses `self.isAITab` (backed by `tabModel.type == .aiChat`) rather
-            // than `webView.url?.isDuckAIURL` because `webView.url` can be transiently nil during
-            // in-flight navigations — losing the boundary protection in that window.
+            // Use `self.isAITab` over `webView.url?.isDuckAIURL` — webView.url goes transiently nil during in-flight navigations, losing boundary protection.
             let decision = AIBoundaryNavigationDecision.forSameFrameLinkTap(
                 currentIsAI: isAITab,
                 targetIsAI: linkURL.isDuckAIURL,

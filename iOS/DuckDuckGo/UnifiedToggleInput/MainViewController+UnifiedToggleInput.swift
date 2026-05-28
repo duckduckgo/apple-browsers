@@ -722,11 +722,7 @@ private extension MainViewController {
         tab.borderView.isBottomVisible = true
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
-        // Snap chrome to revealed without animation. AI tabs share the BrowserChromeManager
-        // with the rest of the app, so the scroll inside a long chat can put barsState into
-        // .hidden while the chrome is overridden by the AI chat header (alpha=0). Without
-        // this snap, returning to a web tab makes the top omnibar fly down from off-screen
-        // as revealBars animates from -navBarTopOffset to 0.
+        // Snap chrome revealed — prior chat-scroll could have hidden bars under the AI header, so without this the omnibar flies in on return.
         chromeManager.reset(animated: false)
         if coordinator.isActive {
             coordinator.deactivateToOmnibar()
@@ -1076,13 +1072,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
-        // Match the production omnibar toggle: from a search/NTP/web origin (anything other than
-        // a Duck.ai tab), a URL-shaped submission lands as a URL load even when the toggle is set
-        // to Duck.ai. Attachments suppress the heuristic — there's no sensible URL-load with
-        // attachments. Already on a Duck.ai tab, keep prompt semantics so users can ask the model
-        // about a URL by name.
+        // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
+        // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.
         if currentTab?.isAITab != true,
-           (images?.isEmpty ?? true), (files?.isEmpty ?? true),
+           images?.isEmpty ?? true, files?.isEmpty ?? true,
            let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
            url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
             loadUrlRespectingAIBoundary(url)
@@ -1294,9 +1287,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapTabSwitcher() {
-        // Use `requestTabSwitcher()` rather than `showTabSwitcher()` so the header tap fires
-        // the same pixels as every other tab-switcher entry point: `.tabBarTabSwitcherOpened`,
-        // `.tabSwitcherOpenedDaily`, and `.aiChatTabSwitcherOpened` (when current is AI).
+        // Via `requestTabSwitcher()` not `showTabSwitcher()` — fires the same pixels as every other entry point.
         requestTabSwitcher()
     }
 }

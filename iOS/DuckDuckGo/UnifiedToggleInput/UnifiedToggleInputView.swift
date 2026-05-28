@@ -707,16 +707,11 @@ final class UnifiedToggleInputView: UIView {
         let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
-        // Flanked layout hides the in-pill voice icon: the fire/menu accessories already flank
-        // the pill and voice is reachable from the chat-header Plus menu.
-        // Snap the icon style synchronously so the focus animation drives the visual transition
-        // — animating the buttons-row crossfade here would snapshot at the old layout and drift.
+        // Flanked: hide the in-pill voice icon (external accessories flank the pill, voice is in the Plus menu).
+        // Snap synchronously so the focus animation drives the transition — animating here would snapshot at the old layout and drift.
         textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : .aiVoicePlain), animated: false)
         if layout != .flanked {
-            // Non-flanked layouts let the card span the full width; the external fire/menu
-            // accessories must hide or they overlap the card's edges. The opposite direction
-            // (showing them on `.flanked`) is handled by `setAITabCollapsedFooterPoseActive`,
-            // which adds the fade-in animation.
+            // Non-flanked: card spans full width, so external fire/menu must hide. The reverse is `setAITabCollapsedFooterPoseActive` (fades in).
             aiTabCollapsedFireButton.isHidden = true
             aiTabCollapsedMenuButton.isHidden = true
         }

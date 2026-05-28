@@ -602,6 +602,22 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockDelegate.requestedOpenURL, url)
     }
 
+    func testDidReceiveNewChatStartedNotifiesDelegate() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+        let mockDelegate = MockAIChatContentHandlingDelegate()
+        handler.delegate = mockDelegate
+
+        // When
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .newChatStarted)
+
+        // Then
+        XCTAssertEqual(mockDelegate.didReceiveNewChatCreatedCallCount, 1)
+        XCTAssertEqual(mockDelegate.didReceiveCloseChatRequestCallCount, 0)
+    }
+
     // MARK: - fireAIChatTelemetry
 
     func testFireAIChatTelemetryCallsProductSurfaceTelemetry() throws {
@@ -787,6 +803,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func responseReceived(params: Any, message: any UserScriptMessage) async -> (any Encodable)? { nil }
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
 }
 // swiftlint:enable inclusive_language
 

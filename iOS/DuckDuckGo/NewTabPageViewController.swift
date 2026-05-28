@@ -22,6 +22,7 @@ import DDGSync
 import Bookmarks
 import BrowserServicesKit
 import Core
+import DesignResourcesKit
 import Onboarding
 import RemoteMessaging
 import Subscription
@@ -144,6 +145,17 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         registerForNotifications()
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // In UTI mode the visit-site dialog's hostingController is parented to MainViewController
+        // (not to self) so it lives in unifiedInputContentContainer.  When navigation replaces
+        // this NTP with a web view or a fresh NTP, the container can reappear later and show the
+        // stale dialog.  Clean it up here before this NTP leaves the screen.
+        if let hc = hostingController, hc.parent !== self {
+            dismissHostingController(didFinishNTPOnboarding: false)
+        }
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
@@ -261,11 +273,18 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private func launchNewSearch() {
         // If we are displaying a Subscription promotion on a new tab, do not activate search
         guard !daxDialogsManager.isShowingSubscriptionPromotion else { return }
-        // Duck.ai tailored flow surfaces the omnibar in AI-chat mode by default so users land in the
-        // experience the onboarding emphasised. Other flows pass `nil` to let the omnibar fall back
-        // to its default mode (search).
-        let textEntryMode: TextEntryMode? = onboardingFlowProvider.currentOnboardingFlow == .duckAI ? .aiChat : nil
-        chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
+        if let mainVC = parent as? MainViewController,
+           let coordinator = mainVC.unifiedToggleInputCoordinator,
+           coordinator.isOmnibarSession {
+            // UTI mode: expand the UTI pill so the address bar is ready for a new search.
+            coordinator.activateInput()
+        } else {
+            // Duck.ai tailored flow surfaces the omnibar in AI-chat mode by default so users land in the
+            // experience the onboarding emphasised. Other flows pass `nil` to let the omnibar fall back
+            // to its default mode (search).
+            let textEntryMode: TextEntryMode? = onboardingFlowProvider.currentOnboardingFlow == .duckAI ? .aiChat : nil
+            chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
+        }
     }
 
     func dismiss() {
@@ -296,6 +315,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         // we don't repeat them here — re-setting the pending flag at this point would
         // leak past the EOJ flow and incorrectly suppress the Dax in the next-created
         // editing state (e.g. after the subscription promo's "No, Thanks").
+        setLogoHidden(true)
         chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
 
         DispatchQueue.main.async { [weak self] in
@@ -375,9 +395,19 @@ extension NewTabPageViewController {
         // Completion dialog should not hide NTP background state.
         newTabPageViewModel.finishOnboarding()
 
+        // UTI mode: no OmniBarEditingStateViewController is presented; embed the dialog in the
+        // UTI's content area (below the bar) and wire up subscription-promo check on dismiss.
+        if let mainVC = parent as? MainViewController,
+           let coordinator = mainVC.unifiedToggleInputCoordinator,
+           coordinator.isOmnibarSession {
+            showDuckAIOnboardingCompletionDialogInUTI(mainVC: mainVC, coordinator: coordinator, message: message)
+            return
+        }
+
         let presentedHostViewController = parent?.presentedViewController ?? parent
         guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
             isShowingDuckAICompletionDialog = false
+            setLogoHidden(false)
             view.alpha = 1
             return
         }
@@ -452,11 +482,137 @@ extension NewTabPageViewController {
         container.bringSubviewToFront(editingController.switchBarVC.view)
     }
 
+    // Mirrors showDuckAIOnboardingCompletionDialog for UTI mode where no editing-state VC exists.
+    // The completion dialog is embedded directly in unifiedInputContentContainer below the UTI bar,
+    // and the onDismiss closure mirrors the legacy path's subscription-promo check.
+    private func showDuckAIOnboardingCompletionDialogInUTI(
+        mainVC: MainViewController,
+        coordinator: UnifiedToggleInputCoordinator,
+        message: String
+    ) {
+        isShowingDuckAICompletionDialog = true
+        // The NTP view is about to become visible (view.alpha = 1 below) but
+        // finishOnboarding() has already set isOnboarding = false, so SwiftUI
+        // would render the Dax logo on the next frame.  Hide both the NTP logo
+        // and the UTI/omnibar logo (shown by the beginEditing transition) so
+        // neither flashes through the transparent completion dialog hosting view.
+        // Both are restored once the dialog is dismissed.
+        setLogoHidden(true)
+        coordinator.contentViewController.setLogoHidden(true)
+        view.alpha = 1
+
+        let onDismiss = { [weak self, weak mainVC, weak coordinator] in
+            guard let self else { return }
+            // Collapse the UTI bar explicitly rather than going through omniBar.endEditing()
+            // (which only resigns the legacy text field and does not drive the UTI state machine).
+            // Takes an optional completion so the subscription promo can be deferred until after
+            // the animation finishes (ensuring coordinator.deactivateToOmnibar() has run).
+            let collapseUTI = { (completion: (() -> Void)?) in
+                if let mainVC, let coordinator = coordinator ?? mainVC.unifiedToggleInputCoordinator {
+                    mainVC.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator, completion: completion)
+                } else {
+                    completion?()
+                }
+            }
+            let finishDismissal = {
+                // Mirror the OmniBar path: mark EOJ seen before peeking so that
+                // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
+                // branch and can return .subscriptionPromotion (r3257196584).
+                self.daxDialogsManager.setFinalOnboardingDialogSeen()
+                let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
+                if nextSpec == .subscriptionPromotion {
+                    // Zero the UTI content container alpha so the UTI Dax can't flash
+                    // during the collapse animation.  Restored to 1 by
+                    // dismissUnifiedToggleInputToOmnibar's animation completion block.
+                    if let mainVC = self.parent as? MainViewController {
+                        mainVC.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                    }
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    // Defer showNextDaxDialog to the collapse completion so that
+                    // coordinator.deactivateToOmnibar() has already run before the
+                    // promo appears.  Without this, tapping "No thanks" quickly
+                    // while the collapse animation is still running causes
+                    // launchNewSearch() to find isOmnibarSession = true and call
+                    // activateInput() instead of omniBar.beginEditing(); the collapse
+                    // completion then cancels that session, leaving an empty NTP.
+                    collapseUTI { [weak self] in
+                        self?.showNextDaxDialog()
+                    }
+                } else {
+                    self.daxDialogsManager.dismiss()
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    self.setLogoHidden(false)
+                    coordinator?.contentViewController.setLogoHidden(false)
+                    collapseUTI(nil)
+                    ViewHighlighter.hideAll()
+                }
+            }
+            guard let hostingView = self.hostingController?.view else {
+                finishDismissal()
+                return
+            }
+            hostingView.isUserInteractionEnabled = false
+            // Mark EOJ as seen now (idempotent — finishDismissal also calls it) so we
+            // can check subscriptionPromotionPending before deciding whether to animate.
+            self.daxDialogsManager.setFinalOnboardingDialogSeen()
+            if self.daxDialogsManager.subscriptionPromotionPending {
+                // Skip the 0.2s fade: the UTI Dax would appear through the fading dialog
+                // before the subscription promo covers it.  An instant dismiss avoids the
+                // blink and matches the desired UX ("should disappear right away").
+                hostingView.alpha = 0
+                finishDismissal()
+            } else {
+                UIView.animate(withDuration: 0.2, animations: { hostingView.alpha = 0 },
+                               completion: { _ in finishDismissal() })
+            }
+        }
+
+        let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
+        let hostingController = UIHostingController(rootView: root)
+        hostingController.view.backgroundColor = UIColor.clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        guard let container = mainVC.viewCoordinator.unifiedInputContentContainer else {
+            assertionFailure("unifiedInputContentContainer is nil in UTI completion dialog path")
+            isShowingDuckAICompletionDialog = false
+            setLogoHidden(false)
+            coordinator.contentViewController.setLogoHidden(false)
+            return
+        }
+        self.hostingController = hostingController
+        mainVC.addChild(hostingController)
+        container.addSubview(hostingController.view)
+        // In top-bar mode the UTI bar is above the content area: pin the dialog below the bar.
+        // In bottom-bar mode the UTI bar is at the bottom: pin the dialog above the bar so it
+        // fills the visible content area instead of collapsing to zero height.
+        let isBottomBar = coordinator.cardPosition.isBottom
+        NSLayoutConstraint.activate([
+            isBottomBar
+                ? hostingController.view.topAnchor.constraint(equalTo: container.topAnchor)
+                : hostingController.view.topAnchor.constraint(equalTo: coordinator.viewController.view.bottomAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            isBottomBar
+                ? hostingController.view.bottomAnchor.constraint(equalTo: coordinator.viewController.view.topAnchor)
+                : hostingController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        hostingController.didMove(toParent: mainVC)
+    }
+
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
         dismissHostingController(didFinishNTPOnboarding: false, updateUnifiedInputContentOverlaySuppression: false)
 
         guard let spec = dialogProvider.nextHomeScreenMessageNew() else {
-            chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+            // When the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+            // is about to fire, it drives its own overlay state.  Un-suppressing here while the
+            // UTI is active from the premature beginEditing would cause a visual flash of the
+            // NTP Dax logo before the completion dialog appears.
+            let contextualLogic = daxDialogsManager as? ContextualOnboardingLogic
+            let chatPathCompletionPending = contextualLogic?.chatPathPhase == .trackerToEOJ
+                && contextualLogic?.isAIChatEnabled == true
+            if !chatPathCompletionPending {
+                chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
+            }
             return
         }
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
@@ -466,8 +622,17 @@ extension NewTabPageViewController {
 
             let nextSpec = dialogProvider.nextHomeScreenMessageNew()
             guard nextSpec != .subscriptionPromotion else {
+                // Hide the NTP logo before the promo fades in so it doesn't blink through
+                // the FadeInView's alpha-0→1 animation.  It will be restored once the UTI
+                // deactivates after the user acts on the promo ("No thanks" / proceed).
+                self.setLogoHidden(true)
                 chromeDelegate?.omniBar.endEditing()
                 showNextDaxDialog()
+                // UIHostingController starts with a clear UIKit background; SwiftUI renders
+                // the promo's opaque ContextualBackgroundStyle backdrop asynchronously.
+                // Matching the backing view's colour immediately prevents the one-frame gap
+                // where whatever is behind the promo (NTP background, logo) shows through.
+                self.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                 return
             }
 
@@ -485,8 +650,12 @@ extension NewTabPageViewController {
             if spec == .final {
                 let nextSpec = dialogProvider.nextHomeScreenMessageNew()
                 if nextSpec == .subscriptionPromotion {
+                    // Hide the NTP logo before the promo fades in — mirrors the onDismiss path.
+                    self?.setLogoHidden(true)
                     self?.chromeDelegate?.omniBar.endEditing()
                     self?.showNextDaxDialog()
+                    // Set the background color to the rebranding backdrop color to prevent the NTP logo from flashing through the completion dialog.
+                    self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                     return
                 }
                 dialogProvider.dismiss()

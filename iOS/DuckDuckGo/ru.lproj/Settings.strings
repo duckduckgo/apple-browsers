@@ -1,26 +1,8 @@
 /* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
 "2pp-PM-6rW.title" = "Клавиатура";
 
-/* Class = "UILabel"; text = "Clear Tabs Only"; ObjectID = "3WZ-Fi-HIH"; */
-"3WZ-Fi-HIH.text" = "Сбросить только вкладки";
-
-/* Class = "UILabel"; text = "App Exit, Inactive for 30 Minutes"; ObjectID = "5Yd-7i-bey"; */
-"5Yd-7i-bey.text" = "После выхода из приложения, через 30 минут бездействия";
-
-/* Class = "UILabel"; text = "Automatically Clear Data"; ObjectID = "5YD-Od-uDU"; */
-"5YD-Od-uDU.text" = "Автоудаление данных";
-
-/* Class = "UILabel"; text = "App Exit, Inactive for 1 Hour"; ObjectID = "9EC-lx-77p"; */
-"9EC-lx-77p.text" = "После выхода из приложения, через 1 час бездействия";
-
-/* Class = "UILabel"; text = "Clear Tabs and Data"; ObjectID = "9fc-9r-4aA"; */
-"9fc-9r-4aA.text" = "Сбросить вкладки и данные";
-
 /* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
 "13n-KI-KLq.text" = "При запуске приложения";
-
-/* Class = "UITableViewSection"; footerTitle = "Data and/or tabs will be cleared upon restart of the app."; ObjectID = "BGs-JL-4ib"; */
-"BGs-JL-4ib.footerTitle" = "Данные и/или вкладки будут сброшены при следующем запуске приложения.";
 
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Предлагать сделать сайты огнеупорными при входе";
@@ -34,26 +16,14 @@
 /* Class = "UIBarButtonItem"; title = "Add"; ObjectID = "CxT-QK-iVn"; */
 "CxT-QK-iVn.title" = "Добавить";
 
-/* Class = "UILabel"; text = "App Exit, Inactive for 15 Minutes"; ObjectID = "D0R-jp-UY8"; */
-"D0R-jp-UY8.text" = "После выхода из приложения, через 15 минут бездействия";
-
 /* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
 "dud-qo-Ces.text" = "Метка";
 
 /* Class = "UILabel"; text = "Label"; ObjectID = "EIq-Ev-nfj"; */
 "EIq-Ev-nfj.text" = "Метка";
 
-/* Class = "UILabel"; text = "App Exit, Inactive for 5 Minutes"; ObjectID = "ElX-yE-4PX"; */
-"ElX-yE-4PX.text" = "После выхода из приложения, через 5 минут бездействия";
-
 /* Class = "UINavigationItem"; title = "App Icon"; ObjectID = "eMH-uv-Kms"; */
 "eMH-uv-Kms.title" = "Значок приложения";
-
-/* Class = "UILabel"; text = "App Exit Only"; ObjectID = "Fal-1Y-o2S"; */
-"Fal-1Y-o2S.text" = "Только после выхода из приложения";
-
-/* Class = "UITableViewController"; title = "Automatically Clear Data"; ObjectID = "fdJ-b1-Des"; */
-"fdJ-b1-Des.title" = "Автоудаление данных";
 
 /* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
 "fV3-86-QQj.title" = "Глобальный контроль конфиденциальности (GPC)";
@@ -79,17 +49,8 @@
 /* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
 "tWw-Lh-ZT1.title" = "Глобальный контроль конфиденциальности (GPC)";
 
-/* Class = "UITableViewSection"; headerTitle = "Action"; ObjectID = "U2M-6p-6nl"; */
-"U2M-6p-6nl.headerTitle" = "Действие";
-
 /* Class = "UILabel"; text = "Remove All Fireproof Sites"; ObjectID = "UZx-52-aer"; */
 "UZx-52-aer.text" = "Удалить все огнеупорные сайты";
-
-/* Class = "UITableViewSection"; footerTitle = "App exit is defined by swiping the app to close it while inactivity is when the app is in the background."; ObjectID = "vSJ-YJ-bBs"; Note = "Timing setting for automatic data clearing function"; */
-"vSJ-YJ-bBs.footerTitle" = "Под выходом из приложения подразумевается закрытие свайпом, а под бездействием — работа в фоновом режиме.";
-
-/* Class = "UITableViewSection"; headerTitle = "Desired timing"; ObjectID = "vSJ-YJ-bBs"; Note = "Timing setting for automatic data clearing function"; */
-"vSJ-YJ-bBs.headerTitle" = "Предпочитаемое время";
 
 /* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
 "xUX-nF-HOl.title" = "Огнеупорные сайты";

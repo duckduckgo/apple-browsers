@@ -937,6 +937,7 @@ class MainViewController: UIViewController {
         controller.historyManager = historyManager
         controller.fireproofing = fireproofing
         controller.aiChatSettings = aiChatSettings
+        controller.featureFlagger = featureFlagger
         controller.keyValueStore = keyValueStore
         controller.tabManager = tabManager
         controller.daxDialogsManager = daxDialogsManager
@@ -1628,7 +1629,7 @@ class MainViewController: UIViewController {
         tabModel.viewed = true
         tabModel.openedAfterIdle = openedAfterIdle
         if shouldSaveTabs {
-            _ = tabManager.save()
+            tabManager.save()
         }
 
         let newTabDaxDialogFactory = NewTabDaxDialogsProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
@@ -1663,7 +1664,7 @@ class MainViewController: UIViewController {
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
-        
+
         if hasCompletedInitialLoad {
             lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
         }
@@ -1699,7 +1700,13 @@ class MainViewController: UIViewController {
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
         // viewDidAppear fires after this function and shows the dialog, but the editing state
         // created here would immediately cover it.
-        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !daxDialogsManager.subscriptionPromotionPending {
+        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
+        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
+        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
+            && !daxDialogsManager.subscriptionPromotionPending
+            && !chatPathCompletionPending {
             omniBar.beginEditing(animated: true)
         }
 
@@ -2088,7 +2095,7 @@ class MainViewController: UIViewController {
         let shouldSaveTabs = tab.tabModel.viewed == false
         tab.tabModel.viewed = true
         if shouldSaveTabs {
-            _ = tabManager.save()
+            tabManager.save()
         }
 
         if tab.link == nil {
@@ -2251,6 +2258,12 @@ class MainViewController: UIViewController {
             if let tab = currentTab {
                 refreshUnifiedToggleInput(for: tab)
             } else if let coordinator = unifiedToggleInputCoordinator, coordinator.isActive {
+                // An active omnibar session means the address bar was just activated (e.g. by
+                // launchNewSearch after a subscription promo dismissal on a tab with no VC yet).
+                // Hiding the coordinator here would tear it down before the keyboard can appear.
+                // refreshUnifiedToggleInput carries its own preserveOmnibarSession guard; mirror
+                // that protection for this nil-tab path.
+                guard !coordinator.isOmnibarSession else { return }
                 coordinator.hide()
                 coordinator.unbind()
                 viewCoordinator.hideAITabChrome()
@@ -4683,6 +4696,7 @@ extension MainViewController: EscapeHatchActionRouter {
             clearEscapeHatch()
             return
         }
+
         onSwitchToTab(tab)
     }
 
@@ -4696,6 +4710,8 @@ extension MainViewController: EscapeHatchActionRouter {
         tabManager.remove(tab: tab, in: targetTabsModel)
         refreshTabIcon()
         refreshTabBar()
+        ntpAfterIdleInstrumentation.escapeHatchCloseTabTapped()
+        postIdleSessionInstrumentation.closeTabTapped()
 
         if targetTabsModel.hasActiveTabs {
             return
@@ -4725,9 +4741,12 @@ extension MainViewController: EscapeHatchActionRouter {
             onConfirm: { [weak self] fireRequest in
                 self?.forgetAllWithAnimation(request: fireRequest) {}
                 self?.clearEscapeHatch()
+                self?.postIdleSessionInstrumentation.burnTabTapped()
             },
             onCancel: { }
         )
+
+        ntpAfterIdleInstrumentation.escapeHatchBurnTapped(requiredConfirmation: true)
     }
 
     func escapeHatchDidRequestBurnImmediately(_ tab: Tab) {
@@ -4747,10 +4766,18 @@ extension MainViewController: EscapeHatchActionRouter {
 
         forgetAllWithAnimation(request: request) {}
         clearEscapeHatch()
+        ntpAfterIdleInstrumentation.escapeHatchBurnTapped(requiredConfirmation: false)
+        postIdleSessionInstrumentation.burnTabTapped()
     }
 
     func escapeHatchDidRequestTabSwitcher() {
         requestTabSwitcher()
+        ntpAfterIdleInstrumentation.escapeHatchTabSwitcherTapped()
+    }
+
+    func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {
+        ntpAfterIdleInstrumentation.escapeHatchOptionChanged(to: option)
+        postIdleSessionInstrumentation.openingScreenChanged()
     }
 }
 
@@ -4987,7 +5014,7 @@ extension MainViewController: TabDelegate {
         guard currentTab == tab else { return }
         refreshControls()
         themeColorManager.updateThemeColor()
-        _ = tabManager.save()
+        tabManager.save()
         refreshTabBar()
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
@@ -4997,7 +5024,7 @@ extension MainViewController: TabDelegate {
         // For the current tab, `tabLoadingStateDidChange` (called immediately before this)
         // already triggers a save, so skip here to avoid a redundant save in the same run loop.
         guard currentTab != tab else { return }
-        _ = tabManager.save()
+        tabManager.save()
         tabsBarController?.reloadCell(for: tab.tabModel)
     }
 
@@ -5314,7 +5341,6 @@ extension MainViewController: TabDelegate {
 extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
-        TabSwitcherDiagnosticsOverlay.recordEvent("tabSwitcher dismissed (TSVC=\(ObjectIdentifier(tabSwitcher).debugDescription), tab \(tab == nil ? "nil" : "set"))")
         defer {
             showMenuHighlighterIfNeeded()
             applyWidth()
@@ -5456,6 +5482,7 @@ extension MainViewController: TabSwitcherDelegate {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
             case .fire:
+                fireModePromotionEligibility?.markBurnPerformed()
                 request = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .tabSwitcher)
             case .normal:
                 request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)
@@ -5523,8 +5550,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
     /// Not `private` because the UTI extension in `MainViewController+UnifiedToggleInput`
     /// calls it from another file.
     func requestTabSwitcher() {
-        TabSwitcherDiagnosticsOverlay.recordEvent("requestTabSwitcher entered (ts-ref=\(tabSwitcherController == nil ? "nil" : "live"), presentedVC=\(presentedViewController.map { "\(type(of: $0))" } ?? "nil"))")
-
         Pixel.fire(pixel: .tabBarTabSwitcherOpened,
                    withAdditionalParameters: [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue])
         var openedDailyParams = TabSwitcherOpenDailyPixel().parameters(with: tabManager.allTabsModel.tabs)
@@ -5546,7 +5571,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
             ntpAfterIdleInstrumentation.tabSwitcherSelectedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        tabManager.currentTabsModel.currentTab?.openedAfterIdle = false
+        // Don't clear `openedAfterIdle` on switcher open — the after-idle session
+        // ends on actual tab transition (see `transitionTo`), not on peeking.
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()
@@ -5606,6 +5632,13 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
+
+        // This needs to be done before the fire burning process starts or the race condition
+        //  results in the promo not showing at the expected time.
+        if request.trigger == .manualFire {
+            fireModePromotionEligibility?.markBurnPerformed()
+        }
+
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         
@@ -5683,7 +5716,11 @@ extension MainViewController {
         guard let window = view.window else { return }
         
         let fireButtonView: UIView?
-        if viewCoordinator.toolbar.isHidden { // This is the iPad case
+        if let utiCoordinator = unifiedToggleInputCoordinator, !utiCoordinator.aiTabFireButton.isHidden {
+            // In the AI-tab collapsed pose the fire button is the flanking pill button on the
+            // left of the UTI input bar — use it instead of the (hidden) legacy toolbar.
+            fireButtonView = utiCoordinator.aiTabFireButton
+        } else if viewCoordinator.toolbar.isHidden { // This is the iPad case
             fireButtonView = tabsBarController?.fireButton
         } else {
             fireButtonView = findFireButton()
@@ -5905,10 +5942,6 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
-        if fireRequest.trigger == .manualFire {
-            fireModePromotionEligibility?.markBurnPerformed()
-        }
-
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {
@@ -6268,6 +6301,13 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         reportDuckAIFrontendSubmissionAcknowledged()
+    }
+
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {
+        DispatchQueue.main.async { [weak self] in
+            self?.unifiedToggleInputCoordinator?.startNewChat()
+            self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        }
     }
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {

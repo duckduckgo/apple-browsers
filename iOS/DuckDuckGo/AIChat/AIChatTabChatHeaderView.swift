@@ -336,6 +336,21 @@ final class AIChatTabChatHeaderView: UIView {
         state.isVoiceSessionActive = active
     }
 
+    /// Locks or unlocks the header controls during the Duck.ai onboarding experiment path.
+    /// When locked, the settings, new-chat, upgrade, chats-list, and tab-switcher buttons are
+    /// disabled until the fire step passes.
+    func setOnboardingLocked(_ locked: Bool) {
+        appMenuButton.isEnabled = !locked
+        newChatButton.isEnabled = !locked
+        chatListButton.isEnabled = !locked
+        chatListButton.alpha = locked ? 0.5 : 1
+        tabSwitcherButton.isEnabled = !locked
+        // TabSwitcherStaticButton doesn't auto-dim when disabled; set alpha explicitly.
+        tabSwitcherButton.alpha = locked ? 0.5 : 1
+        titleContainer.isUserInteractionEnabled = !locked
+        titleContainer.alpha = locked ? 0.5 : 1
+    }
+
     private func applyState() {
         titleContainer.isHidden = state.isSubscriptionActive != false
         paidTitleStack.isHidden = state.isSubscriptionActive != true

@@ -201,10 +201,6 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    var shouldShowHideAIGeneratedImagesSection: Bool {
-        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
-    }
-
     var isDefaultOmnibarModeEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
     }
@@ -735,7 +731,7 @@ final class SettingsViewModel: ObservableObject {
         adBlockingAvailability.isRemotelyDisabled
     }
 
-      var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
+    var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
                 return self.state.duckPlayerNativeYoutubeMode
@@ -1873,6 +1869,15 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatNavigationBarEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatNavigationBarUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatNavigationBarUserSettings(enable: newValue)
             }
         )
     }

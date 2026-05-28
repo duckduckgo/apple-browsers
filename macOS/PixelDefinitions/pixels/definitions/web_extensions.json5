@@ -53,7 +53,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_mac_web_extension_embedded_installed": {
         "description": "Fires when the embedded (bundled) web extension is successfully installed for the first time.",

@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Core
 import DesignResourcesKitIcons
 import PhotosUI
 import UIKit
@@ -220,6 +221,10 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
                 guard let image = object as? UIImage else { return }
 
                 Task { @MainActor in
+                    DailyPixel.fireDailyAndCount(
+                        pixel: .unifiedToggleInputImageAttached,
+                        withAdditionalParameters: ["source": "photo_library"]
+                    )
                     self?.onImagePicked?(image, suggestedName)
                 }
             }
@@ -233,6 +238,10 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
         picker.dismiss(animated: true)
         onExpandIfNeeded?()
         guard let image = info[.originalImage] as? UIImage else { return }
+        DailyPixel.fireDailyAndCount(
+            pixel: .unifiedToggleInputImageAttached,
+            withAdditionalParameters: ["source": "camera"]
+        )
         onImagePicked?(image, "photo")
     }
 

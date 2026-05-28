@@ -50,6 +50,16 @@ protocol NTPAfterIdleInstrumentation: AnyObject {
     /// The user tapped the tab switcher pill next to the escape hatch card.
     /// (The escape hatch is only shown after idle return, so no user-initiated variant is needed.)
     func escapeHatchTabSwitcherTapped()
+
+    /// The user tapped the close-tab action on the escape hatch card.
+    func escapeHatchCloseTabTapped()
+
+    /// The user tapped the burn-tab action on the escape hatch card.
+    /// - Parameter requiredConfirmation: `true` when the burn flow shows the fire confirmation prompt, `false` when the tab is burned immediately.
+    func escapeHatchBurnTapped(requiredConfirmation: Bool)
+
+    /// The user changed the Opening Screen option from the escape hatch's settings menu.
+    func escapeHatchOptionChanged(to option: AfterInactivityOption)
 }
 
 final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
@@ -101,5 +111,17 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
     func escapeHatchTabSwitcherTapped() {
         guard eligibilityManager.isEligibleForNTPAfterIdle() else { return }
         firePixel(.ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle)
+    }
+
+    func escapeHatchCloseTabTapped() {
+        firePixel(.ntpAfterIdleEscapeHatchCloseTabTapped)
+    }
+
+    func escapeHatchBurnTapped(requiredConfirmation: Bool) {
+        firePixel(requiredConfirmation ? .ntpAfterIdleEscapeHatchBurnWithConfirmationTapped : .ntpAfterIdleEscapeHatchBurnImmediatelyTapped)
+    }
+
+    func escapeHatchOptionChanged(to option: AfterInactivityOption) {
+        firePixel(option == .newTab ? .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab : .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab)
     }
 }

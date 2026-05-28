@@ -194,28 +194,26 @@ extension Preferences {
                     }
                 }
 
-                if model.shouldShowHideAIGeneratedImagesSection {
-                    PreferencePaneSection {
-                        VStack(alignment: .leading) {
-                            TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
-                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
-                                                       bottomPadding: 2)
+                PreferencePaneSection {
+                    VStack(alignment: .leading) {
+                        TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
+                                                   image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
+                                                   bottomPadding: 2)
 
-                            TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
-                                .padding(.bottom, 6)
-                            Button {
-                                PixelKit.fire(GeneralPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
-                                model.openSearchAssistSettings()
-                            } label: {
-                                HStack {
-                                    Text(UserText.searchAIFeaturesSettingsLink)
-                                    Image(.externalAppScheme)
-                                }
-                                .foregroundColor(Color.linkBlue)
-                                .cursor(.pointingHand)
+                        TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
+                            .padding(.bottom, 6)
+                        Button {
+                            PixelKit.fire(GeneralPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
+                            model.openSearchAssistSettings()
+                        } label: {
+                            HStack {
+                                Text(UserText.searchAIFeaturesSettingsLink)
+                                Image(.externalAppScheme)
                             }
-                            .buttonStyle(.plain)
+                            .foregroundColor(Color.linkBlue)
+                            .cursor(.pointingHand)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }

@@ -226,7 +226,7 @@ final class MainWindowController: NSWindowController {
 
     private var trafficLightsAlphaCancellables = [AnyCancellable]()
     private func subscribeToTrafficLightsAlpha() {
-        guard let window, let featureFlagger else {
+        guard let window else {
             return
         }
 

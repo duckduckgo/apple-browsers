@@ -11,7 +11,7 @@ tags:
 
 # Set up 
 - runFlow: 
-    file: ../shared/setup.yaml
+    file: shared/setup.yaml
 
 # Load Site
 - runFlow: 

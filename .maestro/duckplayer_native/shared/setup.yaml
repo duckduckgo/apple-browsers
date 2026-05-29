@@ -1,0 +1,18 @@
+# setup.yaml
+# Duck Player Native-specific setup. Mirrors `.maestro/shared/setup.yaml`
+# plus forces `webExtensions` off so the YouTube ad-blocking web extension
+# does not interfere with Duck Player playback flows.
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.webExtensions: "false"

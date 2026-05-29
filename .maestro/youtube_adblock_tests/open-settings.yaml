@@ -1,0 +1,39 @@
+# open-settings.yaml
+# Opens Settings and navigates to the Ad Blocking screen.
+# Requires iOS 18.4+ at runtime (WKWebExtension support); the
+# `webExtensions` and `adBlockingExtension` feature-flag overrides below
+# are no-ops on older iOS.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - youtube_adblock
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.webExtensions: "true"
+        ff.adBlockingExtension: "true"
+        ff.adBlockingExtensionEnabledByDefault: "true"
+
+# Browsing menu → Settings → Ad Blocking
+- tapOn: "Browsing Menu"
+- waitForAnimationToEnd
+- tapOn: "Settings"
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    centerElement: true
+    element: "Ad Blocking"
+    direction: DOWN
+- tapOn: "Ad Blocking"
+- waitForAnimationToEnd
+
+# Confirm we landed on the Ad Blocking screen
+- assertVisible: "YouTube Ad Blocking"
+- assertVisible: "Block ads on YouTube"

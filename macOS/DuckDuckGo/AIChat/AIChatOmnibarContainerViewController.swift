@@ -418,7 +418,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         NSAppearance.withAppAppearance {
             if enabled {
                 if submitButtonMode == .voice {
-                    submitButton.normalTintColor = NSColor(designSystemColor: .accentAltContentPrimary)
+                    submitButton.normalTintColor = NSColor(designSystemColor: .iconsPrimary)
                 } else {
                     submitButton.normalTintColor = NSColor(designSystemColor: .accentContentPrimary)
                 }
@@ -446,11 +446,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             designSystemColor = nil
         } else if submitButtonMode == .voice {
             if submitButton.isMouseDown {
-                designSystemColor = .accentAltTertiary
+                designSystemColor = .controlsFillTertiary
             } else if submitButton.isMouseOver {
-                designSystemColor = .accentAltSecondary
+                designSystemColor = .controlsFillSecondary
             } else {
-                designSystemColor = .accentAltPrimary
+                designSystemColor = .controlsFillPrimary
             }
         } else {
             if submitButton.isMouseDown {

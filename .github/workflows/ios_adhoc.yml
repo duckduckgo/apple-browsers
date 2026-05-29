@@ -225,18 +225,21 @@ jobs:
           echo "---" >> $GITHUB_STEP_SUMMARY
           if [[ -n "${INSTALL_URL:-}" ]]; then
             echo "🔗 [Install on iPhone](${INSTALL_URL})" >> $GITHUB_STEP_SUMMARY
-            if [[ -n "${QR_URL:-}" ]]; then
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "Scan with your iPhone to open the install page in Safari:" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "<img src=\"${QR_URL}\" alt=\"Scan to install on iPhone\" width=\"240\">" >> $GITHUB_STEP_SUMMARY
-            fi
           else
             echo "> [!WARNING]" >> $GITHUB_STEP_SUMMARY
             echo "> OTA install page generation failed or did not produce a URL. Use the IPA link below." >> $GITHUB_STEP_SUMMARY
           fi
           echo "🔗 [${IPA_S3_PATH}](${IPA_URL})" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [${DSYM_S3_PATH}](${DSYM_URL})" >> $GITHUB_STEP_SUMMARY
+
+          # QR comes last: a trailing raw-HTML <img> block can't absorb any
+          # markdown after it, so the links above always render correctly.
+          if [[ -n "${INSTALL_URL:-}" && -n "${QR_URL:-}" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Scan with your iPhone to open the install page in Safari:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<img src=\"${QR_URL}\" alt=\"Scan to install on iPhone\" width=\"240\">" >> $GITHUB_STEP_SUMMARY
+          fi
 
           if [[ -z "$ASANA_TASK_URL" ]]; then
             exit 0

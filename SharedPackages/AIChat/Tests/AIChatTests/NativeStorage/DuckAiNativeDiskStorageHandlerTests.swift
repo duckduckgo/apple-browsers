@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import XCTest
 import Persistence
 import PersistenceTestingUtils
@@ -316,6 +317,10 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     func getAllChats() throws -> [DuckAiChatRecord] {
         getAllChatsCallCount += 1
         return stubbedChats
+    }
+
+    func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        Just(stubbedChats).setFailureType(to: Error.self).eraseToAnyPublisher()
     }
 
     func deleteChat(chatId: String) throws {

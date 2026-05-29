@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import DuckAiDataStore
 import Persistence
@@ -99,6 +100,10 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling {
 
     public func getAllChats() throws -> [DuckAiChatRecord] {
         try dataStore.getAllChats()
+    }
+
+    public func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        dataStore.chatsPublisher()
     }
 
     public func deleteChat(chatId: String) throws {

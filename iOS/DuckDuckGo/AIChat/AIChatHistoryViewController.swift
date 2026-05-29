@@ -81,8 +81,6 @@ final class AIChatHistoryViewController: UIViewController {
         setupViews()
         configureToolbar()
         bindViewModel()
-
-        Task { await viewModel.loadChats() }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -139,15 +137,20 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     private func bindViewModel() {
-        Publishers.CombineLatest(viewModel.$pinned, viewModel.$recent)
+        Publishers.CombineLatest3(viewModel.$pinned, viewModel.$recent, viewModel.$hasLoaded)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, _ in
+            .sink { [weak self] _, _, _ in
                 self?.refreshContent()
             }
             .store(in: &cancellables)
     }
 
     private func refreshContent() {
+        guard viewModel.hasLoaded else {
+            tableView.isHidden = true
+            navigationController?.setToolbarHidden(true, animated: false)
+            return
+        }
         if viewModel.isEmpty {
             showEmptyState()
         } else {

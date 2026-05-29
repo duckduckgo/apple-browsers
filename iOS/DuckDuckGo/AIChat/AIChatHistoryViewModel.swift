@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import UIKit
 import AIChat
@@ -32,33 +33,34 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     @Published private(set) var pinned: [DuckAiChat] = []
     @Published private(set) var recent: [DuckAiChat] = []
-    @Published private(set) var isLoading: Bool = false
+    @Published private(set) var hasLoaded: Bool = false
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
     private let reader: ChatHistoryReading
+    private var cancellables: Set<AnyCancellable> = []
 
     weak var delegate: AIChatHistoryViewModelDelegate?
 
     init(reader: ChatHistoryReading) {
         self.reader = reader
-    }
-
-    // MARK: - Loading
-
-    func loadChats() async {
-        isLoading = true
-        defer { isLoading = false }
-
-        let result = await reader.fetchAllChats()
-        switch result {
-        case .success(let chats):
-            self.pinned = chats.filter(\.pinned)
-            self.recent = chats.filter { !$0.pinned }
-        case .failure:
-            self.pinned = []
-            self.recent = []
-        }
+        reader.chatsPublisher()
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure = completion {
+                        self?.pinned = []
+                        self?.recent = []
+                    }
+                    self?.hasLoaded = true
+                },
+                receiveValue: { [weak self] chats in
+                    self?.pinned = chats.filter(\.pinned)
+                    self?.recent = chats.filter { !$0.pinned }
+                    self?.hasLoaded = true
+                }
+            )
+            .store(in: &cancellables)
     }
 
     // MARK: - Table data source

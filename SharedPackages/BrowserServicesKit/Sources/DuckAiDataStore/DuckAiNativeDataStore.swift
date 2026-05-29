@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Common
 import FoundationExtensions
 import CryptoKit
@@ -244,6 +245,22 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
             }
         } catch {
             throw DuckAiNativeDataStoreError.databaseError(error)
+        }
+    }
+
+    public func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        let observation = ValueObservation.tracking { db in
+            try ChatRecord.fetchAll(db)
+                .map { DuckAiChatRecord(chatId: $0.chatId, data: $0.data) }
+        }
+        do {
+            let queue = try dbQueue()
+            return observation
+                .publisher(in: queue, scheduling: .async(onQueue: .main))
+                .mapError { DuckAiNativeDataStoreError.databaseError($0) }
+                .eraseToAnyPublisher()
+        } catch {
+            return Fail(error: error).eraseToAnyPublisher()
         }
     }
 

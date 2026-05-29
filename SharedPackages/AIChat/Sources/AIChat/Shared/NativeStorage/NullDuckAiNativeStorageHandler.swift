@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import DuckAiDataStore
 import Foundation
 
@@ -33,6 +34,9 @@ final class NullDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     func putChats(_ chats: [DuckAiChatRecord]) throws {}
     func getChat(chatId: String) throws -> DuckAiChatRecord? { nil }
     func getAllChats() throws -> [DuckAiChatRecord] { [] }
+    func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        Just([]).setFailureType(to: Error.self).eraseToAnyPublisher()
+    }
     func deleteChat(chatId: String) throws {}
     func deleteAllChats() throws {}
 

@@ -17,21 +17,21 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import AIChat
 
 #if DEBUG
 final class MockChatHistoryReader: ChatHistoryReading {
 
-    var chats: [DuckAiChat]
+    let subject: CurrentValueSubject<[DuckAiChat], Error>
 
     init(chats: [DuckAiChat] = []) {
-        self.chats = chats
+        self.subject = CurrentValueSubject(chats)
     }
 
-    @MainActor
-    func fetchAllChats() async -> Result<[DuckAiChat], Error> {
-        .success(chats)
+    func chatsPublisher() -> AnyPublisher<[DuckAiChat], Error> {
+        subject.eraseToAnyPublisher()
     }
 }
 #endif

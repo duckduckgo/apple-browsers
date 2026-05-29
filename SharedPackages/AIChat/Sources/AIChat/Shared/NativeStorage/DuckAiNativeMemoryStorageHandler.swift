@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import DuckAiDataStore
 
@@ -39,6 +40,7 @@ public final class DuckAiNativeMemoryStorageHandler: DuckAiNativeStorageHandling
     private var files: [String: DuckAiFileContent] = [:]
     private var migrations: [String: Bool] = [:]
     private let seedSource: DuckAiNativeStorageHandling?
+    private let chatsSubject = CurrentValueSubject<[DuckAiChatRecord], Error>([])
 
     public init(seedSource: DuckAiNativeStorageHandling? = nil) {
         self.seedSource = seedSource
@@ -98,16 +100,20 @@ public final class DuckAiNativeMemoryStorageHandler: DuckAiNativeStorageHandling
 
     public func putChat(chatId: String, data: Data) throws {
         lock.lock()
-        defer { lock.unlock() }
         chats[chatId] = data
+        let snapshot = snapshotChatsLocked()
+        lock.unlock()
+        chatsSubject.send(snapshot)
     }
 
     public func putChats(_ chats: [DuckAiChatRecord]) throws {
         lock.lock()
-        defer { lock.unlock() }
         for chat in chats where !chat.chatId.isEmpty {
             self.chats[chat.chatId] = chat.data
         }
+        let snapshot = snapshotChatsLocked()
+        lock.unlock()
+        chatsSubject.send(snapshot)
     }
 
     public func getChat(chatId: String) throws -> DuckAiChatRecord? {
@@ -120,19 +126,32 @@ public final class DuckAiNativeMemoryStorageHandler: DuckAiNativeStorageHandling
     public func getAllChats() throws -> [DuckAiChatRecord] {
         lock.lock()
         defer { lock.unlock() }
-        return chats.map { DuckAiChatRecord(chatId: $0.key, data: $0.value) }
+        return snapshotChatsLocked()
+    }
+
+    public func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        chatsSubject.eraseToAnyPublisher()
     }
 
     public func deleteChat(chatId: String) throws {
         lock.lock()
-        defer { lock.unlock() }
         chats.removeValue(forKey: chatId)
+        let snapshot = snapshotChatsLocked()
+        lock.unlock()
+        chatsSubject.send(snapshot)
     }
 
     public func deleteAllChats() throws {
         lock.lock()
-        defer { lock.unlock() }
         chats.removeAll()
+        let snapshot = snapshotChatsLocked()
+        lock.unlock()
+        chatsSubject.send(snapshot)
+    }
+
+    /// Caller must hold `lock`.
+    private func snapshotChatsLocked() -> [DuckAiChatRecord] {
+        chats.map { DuckAiChatRecord(chatId: $0.key, data: $0.value) }
     }
 
     // MARK: - Files

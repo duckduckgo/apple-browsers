@@ -16,15 +16,14 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import os.log
 
 public protocol ChatHistoryReading {
-    @MainActor
-    func fetchAllChats() async -> Result<[DuckAiChat], Error>
+    func chatsPublisher() -> AnyPublisher<[DuckAiChat], Error>
 }
 
-@MainActor
 public final class ChatHistoryReader: ChatHistoryReading {
 
     private let storageHandler: DuckAiNativeStorageHandling
@@ -33,19 +32,16 @@ public final class ChatHistoryReader: ChatHistoryReading {
         self.storageHandler = storageHandler
     }
 
-    public func fetchAllChats() async -> Result<[DuckAiChat], Error> {
-        do {
-            let records = try storageHandler.getAllChats()
-            let chats = records.compactMap { try? DuckAiChat.decode(from: $0.data).chat }
-
-            let sorted = chats.sorted { lhs, rhs in
-                if lhs.pinned != rhs.pinned { return lhs.pinned }
-                return lhs.lastEdit > rhs.lastEdit
+    public func chatsPublisher() -> AnyPublisher<[DuckAiChat], Error> {
+        storageHandler.chatsPublisher()
+            .map { records in
+                records
+                    .compactMap { try? DuckAiChat.decode(from: $0.data).chat }
+                    .sorted { lhs, rhs in
+                        if lhs.pinned != rhs.pinned { return lhs.pinned }
+                        return lhs.lastEdit > rhs.lastEdit
+                    }
             }
-            return .success(sorted)
-        } catch {
-            Logger.aiChat.error("ChatHistoryReader: Failed to fetch chats: \(error.localizedDescription)")
-            return .failure(error)
-        }
+            .eraseToAnyPublisher()
     }
 }

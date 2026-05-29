@@ -28,60 +28,19 @@ The VPN runs across three processes: the main browser (`DuckDuckGo.app`), a dedi
 
 ## IPC Communication
 
-The main app communicates with the VPN agent through two IPC mechanisms:
+The main app talks to the VPN agent over two transports: XPC as the primary channel, and a Unix Domain Socket fallback for commands that must still work when XPC is unavailable — notably uninstall and quit, which can run while the agent's XPC service is being torn down.
 
-### XPC (Primary)
-
-- Type-safe protocols
-- Automatic process management
-- macOS standard for inter-process communication
-- Used for most VPN control operations
-
-### Unix Domain Sockets (Fallback)
-
-- Simple message passing
-- Works when XPC connection unavailable
-- Used for specific commands (uninstall, quit)
-- Shared file system location
-
-`NetworkProtectionIPCClient` abstracts the IPC transport; `NetworkProtectionIPCTunnelController` wraps a client conforming to it and exposes the `TunnelController` interface, so call sites in the main app don't need to know whether XPC or UDS is in use.
+`NetworkProtectionIPCClient` abstracts the transport so call sites never choose between them; `NetworkProtectionIPCTunnelController` wraps a client conforming to it and exposes the `TunnelController` interface.
 
 ## VPN Agent as Login Item
 
 The VPN agent (`DuckDuckGoVPN.app`) runs as a login item to maintain VPN connectivity independent of the main browser:
 
-**Benefits:**
-- VPN remains active if browser crashes
-- Faster VPN startup (agent already running)
-- Better system integration
-- Independent lifecycle management
-
-**Lifecycle:**
-1. Browser registers agent as login item
-2. Agent launches on login (or on-demand)
-3. Agent initializes tunnel controller
-4. Agent starts IPC servers (XPC + UDS)
-5. Browser connects via IPC when needed
-6. Agent persists until explicitly quit
+Running as a separate login item is what lets the VPN survive a browser crash and reconnect on login without the browser running. It also means the agent is already alive when the browser needs it, so connecting is just an IPC call rather than a process launch.
 
 ## System Extension
 
-The system extension provides the actual VPN functionality:
-
-### Installation
-
-1. Check if extension is already installed
-2. Submit install request via `SystemExtensionManager`
-3. User approves in System Settings
-4. Extension activated
-5. Create VPN configuration (`NETunnelProviderManager`)
-6. Save configuration to system preferences
-
-### Management
-
-- Extensions auto-update with app updates
-- Uninstall via `SystemExtensionManager.deactivate()`
-- Status monitoring via `SystemExtensions` framework
+`SystemExtensionManager` wraps install, uninstall, and upgrade of the packet-tunnel system extension. Installation requires explicit user approval in System Settings — the app submits the request but cannot complete activation on its own, which is why onboarding has to hand off to System Settings and wait. Once activated, the VPN configuration (`NETunnelProviderManager`) is created and saved to system preferences.
 
 ## VPN Features
 

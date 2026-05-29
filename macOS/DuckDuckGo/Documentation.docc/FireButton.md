@@ -98,14 +98,6 @@ Always convert domains to eTLD+1 form before passing them to the Fire engine —
 
 Fireproofed domains are completely excluded from clearing. The Fire engine automatically filters them out when determining domains to burn.
 
-### Async Coordination
-
-Fire uses a dispatch group to coordinate multiple async operations across different managers (web cache, history, permissions, etc.) and only signals completion once every manager finishes.
-
-### Data Clearing Order
-
-Clearing roughly follows: prepare tabs → burn tabs → web cache → history → favicons → permissions → downloads → zoom levels → autoconsent → chat history → completion. Several steps run concurrently via a dispatch group, so the order above is the logical flow, not a strict sequential one — see `Fire.burnAll` for the exact orchestration.
-
 ### Fire Animation
 
 Fire animation is controlled by user preferences via ``VisualizeFireSettingsDecider``.

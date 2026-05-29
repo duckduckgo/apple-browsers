@@ -83,69 +83,9 @@ Refer to ``MainMenu`` and `MainMenuActions.swift` for implementation patterns.
 
 ## Patterns & Best Practices
 
-### Menu Builder Pattern
-
-The codebase uses a fluent builder pattern (`NSMenu.buildItems {}`) for declarative menu construction. Benefits: clean structure, easy maintenance, optional items integrate cleanly (nil items ignored).
-
-### Responder Chain Integration
-
-Actions route through the responder chain using selectors. The action is sent to the first responder and travels up the chain until handled.
-
 ### Bookmark and History Menus
 
 These menus rebuild dynamically by subscribing to data-change publishers from `BookmarkManager` and `HistoryCoordinator`. The bookmarks menu is built inline within ``MainMenu``; the history menu lives in ``HistoryMenu``.
-
-## Common Menu Structure
-
-### DuckDuckGo Menu (App Menu)
-- About DuckDuckGo
-- Preferences
-- Services
-- Hide/Show
-- Quit
-
-### File Menu
-- New Tab / Window
-- Open File / Location
-- Close Tab / Window
-- Save / Print
-- Email Page
-
-### Edit Menu
-- Undo / Redo
-- Cut / Copy / Paste
-- Find
-- Speech
-
-### View Menu
-- Show/Hide Toolbar
-- Show/Hide Bookmarks
-- Zoom In / Out
-- Enter Full Screen
-
-### History Menu
-- Back / Forward
-- Home
-- Recently Closed
-- History entries (grouped by date)
-- Clear History
-
-### Bookmarks Menu
-- Add Bookmark
-- Manage Bookmarks
-- Bookmarks Bar toggle
-- Favorites
-- Bookmark folders (as submenus)
-
-### Window Menu
-- Minimize
-- Zoom
-- Window list
-
-### Debug Menu (Internal Only)
-- Various debug options
-- Feature flags
-- Testing tools
 
 ## Topics
 

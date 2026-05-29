@@ -4,7 +4,7 @@ Control VPN tunnel connections through a unified protocol interface.
 
 ## Overview
 
-The ``TunnelController`` protocol provides a platform-agnostic interface for controlling VPN tunnel connections. It abstracts the underlying Network Extension framework details, allowing applications to start, stop, and manage VPN tunnels consistently across different implementations.
+The ``TunnelController`` protocol isolates VPN control from the Network Extension and IPC machinery behind it. Call sites — and tests — start, stop, and command the tunnel through one interface without knowing whether the real controller lives in-process, in the VPN agent across an IPC boundary, or is a mock.
 
 ## Core Protocol
 

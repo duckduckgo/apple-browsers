@@ -26,19 +26,6 @@ Core functionality is organized into focused packages and modules:
 
 ## Development Patterns
 
-### Dependency Injection
-
-Components receive dependencies through initializers rather than accessing globals, enabling better testability and modular design.
-
-### MVVM + Coordinators
-
-UI follows Model-View-ViewModel pattern with Coordinators managing navigation and flow:
-
-- **Models**: Data structures and business logic
-- **ViewModels**: UI state and presentation logic
-- **Views**: SwiftUI/AppKit UI components
-- **Coordinators**: Navigation and feature orchestration
-
 ### Feature Flags
 
 New features are protected behind feature flags using `FeatureFlagger`. See `FeatureFlagger.swift` for implementation.

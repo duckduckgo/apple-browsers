@@ -26,15 +26,6 @@ Tab
 └── TabDelegate (communication with MainViewController)
 ```
 
-### Tab Lifecycle
-
-1. **Creation**: Tab initialized with configuration and dependencies
-2. **WebView Setup**: WKWebView created with user scripts and content rules
-3. **Extension Registration**: TabExtensions instantiated and registered
-4. **Navigation**: User navigates, extensions react to navigation events
-5. **State Changes**: Extensions update based on page content and user actions
-6. **Closure**: Tab cleaned up, webview deallocated, extensions torn down
-
 ### Extension System
 
 The ``TabExtension`` protocol enables modular functionality. Each extension:
@@ -84,16 +75,6 @@ Extensions can subscribe to tab publishers like `navigationDidEndPublisher` usin
 ### Accessing Tab State
 
 The ``Tab`` class exposes state through its public interface: `title`, `isLoading`, `canGoBack`, `canGoForward`, and other navigation flags as published properties. The current URL is read from the underlying web view (`tab.webView.url`) rather than as a direct stored property on Tab. Privacy-related state — such as the current `PrivacyInfo` — is exposed by the privacy dashboard extension and reached through dynamic member lookup on the Tab. Other per-feature state is similarly surfaced through extensions rather than stored directly on Tab itself.
-
-## Patterns & Best Practices
-
-### Extension Design Patterns
-
-1. **Single Responsibility**: Each extension handles one feature domain
-2. **Dependency Injection**: Extensions receive dependencies, don't create them
-3. **Protocol-Based Access**: Public protocols hide implementation details
-4. **Weak References**: Extensions hold weak references to Tab to avoid retain cycles
-5. **Combine Integration**: Use publishers for event-driven communication
 
 ## Topics
 

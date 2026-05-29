@@ -25,9 +25,13 @@ import UIKit
 @testable import DuckDuckGo
 
 @Suite("PassKitPreviewHelper", .serialized)
-struct PassKitPreviewHelperTests {
+final class PassKitPreviewHelperTests {
 
     init() {
+        PixelFiringMock.tearDown()
+    }
+
+    deinit {
         PixelFiringMock.tearDown()
     }
 

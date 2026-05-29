@@ -25,9 +25,13 @@ import Testing
 @testable import DuckDuckGo
 
 @Suite("NavigationResponseRouter", .serialized)
-struct NavigationResponseRouterTests {
+final class NavigationResponseRouterTests {
 
     init() {
+        PixelFiringMock.tearDown()
+    }
+
+    deinit {
         PixelFiringMock.tearDown()
     }
 

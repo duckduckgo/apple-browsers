@@ -153,7 +153,7 @@ struct ClassifierTests {
         #expect(try Classifier.classify(input: "webkit-extension://sample-extension") == .navigate(url: URL(string: "webkit-extension://sample-extension")!))
     }
 
-    @Test("Classifies x-safari-https scheme as search")
+    @Test("Classifies x-safari-https scheme as search", .timeLimit(.minutes(1)))
     func classifiesXSafariSchemeAsSearch() async throws {
         #expect(try Classifier.classify(input: "x-safari-https://example.com") == .search(query: "x-safari-https://example.com"))
     }

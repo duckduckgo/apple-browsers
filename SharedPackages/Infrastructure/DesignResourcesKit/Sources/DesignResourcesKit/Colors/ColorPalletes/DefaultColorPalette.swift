@@ -204,13 +204,18 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .surfaceTertiary: return surfaceTertiary
         case .surfaceCanvas: return surfaceCanvas
 
-        case .accent: return accent
+        case .accent:
+            // Rebranding 2026: the primary accent blue switches to Pondwater. Reuses the rebranding
+            // `accentPrimary` mapping so there's a single source of truth for the new value.
+            return DesignSystemRebrand.isAppRebranded() ? dynamicColor(for: SingleUseColor.Rebranding.accentPrimary) : accent
         case .accentGlowSecondary: return accentGlowSecondary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .shieldPrivacy: return shieldPrivacy
         case .border: return border
-        case .textLink: return textLink
+        case .textLink:
+            // Rebranding 2026: text links switch to Pondwater, matching the rebranded accent.
+            return DesignSystemRebrand.isAppRebranded() ? dynamicColor(for: SingleUseColor.Rebranding.textLink) : textLink
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
         case .textTertiary: return textTertiary

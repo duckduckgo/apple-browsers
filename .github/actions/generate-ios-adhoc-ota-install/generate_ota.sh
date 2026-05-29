@@ -71,17 +71,25 @@ install_template_vars=(
 python3 "${action_dir}/render.py" "${action_dir}/ios_adhoc_manifest.plist" "${manifest_filename}" "${manifest_template_vars[@]}"
 python3 "${action_dir}/render.py" "${action_dir}/ios_adhoc_install.html" "${install_filename}" "${install_template_vars[@]}"
 
-# QR code pointing at the install page, so the build runner can scan it straight
-# from the GitHub Actions run summary and open the page on the iPhone.
-python3 "${action_dir}/generate_qr.py" "${install_url}" "${qr_filename}"
-
 aws s3 cp "${manifest_filename}" "${ipa_dir_s3}/${manifest_filename}" \
   --acl public-read --content-type "application/x-plist"
 aws s3 cp "${install_filename}" "${ipa_dir_s3}/${install_filename}" \
   --acl public-read --content-type "text/html; charset=utf-8"
-aws s3 cp "${qr_filename}" "${ipa_dir_s3}/${qr_filename}" \
-  --acl public-read --content-type "image/png"
 
 echo "install-url=${install_url}" >> "${GITHUB_OUTPUT}"
-echo "qr-url=${qr_url}" >> "${GITHUB_OUTPUT}"
 echo "title=${TITLE}" >> "${GITHUB_OUTPUT}"
+
+# QR code pointing at the install page, so the build runner can scan it straight
+# from the GitHub Actions run summary and open the page on the iPhone. This is
+# best-effort and runs last: the install page above is the primary artifact, so
+# a hiccup installing the QR dependency must never fail the build or drop the
+# install-url output. Each step is chained in the `if` so `set -e` won't abort.
+qr_venv="$(mktemp -d)/venv"
+if python3 -m venv "${qr_venv}" \
+  && "${qr_venv}/bin/pip" install --quiet --disable-pip-version-check -r "${action_dir}/requirements.txt" \
+  && "${qr_venv}/bin/python" "${action_dir}/generate_qr.py" "${install_url}" "${qr_filename}" \
+  && aws s3 cp "${qr_filename}" "${ipa_dir_s3}/${qr_filename}" --acl public-read --content-type "image/png"; then
+  echo "qr-url=${qr_url}" >> "${GITHUB_OUTPUT}"
+else
+  echo "QR code generation failed; continuing without it." >&2
+fi

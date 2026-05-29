@@ -3205,9 +3205,6 @@ https://duckduckgo.com/mac";
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Open in Another App?";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Unfortunately, the page couldn't load.";
-
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";
 

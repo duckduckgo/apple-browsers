@@ -46,9 +46,11 @@ class ZippedPassKitPreviewHelper: FilePreview {
         do {
             entries = try extractDataEntriesFromZipAtFilePath(self.filePath)
         } catch {
+            // ZIP-side failures (missing file, corrupt archive) mean no pass bytes reached PassKit, mirroring
+            // the file-read failure path in PassKitPreviewHelper.preview().
             Logger.general.error("Can't present passkit: \(error.localizedDescription, privacy: .public)")
             pixelFiring.fire(.walletPassPreviewFailed,
-                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: PassKitPreviewHelper.failureReason(for: error)])
+                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "no_data_supplied"])
             return
         }
 

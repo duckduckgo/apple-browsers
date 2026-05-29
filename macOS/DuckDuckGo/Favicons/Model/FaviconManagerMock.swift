@@ -19,6 +19,7 @@
 #if DEBUG
 import AppKit
 import Common
+import FoundationExtensions
 import Combine
 import Foundation
 import History

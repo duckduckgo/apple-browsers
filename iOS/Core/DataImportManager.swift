@@ -24,6 +24,7 @@ import os.log
 import Persistence
 import Bookmarks
 import Common
+import FoundationExtensions
 
 public protocol DataImportManaging: DataImporter {
     func importFile(at url: URL, for fileType: DataImportFileType) async throws -> DataImportSummary?

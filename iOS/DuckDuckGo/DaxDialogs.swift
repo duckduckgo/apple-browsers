@@ -22,6 +22,7 @@ import Core
 import TrackerRadarKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import PrivacyDashboard
 import Combine
 import AIChat

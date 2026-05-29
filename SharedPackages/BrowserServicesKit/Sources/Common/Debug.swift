@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import os.log
 
 public func breakByRaisingSigInt(_ description: String, file: StaticString = #file, line: Int = #line) {

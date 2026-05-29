@@ -23,6 +23,7 @@ import BrokenSitePrompt
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Configuration
 import Core
 import DataBrokerProtection_iOS
@@ -211,7 +212,9 @@ class MainViewController: UIViewController {
     private var vpnCancellables = Set<AnyCancellable>()
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
+    private var aiChatChromeChipCancellables = Set<AnyCancellable>()
     private var settingsCancellables = Set<AnyCancellable>()
+    private var webViewViewportRefreshCancellable: AnyCancellable?
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -945,6 +948,44 @@ class MainViewController: UIViewController {
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
+        bindAIChatChromeChipToCurrentTab()
+    }
+
+    /// Rebinds chip subscriptions to the current tab's URL + contextual sheet publishers.
+    /// Called whenever the active tab changes (transitionTo) or the tabs bar is created.
+    func bindAIChatChromeChipToCurrentTab() {
+        aiChatChromeChipCancellables.removeAll()
+
+        guard let currentTab else {
+            refreshAIChatChromeChip()
+            return
+        }
+
+        currentTab.urlPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
+            .store(in: &aiChatChromeChipCancellables)
+
+        currentTab.aiChatContextualSheetCoordinator.$isSheetPresented
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
+            .store(in: &aiChatChromeChipCancellables)
+
+        refreshAIChatChromeChip()
+    }
+
+    private func refreshAIChatChromeChip() {
+        guard let tabsBarController else { return }
+        // Read from the Tab model (always available); the VC may not be instantiated yet.
+        let currentTabModel = tabManager.currentTabsModel.currentTab
+        let isAIChat = currentTabModel?.isAITab ?? false
+        let isHome = currentTabModel?.isHomeTab ?? false
+        let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
+        tabsBarController.updateAIChatChipState(
+            isCurrentTabAIChat: isAIChat,
+            isCurrentTabHome: isHome,
+            isContextualSheetPresented: isSheetPresented
+        )
     }
 
     func startAddFavoriteFlow() {
@@ -1189,6 +1230,13 @@ class MainViewController: UIViewController {
                                                selector: #selector(onAppDidEnterBackground),
                                                name: UIApplication.didEnterBackgroundNotification,
                                                object: nil)
+
+        webViewViewportRefreshCancellable = NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard AppWidthObserver.shared.isPad else { return }
+                self?.refreshCurrentWebViewViewportAfterForeground()
+            }
     }
 
     @objc private func onAppDidEnterBackground() {
@@ -1871,6 +1919,24 @@ class MainViewController: UIViewController {
         }
     }
 
+    /// Forces a viewport-size IPC to the WebContent process after foreground. Works around a
+    /// WKWebView bug where iOS's iPad multitasking snapshot cycle can leave the page stuck on a
+    /// stale `window.outerWidth` / `innerHeight`, breaking `vh`/`vw`-based layouts.
+    /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1214469654462812?focus=true
+    private func refreshCurrentWebViewViewportAfterForeground() {
+        guard let webView = currentTab?.webView else { return }
+        let originalFrame = webView.frame
+        guard originalFrame.width > 0, originalFrame.height > 1 else { return }
+
+        var nudged = originalFrame
+        nudged.size.height -= 1
+        webView.frame = nudged
+
+        DispatchQueue.main.async { [weak webView] in
+            webView?.frame = originalFrame
+        }
+    }
+
     private func fireTemporaryTelemetryPixels() {
         // Sent as individual pixels to avoid creating parameter combinations that can identify users
         let fireButtonAnim = appSettings.currentFireButtonAnimation.rawValue
@@ -2105,6 +2171,7 @@ class MainViewController: UIViewController {
         }
         themeColorManager.updateThemeColor()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        bindAIChatChromeChipToCurrentTab()
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
@@ -2167,6 +2234,7 @@ class MainViewController: UIViewController {
         } else {
             showTabSwitcher()
         }
+        bindAIChatChromeChipToCurrentTab()
     }
 
     fileprivate func refreshControls() {
@@ -2821,6 +2889,7 @@ class MainViewController: UIViewController {
         }
         attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, previousTab: previousTab, openedAfterIdle: openedAfterIdle)
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        bindAIChatChromeChipToCurrentTab()
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         themeColorManager.updateThemeColor()
         showBars() // In case the browser chrome bars are hidden when calling this method

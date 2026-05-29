@@ -21,6 +21,7 @@ import AppKitExtensions
 import Bookmarks
 import Combine
 import Common
+import FoundationExtensions
 import DDGSync
 import Foundation
 import os.log

@@ -20,6 +20,7 @@ import AIChat
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import PixelKit
 import Subscription

@@ -26,6 +26,7 @@ import AIChat
 import OSLog
 import WebKit
 import Common
+import FoundationExtensions
 import DDGSync
 import Core
 import Persistence

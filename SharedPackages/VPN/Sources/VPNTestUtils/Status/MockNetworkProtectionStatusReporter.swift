@@ -21,6 +21,7 @@
 import Combine
 import NetworkExtension
 import Common
+import FoundationExtensions
 import VPN
 
 /// This is the default status reporter.

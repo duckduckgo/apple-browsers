@@ -18,6 +18,7 @@
 //
 
 import AdServices
+import ConcurrencyExtensions
 import os.log
 
 protocol AdAttributionFetcher {

@@ -19,6 +19,7 @@
 import Foundation
 import CommonCrypto
 import Common
+import FoundationExtensions
 
 /// Helper that generates codes used in the OAuth2 authentication process
 struct OAuthCodesGenerator {

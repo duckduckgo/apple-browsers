@@ -93,6 +93,22 @@ def flatten_localization(entry: Dict, prefix: str = "") -> Dict[str, str]:
     return leaves
 
 
+_WS_ESCAPES = (("\\n", "\n"), ("\\t", "\t"), ("\\r", "\r"))
+
+
+def _edge_whitespace(segment: str) -> bool:
+    """True if a bold-content segment starts/ends with whitespace.
+
+    Counts literal .strings escapes (\\n, \\t, \\r) as whitespace: the regex
+    .strings parser keeps them escaped, but they decode to real whitespace at
+    runtime, so `**Text\\n**` renders broken just like `**Text **`.
+    """
+    probe = segment
+    for escape, real in _WS_ESCAPES:
+        probe = probe.replace(escape, real)
+    return bool(probe) and probe != probe.strip()
+
+
 def marker_issues(source_value: str, loc_value: str) -> List[str]:
     """Return a list of problem descriptions for a translation. Empty == fine.
 
@@ -121,7 +137,7 @@ def marker_issues(source_value: str, loc_value: str) -> List[str]:
     if loc % 2 == 0 and loc > 0:
         segments = loc_value.split(MARKER)
         bad = [segments[i] for i in range(1, len(segments), 2)
-               if segments[i] and segments[i] != segments[i].strip()]
+               if _edge_whitespace(segments[i])]
         if bad:
             rendered = ", ".join(repr(b) for b in bad)
             issues.append(f"space inside bold delimiter: {rendered} [WHITESPACE]")

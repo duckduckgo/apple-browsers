@@ -4606,5 +4606,6 @@ extension TabViewController: SafariRedirectHandlerDelegate {
             title: UserText.generalPageProblemTitle,
             message: UserText.generalPageProblemMessage,
             button: UserText.generalPageProblemOpenInBrowserButton)
+        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
     }
 }

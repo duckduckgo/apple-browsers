@@ -65,7 +65,6 @@ final class SpecialErrorPageNavigationHandler: SpecialErrorPageContextHandling {
         errorData = .generalPageProblem(url: url, title: title, message: message, button: button)
         isSpecialErrorPageRequest = true
         loadSpecialErrorPage(url: url)
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
     }
 }
 

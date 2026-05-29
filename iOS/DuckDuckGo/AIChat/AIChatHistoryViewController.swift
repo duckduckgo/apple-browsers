@@ -32,7 +32,7 @@ final class AIChatHistoryViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        title = UserText.aiChatRecentChatsTitle
+        title = UserText.actionAIChatHistory
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: UserText.navigationTitleDone,
             style: .plain,

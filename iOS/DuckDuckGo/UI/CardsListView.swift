@@ -58,8 +58,39 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
         let title: String
         let description: String
         let disclosureIcon: Image?
+        let cachedImage: (() -> UIImage?)?
+        let imageUrl: URL?
+        let loadImage: ((URL) async throws -> UIImage)?
+        let onImageLoadSuccess: (() -> Void)?
+        let onImageLoadFailed: (() -> Void)?
         let onAppear: (() -> Void)?
         let onTapAction: (() -> Void)?
+
+        init(
+            icon: String,
+            title: String,
+            description: String,
+            disclosureIcon: Image? = nil,
+            cachedImage: (() -> UIImage?)? = nil,
+            imageUrl: URL? = nil,
+            loadImage: ((URL) async throws -> UIImage)? = nil,
+            onImageLoadSuccess: (() -> Void)? = nil,
+            onImageLoadFailed: (() -> Void)? = nil,
+            onAppear: (() -> Void)? = nil,
+            onTapAction: (() -> Void)? = nil
+        ) {
+            self.icon = icon
+            self.title = title
+            self.description = description
+            self.disclosureIcon = disclosureIcon
+            self.cachedImage = cachedImage
+            self.imageUrl = imageUrl
+            self.loadImage = loadImage
+            self.onImageLoadSuccess = onImageLoadSuccess
+            self.onImageLoadFailed = onImageLoadFailed
+            self.onAppear = onAppear
+            self.onTapAction = onTapAction
+        }
     }
 
     struct FeaturedTwoLinesCard {
@@ -67,8 +98,39 @@ extension RemoteMessagingUI.CardsListDisplayModel.Item {
         let title: String
         let description: String
         let actionButtonTitle: String?
+        let cachedImage: (() -> UIImage?)?
+        let imageUrl: URL?
+        let loadImage: ((URL) async throws -> UIImage)?
+        let onImageLoadSuccess: (() -> Void)?
+        let onImageLoadFailed: (() -> Void)?
         let onAppear: (() -> Void)?
         let onTapAction: (() -> Void)?
+
+        init(
+            icon: String,
+            title: String,
+            description: String,
+            actionButtonTitle: String? = nil,
+            cachedImage: (() -> UIImage?)? = nil,
+            imageUrl: URL? = nil,
+            loadImage: ((URL) async throws -> UIImage)? = nil,
+            onImageLoadSuccess: (() -> Void)? = nil,
+            onImageLoadFailed: (() -> Void)? = nil,
+            onAppear: (() -> Void)? = nil,
+            onTapAction: (() -> Void)? = nil
+        ) {
+            self.icon = icon
+            self.title = title
+            self.description = description
+            self.actionButtonTitle = actionButtonTitle
+            self.cachedImage = cachedImage
+            self.imageUrl = imageUrl
+            self.loadImage = loadImage
+            self.onImageLoadSuccess = onImageLoadSuccess
+            self.onImageLoadFailed = onImageLoadFailed
+            self.onAppear = onAppear
+            self.onTapAction = onTapAction
+        }
     }
 
 }
@@ -128,10 +190,15 @@ extension RemoteMessagingUI {
         var body: some View {
             HStack(alignment: .top, spacing: Metrics.Card.TwoLines.contentHorizontalSpacing) {
                 VStack(alignment: .leading) {
-                    Image(displayModel.icon)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: Metrics.Card.TwoLines.iconSize.width, height: Metrics.Card.TwoLines.iconSize.height)
+                    CardIcon(
+                        placeholderIcon: displayModel.icon,
+                        cachedImage: displayModel.cachedImage,
+                        imageUrl: displayModel.imageUrl,
+                        loadImage: displayModel.loadImage,
+                        onImageLoadSuccess: displayModel.onImageLoadSuccess,
+                        onImageLoadFailed: displayModel.onImageLoadFailed,
+                        size: Metrics.Card.TwoLines.iconSize
+                    )
                 }
 
                 VStack(alignment: .leading, spacing: Metrics.Card.TwoLines.copyVerticalSpacing) {
@@ -173,10 +240,15 @@ extension RemoteMessagingUI {
 
         var body: some View {
             VStack(alignment: .center, spacing: Metrics.Card.FeaturedTwoLines.contentVerticalSpacing) {
-                Image(displayModel.icon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: Metrics.Card.FeaturedTwoLines.iconSize.width, height: Metrics.Card.FeaturedTwoLines.iconSize.height)
+                CardIcon(
+                    placeholderIcon: displayModel.icon,
+                    cachedImage: displayModel.cachedImage,
+                    imageUrl: displayModel.imageUrl,
+                    loadImage: displayModel.loadImage,
+                    onImageLoadSuccess: displayModel.onImageLoadSuccess,
+                    onImageLoadFailed: displayModel.onImageLoadFailed,
+                    size: Metrics.Card.FeaturedTwoLines.iconSize
+                )
 
                 Text(verbatim: displayModel.title)
                     .font(.system(size: Metrics.Card.FeaturedTwoLines.titleSize, weight: .bold))
@@ -224,6 +296,58 @@ extension RemoteMessagingUI {
         }
     }
 
+
+}
+
+// MARK: - Card Icon
+
+private extension RemoteMessagingUI {
+
+    struct CardIcon: View {
+        let placeholderIcon: String
+        let cachedImage: (() -> UIImage?)?
+        let imageUrl: URL?
+        let loadImage: ((URL) async throws -> UIImage)?
+        let onImageLoadSuccess: (() -> Void)?
+        let onImageLoadFailed: (() -> Void)?
+        let size: CGSize
+
+        @State private var loadedImage: UIImage?
+
+        var body: some View {
+            // Query the loader cache on every render so that views recycled by
+            // LazyVStack pick up the previously loaded image instead of restarting
+            // the load (which would flicker the placeholder and re-fire pixels).
+            if let displayImage = loadedImage ?? cachedImage?() {
+                Image(uiImage: displayImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: size.width, height: size.height)
+                    .task {
+                        onImageLoadSuccess?()
+                    }
+            } else {
+                Image(placeholderIcon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: size.width, height: size.height)
+                    .task {
+                        await loadRemoteImage()
+                    }
+            }
+        }
+
+        private func loadRemoteImage() async {
+            guard let imageUrl, let loadImage else { return }
+            do {
+                loadedImage = try await loadImage(imageUrl)
+            } catch is CancellationError {
+                // Task was cancelled - no-op
+            } catch {
+                onImageLoadFailed?()
+            }
+        }
+    }
 
 }
 

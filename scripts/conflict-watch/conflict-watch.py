@@ -22,9 +22,13 @@ Filters
 * Branch is not already merged into ``main`` (``git diff --quiet
   main..branch`` — two-dot, so it catches squash-merged refs whose
   tip content already matches main).
-* Branch's most recent PR (if any) is OPEN — branches whose latest PR
-  is MERGED or CLOSED-unmerged are skipped via the GitHub API (catches
-  the "PR landed but the bare mirror hasn't fetched yet" race).
+* Branch has an open PR — branches with no PR at all, or whose latest
+  PR is MERGED or CLOSED-unmerged, are skipped via the GitHub API.
+  Dropping no-PR branches also keeps owner_key consistent: a github_login
+  is only resolvable from a PR, so without one the key would fall back to
+  author_email and the same-author pair filter would misfire across a
+  developer's own branches. Skipping non-open PRs additionally closes the
+  "PR landed but the bare mirror hasn't fetched yet" race.
 * Pair authors differ — single-author pair-conflicts aren't a
   coordination signal.
 * Branch author is not a known bot (dependabot, renovate, …).
@@ -323,6 +327,7 @@ class RunSummary:
     branches_skipped_merged: int = 0
     branches_skipped_bot: int = 0
     branches_skipped_pattern: int = 0
+    branches_skipped_no_pr: int = 0
     branches_skipped_inactive_pr: int = 0
     pairs_probed: int = 0
     pairs_with_hard_conflicts: int = 0
@@ -1768,14 +1773,24 @@ def main() -> int:
             continue
         if b.github_login and b.github_login in user_map:
             b.asana_gid = user_map[b.github_login]
-        # PR-state filter: if every PR for this branch is non-open, the
-        # engineer isn't actively heading toward merge. Closes the
-        # "PR merged but bare mirror is stale" race that produces
-        # creation-time false positives.
-        if pr_status.has_any_pr and not pr_status.has_open_pr:
-            summary.branches_skipped_inactive_pr += 1
-            logger.info("Skipping branch %s: most recent PR is %s "
-                        "(no open PR)", b.name, pr_status.most_recent_state)
+        # PR-state filter: only branches with an open PR are kept. Two
+        # cases get dropped here:
+        #   * no PR at all — not yet proposed for merge, and with no PR
+        #     there's no github_login to resolve, which would make
+        #     owner_key fall back to author_email and break the
+        #     same-author pair filter across a developer's own branches.
+        #   * all PRs non-open (merged / closed-unmerged) — the engineer
+        #     isn't actively heading toward merge; also closes the
+        #     "PR merged but bare mirror is stale" race that produces
+        #     creation-time false positives.
+        if not pr_status.has_open_pr:
+            if pr_status.has_any_pr:
+                summary.branches_skipped_inactive_pr += 1
+                logger.info("Skipping branch %s: most recent PR is %s "
+                            "(no open PR)", b.name, pr_status.most_recent_state)
+            else:
+                summary.branches_skipped_no_pr += 1
+                logger.debug("Skipping branch %s: no PR", b.name)
             continue
         b.pr_url = pr_status.open_pr_url
         kept.append(b)

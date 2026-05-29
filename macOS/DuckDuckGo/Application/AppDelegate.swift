@@ -15,6 +15,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+//  (temp) CAS measurement: realistic app-target edit — revert after.
 
 import AIChat
 import AppKitExtensions

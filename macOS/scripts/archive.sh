@@ -252,6 +252,15 @@ archive_and_export() {
 	local derived_data="${workdir}/DerivedData"
 	rm -rf "${derived_data}"
 
+	# Opt-in compilation caching. When ARCHIVE_CAS_PATH is set the CAS lives outside
+	# DerivedData (which is wiped above), so it survives to be persisted across CI runs.
+	# Unset for distribution builds, leaving the xcodebuild invocation unchanged.
+	local compilation_cache_args=""
+	if [[ -n "${ARCHIVE_CAS_PATH:-}" ]]; then
+		echo "Compilation caching enabled, CAS at ${ARCHIVE_CAS_PATH}"
+		compilation_cache_args="COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH=${ARCHIVE_CAS_PATH}"
+	fi
+
 	${filter_output} xcrun xcodebuild archive \
 		-scheme "${scheme}" \
 		-configuration "${configuration}" \
@@ -261,6 +270,7 @@ archive_and_export() {
 		MARKETING_VERSION="${app_version}" \
 		CURRENT_PROJECT_VERSION="${build_number}" \
 		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo \
+		${compilation_cache_args} \
 		${extra_xcargs:+"${extra_xcargs}"} \
 		2>&1 \
 		| ${log_formatter}

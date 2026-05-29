@@ -82,6 +82,7 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
+      enable-compilation-cache: true
     secrets: inherit
 
   # This job sets up the matrix strategy arguments for the ui-tests job
@@ -172,9 +173,192 @@ jobs:
 
           echo "test=${test}" >> $GITHUB_OUTPUT
 
+  # Builds the test bundle once per macOS version and caches the build products.
+  # The ui-tests shards restore these products and run with test-without-building,
+  # so the app is compiled once per OS instead of once per test class.
+  build-for-testing:
+    name: Build for testing (macOS ${{ matrix.os-version }})
+    needs: [should-run-checks, setup-tests]
+    if: needs.should-run-checks.outputs.should_run == 'true'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
+        include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
+
+    timeout-minutes: 120
+
+    env:
+      scheme: ${{ inputs.build-type == 'appstore' && 'macOS UI Tests App Store CI' || 'macOS UI Tests CI' }}
+      extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
+
+    steps:
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+    - name: Check out the code
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ inputs.branch || github.sha }}
+
+    - name: Initialize submodules with retry
+      run: |
+        max_attempts=3
+        retry_delay=15
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Submodule init attempt $attempt of $max_attempts"
+          if git submodule update --init --recursive; then
+            echo "Submodules initialized successfully"
+            exit 0
+          fi
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Failed, retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "All submodule init attempts failed"
+        exit 1
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
+
+    - name: Create Default Keychain
+      run: bundle exec fastlane create_keychain_ui_tests
+
+    - name: Sync code signing assets
+      id: sync-signing-first-attempt
+      continue-on-error: true
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        bundle exec fastlane sync_signing_ci
+
+    - name: Retry sync code signing assets
+      if: steps.sync-signing-first-attempt.outcome == 'failure'
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        echo "First attempt to sync code signing assets failed. Retrying..."
+        bundle exec fastlane sync_signing_ci
+
+    - name: Set cache key hash
+      run: |
+        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+        if [[ "$has_only_tags" == "true" ]]; then
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+        else
+          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+        fi
+
+    - name: Cache SPM
+      if: env.cache_key_hash
+      uses: actions/cache@v4
+      with:
+        path: macOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-macos-
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: ${{ matrix.xcode-version }}
+
+    # One build per commit per macOS version. On a cache hit (e.g. a re-run of the same
+    # commit) the build steps below are skipped; on a miss the products are saved at job end.
+    - name: Cache test build products
+      id: products-cache
+      uses: actions/cache@v4
+      with:
+        path: macOS/DerivedData/Build/Products
+        key: ui-products-${{ github.sha }}-macos${{ matrix.os-version }}
+
+    - name: Resolve package dependencies
+      if: steps.products-cache.outputs.cache-hit != 'true'
+      working-directory: macOS
+      run: |
+        max_attempts=5
+        retry_delay=10
+
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Attempt $attempt of $max_attempts"
+          if xcodebuild -resolvePackageDependencies \
+            -scheme "${{ env.scheme }}" \
+            -derivedDataPath DerivedData \
+            2>&1 | tee resolve.log; then
+            echo "Package resolution succeeded"
+            exit 0
+          fi
+
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Package resolution failed (attempt $attempt), retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "Package resolution failed after $max_attempts attempts"
+        exit 1
+
+    - name: Restore Xcode Compilation Cache
+      if: steps.products-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ui-tests
+        restore-keys: |
+          xcode-compilation-cache-ui-tests-
+
+    - name: Build for testing
+      if: steps.products-cache.outputs.cache-hit != 'true'
+      working-directory: macOS
+      run: |
+        set -o pipefail && xcodebuild build-for-testing \
+          -scheme "${{ env.scheme }}" \
+          -derivedDataPath DerivedData \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          ${{ env.extra-xcargs }} \
+        | tee xcodebuild.log \
+        | xcbeautify
+
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main' && steps.products-cache.outputs.cache-hit != 'true'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash && steps.products-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
+
   ui-tests:
     name: ${{ matrix.test }} (macOS ${{ matrix.os-version }})
-    needs: [create-notarized-app, setup-tests]
+    needs: [create-notarized-app, setup-tests, build-for-testing]
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -354,45 +538,13 @@ jobs:
         echo "Package resolution failed after $max_attempts attempts"
         exit 1
 
-    - name: Restore Xcode Compilation Cache
+    - name: Restore test build products
       uses: actions/cache/restore@v4
       with:
-        path: macOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ui-tests
-        restore-keys: |
-          xcode-compilation-cache-ui-tests-
-
-    - name: Build for testing
-      working-directory: macOS
-      run: |
-        set -o pipefail && xcodebuild build-for-testing \
-          -scheme "${{ env.scheme }}" \
-          -derivedDataPath DerivedData \
-          -skipPackagePluginValidation \
-          -skipMacroValidation \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          ${{ env.extra-xcargs }} \
-        | tee xcodebuild.log \
-        | xcbeautify
-
-    - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
-      id: compilation-cache-hash
-      run: |
-        if [ -d "DerivedData/CompilationCache.noindex" ]; then
-          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=${hash}" >> $GITHUB_OUTPUT
-        else
-          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
-        fi
-
-    - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
-      with:
-        path: macOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
+        # Compiled once by the build-for-testing job for this commit + macOS version.
+        path: macOS/DerivedData/Build/Products
+        key: ui-products-${{ github.sha }}-macos${{ matrix.os-version }}
+        fail-on-cache-miss: true
 
     - name: Extract and Copy app to /DerivedData
       working-directory: macOS

@@ -134,13 +134,18 @@ final class AIChatModelPickerButton: NSView {
     override var canBecomeKeyView: Bool { true }
 
     override func becomeFirstResponder() -> Bool {
-        setFocusRingHidden(false)
-        return super.becomeFirstResponder()
+        // Only toggle ring visibility once the responder transition actually succeeded —
+        // if super returns false the view is *not* first responder, and `resignFirstResponder`
+        // won't fire to undo a premature show.
+        let didBecome = super.becomeFirstResponder()
+        if didBecome { setFocusRingHidden(false) }
+        return didBecome
     }
 
     override func resignFirstResponder() -> Bool {
-        setFocusRingHidden(true)
-        return super.resignFirstResponder()
+        let didResign = super.resignFirstResponder()
+        if didResign { setFocusRingHidden(true) }
+        return didResign
     }
 
     private func setFocusRingHidden(_ hidden: Bool) {

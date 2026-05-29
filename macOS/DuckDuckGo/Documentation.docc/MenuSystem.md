@@ -42,7 +42,7 @@ MainMenuActions (Action Handlers)
 ### Core Implementation
 
 - ``MainMenu`` — main menu construction and management; menu item lifecycle, updates, and feature flag integration. The bookmarks menu is constructed inside ``MainMenu`` via a `buildBookmarksMenu` method rather than a separate type, and the resulting `NSMenu` is updated in place as bookmarks change.
-- `MainMenuActions.swift` — `@objc` action methods declared as extensions on `AppDelegate`; responder chain integration and coordination with ``FireCoordinator``, ``TabCollectionViewModel``, and other app components.
+- `MainMenuActions.swift` — `@objc` action methods declared as extensions on `AppDelegate`; responder chain integration and coordination with ``TabCollectionViewModel`` and other app components.
 
 ### Dynamic Menus
 

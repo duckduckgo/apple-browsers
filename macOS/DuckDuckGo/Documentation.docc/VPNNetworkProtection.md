@@ -44,10 +44,6 @@ Running as a separate login item is what lets the VPN survive a browser crash an
 
 ## VPN Features
 
-### Site-Specific Exclusions
-
-The `NetworkProtectionControllerTabExtension` allows excluding specific domains from VPN routing. Traffic to excluded domains bypasses the VPN tunnel.
-
 ### Connection Monitoring
 
 - `NetworkProtectionStatusReporter` — publishes connection status changes
@@ -66,14 +62,8 @@ Both back onto shared defaults so values are synchronized across the main app, t
 ## Entry Points
 
 - ``TunnelControllerProvider`` — vends the app's `NetworkProtectionIPCTunnelController` instance; the main app's entry point for VPN control.
-- ``NetworkProtectionControllerTabExtension`` — per-tab VPN exclusion management, integrated into the Tab architecture.
+- ``NetworkProtectionControllerTabExtension`` — the VPN's hook into the Tab architecture. As a per-tab navigation responder it holds the tunnel controller and reports VPN-while-searching usage when a DuckDuckGo search loads with the tunnel connected.
 - `DuckDuckGoVPNAppDelegate` — the VPN agent's delegate; owns IPC server setup and the tunnel controller lifecycle inside the agent process.
-
-## Common Tasks
-
-### Excluding a Domain
-
-Use the tab extension to exclude specific sites from VPN routing. See `NetworkProtectionControllerTabExtension` for implementation.
 
 ## Topics
 

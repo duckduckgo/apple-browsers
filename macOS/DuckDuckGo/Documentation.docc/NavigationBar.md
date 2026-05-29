@@ -48,7 +48,7 @@ The privacy icon is driven by ``PrivacyIconViewModel``, which derives its state 
 
 ### URL Validation
 
-URL validation uses `URL(trimmedAddressBarString:useUnifiedLogic:)`. The unified-logic path is feature-flagged so the newer prediction behavior can be rolled out independently, and punycode handling exists so IDN domains are validated as the registrable domain rather than their Unicode display form.
+URL validation uses `URL(trimmedAddressBarString:useUnifiedLogic:)`. The unified-logic path is feature-flagged so the newer prediction behavior can be rolled out independently. IDN domains are punycode-encoded when the URL is constructed for validation, while a decoded Unicode form is kept for display when the field is being edited — so the host is validated in its ASCII-compatible form but still shown readably.
 
 ### Autocomplete Behavior
 
@@ -56,7 +56,7 @@ Inline autocompletion is deliberately conservative: it appears only when the com
 
 ### HTTPS Upgrading
 
-URLs are upgraded to HTTPS during navigation rather than at input time, so the upgrade applies regardless of how navigation was initiated (typed, suggestion, paste-and-go).
+URLs are upgraded to HTTPS as part of navigation handling, so the upgrade applies regardless of how navigation was initiated (typed, suggestion, paste-and-go).
 
 ## Topics
 

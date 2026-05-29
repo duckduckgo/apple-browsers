@@ -70,7 +70,7 @@ Reference existing implementations like `ContentBlockingTabExtension` or `Histor
 
 ### Responding to Navigation Events
 
-Extensions can subscribe to tab publishers like `navigationDidEndPublisher` using Combine. See the `Tab` class for available publishers and the `TabExtensions` class for integration patterns.
+Extensions can subscribe to tab publishers like `navigationDidEndPublisher` using Combine. See the `Tab` class for available publishers and `TabExtensions` for integration patterns.
 
 ### Accessing Tab State
 

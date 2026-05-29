@@ -46,7 +46,7 @@ Fire (Data Clearing Engine)
 
 ### UI Components
 
-- ``FireViewController`` — fire button UI and popover presentation; delegates to ``FireCoordinator`` for the actual clearing.
+- ``FireViewController`` — presents the fire animation (a Lottie overlay) while burning is in progress; driven by a ``FireViewModel``. The fire-button action, popover, and dialog presentation live in ``FireCoordinator``.
 - ``FirePopoverViewController`` — legacy fire popover UI with options for what to clear.
 - ``FireDialogViewModel`` — new Fire Dialog state management; carries the clearing-options enum (current tab, current window, all data) and the toggle states for individual data categories.
 

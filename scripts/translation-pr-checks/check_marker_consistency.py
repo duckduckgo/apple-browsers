@@ -172,13 +172,19 @@ def check_xcstrings_data(new_data: Dict, path: str, old_data: Dict = None) -> Li
         else:
             source_leaves = {"": key}
         old_locs = old_strings.get(key, {}).get("localizations", {}) if old_data is not None else {}
+        # If the English source for this key changed, every locale leaf must be
+        # re-checked — not just leaves that themselves changed — because a
+        # source-only marker edit now mismatches the untouched translations.
+        old_source_leaves = (flatten_localization(old_locs.get(source_lang, {}))
+                             if source_lang in old_locs else {"": key})
+        source_changed = old_data is not None and old_source_leaves != source_leaves
         for locale, loc_entry in localizations.items():
             if locale == source_lang:
                 continue
             new_leaves = flatten_localization(loc_entry)
             old_leaves = flatten_localization(old_locs.get(locale, {})) if old_data is not None else {}
             for sub_path, loc_value in new_leaves.items():
-                if old_data is not None and old_leaves.get(sub_path) == loc_value:
+                if old_data is not None and not source_changed and old_leaves.get(sub_path) == loc_value:
                     continue
                 source_value = source_leaves.get(sub_path, source_leaves.get(""))
                 if source_value is None:
@@ -195,18 +201,43 @@ def check_xcstrings_data(new_data: Dict, path: str, old_data: Dict = None) -> Li
 # =============================================================================
 
 def check_changed(platform: str) -> List[Finding]:
-    """PR mode: only keys changed vs the base branch."""
+    """PR mode: keys changed vs the base branch, plus every locale of any key
+    whose English source changed — a source-only marker edit must re-check the
+    existing (unchanged) translations against the new source."""
     paths = get_search_paths(platform)
     findings: List[Finding] = []
 
-    strings_files = get_changed_files([".strings"], paths)
-    base_strings = get_files_content_at_base(strings_files)
-    for path in strings_files:
-        old = parse_strings_file(base_strings.get(path, ""))
-        new = parse_strings_file(read_file(path))
-        changed_keys = {k for k, v in new.items() if old.get(k) != v}
-        findings.extend(check_strings_file(path, only_changed_keys=changed_keys))
+    # ---- .strings ----
+    # A "unit" is one (lproj-parent, filename) the PR touched via en.lproj or any
+    # locale. For each, check every sibling locale for the union of
+    # (source-changed keys) and (that locale's own changed keys).
+    units = set()
+    for path in get_changed_files([".strings"], paths):
+        if os.path.basename(os.path.dirname(path)) == "Base.lproj":
+            continue
+        units.add((os.path.dirname(os.path.dirname(path)), os.path.basename(path)))
 
+    for parent, filename in sorted(units):
+        en_path = os.path.join(parent, "en.lproj", filename)
+        if not os.path.exists(en_path):
+            continue
+        locale_paths = [os.path.join(parent, d, filename)
+                        for d in sorted(os.listdir(parent))
+                        if d.endswith(".lproj") and d not in ("en.lproj", "Base.lproj")
+                        and os.path.exists(os.path.join(parent, d, filename))]
+        base = get_files_content_at_base([en_path] + locale_paths)
+        en_old = parse_strings_file(base.get(en_path, ""))
+        en_new = parse_strings_file(read_file(en_path))
+        source_changed = {k for k in set(en_old) | set(en_new) if en_old.get(k) != en_new.get(k)}
+        for loc_path in locale_paths:
+            loc_old = parse_strings_file(base.get(loc_path, ""))
+            loc_new = parse_strings_file(read_file(loc_path))
+            loc_changed = {k for k, v in loc_new.items() if loc_old.get(k) != v}
+            keys = source_changed | loc_changed
+            if keys:
+                findings.extend(check_strings_file(loc_path, only_changed_keys=keys))
+
+    # ---- .xcstrings ----
     xcstrings_files = get_changed_files([".xcstrings"], paths)
     base_xc = get_files_content_at_base(xcstrings_files)
     for path in xcstrings_files:

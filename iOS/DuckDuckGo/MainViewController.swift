@@ -2023,6 +2023,9 @@ class MainViewController: UIViewController {
             refreshControls()
             tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+            // Rebind the chip to the newly-current tab — this path (e.g. the Duck.ai chip
+            // opening a chat in a new tab) doesn't go through transitionTo.
+            bindAIChatChromeChipToCurrentTab()
             completion?()
         }
 

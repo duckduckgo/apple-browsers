@@ -237,11 +237,7 @@ extension SupportedOSChecker: SupportedOSChecking {
     }
 }
 
-// MARK: - Sample: Big Sur end-of-support launch notice
-//
-// Self-contained sample showing an on-launch NSAlert when Big Sur support has
-// ended. Currently shows for all users — wrap the `show()` call in a
-// `SupportedOSChecker().showsSupportWarning` guard before shipping.
+// MARK: - Big Sur end-of-support launch notice
 
 struct BigSurEndOfSupportNoticePersistor {
 
@@ -292,8 +288,6 @@ final class BigSurEndOfSupportNoticePresenter {
         alert.messageText = UserText.bigSurEndOfSupportNoticeTitle
         alert.informativeText = bodyText()
         // First-added button is the default and sits on the right.
-        // Hide the "Update macOS" call to action on hardware that can't upgrade
-        // past Big Sur; fall back to a neutral OK.
         let canUpgrade = canUpgradeOS
         alert.addButton(withTitle: primaryButtonTitle())
         if persistsDismissal {

@@ -59,12 +59,11 @@ extension MainViewController {
         // Idempotent: callable from viewDidLoad, MainCoordinator.startOnboardingFlowIfNotSeenBefore,
         // and onboardingCompleted — first call that passes the gates wins.
         guard unifiedToggleInputCoordinator == nil else { return }
-        // Defer setup only for default-flow users still in linear onboarding intro: cohort
-        // enrollment for the Duck.ai query experiment happens during their onboarding, and
-        // wiring up the coordinator before that lands would read a stale
-        // `unifiedToggleInputFeature.isAvailable`. Duck.ai tailored-flow users are
-        // pre-enrolled and need UTI active during the Duck.ai interlude that runs inside
-        // their onboarding. Returning users (who skip linear onboarding) fall through immediately.
+        // Defer setup until linear onboarding for default flow has completed, so that any experiment
+        // cohort enrollment that happens during onboarding is reflected in
+        // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
+        // Duck.ai tailored-flow users are need UTI during the linear onboarding otherwise they will not see the new UI in the Duck.ai page that is shown during the linear onboarding interlude.
+        // Returning users (who skip linear onboarding) fall through immediately.
         guard !(needsToShowOnboardingIntro() && onboardingManager.currentOnboardingFlow == .default) else { return }
         guard unifiedToggleInputFeature.isAvailable else { return }
 

@@ -49,7 +49,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
-        let result = await reader.fetchAllChats(query: nil)
+        let result = await reader.fetchAllChats()
         switch result {
         case .success(let chats): self.chats = chats
         case .failure: self.chats = []

@@ -21,7 +21,7 @@ import os.log
 
 public protocol ChatHistoryReading {
     @MainActor
-    func fetchAllChats(query: String?) async -> Result<[DuckAiChat], Error>
+    func fetchAllChats() async -> Result<[DuckAiChat], Error>
 }
 
 @MainActor
@@ -33,20 +33,12 @@ public final class ChatHistoryReader: ChatHistoryReading {
         self.storageHandler = storageHandler
     }
 
-    public func fetchAllChats(query: String?) async -> Result<[DuckAiChat], Error> {
+    public func fetchAllChats() async -> Result<[DuckAiChat], Error> {
         do {
             let records = try storageHandler.getAllChats()
             let chats = records.compactMap { try? DuckAiChat.decode(from: $0.data).chat }
 
-            let trimmed = query?.trimmingCharacters(in: .whitespaces)
-            let filtered: [DuckAiChat]
-            if let trimmed, !trimmed.isEmpty {
-                filtered = chats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
-            } else {
-                filtered = chats
-            }
-
-            let sorted = filtered.sorted { lhs, rhs in
+            let sorted = chats.sorted { lhs, rhs in
                 if lhs.pinned != rhs.pinned { return lhs.pinned }
                 return lhs.lastEdit > rhs.lastEdit
             }

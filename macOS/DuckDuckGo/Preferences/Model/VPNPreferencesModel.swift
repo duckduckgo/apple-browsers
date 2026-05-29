@@ -160,12 +160,6 @@ final class VPNPreferencesModel: ObservableObject {
         self.pinningManager = pinningManager
         self.featureFlagger = featureFlagger
 
-        // If the feature flag is off, force the stored value back to its default so the
-        // tunnel never honors a value set while the flag was on for this user.
-        if !featureFlagger.isFeatureOn(.vpnStrictRouting), settings.enforceRoutes != UserDefaults.enforceRoutesDefaultValue {
-            settings.enforceRoutes = UserDefaults.enforceRoutesDefaultValue
-        }
-
         connectOnLogin = settings.connectOnLogin
         excludedAppsCount = proxySettings.excludedAppsMinusDBPAgent.count
         excludedDomainsCount = proxySettings.excludedDomains.count

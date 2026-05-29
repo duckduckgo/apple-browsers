@@ -339,6 +339,20 @@ public final class VPNSettings {
         }
     }
 
+    /// Forces `enforceRoutes` back to its safe default when Strict routing isn't available to this
+    /// user, so a value relaxed while the feature was available can't persist after it's withdrawn.
+    ///
+    /// Callers pass the resolved availability (not a feature flagger) so this stays free of the
+    /// app-side flag system — keeping it usable from contexts that can't evaluate flags.
+    public func resetEnforceRoutesIfUnavailable(strictRoutingAvailable: Bool) {
+        guard !strictRoutingAvailable,
+              enforceRoutes != UserDefaults.enforceRoutesDefaultValue else {
+            return
+        }
+
+        enforceRoutes = UserDefaults.enforceRoutesDefaultValue
+    }
+
     // MARK: - Exclude Local Routes
 
     public var excludeLocalNetworksPublisher: AnyPublisher<Bool, Never> {

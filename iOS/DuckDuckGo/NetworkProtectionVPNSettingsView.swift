@@ -46,7 +46,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 if viewModel.isStrictRoutingAvailable {
                     toggleSection(
                         text: UserText.netPStrictRoutingSettingTitle,
-                        headerText: UserText.netPExcludeLocalNetworksSettingHeader,
+                        headerText: "",
                         footerText: UserText.netPStrictRoutingSettingFooter
                     ) {
                         Toggle("", isOn: $viewModel.enforceRoutes)

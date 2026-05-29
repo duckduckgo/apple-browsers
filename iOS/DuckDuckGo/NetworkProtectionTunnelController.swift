@@ -396,6 +396,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     private func setup(_ tunnelManager: NETunnelProviderManager) {
+        // Scrub a stale enforceRoutes value before it reaches the protocol config, so it can't
+        // persist after the Strict routing flag is withdrawn. This is the authoritative reset: it
+        // runs on every connect, regardless of whether the user ever opens VPN settings.
+        settings.resetEnforceRoutesIfUnavailable(
+            strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRouting))
+
         tunnelManager.applyDuckDuckGoConfiguration(from: settings)
     }
 

@@ -52,6 +52,14 @@ public struct VPNWidgetTunnelController: Sendable {
 
         // Re-apply configuration from current settings so route/exclusion changes
         // the user made in-app actually reach the system VPN profile.
+        //
+        // Known gap: unlike the main tunnel controller, this widget process can't evaluate the
+        // Strict routing feature flag, so it can't scrub a stale `enforceRoutes` value here. A
+        // tunnel started solely from the widget, in the window after the flag is withdrawn but
+        // before the app next runs and resets the setting, could apply the relaxed value. The app
+        // runs around virtually every connect, so the window is small; acceptable while Strict
+        // routing is internal-only. Closing it fully would require persisting flag availability to
+        // shared defaults for this process to read.
         manager.applyDuckDuckGoConfiguration(from: settings)
         manager.isOnDemandEnabled = true
 

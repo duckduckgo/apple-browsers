@@ -501,30 +501,34 @@ class BranchPRStatus:
     most_recent_state: Optional[str] = None    # "OPEN" | "MERGED" | "CLOSED" | None
     most_recent_merged_at: Optional[str] = None
     most_recent_pr_number: Optional[int] = None
+    author_login: Optional[str] = None
 
 
-_login_cache: dict[str, Optional[str]] = {}
 _pr_status_cache: dict[str, BranchPRStatus] = {}
 
 
-def lookup_github_login(sha: str) -> Optional[str]:
-    if sha in _login_cache:
-        return _login_cache[sha]
-    if not have_command("gh"):
-        _login_cache[sha] = None
-        return None
-    try:
-        proc = run(
-            ["gh", "api", f"repos/{REPO}/commits/{sha}",
-             "--jq", ".author.login // \"\""],
-            check=False,
-        )
-        login = (proc.stdout or "").strip()
-        _login_cache[sha] = login or None
-    except Exception as exc:
-        logger.warning("gh lookup failed for %s: %s", sha, exc)
-        _login_cache[sha] = None
-    return _login_cache[sha]
+def _parse_pr_status(text: str) -> BranchPRStatus:
+    prs = json.loads(text or "[]")
+    status = BranchPRStatus()
+    if not prs:
+        return status
+    status.has_any_pr = True
+    prs_sorted = sorted(prs, key=lambda p: p.get("createdAt", ""), reverse=True)
+    most_recent = prs_sorted[0]
+    status.most_recent_state = most_recent.get("state")
+    status.most_recent_merged_at = most_recent.get("mergedAt")
+    status.most_recent_pr_number = most_recent.get("number")
+    author = most_recent.get("author") or {}
+    status.author_login = author.get("login") if isinstance(author, dict) else None
+    for pr in prs_sorted:
+        if pr.get("state") == "OPEN":
+            status.has_open_pr = True
+            status.open_pr_url = pr.get("url")
+            author = pr.get("author") or {}
+            if isinstance(author, dict):
+                status.author_login = author.get("login") or status.author_login
+            break
+    return status
 
 
 def lookup_branch_pr_status(branch_name: str) -> BranchPRStatus:
@@ -548,32 +552,18 @@ def lookup_branch_pr_status(branch_name: str) -> BranchPRStatus:
              "--repo", REPO,
              "--head", branch_name,
              "--state", "all",
-             "--json", "state,url,mergedAt,createdAt,number",
+             "--json", "state,url,mergedAt,createdAt,number,author",
              "--limit", "10"],
             check=False,
         )
         if proc.returncode != 0:
             _pr_status_cache[branch_name] = status
             return status
-        prs = json.loads(proc.stdout or "[]")
+        status = _parse_pr_status(proc.stdout)
     except Exception as exc:
         logger.warning("gh pr list failed for %s: %s", branch_name, exc)
         _pr_status_cache[branch_name] = status
         return status
-    if not prs:
-        _pr_status_cache[branch_name] = status
-        return status
-    status.has_any_pr = True
-    prs_sorted = sorted(prs, key=lambda p: p.get("createdAt", ""), reverse=True)
-    most_recent = prs_sorted[0]
-    status.most_recent_state = most_recent.get("state")
-    status.most_recent_merged_at = most_recent.get("mergedAt")
-    status.most_recent_pr_number = most_recent.get("number")
-    for pr in prs_sorted:
-        if pr.get("state") == "OPEN":
-            status.has_open_pr = True
-            status.open_pr_url = pr.get("url")
-            break
     _pr_status_cache[branch_name] = status
     return status
 
@@ -1520,6 +1510,21 @@ def run_self_test() -> int:
         else:
             print("PASS: parse_user_map → flat mapping with comments + skips")
 
+        pr_status = _parse_pr_status(json.dumps([
+            {
+                "state": "OPEN",
+                "url": "https://github.com/duckduckgo/apple-browsers/pull/1",
+                "createdAt": "2024-01-01T00:00:00Z",
+                "number": 1,
+                "author": {"login": "octocat"},
+            }
+        ]))
+        if not pr_status.has_open_pr or pr_status.author_login != "octocat":
+            print(f"FAIL: parse PR author login → {pr_status}")
+            ok = False
+        else:
+            print("PASS: parse PR author login → octocat")
+
         # _matches_always_ignore against defaults
         cases = [
             ("App.pbxproj", True),
@@ -1590,7 +1595,8 @@ def run_report(top_n: int) -> int:
 
     kept: list[Branch] = []
     for b in branches:
-        b.github_login = lookup_github_login(b.sha)
+        pr_status = lookup_branch_pr_status(b.name)
+        b.github_login = pr_status.author_login
         if b.github_login and b.github_login.lower() in BOT_AUTHORS:
             summary.branches_skipped_bot += 1
             continue
@@ -1754,14 +1760,14 @@ def main() -> int:
 
     kept: list[Branch] = []
     for b in branches:
-        b.github_login = lookup_github_login(b.sha)
+        pr_status = lookup_branch_pr_status(b.name)
+        b.github_login = pr_status.author_login
         if b.github_login and b.github_login.lower() in BOT_AUTHORS:
             summary.branches_skipped_bot += 1
             logger.debug("Skipping bot branch: %s (%s)", b.name, b.github_login)
             continue
         if b.github_login and b.github_login in user_map:
             b.asana_gid = user_map[b.github_login]
-        pr_status = lookup_branch_pr_status(b.name)
         # PR-state filter: if every PR for this branch is non-open, the
         # engineer isn't actively heading toward merge. Closes the
         # "PR merged but bare mirror is stale" race that produces

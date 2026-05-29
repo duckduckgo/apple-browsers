@@ -60,25 +60,7 @@ final class DockPreferencesModelTests: XCTestCase {
         XCTAssertFalse(model.canAddToDock)
     }
 
-    // MARK: - canShowDockInstructions
-
-    func testWhenSupportsAddingToDockIsFalseThenCanShowDockInstructionsIsTrue() {
-        mockDockCustomizer.supportsAddingToDock = false
-        let model = DockPreferencesModel(
-            dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil
-        )
-        XCTAssertTrue(model.canShowDockInstructions)
-    }
-
-    func testWhenSupportsAddingToDockIsTrueThenCanShowDockInstructionsIsFalse() {
-        mockDockCustomizer.supportsAddingToDock = true
-        let model = DockPreferencesModel(
-            dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil
-        )
-        XCTAssertFalse(model.canShowDockInstructions)
-    }
+    // MARK: - Add to Dock Instructions
 
     func testDockInstructionsVideoAssetIsNotNil() {
         XCTAssertNotNil(DockPreferencesModel.demoVideoURL)

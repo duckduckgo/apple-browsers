@@ -35,11 +35,6 @@ final class DockPreferencesModel: ObservableObject {
         dockCustomizer.supportsAddingToDock
     }
 
-    /// Whether instructions can be shown for how to add the app to the dock manually.
-    var canShowDockInstructions: Bool {
-        !canAddToDock
-    }
-
     /// Whether the app is being added to the dock.
     /// Used to optimistically update settings when adding the app to the dock.
     @Published private var isBeingAddedToDock = false

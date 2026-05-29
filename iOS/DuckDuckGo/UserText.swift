@@ -121,6 +121,8 @@ public struct UserText {
     public static let actionPrintSite = NSLocalizedString("action.title.print.site", value: "Print", comment: "Print action in the menu list")
     public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "Duck.ai", comment: "Open AI Chat action in the menu list")
     public static let actionToggleAIChatContextualSheet = NotLocalizedString("action.title.aiChat.toggleContextualSheet", value: "Toggle Duck.ai sheet", comment: "Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. Not translated; final copy will land in a follow-up PR.")
+    public static let actionHideAIChatChromeShortcut = NotLocalizedString("action.title.aiChat.hideChromeShortcut", value: "Hide Duck.ai Shortcut", comment: "Title of the long-press menu item on the iPad Duck.ai chrome chip that turns off the navigation-bar shortcut. Not translated; final copy will land in a follow-up PR.")
+    public static let actionOpenAISettings = NotLocalizedString("action.title.aiChat.openSettings", value: "Open AI Settings", comment: "Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. Not translated; final copy will land in a follow-up PR.")
     public static let accessibilityValueAIChatContextualSheetOpen = NotLocalizedString("accessibility.value.aiChat.contextualSheet.open", value: "Open", comment: "Accessibility value when the Duck.ai contextual sheet is open. Not translated; final copy will land in a follow-up PR.")
     public static let accessibilityValueAIChatContextualSheetClosed = NotLocalizedString("accessibility.value.aiChat.contextualSheet.closed", value: "Closed", comment: "Accessibility value when the Duck.ai contextual sheet is closed. Not translated; final copy will land in a follow-up PR.")
     public static let actionDuckAIVoice = NSLocalizedString("action.title.duckai.voice", value: "Duck.ai Voice", comment: "Open Duck.ai Voice mode action")
@@ -2878,12 +2880,10 @@ public struct UserText {
     public static let daxEasterEggLogoSaved = NSLocalizedString("dax.easter.egg.logo.saved", value: "Logo Saved", comment: "Toast message shown when the user saves a custom logo")
 
     // MARK: - ICS Calendar Links
-    // Not localized while the feature ships internal-only; swap to NSLocalizedString in the
-    // follow-up PR that flips the flag to enabled.
-    public static let icsAddToCalendarMultipleEvents = NotLocalizedString("ics.add-to-calendar.multiple-events", value: "Multiple events aren't supported. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add")
-    public static let icsAddToCalendarUnrecognizedTimeZone = NotLocalizedString("ics.add-to-calendar.unrecognized-time-zone", value: "Unsupported time zone. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve")
-    public static let icsAddToCalendarParseFailure = NotLocalizedString("ics.add-to-calendar.parse-failure", value: "This file can't be processed. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content)")
-    public static let icsEventAddedToCalendar = NotLocalizedString("ics.event-added-to-calendar", value: "Event added to Apple Calendar", comment: "Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar")
+    public static let icsAddToCalendarMultipleEvents = NSLocalizedString("ics.add-to-calendar.multiple-events", value: "Multiple events aren't supported. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add")
+    public static let icsAddToCalendarUnrecognizedTimeZone = NSLocalizedString("ics.add-to-calendar.unrecognized-time-zone", value: "Unsupported time zone. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve")
+    public static let icsAddToCalendarParseFailure = NSLocalizedString("ics.add-to-calendar.parse-failure", value: "This file can't be processed. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content)")
+    public static let icsEventAddedToCalendar = NSLocalizedString("ics.event-added-to-calendar", value: "Event added to Apple Calendar", comment: "Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar")
 
     // MARK: - OmniBar Long Press Menu
     public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")

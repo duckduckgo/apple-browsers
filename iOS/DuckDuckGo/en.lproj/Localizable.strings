@@ -2386,6 +2386,18 @@
 /* Home tab title */
 "homeTab.title" = "Home";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Multiple events aren't supported. Try opening the downloaded file instead.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "This file can't be processed. Try opening the downloaded file instead.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Unsupported time zone. Try opening the downloaded file instead.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Event added to Apple Calendar";
+
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Import Passwords";
 

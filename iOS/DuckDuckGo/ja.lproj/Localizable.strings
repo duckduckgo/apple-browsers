@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "ホーム";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "複数のイベントには対応していません。代わりにダウンロードしたファイルを開いてみてください。";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "このファイルは処理できません。代わりにダウンロードしたファイルを開いてみてください。";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "このタイムゾーンには対応していません。代わりにダウンロードしたファイルを開いてみてください。";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Appleカレンダーにイベントが追加されました";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 

@@ -742,7 +742,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabsSaveOptimization:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabsSaveOptimization))
         case .icsCalendarLinks:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.icsCalendarLinks))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.icsCalendarLinks))
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:

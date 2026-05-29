@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "Inicio";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Varios eventos no son compatibles. Intenta abrir el archivo descargado en su lugar.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Este archivo no se puede procesar. Intenta abrir el archivo descargado en su lugar.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Zona horaria no compatible. Intenta abrir el archivo descargado en su lugar.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Evento añadido al calendario de Apple";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 

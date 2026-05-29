@@ -328,11 +328,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .microphoneColor24)
                     : .init(resource: .microphoneColor24Legacy)
             }
-            public static var microphoneAdd: DesignSystemImage {
-                AppRebrand.isAppRebranded()
-                    ? .init(resource: .microphoneAdd24)
-                    : .init(resource: .microphoneAdd24Legacy)
-            }
+            public static var microphoneAdd: DesignSystemImage { .init(resource: .microphoneAdd24) }
             public static var microphoneRemove: DesignSystemImage { .init(resource: .microphoneRemove24) }
             public static var paidAiChat: DesignSystemImage {
                 AppRebrand.isAppRebranded()

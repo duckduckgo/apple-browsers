@@ -454,11 +454,6 @@ public final class CustomToggleControl: NSControl {
 
     public override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
-        // NSColor → CGColor resolves against `NSAppearance.current` at conversion time,
-        // which isn't guaranteed to match this view's effective appearance here. Pin
-        // resolution to the view's drawing appearance so dynamic colours (e.g. a
-        // `designSystemColor`) refresh correctly after a light/dark switch — and suppress
-        // the implicit 0.25s CA transition so the ring snaps rather than cross-fades.
         updateFocusRingStrokeColors()
     }
 
@@ -724,14 +719,10 @@ public final class CustomToggleControl: NSControl {
     }
 
     public override func becomeFirstResponder() -> Bool {
-        // Only toggle ring visibility once the responder transition actually succeeded —
-        // if super returns false the view is *not* first responder, and `resignFirstResponder`
-        // won't fire to undo a premature show.
         let didBecome = super.becomeFirstResponder()
         if didBecome {
             setFocusRingHidden(false)
-            // `focusedBackgroundColor` differs from `backgroundColor`, so still redraw the body.
-            needsDisplay = true
+            needsDisplay = true  // refresh body for focusedBackgroundColor
         }
         return didBecome
     }

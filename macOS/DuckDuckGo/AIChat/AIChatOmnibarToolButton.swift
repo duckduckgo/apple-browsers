@@ -228,9 +228,6 @@ final class AIChatOmnibarToolButton: NSView {
     override var canBecomeKeyView: Bool { true }
 
     override func becomeFirstResponder() -> Bool {
-        // Only toggle ring visibility once the responder transition actually succeeded —
-        // if super returns false the view is *not* first responder, and `resignFirstResponder`
-        // won't fire to undo a premature show.
         let didBecome = super.becomeFirstResponder()
         if didBecome { setFocusRingHidden(false) }
         return didBecome

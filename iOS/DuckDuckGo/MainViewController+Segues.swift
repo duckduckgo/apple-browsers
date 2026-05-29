@@ -260,7 +260,7 @@ extension MainViewController {
         launchSettings()
     }
 
-    func segueToDuckDuckGoSubscription(origin: String? = nil) {
+    func segueToDuckDuckGoSubscription(origin: String?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         let components: URLComponents? = origin.map {

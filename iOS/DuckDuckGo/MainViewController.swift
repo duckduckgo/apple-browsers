@@ -980,7 +980,7 @@ class MainViewController: UIViewController {
                canShowVPNInUI {
                 segueToVPN()
             } else {
-                segueToDuckDuckGoSubscription()
+                segueToDuckDuckGoSubscription(origin: nil)
             }
         }
     }

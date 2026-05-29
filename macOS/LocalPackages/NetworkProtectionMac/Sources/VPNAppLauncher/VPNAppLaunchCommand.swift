@@ -29,7 +29,7 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
     case showSettings
     case showVPNLocations
     case moveAppToApplications
-    case showSubscription(origin: String? = nil)
+    case showSubscription(origin: String?)
 
     /// Query-item name used to carry the subscription-funnel origin across the launch-URL IPC.
     public static let showSubscriptionOriginQueryItem = "origin"

@@ -552,7 +552,7 @@ final class MainCoordinator {
 
     // MARK: - Public API
 
-    func segueToDuckDuckGoSubscription(origin: String? = nil) {
+    func segueToDuckDuckGoSubscription(origin: String?) {
         controller.segueToDuckDuckGoSubscription(origin: origin)
     }
 

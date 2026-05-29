@@ -59,7 +59,7 @@ final class VPNURLEventHandler {
             showMainWindow()
         case VPNAppLaunchCommand.showVPNLocations.launchURL:
             showLocations()
-        case VPNAppLaunchCommand.showSubscription().launchURL:
+        case VPNAppLaunchCommand.showSubscription(origin: nil).launchURL:
             let origin = URLComponents(url: url, resolvingAgainstBaseURL: false)?
                 .queryItems?
                 .first(where: { $0.name == VPNAppLaunchCommand.showSubscriptionOriginQueryItem })?
@@ -97,7 +97,7 @@ final class VPNURLEventHandler {
         windowControllersManager.showLocationPickerSheet()
     }
 
-    func showSubscription(origin: String? = nil) {
+    func showSubscription(origin: String?) {
         let fallback = Application.appDelegate.subscriptionManager.url(for: .purchase)
         let url = origin
             .flatMap { SubscriptionURL.purchaseURLComponentsWithOrigin($0)?.url }

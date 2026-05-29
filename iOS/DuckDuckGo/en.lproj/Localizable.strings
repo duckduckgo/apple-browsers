@@ -190,6 +190,9 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Features";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Chats";
+
 /* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
 "aichat.appMenu.header.chatHistory" = "Chat History";
 

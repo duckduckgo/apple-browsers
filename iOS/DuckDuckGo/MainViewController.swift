@@ -2327,6 +2327,7 @@ class MainViewController: UIViewController {
             dataSource: browsingMenuHeaderDataSource,
             isNewTabPage: newTabPageViewController != nil,
             isAITab: currentTab?.isAITab ?? false,
+            usesDuckAILogo: unifiedToggleInputFeature.isAvailable,
             isError: currentTab?.isError ?? false,
             hasLink: currentTab?.link != nil,
             url: currentTab?.url,
@@ -5084,6 +5085,16 @@ extension MainViewController: TabDelegate {
             omniBar.setEditingStateLogoHidden(true)
         }
         newTab()
+    }
+
+    func tabDidRequestNewSearch(_ tab: TabViewController) {
+        // Same as the Duck.ai header Plus-menu "New Search".
+        aiChatTabChatHeaderDidTapNewSearch()
+    }
+
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {
+        // Same as the Duck.ai header Plus-menu "New Voice Chat".
+        aiChatTabChatHeaderDidTapNewVoiceChat()
     }
 
     private func presentChatPathOnboardingCompletionIfNeeded() {

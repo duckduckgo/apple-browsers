@@ -138,7 +138,7 @@ extension TabViewController {
         if unifiedToggleInputFeature.isAvailable {
             return [
                 buildNewAIChatEntry(),
-                buildAIChatHistoryHeaderTile(),
+                buildAINewSearchHeaderTile(),
                 buildAIChatSettingsHeaderTile(),
             ]
         }
@@ -155,15 +155,12 @@ extension TabViewController {
         var entries = [BrowsingMenuEntry]()
 
         if unifiedToggleInputFeature.isAvailable {
-            if includeSettings {
-                entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
-                entries.append(.separator)
-            }
-
-            entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtilityItems, useDetailTextForZoom: useDetailTextForZoom))
+            // Chat-first layout: chat actions lead, Settings last. Zoom/Find/Print intentionally omitted.
+            entries.append(buildAINewVoiceChatEntry(useSmallIcon: useSmallIcon))
 
             entries.append(.separator)
 
+            entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
             entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
 
             if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
@@ -172,9 +169,9 @@ extension TabViewController {
 
             entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
 
-            if separateUtilityItems {
+            if includeSettings {
                 entries.append(.separator)
-                entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
+                entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
             }
 
             return entries
@@ -541,15 +538,38 @@ extension TabViewController {
         })
     }
     
-    /// Glyph deliberately matches the chat-history pill in `AIChatTabChatHeaderView` so the
-    /// header tile and the top-chrome pill read as the same action. Forced to `.alwaysTemplate`
-    /// so the menu cell's tint colour wins in dark mode — the asset's default rendering mode
-    /// renders dark in dark mode without it.
-    private func buildAIChatHistoryHeaderTile() -> BrowsingMenuEntry {
-        .regular(name: UserText.aiChatAppMenuHeaderChatHistory,
-                 accessibilityLabel: UserText.aiChatAppMenuHeaderChatHistory,
-                 image: DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate),
+    /// Mirrors the Plus-menu "New Search": opens a fresh tab forced into search mode.
+    private func buildAINewSearchHeaderTile() -> BrowsingMenuEntry {
+        .regular(name: UserText.aiChatHeaderNewSearchTitle,
+                 accessibilityLabel: UserText.aiChatHeaderNewSearchTitle,
+                 image: DesignSystemImages.Glyphs.Size24.findSearchSmall,
                  action: { [weak self] in
+            guard let self else { return }
+            self.delegate?.tabDidRequestNewSearch(self)
+        })
+    }
+
+    /// Mirrors the Plus-menu "New Voice Chat": starts a Duck.ai voice session.
+    private func buildAINewVoiceChatEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        .regular(name: UserText.aiChatHeaderNewVoiceChatTitle,
+                 accessibilityLabel: UserText.aiChatHeaderNewVoiceChatTitle,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.voice : DesignSystemImages.Glyphs.Size24.voice,
+                 action: { [weak self] in
+            guard let self else { return }
+            self.delegate?.tabDidRequestNewVoiceChat(self)
+        })
+    }
+
+    /// Opens the recent-chats sidebar. Size24 `chats` forced to `.alwaysTemplate` for dark mode;
+    /// Size16 falls back to `aiChatHistory` (no `chats` at 16px).
+    private func buildAIChatsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatHistory
+            : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        return .regular(name: UserText.aiChatAppMenuChats,
+                        accessibilityLabel: UserText.aiChatAppMenuChats,
+                        image: image,
+                        action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
             self?.submitToggleSidebarAction()
         })
@@ -558,7 +578,7 @@ extension TabViewController {
     private func buildAIChatSettingsHeaderTile() -> BrowsingMenuEntry {
         .regular(name: UserText.aiChatAppMenuHeaderChatSettings,
                  accessibilityLabel: UserText.aiChatAppMenuHeaderChatSettings,
-                 image: DesignSystemImages.Glyphs.Size24.settings,
+                 image: DesignSystemImages.Glyphs.Size24.aiChatSettings,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
             self?.submitOpenSettingsAction()

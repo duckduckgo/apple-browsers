@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 
 final class PassiveAddressBarTextField: NSTextField {
 

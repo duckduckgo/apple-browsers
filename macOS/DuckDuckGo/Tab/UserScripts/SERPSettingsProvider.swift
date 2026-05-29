@@ -24,6 +24,7 @@ import AIChat
 import PrivacyConfig
 import Persistence
 import Common
+import FoundationExtensions
 
 /// macOS implementation of SERP settings provider.
 ///

@@ -28,21 +28,22 @@ struct AIChatSyncIntroSheetView: View {
     let onNotNowTap: () -> Void
 
     var body: some View {
-        VStack {
+        VStack(spacing: 24) {
             VStack(spacing: 24) {
                 Image(.syncDesktopMobilePairFeature128)
 
                 Text(UserText.aiChatSyncIntroSheetTitle)
                     .daxTitle1()
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                Text(UserText.aiChatSyncIntroSheetBody)
+                Text(LocalizedStringKey(UserText.aiChatSyncIntroSheetBody))
                     .daxBodyRegular()
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.vertical, 20)
             .foregroundStyle(Color(designSystemColor: .textPrimary))
-
-            Spacer()
 
             VStack {
                 Button(action: onScanTap) {
@@ -59,8 +60,10 @@ struct AIChatSyncIntroSheetView: View {
                 .buttonStyle(GhostButtonStyle())
             }
         }
-        .padding([.horizontal, .top], 20)
-        .background(Color(designSystemColor: .backgroundSheets))
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
 

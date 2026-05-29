@@ -18,9 +18,11 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
-import XPCHelper
+import FoundationExtensions
 import os.log
+import XPCHelper
 
 /// This protocol describes the server-side IPC interface for controlling the tunnel
 ///

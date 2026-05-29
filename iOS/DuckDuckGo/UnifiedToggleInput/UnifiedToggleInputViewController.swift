@@ -33,7 +33,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment, isUserInitiated: Bool)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController)
@@ -63,6 +63,14 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     // MARK: - Public API
+
+    /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
+    var aiTabFireButton: UIButton { inputBarView.aiTabFireButton }
+
+    /// Dims the input bar for the fire-education onboarding step without affecting the fire button.
+    func setOnboardingDimmed(_ dimmed: Bool) {
+        inputBarView.setOnboardingDimmed(dimmed)
+    }
 
     init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
@@ -359,9 +367,9 @@ final class UnifiedToggleInputViewController: UIViewController {
             guard let self else { return }
             self.notifyHeightDidChange()
         }
-        barView.onAttachmentRemoved = { [weak self] id in
+        barView.onAttachmentRemoved = { [weak self] id, attachment, isUserInitiated in
             guard let self else { return }
-            delegate?.unifiedToggleInputVC(self, didRemoveAttachment: id)
+            delegate?.unifiedToggleInputVC(self, didRemoveAttachment: id, attachment: attachment, isUserInitiated: isUserInitiated)
         }
         barView.onAttachmentsLayoutDidChange = { [weak self] in
             guard let self else { return }

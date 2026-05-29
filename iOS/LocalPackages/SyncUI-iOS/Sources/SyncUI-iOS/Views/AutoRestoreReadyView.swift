@@ -77,12 +77,7 @@ public struct AutoRestoreReadyView: View {
                 } label: {
                     Text(UserText.autoRestoreReadyScanCodeLink)
                 }
-                .buttonStyle(GhostButtonStyle())
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(designSystemColor: .accent), lineWidth: 1)
-                        .padding(1)
-                )
+                .buttonStyle(SecondaryButtonStyle())
                 .frame(maxWidth: 360)
                 .padding(.horizontal, 30)
                 .padding(.bottom, 8)

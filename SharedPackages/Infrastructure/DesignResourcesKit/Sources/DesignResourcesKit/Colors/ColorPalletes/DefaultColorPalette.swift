@@ -314,7 +314,13 @@ private extension DefaultColorPalette {
         case .textLink:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
         case .accentPrimary:
-            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater50, darkColor: RebrandingColor.Pondwater.pondwater40)
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
+        case .accentPrimaryPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)
+        case .accentPrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.GrayScale.white)
+        case .accentGlowPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2))
         case .accentAltPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
         case .accentAltGlowPrimary:
@@ -326,7 +332,8 @@ private extension DefaultColorPalette {
         case .buttonsPrimaryDefault:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen30)
         case .buttonsPrimaryPressed:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin60, darkColor: RebrandingColor.Pollen.pollen40)
+            // Figma --ds-accent-alt-tertiary (#9E2B08 = Mandarin70). Was Mandarin60 (#CC3B0A) previously.
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen40)
         case .buttonsPrimaryText:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .buttonsSecondaryDefault:
@@ -335,6 +342,17 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.12), darkColor: RebrandingColor.GrayScale.white.opacity(0.24))
         case .buttonsSecondaryText:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.Eggshell.eggshell10)
+        case .destructivePrimary:
+            // Figma --ds-destructive-primary (#D83544). Not a named shade in the Red palette.
+            return DynamicColor(lightColor: Color(0xD83544), darkColor: RebrandingColor.Red.red40)
+        case .destructivePrimaryPressed:
+            // Figma --ds-destructive-tertiary (#A02231 = Red70).
+            return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
+        case .destructivePrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.GrayScale.white)
+        case .destructiveGlowPrimary:
+            // Figma --ds-destructive-glow-primary (rgba(229,36,75,0.2) = #E5244B @ 20%).
+            return DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xE5244B).opacity(0.2))
         case .controlsFillPrimary:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
         case .decorationPrimary:

@@ -18,6 +18,7 @@
 
 import SwiftUI
 import Combine
+import CombineExtensions
 #if os(iOS)
 import MetricBuilder
 import UIKit

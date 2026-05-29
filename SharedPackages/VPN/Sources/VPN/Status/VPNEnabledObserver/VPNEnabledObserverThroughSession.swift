@@ -21,6 +21,7 @@ import Foundation
 import NetworkExtension
 import NotificationCenter
 import Common
+import FoundationExtensions
 import os.log
 
 public class VPNEnabledObserverThroughSession: VPNEnabledObserver {

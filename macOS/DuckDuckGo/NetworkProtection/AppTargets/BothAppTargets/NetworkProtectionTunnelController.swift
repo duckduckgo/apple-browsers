@@ -20,6 +20,7 @@ import PrivacyConfig
 import Combine
 import SwiftUI
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import NetworkExtension

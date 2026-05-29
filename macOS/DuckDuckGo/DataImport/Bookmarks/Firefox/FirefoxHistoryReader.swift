@@ -20,6 +20,7 @@ import Foundation
 import GRDB
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 
 final class FirefoxHistoryReader {
 

@@ -182,8 +182,7 @@ final class DuckPlayerPreferences: ObservableObject {
     /// can be called from `init` before all stored properties are initialized.
     private static func rolloutDefaultsActive(featureFlagger: FeatureFlagger?) -> Bool {
         guard let featureFlagger else { return false }
-        return AdBlockingAvailability.isFeatureSupported(featureFlagger: featureFlagger)
-            && featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+        return AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger)
     }
 
     private func refreshDefaultModeIfNeeded() {

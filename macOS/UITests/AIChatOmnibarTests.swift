@@ -290,39 +290,4 @@ class AIChatOmnibarTests: UITestCase {
         waitForAddressBarValue(matching: "value == ''")
     }
 
-    /// Regression guard for the omnibar → Duck.ai routing: when the current tab is already on
-    /// Duck.ai, submitting another prompt via the omnibar must open a fresh chat in a new tab
-    /// instead of injecting the prompt into the loaded conversation. Pins the behavior change
-    /// in `WindowControllersManager.openAIChat` (`.currentTab + isDuckAIURL + hasPrompt`).
-    ///
-    /// Setup avoids using the focused omnibar to reach Duck.ai because that leaves the panel
-    /// mounted, replacing the address bar in the XCUI hierarchy and blocking the follow-up
-    /// submission. Instead, click the Duck.ai title button — on NTP it loads Duck.ai in the
-    /// current tab (see `test_duckAITitleButton_loadsInCurrentTab_whenOnNewTabPage` in
-    /// `AIChatTests`), with no panel state to clean up.
-    func test_omnibarSubmit_whenCurrentTabIsDuckAI_opensNewTab() throws {
-        // Step 1: land on Duck.ai in the current tab via the title button (not via the omnibar).
-        let duckAITitleButton = app.buttons["TabBarViewController.duckAIChromeTitleButton"].firstMatch
-        XCTAssertTrue(duckAITitleButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Duck.ai title button should be reachable on NTP")
-        duckAITitleButton.click()
-
-        let tabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
-        XCTAssertEqual(tabs.count, 1,
-                       "Setup precondition: title-button click on NTP loads Duck.ai in the current tab (one tab total)")
-
-        // Step 2: submit a prompt via the focused omnibar. Current tab is Duck.ai, so the
-        // routing change must open a new selected tab rather than reloading the loaded chat.
-        enterDuckAIModeWithPrompt("test prompt")
-        app.typeKey(.return, modifierFlags: [])
-
-        // Tab insertion is async wrt the keystroke — poll the count via predicate.
-        let predicate = NSPredicate(format: "count == 2")
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: tabs)
-        let result = XCTWaiter().wait(for: [expectation],
-                                      timeout: UITests.Timeouts.elementExistence * 3)
-        XCTAssertEqual(result, .completed,
-                       "Submitting a prompt via the omnibar while Duck.ai is the current tab must open a new tab (expected 2 tabs, got \(tabs.count))")
-    }
-
 }

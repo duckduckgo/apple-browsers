@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Combine
 import DuckAiDataStore
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -282,9 +281,6 @@ private final class CallCountingStorageHandler: DuckAiNativeStorageHandling {
     func putChats(_ chats: [DuckAiChatRecord]) throws {}
     func getChat(chatId: String) throws -> DuckAiChatRecord? { nil }
     func getAllChats() throws -> [DuckAiChatRecord] { [] }
-    func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
-        Just([]).setFailureType(to: Error.self).eraseToAnyPublisher()
-    }
 
     func deleteChat(chatId: String) throws {
         deleteChatCallCount += 1

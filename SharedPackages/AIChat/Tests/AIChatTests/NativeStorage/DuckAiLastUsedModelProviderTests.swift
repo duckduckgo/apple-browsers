@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Combine
 import DuckAiDataStore
 import XCTest
 @testable import AIChat
@@ -146,9 +145,6 @@ private final class StubStorageHandler: DuckAiNativeStorageHandling {
         return stubbedChat
     }
     func getAllChats() throws -> [DuckAiChatRecord] { [] }
-    func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
-        Just([]).setFailureType(to: Error.self).eraseToAnyPublisher()
-    }
     func deleteChat(chatId: String) throws {}
     func deleteAllChats() throws {}
     func putFile(uuid: String, chatId: String, data: Data) throws {}

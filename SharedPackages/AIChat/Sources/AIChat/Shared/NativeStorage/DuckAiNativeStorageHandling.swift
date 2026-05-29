@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Combine
 import Foundation
 import DuckAiDataStore
 
@@ -38,9 +37,6 @@ public protocol DuckAiNativeStorageHandling {
     func putChats(_ chats: [DuckAiChatRecord]) throws
     func getChat(chatId: String) throws -> DuckAiChatRecord?
     func getAllChats() throws -> [DuckAiChatRecord]
-    /// Emits the current chats on subscribe and re-emits on any change (writes
-    /// from the JS bridge, sync, cleaner, fire mode, debug tools, etc.).
-    func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error>
     func deleteChat(chatId: String) throws
     func deleteAllChats() throws
 

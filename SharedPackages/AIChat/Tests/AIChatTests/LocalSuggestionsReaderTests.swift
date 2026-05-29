@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Combine
 import DuckAiDataStore
 import XCTest
 @testable import AIChat
@@ -230,10 +229,6 @@ private final class CapturingStorageHandler: DuckAiNativeStorageHandling {
     func getAllChats() throws -> [DuckAiChatRecord] {
         if let error = errorToThrow { throw error }
         return chatsToReturn
-    }
-
-    func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
-        Just(chatsToReturn).setFailureType(to: Error.self).eraseToAnyPublisher()
     }
 
     func putEntry(key: String, value: Any) throws {}

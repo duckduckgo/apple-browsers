@@ -19,7 +19,6 @@
 
 import AIChat
 import BrowserServicesKit
-import Combine
 import Core
 import DuckAiDataStore
 import Foundation
@@ -232,7 +231,6 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     func putChats(_ chats: [DuckAiChatRecord]) throws { try inner.putChats(chats) }
     func getChat(chatId: String) throws -> DuckAiChatRecord? { try inner.getChat(chatId: chatId) }
     func getAllChats() throws -> [DuckAiChatRecord] { try inner.getAllChats() }
-    func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> { inner.chatsPublisher() }
     func deleteChat(chatId: String) throws { try inner.deleteChat(chatId: chatId) }
     func deleteAllChats() throws { try inner.deleteAllChats() }
 

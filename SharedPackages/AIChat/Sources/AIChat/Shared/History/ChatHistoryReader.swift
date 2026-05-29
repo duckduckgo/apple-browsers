@@ -26,14 +26,14 @@ public protocol ChatHistoryReading {
 
 public final class ChatHistoryReader: ChatHistoryReading {
 
-    private let storageHandler: DuckAiNativeStorageHandling
+    private let observer: DuckAiNativeChatsObserving
 
-    public init(storageHandler: DuckAiNativeStorageHandling) {
-        self.storageHandler = storageHandler
+    public init(observer: DuckAiNativeChatsObserving) {
+        self.observer = observer
     }
 
     public func chatsPublisher() -> AnyPublisher<[DuckAiChat], Error> {
-        storageHandler.chatsPublisher()
+        observer.chatsPublisher()
             .map { records in
                 records
                     .compactMap { try? DuckAiChat.decode(from: $0.data).chat }

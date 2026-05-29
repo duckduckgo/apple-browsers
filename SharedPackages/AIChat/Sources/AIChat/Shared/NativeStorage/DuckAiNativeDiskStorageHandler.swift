@@ -27,15 +27,15 @@ import Persistence
 /// delegated to a `DuckAiNativeDataStoring` (GRDB + filesystem). Construct via
 /// `DuckAiNativeStorageHandler(.disk(path:...))`, which handles key derivation
 /// and SQLCipher setup.
-public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling {
+public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving {
 
     private let settingsStore: any ThrowingKeyedStoring<DuckAiNativeStorageSettings>
-    private let dataStore: DuckAiNativeDataStoring
+    private let dataStore: any DuckAiNativeDataStoring & DuckAiNativeChatsRecordObserving
     private let settingsLock = NSLock()
 
     public init(
         settingsStore: any ThrowingKeyedStoring<DuckAiNativeStorageSettings>,
-        dataStore: DuckAiNativeDataStoring
+        dataStore: any DuckAiNativeDataStoring & DuckAiNativeChatsRecordObserving
     ) {
         self.settingsStore = settingsStore
         self.dataStore = dataStore

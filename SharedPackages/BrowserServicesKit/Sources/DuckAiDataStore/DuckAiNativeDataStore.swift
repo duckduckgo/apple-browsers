@@ -24,7 +24,7 @@ import Foundation
 import GRDB
 import os.log
 
-public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
+public final class DuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeChatsRecordObserving {
 
     /// Sentinel error stored in `setupResult` until the background setup task overwrites it.
     /// Under normal init flow this is never observed — `init` enqueues the setup task on the

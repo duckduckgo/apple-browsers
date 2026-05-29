@@ -1553,7 +1553,7 @@ class TabViewController: UIViewController {
     }
     
     func presentOpenInExternalAppAlert(url: URL) {
-        if safariRedirectHandler.handleRedirect(to: url) { return }
+        if safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: url) { return }
 
         let title = UserText.customUrlSchemeTitle
         let message = UserText.customUrlSchemeMessage
@@ -1739,6 +1739,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        Swift.print("***", #function)
 
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
@@ -2564,9 +2565,25 @@ extension TabViewController: WKNavigationDelegate {
         let schemeType = SchemeHandler.schemeType(for: url)
         self.blobDownloadTargetFrame = nil
 
-        if safariRedirectHandler.handleRedirect(to: url) {
-            completion(.cancel)
-            return
+        if (navigationAction.value(forKey: "isUserInitiated") as? Bool) == true {
+            Swift.print("resetting after user initiated navigation")
+            safariRedirectHandler.reset()
+        }
+
+        if !specialErrorPageNavigationHandler.isSpecialErrorPageRequest {
+            if safariRedirectHandler.handleRedirect(to: url) {
+                if !specialErrorPageNavigationHandler.isSpecialErrorPageRequest {
+                    Swift.print("*** cancelling", url)
+                    completion(.cancel)
+                    return
+                } else {
+                    Swift.print("*** now in special page request, fall through")
+                }
+            } else {
+                Swift.print("**** not cancelling", url)
+            }
+        } else {
+            Swift.print("*** special page request, skipping safari check")
         }
 
         switch schemeType {

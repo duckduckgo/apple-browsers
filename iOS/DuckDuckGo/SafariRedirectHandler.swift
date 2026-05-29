@@ -75,14 +75,23 @@ final class SafariRedirectHandler: SafariRedirectHandling {
         if !state.isSafariRedirectSuppressed {
             state.isSafariRedirectSuppressed = true
             hostStates[host] = state
-            convertAndLoad(url: url)
-            return true
         }
 
-        return handleSubsequentRedirect(url: url, host: host)
+        if state.redirectCount == 0 {
+            print("*** converting", url)
+            convertAndLoad(url: url)
+        } else if state.redirectCount > 0 {
+            print("*** showing error for", url)
+            delegate?.safariRedirectHandler(self, didRequestShowSafariRedirectLoopErrorForURL: url)
+        }
+
+        state.redirectCount += 1
+        hostStates[host] = state
+        return true
     }
 
     func reset() {
+        print("***", #function)
         hostStates.removeAll()
     }
 

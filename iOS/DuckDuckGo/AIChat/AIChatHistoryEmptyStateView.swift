@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import AIChat
 import DuckUI
 import DesignResourcesKitIcons
 
@@ -49,5 +50,7 @@ struct AIChatHistoryEmptyStateView: View {
 }
 
 #Preview {
-    AIChatHistoryEmptyStateView(viewModel: AIChatHistoryViewModel())
+    AIChatHistoryEmptyStateView(viewModel: AIChatHistoryViewModel(
+        suggestionsReader: LocalSuggestionsReader(storageHandler: DuckAiNativeMemoryStorageHandler())
+    ))
 }

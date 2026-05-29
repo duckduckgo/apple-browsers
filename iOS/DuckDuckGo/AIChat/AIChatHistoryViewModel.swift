@@ -18,15 +18,64 @@
 //
 
 import Foundation
+import AIChat
 
-/// Backing model for the native Duck.ai chat-history sheet. Owns user intents and
-/// emits them to its delegate (the presenter), which translates each intent into the
-/// matching UIKit action (dismiss, open Duck.ai, …). Keeps the view model free of
-/// UIKit and navigation concerns.
+/// View-layer model for a single chat row. Decouples the SwiftUI views from
+/// `AIChatSuggestion` (the upstream `AIChat`-module type), so previews and tests
+/// only depend on this 4-field struct.
+struct ChatItem: Identifiable, Equatable {
+    enum Kind: Equatable {
+        case text
+        case voice
+        case image
+    }
+
+    let id: String
+    let title: String
+    let kind: Kind
+    let pinned: Bool
+}
+
+/// Backing model for the native Duck.ai chat-history sheet. Owns user intents,
+/// loads chats from a `SuggestionsReading` data source, and publishes pinned/recent
+/// arrays for the SwiftUI views. Emits intents to its delegate (the presenter), which
+/// translates each intent into the matching UIKit action.
 @MainActor
 final class AIChatHistoryViewModel: ObservableObject {
 
+    /// Hard cap on the number of recent (non-pinned) chats fetched per load.
+    /// Pinned chats are unbounded. 500 covers realistic histories without pagination;
+    /// revisit if telemetry shows users hitting the cap.
+    static let maxRecentChats = 500
+
+    @Published private(set) var pinned: [ChatItem] = []
+    @Published private(set) var recent: [ChatItem] = []
+    @Published private(set) var isLoading: Bool = false
+
+    var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
+
+    private let suggestionsReader: SuggestionsReading
+
     weak var delegate: AIChatHistoryViewModelDelegate?
+
+    init(suggestionsReader: SuggestionsReading) {
+        self.suggestionsReader = suggestionsReader
+    }
+
+    func loadChats() async {
+        isLoading = true
+        defer { isLoading = false }
+
+        let result = await suggestionsReader.fetchSuggestions(query: nil, maxChats: Self.maxRecentChats)
+        switch result {
+        case .success(let (pinned, recent)):
+            self.pinned = pinned.map(ChatItem.init(from:))
+            self.recent = recent.map(ChatItem.init(from:))
+        case .failure:
+            self.pinned = []
+            self.recent = []
+        }
+    }
 
     func openDuckAiTapped() {
         delegate?.viewModelDidRequestOpenDuckAi()
@@ -37,4 +86,27 @@ final class AIChatHistoryViewModel: ObservableObject {
 protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// Dismiss the sheet and open the Duck.ai web chat.
     func viewModelDidRequestOpenDuckAi()
+}
+
+// MARK: - Mapping
+
+private extension ChatItem {
+    init(from suggestion: AIChatSuggestion) {
+        self.init(
+            id: suggestion.chatId,
+            title: suggestion.title,
+            kind: ChatItem.Kind(from: suggestion.kind),
+            pinned: suggestion.isPinned
+        )
+    }
+}
+
+private extension ChatItem.Kind {
+    init(from kind: AIChatSuggestion.Kind) {
+        switch kind {
+        case .text: self = .text
+        case .voice: self = .voice
+        case .image: self = .image
+        }
+    }
 }

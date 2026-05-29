@@ -43,22 +43,17 @@ struct ChatItem: Identifiable, Equatable {
 @MainActor
 final class AIChatHistoryViewModel: ObservableObject {
 
-    /// Hard cap on the number of recent (non-pinned) chats fetched per load.
-    /// Pinned chats are unbounded. 500 covers realistic histories without pagination;
-    /// revisit if telemetry shows users hitting the cap.
-    static let maxRecentChats = 500
-
     @Published private(set) var pinned: [ChatItem] = []
     @Published private(set) var recent: [ChatItem] = []
     @Published private(set) var isLoading: Bool = false
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
-    private let suggestionsReader: SuggestionsReading
+    private let suggestionsReader: LocalSuggestionsReader
 
     weak var delegate: AIChatHistoryViewModelDelegate?
 
-    init(suggestionsReader: SuggestionsReading) {
+    init(suggestionsReader: LocalSuggestionsReader) {
         self.suggestionsReader = suggestionsReader
     }
 
@@ -66,7 +61,9 @@ final class AIChatHistoryViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
-        let result = await suggestionsReader.fetchSuggestions(query: nil, maxChats: Self.maxRecentChats)
+        // Android shows every chat the local database holds — no recency window,
+        // no count cap. `fetchAllChats` mirrors that on iOS.
+        let result = await suggestionsReader.fetchAllChats(query: nil)
         switch result {
         case .success(let (pinned, recent)):
             self.pinned = pinned.map(ChatItem.init(from:))

@@ -41,9 +41,11 @@ ipa_dir_url="${IPA_URL%/*}"
 ipa_dir_s3="${IPA_S3_PATH%/*}"
 install_filename="${OUTPUT_NAME}.install.html"
 manifest_filename="${OUTPUT_NAME}.manifest.plist"
+qr_filename="${OUTPUT_NAME}.qr.png"
 
 manifest_url="${ipa_dir_url}/${manifest_filename}"
 install_url="${ipa_dir_url}/${install_filename}"
+qr_url="${ipa_dir_url}/${qr_filename}"
 
 # URL-encode the manifest URL for embedding in the itms-services link.
 manifest_url_encoded="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "${manifest_url}")"
@@ -69,10 +71,17 @@ install_template_vars=(
 python3 "${action_dir}/render.py" "${action_dir}/ios_adhoc_manifest.plist" "${manifest_filename}" "${manifest_template_vars[@]}"
 python3 "${action_dir}/render.py" "${action_dir}/ios_adhoc_install.html" "${install_filename}" "${install_template_vars[@]}"
 
+# QR code pointing at the install page, so the build runner can scan it straight
+# from the GitHub Actions run summary and open the page on the iPhone.
+python3 "${action_dir}/generate_qr.py" "${install_url}" "${qr_filename}"
+
 aws s3 cp "${manifest_filename}" "${ipa_dir_s3}/${manifest_filename}" \
   --acl public-read --content-type "application/x-plist"
 aws s3 cp "${install_filename}" "${ipa_dir_s3}/${install_filename}" \
   --acl public-read --content-type "text/html; charset=utf-8"
+aws s3 cp "${qr_filename}" "${ipa_dir_s3}/${qr_filename}" \
+  --acl public-read --content-type "image/png"
 
 echo "install-url=${install_url}" >> "${GITHUB_OUTPUT}"
+echo "qr-url=${qr_url}" >> "${GITHUB_OUTPUT}"
 echo "title=${TITLE}" >> "${GITHUB_OUTPUT}"

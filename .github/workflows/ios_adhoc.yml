@@ -214,6 +214,7 @@ jobs:
           DSYM_URL: ${{ steps.upload-dsyms-to-s3.outputs.dsym-url }}
           DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
           INSTALL_URL: ${{ steps.generate-ota.outputs.install-url }}
+          QR_URL: ${{ steps.generate-ota.outputs.qr-url }}
           TITLE: ${{ steps.generate-ota.outputs.title }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -224,6 +225,12 @@ jobs:
           echo "---" >> $GITHUB_STEP_SUMMARY
           if [[ -n "${INSTALL_URL:-}" ]]; then
             echo "🔗 [Install on iPhone](${INSTALL_URL})" >> $GITHUB_STEP_SUMMARY
+            if [[ -n "${QR_URL:-}" ]]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Scan with your iPhone to open the install page in Safari:" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "<img src=\"${QR_URL}\" alt=\"Scan to install on iPhone\" width=\"240\">" >> $GITHUB_STEP_SUMMARY
+            fi
           else
             echo "> [!WARNING]" >> $GITHUB_STEP_SUMMARY
             echo "> OTA install page generation failed or did not produce a URL. Use the IPA link below." >> $GITHUB_STEP_SUMMARY

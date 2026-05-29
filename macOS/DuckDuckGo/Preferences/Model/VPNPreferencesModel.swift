@@ -63,7 +63,6 @@ final class VPNPreferencesModel: ObservableObject {
                 return
             }
             settings.enforceRoutes = enforceRoutes
-            reloadVPN()
         }
     }
 

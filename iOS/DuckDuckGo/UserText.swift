@@ -2520,63 +2520,104 @@ public struct UserText {
 
         enum DuckAICPP {
             public enum Intro {
-                public static let message = NotLocalizedString("onboarding.duckai.intro.message", value: "Ready to chat privately with ChatGPT, Claude, and other AIs for free, in a browser that actively protects you?", comment: "The message of the onboarding intro dialog popup")
+                public static let message = NSLocalizedString(
+                    "onboarding.duckai.intro.message",
+                    value: "Ready to chat privately with ChatGPT, Claude, and other AIs for free, in a browser that actively protects you?",
+                    comment: "The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated."
+                )
             }
 
             public enum Skip {
-                public static let message = NotLocalizedString("onboarding.duckai.skip.message", value: "Remember: you can use Duck.ai from anywhere you see the chat icon [[chat_icon]]", comment: "The message of the onboarding skip dialog popup")
+                public static let message = NSLocalizedString(
+                    "onboarding.duckai.skip.message",
+                    value: "Remember: you can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
+                    comment: "The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated."
+                )
 
-                public static let confirmSkipOnboardingCTA = NotLocalizedString("onboarding.duckai.skip.cta.confirm", value: "Start AI Chat", comment: "The title of the button to skip the onboarding and start browsing.")
+                public static let confirmSkipOnboardingCTA = NSLocalizedString(
+                    "onboarding.duckai.skip.cta.confirm",
+                    value: "Start AI Chat",
+                    comment: "Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat"
+                )
             }
 
             public enum AIComparison {
-                public static let title = NotLocalizedString("onboarding.duckai.aiComparison.title", value: "AI protections activated!", comment: "The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers")
-                public static let subHeader = NotLocalizedString("onboarding.duckai.aiComparison.subheader", value: "Popular AIs", comment: "The header to explain how Duck.ai compares to other AIs")
-                public static let cta = NotLocalizedString("onboarding.duckai.aiComparison.cta", value: "Give Duck.ai a try!", comment: "Button to continue the onboarding flow")
+                public static let title = NSLocalizedString(
+                    "onboarding.duckai.aiComparison.title",
+                    value: "AI protections activated!",
+                    comment: "The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers"
+                )
+                public static let subHeader = NSLocalizedString(
+                    "onboarding.duckai.aiComparison.subheader",
+                    value: "Popular AIs",
+                    comment: "Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow."
+                )
+                public static let cta = NSLocalizedString(
+                    "onboarding.duckai.aiComparison.cta",
+                    value: "Give Duck.ai a try!",
+                    comment: "Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated."
+                )
 
                 public enum Features {
-                    public static let anonymousChats = NotLocalizedString("onboarding.duckai.ai.features.anonymousChats.title", value: "All chats are anonymized", comment: "Message to highlight AI capability of anonymous chats")
-                    public static let noAccountsNeeded = NotLocalizedString("onboarding.duckai.ai.features.noAccountsNeeded.title", value: "No account needed to access all AI features", comment: "Message to highlight AI capability of no accounts needed to chat")
-                    public static let noTrainingData = NotLocalizedString("onboarding.duckai.ai.features.noTrainingData.title", value: "Never uses your chats to train AI", comment: "Message to highlight how users AI chat are not used to train AI models")
-                    public static let onePlaceAccess = NotLocalizedString("onboarding.duckai.ai.features.onePlaceAccess.title", value: "Access ChatGPT, Claude, and more, all in one place", comment: "Message to highlight AI capability of AI models all in one place")
+                    public static let anonymousChats = NSLocalizedString(
+                        "onboarding.duckai.ai.features.anonymousChats.title",
+                        value: "All chats are anonymized",
+                        comment: "One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized"
+                    )
+                    public static let noAccountsNeeded = NSLocalizedString(
+                        "onboarding.duckai.ai.features.noAccountsNeeded.title",
+                        value: "No account needed to access all AI features",
+                        comment: "One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features"
+                    )
+                    public static let noTrainingData = NSLocalizedString(
+                        "onboarding.duckai.ai.features.noTrainingData.title",
+                        value: "Never uses your chats to train AI",
+                        comment: "One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models"
+                    )
+                    public static let onePlaceAccess = NSLocalizedString(
+                        "onboarding.duckai.ai.features.onePlaceAccess.title",
+                        value: "Access ChatGPT, Claude, and more, all in one place",
+                        comment: "One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated."
+                    )
                 }
             }
 
             public enum DuckAIQuery {
-                public static let title = NotLocalizedString(
+                public static let title = NSLocalizedString(
                     "onboarding.duckai.duckAIQuery.title",
                     value: "Now, try a private AI chat!",
-                    comment: "Title for the onboarding Duck.ai query screen."
+                    comment: "Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat."
                 )
             }
 
             public enum AddToDock {
                 public enum Promo {
-                    static let message = NotLocalizedString(
+                    static let message = NSLocalizedString(
                         "onboarding.duckai.addToDock.promo.message",
                         value: "I'll nest in easy reach for all your daily AI chats and browsing.",
-                        comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock."
+                        comment: "Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow."
                     )
                 }
             }
 
             public enum BrowserComparison {
-                public static let title = NotLocalizedString(
+                public static let title = NSLocalizedString(
                     "onboarding.duckai.browser.title",
                     value: "Want to make DuckDuckGo your default browser?",
-                    comment: "The title of the dialog to show the privacy features that DuckDuckGo offers"
+                    comment: "Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser."
                 )
             }
 
             public enum Contextual {
-                static let onboardingEndOfJourneyMessage = NotLocalizedString(
+                static let onboardingEndOfJourneyMessage = NSLocalizedString(
                     "onboarding.duckai.contextual.end-of-journey.message",
                     value: "Start a private AI chat with Duck.ai or toggle to Search for protected browsing.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
-                    comment: "Message of the last screen of the onboarding to the browser app for the Duck.ai flow.")
-                static let subscriptionMessage = NotLocalizedString(
+                    comment: "Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated."
+                )
+                static let subscriptionMessage = NSLocalizedString(
                     "onboarding.duckai.contextual.subscription.message",
                     value: "We also offer a paid subscription featuring advanced AI models with higher chat limits from GPT, Claude, and Llama, a secure VPN, and more.",
-                    comment: "Body text of the subscription promo for Duck.ai flow."
+                    comment: "Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated."
                 )
             }
         }

@@ -110,10 +110,6 @@ Clearing roughly follows: prepare tabs → burn tabs → web cache → history �
 
 Fire animation is controlled by user preferences via ``VisualizeFireSettingsDecider``.
 
-### Testing
-
-Test Fire functionality using mock implementations of dependencies like `HistoryCoordinating` and `WebCacheManager` to verify clearing behavior.
-
 ## Fire Dialog (Feature-Flagged)
 
 The new Fire Dialog provides enhanced UX with visual options (clear current tab, window, or all data), granular toggles for what gets cleared, persistent settings, and time range selection.

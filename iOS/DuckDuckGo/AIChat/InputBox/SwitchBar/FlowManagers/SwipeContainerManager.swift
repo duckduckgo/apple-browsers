@@ -20,18 +20,30 @@
 import Combine
 import Foundation
 import UIKit
-import PrivacyConfig
 
 /// Manages the horizontal swipe container with pagination between search and AI chat modes
 final class SwipeContainerManager: NSObject {
 
+    enum ContentTransition {
+        case paged
+        case crossfade
+
+        init(switchBarHandler: SwitchBarHandling) {
+            self = switchBarHandler.isUsingFadeOutAnimation ? .crossfade : .paged
+        }
+    }
+
     // MARK: - Properties
 
     private let switchBarHandler: SwitchBarHandling
-    private let featureFlagger: FeatureFlagger
+    private let contentTransition: ContentTransition
+
+    private var usesFadeOutTransition: Bool {
+        contentTransition == .crossfade
+    }
 
     var searchPageContainer: UIView {
-        if switchBarHandler.isUsingFadeOutAnimation {
+        if usesFadeOutTransition {
             return fadeOutContainerViewController.searchPageContainer
         } else {
             return swipeContainerViewController.searchPageContainer
@@ -39,7 +51,7 @@ final class SwipeContainerManager: NSObject {
     }
 
     var chatPageContainer: UIView {
-        if switchBarHandler.isUsingFadeOutAnimation {
+        if usesFadeOutTransition {
             return fadeOutContainerViewController.chatPageContainer
         } else {
             return swipeContainerViewController.chatPageContainer
@@ -47,10 +59,10 @@ final class SwipeContainerManager: NSObject {
     }
 
     private lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
-    private lazy var fadeOutContainerViewController = FadeOutContainerViewController(switchBarHandler: switchBarHandler, featureFlagger: featureFlagger)
+    private lazy var fadeOutContainerViewController = FadeOutContainerViewController(switchBarHandler: switchBarHandler)
 
     var containerViewController: UIViewController {
-        switchBarHandler.isUsingFadeOutAnimation ? fadeOutContainerViewController : swipeContainerViewController
+        usesFadeOutTransition ? fadeOutContainerViewController : swipeContainerViewController
     }
 
     var delegate: SwipeContainerViewControllerDelegate? {
@@ -64,8 +76,18 @@ final class SwipeContainerManager: NSObject {
     }
 
     var isSwipeEnabled: Bool {
-        get { swipeContainerViewController.isSwipeEnabled }
-        set { swipeContainerViewController.isSwipeEnabled = newValue }
+        get {
+            usesFadeOutTransition
+                ? fadeOutContainerViewController.isSwipeEnabled
+                : swipeContainerViewController.isSwipeEnabled
+        }
+        set {
+            if usesFadeOutTransition {
+                fadeOutContainerViewController.isSwipeEnabled = newValue
+            } else {
+                swipeContainerViewController.isSwipeEnabled = newValue
+            }
+        }
     }
 
     var fadeOutDelegate: FadeOutContainerViewControllerDelegate? {
@@ -76,9 +98,9 @@ final class SwipeContainerManager: NSObject {
     // MARK: - Initialization
     
     init(switchBarHandler: SwitchBarHandling,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         contentTransition: ContentTransition? = nil) {
         self.switchBarHandler = switchBarHandler
-        self.featureFlagger = featureFlagger
+        self.contentTransition = contentTransition ?? ContentTransition(switchBarHandler: switchBarHandler)
         super.init()
     }
     
@@ -104,7 +126,7 @@ final class SwipeContainerManager: NSObject {
 
     /// Overlays the search page on the visible area, or returns it to its natural position.
     func setSearchPageVisible(_ visible: Bool, animated: Bool) {
-        if switchBarHandler.isUsingFadeOutAnimation {
+        if usesFadeOutTransition {
             applySearchPageFade(visible, animated: animated)
         } else {
             applySearchPageSlide(visible, animated: animated)
@@ -154,8 +176,8 @@ final class SwipeContainerManager: NSObject {
     }
 
     func syncVisibleMode(animated: Bool) {
-        if switchBarHandler.isUsingFadeOutAnimation {
-            fadeOutContainerViewController.setMode(switchBarHandler.currentToggleState)
+        if usesFadeOutTransition {
+            fadeOutContainerViewController.setMode(switchBarHandler.currentToggleState, animated: animated)
         } else {
             swipeContainerViewController.syncToCurrentMode(animated: animated)
         }

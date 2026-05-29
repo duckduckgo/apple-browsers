@@ -150,6 +150,8 @@ final class DaxLogoManager {
             guard self?.pendingTransitionToken == token else { return }
             self?.pendingTransitionToken = nil
             self?.isAnimatingLogoTransition = false
+            self?.currentProgress = targetProgress
+            self?.updateState()
         }
     }
 

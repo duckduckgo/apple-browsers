@@ -289,6 +289,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
+    case walletPassDownload
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -803,6 +806,7 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .duckAiChatHistory }
 
     case featureEnabled
+    case nativeChatHistory
 }
 
 public enum PromoQueueSubfeature: String, PrivacySubfeature {

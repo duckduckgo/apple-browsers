@@ -1812,35 +1812,52 @@ extension TabViewController: WKNavigationDelegate {
         let isSuccessfulResponse = httpResponse?.isSuccessfulResponse ?? false
         lastHttpStatusCode = httpResponse?.statusCode
 
-        // Important: Order of these checks matter!
-        if urlSchemeType == .blob {
-            // 1. To properly handle BLOB we need to trigger its download, if temporaryDownloadForPreviewedFile is set we allow its load in the web view
-            if let temporaryDownloadForPreviewedFile, temporaryDownloadForPreviewedFile.url == navigationResponse.response.url {
-                // BLOB already has a temporary downloaded so and we can allow loading it
-                blobDownloadTargetFrame = nil
-                return .allow
-            } else {
-                // First we need to trigger download to handle it then in webView:navigationAction:didBecomeDownload
-                return .download
-            }
-        } else if FilePreviewHelper.canAutoPreviewMIMEType(mimeType) ||
-                    FilePreviewHelper.canAutoPreviewICSByExtension(url: navigationResponse.response.url,
-                                                                   filename: navigationResponse.response.suggestedFilename,
-                                                                   featureFlagger: featureFlagger) {
-            // 2. For this MIME type we are able to provide a better custom preview via FilePreviewHelper so it takes priority
+        let shape = NavigationResponseRouter.ResponseShape(
+            url: navigationResponse.response.url,
+            mimeType: mimeType,
+            canShowMIMEType: navigationResponse.canShowMIMEType,
+            suggestedFilename: navigationResponse.response.suggestedFilename,
+            isContentDispositionAttachment: httpResponse?.shouldDownload ?? false,
+            didNavigationActionRequestDownload: recentNavigationActionShouldPerformDownloadURL != nil
+                && recentNavigationActionShouldPerformDownloadURL == navigationResponse.response.url,
+            urlSchemeType: urlSchemeType,
+            urlNavigationalScheme: urlNavigationalScheme,
+            hasTemporaryBlobDownload: temporaryDownloadForPreviewedFile?.url == navigationResponse.response.url
+        )
+        let router = NavigationResponseRouter(featureFlagger: featureFlagger)
+
+        switch router.decide(for: shape) {
+        case .blobAllow:
+            blobDownloadTargetFrame = nil
+            return .allow
+
+        case .blobDownload:
+            return .download
+
+        case .autoPreviewPersist:
+            // Legacy URLSession path. ICS persists to Downloads. Transient types fall here when the
+            // walletPassDownload failsafe is off.
             let (policy, download) = await startDownload(with: navigationResponse)
             mostRecentAutoPreviewDownloadID = download?.id
-            Pixel.fire(pixel: .downloadStarted,
-                       withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "1"])
             return policy
-        } else if shouldTriggerDownloadAction(for: navigationResponse),
-                  let downloadMetadata = try? AppDependencyProvider.shared.downloadManager.downloadMetaData(for: navigationResponse.response) {
-            // 3a. We know it is a download, but allow WebKit handle the "data" scheme natively
-            if urlNavigationalScheme == .data {
-                return .download
-            }
 
-            // 3b. We know the response should trigger the file download prompt
+        case .autoPreviewTransient:
+            // Modern WKDownload path. The didBecome download: handler picks up the response and routes
+            // it through transfer() with isTemporary: true, preserving POST and session state.
+            return .download
+
+        case .dataSchemeDownload:
+            return .download
+
+        case .userPromptDownload:
+            guard let downloadMetadata = try? AppDependencyProvider.shared.downloadManager.downloadMetaData(for: navigationResponse.response) else {
+                // Preserve pre-extraction behavior: if metadata cannot be built, fall through to the
+                // webViewPreview branch when canShowMIMEType, otherwise allow.
+                if navigationResponse.canShowMIMEType {
+                    return await handleWebViewPreviewBranch(navigationResponse, isSuccessfulResponse: isSuccessfulResponse)
+                }
+                return .allow
+            }
             switch await presentSaveToDownloadsAlert(with: downloadMetadata) {
             case .success:
                 let (policy, _) = await startDownload(with: navigationResponse)
@@ -1848,25 +1865,25 @@ extension TabViewController: WKNavigationDelegate {
             case .cancelled:
                 return .cancel
             }
-        } else if navigationResponse.canShowMIMEType {
-            // 4. WebView can preview the MIME type and it is not to be handled by our custom FilePreviewHelper
-            url = webView.url
-            if navigationResponse.isForMainFrame, let decision = setupOrClearTemporaryDownload(for: navigationResponse.response) {
-                // Loading a file preview in web view
-                return decision
-            } else {
-                // Loading HTML
-                if navigationResponse.isForMainFrame && isSuccessfulResponse {
-                    adClickAttributionDetection.on2XXResponse(url: url)
-                }
-                await adClickAttributionLogic.onProvisionalNavigation()
 
-                return .allow
-            }
-        } else {
-            // Fallback
+        case .webViewPreview:
+            return await handleWebViewPreviewBranch(navigationResponse, isSuccessfulResponse: isSuccessfulResponse)
+
+        case .allowDefault:
             return .allow
         }
+    }
+
+    private func handleWebViewPreviewBranch(_ navigationResponse: WKNavigationResponse, isSuccessfulResponse: Bool) async -> WKNavigationResponsePolicy {
+        url = webView.url
+        if navigationResponse.isForMainFrame, let decision = setupOrClearTemporaryDownload(for: navigationResponse.response) {
+            return decision
+        }
+        if navigationResponse.isForMainFrame && isSuccessfulResponse {
+            adClickAttributionDetection.on2XXResponse(url: url)
+        }
+        await adClickAttributionLogic.onProvisionalNavigation()
+        return .allow
     }
 
     private func shouldTriggerDownloadAction(for navigationResponse: WKNavigationResponse) -> Bool {

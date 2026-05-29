@@ -88,46 +88,4 @@ public final class LocalSuggestionsReader: SuggestionsReading {
     public func tearDown() {
         // No-op — local storage does not require teardown.
     }
-
-    /// Returns every chat the local storage holds, with no recency window and no
-    /// count cap — matches Android's chat-history surface which displays everything
-    /// synchronized to the local database. Pinned chats first, then non-pinned
-    /// sorted by `lastEdit` descending.
-    @MainActor
-    public func fetchAllChats(query: String?) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
-        do {
-            let records = try storageHandler.getAllChats()
-            let decoded = records.compactMap { try? DuckAiChat.decode(from: $0.data) }
-
-            let trimmedQuery = query?.trimmingCharacters(in: .whitespaces)
-            let filtered: [(chat: DuckAiChat, firstUserMessageContent: String?)]
-
-            if let trimmedQuery, !trimmedQuery.isEmpty {
-                filtered = decoded.filter { $0.chat.title.localizedCaseInsensitiveContains(trimmedQuery) }
-            } else {
-                filtered = decoded
-            }
-
-            let suggestions = filtered.map { item in
-                AIChatSuggestion(
-                    id: item.chat.chatId,
-                    title: item.chat.title,
-                    isPinned: item.chat.pinned,
-                    chatId: item.chat.chatId,
-                    timestamp: AIChatSuggestion.parseISO8601Date(item.chat.lastEdit),
-                    firstUserMessageContent: item.firstUserMessageContent,
-                    model: item.chat.model
-                )
-            }
-
-            let pinned = suggestions.filter { $0.isPinned }
-            var recent = suggestions.filter { !$0.isPinned }
-            recent.sort { ($0.timestamp ?? .distantPast) > ($1.timestamp ?? .distantPast) }
-
-            return .success((pinned: pinned, recent: recent))
-        } catch {
-            Logger.aiChat.error("LocalSuggestionsReader: Failed to fetch all chats: \(error.localizedDescription)")
-            return .failure(error)
-        }
-    }
 }

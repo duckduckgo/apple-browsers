@@ -51,6 +51,6 @@ struct AIChatHistoryEmptyStateView: View {
 
 #Preview {
     AIChatHistoryEmptyStateView(viewModel: AIChatHistoryViewModel(
-        suggestionsReader: LocalSuggestionsReader(storageHandler: DuckAiNativeMemoryStorageHandler())
+        reader: ChatHistoryReader(storageHandler: DuckAiNativeMemoryStorageHandler())
     ))
 }

@@ -5229,12 +5229,12 @@ extension MainViewController: TabDelegate {
     }
 
     func openAIChatHistory() {
-        // Local-only reader: we don't want the JS-bridged web suggestions here, just
-        // what's already saved on-disk in the encrypted SQLite store. Falls back to an
-        // empty in-memory store if no native storage is configured (edge case).
+        // Reads directly from the encrypted native storage — no JS-bridged web
+        // suggestions, no recency window. Falls back to an empty in-memory store
+        // if no native storage is configured (edge case).
         let storageHandler = duckAiNativeStorageHandler ?? DuckAiNativeMemoryStorageHandler()
-        let suggestionsReader = LocalSuggestionsReader(storageHandler: storageHandler)
-        let viewModel = AIChatHistoryViewModel(suggestionsReader: suggestionsReader)
+        let reader = ChatHistoryReader(storageHandler: storageHandler)
+        let viewModel = AIChatHistoryViewModel(reader: reader)
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel)
         let navigationController = UINavigationController(rootViewController: content)

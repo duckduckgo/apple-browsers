@@ -20,9 +20,8 @@
 import Foundation
 import AIChat
 
-/// View-layer model for a single chat row. Decouples the SwiftUI views from
-/// `AIChatSuggestion` (the upstream `AIChat`-module type), so previews and tests
-/// only depend on this 4-field struct.
+/// View-layer model for a single chat row. Decouples the views from `DuckAiChat`
+/// (the storage type), so previews and tests only depend on this 4-field struct.
 struct ChatItem: Identifiable, Equatable {
     enum Kind: Equatable {
         case text
@@ -37,8 +36,8 @@ struct ChatItem: Identifiable, Equatable {
 }
 
 /// Backing model for the native Duck.ai chat-history sheet. Owns user intents,
-/// loads chats from a `SuggestionsReading` data source, and publishes pinned/recent
-/// arrays for the SwiftUI views. Emits intents to its delegate (the presenter), which
+/// loads chats from a `ChatHistoryReading` data source, and publishes pinned/recent
+/// arrays for the views. Emits intents to its delegate (the presenter), which
 /// translates each intent into the matching UIKit action.
 @MainActor
 final class AIChatHistoryViewModel: ObservableObject {
@@ -49,25 +48,26 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
-    private let suggestionsReader: LocalSuggestionsReader
+    private let reader: ChatHistoryReading
 
     weak var delegate: AIChatHistoryViewModelDelegate?
 
-    init(suggestionsReader: LocalSuggestionsReader) {
-        self.suggestionsReader = suggestionsReader
+    init(reader: ChatHistoryReading) {
+        self.reader = reader
     }
 
     func loadChats() async {
         isLoading = true
         defer { isLoading = false }
 
-        // Android shows every chat the local database holds — no recency window,
-        // no count cap. `fetchAllChats` mirrors that on iOS.
-        let result = await suggestionsReader.fetchAllChats(query: nil)
+        // Match Android: read every chat the local database holds. The reader
+        // already returns chats with pinned-first ordering and `lastEdit` desc.
+        let result = await reader.fetchAllChats(query: nil)
         switch result {
-        case .success(let (pinned, recent)):
-            self.pinned = pinned.map(ChatItem.init(from:))
-            self.recent = recent.map(ChatItem.init(from:))
+        case .success(let chats):
+            let items = chats.map(ChatItem.init(from:))
+            self.pinned = items.filter(\.pinned)
+            self.recent = items.filter { !$0.pinned }
         case .failure:
             self.pinned = []
             self.recent = []
@@ -88,12 +88,16 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
 // MARK: - Mapping
 
 private extension ChatItem {
-    init(from suggestion: AIChatSuggestion) {
+    init(from chat: DuckAiChat) {
+        // Reuse the canonical model-string → kind helper used by autocomplete so
+        // the chat-history rows stay in sync with how the rest of the app
+        // classifies Duck.ai chat types.
+        let suggestionKind = AIChatSuggestion.kind(forModel: chat.model)
         self.init(
-            id: suggestion.chatId,
-            title: suggestion.title,
-            kind: ChatItem.Kind(from: suggestion.kind),
-            pinned: suggestion.isPinned
+            id: chat.chatId,
+            title: chat.title,
+            kind: ChatItem.Kind(from: suggestionKind),
+            pinned: chat.pinned
         )
     }
 }

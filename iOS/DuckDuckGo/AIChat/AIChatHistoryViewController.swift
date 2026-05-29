@@ -46,9 +46,6 @@ final class AIChatHistoryViewController: UIViewController {
         // Default ~22pt gap between table header and the first section. Figma wants
         // the search bar and PINNED to sit close together.
         table.sectionHeaderTopPadding = 0
-        // Figma insets cards by 16pt from the screen edge (vs `.insetGrouped`'s
-        // default ~20pt). Override the layout margins so the cards match.
-        table.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
         return table
     }()
 
@@ -116,15 +113,17 @@ final class AIChatHistoryViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
-        // Search bar lives in the table header. 16pt outer inset matches the cell
-        // card inset below (Figma spec).
+        // Search bar lives in the table header. 12pt outer inset visually lines its
+        // pill up with the `.insetGrouped` cells below — the system manages the
+        // card inset itself; trying to override it via `directionalLayoutMargins`
+        // only changes cell *content* margins, not the card position.
         let headerHeight = searchBar.intrinsicContentSize.height
         let headerView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: headerHeight))
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         headerView.addSubview(searchBar)
         NSLayoutConstraint.activate([
-            searchBar.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
-            searchBar.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
+            searchBar.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 12),
+            searchBar.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -12),
             searchBar.topAnchor.constraint(equalTo: headerView.topAnchor),
             searchBar.bottomAnchor.constraint(equalTo: headerView.bottomAnchor)
         ])

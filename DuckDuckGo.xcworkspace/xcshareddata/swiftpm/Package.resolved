@@ -1,5 +1,5 @@
 {
-  "originHash" : "0fa6e9348f2f663332d1531463e3a65d9bf9d69ea018cd02faaeaf5f26ca42d2",
+  "originHash" : "cff39aae2f1dfd73f37d3396119c928bb9fff86a1d8268e79570ec8c6808eb12",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "0d678e5ea42dd082c22237469599186b5d3a753a",
-        "version" : "14.14.0"
+        "branch" : "pr-releases/alavrenchuk/ntp-attach-tabs",
+        "revision" : "42f68f77bc0bca558401829063d13e1d3dcddedc"
       }
     },
     {

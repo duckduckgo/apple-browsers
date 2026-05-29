@@ -22,73 +22,30 @@ if [ -z "$ACTION" ] || [ -z "$PR_NUMBER" ]; then
 	exit 1
 fi
 
-declare -a LABELS=()
-LABELS_CHANGED=false
-
-load_labels() {
-	local current_labels
-	current_labels="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" \
-		--jq '.[].name')"
-	while IFS= read -r label; do
-		[[ -n "$label" ]] && LABELS+=("$label")
-	done <<< "$current_labels"
-}
-
-has_label() {
-	local label="$1"
-	local current
-	for current in "${LABELS[@]}"; do
-		if [[ "$current" == "$label" ]]; then
-			return 0
-		fi
-	done
-	return 1
-}
-
-add_label() {
-	local label="$1"
-	if has_label "$label"; then
-		return
-	fi
-	echo "  Adding label: $label"
-	LABELS+=("$label")
-	LABELS_CHANGED=true
-}
-
+# Function to remove a label (silent on failure)
 remove_label() {
 	local label="$1"
-	local current
-	local kept=()
-	for current in "${LABELS[@]}"; do
-		if [[ "$current" != "$label" ]]; then
-			kept+=("$current")
-		fi
-	done
-	if [[ ${#kept[@]} -ne ${#LABELS[@]} ]]; then
-		echo "  Removing label: $label"
-		LABELS_CHANGED=true
-	fi
-	LABELS=("${kept[@]}")
+	local encoded="${label// /%20}"
+	echo "  Removing label: $label"
+	gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels/$encoded" 2>/dev/null || echo "  (Label not found or already removed)"
 }
 
-apply_labels() {
-	local labels_json
-	if [[ "$LABELS_CHANGED" != "true" ]]; then
-		echo "  Labels already up to date"
-		return
-	fi
-	if [[ ${#LABELS[@]} -eq 0 ]]; then
-		labels_json="[]"
-	else
-		labels_json="$(printf '%s\n' "${LABELS[@]}" | jq -R . | jq -s .)"
-	fi
-	jq -n --argjson labels "$labels_json" '{labels: $labels}' \
-		| gh api -X PUT "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" \
-			--input - >/dev/null
+# Function to add a label
+add_label() {
+	local label="$1"
+	echo "  Adding label: $label"
+	gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" \
+		--field "labels[]=$label" 2>/dev/null || echo "  (Label already exists)"
+}
+
+# Function to check if a label exists
+has_label() {
+	local label="$1"
+	gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" \
+		--jq ".[].name | select(. == \"$label\")" 2>/dev/null | grep -q "$label"
 }
 
 echo "🏷️  Managing PR labels for action: $ACTION (status: ${STATUS:-N/A})"
-load_labels
 
 case "$ACTION" in
 	after_upload)
@@ -191,6 +148,5 @@ case "$ACTION" in
 		;;
 esac
 
-apply_labels
 echo "✨ Label management complete"
 exit 0

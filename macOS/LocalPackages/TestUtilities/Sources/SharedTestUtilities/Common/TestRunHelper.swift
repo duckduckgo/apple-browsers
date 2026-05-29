@@ -248,11 +248,6 @@ extension TestRunHelper: XCTestObservation {
             withExtendedLifetime(waiter) {}
         }
 
-        if case .integrationTests = AppVersion.runType {
-            // Reap web-content processes left in the shared process pool after each integration test.
-            WKProcessPool.cleanUpWebContentProcesses()
-        }
-
         loadedViews = []
     }
 

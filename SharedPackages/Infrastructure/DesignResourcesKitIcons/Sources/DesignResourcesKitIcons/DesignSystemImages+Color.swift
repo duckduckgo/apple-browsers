@@ -148,11 +148,7 @@ public extension DesignSystemImages {
                     : .init(resource: .addressBarBottomColor24Legacy)
             }
             public static var adsBlocked: DesignSystemImage { .init(resource: .adsBlockedColor24) }
-            public static var radar: DesignSystemImage {
-                AppRebrand.isAppRebranded()
-                    ? .init(resource: .radarColor24)
-                    : .init(resource: .radarColor24Legacy)
-            }
+            public static var radar: DesignSystemImage { .init(resource: .radarColor24) }
             public static var adsFewer: DesignSystemImage { .init(resource: .adsFewerColor24) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor24) }
             public static var aiChatAdvanced: DesignSystemImage {

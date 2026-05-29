@@ -5229,9 +5229,6 @@ extension MainViewController: TabDelegate {
     }
 
     func openAIChatHistory() {
-        // Reads directly from the encrypted native storage — no JS-bridged web
-        // suggestions, no recency window. Falls back to an empty in-memory store
-        // if no native storage is configured (edge case).
         let storageHandler = duckAiNativeStorageHandler ?? DuckAiNativeMemoryStorageHandler()
         let reader = ChatHistoryReader(storageHandler: storageHandler)
         let viewModel = AIChatHistoryViewModel(reader: reader)

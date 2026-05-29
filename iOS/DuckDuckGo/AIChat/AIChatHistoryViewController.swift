@@ -23,16 +23,7 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-/// Container for the native Duck.ai chat-history sheet. Owns a UIKit `UITableView`
-/// for the populated list and embeds the SwiftUI empty state via `UIHostingController`
-/// when the view model has no chats. Mirrors the structure of `BookmarksViewController`:
-/// search bar in the table header, system `UIToolbar` at the bottom.
 final class AIChatHistoryViewController: UIViewController {
-
-    private enum Section: Int, CaseIterable {
-        case pinned
-        case recent
-    }
 
     private let viewModel: AIChatHistoryViewModel
     private var cancellables: Set<AnyCancellable> = []
@@ -43,8 +34,6 @@ final class AIChatHistoryViewController: UIViewController {
         table.delegate = self
         table.register(AIChatHistoryCell.self, forCellReuseIdentifier: AIChatHistoryCell.reuseIdentifier)
         table.translatesAutoresizingMaskIntoConstraints = false
-        // Default ~22pt gap between table header and the first section. Figma wants
-        // the search bar and PINNED to sit close together.
         table.sectionHeaderTopPadding = 0
         return table
     }()
@@ -77,8 +66,6 @@ final class AIChatHistoryViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Match the body's grouped-background colour so the nav bar blends with the list
-        // — same trick `BookmarksViewController` uses.
         let backgroundColor: UIColor = .systemGroupedBackground
         view.backgroundColor = backgroundColor
         navigationController?.view.backgroundColor = backgroundColor
@@ -113,10 +100,6 @@ final class AIChatHistoryViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
-        // Search bar lives in the table header. 12pt outer inset visually lines its
-        // pill up with the `.insetGrouped` cells below — the system manages the
-        // card inset itself; trying to override it via `directionalLayoutMargins`
-        // only changes cell *content* margins, not the card position.
         let headerHeight = searchBar.intrinsicContentSize.height
         let headerView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: headerHeight))
         searchBar.translatesAutoresizingMaskIntoConstraints = false
@@ -143,8 +126,6 @@ final class AIChatHistoryViewController: UIViewController {
             target: nil,
             action: nil
         )
-        // Fixed gap separates Fire and Compose into their own pills (iOS 26 groups
-        // adjacent toolbar items into a single pill by default).
         let gap = UIBarButtonItem(systemItem: .fixedSpace)
         gap.width = 12
         let spacer = UIBarButtonItem(systemItem: .flexibleSpace)
@@ -158,9 +139,9 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     private func bindViewModel() {
-        Publishers.CombineLatest(viewModel.$pinned, viewModel.$recent)
+        viewModel.$chats
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, _ in
+            .sink { [weak self] _ in
                 self?.refreshContent()
             }
             .store(in: &cancellables)
@@ -211,35 +192,27 @@ final class AIChatHistoryViewController: UIViewController {
 extension AIChatHistoryViewController: UITableViewDataSource {
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        Section.allCases.count
+        viewModel.numberOfSections
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch Section(rawValue: section) {
-        case .pinned: return viewModel.pinned.count
-        case .recent: return viewModel.recent.count
-        case .none: return 0
-        }
+        viewModel.numberOfRows(in: section)
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        // Title returned for accessibility; visual header is built in `viewForHeaderInSection`.
-        title(for: section)
+        viewModel.title(forSection: section)
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard let title = title(for: section) else { return nil }
+        guard let title = viewModel.title(forSection: section) else { return nil }
         let label = UILabel()
         label.text = title
-        // Figma: 13pt SF Pro regular, text-secondary, uppercase, 18pt line height.
         label.font = .systemFont(ofSize: 13, weight: .regular)
         label.textColor = .secondaryLabel
         label.translatesAutoresizingMaskIntoConstraints = false
 
         let container = UIView()
         container.addSubview(label)
-        // Figma: 24pt left padding inside the 16pt content container → 24pt from
-        // card's outer edge. Top 16pt, no bottom padding.
         NSLayoutConstraint.activate([
             label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 24),
             label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -24),
@@ -250,23 +223,14 @@ extension AIChatHistoryViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        title(for: section) == nil ? .leastNormalMagnitude : UITableView.automaticDimension
-    }
-
-    private func title(for section: Int) -> String? {
-        switch Section(rawValue: section) {
-        case .pinned: return viewModel.pinned.isEmpty ? nil : "PINNED"
-        case .recent: return viewModel.recent.isEmpty ? nil : "RECENT"
-        case .none: return nil
-        }
+        viewModel.title(forSection: section) == nil ? .leastNormalMagnitude : UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: AIChatHistoryCell.reuseIdentifier, for: indexPath)
         guard let chatCell = cell as? AIChatHistoryCell else { return cell }
-        if let chat = chat(at: indexPath) {
-            chatCell.configure(with: chat)
-        }
+        chatCell.titleLabel.text = viewModel.title(forRowAt: indexPath)
+        chatCell.iconImageView.image = viewModel.icon(forRowAt: indexPath)
         return chatCell
     }
 }
@@ -277,25 +241,5 @@ extension AIChatHistoryViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        // Row taps wired in a follow-up.
-    }
-}
-
-// MARK: - Helpers
-
-private extension AIChatHistoryViewController {
-
-    func chat(at indexPath: IndexPath) -> ChatItem? {
-        switch Section(rawValue: indexPath.section) {
-        case .pinned: return viewModel.pinned[safe: indexPath.row]
-        case .recent: return viewModel.recent[safe: indexPath.row]
-        case .none: return nil
-        }
-    }
-}
-
-private extension Array {
-    subscript(safe index: Int) -> Element? {
-        indices.contains(index) ? self[index] : nil
     }
 }

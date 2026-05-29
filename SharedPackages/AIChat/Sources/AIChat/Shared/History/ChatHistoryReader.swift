@@ -19,12 +19,6 @@
 import Foundation
 import os.log
 
-/// Reads Duck.ai chats straight from the native local storage for the chat-history
-/// surface. Mirrors Android's `ChatHistoryRepository` shape: returns every chat the
-/// local DB holds — no recency window, no count cap — with an optional title query.
-///
-/// This is intentionally separate from `LocalSuggestionsReader`, which serves
-/// autocomplete and applies its own 1-week / max-count filtering.
 public protocol ChatHistoryReading {
     @MainActor
     func fetchAllChats(query: String?) async -> Result<[DuckAiChat], Error>
@@ -52,8 +46,6 @@ public final class ChatHistoryReader: ChatHistoryReading {
                 filtered = chats
             }
 
-            // Pinned chats float to the top; the rest sort by `lastEdit` desc. The VM
-            // splits them into PINNED / RECENT sections.
             let sorted = filtered.sorted { lhs, rhs in
                 if lhs.pinned != rhs.pinned { return lhs.pinned }
                 return lhs.lastEdit > rhs.lastEdit

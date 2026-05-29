@@ -19,11 +19,7 @@
 
 import UIKit
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
-/// Row in the native Duck.ai chat-history table. 24pt glyph + single-line title,
-/// laid out programmatically. Mirrors the shape of `BookmarkCell` but skips the
-/// favourite indicator since chats don't have one.
 final class AIChatHistoryCell: UITableViewCell {
 
     static let reuseIdentifier = "AIChatHistoryCell"
@@ -56,28 +52,16 @@ final class AIChatHistoryCell: UITableViewCell {
         fatalError("init(coder:) is not supported.")
     }
 
-    func configure(with chat: ChatItem) {
-        iconImageView.image = Self.icon(for: chat.kind, pinned: chat.pinned)
-        titleLabel.text = chat.title
-    }
-
     private func setupViews() {
         contentView.addSubview(iconImageView)
         contentView.addSubview(titleLabel)
 
-        // Figma spec: 24pt icon slot with ~2pt inset → 20pt visible glyph. Our
-        // DesignSystem glyphs fill the whole frame, so use a 20pt frame to match
-        // the visible size. 16pt from card edge, 8pt gap to text, 11.5pt vertical
-        // padding (≈44pt row height).
         NSLayoutConstraint.activate([
             iconImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             iconImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: 20),
             iconImageView.heightAnchor.constraint(equalToConstant: 20),
 
-            // Keep the text position the same as a 24pt icon would produce (12pt
-            // gap visually = 8pt gap from a 24pt slot, but here our slot is 20pt
-            // so we use 12pt to preserve the same text start position).
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 12),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -87,19 +71,7 @@ final class AIChatHistoryCell: UITableViewCell {
 
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
 
-        // Separator should start where the text starts (after icon), not at the
-        // cell's leading edge — matches Figma + Apple HIG.
-        separatorInset = UIEdgeInsets(top: 0, left: 16 + 20 + 12, bottom: 0, right: 0)
-    }
-
-    private static func icon(for kind: ChatItem.Kind, pinned: Bool) -> UIImage {
-        // Only the text-pinned variant exists in DesignSystemImages so far; voice
-        // and image fall back to their non-pinned glyphs until those variants ship.
-        switch (kind, pinned) {
-        case (.text, true): return DesignSystemImages.Glyphs.Size24.chatPinned
-        case (.text, false): return DesignSystemImages.Glyphs.Size24.chat
-        case (.voice, _): return DesignSystemImages.Glyphs.Size24.voice
-        case (.image, _): return DesignSystemImages.Glyphs.Size24.image
-        }
+        // Separator starts where the text starts (16 + 20 + 12).
+        separatorInset = UIEdgeInsets(top: 0, left: 48, bottom: 0, right: 0)
     }
 }

@@ -272,7 +272,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        max_attempts=5
+        max_attempts=3
         retry_delay=10
 
         for attempt in $(seq 1 $max_attempts); do
@@ -289,6 +289,7 @@ jobs:
           if [[ $attempt -lt $max_attempts ]]; then
             echo "Download failed, retrying in ${retry_delay}s..."
             sleep $retry_delay
+            retry_delay=$((retry_delay * 2))
           fi
         done
         echo "All download attempts failed"
@@ -450,7 +451,7 @@ jobs:
 
     - name: Prepare test report
       id: prepare-test-report
-      if: always()
+      if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
         test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }})"
@@ -464,7 +465,7 @@ jobs:
     # that publishes a combined report for all test cases
     - name: Upload test report
       uses: actions/upload-artifact@v4
-      if: always()
+      if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
         name: "testreport-${{ matrix.test }}-macos${{ matrix.os-version }}"
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"

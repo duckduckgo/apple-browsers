@@ -18,6 +18,7 @@
 
 import Cocoa
 import Common
+import FoundationExtensions
 
 /// Protocol for buttons that can show a notification dot in their upper-right corner
 protocol NotificationDotProviding: NSView {

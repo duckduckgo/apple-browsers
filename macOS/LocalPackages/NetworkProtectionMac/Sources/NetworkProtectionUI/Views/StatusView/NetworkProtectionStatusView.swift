@@ -20,6 +20,7 @@ import SwiftUI
 import SwiftUIExtensions
 import Combine
 import Common
+import FoundationExtensions
 import VPN
 
 extension View {

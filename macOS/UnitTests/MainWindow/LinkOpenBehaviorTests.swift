@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import CoreGraphics
 import Foundation
 import Testing

@@ -17,6 +17,8 @@
 //
 
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import Foundation
 import WebKit
 

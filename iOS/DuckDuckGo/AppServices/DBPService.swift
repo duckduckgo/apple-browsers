@@ -21,6 +21,7 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import Networking
@@ -72,6 +73,10 @@ final class DBPService: NSObject {
             let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
             #endif
 
+            let dbpContentBlocking: DBPWebViewContentBlocking? = featureFlagger.isContentBlockingOn
+                ? DBPIOSContentBlocking(contentBlockingManager: contentBlocking.contentBlockingManager)
+                : nil
+
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -107,7 +112,8 @@ final class DBPService: NSObject {
                 eventsHandler: eventsHandler,
                 freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                 isWebViewInspectable: isWebViewInspectable,
-                freeTrialConversionService: appDependencies.freeTrialConversionService)
+                freeTrialConversionService: appDependencies.freeTrialConversionService,
+                contentBlocking: dbpContentBlocking)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -149,6 +155,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
 
     var isWebViewUserAgentOn: Bool {
         false
+    }
+
+    var isContentBlockingOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpContentBlocking)
     }
 
     var isFreemiumPIREnabled: Bool {

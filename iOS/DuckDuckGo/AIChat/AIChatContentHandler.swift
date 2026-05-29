@@ -20,6 +20,7 @@
 import AIChat
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Core
 import os.log
 import PrivacyConfig
@@ -65,6 +66,11 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 
     /// Called when the user submits a prompt.
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling)
+
+    /// Called when the frontend signals that a new chat was created (via the `userDidCreateNewChat` metric).
+    /// Fires for both the native new-chat button and the in-webview sidebar's "New Chat" — the FE is the
+    /// single source of truth so the host can reset UTI state once, on the actual transition.
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling)
 
     /// Called when the frontend requests page context (`getAIChatPageContext`), signaling it has initialized and registered its JS message handlers.
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling)
@@ -122,6 +128,7 @@ extension AIChatContentHandling {
 
 extension AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {}
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {}
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {}
 }
 
@@ -310,6 +317,8 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             delegate?.aiChatContentHandlerDidReceiveCloseChatRequest(self)
         case .sendToSyncSettings, .sendToSetupSync:
             delegate?.aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(self)
+        case .newChatStarted:
+            delegate?.aiChatContentHandlerDidReceiveNewChatCreated(self)
         default:
             break
         }

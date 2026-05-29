@@ -501,7 +501,7 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            UIColor(designSystemColor: .surface)
+            UIColor(designSystemColor: .surfaceCanvas)
         }
     }
 

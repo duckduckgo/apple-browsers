@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 
 public protocol OSVersionProviding {
 

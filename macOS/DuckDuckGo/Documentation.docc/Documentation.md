@@ -43,18 +43,6 @@ UI follows Model-View-ViewModel pattern with Coordinators managing navigation an
 
 New features are protected behind feature flags using `FeatureFlagger`. See `FeatureFlagger.swift` for implementation.
 
-## Common Tasks
-
-### Adding a New Feature
-
-1. Plan the feature architecture (where does it fit?)
-2. Create necessary models and business logic
-3. Implement UI (SwiftUI or AppKit)
-4. Add feature flag if experimental
-5. Integrate with existing systems (tabs, preferences, etc.)
-6. Add tests
-7. Update documentation
-
 ## Privacy Features
 
 The browser includes comprehensive privacy protection:

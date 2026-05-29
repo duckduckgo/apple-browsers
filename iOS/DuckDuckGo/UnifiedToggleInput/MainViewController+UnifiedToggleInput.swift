@@ -482,7 +482,8 @@ private extension MainViewController {
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
-        if !wasSwipeDriven {
+        let shouldAnimateLogoTransition = coordinator.contentViewController.daxLogoManager.isLogoVisible
+        if !wasSwipeDriven && shouldAnimateLogoTransition {
             coordinator.contentViewController.daxLogoManager.animateLogoTransition(
                 toMode: mode,
                 fromProgress: previousLottieProgress,

@@ -139,9 +139,9 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     private func bindViewModel() {
-        viewModel.$chats
+        Publishers.CombineLatest(viewModel.$pinned, viewModel.$recent)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] _, _ in
                 self?.refreshContent()
             }
             .store(in: &cancellables)

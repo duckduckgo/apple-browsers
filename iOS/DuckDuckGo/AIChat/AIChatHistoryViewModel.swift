@@ -30,10 +30,11 @@ final class AIChatHistoryViewModel: ObservableObject {
         case recent
     }
 
-    @Published private(set) var chats: [DuckAiChat] = []
+    @Published private(set) var pinned: [DuckAiChat] = []
+    @Published private(set) var recent: [DuckAiChat] = []
     @Published private(set) var isLoading: Bool = false
 
-    var isEmpty: Bool { chats.isEmpty }
+    var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
     private let reader: ChatHistoryReading
 
@@ -51,8 +52,12 @@ final class AIChatHistoryViewModel: ObservableObject {
 
         let result = await reader.fetchAllChats()
         switch result {
-        case .success(let chats): self.chats = chats
-        case .failure: self.chats = []
+        case .success(let chats):
+            self.pinned = chats.filter(\.pinned)
+            self.recent = chats.filter { !$0.pinned }
+        case .failure:
+            self.pinned = []
+            self.recent = []
         }
     }
 
@@ -63,14 +68,13 @@ final class AIChatHistoryViewModel: ObservableObject {
     func title(forSection section: Int) -> String? {
         guard let section = Section(rawValue: section) else { return nil }
         switch section {
-        case .pinned: return chats(in: .pinned).isEmpty ? nil : "PINNED"
-        case .recent: return chats(in: .recent).isEmpty ? nil : "RECENT"
+        case .pinned: return pinned.isEmpty ? nil : "PINNED"
+        case .recent: return recent.isEmpty ? nil : "RECENT"
         }
     }
 
     func numberOfRows(in section: Int) -> Int {
-        guard let section = Section(rawValue: section) else { return 0 }
-        return chats(in: section).count
+        chats(in: section)?.count ?? 0
     }
 
     func title(forRowAt indexPath: IndexPath) -> String? {
@@ -90,17 +94,17 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     // MARK: - Helpers
 
-    private func chats(in section: Section) -> [DuckAiChat] {
-        switch section {
-        case .pinned: return chats.filter(\.pinned)
-        case .recent: return chats.filter { !$0.pinned }
+    private func chats(in section: Int) -> [DuckAiChat]? {
+        switch Section(rawValue: section) {
+        case .pinned: return pinned
+        case .recent: return recent
+        case .none: return nil
         }
     }
 
     private func chat(at indexPath: IndexPath) -> DuckAiChat? {
-        guard let section = Section(rawValue: indexPath.section) else { return nil }
-        let pool = chats(in: section)
-        guard pool.indices.contains(indexPath.row) else { return nil }
+        guard let pool = chats(in: indexPath.section),
+              pool.indices.contains(indexPath.row) else { return nil }
         return pool[indexPath.row]
     }
 

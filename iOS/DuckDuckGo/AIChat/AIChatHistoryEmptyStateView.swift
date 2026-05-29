@@ -18,12 +18,9 @@
 //
 
 import SwiftUI
-import AIChat
 import DuckUI
 import DesignResourcesKitIcons
 
-/// Empty state for the native Duck.ai chat-history sheet — illustration, headline,
-/// and a primary "Open Duck.ai" button.
 struct AIChatHistoryEmptyStateView: View {
 
     @ObservedObject var viewModel: AIChatHistoryViewModel
@@ -50,7 +47,5 @@ struct AIChatHistoryEmptyStateView: View {
 }
 
 #Preview {
-    AIChatHistoryEmptyStateView(viewModel: AIChatHistoryViewModel(
-        reader: ChatHistoryReader(storageHandler: DuckAiNativeMemoryStorageHandler())
-    ))
+    AIChatHistoryEmptyStateView(viewModel: AIChatHistoryViewModel(reader: MockChatHistoryReader()))
 }

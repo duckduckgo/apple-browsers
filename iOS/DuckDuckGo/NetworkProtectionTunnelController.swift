@@ -400,7 +400,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         // persist after the Strict routing flag is withdrawn. This is the authoritative reset: it
         // runs on every connect, regardless of whether the user ever opens VPN settings.
         settings.resetEnforceRoutesIfUnavailable(
-            strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRouting))
+            strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle))
 
         tunnelManager.applyDuckDuckGoConfiguration(from: settings)
     }

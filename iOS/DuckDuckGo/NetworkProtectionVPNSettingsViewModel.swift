@@ -39,7 +39,7 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
 
     var isStrictRoutingAvailable: Bool {
-        featureFlagger.isFeatureOn(.vpnStrictRouting)
+        featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
     }
 
     private var notificationsAuthorization: NotificationsAuthorizationControlling

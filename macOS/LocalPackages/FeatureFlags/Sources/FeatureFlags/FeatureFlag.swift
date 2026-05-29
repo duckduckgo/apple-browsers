@@ -48,7 +48,7 @@ public enum FeatureFlag: String, CaseIterable {
     case networkProtectionAppStoreSysexMessage
 
     /// Gates the "Strict routing" VPN toggle (internal-only).
-    case vpnStrictRouting
+    case vpnStrictRoutingToggle
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
@@ -453,7 +453,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtension), category: .vpn)
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
-        case .vpnStrictRouting:
+        case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRouting), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)

@@ -68,7 +68,7 @@ final class VPNPreferencesModel: ObservableObject {
     }
 
     var isStrictRoutingAvailable: Bool {
-        featureFlagger.isFeatureOn(.vpnStrictRouting)
+        featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
     }
 
     @Published var showInMenuBar: Bool {

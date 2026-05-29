@@ -516,7 +516,8 @@ public class AppUserDefaults: AppSettings {
                let mode = DuckPlayerMode(stringValue: value) {
                 return mode
             }
-            return featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault) ? .disabled : .alwaysAsk
+            return (AdBlockingAvailability.isFeatureSupported(featureFlagger: featureFlagger)
+                    && featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)) ? .disabled : .alwaysAsk
         }
         set {
             userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerMode)
@@ -581,7 +582,8 @@ public class AppUserDefaults: AppSettings {
                let mode = NativeDuckPlayerYoutubeMode(stringValue: value) {
                 return mode
             }
-            return featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault) ? .never : .ask
+            return (AdBlockingAvailability.isFeatureSupported(featureFlagger: featureFlagger)
+                    && featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)) ? .never : .ask
         }
         set {
             userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerNativeYoutubeMode)

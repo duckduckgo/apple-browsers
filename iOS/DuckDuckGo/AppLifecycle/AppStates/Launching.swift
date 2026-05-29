@@ -74,8 +74,7 @@ struct Launching: LaunchingHandling {
             featureFlagger.isFeatureOn(.appRebranding)
         }
 
-        // Wire the DesignResourcesKit color rebrand hook to the same feature flag, so design-system
-        // colors (e.g. the primary accent and text links) switch to their Pondwater values.
+        // Temporary feature flag and wiring during rebrand rollout – used to enable color palette updates.
         DesignSystemRebrand.isAppRebranded = { [featureFlagger] in
             featureFlagger.isFeatureOn(.appRebranding)
         }

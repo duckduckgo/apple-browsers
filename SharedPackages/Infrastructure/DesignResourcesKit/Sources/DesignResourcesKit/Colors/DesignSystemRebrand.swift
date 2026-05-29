@@ -18,14 +18,7 @@
 
 import Foundation
 
-/// Global, app-wide app-rebrand state used to switch design-system colors between their legacy and
-/// rebranded values. The host app should override this at launch by setting the closure to a live feature-flag lookup, e.g.:
-///
-/// ```swift
-/// DesignSystemRebrand.isAppRebranded = {
-///     AppDependencyProvider.shared.featureFlagger.isFeatureOn(.appRebranding)
-/// }
-/// ```
+/// Used to switch design-system colors between their legacy and rebranded values.
 ///
 public enum DesignSystemRebrand {
 

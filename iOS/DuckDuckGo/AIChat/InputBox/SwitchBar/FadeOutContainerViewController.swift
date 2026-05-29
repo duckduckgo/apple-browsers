@@ -49,6 +49,8 @@ final class FadeOutContainerViewController: UIViewController {
 
     private var displayLink: CADisplayLink?
     private var targetProgress: CGFloat = 0.0
+    private var visibleMode: TextEntryMode?
+    private var transitionID = 0
 
     init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
@@ -75,7 +77,7 @@ final class FadeOutContainerViewController: UIViewController {
     }
 
     func setMode(_ mode: TextEntryMode, animated: Bool = true) {
-        updateVisibility(animated: animated)
+        updateVisibility(to: mode, animated: animated)
     }
 
     // MARK: - Private
@@ -84,9 +86,10 @@ final class FadeOutContainerViewController: UIViewController {
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
-            .sink { [weak self] _ in
+            .sink { [weak self] mode in
                 guard let self else { return }
-                self.updateVisibility(animated: true)
+                guard mode == self.switchBarHandler.currentToggleState else { return }
+                self.updateVisibility(to: mode, animated: true)
             }
             .store(in: &cancellables)
     }
@@ -146,18 +149,24 @@ final class FadeOutContainerViewController: UIViewController {
     }
 
     private func configureInitialState() {
-        let isSearchMode = switchBarHandler.currentToggleState == .search
+        let currentMode = switchBarHandler.currentToggleState
+        let isSearchMode = currentMode == .search
         searchPageContainer.alpha = isSearchMode ? 1.0 : 0.0
         chatPageContainer.alpha = isSearchMode ? 0.0 : 1.0
         transitionProgress = isSearchMode ? 0.0 : 1.0
+        visibleMode = currentMode
     }
 
-    private func updateVisibility(animated: Bool) {
+    private func updateVisibility(to mode: TextEntryMode, animated: Bool) {
         guard searchPageContainer != nil, chatPageContainer != nil else { return }
+        guard visibleMode != mode else { return }
 
-        let newMode = switchBarHandler.currentToggleState
-        let isSearchMode = newMode == .search
-        targetProgress = isSearchMode ? 0.0 : 1.0
+        visibleMode = mode
+        transitionID += 1
+        let currentTransitionID = transitionID
+        let isSearchMode = mode == .search
+        let targetProgress = isSearchMode ? 0.0 : 1.0
+        self.targetProgress = targetProgress
 
         let isShowingSuggestions = delegate?.fadeOutContainerViewControllerIsShowingSuggestions(self) ?? false
         let shouldHideSearchImmediately = !isSearchMode && isShowingSuggestions
@@ -177,12 +186,13 @@ final class FadeOutContainerViewController: UIViewController {
         }
 
         let completion: (Bool) -> Void = { [weak self] finished in
-            self?.stopDisplayLink()
+            guard let self, self.transitionID == currentTransitionID else { return }
 
-            guard let self, finished else { return }
+            self.stopDisplayLink()
+            guard finished else { return }
 
-            self.updateTransitionProgress(self.targetProgress)
-            self.delegate?.fadeOutContainerViewController(self, didTransitionToMode: newMode)
+            self.updateTransitionProgress(targetProgress)
+            self.delegate?.fadeOutContainerViewController(self, didTransitionToMode: mode)
         }
 
         if animated {

@@ -3433,12 +3433,16 @@ class MainViewController: UIViewController {
             return
         }
 
-        // New tab when current has content: deep links always cross; UTI crosses only on web→chat (chat→chat from non-deep-link stays in-place, same rule as `AIBoundaryNavigationDecision`).
-        // NTP stays in-place via `link != nil`.
+        // Deep links cross unconditionally; everything else defers to `AIBoundaryNavigationDecision` so the chat→chat-stays-in-place matrix lives in one place. NTP/empty stays in-place via `link != nil`.
         let shouldOpenInNewTab: Bool = {
             guard let currentTab, currentTab.tabModel.link != nil else { return false }
             if fromDeepLink { return true }
-            return unifiedToggleInputFeature.isAvailable && currentTab.isAITab == false
+            return AIBoundaryNavigationDecision.forProgrammaticNavigation(
+                currentIsAI: currentTab.isAITab,
+                currentHasContent: true,
+                targetIsAI: true,
+                unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+            ) == .openInNewTab
         }()
         if shouldOpenInNewTab, let currentTab {
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)

@@ -54,6 +54,8 @@ final class AIChatTabChatHeaderView: UIView {
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
 
+    private let isFireModeEnabled: Bool
+
     private struct ViewState: Equatable {
         /// `nil` until the first subscription-state check resolves, so we can render a blank
         /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
@@ -175,14 +177,18 @@ final class AIChatTabChatHeaderView: UIView {
         ) { [weak self] _ in
             self?.delegate?.aiChatTabChatHeaderDidTapNewSearch()
         }
-        let newFireTab = UIAction(
-            title: UserText.aiChatHeaderNewFireTabTitle,
-            image: DesignSystemImages.Glyphs.Size24.fireTabs
-        ) { [weak self] _ in
-            self?.delegate?.aiChatTabChatHeaderDidTapNewFireTab()
-        }
         let inTabGroup = UIMenu(options: .displayInline, children: [newChat, newVoiceChat])
-        let newTabGroup = UIMenu(options: .displayInline, children: [newTab, newSearch, newFireTab])
+        var newTabActions: [UIAction] = [newTab, newSearch]
+        if isFireModeEnabled {
+            let newFireTab = UIAction(
+                title: UserText.aiChatHeaderNewFireTabTitle,
+                image: DesignSystemImages.Glyphs.Size24.fireTabs
+            ) { [weak self] _ in
+                self?.delegate?.aiChatTabChatHeaderDidTapNewFireTab()
+            }
+            newTabActions.append(newFireTab)
+        }
+        let newTabGroup = UIMenu(options: .displayInline, children: newTabActions)
         return UIMenu(children: [inTabGroup, newTabGroup])
     }
 
@@ -309,7 +315,14 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
+    init(isFireModeEnabled: Bool) {
+        self.isFireModeEnabled = isFireModeEnabled
+        super.init(frame: .zero)
+        setupUI()
+    }
+
     override init(frame: CGRect) {
+        self.isFireModeEnabled = false
         super.init(frame: frame)
         setupUI()
     }

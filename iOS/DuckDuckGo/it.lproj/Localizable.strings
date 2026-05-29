@@ -1460,7 +1460,7 @@
 "data.import.passwords.instructions.header" = "Come esportare le password";
 
 /* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
-"data.import.passwords.instructions.safari.step1" = "Apri ⚙️ Impostazioni, digita “Esporta” nella barra di ricerca e scegli il risultato **Esporta** per Safari per andare direttamente all'opzione (oppure vai su App > Safari in Impostazioni).";
+"data.import.passwords.instructions.safari.step1" = "Apri ⚙️ **Impostazioni**, digita “Esporta” nella barra di ricerca e scegli il risultato **Esporta** per Safari per andare direttamente all'opzione (oppure vai su App > Safari in Impostazioni).";
 
 /* Text next to selector for which browser to export passwords from (Safari | Chrome) */
 "data.import.passwords.instructions.selector" = "Esporta da";
@@ -1815,9 +1815,6 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Mai";
-
-/* Toast for opening in YouTube app if installed */
-"duckplayer.open-in-youtube-app" = "Apri nell'app YouTube";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";

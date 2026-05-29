@@ -1454,7 +1454,7 @@
 "data.import.passwords.instructions.chrome.step1" = "I Chrome, gå till **Google Lösenordshanterare** och sedan **Inställningar**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Välj **Exportera data**, därefter **… ** och sedan **Ladda ner till CSV**. Spara filen i en mapp som du kommer ihåg.";
+"data.import.passwords.instructions.chrome.step2" = "Välj **Exportera data**, därefter **…** och sedan **Ladda ner till CSV**. Spara filen i en mapp som du kommer ihåg.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Så här exporterar du lösenord";
@@ -1815,9 +1815,6 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Aldrig";
-
-/* Toast for opening in YouTube app if installed */
-"duckplayer.open-in-youtube-app" = "Öppna i YouTube-appen";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";

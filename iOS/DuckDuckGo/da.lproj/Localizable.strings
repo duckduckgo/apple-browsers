@@ -1816,9 +1816,6 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Aldrig";
 
-/* Toast for opening in YouTube app if installed */
-"duckplayer.open-in-youtube-app" = "Åbn i YouTube-appen";
-
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 

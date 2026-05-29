@@ -1379,7 +1379,7 @@
 "data.import.detail.passwords.description" = "Du musst die Passwort-App öffnen und dann den Schritten zum Importieren folgen.";
 
 /* Step 1 instruction for importing from the Passwords app */
-"data.import.detail.passwords.step1" = "Tippe auf **···** > ** Daten in eine andere App exportieren**";
+"data.import.detail.passwords.step1" = "Tippe auf **···** > **Daten in eine andere App exportieren**";
 
 /* Step 2 instruction for importing from the Passwords app */
 "data.import.detail.passwords.step2" = "Tippe auf **Alles auswählen** > **Weiter**";
@@ -1815,9 +1815,6 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nie";
-
-/* Toast for opening in YouTube app if installed */
-"duckplayer.open-in-youtube-app" = "In der YouTube-App öffnen";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";

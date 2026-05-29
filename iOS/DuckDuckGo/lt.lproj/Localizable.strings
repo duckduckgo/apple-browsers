@@ -212,7 +212,7 @@
 "addWidget.settings.secondParagraph.%@" = "Bakstelėkite pliuso mygtuką %@.";
 
 /* No comment provided by engineer. */
-"addWidget.settings.title" = "Raskite ir pasirinkite „DuckDuckGo“. Tuomet pasirinkite valdiklį.";
+"addWidget.settings.title" = "Raskite ir pasirinkite „**DuckDuckGo**“. Tuomet pasirinkite valdiklį.";
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Tik vienas bakstelėjimas – ir jūs jau mėgstamiausiose svetainėse.";
@@ -1815,9 +1815,6 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Niekada";
-
-/* Toast for opening in YouTube app if installed */
-"duckplayer.open-in-youtube-app" = "Atidaryti programėlėje „YouTube“";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";

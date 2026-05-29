@@ -212,7 +212,7 @@
 "addWidget.settings.secondParagraph.%@" = "Artı %@ düğmesine dokunun.";
 
 /* No comment provided by engineer. */
-"addWidget.settings.title" = "DuckDuckGo'yu bulun ve seçin. Ardından bir widget seçin.";
+"addWidget.settings.title" = "**DuckDuckGo**yu bulun ve seçin. Ardından bir widget seçin.";
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Favori sitelerinize tek dokunuşla erişin.";
@@ -1304,7 +1304,7 @@
 "control.center.widget.education.paragraph.1" = "Ekranın sağ üst köşesinden aşağı doğru kaydırın";
 
 /* Second paragraph of the Control Center Widget Education screen */
-"control.center.widget.education.paragraph.2" = "Kontrol Merkezi'nin** sol üst köşesindeki **+** düğmesine dokunun";
+"control.center.widget.education.paragraph.2" = "**Kontrol Merkezi'nin** sol üst köşesindeki **+** düğmesine dokunun";
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Ekranın en altındaki **Kontrol Ekle** seçeneğine dokunun";
@@ -1815,9 +1815,6 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Hiçbir zaman";
-
-/* Toast for opening in YouTube app if installed */
-"duckplayer.open-in-youtube-app" = "YouTube uygulamasında aç";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";

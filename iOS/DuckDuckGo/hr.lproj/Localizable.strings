@@ -212,7 +212,7 @@
 "addWidget.settings.secondParagraph.%@" = "Dodirnite gumb plus %@.";
 
 /* No comment provided by engineer. */
-"addWidget.settings.title" = "Pronađi i odaberi DuckDuckGo. Zatim odaberi widget.";
+"addWidget.settings.title" = "Pronađi i odaberi **DuckDuckGo**. Zatim odaberi widget.";
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Jednim dodirom do vaših omiljenih stranica.";
@@ -1815,9 +1815,6 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikada";
-
-/* Toast for opening in YouTube app if installed */
-"duckplayer.open-in-youtube-app" = "Otvori u aplikaciji YouTube";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";

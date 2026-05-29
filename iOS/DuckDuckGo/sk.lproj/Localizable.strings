@@ -212,7 +212,7 @@
 "addWidget.settings.secondParagraph.%@" = "Klepnite na tlačidlo plus %@.";
 
 /* No comment provided by engineer. */
-"addWidget.settings.title" = "Nájdi a vyber DuckDuckGo. Potom vyber miniaplikáciu.";
+"addWidget.settings.title" = "Nájdi a vyber **DuckDuckGo**. Potom vyber miniaplikáciu.";
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Jedným kliknutím na vaše obľúbené webové lokality.";
@@ -1815,9 +1815,6 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikdy";
-
-/* Toast for opening in YouTube app if installed */
-"duckplayer.open-in-youtube-app" = "Otvoriť v aplikácii YouTube";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";

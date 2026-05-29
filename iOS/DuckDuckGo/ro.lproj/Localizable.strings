@@ -212,7 +212,7 @@
 "addWidget.settings.secondParagraph.%@" = "Atinge butonul plus %@.";
 
 /* No comment provided by engineer. */
-"addWidget.settings.title" = "Găsește și selectează DuckDuckGo. Apoi alege un widget.";
+"addWidget.settings.title" = "Găsește și selectează **DuckDuckGo**. Apoi alege un widget.";
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Atinge o dată pentru a ajunge la site-urile tale preferate.";
@@ -1815,9 +1815,6 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Niciodată";
-
-/* Toast for opening in YouTube app if installed */
-"duckplayer.open-in-youtube-app" = "Deschide în aplicația YouTube";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";

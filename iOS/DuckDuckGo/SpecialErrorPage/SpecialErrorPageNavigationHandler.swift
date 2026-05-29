@@ -178,7 +178,7 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
 
     @MainActor
     func openInBrowserAction() {
-        guard let errorData, let url = webView?.url else { return }
+        guard let errorData else { return }
 
         switch errorData {
         case .ssl:
@@ -186,10 +186,12 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
             isSpecialErrorPageVisible = false
             _ = webView?.reload()
         case .maliciousSite:
+            guard let url = webView?.url else { return }
             maliciousSiteProtectionNavigationHandler.visitSite(url: url, errorData: errorData)
             isSpecialErrorPageVisible = false
             _ = webView?.reload()
         case .generalPageProblem:
+            guard let url = webView?.url else { return }
             delegate?.openSpecialErrorPageURLInBrowser(url)
         }
     }

@@ -1975,12 +1975,20 @@ class MainViewController: UIViewController {
 
     /// Load URL in a new tab, with option to reuse an existing tab.
     ///
+    /// - Note: New user-initiated entry paths should route through `loadUrlRespectingAIBoundary` first so the Duck.ai ↔ web boundary rule is honored. Direct callers must justify the bypass.
+    ///
     /// - Parameters:
     ///   - url: The URL to be loaded.
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
     ///   - inheritedAttribution: The attribution state to be inherited from a parent tab, if any.
     ///   - fromExternalLink: A flag indicating if the URL is from an external link. Defaults to `false`.
-    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) {
+    ///   - voiceMode: When true, marks the new tab as opened from voice search.
+    ///   - completion: Optional closure run once the new/selected tab is in place. When `clearInProgress`
+    ///     is true at call time, this fires only after the data clear completes (via `postClear`).
+    ///     Timing relative to UI refresh differs by exit path: the URL-reuse branch fires this before
+    ///     `refreshOmniBar`/tab-bar refresh; all other branches fire it after. Callers should not rely
+    ///     on chrome state being settled inside the closure.
+    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false, completion: (() -> Void)? = nil) {
 
         func worker() {
             allowContentUnderflow = false
@@ -1994,6 +2002,7 @@ class MainViewController: UIViewController {
             // Check if an existing tab with the same URL should be reused.
             else if reuseExisting != .none, let existing = tabManager.first(withUrl: url) {
                 selectTab(existing)
+                completion?()
                 return
             }
             // Check if a tab presenting a New Tab page should be reused.
@@ -2014,10 +2023,16 @@ class MainViewController: UIViewController {
             refreshControls()
             tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+            completion?()
         }
 
         if clearInProgress {
-            postClear = worker
+            // Compose with any already-deferred worker — back-to-back `loadUrlInNewTab` during the same clear must not drop the first's completion.
+            let previous = postClear
+            postClear = {
+                previous?()
+                worker()
+            }
         } else {
             worker()
         }
@@ -2037,7 +2052,7 @@ class MainViewController: UIViewController {
         }
         // Make sure that once query is submitted, we don't trigger the non-SERP flow
         skipSERPFlow = false
-        loadUrl(url)
+        loadUrlRespectingAIBoundary(url)
     }
 
     func stopLoading() {
@@ -2245,9 +2260,6 @@ class MainViewController: UIViewController {
         refreshBackForwardMenuItems()
         updateChromeForDuckPlayer()
         refreshMiddleButton()
-        aiChatTabChatHeaderView?.setNavAvailable(canGoBack: currentTab?.canGoBack ?? false,
-                                                  canGoForward: currentTab?.canGoForward ?? false)
-        reconcileBackArrowForceVisibility()
         // Belt-and-braces reconciliation. Most explicit transitions also call this directly
         // (NTP attach, AI-tab refresh, etc.); doing it here too means any future state-change
         // hook that fires `refreshControls` self-corrects the toolbar's hidden state without
@@ -2279,12 +2291,10 @@ class MainViewController: UIViewController {
         tabSwitcherButton?.tabCount = count
         tabSwitcherButton?.hasUnread = hasUnread
         tabSwitcherButton?.isFireMode = isFireMode
+        aiChatTabChatHeaderView?.setTabIconState(count: count, hasUnread: hasUnread, isFireMode: isFireMode)
         omniBarTabSwitcherButton?.tabCount = count
         omniBarTabSwitcherButton?.hasUnread = hasUnread
         omniBarTabSwitcherButton?.isFireMode = isFireMode
-        aiChatTabChatHeaderView?.tabSwitcherButton.tabCount = count
-        aiChatTabChatHeaderView?.tabSwitcherButton.hasUnread = hasUnread
-        aiChatTabChatHeaderView?.tabSwitcherButton.isFireMode = isFireMode
     }
 
     private func refreshTabBar() {
@@ -2385,6 +2395,7 @@ class MainViewController: UIViewController {
             dataSource: browsingMenuHeaderDataSource,
             isNewTabPage: newTabPageViewController != nil,
             isAITab: currentTab?.isAITab ?? false,
+            usesDuckAILogo: unifiedToggleInputFeature.isAvailable,
             isError: currentTab?.isError ?? false,
             hasLink: currentTab?.link != nil,
             url: currentTab?.url,
@@ -3445,6 +3456,7 @@ class MainViewController: UIViewController {
         // Voice mode has no on-screen input; dismiss the keyboard before either branch loads.
         unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
 
+        // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
         let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
 
@@ -3491,9 +3503,43 @@ class MainViewController: UIViewController {
             return
         }
 
-        if fromDeepLink, let currentTab, currentTab.tabModel.link != nil {
-            let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: .default, tools: tools)
-            loadUrlInNewTab(chatURL, inheritedAttribution: nil)
+        // Deep links cross unconditionally; everything else defers to `AIBoundaryNavigationDecision` so the chat→chat-stays-in-place matrix lives in one place. NTP/empty stays in-place via `link != nil`.
+        let shouldOpenInNewTab: Bool = {
+            guard let currentTab, currentTab.tabModel.link != nil else { return false }
+            if fromDeepLink { return true }
+            return AIBoundaryNavigationDecision.forProgrammaticNavigation(
+                currentIsAI: currentTab.isAITab,
+                currentHasContent: true,
+                targetIsAI: true,
+                unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+            ) == .openInNewTab
+        }()
+        if shouldOpenInNewTab, let currentTab {
+            let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
+            // Mirror the in-place `.barUsed` so the new-tab branch keeps idle-session parity.
+            // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
+            if !fromDeepLink {
+                postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
+            }
+            // Stage prompt singleton before `loadUrlInNewTab` — matches legacy `setData → load` order.
+            // Per-tab payload runs in completion since it targets the newly-selected chat tab.
+            if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let prompt = AIChatNativePrompt.queryPrompt(
+                    query,
+                    autoSubmit: autoSend,
+                    toolChoice: tools?.map(\.rawValue),
+                    images: images,
+                    files: files,
+                    modelId: modelId,
+                    reasoningEffort: reasoningEffort
+                )
+                AIChatPromptHandler.shared.setData(prompt)
+            }
+            loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] in
+                if let payload {
+                    self?.currentTab?.aiChatContentHandler.setPayload(payload: payload)
+                }
+            }
             return
         }
 
@@ -3712,9 +3758,24 @@ extension MainViewController: BrowserChromeDelegate {
         if url.isBookmarklet() {
             executeBookmarklet(url)
         } else {
-            loadUrl(url)
+            loadUrlRespectingAIBoundary(url)
         }
         showHomeRowReminder()
+    }
+
+    func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false) {
+        let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
+            currentIsAI: currentTab?.isAITab == true,
+            currentHasContent: currentTab?.tabModel.link != nil,
+            targetIsAI: url.isDuckAIURL,
+            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        )
+        switch decision {
+        case .openInNewTab:
+            loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
+        case .loadInPlace:
+            loadUrl(url, fromExternalLink: fromExternalLink)
+        }
     }
 
 
@@ -3729,7 +3790,7 @@ extension MainViewController: BrowserChromeDelegate {
         switch suggestion {
         case .phrase(phrase: let phrase):
             if let url = URL.makeSearchURL(query: phrase, useUnifiedLogic: isUnifiedURLPredictionEnabled, forceSearchQuery: true) {
-                loadUrl(url)
+                loadUrlRespectingAIBoundary(url)
             } else {
                 Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
             }
@@ -3738,14 +3799,14 @@ extension MainViewController: BrowserChromeDelegate {
             if url.isBookmarklet() {
                 executeBookmarklet(url)
             } else {
-                loadUrl(url)
+                loadUrlRespectingAIBoundary(url)
             }
 
         case .bookmark(_, url: let url, _, _):
-            loadUrl(url)
+            loadUrlRespectingAIBoundary(url)
 
         case .historyEntry(_, url: let url, _):
-            loadUrl(url)
+            loadUrlRespectingAIBoundary(url)
 
         case .openTab(title: _, url: let url, tabId: let tabId, _):
             if newTabPageViewController != nil, let tab = tabManager.currentTabsModel.currentTab {
@@ -3786,7 +3847,8 @@ extension MainViewController: OmniBarDelegate {
 
     func onChatHistorySelected(url: URL) {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
-        loadUrlInNewTab(url, inheritedAttribution: nil)
+        // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
+        loadUrlRespectingAIBoundary(url)
     }
 
     func onAIChatQueryUpdated(_ query: String) {
@@ -4748,15 +4810,6 @@ extension MainViewController: AutocompleteViewControllerDelegate {
 }
 
 extension MainViewController {
-    private func handleRequestedURL(_ url: URL) {
-        showKeyboardAfterFireButton?.cancel()
-
-        if url.isBookmarklet() {
-            executeBookmarklet(url)
-        } else {
-            loadUrl(url)
-        }
-    }
 }
 
 extension MainViewController: EscapeHatchActionRouter {
@@ -5117,6 +5170,16 @@ extension MainViewController: TabDelegate {
         newTab()
     }
 
+    func tabDidRequestNewSearch(_ tab: TabViewController) {
+        // Same as the Duck.ai header Plus-menu "New Search".
+        aiChatTabChatHeaderDidTapNewSearch()
+    }
+
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {
+        // Same as the Duck.ai header Plus-menu "New Voice Chat".
+        aiChatTabChatHeaderDidTapNewVoiceChat()
+    }
+
     private func presentChatPathOnboardingCompletionIfNeeded() {
         guard daxDialogsManager.chatPathPhase == .trackerToEOJ,
               aiChatSettings.isAIChatEnabled else { return }
@@ -5398,7 +5461,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tab(_ tab: TabViewController, didRequestLoadURL url: URL) {
-        loadUrl(url, fromExternalLink: true)
+        loadUrlRespectingAIBoundary(url, fromExternalLink: true)
     }
 
     func tab(_ tab: TabViewController, didRequestLoadQuery query: String) {
@@ -5604,7 +5667,7 @@ extension MainViewController: BookmarksDelegate {
         if url.isBookmarklet() {
             executeBookmarklet(url)
         } else {
-            loadUrl(url)
+            loadUrlRespectingAIBoundary(url)
         }
     }
 }

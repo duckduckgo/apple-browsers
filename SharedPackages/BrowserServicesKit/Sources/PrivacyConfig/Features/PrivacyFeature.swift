@@ -289,6 +289,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
+    case walletPassDownload
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -422,6 +425,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case omnibarDefaultPosition
 
     case unifiedToggleInput
+
+    /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
+    /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
+    /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.
+    case aiChatTabHideToggle
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode

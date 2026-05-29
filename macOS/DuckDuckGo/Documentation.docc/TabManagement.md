@@ -85,3 +85,8 @@ The ``Tab`` class exposes state through its public interface: `title`, `isLoadin
 - ``TabCollection``
 - ``MainViewController``
 
+### Extension System
+
+- ``TabExtension``
+- ``TabExtensionDependencies``
+

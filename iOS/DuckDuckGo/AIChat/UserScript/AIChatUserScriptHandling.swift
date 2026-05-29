@@ -26,6 +26,7 @@ import AIChat
 import OSLog
 import WebKit
 import Common
+import FoundationExtensions
 import DDGSync
 import Core
 import Persistence
@@ -174,6 +175,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -553,6 +555,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Image Generation Chat
+
+    @MainActor
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatNewImageGenerationChatStarted, object: message.messageWebView)
         return nil
     }
 

@@ -20,11 +20,13 @@ import AppKit
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import NewTabPage
 import PixelKit
 import PrivacyConfig
 import Subscription
+import WebExtensions
 
 extension HomePage.Models {
 
@@ -53,6 +55,7 @@ extension HomePage.Models {
         private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
         private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
         private let cardActionsHandler: NewTabPageNextStepsCardsActionHandling
+        private let adBlockingAvailability: AdBlockingAvailabilityProviding
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
         var shouldShowAllFeatures: Bool {
             didSet {
@@ -92,7 +95,8 @@ extension HomePage.Models {
              subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
              persistor: HomePageContinueSetUpModelPersisting,
              pixelHandler: NewTabPageNextStepsCardsPixelHandling,
-             cardActionsHandler: NewTabPageNextStepsCardsActionHandling) {
+             cardActionsHandler: NewTabPageNextStepsCardsActionHandling,
+             adBlockingAvailability: AdBlockingAvailabilityProviding) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
@@ -103,6 +107,7 @@ extension HomePage.Models {
             self.pixelHandler = pixelHandler
             self.cardActionsHandler = cardActionsHandler
             self.persistor = persistor
+            self.adBlockingAvailability = adBlockingAvailability
 
             shouldShowAllFeaturesPublisher = shouldShowAllFeaturesSubject.removeDuplicates().eraseToAnyPublisher()
 
@@ -141,6 +146,8 @@ extension HomePage.Models {
             case .subscription:
                 pixelHandler.fireSubscriptionCardDismissedPixel()
                 subscriptionCardVisibilityManager.dismissSubscriptionCard()
+            case .youtubeAdBlocking:
+                persistor.shouldShowYouTubeAdBlockingSetting = false
             }
             refreshFeaturesMatrix()
         }
@@ -191,6 +198,8 @@ extension HomePage.Models {
                 return shouldEmailProtectionCardBeVisible
             case .subscription:
                 return shouldSubscriptionCardBeVisible
+            case .youtubeAdBlocking:
+                return shouldYouTubeAdBlockingCardBeVisible
             }
         }
 
@@ -229,16 +238,14 @@ extension HomePage.Models {
         }
 
         var firstRunFeatures: [FeatureType] {
-            var features = availableFeatures.filter { $0 != .duckplayer }
-            features.insert(.duckplayer, at: 0)
-            return features
+            availableFeatures
         }
 
         private var availableFeatures: [FeatureType] {
             if dockCustomizer.supportsAddingToDock {
-                return [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+                return [.youtubeAdBlocking, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
             } else {
-                return [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
+                return [.youtubeAdBlocking, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
             }
         }
 
@@ -273,6 +280,10 @@ extension HomePage.Models {
         private var shouldSubscriptionCardBeVisible: Bool {
             subscriptionCardVisibilityManager.shouldShowSubscriptionCard
         }
+
+        private var shouldYouTubeAdBlockingCardBeVisible: Bool {
+            persistor.shouldShowYouTubeAdBlockingSetting && adBlockingAvailability.isEnabled
+        }
     }
 
     // MARK: Feature Type
@@ -283,6 +294,7 @@ extension HomePage.Models {
         case dock
         case importBookmarksAndPasswords
         case subscription
+        case youtubeAdBlocking
     }
 
     enum FeaturesGridDimensions {

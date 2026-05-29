@@ -22,6 +22,7 @@ import Combine
 import Core
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DDGSync
 import DesignResourcesKit
 import DesignResourcesKitIcons

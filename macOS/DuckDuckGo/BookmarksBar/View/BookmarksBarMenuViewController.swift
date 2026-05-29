@@ -20,6 +20,7 @@ import AppKit
 import Carbon
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 
 protocol BookmarksBarMenuViewControllerDelegate: AnyObject {

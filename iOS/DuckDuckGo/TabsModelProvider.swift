@@ -66,6 +66,8 @@ protocol TabsModelProviding {
     /// Clears tabs for the given browsing mode, or all tabs if `nil`.
     func clearTabs(for browsingMode: BrowsingMode?)
     func save() -> Result<Void, Error>
+    /// Drains any in-flight async save, then persists synchronously and returns the real outcome.
+    func flushPendingSave() -> Result<Void, Error>
 }
 
 class TabsModelProvider: TabsModelProviding {
@@ -105,6 +107,21 @@ class TabsModelProvider: TabsModelProviding {
     func save() -> Result<Void, Error> {
         let normalResult = persistence.save(model: _normalTabsModel, for: .normal)
         let fireResult = persistence.save(model: _fireModeTabsModel, for: .fire)
+
+        if case .failure(let error) = normalResult {
+            return .failure(error)
+        }
+        if case .failure(let error) = fireResult {
+            return .failure(error)
+        }
+        return .success(())
+    }
+
+    func flushPendingSave() -> Result<Void, Error> {
+        // Drain any async save so it can't overwrite the synchronous one.
+        persistence.flush()
+        let normalResult = persistence.saveSynchronously(model: _normalTabsModel, for: .normal)
+        let fireResult = persistence.saveSynchronously(model: _fireModeTabsModel, for: .fire)
 
         if case .failure(let error) = normalResult {
             return .failure(error)

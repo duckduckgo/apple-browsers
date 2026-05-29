@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -379,6 +380,110 @@ final class DataImportViewModelTests: XCTestCase {
 
         // THEN: Should preserve filtered types (not all previous types available, so don't select all)
         XCTAssertEqual(result, [.passwords])
+    }
+
+    @MainActor
+    func testUpdateWithSource_roundTripThroughPasswordManager_restoresBookmarks() {
+        // GIVEN: Chrome with all selectable types selected (default state)
+        model = DataImportViewModel(
+            importSource: .chrome,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
+                return .init(browser: browser, profiles: [defaultProfile])
+            }
+        )
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks, .passwords])
+
+        // WHEN: switch to a password-manager source (which only offers passwords)
+        model.update(with: .bitwarden)
+        XCTAssertEqual(model.selectableImportTypes, [.passwords])
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+
+        // AND: switch back to a browser source
+        model.update(with: .chrome)
+
+        // THEN: both bookmarks and passwords are selected again; the narrowing
+        // from the password-manager source doesn't bleed across
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks, .passwords])
+    }
+
+    @MainActor
+    func testUpdateWithSource_userNarrowedSelection_isPreservedAcrossSourceSwitch() {
+        // GIVEN: Chrome, then user unchecks bookmarks (explicit narrowing)
+        model = DataImportViewModel(
+            importSource: .chrome,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
+                return .init(browser: browser, profiles: [defaultProfile])
+            }
+        )
+        model.setDataType(.bookmarks, selected: false)
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+
+        // WHEN: switch to another browser that also supports both types
+        model.update(with: .firefox)
+
+        // THEN: the explicit narrowing is preserved
+        XCTAssertEqual(model.selectableImportTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+    }
+
+    @MainActor
+    func testUpdateWithSource_userNarrowingSurvivesRoundTripThroughSingleTypeSource() {
+        // GIVEN: Chrome with both types, then user unchecks passwords
+        model = DataImportViewModel(
+            importSource: .chrome,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
+                return .init(browser: browser, profiles: [defaultProfile])
+            }
+        )
+        model.setDataType(.passwords, selected: false)
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+
+        // WHEN: switch to a bookmarks-only source (e.g. Tor), then back to Chrome
+        model.update(with: .tor)
+        XCTAssertEqual(model.selectableImportTypes, [.bookmarks])
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+
+        model.update(with: .chrome)
+
+        // THEN: passwords stays deselected — the round trip through a source
+        // whose selectable set equals the user's narrowed selection doesn't
+        // erase the explicit intent.
+        XCTAssertEqual(model.selectableImportTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+    }
+
+    @MainActor
+    func testSetDataType_unchangedValue_doesNotMarkSelectionAsUserModified() {
+        // GIVEN: Chrome with both types selected by default
+        model = DataImportViewModel(
+            importSource: .chrome,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
+                return .init(browser: browser, profiles: [defaultProfile])
+            }
+        )
+        XCTAssertFalse(model.hasUserModifiedDataTypeSelection)
+
+        // WHEN: setDataType is called with values that match the current state
+        // (this happens when the type-picker sheet's Done button re-emits every
+        // item's current state)
+        model.setDataType(.bookmarks, selected: true)
+        model.setDataType(.passwords, selected: true)
+
+        // THEN: the flag stays false, and a source round trip still resets to
+        // all-of-new-source's-types
+        XCTAssertFalse(model.hasUserModifiedDataTypeSelection)
+
+        model.update(with: .bitwarden)
+        model.update(with: .chrome)
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks, .passwords])
     }
 
     // MARK: - Button State Tests

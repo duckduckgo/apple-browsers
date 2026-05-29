@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import History

@@ -20,6 +20,7 @@
 import SwiftUI
 import Persistence
 import Common
+import FoundationExtensions
 import Core
 import PrivacyConfig
 import SetDefaultBrowserCore

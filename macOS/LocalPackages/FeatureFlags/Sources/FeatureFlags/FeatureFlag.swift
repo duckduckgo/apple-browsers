@@ -65,6 +65,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
     case adBlockingExtension
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173932
+    case adBlockingExtensionEnabledByDefault
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
 
@@ -188,14 +191,15 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141
     case blurryAddressBarTahoeFix
 
+    /// Prevents IME composition-confirm Return from submitting the address bar.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214960575971803?focus=true
+    case addressBarIMEConfirmFix
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477623612
     case dataImportNewExperience
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721557461
-    case showHideAIGeneratedImagesSection
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
@@ -384,6 +388,16 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214684208036378
     case bookmarksBarMenusCustomWindow
+
+    /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
+    /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to fall back to the
+    /// trampoline if the SPI ever misbehaves.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215026874168279
+    case newErrorPageReload
+
+    /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
+    /// https://app.asana.com/1/137249556945/task/1214533186882448
+    case aiChatSettingsLinkInAiFeatures
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -447,7 +461,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:
-            Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled), category: .adBlocking)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled), category: .adBlocking)
+        case .adBlockingExtensionEnabledByDefault:
+            Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault), category: .adBlocking)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(ForceDarkModeOnWebsitesSubfeature.featureRollout), category: .webExtensions)
         case .syncSeamlessAccountSwitching:
@@ -528,12 +544,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
+        case .addressBarIMEConfirmFix:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addressBarIMEConfirmFix))
         case .dataImportNewExperience:
             Config(source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
-        case .showHideAIGeneratedImagesSection:
-            Config(source: .remoteReleasable(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration), category: .duckAI)
         case .allowProTierPurchase:
@@ -647,6 +663,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.autoplayPolicy), supportsLocalOverriding: true)
         case .bookmarksBarMenusCustomWindow:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow))
+        case .newErrorPageReload:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.newErrorPageReload))
+        case .aiChatSettingsLinkInAiFeatures:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.settingsLinkInAiFeatures), category: .duckAI)
         }
     }
 

@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import CommonObjCExtensions
 import Navigation
 import os.log
@@ -319,6 +320,21 @@ extension WKWebView {
         loadAlternateHTMLString(self, Selector.loadAlternateHTMLString, html as NSString, baseURL as NSURL, failingURL as NSURL)
     }
 
+    /// Runs the script via the `_evaluateJavaScriptWithoutUserGesture:` SPI so any resulting
+    /// navigation arrives at the policy chain as `isUserInitiated = false`. Returns false if the
+    /// SPI is unavailable so callers can fall back.
+    @discardableResult
+    func evaluateJavaScriptWithoutUserGesture(_ script: String) -> Bool {
+        guard responds(to: Selector.evaluateJavaScriptWithoutUserGesture),
+              let method = class_getInstanceMethod(object_getClass(self), Selector.evaluateJavaScriptWithoutUserGesture)
+        else { return false }
+        let imp = method_getImplementation(method)
+        typealias Fn = @convention(c) (WKWebView, ObjectiveC.Selector, NSString, AnyObject?) -> Void
+        let fn = unsafeBitCast(imp, to: Fn.self)
+        fn(self, Selector.evaluateJavaScriptWithoutUserGesture, script as NSString, nil)
+        return true
+    }
+
     func setDocumentHtml(_ html: String) {
         self.evaluateJavaScript("document.open(); document.write('\(html.escapedJavaScriptString())'); document.close()", in: nil, in: .defaultClient)
     }
@@ -467,6 +483,7 @@ extension WKWebView {
         static let fullScreenPlaceholderView = NSSelectorFromString("_fullScreenPlaceholderView")
         static let printOperationWithPrintInfoForFrame = NSSelectorFromString("_printOperationWithPrintInfo:forFrame:")
         static let loadAlternateHTMLString = NSSelectorFromString("_loadAlternateHTMLString:baseURL:forUnreachableURL:")
+        static let evaluateJavaScriptWithoutUserGesture = NSSelectorFromString("_evaluateJavaScriptWithoutUserGesture:completionHandler:")
         static let mediaMutedState = NSSelectorFromString("_mediaMutedState")
         static let setPageMuted = NSSelectorFromString("_setPageMuted:")
         static let setAddsVisitedLinks = NSSelectorFromString("_setAddsVisitedLinks:")

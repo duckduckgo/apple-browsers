@@ -25,6 +25,7 @@ public extension NewTabPageDataModel {
         case defaultApp
         case emailProtection
         case duckplayer
+        case youtubeAdBlocking
         case addAppToDockMac
         case subscription
         case personalizeBrowser

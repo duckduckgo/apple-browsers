@@ -520,5 +520,21 @@ struct OnboardingStepsForConfiguredFlow {
         // THEN
         #expect(result == expectedSteps)
     }
-    
+
+    // MARK: - Resume-step mapping
+
+    @Test("Check OnboardingIntroStep.resumeStep maps each step to the matching checkpoint")
+    func resumeStepMappingIsCorrect() {
+        #expect(OnboardingIntroStep.introDialog(isReturningUser: false).resumeStep == nil)
+        #expect(OnboardingIntroStep.introDialog(isReturningUser: true).resumeStep == nil)
+        #expect(OnboardingIntroStep.browserComparison.resumeStep == .browserComparison)
+        #expect(OnboardingIntroStep.aiComparison.resumeStep == .aiComparison)
+        #expect(OnboardingIntroStep.addToDockPromo.resumeStep == .addToDockPromo)
+        #expect(OnboardingIntroStep.appIconSelection.resumeStep == .appIconSelection)
+        #expect(OnboardingIntroStep.addressBarPositionSelection.resumeStep == .addressBarPositionSelection)
+        #expect(OnboardingIntroStep.searchExperienceSelection.resumeStep == .searchExperienceSelection)
+        #expect(OnboardingIntroStep.duckAIQuerySelection.resumeStep == .duckAIQuerySelection)
+        #expect(OnboardingIntroStep.interlude(.duckAI).resumeStep == .interludeDuckAI)
+    }
+
 }

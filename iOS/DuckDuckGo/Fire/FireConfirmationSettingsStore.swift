@@ -20,6 +20,7 @@
 import Foundation
 import Persistence
 import Common
+import FoundationExtensions
 
 protocol FireConfirmationSettingsStoring: AnyObject {
     var clearTabs: Bool { get set }

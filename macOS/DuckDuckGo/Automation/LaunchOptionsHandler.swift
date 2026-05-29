@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 /// Handles launch options and user defaults for automation and testing scenarios
 public final class LaunchOptionsHandler {

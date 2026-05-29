@@ -172,9 +172,6 @@ extension Pixel {
         case browsingMenuEnableProtection
         case browsingMenuReportBrokenSite
         case browsingMenuFireproof
-        case fireproofingETLDPlus1MigrationStart
-        case fireproofingETLDPlus1MigrationSuccess
-        case fireproofingETLDPlus1MigrationFailed
         case browsingMenuAutofill
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
@@ -1459,6 +1456,11 @@ extension Pixel {
         case ntpAfterIdleTabSwitcherSelectedAfterIdle
         case ntpAfterIdleTabSwitcherSelectedUserInitiated
         case ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle
+        case ntpAfterIdleEscapeHatchCloseTabTapped
+        case ntpAfterIdleEscapeHatchBurnWithConfirmationTapped
+        case ntpAfterIdleEscapeHatchBurnImmediatelyTapped
+        case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab
+        case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab
         case ntpAfterIdleSettingChangedToNewTab
         case ntpAfterIdleSettingChangedToLastUsedTab
         case ntpAfterIdleSettingIdleIntervalChanged
@@ -1590,6 +1592,16 @@ extension Pixel {
         case duckAiNativeStorageMigrationDoneCount(key: String)
         case duckAiNativeStorageMigrationDoneBlankCount
 
+        case duckAiNativeStorageContainerMigrationNotNeeded(label: String)
+        case duckAiNativeStorageContainerMigrationSuccess(label: String)
+        case duckAiNativeStorageContainerMigrationAttemptFailed(label: String)
+        case duckAiNativeStorageContainerMigrationGaveUp(label: String)
+        case duckAiNativeStorageContainerMigrationProtectionFailed(label: String)
+        case duckAiNativeStorageContainerMigrationDestinationConflict(label: String)
+        case duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: String)
+        case duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: String)
+        case duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: String)
+
         case duckAiNativeStorageInitSuccess
         case duckAiNativeStorageInitError
         case duckAiNativeStorageMigrationStarted
@@ -1708,6 +1720,36 @@ extension Pixel {
         case aiChatContextualRecentChatsPopupDisplayed
         case aiChatContextualRecentChatSelected
         case aiChatContextualViewAllChatsTapped
+
+        // MARK: Unified Toggle Input (UTI)
+        case unifiedToggleInputImageGenerationSelected
+        case unifiedToggleInputImageGenerationDeselected
+        case unifiedToggleInputImageGenerationSubmitted
+        case unifiedToggleInputWebSearchSelected
+        case unifiedToggleInputWebSearchDeselected
+        case unifiedToggleInputWebSearchSubmitted
+        case unifiedToggleInputModelSelected
+        case unifiedToggleInputReasoningEffortSelected
+        case unifiedToggleInputImageAttached
+        case unifiedToggleInputImageRemoved
+        case unifiedToggleInputFileAttached
+        case unifiedToggleInputFileRemoved
+        case unifiedToggleInputFileValidationFailed
+        case unifiedToggleInputVoiceTapped
+        case unifiedToggleInputStopGenerationTapped
+        case unifiedToggleInputSubscriptionUpsellTriggered
+        case unifiedToggleInputChatHeaderUpgradeTapped
+        case unifiedToggleInputPromptSubmitted
+
+        // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
+        case autocompleteDuckAIClickWebsite
+        case autocompleteDuckAIClickBookmark
+        case autocompleteDuckAIClickFavorite
+        case autocompleteDuckAIClickHistorySearch
+        case autocompleteDuckAIClickHistorySite
+        case autocompleteDuckAIClickSwitchToTab
+        case autocompleteDuckAIClickChatHistory
+        case autocompleteDuckAIClickSearchDuckDuckGo
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -1850,6 +1892,13 @@ extension Pixel {
         case webExtensionAdBlockingSettingsOpen
         case webExtensionAdBlockingEnabled
         case webExtensionAdBlockingDisabled
+
+        case webExtensionAdBlockingMenuEnableTapped
+        case webExtensionAdBlockingMenuDisableTapped
+        case webExtensionAdBlockingPickerAlwaysOn
+        case webExtensionAdBlockingPickerAlwaysOff
+        case webExtensionAdBlockingPickerDisableUntilRelaunch
+        case webExtensionAdBlockingBreakageReportEntered
 
         case webExtensionScriptletFetchSuccess
         case webExtensionScriptletFetchError
@@ -2041,9 +2090,6 @@ extension Pixel.Event {
         case .browsingMenuEnableProtection: return "mb_wlr"
         case .browsingMenuReportBrokenSite: return "mb_rb"
         case .browsingMenuFireproof: return "mb_f"
-        case .fireproofingETLDPlus1MigrationStart: return "m_fireproofing_etldplus1_migration_start"
-        case .fireproofingETLDPlus1MigrationSuccess: return "m_fireproofing_etldplus1_migration_success"
-        case .fireproofingETLDPlus1MigrationFailed: return "m_fireproofing_etldplus1_migration_failed"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
         case .browsingMenuNewDuckAddress: return "m_menu_new_duck_address"
@@ -3216,6 +3262,11 @@ extension Pixel.Event {
         case .ntpAfterIdleTabSwitcherSelectedAfterIdle: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_after_idle"
         case .ntpAfterIdleTabSwitcherSelectedUserInitiated: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_user_initiated"
         case .ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle: return "m_ntp_after_idle_escape_hatch_tab_switcher_tapped_after_idle"
+        case .ntpAfterIdleEscapeHatchCloseTabTapped: return "m_ntp_after_idle_escape_hatch_close_tab_tapped"
+        case .ntpAfterIdleEscapeHatchBurnWithConfirmationTapped: return "m_ntp_after_idle_escape_hatch_burn_with_confirmation_tapped"
+        case .ntpAfterIdleEscapeHatchBurnImmediatelyTapped: return "m_ntp_after_idle_escape_hatch_burn_immediately_tapped"
+        case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_new_tab"
+        case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_last_used_tab"
         case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
         case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
         case .ntpAfterIdleSettingIdleIntervalChanged: return "m_ntp_after_idle_setting_idle_interval_changed"
@@ -3348,6 +3399,16 @@ extension Pixel.Event {
         case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
         case .duckAiNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
 
+        case .duckAiNativeStorageContainerMigrationNotNeeded(let label): return "m_duck-ai_native-storage_container-migration_not-needed_\(label)"
+        case .duckAiNativeStorageContainerMigrationSuccess(let label): return "m_duck-ai_native-storage_container-migration_success_\(label)"
+        case .duckAiNativeStorageContainerMigrationAttemptFailed(let label): return "m_duck-ai_native-storage_container-migration_attempt-failed_\(label)"
+        case .duckAiNativeStorageContainerMigrationGaveUp(let label): return "m_duck-ai_native-storage_container-migration_gave-up_\(label)"
+        case .duckAiNativeStorageContainerMigrationProtectionFailed(let label): return "m_duck-ai_native-storage_container-migration_protection-failed_\(label)"
+        case .duckAiNativeStorageContainerMigrationDestinationConflict(let label): return "m_duck-ai_native-storage_container-migration_destination-conflict_\(label)"
+        case .duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(let label): return "m_duck-ai_native-storage_container-migration_exclude-from-backup-failed_\(label)"
+        case .duckAiNativeStorageContainerMigrationProtectedDataUnavailable(let label): return "m_duck-ai_native-storage_container-migration_protected-data-unavailable_\(label)"
+        case .duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(let label): return "m_duck-ai_native-storage_container-migration_key-value-store-read-failed_\(label)"
+
         case .duckAiNativeStorageInitSuccess: return "m_duck-ai_native-storage_init_success"
         case .duckAiNativeStorageInitError: return "m_duck-ai_native-storage_init_error"
         case .duckAiNativeStorageMigrationStarted: return "m_duck-ai_native-storage_migration_started"
@@ -3457,6 +3518,35 @@ extension Pixel.Event {
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
+
+        // MARK: Unified Toggle Input (UTI)
+        case .unifiedToggleInputImageGenerationSelected: return "m_aichat_unified_input_image_generation_selected"
+        case .unifiedToggleInputImageGenerationDeselected: return "m_aichat_unified_input_image_generation_deselected"
+        case .unifiedToggleInputImageGenerationSubmitted: return "m_aichat_unified_input_image_generation_submitted"
+        case .unifiedToggleInputWebSearchSelected: return "m_aichat_unified_input_web_search_selected"
+        case .unifiedToggleInputWebSearchDeselected: return "m_aichat_unified_input_web_search_deselected"
+        case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
+        case .unifiedToggleInputModelSelected: return "m_aichat_unified_input_model_selected"
+        case .unifiedToggleInputReasoningEffortSelected: return "m_aichat_unified_input_reasoning_effort_selected"
+        case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
+        case .unifiedToggleInputImageRemoved: return "m_aichat_unified_input_image_removed"
+        case .unifiedToggleInputFileAttached: return "m_aichat_unified_input_file_attached"
+        case .unifiedToggleInputFileRemoved: return "m_aichat_unified_input_file_removed"
+        case .unifiedToggleInputFileValidationFailed: return "m_aichat_unified_input_file_validation_failed"
+        case .unifiedToggleInputVoiceTapped: return "m_aichat_unified_input_voice_tapped"
+        case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
+        case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
+        case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
+        case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
+
+        case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
+        case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"
+        case .autocompleteDuckAIClickFavorite: return "m_autocomplete_duckai_click_favorite"
+        case .autocompleteDuckAIClickHistorySearch: return "m_autocomplete_duckai_click_history_search"
+        case .autocompleteDuckAIClickHistorySite: return "m_autocomplete_duckai_click_history_site"
+        case .autocompleteDuckAIClickSwitchToTab: return "m_autocomplete_duckai_click_switch_to_tab"
+        case .autocompleteDuckAIClickChatHistory: return "m_autocomplete_duckai_click_chat_history"
+        case .autocompleteDuckAIClickSearchDuckDuckGo: return "m_autocomplete_duckai_click_search_duckduckgo"
 
         // MARK: AI Chat Sync
 
@@ -3667,6 +3757,13 @@ extension Pixel.Event {
         case .webExtensionAdBlockingSettingsOpen: return "m_web_extension_ad_blocking_settings_open"
         case .webExtensionAdBlockingEnabled: return "m_web_extension_ad_blocking_enabled"
         case .webExtensionAdBlockingDisabled: return "m_web_extension_ad_blocking_disabled"
+
+        case .webExtensionAdBlockingMenuEnableTapped: return "m_web_extension_ad_blocking_menu_enable_tapped"
+        case .webExtensionAdBlockingMenuDisableTapped: return "m_web_extension_ad_blocking_menu_disable_tapped"
+        case .webExtensionAdBlockingPickerAlwaysOn: return "m_web_extension_ad_blocking_picker_always_on"
+        case .webExtensionAdBlockingPickerAlwaysOff: return "m_web_extension_ad_blocking_picker_always_off"
+        case .webExtensionAdBlockingPickerDisableUntilRelaunch: return "m_web_extension_ad_blocking_picker_disable_until_relaunch"
+        case .webExtensionAdBlockingBreakageReportEntered: return "m_web_extension_ad_blocking_breakage_report_entered"
 
         case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
         case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"

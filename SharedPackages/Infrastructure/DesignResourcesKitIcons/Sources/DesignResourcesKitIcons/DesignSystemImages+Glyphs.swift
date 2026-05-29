@@ -197,6 +197,7 @@ public extension DesignSystemImages {
             public static var gift: DesignSystemImage { .init(resource: .gift16) }
             public static var globe: DesignSystemImage { .init(resource: .globe16) }
             public static var globeBlocked: DesignSystemImage { .init(resource: .globeBlocked16) }
+            public static var goBackCircle: DesignSystemImage { .init(resource: .goBackCircle16) }
             public static var help: DesignSystemImage { .init(resource: .help16) }
             public static var history: DesignSystemImage { .init(resource: .history16) }
             public static var home: DesignSystemImage { .init(resource: .home16) }
@@ -238,6 +239,7 @@ public extension DesignSystemImages {
             public static var pin: DesignSystemImage { .init(resource: .pin16) }
             public static var platformApple: DesignSystemImage { .init(resource: .platformApple16) }
             public static var platformMacOS: DesignSystemImage { .init(resource: .platformMacOS16) }
+            public static var permissionAutoplay: DesignSystemImage { .init(resource: .playerVideo16) }
             public static var pointUpSolid: DesignSystemImage { .init(resource: .pointUpSolid16) }
             public static var popupBlocked: DesignSystemImage { .init(resource: .popupBlocked16) }
             public static var print: DesignSystemImage { .init(resource: .print16) }
@@ -286,7 +288,8 @@ public extension DesignSystemImages {
             public static var permissionCameraSolid: DesignSystemImage { .init(resource: .videoSolid16) }
             public static var undo: DesignSystemImage { .init(resource: .undo16)}
             public static var update: DesignSystemImage { .init(resource: .update16) }
-            public static var videoPlayer: DesignSystemImage { .init(resource: .playerVideo16) }
+            public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayer16) }
+            public static var videoPlayerBlocked: DesignSystemImage { .init(resource: .videoPlayerBlocked16) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid16) }
             public static var viewGridSolid: DesignSystemImage { .init(resource: .viewGridSolid16) }
             public static var viewList: DesignSystemImage { .init(resource: .viewList16) }
@@ -518,6 +521,8 @@ public extension DesignSystemImages {
             public static var shieldCheckSolid: DesignSystemImage { .init(resource: .shieldCheckSolid24) }
             public static var shareAndroid: DesignSystemImage { .init(resource: .shareAndroid24) }
             public static var shareApple: DesignSystemImage { .init(resource: .shareApple24) }
+            public static var sheet: DesignSystemImage { .init(resource: .sheet24) }
+            public static var sheetOpen: DesignSystemImage { .init(resource: .sheetOpen24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
             public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare24) }
@@ -543,6 +548,7 @@ public extension DesignSystemImages {
             public static var vpn: DesignSystemImage { .init(resource: .VPN_24) }
             public static var vpnUnlocked: DesignSystemImage { .init(resource: .vpnUnlocked24) }
             public static var video: DesignSystemImage { .init(resource: .video24) }
+            public static var videoAdBlocked: DesignSystemImage { .init(resource: .videoAdBlocked24) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayer24) }
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid24) }
             public static var viewList: DesignSystemImage { .init(resource: .viewList24) }

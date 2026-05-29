@@ -20,7 +20,9 @@ import AppLauncher
 import AppKit
 import BrowserServicesKit
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import LoginItems

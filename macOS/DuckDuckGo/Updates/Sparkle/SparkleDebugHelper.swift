@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 
 /// Helper for testing Sparkle update pixels via debug menu
 final class SparkleDebugHelper {

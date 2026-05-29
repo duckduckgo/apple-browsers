@@ -56,6 +56,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
     public let applicationNameForUserAgent: String?
+    public let contentBlocking: DBPWebViewContentBlocking?
     public var fetchedEmail: String?
     public var emailData: ExtractedEmailData = [:]
 
@@ -71,6 +72,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 stageDurationCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
+                contentBlocking: DBPWebViewContentBlocking? = nil,
                 shouldRunNextStep: @escaping () -> Bool
     ) {
         self.privacyConfig = privacyConfig
@@ -86,6 +88,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.executionConfig = executionConfig
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgent = applicationNameForUserAgent
+        self.contentBlocking = contentBlocking
     }
 
     @MainActor

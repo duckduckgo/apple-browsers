@@ -22,6 +22,7 @@ import Combine
 import PrivacyConfig
 import PrivacyDashboard
 import Common
+import FoundationExtensions
 import PixelKit
 import PixelExperimentKit
 import os.log

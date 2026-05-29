@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DesignResourcesKitIcons
@@ -1077,13 +1078,6 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
         addItem(globalZoomSettingItem)
 
         zoomItems = [zoomInItem, zoomOutItem, actualSizeItem]
-    }
-
-    override func performActionForItem(at index: Int) {
-        if let item = item(at: index), zoomItems.contains(item) {
-            PixelKit.fire(MoreOptionsMenuPixel.zoomActionClicked, frequency: .daily)
-        }
-        super.performActionForItem(at: index)
     }
 
     private var zoomItems: [NSMenuItem] = []

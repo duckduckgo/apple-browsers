@@ -2725,12 +2725,6 @@ https://duckduckgo.com/mac";
 /* Title for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.title" = "Exclude Local Networks";
 
-/* Footer text for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.footer" = "We recommend keeping this on when using networks you don't trust. If you're having trouble reaching local devices or other networks, try turning it off.";
-
-/* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Strict routing";
-
 /* Title for the VPN Location screen's All Countries section. */
 "network.protection.vpn.location.all.countries.section.title" = "All Countries";
 
@@ -2781,6 +2775,12 @@ https://duckduckgo.com/mac";
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Shortcuts";
+
+/* Footer text for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.footer" = "We recommend keeping this on when using networks you don't trust. If you're having trouble reaching local devices or other networks, try turning it off.";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Strict routing";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";

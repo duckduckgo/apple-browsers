@@ -171,6 +171,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         subscribeToSnoozeTimingChanges()
         subscribeToStatusChanges()
         subscribeToConfigurationChanges()
+        subscribeToEnforceRoutesSettingChanges()
     }
 
     /// Starts the VPN connection used for Network Protection
@@ -228,6 +229,17 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         tunnelManager.connection.stopVPNTunnel()
+    }
+
+    func restart() async {
+        guard let internalManager else {
+            await stop()
+            return
+        }
+
+        await stop()
+        await start()
+        try? await enableOnDemand(tunnelManager: internalManager)
     }
 
     func command(_ command: VPNCommand) async throws {
@@ -429,6 +441,37 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 }
             }
             .store(in: &cancellables)
+    }
+
+    // MARK: - Handling Settings Changes
+
+    private func subscribeToEnforceRoutesSettingChanges() {
+        settings.enforceRoutesPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] enforceRoutes in
+                guard let self else { return }
+                Task {
+                    try? await self.handleSetEnforceRoutes(enforceRoutes)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleSetEnforceRoutes(_ enforceRoutes: Bool) async throws {
+        guard let tunnelManager = await tunnelManager,
+              tunnelManager.protocolConfiguration?.enforceRoutes == !enforceRoutes else {
+            return
+        }
+
+        try await setupAndSave(tunnelManager)
+
+        // enforceRoutes is bound to the NECP session when it's created, so re-saving the protocol
+        // only affects the next connection. If a tunnel is currently up, fully restart it so the
+        // new value takes effect now rather than on the next connect.
+        if await isConnected {
+            await restart()
+        }
     }
 
     // MARK: - Observing Status Changes

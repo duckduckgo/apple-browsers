@@ -25,6 +25,7 @@ import UserNotifications
 import VPN
 import BrowserServicesKit
 import Core
+import PrivacyConfig
 
 enum NetworkProtectionNotificationsViewKind: Equatable {
     case loading
@@ -71,11 +72,6 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
             }
 
             settings.enforceRoutes = enforceRoutes
-
-            Task {
-                try await Task.sleep(interval: 0.1)
-                try await controller.command(.restartAdapter)
-            }
         }
     }
 

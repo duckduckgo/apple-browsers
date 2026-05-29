@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 final class PartialFormSaveManager {
     typealias WebsiteAccount = SecureVaultModels.WebsiteAccount

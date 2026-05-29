@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import ContentBlocking
 import TrackerRadarKit
 import XCTest

@@ -20,6 +20,7 @@ import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import FeatureFlags
 import PersistenceTestingUtils
 import PixelKit

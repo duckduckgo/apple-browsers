@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import Common
+@testable import FoundationExtensions
 
 final class SequenceExtensionTests: XCTestCase {
 

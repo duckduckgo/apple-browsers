@@ -19,6 +19,8 @@
 
 import Core
 import Common
+import FoundationExtensions
+import PrivacyConfig
 
 protocol SafariRedirectHandling: AnyObject {
     /// Whether the given URL was loaded after a suppressed x-safari redirect (for breakage reports).

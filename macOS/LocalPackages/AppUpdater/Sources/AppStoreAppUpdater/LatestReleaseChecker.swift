@@ -18,6 +18,7 @@
 import AppUpdaterShared
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 
 public enum LatestReleaseMetadataType {

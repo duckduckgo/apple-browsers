@@ -1723,6 +1723,9 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Never";
 
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Open in YouTube app";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
@@ -1960,11 +1963,11 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Last used Fire Tab";
 
-/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
-"escapeHatch.menu.burnTab" = "Burn Tab";
-
 /* Menu item that closes the open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeTab" = "Close Tab";
+
+/* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.deleteTab" = "Delete Tab";
 
 /* Menu item that returns the user to the open tab from the escape hatch card */
 "escapeHatch.menu.returnToTab" = "Return to Tab";
@@ -3343,14 +3346,14 @@ Take back control of your personal information with the browser designed for dat
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Inactivity Timer";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Opening Screen";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Last Used Tab";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "New Tab";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "After Inactivity";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";

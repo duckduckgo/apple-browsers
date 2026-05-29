@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 public protocol AutofillUrlSort {
     func firstCharacterForGrouping(_ account: SecureVaultModels.WebsiteAccount, tld: TLD) -> String?

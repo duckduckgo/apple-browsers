@@ -17,20 +17,22 @@
 //  limitations under the License.
 //
 
-import UIKit
-import SwiftUI
-import DataBrokerProtectionCore
-import DataBrokerProtection_iOS
 import BrowserServicesKit
-import ContentScopeScripts
-import WebKit
-import Common
 import Combine
+import Common
+import ConcurrencyExtensions
+import ContentScopeScripts
+import Core
+import DataBrokerProtection_iOS
+import DataBrokerProtectionCore
+import enum UserScript.UserScriptError
+import FoundationExtensions
 import os.log
 import PixelKit
 import PrivacyConfig
-import Core
-import enum UserScript.UserScriptError
+import SwiftUI
+import UIKit
+import WebKit
 
 // MARK: - Main View Controller
 

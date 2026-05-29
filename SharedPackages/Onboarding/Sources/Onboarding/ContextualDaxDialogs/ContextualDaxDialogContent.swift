@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+import Combine
+import ConcurrencyExtensions
 import Foundation
 import SwiftUI
-import Combine
 
 #if canImport(UIKit)
 typealias PlatformFont = UIFont

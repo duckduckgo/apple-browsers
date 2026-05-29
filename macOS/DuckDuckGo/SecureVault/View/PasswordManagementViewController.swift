@@ -21,6 +21,7 @@ import Carbon.HIToolbox
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import DDGSync
 import Foundation
 import SecureStorage

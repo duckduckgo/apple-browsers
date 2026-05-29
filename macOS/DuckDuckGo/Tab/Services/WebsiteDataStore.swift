@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import WebKit
 import GRDB
 import Subscription

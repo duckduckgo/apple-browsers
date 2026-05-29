@@ -19,6 +19,7 @@
 import AIChat
 import AppKit
 import Combine
+import CombineExtensions
 import Foundation
 import PixelKit
 import PrivacyConfig
@@ -114,10 +115,6 @@ final class AIChatPreferences: ObservableObject {
 
     var shouldShowNewTabPageToggle: Bool {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
-    }
-
-    var shouldShowHideAIGeneratedImagesSection: Bool {
-        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
 
     var shouldShowDuckAiSettingsLink: Bool {

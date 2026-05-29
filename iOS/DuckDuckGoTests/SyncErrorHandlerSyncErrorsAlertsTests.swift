@@ -21,6 +21,7 @@ import XCTest
 import DDGSync
 import Combine
 import Common
+import FoundationExtensions
 import BrowserServicesKitTestsUtils
 @testable import Core
 @testable import DuckDuckGo

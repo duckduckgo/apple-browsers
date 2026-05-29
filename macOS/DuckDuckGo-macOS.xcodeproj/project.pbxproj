@@ -4397,6 +4397,8 @@
 		F14890982ECDD24400B5239E /* AttributedMetricDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14890962ECDD24400B5239E /* AttributedMetricDebugMenu.swift */; };
 		F14B813F2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14B813E2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift */; };
 		F14B81402F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14B813E2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift */; };
+		F156E39B2FB5FCBA004A8424 /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = F156E39A2FB5FBCC004A8424 /* Documentation.docc */; };
+		F156E39C2FB5FCBA004A8424 /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = F156E39A2FB5FBCC004A8424 /* Documentation.docc */; };
 		F158DE022E9E992C00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE012E9E992C00628DD0 /* ContentBlocking */; };
 		F158DE042E9E995F00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE032E9E995F00628DD0 /* ContentBlocking */; };
 		F158DE062E9E9DF100628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE052E9E9DF100628DD0 /* ContentBlocking */; };
@@ -6899,6 +6901,7 @@
 		F14890842ECCCAA800B5239E /* AttributedMetricUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedMetricUtils.swift; sourceTree = "<group>"; };
 		F14890962ECDD24400B5239E /* AttributedMetricDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedMetricDebugMenu.swift; sourceTree = "<group>"; };
 		F14B813E2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPixelHandlerTests.swift; sourceTree = "<group>"; };
+		F156E39A2FB5FBCC004A8424 /* Documentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Documentation.docc; sourceTree = "<group>"; };
 		F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeature.swift; sourceTree = "<group>"; };
 		F17114812C7C98FB009836C1 /* Logger+Favicons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Favicons.swift"; sourceTree = "<group>"; };
 		F17114842C7C9D28009836C1 /* Logger+Fire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Fire.swift"; sourceTree = "<group>"; };
@@ -10663,6 +10666,7 @@
 				3192EC862A4DCF0E001E97A5 /* DBP */,
 				BBDE001A2D6DE66100109F88 /* DefaultBrowserAndAddToDockPrompts */,
 				4B379C1C27BDB7EA008A968E /* DeviceAuthentication */,
+				F156E39A2FB5FBCC004A8424 /* Documentation.docc */,
 				AA585D8B248FD31400E9A3E2 /* DuckDuckGo.entitlements */,
 				370AB88B2E2641C500BBBDE0 /* DuckDuckGoAlpha.entitlements */,
 				37D9BBA329376EE8000B99F9 /* DuckDuckGoAppStore.entitlements */,
@@ -15192,6 +15196,7 @@
 				3706FB3E293F65D500E42796 /* BookmarksBarViewModel.swift in Sources */,
 				3706FB3F293F65D500E42796 /* NSPopUpButtonView.swift in Sources */,
 				84E720682EAA1A44002618BD /* PermissionManagerMock.swift in Sources */,
+				F156E39C2FB5FCBA004A8424 /* Documentation.docc in Sources */,
 				F1FDC9392BF51F41006B1435 /* VPNSettings+Environment.swift in Sources */,
 				ED4B3F442F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift in Sources */,
 				1ED910D62B63BFB300936947 /* IdentityTheftRestorationPagesUserScript.swift in Sources */,
@@ -17464,6 +17469,7 @@
 				C124AC232D4257BE009FBFD0 /* DataImportExtension.swift in Sources */,
 				B63ED0E526BB8FB900A9DAD1 /* SharingMenu.swift in Sources */,
 				AA4FF40C2624751A004E2377 /* GrammarFeaturesManager.swift in Sources */,
+				F156E39B2FB5FCBA004A8424 /* Documentation.docc in Sources */,
 				7BC16BAA2E724CF80016EE8E /* ContentScopePreferences.swift in Sources */,
 				4B0AACAE28BC6FD0001038AC /* SafariFaviconsReader.swift in Sources */,
 				BBFEE6CA2E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift in Sources */,

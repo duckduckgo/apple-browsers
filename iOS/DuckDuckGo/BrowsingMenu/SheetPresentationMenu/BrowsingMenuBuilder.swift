@@ -82,6 +82,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         // MARK: Shortcuts group
         let shortcutsItems: [BrowsingMenuModel.Entry] = [
+            .init(entryBuilder.makeDuckAiChatsEntry()),
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
             .init(entryBuilder.makeDownloadsEntry())
@@ -176,6 +177,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         // MARK: Shortcuts group
         let shortcutItems: [BrowsingMenuModel.Entry] = [
+            .init(entryBuilder.makeDuckAiChatsEntry()),
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
             .init(entryBuilder.makeDownloadsEntry())

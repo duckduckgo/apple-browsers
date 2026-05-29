@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIKit
 
 public struct AutoRestoreReadyView: View {
@@ -46,7 +47,7 @@ public struct AutoRestoreReadyView: View {
                 }
                 .frame(height: 56)
 
-                Image("Sync-Pending-128")
+                Image(rebrandable: "Sync-Pending-128")
                     .padding(20)
 
                 Text(UserText.autoRestoreReadyTitle)

@@ -583,11 +583,17 @@ def _prefetch_github_refs(branch_names: list[str]) -> None:
             logger.warning("Batched GitHub PR lookup returned bad JSON: %s", exc)
             return
         for idx, branch_name in enumerate(batch):
-            node = repo_payload.get(f"b{idx}") or {}
-            pr_nodes = (
-                node.get("associatedPullRequests", {}).get("nodes", [])
-                if isinstance(node, dict) else []
-            )
+            node = repo_payload.get(f"b{idx}")
+            if not isinstance(node, dict):
+                # GraphQL returns a null ref for branches that no longer
+                # exist (most commonly a branch that was merged and then
+                # deleted). Caching an empty status here would hide the
+                # merged PR from the sweep, since lookup_branch_pr_status
+                # short-circuits on any cached entry. Leave it uncached so
+                # the fallback `gh pr list --head` query runs, which still
+                # finds PRs for deleted branches.
+                continue
+            pr_nodes = node.get("associatedPullRequests", {}).get("nodes", [])
             _pr_status_cache[branch_name] = _branch_pr_status_from_prs(pr_nodes)
 
 

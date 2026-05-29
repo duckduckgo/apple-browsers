@@ -3598,14 +3598,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Tétlenségi időzítő";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Nyitóképernyő";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Utoljára használt lap";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Új lap";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Inaktivitás után";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Próbáld ki az új funkciót, amellyel a címsorban váltogathatsz a keresés és a Duck.ai között.";

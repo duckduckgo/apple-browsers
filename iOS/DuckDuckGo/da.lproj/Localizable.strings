@@ -3598,14 +3598,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Timer for inaktivitet";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Åbningsskærm";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Sidst brugte fane";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Ny fane";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Efter inaktivitet";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Prøv den nye mulighed for at skifte mellem søgning og Duck.ai i adresselinjen.";

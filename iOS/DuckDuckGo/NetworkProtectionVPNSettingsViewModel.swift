@@ -38,9 +38,7 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private var cancellables: Set<AnyCancellable> = []
 
-    var isStrictRoutingAvailable: Bool {
-        featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
-    }
+    @Published private(set) var isStrictRoutingAvailable: Bool
 
     private var notificationsAuthorization: NotificationsAuthorizationControlling
     @Published var viewKind: NetworkProtectionNotificationsViewKind = .loading
@@ -91,6 +89,7 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
 
         self.controller = controller
         self.featureFlagger = featureFlagger
+        self.isStrictRoutingAvailable = featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
 
         self.excludeLocalNetworks = settings.excludeLocalNetworks
         self.enforceRoutes = settings.enforceRoutes
@@ -114,6 +113,16 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .map { String(describing: $0) }
             .assign(to: \.dnsServers, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
+        // Keep the toggle's availability in sync as the feature flag changes at runtime
+        // (remote config update or a local override), so the row appears/disappears live.
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.isStrictRoutingAvailable = self.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+            }
             .store(in: &cancellables)
     }
 

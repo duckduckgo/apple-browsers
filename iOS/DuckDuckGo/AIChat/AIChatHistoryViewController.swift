@@ -20,9 +20,7 @@
 import SwiftUI
 import UIKit
 
-/// Container for the native Duck.ai chat-history sheet. Pure shell: hosts the SwiftUI
-/// view and owns the navigation-bar Done button. Intents emitted by the view model are
-/// handled by the presenter (`MainViewController`), which is the view model's delegate.
+/// View controller for the native Duck.ai chat-history sheet.
 final class AIChatHistoryViewController: UIViewController {
 
     private let viewModel: AIChatHistoryViewModel

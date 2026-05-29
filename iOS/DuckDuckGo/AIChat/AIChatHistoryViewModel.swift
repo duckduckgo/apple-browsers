@@ -19,10 +19,7 @@
 
 import Foundation
 
-/// Backing model for the native Duck.ai chat-history sheet. Owns user intents and
-/// emits them to its delegate (the presenter), which translates each intent into the
-/// matching UIKit action (dismiss, open Duck.ai, …). Keeps the view model free of
-/// UIKit and navigation concerns.
+/// View model for the native Duck.ai chat-history sheet.
 @MainActor
 final class AIChatHistoryViewModel: ObservableObject {
 

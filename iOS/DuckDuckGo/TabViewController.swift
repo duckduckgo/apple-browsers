@@ -2010,8 +2010,30 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
+
+        showDuckPlayerToastIfNeeded()
     }
-    
+
+    private func showDuckPlayerToastIfNeeded() {
+        guard let url = webView.url,
+              url.isYoutube,
+              webView?.canGoBack == false else { return }
+
+        let sanitizedURL = url.removingParameters(named: [
+            WebDuckPlayerNavigationHandler.Constants.newTabParameter,
+            WebDuckPlayerNavigationHandler.Constants.duckPlayerReferrerParameter,
+            WebDuckPlayerNavigationHandler.Constants.allowFirstVideoParameter
+        ])
+
+        guard let youTubeAppLink = sanitizedURL.replacing(scheme: "youtube"),
+              UIApplication.shared.canOpenURL(youTubeAppLink) else { return }
+
+        ActionMessageView.present(message: UserText.duckPlayerOpenInYouTubeApp, actionTitle: UserText.actionOpen, onAction: {
+            UIApplication.shared.open(youTubeAppLink)
+        })
+
+    }
+
     /// Check cache for DaxEasterEgg logo on commit (instant display for back navigation)
     private func checkDaxEasterEggCacheIfDuckDuckGoSearch(_ webView: WKWebView) {
         guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }

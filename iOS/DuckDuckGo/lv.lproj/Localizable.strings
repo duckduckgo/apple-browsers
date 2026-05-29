@@ -1777,6 +1777,7 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Sazinies ar Duck.ai, izmantojot Siri!";
 
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Visas tērzēšanas sarunas ir %@ privātas";
 
 /* No comment provided by engineer. */
@@ -1814,6 +1815,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nekad";
+
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Atvērt YouTube lietotnē";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -3594,14 +3598,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Neaktivitātes taimeris";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Ekrāna atvēršana";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Pēdējā lietotā cilne";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Jauna cilne";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Pēc neaktivitātes perioda";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Izmēģini jauno iespēju pārslēgties starp meklēšanu un Duck.ai adrešu joslā.";

@@ -90,6 +90,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
+    /// Per-tab Duck.ai omnibar state (prompt text, selection, mode, tool, attachments).
+    /// Owned by Tab so it survives TabViewModel recreation when the tab moves to a new window.
+    let addressBarSharedTextState = AddressBarSharedTextState()
+
     private let webViewConfiguration: WKWebViewConfiguration
 
     let startupPreferences: StartupPreferences

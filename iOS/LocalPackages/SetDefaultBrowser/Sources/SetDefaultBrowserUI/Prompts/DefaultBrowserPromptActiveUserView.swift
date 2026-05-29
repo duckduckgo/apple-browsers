@@ -88,7 +88,7 @@ private extension DefaultBrowserPromptActiveUserView {
             let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
             VStack(spacing: Metrics.Content.itemsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)) {
-                Image(.deviceMobileDefault128)
+                Image(rebrandable: "device-mobile-default-128")
                     .resizable()
                     .scaledToFit()
                     .frame(width: imageSize.width, height: imageSize.height)

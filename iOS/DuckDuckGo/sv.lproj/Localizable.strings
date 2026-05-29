@@ -1816,6 +1816,9 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Aldrig";
 
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Öppna i YouTube-appen";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
@@ -3595,14 +3598,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Inaktivitetstimer";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Öppningsskärm";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Senast använda flik";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Ny flik";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Efter inaktivitet";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Prova det nya alternativet för att växla mellan sökning och Duck.ai i adressfältet.";

@@ -270,6 +270,10 @@ extension TabViewController {
             entries.append(.separator)
         }
 
+        if featureFlagger.isFeatureOn(.aiChatNativeChatHistory) {
+            entries.append(buildDuckAiChatsEntry())
+        }
+
         entries.append(buildOpenBookmarksEntry())
 
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
@@ -509,6 +513,15 @@ extension TabViewController {
             self?.openNewChatInNewTab()
         })
     }
+
+    private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {
+        .regular(name: UserText.actionAIChatHistory,
+                 accessibilityLabel: UserText.actionAIChatHistory,
+                 image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChatHistory : DesignSystemImages.Glyphs.Size24.aiChatHistory,
+                 action: { [weak self] in
+            self?.openAIChatHistory()
+        })
+    }
     
     private func buildAIChatSidebarEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAIChatHistory,
@@ -728,6 +741,10 @@ extension TabViewController {
         delegate?.tabDidRequestAIChat(tab: self)
     }
 
+    private func openAIChatHistory() {
+        delegate?.tabDidRequestAIChatHistory(tab: self)
+    }
+
     private func buildToggleProtectionEntry(forDomain domain: String, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let isProtected = !config.isUserUnprotected(domain: domain)
@@ -889,12 +906,17 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeChatEntry() -> BrowsingMenuEntry? {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
         guard settings.isAIChatBrowsingMenuUserSettingsEnabled else { return nil }
-        
+
         if aiChatFullModeFeature.isAvailable {
             return buildNewAIChatEntry(withSmallIcon: false)
         } else {
             return buildChatEntry(withSmallIcon: false)
         }
+    }
+
+    func makeDuckAiChatsEntry() -> BrowsingMenuEntry? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeChatHistory) else { return nil }
+        return buildDuckAiChatsEntry(withSmallIcon: false)
     }
     
     func makeSettingsEntry() -> BrowsingMenuEntry {

@@ -73,8 +73,9 @@ final class TabViewModel: NSObject {
 
     var lastAddressBarTextFieldValue: AddressBarTextField.Value?
 
-    /// Shared text state for the address bar and AI Chat omnibar for this tab
-    let addressBarSharedTextState = AddressBarSharedTextState()
+    /// Shared text state for the address bar and AI Chat omnibar for this tab.
+    /// Owned by `Tab` so it survives TabViewModel recreation on cross-window moves.
+    var addressBarSharedTextState: AddressBarSharedTextState { tab.addressBarSharedTextState }
 
     @Published private(set) var title: String = UserText.tabHomeTitle
     @Published private(set) var favicon: NSImage?

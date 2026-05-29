@@ -275,9 +275,9 @@ extension MainViewController {
                 unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = rootBackgroundColor
             } else {
-                rootBackgroundColor = UIColor(designSystemColor: .surface)
+                rootBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
                 navigationBarContainerColor = .clear
-                unifiedToggleInputContainerColor = UIColor(designSystemColor: .surface)
+                unifiedToggleInputContainerColor = UIColor(designSystemColor: .surfaceCanvas)
                 webViewBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
             }
         }

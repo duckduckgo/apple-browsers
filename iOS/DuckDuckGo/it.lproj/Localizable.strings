@@ -1816,6 +1816,9 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Mai";
 
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Apri nell'app YouTube";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
@@ -3595,14 +3598,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Timer di inattività";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Schermata di apertura";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ultima scheda usata";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nuova scheda";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Dopo l'inattività";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Prova la nuova opzione per passare dalla ricerca a Duck.ai nella barra degli indirizzi.";

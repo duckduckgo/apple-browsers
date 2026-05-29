@@ -20,6 +20,7 @@
 import BrowserServicesKitTestsUtils
 import Combine
 import Common
+import FoundationExtensions
 @testable import DDGSync
 import PixelKitTestingUtilities
 import PrivacyConfig

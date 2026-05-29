@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Common
+import FoundationExtensions
 import DuckUI
 import BrowserServicesKit
 import DesignResourcesKit

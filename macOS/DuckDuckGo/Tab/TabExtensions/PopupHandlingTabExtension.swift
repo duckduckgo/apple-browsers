@@ -19,8 +19,10 @@
 import AppKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import ContentBlocking
 import FeatureFlags
+import FoundationExtensions
 import Navigation
 import OSLog
 import PrivacyConfig

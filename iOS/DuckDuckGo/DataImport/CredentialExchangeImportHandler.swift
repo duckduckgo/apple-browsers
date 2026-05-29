@@ -21,6 +21,7 @@ import Foundation
 import AuthenticationServices
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import SecureStorage
 
 /// Handles ASCredential exchange import activities by receiving credentials via ASCredentialImportManager

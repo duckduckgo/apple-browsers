@@ -18,6 +18,7 @@
 
 import Cocoa
 import Common
+import FoundationExtensions
 import os.log
 
 extension NSTextField {

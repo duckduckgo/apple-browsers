@@ -41,7 +41,7 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
     @MainActor
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        return .banner
+        return [.banner, .list]
     }
     
     @MainActor

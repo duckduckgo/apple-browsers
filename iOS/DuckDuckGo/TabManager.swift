@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import WebKit
@@ -60,6 +61,7 @@ enum FireModeSwitchSource: String {
     case longPressLink = "long_press_link"
     case tabSwitcherLongPress = "tab_switcher_long_press"
     case keyCommand = "key_command"
+    case aiChatHeaderPlusMenu = "ai_chat_header_plus_menu"
 }
 
 /// Receives lifecycle events for TabViewController instances managed by TabManager.

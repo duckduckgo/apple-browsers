@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 public struct WideEventMetadata {
     /// The name used when sending the pixel.

@@ -19,6 +19,7 @@
 import AppKit
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import SwiftUI
 
 // SwiftUI view for the About panel

@@ -54,7 +54,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         /// Extra clearance above the natural insetGrouped top padding so the first cell stays below the floating (x) dismiss button.
         static let topContentInset: CGFloat = 12
         static let escapeHatchCardHeight: CGFloat = 56
-        static let escapeHatchTopPadding: CGFloat = 8
+        static let escapeHatchTopPadding: CGFloat = 14
         static let headerBottomPadding: CGFloat = 24
         static let syncPromoInterCardSpacing: CGFloat = 20
         static let recentChatsHeaderHeight: CGFloat = 48
@@ -74,7 +74,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         )
 
         static let unifiedToggleInput = LayoutConfiguration(
-            tableHorizontalInset: 0,
+            tableHorizontalInset: 8,
             escapeHatchHorizontalInset: Constants.horizontalInset,
             escapeHatchMaxWidth: nil
         )

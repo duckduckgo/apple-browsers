@@ -20,6 +20,7 @@ import Cocoa
 import CoreData
 import Combine
 import Common
+import FoundationExtensions
 import Persistence
 import PixelKit
 import os.log

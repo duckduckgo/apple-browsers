@@ -584,6 +584,8 @@ private extension OnboardingIntroViewModel {
         }
         // Restore-data prompt is suppressed in the Duck.ai tailored flow.
         guard onboardingManager.currentOnboardingFlow != .duckAI else {
+            // Fire a temporary pixel to measure the volume of re‑installers who previously synced their device and would normally see the restore-data flow but instead experience the CPP onboarding (honouring the CPP install context).
+            DailyPixel.fireDailyAndCount(pixel: .onboardingSyncAutoRestoreUserFromDuckAiFlow)
             return .skipTutorial
         }
         return restorePromptHandler.isEligibleForRestorePrompt() ? .restoreData : .skipTutorial

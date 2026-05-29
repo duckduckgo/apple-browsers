@@ -3205,6 +3205,15 @@ https://duckduckgo.com/mac";
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Open in Another App?";
 
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "We tried to load it privately, but it won't display.";
+
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Open in Safari";
+
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "This page only loads in Safari";
+
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";
 

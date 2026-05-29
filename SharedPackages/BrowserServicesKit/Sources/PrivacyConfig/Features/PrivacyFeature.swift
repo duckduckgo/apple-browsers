@@ -183,8 +183,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
-    case semaphoreAlwaysVisible
-
     /// Autoplay policy control via WKWebpagePreferences
     case autoplayPolicy
 

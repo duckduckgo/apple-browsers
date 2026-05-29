@@ -320,10 +320,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
     case autoplayPolicy
 
-    /// Window Semaphore Fullscreen Behavior Flag
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213585076410725?focus=true
-    case semaphoreAlwaysVisible
-
     /// Enables the promo service to coordinate promos/calls to action
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
     case promoQueue
@@ -618,8 +614,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .semaphoreAlwaysVisible:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
         case .promoQueue:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
         case .websitesHistoryFirstTimeQuitSurvey:

@@ -10,6 +10,7 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
@@ -19,6 +20,7 @@ on:
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/translation-pr-checks/**'
   schedule:
     - cron: '10,35,50 4,5,6 * * *'
   workflow_call:

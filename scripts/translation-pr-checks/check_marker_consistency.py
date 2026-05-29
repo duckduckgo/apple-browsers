@@ -64,26 +64,32 @@ def read_file(path: str) -> str:
         return ""
 
 
-def flatten_localization(entry: Dict) -> Dict[str, str]:
+def flatten_localization(entry: Dict, prefix: str = "") -> Dict[str, str]:
     """Flatten one .xcstrings localization entry to {subpath: value}.
 
-    Handles plain stringUnit values and plural/device variations.
+    Recurses through stringUnit, variations (plural/device), and substitutions
+    (named plural arguments, which themselves nest variations), so every
+    translatable leaf is captured.
     """
     leaves: Dict[str, str] = {}
     if not isinstance(entry, dict):
         return leaves
     string_unit = entry.get("stringUnit")
     if isinstance(string_unit, dict) and isinstance(string_unit.get("value"), str):
-        leaves[""] = string_unit["value"]
+        leaves[prefix] = string_unit["value"]
     variations = entry.get("variations")
     if isinstance(variations, dict):
         for kind, cases in variations.items():
             if not isinstance(cases, dict):
                 continue
             for case_name, case_entry in cases.items():
-                for sub_path, value in flatten_localization(case_entry).items():
-                    name = f"{kind}.{case_name}"
-                    leaves[f"{name}.{sub_path}" if sub_path else name] = value
+                key = f"{prefix}.{kind}.{case_name}" if prefix else f"{kind}.{case_name}"
+                leaves.update(flatten_localization(case_entry, key))
+    substitutions = entry.get("substitutions")
+    if isinstance(substitutions, dict):
+        for name, sub_entry in substitutions.items():
+            key = f"{prefix}.sub:{name}" if prefix else f"sub:{name}"
+            leaves.update(flatten_localization(sub_entry, key))
     return leaves
 
 

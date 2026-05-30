@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-// CI re-trigger marker.
 import AIChat
 import AppKitExtensions
 import AppUpdaterShared

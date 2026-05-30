@@ -2538,7 +2538,8 @@ class MainViewController: UIViewController {
 
         updateNewTabPageLayoutForCurrentChromeMode()
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
             // Do this async otherwise the toolbar buttons skew to the right
             if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
                !self.isInMinimalChromeLayout,
@@ -2548,7 +2549,7 @@ class MainViewController: UIViewController {
             // If tabs have been udpated, do this async to make sure size calcs are current
             self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel)
             self.swipeTabsCoordinator?.refresh(tabsModel: self.tabManager.currentTabsModel)
-            
+
             // Do this on the next UI thread pass so we definitely have the right width
             self.applyWidthToTrayController()
         }
@@ -3618,7 +3619,8 @@ extension MainViewController: BrowserChromeDelegate {
             showMenuHighlighterIfNeeded()
         }
 
-        let updateBlock = {
+        let updateBlock = { [weak self] in
+            guard let self else { return }
             self.updateToolbarConstant(percent)
             self.updateNavBarConstant(percent)
             self.currentTab?.updateWebViewBottomAnchor(for: percent)
@@ -3626,7 +3628,7 @@ extension MainViewController: BrowserChromeDelegate {
             self.viewCoordinator.navigationBarContainer.alpha = percent
             self.viewCoordinator.tabBarContainer.alpha = percent
             self.viewCoordinator.toolbar.alpha = percent
-            
+
             // Post notification only when bars are fully shown or hidden
             if percent == 0 || percent == 1 {
                 NotificationCenter.default.post(
@@ -3636,12 +3638,12 @@ extension MainViewController: BrowserChromeDelegate {
                 )
             }
         }
-           
+
         if animated {
             self.view.layoutIfNeeded()
-            UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
+            UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) { [weak self] in
                 updateBlock()
-                self.view.layoutIfNeeded()
+                self?.view.layoutIfNeeded()
             }
         } else {
             updateBlock()
@@ -5227,16 +5229,17 @@ extension MainViewController: TabDelegate {
         tab.aiChatContextualSheetCoordinator.dismissSheet()
         if openedByPage {
             showBars()
-            newTabAnimation {
+            newTabAnimation { [weak self] in
+                guard let self else { return }
                 self.loadUrlInNewTab(url, inheritedAttribution: attribution)
                 self.currentTab?.openedByPage = true
                 self.currentTab?.openingTab = tab
             }
-            tabSwitcherButton?.animateUpdate {
-                self.tabSwitcherButton?.tabCount += 1
+            tabSwitcherButton?.animateUpdate { [weak self] in
+                self?.tabSwitcherButton?.tabCount += 1
             }
-            omniBarTabSwitcherButton?.animateUpdate {
-                self.omniBarTabSwitcherButton?.tabCount += 1
+            omniBarTabSwitcherButton?.animateUpdate { [weak self] in
+                self?.omniBarTabSwitcherButton?.tabCount += 1
             }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)

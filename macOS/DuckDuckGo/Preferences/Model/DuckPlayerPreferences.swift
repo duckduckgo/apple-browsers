@@ -151,7 +151,7 @@ final class DuckPlayerPreferences: ObservableObject {
         if let stored = persistor.duckPlayerModeBool {
             duckPlayerMode = .init(stored)
         } else {
-            duckPlayerMode = featureFlagger?.isFeatureOn(.adBlockingExtensionEnabledByDefault) == true ? .disabled : .alwaysAsk
+            duckPlayerMode = Self.rolloutDefaultsActive(featureFlagger: featureFlagger) ? .disabled : .alwaysAsk
         }
         youtubeOverlayInteracted = persistor.youtubeOverlayInteracted
         youtubeOverlayAnyButtonPressed = persistor.youtubeOverlayAnyButtonPressed
@@ -177,9 +177,17 @@ final class DuckPlayerPreferences: ObservableObject {
             .store(in: &cancellables)
     }
 
+    /// Whether the `adBlockingExtensionEnabledByDefault` rollout has activated the new defaults
+    /// regime — only when the platform actually supports the ad-blocking extension. Static so it
+    /// can be called from `init` before all stored properties are initialized.
+    private static func rolloutDefaultsActive(featureFlagger: FeatureFlagger?) -> Bool {
+        guard let featureFlagger else { return false }
+        return AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger)
+    }
+
     private func refreshDefaultModeIfNeeded() {
         guard persistor.duckPlayerModeBool == nil else { return }
-        let resolved: DuckPlayerMode = featureFlagger?.isFeatureOn(.adBlockingExtensionEnabledByDefault) == true ? .disabled : .alwaysAsk
+        let resolved: DuckPlayerMode = Self.rolloutDefaultsActive(featureFlagger: featureFlagger) ? .disabled : .alwaysAsk
         guard resolved != duckPlayerMode else { return }
         isApplyingRolloutDefault = true
         duckPlayerMode = resolved

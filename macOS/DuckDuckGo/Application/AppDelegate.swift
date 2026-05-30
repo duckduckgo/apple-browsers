@@ -1472,6 +1472,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
+        if SupportedOSChecker().showsSupportWarning {
+            BigSurEndOfSupportNoticePresenter(keyValueStore: keyValueStore).showIfNeeded()
+        }
+
         // This messaging system has been replaced by RMF, but we need to clean up the message manifest for any users who had it stored.
         let deprecatedRemoteMessagingStorage = DefaultSurveyRemoteMessagingStorage.surveys()
         deprecatedRemoteMessagingStorage.removeStoredMessagesIfNecessary()

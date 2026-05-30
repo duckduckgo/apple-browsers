@@ -233,7 +233,12 @@ final class FireTests: XCTestCase {
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0, "No new regular tab should be inserted when pinned tabs exist")
         XCTAssertEqual(tabCollectionViewModel.pinnedTabsCollection?.tabs.map(\.content.userEditableUrl), urls as [URL?], "Pinned tabs should be preserved")
 
-        await TabCleanupPreparer().prepareTabsForCleanup(tabCollectionViewModel.pinnedTabs + pinnedTabs)
+        let tabsToClean = (tabCollectionViewModel.pinnedTabs + pinnedTabs).reduce(into: [Tab]()) { tabs, tab in
+            if !tabs.contains(where: { $0 === tab }) {
+                tabs.append(tab)
+            }
+        }
+        await TabCleanupPreparer().prepareTabsForCleanup(tabsToClean)
     }
 
     @MainActor

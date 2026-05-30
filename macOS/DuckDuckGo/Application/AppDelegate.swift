@@ -72,7 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if DEBUG
     let disableCVDisplayLinkLogs: Void = {
-        // Disable CVDisplayLink logs
+        // Disable noisy CVDisplayLink logs
         CFPreferencesSetValue("cv_note" as CFString,
                               0 as CFPropertyList,
                               "com.apple.corevideo" as CFString,

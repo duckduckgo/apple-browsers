@@ -63,12 +63,11 @@ public extension WKWebView {
 
     fileprivate static func didReleaseCustomSchemeHandler() {
         customSchemeHandlerLock.lock()
-        liveCustomSchemeHandlerCount -= 1
-        let wasLast = liveCustomSchemeHandlerCount <= 0
-        if wasLast { liveCustomSchemeHandlerCount = 0 }
-        customSchemeHandlerLock.unlock()
+        defer { customSchemeHandlerLock.unlock() }
 
-        if wasLast {
+        liveCustomSchemeHandlerCount -= 1
+        if liveCustomSchemeHandlerCount <= 0 {
+            liveCustomSchemeHandlerCount = 0
             customHandlerSchemes = []
         }
     }

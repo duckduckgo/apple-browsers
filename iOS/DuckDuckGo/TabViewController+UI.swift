@@ -1,5 +1,5 @@
 //
-//  TabViewController.swift
+//  TabViewController+UI.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,12 +17,24 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import UIKit
 
 extension TabViewController {
 
     func setupErrorActionButton() {
         error.addSubview(errorActionButton)
+        var buttonConfiguration = UIButton.Configuration.filled()
+        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
+        buttonConfiguration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
+        buttonConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24)
+        buttonConfiguration.background.cornerRadius = 8
+        buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var transformed = incoming
+            transformed.font = UIFont.daxSubheadSemibold()
+            return transformed
+        }
+        errorActionButton.configuration = buttonConfiguration
         NSLayoutConstraint.activate([
             errorActionButton.topAnchor.constraint(equalTo: errorMessage.bottomAnchor, constant: 24),
             errorActionButton.centerXAnchor.constraint(equalTo: error.centerXAnchor),
@@ -107,7 +119,7 @@ extension TabViewController {
         errorContentStack.translatesAutoresizingMaskIntoConstraints = false
         error.addSubview(errorContentStack)
 
-        errorInfoImage = UIImageView(image: UIImage(named: "ErrorInfoUniversal"))
+        errorInfoImage = UIImageView(image: UIImage(resource: .errorInfoUniversal))
         errorInfoImage.contentMode = .scaleAspectFit
         errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
 

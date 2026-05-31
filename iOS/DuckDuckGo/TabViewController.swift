@@ -1382,6 +1382,7 @@ class TabViewController: UIViewController {
     private func showError(message: String) {
         webView.isHidden = true
         error.isHidden = false
+        setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorMessage.text = message
         errorActionButton.isHidden = true
@@ -1392,6 +1393,7 @@ class TabViewController: UIViewController {
     private func hideErrorMessage() {
         error.isHidden = true
         webView.isHidden = false
+        setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorActionButton.isHidden = true
         safariRedirectLoopErrorURL = nil
@@ -1401,11 +1403,17 @@ class TabViewController: UIViewController {
         safariRedirectLoopErrorURL = url
         webView.isHidden = true
         error.isHidden = false
+        setErrorInfoImage(resource: .shieldAlert96)
         errorHeader.text = UserText.generalPageProblemTitle
         errorMessage.text = UserText.generalPageProblemMessage
         errorActionButton.setTitle(UserText.generalPageProblemOpenInBrowserButton, for: .normal)
         errorActionButton.isHidden = false
         error.layoutIfNeeded()
+    }
+
+    private func setErrorInfoImage(resource: ImageResource = .errorInfoUniversal) {
+        errorInfoImage.image = UIImage(resource: resource)
+        errorInfoImage.isHidden = false
     }
 
     private func isDuckDuckGoUrl() -> Bool {
@@ -3684,8 +3692,7 @@ extension TabViewController {
         error?.backgroundColor = theme.backgroundColor
         errorHeader.textColor = theme.barTintColor
         errorMessage.textColor = theme.barTintColor
-        errorActionButton.setTitleColor(theme.barTintColor, for: .normal)
-        
+
         if let webView {
             webView.scrollView.refreshControl?.backgroundColor = theme.mainViewBackgroundColor
             webView.scrollView.refreshControl?.tintColor = .secondaryLabel

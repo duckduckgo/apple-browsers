@@ -14,6 +14,7 @@ jobs:
         with:
           repository: duckduckgo/apple-browsers
           path: apple-monorepo/
+          persist-credentials: false
       - name: Execute Update Script
         run: |
           cd ./apple-monorepo/macOS

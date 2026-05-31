@@ -64,38 +64,39 @@ final class SafariRedirectHandlerTests: XCTestCase {
 
     // MARK: - Loop handling
 
-    func testSubsequentRedirectsConvertUntilLoopThreshold() {
-        _ = handler.handleRedirect(to: xSafariHTTPSURL)
+    func testSecondRedirectRequestsLoopError() {
         _ = handler.handleRedirect(to: xSafariHTTPSURL)
         _ = handler.handleRedirect(to: xSafariHTTPSURL)
 
-        XCTAssertEqual(delegate.loadedURLs.count, 3)
-        XCTAssertTrue(delegate.loopErrorURLs.isEmpty)
-    }
-
-    func testThirdSubsequentRedirectRequestsStandardErrorFlow() {
-        _ = handler.handleRedirect(to: xSafariHTTPSURL)
-        _ = handler.handleRedirect(to: xSafariHTTPSURL) // count 1
-        _ = handler.handleRedirect(to: xSafariHTTPSURL) // count 2
-        _ = handler.handleRedirect(to: xSafariHTTPSURL) // count 3 -> loop
-
-        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loadedURLs.count, 1)
         XCTAssertEqual(delegate.loopErrorURLs.count, 1)
-        XCTAssertEqual(delegate.loopErrorURLs.first?.scheme, "https")
+        XCTAssertEqual(delegate.loopErrorURLs.first?.scheme, "x-safari-https")
         XCTAssertEqual(delegate.loopErrorURLs.first?.host, "example.com")
     }
 
-    func testAdditionalRedirectsAfterLoopAreConsumedWithoutNewCallbacks() {
+    func testAdditionalRedirectsKeepRequestingLoopError() {
         _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        _ = handler.handleRedirect(to: xSafariHTTPSURL) // loop callback #1
+        _ = handler.handleRedirect(to: xSafariHTTPSURL) // loop callback #2
+        _ = handler.handleRedirect(to: xSafariHTTPSURL) // loop callback #3
+
+        XCTAssertEqual(delegate.loadedURLs.count, 1)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.first?.scheme, "x-safari-https")
+        XCTAssertEqual(delegate.loopErrorURLs.first?.host, "example.com")
+    }
+
+    func testAdditionalRedirectsAfterLoopStillCallLoopErrorCallback() {
         _ = handler.handleRedirect(to: xSafariHTTPSURL)
-        _ = handler.handleRedirect(to: xSafariHTTPSURL)
-        _ = handler.handleRedirect(to: xSafariHTTPSURL) // loop
+        _ = handler.handleRedirect(to: xSafariHTTPSURL) // loop callback #1
+        _ = handler.handleRedirect(to: xSafariHTTPSURL) // loop callback #2
+        _ = handler.handleRedirect(to: xSafariHTTPSURL) // loop callback #3
 
         XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
         XCTAssertTrue(handler.handleRedirect(to: xSafariHTTPSURL))
 
-        XCTAssertEqual(delegate.loopErrorURLs.count, 1)
-        XCTAssertEqual(delegate.loadedURLs.count, 3)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 5)
+        XCTAssertEqual(delegate.loadedURLs.count, 1)
     }
 
     // MARK: - Per-host scoping
@@ -141,14 +142,14 @@ final class SafariRedirectHandlerTests: XCTestCase {
 
     func testResetMidLoopStartsFresh() {
         _ = handler.handleRedirect(to: xSafariHTTPSURL)
-        _ = handler.handleRedirect(to: xSafariHTTPSURL) // count 1
-        _ = handler.handleRedirect(to: xSafariHTTPSURL) // count 2
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
+        _ = handler.handleRedirect(to: xSafariHTTPSURL)
 
         handler.reset()
 
         _ = handler.handleRedirect(to: xSafariHTTPSURL)
-        XCTAssertEqual(delegate.loadedURLs.count, 4)
-        XCTAssertTrue(delegate.loopErrorURLs.isEmpty)
+        XCTAssertEqual(delegate.loadedURLs.count, 2)
+        XCTAssertEqual(delegate.loopErrorURLs.count, 2)
     }
 
     // MARK: - isAfterSuppressedXSafariRedirect

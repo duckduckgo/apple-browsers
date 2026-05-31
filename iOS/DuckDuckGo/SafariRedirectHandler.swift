@@ -99,23 +99,6 @@ final class SafariRedirectHandler: SafariRedirectHandling {
         return tld.eTLDplus1(host) ?? host
     }
 
-    private func handleSubsequentRedirect(url: URL, host: String) -> Bool {
-        var state = hostStates[host, default: HostState()]
-        state.redirectCount += 1
-        hostStates[host] = state
-        if state.redirectCount > 2 && !state.loopErrorPageShown {
-            state.loopErrorPageShown = true
-            hostStates[host] = state
-            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPSLoopDetected, error: nil, withAdditionalParameters: [:])
-            if let mappedURL = convertToHTTPOrHTTPSURL(url: url) {
-                delegate?.safariRedirectHandler(self, didRequestShowSafariRedirectLoopErrorForURL: mappedURL)
-            }
-        } else if state.redirectCount <= 2 {
-            convertAndLoad(url: url)
-        }
-        return true
-    }
-
     private func convertAndLoad(url: URL) {
         if let convertedURL = convertToHTTPOrHTTPSURL(url: url) {
             delegate?.safariRedirectHandler(self, didRequestLoadURL: convertedURL)

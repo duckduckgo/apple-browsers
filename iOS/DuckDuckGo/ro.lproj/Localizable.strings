@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "Pagina de pornire";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Nu sunt acceptate evenimente multiple. Încearcă să deschizi în schimb fișierul descărcat.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Acest fișier nu poate fi prelucrat. Încearcă să deschizi în schimb fișierul descărcat.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Fus orar neacceptat. Încearcă să deschizi în schimb fișierul descărcat.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Eveniment adăugat în Calendarul Apple";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Identificator: %1$@ | %2$@ | %3$@";
 

@@ -19,6 +19,7 @@
 import AppUpdaterShared
 import Cocoa
 import Combine
+import DesignResourcesKitIcons
 import Navigation
 import Persistence
 import PixelKit
@@ -79,7 +80,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
     func testMenuItemImage_IsUpdateMenuItemIcon() {
         let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockController)
 
-        XCTAssertEqual(menuItem.image?.pngData(), NSImage.updateMenuItemIcon.pngData())
+        XCTAssertEqual(menuItem.image?.pngData(), DesignSystemImages.Glyphs.Size12.updateRecolorable.pngData())
     }
 }
 

@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "Hjem";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Flere begivenheder understøttes ikke. Prøv i stedet at åbne den downloadede fil.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Denne fil kan ikke behandles. Prøv i stedet at åbne den downloadede fil.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Tidszone, der ikke understøttes. Prøv i stedet at åbne den downloadede fil.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Begivenhed føjet til Apple Kalender";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 

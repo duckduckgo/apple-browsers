@@ -136,11 +136,12 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
     }
 
     private func prefetchRemoteMessageImages() {
-        guard let message = remoteMessagingClient.store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .any),
-              let imageUrl = message.content?.imageUrl else {
+        guard let message = remoteMessagingClient.store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .any) else {
             return
         }
-        remoteMessagingImageLoader.prefetch([imageUrl])
+        let imageUrls = message.content?.allImageUrls ?? []
+        guard !imageUrls.isEmpty else { return }
+        remoteMessagingImageLoader.prefetch(imageUrls)
     }
 
 }

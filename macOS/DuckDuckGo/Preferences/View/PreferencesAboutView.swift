@@ -53,8 +53,8 @@ extension Preferences {
                 VStack(alignment: .leading) {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
-                    if let warning = model.osSupportWarning {
-                        UnsupportedDeviceInfoBox(warning: warning)
+                    if model.unsupportedMinVersion != nil {
+                        UnsupportedDeviceInfoBox(canUpgradeOS: model.canUpgradeOS)
                             .padding(.top, 10)
                     }
 
@@ -485,37 +485,19 @@ extension Preferences {
 
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
-        var warning: OSSupportWarning
+        var canUpgradeOS: Bool = true
 
-        private var osVersion: String {
-            return "\(ProcessInfo.processInfo.operatingSystemVersion)"
+        private var titleText: String { UserText.bigSurEndOfSupportNoticeTitle }
+
+        private var bodyText: String {
+            canUpgradeOS
+                ? UserText.bigSurEndOfSupportNoticeMessage
+                : UserText.bigSurEndOfSupportNoticeMessageIncapable
         }
 
-        private var versionString: String {
-            switch warning {
-            case .unsupported(let versionString),
-                    .willDropSupportSoon(let versionString):
-                return versionString
-            }
-        }
-
-        private var versionText: String {
-            switch warning {
-            case .unsupported:
-                return UserText.aboutUnsupportedDeviceInfo1
-            case .willDropSupportSoon:
-                return UserText.aboutWillSoonBeUnsupportedDeviceInfo1
-            }
-        }
-
-        private var combinedText: String {
-            switch warning {
-            case .unsupported(let minVersion):
-                return UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
-            case .willDropSupportSoon(let upcomingMinVersion):
-                return UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
-            }
-        }
+        /// Substring of the capable body text turned into a Software Update link.
+        /// If localizers reword this token the link silently drops, but the banner stays functional.
+        private static let linkTarget = "Update macOS"
 
         var body: some View {
             let image = Image(.alertColor16)
@@ -523,13 +505,13 @@ extension Preferences {
                 .frame(width: 16, height: 16)
                 .padding(.trailing, 4)
 
-            let versionText = Text(versionText)
+            let titleView = Text(titleText)
 
             let contentView: some View = HStack(alignment: .center, spacing: 0) {
                 if #available(macOS 12.0, *) {
-                    Text(combinedTextAttributedAttributed)
+                    Text(bodyTextAttributed)
                 } else {
-                    NSAttributedTextView(attributedString: legacyCombinedTextAttributed)
+                    NSAttributedTextView(attributedString: legacyBodyTextAttributed)
                 }
 
                 // Added to prevent bouncy animation when resizing the parent view
@@ -540,7 +522,7 @@ extension Preferences {
             return HStack(alignment: .top) {
                 image
                 VStack(alignment: .leading, spacing: 12) {
-                    versionText
+                    titleView
                     contentView
                 }
             }
@@ -552,24 +534,22 @@ extension Preferences {
         }
 
         @available(macOS 12, *)
-        private var combinedTextAttributedAttributed: AttributedString {
-            var instructions = AttributedString(combinedText)
-            if let range = instructions.range(of: "macOS \(versionString)") {
+        private var bodyTextAttributed: AttributedString {
+            var instructions = AttributedString(bodyText)
+            if canUpgradeOS, let range = instructions.range(of: Self.linkTarget) {
                 instructions[range].link = Self.softwareUpdateURL
             }
             return instructions
         }
 
-        private var legacyCombinedTextAttributed: NSAttributedString {
-            let fullText = combinedText
+        private var legacyBodyTextAttributed: NSAttributedString {
+            let fullText = bodyText
             let attributedString = NSMutableAttributedString(string: fullText)
 
-            // Create paragraph style for consistent formatting
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.lineSpacing = 0
             paragraphStyle.paragraphSpacing = 0
 
-            // Apply default text styling to match SwiftUI Text
             let defaultAttributes: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
                 .foregroundColor: NSColor.labelColor,
@@ -577,9 +557,7 @@ extension Preferences {
             ]
             attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
 
-            // Find the version string to make it clickable
-            let versionText = "macOS \(versionString)"
-            if let range = fullText.range(of: versionText) {
+            if canUpgradeOS, let range = fullText.range(of: Self.linkTarget) {
                 let nsRange = NSRange(range, in: fullText)
                 attributedString.addAttribute(.link, value: Self.softwareUpdateURL, range: nsRange)
                 attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)

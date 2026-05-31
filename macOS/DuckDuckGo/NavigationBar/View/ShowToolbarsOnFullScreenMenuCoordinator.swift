@@ -18,6 +18,7 @@
 
 import Foundation
 import AppKit
+import DesignResourcesKitIcons
 
 struct ShowToolbarsOnFullScreenMenuCoordinator {
 
@@ -36,9 +37,10 @@ struct ShowToolbarsOnFullScreenMenuCoordinator {
     }
 
     private static func makeMenuItem(prefs: AppearancePreferences) -> NSMenuItem {
-        let item = BlockMenuItem(title: UserText.mainMenuViewShowToolbarsOnFullScreen, isChecked: prefs.showTabsAndBookmarksBarOnFullScreen) {
+        let item = BlockMenuItem(title: UserText.mainMenuViewShowToolbarsOnFullScreen, isChecked: prefs.showTabsAndBookmarksBarOnFullScreen, block: {
             prefs.showTabsAndBookmarksBarOnFullScreen = !prefs.showTabsAndBookmarksBarOnFullScreen
-        }
+        })
+            .withImage(DesignSystemImages.Glyphs.Size12.window)
         return item
     }
 

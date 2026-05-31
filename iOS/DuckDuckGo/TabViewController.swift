@@ -2636,7 +2636,6 @@ extension TabViewController: WKNavigationDelegate {
         self.blobDownloadTargetFrame = nil
 
         if (navigationAction.value(forKey: "isUserInitiated") as? Bool) == true {
-            Swift.print("resetting after user initiated navigation")
             safariRedirectHandler.reset()
         }
 

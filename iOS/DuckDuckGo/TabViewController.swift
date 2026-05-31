@@ -1770,8 +1770,6 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        Swift.print("***", #function)
-
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
@@ -2642,20 +2640,9 @@ extension TabViewController: WKNavigationDelegate {
             safariRedirectHandler.reset()
         }
 
-        if !specialErrorPageNavigationHandler.isSpecialErrorPageRequest {
-            if safariRedirectHandler.handleRedirect(to: url) {
-                if !specialErrorPageNavigationHandler.isSpecialErrorPageRequest {
-                    Swift.print("*** cancelling", url)
-                    completion(.cancel)
-                    return
-                } else {
-                    Swift.print("*** now in special page request, fall through")
-                }
-            } else {
-                Swift.print("**** not cancelling", url)
-            }
-        } else {
-            Swift.print("*** special page request, skipping safari check")
+        if safariRedirectHandler.handleRedirect(to: url) {
+            completion(.cancel)
+            return
         }
 
         switch schemeType {

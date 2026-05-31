@@ -78,10 +78,8 @@ final class SafariRedirectHandler: SafariRedirectHandling {
         }
 
         if state.redirectCount == 0 {
-            print("*** converting", url)
             convertAndLoad(url: url)
         } else if state.redirectCount > 0 {
-            print("*** showing error for", url)
             delegate?.safariRedirectHandler(self, didRequestShowSafariRedirectLoopErrorForURL: url)
         }
 
@@ -91,7 +89,6 @@ final class SafariRedirectHandler: SafariRedirectHandling {
     }
 
     func reset() {
-        print("***", #function)
         hostStates.removeAll()
     }
 

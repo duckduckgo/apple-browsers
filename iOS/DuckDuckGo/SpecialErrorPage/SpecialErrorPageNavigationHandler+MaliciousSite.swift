@@ -200,8 +200,6 @@ private extension SpecialErrorData {
         switch self {
         case .ssl:
             return nil
-        case .generalPageProblem:
-            return nil
         case let .maliciousSite(threatKind, _):
             return threatKind
         }

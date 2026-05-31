@@ -57,7 +57,7 @@
                                 <rect key="frame" x="0.0" y="353" width="768" height="338"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="center" spacing="24" translatesAutoresizingMaskIntoConstraints="NO" id="09V-cw-B4O">
-                                        <rect key="frame" x="10" y="0.0" width="748" height="338"/>
+                                        <rect key="frame" x="10" y="0.0" width="748" height="383"/>
                                         <subviews>
                                             <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="ErrorInfoUniversal" translatesAutoresizingMaskIntoConstraints="NO" id="TUO-E3-s7Q">
                                                 <rect key="frame" x="218" y="0.0" width="312" height="240.5"/>
@@ -92,6 +92,13 @@
                                                     </label>
                                                 </subviews>
                                             </stackView>
+                                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6C9-qN-rmL">
+                                                <rect key="frame" x="310" y="362" width="149" height="21"/>
+                                                <state key="normal" title="Open in Safari"/>
+                                                <connections>
+                                                    <action selector="onOpenInSafariFromErrorPage:" destination="Omk-JQ-4lU" eventType="touchUpInside" id="gsH-jz-g7J"/>
+                                                </connections>
+                                            </button>
                                         </subviews>
                                         <constraints>
                                             <constraint firstItem="DZ8-qm-cwD" firstAttribute="width" secondItem="TUO-E3-s7Q" secondAttribute="width" id="3Pi-8m-5sA"/>
@@ -146,6 +153,7 @@
                     <connections>
                         <outlet property="containerStackView" destination="Wfg-yB-zj4" id="TDY-ap-WRj"/>
                         <outlet property="error" destination="Kd4-Oi-JP2" id="zBn-cG-pfQ"/>
+                        <outlet property="errorActionButton" destination="6C9-qN-rmL" id="SLd-XH-bS8"/>
                         <outlet property="errorHeader" destination="6P7-7R-riV" id="IkB-Tc-Eat"/>
                         <outlet property="errorInfoImage" destination="TUO-E3-s7Q" id="ngN-8S-PwR"/>
                         <outlet property="errorMessage" destination="Cjw-mk-QL3" id="b1N-1W-IGs"/>

@@ -72,6 +72,7 @@ class TabViewController: UIViewController {
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
     @IBOutlet private(set) weak var errorHeader: UILabel!
     @IBOutlet private(set) weak var errorMessage: UILabel!
+    @IBOutlet private(set) weak var errorActionButton: UIButton!
     @IBOutlet weak var containerStackView: UIStackView!
     @IBOutlet weak var outerContainer: UIView!
     @IBOutlet weak var webViewContainer: UIView!
@@ -117,6 +118,8 @@ class TabViewController: UIViewController {
 
     var preventUniversalLinksOnce = false
     private var shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
+    private var safariRedirectLoopErrorURL: URL?
+    private var defaultErrorHeaderText = ""
 
     var openedByPage = false
     weak var openingTab: TabViewController? {
@@ -736,6 +739,7 @@ class TabViewController: UIViewController {
         fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing, favicons: favicons)
         initAttributionLogic()
         decorate()
+        defaultErrorHeaderText = errorHeader.text ?? ""
         addTextZoomObserver()
 
         subscribeToEmailProtectionSignOutNotification()
@@ -1371,13 +1375,44 @@ class TabViewController: UIViewController {
     private func showError(message: String) {
         webView.isHidden = true
         error.isHidden = false
+        errorHeader.text = defaultErrorHeaderText
         errorMessage.text = message
+        errorActionButton.isHidden = true
+        safariRedirectLoopErrorURL = nil
         error.layoutIfNeeded()
     }
 
     private func hideErrorMessage() {
         error.isHidden = true
         webView.isHidden = false
+        errorHeader.text = defaultErrorHeaderText
+        errorActionButton.isHidden = true
+        safariRedirectLoopErrorURL = nil
+    }
+
+    private func showSafariRedirectLoopError(for url: URL) {
+        safariRedirectLoopErrorURL = url
+        webView.isHidden = true
+        error.isHidden = false
+        errorHeader.text = UserText.generalPageProblemTitle
+        errorMessage.text = UserText.generalPageProblemMessage
+        errorActionButton.setTitle(UserText.generalPageProblemOpenInBrowserButton, for: .normal)
+        errorActionButton.isHidden = false
+        error.layoutIfNeeded()
+    }
+
+    @IBAction func onOpenInSafariFromErrorPage(_ sender: UIButton) {
+        guard let safariRedirectLoopErrorURL else { return }
+        openExternally(url: makeXSafariHTTPSURL(from: safariRedirectLoopErrorURL))
+    }
+
+    private func makeXSafariHTTPSURL(from url: URL) -> URL {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url
+        }
+
+        components.scheme = "x-safari-https"
+        return components.url ?? url
     }
 
     private func isDuckDuckGoUrl() -> Bool {
@@ -3655,6 +3690,7 @@ extension TabViewController {
         error?.backgroundColor = theme.backgroundColor
         errorHeader.textColor = theme.barTintColor
         errorMessage.textColor = theme.barTintColor
+        errorActionButton.setTitleColor(theme.barTintColor, for: .normal)
         
         if let webView {
             webView.scrollView.refreshControl?.backgroundColor = theme.mainViewBackgroundColor
@@ -4407,21 +4443,6 @@ extension TabViewController: SpecialErrorPageNavigationDelegate {
         let behavior: TabClosingBehavior = shouldCreateNewEmptyTab ? .createEmptyTabAtSamePosition : .onlyClose
         delegate?.tabDidRequestClose(tabModel, behavior: behavior, clearTabHistory: true)
     }
-
-    func openSpecialErrorPageURLInBrowser(_ url: URL) {
-        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            openExternally(url: url)
-            return
-        }
-
-        components.scheme = "x-safari-https"
-        if let safariURL = components.url {
-            openExternally(url: safariURL)
-        } else {
-            openExternally(url: url)
-        }
-    }
-
 }
 
 // MARK: - DuckPlayerTabNavigationHandling
@@ -4601,11 +4622,7 @@ extension TabViewController: SafariRedirectHandlerDelegate {
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
-        specialErrorPageNavigationHandler.loadGeneralPageProblemErrorPage(
-            for: url,
-            title: UserText.generalPageProblemTitle,
-            message: UserText.generalPageProblemMessage,
-            button: UserText.generalPageProblemOpenInBrowserButton)
+        showSafariRedirectLoopError(for: url)
         DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
     }
 }

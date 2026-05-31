@@ -23,7 +23,4 @@ import Foundation
 protocol SpecialErrorPageNavigationDelegate: AnyObject {
     /// Asks the delegate to close the special error page tab when the web view can't navigate back.
     func closeSpecialErrorPageTab(shouldCreateNewEmptyTab: Bool)
-
-    /// Asks the delegate to open the given URL in the browser.
-    func openSpecialErrorPageURLInBrowser(_ url: URL)
 }

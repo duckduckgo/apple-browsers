@@ -37,8 +37,4 @@ protocol SpecialErrorPageContextHandling: SpecialErrorPageThreatProvider {
 
     /// Sets the user script for the special error page.
     func setUserScript(_ userScript: SpecialErrorPageUserScript?)
-
-    /// Loads the special error page for a general page problem.
-    @MainActor
-    func loadGeneralPageProblemErrorPage(for url: URL, title: String?, message: String?, button: String?)
 }

@@ -225,8 +225,6 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     func attachWebView(_ webView: WKWebView) {}
     
     func setUserScript(_ userScript: SpecialErrorPages.SpecialErrorPageUserScript?) {}
-
-    func loadGeneralPageProblemErrorPage(for url: URL, title: String?, message: String?, button: String?) {}
     
     func handleDecidePolicy(for navigationAction: WKNavigationAction, webView: WKWebView) {}
     
@@ -247,8 +245,6 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     func leaveSiteAction() {}
     
     func visitSiteAction() {}
-
-    func openInBrowserAction() {}
     
     func advancedInfoPresented() {}
 

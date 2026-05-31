@@ -129,31 +129,6 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
     }
 
     @MainActor
-    func test_WhenHandlerForInitialSetUpCalledForGeneralPageProblem_ThenRightParameterReturned() async {
-        // GIVEN
-        let expectedURL = URL(string: "https://example.com")!
-        let expectedData = SpecialErrorData.generalPageProblem(url: expectedURL,
-                                                               title: "Open this page in your default browser",
-                                                               message: "This page can’t be shown in private mode here.",
-                                                               button: "Open in Browser")
-        var encodable: Encodable?
-        userScript.isEnabled = true
-        delegate.errorData = expectedData
-
-        // WHEN
-        let handler = userScript.handler(forMethodNamed: "initialSetup")
-        if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage.mock())
-        }
-
-        // THEN
-        XCTAssertNotNil(handler)
-        XCTAssertNotNil(encodable)
-        let data = encodable as? SpecialErrorPageUserScript.InitialSetupResult
-        XCTAssertEqual(data?.errorData, expectedData)
-    }
-
-    @MainActor
     func test_WhenHandlerForLeaveSiteCalled_AndIsEnabledTrue_ThenLeaveSiteCalled() async {
         // GIVEN
         var encodable: Encodable?
@@ -170,25 +145,6 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         XCTAssertNil(encodable)
         XCTAssertTrue(delegate.leaveSiteCalled)
         XCTAssertFalse(delegate.visitSiteCalled)
-    }
-
-    @MainActor
-    func test_WhenHandlerForOpenInBrowserCalled_AndIsEnabledTrue_ThenOpenInBrowserCalled() async {
-        // GIVEN
-        var encodable: Encodable?
-        userScript.isEnabled = true
-
-        // WHEN
-        let handler = userScript.handler(forMethodNamed: "openInBrowser")
-        if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage.mock())
-        }
-
-        // THEN
-        XCTAssertNotNil(handler)
-        XCTAssertNil(encodable)
-        XCTAssertTrue(delegate.openInBrowserCalled)
-        XCTAssertFalse(delegate.leaveSiteCalled)
     }
 
     @MainActor
@@ -215,7 +171,6 @@ class CapturingSpecialErrorPageUserScriptDelegate: SpecialErrorPageUserScriptDel
     var errorData: SpecialErrorData?
     var leaveSiteCalled = false
     var visitSiteCalled = false
-    var openInBrowserCalled = false
     var advancedInfoPresentedCalled = false
 
     func leaveSiteAction() {
@@ -224,10 +179,6 @@ class CapturingSpecialErrorPageUserScriptDelegate: SpecialErrorPageUserScriptDel
 
     func visitSiteAction() {
         visitSiteCalled = true
-    }
-
-    func openInBrowserAction() {
-        openInBrowserCalled = true
     }
 
     func advancedInfoPresented() {

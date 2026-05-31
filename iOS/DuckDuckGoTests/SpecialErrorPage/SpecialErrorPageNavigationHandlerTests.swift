@@ -198,33 +198,6 @@ final class SpecialErrorPageNavigationHandlerTests {
     }
 
     @MainActor
-    @Test("When General Page Problem Error Page is requested then special error page is loaded")
-    func whenLoadGeneralPageProblemErrorPageIsCalledThenSpecialErrorPageIsLoaded() throws {
-        // GIVEN
-        sut.attachWebView(webView)
-        let url = try #require(URL(string: "https://www.example.com"))
-        var didCallLoadSimulatedRequest = false
-        webView.loadRequestHandler = { _, _ in
-            didCallLoadSimulatedRequest = true
-        }
-
-        // WHEN
-        sut.loadGeneralPageProblemErrorPage(for: url,
-                                            title: "Open this page in your default browser",
-                                            message: "This page can’t be shown in private mode here.",
-                                            button: "Open in Browser")
-
-        // THEN
-        #expect(sut.isSpecialErrorPageRequest)
-        #expect(sut.failedURL == url)
-        #expect(sut.errorData == .generalPageProblem(url: url,
-                                                     title: "Open this page in your default browser",
-                                                     message: "This page can’t be shown in private mode here.",
-                                                     button: "Open in Browser"))
-        #expect(didCallLoadSimulatedRequest)
-    }
-
-    @MainActor
     @Test("Receive Challenge forwards event to SSL Error Page Navigation Handler")
     func whenDidHandleWebViewReceiveChallengeIsCalledAskSSLErrorPageNavigationHandlerToHandleTheChallenge() {
         // GIVEN
@@ -413,24 +386,6 @@ final class SpecialErrorPageNavigationHandlerTests {
         // THEN
         #expect(!sut.isSpecialErrorPageVisible)
         #expect(webView.didCallReload)
-    }
-
-    @MainActor
-    @Test("Open In Browser opens external browser for General Page Problem special error")
-    func whenOpenInBrowser_AndGeneralPageProblemError_ThenAskDelegateToOpenInBrowser() throws {
-        // GIVEN
-        let url = try #require(URL(string: "https://www.example.com"))
-        let delegate = SpySpecialErrorPageNavigationDelegate()
-        sut.delegate = delegate
-        sut.attachWebView(webView)
-        webView.setCurrentURL(url)
-        sut.loadGeneralPageProblemErrorPage(for: url, title: nil, message: nil, button: nil)
-
-        // WHEN
-        sut.openInBrowserAction()
-
-        // THEN
-        #expect(delegate.openedBrowserURL == url)
     }
 
     @MainActor

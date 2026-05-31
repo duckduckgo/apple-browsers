@@ -58,14 +58,6 @@ final class SpecialErrorPageNavigationHandler: SpecialErrorPageContextHandling {
         self.userScript = userScript
         userScript?.delegate = self
     }
-
-    @MainActor
-    func loadGeneralPageProblemErrorPage(for url: URL, title: String?, message: String?, button: String?) {
-        failedURL = url
-        errorData = .generalPageProblem(url: url, title: title, message: message, button: button)
-        isSpecialErrorPageRequest = true
-        loadSpecialErrorPage(url: url)
-    }
 }
 
 // MARK: - WebViewNavigationHandling
@@ -165,18 +157,11 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
         case .maliciousSite:
             maliciousSiteProtectionNavigationHandler.leaveSite()
             closeTab(shouldCreateNewTab: true)
-        case .generalPageProblem:
-            navigateBackIfPossible()
         }
     }
 
     @MainActor
     func visitSiteAction() {
-        openInBrowserAction()
-    }
-
-    @MainActor
-    func openInBrowserAction() {
         guard let errorData else { return }
 
         switch errorData {
@@ -189,9 +174,6 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
             maliciousSiteProtectionNavigationHandler.visitSite(url: url, errorData: errorData)
             isSpecialErrorPageVisible = false
             _ = webView?.reload()
-        case .generalPageProblem:
-            guard let url = webView?.url else { return }
-            delegate?.openSpecialErrorPageURLInBrowser(url)
         }
     }
 
@@ -204,8 +186,6 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
             sslErrorPageNavigationHandler.advancedInfoPresented()
         case .maliciousSite:
             maliciousSiteProtectionNavigationHandler.advancedInfoPresented()
-        case .generalPageProblem:
-            break
         }
     }
 }
@@ -237,8 +217,6 @@ private extension SpecialErrorData {
         case .ssl:
             return nil
         case let .maliciousSite(_, url):
-            return url
-        case let .generalPageProblem(url, _, _, _):
             return url
         }
     }

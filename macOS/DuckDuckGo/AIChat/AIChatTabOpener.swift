@@ -226,8 +226,9 @@ extension WindowControllersManager: AIChatTabManaging {
     /// - Parameters:
     ///   - url: The AI chat URL to open.
     ///   - linkOpenBehavior: Specifies where to open the URL. Defaults to `.currentTab`.
-    ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
-    ///                or `.newTabUnselected`.
+    ///   - hasPrompt: With `.currentTab`, if the current tab is already an AI chat and a prompt was supplied,
+    ///                opens a fresh chat in a new selected tab so the loaded conversation is left untouched.
+    ///                Ignored for `.newTab` / `.newWindow`, which always open a new tab/window.
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
 
         let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
@@ -236,7 +237,10 @@ extension WindowControllersManager: AIChatTabManaging {
         case .currentTab:
             if let currentTab = tabCollectionViewModel?.selectedTab, currentTab.url?.isDuckAIURL == true {
                 if hasPrompt {
-                    currentTab.reload()
+                    // Omnibar submission while Duck.ai is already loaded: open a fresh chat in a new
+                    // selected tab rather than injecting the prompt into the loaded conversation,
+                    // which users found confusing.
+                    open(url, with: .newTab(selected: true), source: .ui, target: nil)
                 } else if url.getParameter(named: "chatID") != nil {
                     // Navigate to a specific existing chat — must load even if already on duck.ai
                     show(url: url, source: .ui, newTab: false)

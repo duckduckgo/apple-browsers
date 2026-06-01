@@ -626,7 +626,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment),
                    cohortType: DuckAIQueryExperimentCohort.self)
         case .onboardingDuckAIFlow:
-            Config(source: .disabled, supportsLocalOverriding: true)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiOnboardingFlow))
         case .storeSerpSettings:
             Config(source: .remoteReleasable(SERPSubfeature.storeSerpSettings))
         case .standaloneMigration:

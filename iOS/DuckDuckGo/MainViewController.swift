@@ -1843,7 +1843,10 @@ class MainViewController: UIViewController {
         if isExperimentDuckAIFireFlow {
             // Keep this path scoped to the onboarding experiment: single "Delete This Chat" action only,
             // whether the contextual dialog has already appeared or is still pending.
-            contextualOnboardingPixelReporter.measureDuckAIExperimentFireButtonCTAAction()
+            // Fire experiment pixel only if flow is default.
+            if onboardingManager.currentOnboardingFlow == .default {
+                contextualOnboardingPixelReporter.measureDuckAIExperimentFireButtonCTAAction()
+            }
             presentExperimentDuckAIFireConfirmation()
             performCancel()
             return

@@ -56,11 +56,15 @@ extension MainViewController {
     }
 
     func setUpUnifiedToggleInputIfNeeded() {
-        // Defer setup until linear onboarding has completed, so that any experiment
+        // Idempotent: callable from viewDidLoad, MainCoordinator.startOnboardingFlowIfNotSeenBefore,
+        // and onboardingCompleted — first call that passes the gates wins.
+        guard unifiedToggleInputCoordinator == nil else { return }
+        // Defer setup until linear onboarding for default flow has completed, so that any experiment
         // cohort enrollment that happens during onboarding is reflected in
         // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
+        // Duck.ai tailored-flow users are need UTI during the linear onboarding otherwise they will not see the new UI in the Duck.ai page that is shown during the linear onboarding interlude.
         // Returning users (who skip linear onboarding) fall through immediately.
-        guard !needsToShowOnboardingIntro() else { return }
+        guard !(needsToShowOnboardingIntro() && onboardingManager.currentOnboardingFlow == .default) else { return }
         guard unifiedToggleInputFeature.isAvailable else { return }
 
         let aiChatPreferences = AIChatPreferencesPersistor()
@@ -182,6 +186,26 @@ extension MainViewController {
             viewCoordinator.toolbar.isHidden = true
         } else {
             viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
+            // Self-heal a stale clamp. `updateToolbarConstant` deliberately pushes the
+            // toolbar's constraint off-screen whenever `toolbar.isHidden == true`. This
+            // is required for iPad and minimal-chrome layouts, where the toolbar is
+            // permanently hidden and its off-screen layout slot acts as a spacer.
+            //
+            // The UTI AI-tab phase reuses `isHidden = true` *transiently*. Any
+            // `setBarsVisibility(1)` call during that phase (refreshAITab, BarsAnimator,
+            // applyExperimentDuckAIFireChromeState, etc.) writes the same off-screen
+            // value via the clamp. When `isHidden` flips back to false here, nothing
+            // else recomputes the constant; the toolbar is unhidden but laid out
+            // off-screen. Snap it back to 0.
+            //
+            // `alpha == 1` excludes mid-scroll partial-hides. `BarsAnimator` writes
+            // matching `alpha` and `constant` values together, so they can only
+            // disagree when the clamp suppressed a write.
+            if !viewCoordinator.toolbar.isHidden
+                && viewCoordinator.toolbar.alpha == 1.0
+                && viewCoordinator.constraints.toolbarBottom.constant != 0 {
+                viewCoordinator.constraints.toolbarBottom.constant = 0
+            }
         }
         // `toolbarBottom.constant` is derived from `isHidden`; recompute when it flips.
         if wasHidden != viewCoordinator.toolbar.isHidden {
@@ -1078,7 +1102,7 @@ extension MainViewController {
 
 extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
-    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool) -> UnifiedToggleInputActivationDecision {
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision {
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
             return .allowDefault
@@ -1087,7 +1111,10 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             onExperimentalAddressBarTapped()
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        let inputMode = tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) } ?? .search
+        let inputMode = textEntryMode
+            ?? tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) }
+            ?? .search
+        coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
         coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible

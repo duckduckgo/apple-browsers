@@ -113,7 +113,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         let activationDecision = unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
             currentText: extractCurrentTextForEditing(textField),
-            tapped: textFieldTapped)
+            tapped: textFieldTapped,
+            textEntryMode: textEntryMode)
 
         if activationDecision == .intercept {
             return false

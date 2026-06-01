@@ -28,9 +28,12 @@ final class OnboardingUITests: UITestCase {
         continueAfterFailure = false
         try resetApplicationData()
 
-        app = XCUIApplication.setUp(environment: [
-            "UITEST_MODE_ONBOARDING": "1"
-        ])
+        app = XCUIApplication.setUp(
+            environment: [
+                "UITEST_MODE_ONBOARDING": "1"
+            ],
+            featureFlags: ["onboardingRebranding": false]
+        )
         app.enforceSingleWindow()
 
         welcomeWindow = app.windows["Welcome"]

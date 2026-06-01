@@ -76,7 +76,12 @@ final class OmniBarNotificationContainerView: UIView {
     }
     
     private func makeNotificationViewModel(for type: OmniBarNotificationType) -> OmniBarNotificationViewModel {
-        let useDarkStyle = traitCollection.userInterfaceStyle == .dark
+        Self.makeNotificationViewModel(for: type, useDarkStyle: traitCollection.userInterfaceStyle == .dark)
+    }
+
+    /// Maps a notification type to its view model. Kept pure (no view-instance dependencies) so it can
+    /// be reused by SwiftUI previews as well as the runtime container.
+    static func makeNotificationViewModel(for type: OmniBarNotificationType, useDarkStyle: Bool) -> OmniBarNotificationViewModel {
         let notificationText: String
         let notificationAnimationName: String
         var eventCount: Int = 0

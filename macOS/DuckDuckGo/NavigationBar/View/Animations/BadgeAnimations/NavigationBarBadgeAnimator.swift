@@ -86,6 +86,13 @@ final class NavigationBarBadgeAnimator: NSObject {
                     self?.animateButtonsFade(.end,
                                        buttonsContainer: buttonsContainer,
                                        notificationBadgeContainer: notificationBadgeContainer) {
+                        // Tear down the just-finished badge view now (the end-fade has completed,
+                        // so it's at alpha 0). This must happen before the delegate callback or
+                        // auto-processing below, either of which can synchronously start — and
+                        // prepare — the next queued animation on this same shared container.
+                        // Removing afterwards would destroy that newly prepared view instead.
+                        notificationBadgeContainer.removeAnimation()
+
                         // Capture the type before clearing state
                         let finishedType = self?.currentAnimationType
                         self?.isAnimating = false
@@ -96,8 +103,6 @@ final class NavigationBarBadgeAnimator: NSObject {
                         if let finishedType = finishedType {
                             self?.delegate?.didFinishAnimating(type: finishedType)
                         }
-
-                        notificationBadgeContainer.removeAnimation()
 
                         // Only auto-process next animation if flag is set
                         // (tracker notifications will manually process after shield animation)

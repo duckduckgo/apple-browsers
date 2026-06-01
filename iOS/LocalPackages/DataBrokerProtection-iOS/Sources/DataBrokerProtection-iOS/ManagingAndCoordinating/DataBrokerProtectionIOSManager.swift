@@ -564,7 +564,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         case .scheduledScan:
             queueManager.startScheduledScanOperationsIfPermitted(
                 showWebView: true,
-                isAuthenticatedUser: currentRunIsFreeScan != true,
+                isAuthenticatedUser: true,
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completionHandler

@@ -90,7 +90,8 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
-        AnyView(
+        onboardingPixelReporter.measureDialogShown(dialogType: type)
+        return AnyView(
             ContextualDialogView(
                 type: type,
                 delegate: delegate,

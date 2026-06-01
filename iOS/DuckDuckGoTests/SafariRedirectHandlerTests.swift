@@ -20,6 +20,7 @@
 import XCTest
 import UIKit
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 @testable import DuckDuckGo
 

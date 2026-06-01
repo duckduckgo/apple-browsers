@@ -60,6 +60,11 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// remediation prompt (e.g. when the OS has denied microphone access to the app).
     case voiceChatStartFailed
 
+    /// Posted by the FE when a new chat is created in image-generation mode (e.g. the user
+    /// tapped the sidebar's "New Image" entry). Native uses this to mirror the FE's active
+    /// tool state in the Unified Input toolbar.
+    case newImageGenerationChatStarted
+
     // Sync
     case getSyncStatus
     case getScopedSyncAuthToken

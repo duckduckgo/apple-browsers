@@ -19,6 +19,7 @@
 import Foundation
 import Subscription
 import Common
+import FoundationExtensions
 import PixelKit
 import PrivacyConfig
 import FeatureFlags

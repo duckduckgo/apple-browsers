@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import SwiftUI
 import SwiftUIExtensions
@@ -108,7 +109,7 @@ struct BookmarksBarPromptView: View {
                         .frame(height: 28)
                 }
                 .accessibilityIdentifier("BookmarksBarPopover.hide")
-                .buttonStyle(StandardButtonStyle())
+                .buttonStyle(StandardButtonStyle(pillShape: true))
                 .padding(0)
 
                 Button {
@@ -122,16 +123,16 @@ struct BookmarksBarPromptView: View {
 
                 }
                 .accessibilityIdentifier("BookmarksBarPopover.show")
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, pillShape: true))
                 .padding(0)
             }
 
         }
         .multilineTextAlignment(.center)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 16)
         .padding(.top, 20)
-        .padding(.bottom, 16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .background(Color(.interfaceBackground))
     }
 

@@ -19,6 +19,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Core
 
 final class PromptCooldownStorePixelReporter: EventMapping<PromptCooldownKeyValueFilesStore.DebugEvent> {

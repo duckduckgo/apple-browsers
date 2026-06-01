@@ -30,6 +30,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../AppKitExtensions"),

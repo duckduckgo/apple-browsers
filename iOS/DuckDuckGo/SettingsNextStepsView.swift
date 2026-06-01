@@ -51,7 +51,9 @@ struct SettingsNextStepsView: View {
             // Enable Voice Search
             NavigationLink(destination: SettingsAccessibilityView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.enableVoiceSearch,
-                                 image: Image(uiImage: DesignSystemImages.Color.Size24.microphone))
+                                 image: Image(uiImage: AppRebrand.isAppRebranded()
+                                              ? DesignSystemImages.Color.Size24.microphoneAdd
+                                              : DesignSystemImages.Color.Size24.microphone))
             }
         }
 

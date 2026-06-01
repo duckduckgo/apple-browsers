@@ -17,6 +17,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../AIChat")
     ],
     targets: [
@@ -24,6 +25,9 @@ let package = Package(
             name: "SERPSettings",
             dependencies: [
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),

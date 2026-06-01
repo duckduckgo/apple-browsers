@@ -272,6 +272,16 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Serial queue that protects all mutable state and runs trigger evaluation off the main thread.
     private let stateQueue: DispatchQueue
 
+    /// Per-instance key used to tag `stateQueue` so callers can non-fatally check whether they are
+    /// already on it. See `isOnStateQueue`.
+    private static let stateQueueKey = DispatchSpecificKey<ObjectIdentifier>()
+
+    /// Non-fatal check for whether the current execution context is `stateQueue`. Use this to
+    /// re-dispatch off-queue callers via `stateQueue.async` rather than trap.
+    private var isOnStateQueue: Bool {
+        DispatchQueue.getSpecific(key: Self.stateQueueKey) == ObjectIdentifier(self)
+    }
+
     // MARK: - Init
 
     init(
@@ -305,6 +315,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             }
         }
         self.recordsSubject = CurrentValueSubject(initialSnapshot)
+        // Tag the queue so `isOnStateQueue` can identify this instance's queue without trapping.
+        // Using ObjectIdentifier(self) lets multiple PromoService instances safely share a queue.
+        stateQueue.setSpecific(key: Self.stateQueueKey, value: ObjectIdentifier(self))
 
         triggerPublisher
             .receive(on: stateQueue)
@@ -403,7 +416,12 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     }
 
     private func applyExternalVisibility(visible: Bool, promoId: String, delegate: ExternalPromoDelegate) {
-        dispatchPrecondition(condition: .onQueue(stateQueue))
+        guard isOnStateQueue else {
+            stateQueue.async { [weak self] in
+                self?.applyExternalVisibility(visible: visible, promoId: promoId, delegate: delegate)
+            }
+            return
+        }
         if visible {
             externalVisiblePromoIds.insert(promoId)
             var record = historyStore.record(for: promoId)
@@ -601,7 +619,12 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     }
 
     private func recordResultAndCleanup(promoId: String, result: PromoResult) {
-        dispatchPrecondition(condition: .onQueue(stateQueue))
+        guard isOnStateQueue else {
+            stateQueue.async { [weak self] in
+                self?.recordResultAndCleanup(promoId: promoId, result: result)
+            }
+            return
+        }
         guard var session = activeSessions[promoId] else { return }
         if session.isResultRecorded { return }
 

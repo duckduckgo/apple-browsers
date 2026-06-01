@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import CommonObjCExtensions
 import Navigation
 import os.log

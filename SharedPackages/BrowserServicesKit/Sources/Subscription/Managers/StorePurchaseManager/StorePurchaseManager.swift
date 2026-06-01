@@ -22,6 +22,7 @@ import StoreKit
 import os.log
 import Networking
 import Common
+import FoundationExtensions
 
 public enum StoreError: DDGError {
     case failedVerification

@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions

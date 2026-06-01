@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import ConcurrencyExtensions
 import DataBrokerProtectionCore
+import Foundation
 import UserScript
 
 extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {

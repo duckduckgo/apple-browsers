@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import ConcurrencyExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

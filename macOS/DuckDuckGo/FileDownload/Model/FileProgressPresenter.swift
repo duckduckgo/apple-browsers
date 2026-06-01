@@ -17,7 +17,9 @@
 //
 
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import Foundation
 
 final class FileProgressPresenter {

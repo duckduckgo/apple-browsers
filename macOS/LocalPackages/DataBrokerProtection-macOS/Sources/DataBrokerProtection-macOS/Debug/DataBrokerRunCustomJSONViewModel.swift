@@ -16,16 +16,18 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
-import DataBrokerProtectionCore
 import Common
+import ConcurrencyExtensions
 import ContentScopeScripts
-import os.log
+import DataBrokerProtectionCore
+import enum UserScript.UserScriptError
 import FeatureFlags
+import Foundation
+import FoundationExtensions
+import os.log
 import PixelKit
 import PrivacyConfig
-import enum UserScript.UserScriptError
 
 struct ExtractedAddress: Codable {
     let state: String

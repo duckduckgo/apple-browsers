@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 
 public enum SubscriptionManagerError: DDGError {
     /// The app has no `TokenContainer`

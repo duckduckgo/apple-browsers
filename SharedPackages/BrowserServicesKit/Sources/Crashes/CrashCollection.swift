@@ -21,6 +21,7 @@ import MetricKit
 import Persistence
 import os.log
 import Common
+import FoundationExtensions
 
 public enum CrashCollectionPlatform {
     case iOS, macOS, macOSAppStore

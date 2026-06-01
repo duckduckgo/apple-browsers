@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Crashes
 import FeatureFlags
 import Foundation

@@ -5,6 +5,7 @@ import Foundation
 import NetworkExtension
 import os.log
 import Common
+import FoundationExtensions
 
 // MARK: - WireGuard Go Interface
 

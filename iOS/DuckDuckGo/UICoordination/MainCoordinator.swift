@@ -563,8 +563,7 @@ final class MainCoordinator {
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager,
-                        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) })
+                        dataStoreIDManager: dataStoreIDManager)
     }
 
     // MARK: - Public API
@@ -874,6 +873,10 @@ extension MainCoordinator: OnboardingPresenting {
     func startOnboardingFlowIfNotSeenBefore(url: URL?) {
         // 1. Configure Onboarding Flow
         onboardingManager.configureOnboardingFlow(from: url)
+
+        // The flow is now known. Duck.ai tailored-flow users need UTI set up before the
+        // Duck.ai interlude runs inside their onboarding
+        controller.setUpUnifiedToggleInputIfNeeded()
 
         // 2. Presenting Onboarding Flow if needed
         guard !hasPresentedOnboarding, controller.isStartupOnboardingPending else { return }

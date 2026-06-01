@@ -67,6 +67,9 @@ public final class NetworkProtectionPopover: NSPopover {
             .environmentObject(statusViewModel)
             .environmentObject(tipsModel)
             .fixedSize()
+            .legacyOnDismiss { [weak self] in
+                self?.close()
+            }
 
         let controller = NSHostingController(rootView: view)
         contentViewController = controller

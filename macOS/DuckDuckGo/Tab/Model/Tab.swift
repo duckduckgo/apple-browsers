@@ -1109,7 +1109,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         case .loadInBackgroundIfNeeded(shouldLoadInBackground: let shouldLoadInBackground):
 #if DEBUG
             switch AppVersion.runType {
-            case .unitTests, .integrationTests: return false
+            case .unitTests, .integrationTests, .xcPreviews: return false
             default: break
             }
 #endif

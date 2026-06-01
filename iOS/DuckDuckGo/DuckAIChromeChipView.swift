@@ -46,11 +46,13 @@ final class DuckAIChromeChipView: UIView {
         config.contentInsets = Constants.textPadding
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
-            outgoing.font = UIFont.daxBodyRegular()
+            outgoing.font = UIFont.preferredFont(forTextStyle: .body,
+                                                 compatibleWith: UITraitCollection(preferredContentSizeCategory: .large))
             return outgoing
         }
         let button = UIButton(configuration: config)
         button.isPointerInteractionEnabled = true
+        button.accessibilityLabel = UserText.accessibilityLabelOpenAIChat
         return button
     }()
 

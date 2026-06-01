@@ -34,7 +34,11 @@ protocol TabDelegate: AnyObject {
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
     func tabDidRequestNewTab(_ tab: TabViewController)
-    
+
+    func tabDidRequestNewSearch(_ tab: TabViewController)
+
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController)
+
     func newTab(reuseExisting: Bool)
 
     func tabDidRequestActivate(_ tab: TabViewController)
@@ -182,6 +186,10 @@ extension TabDelegate {
     }
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
+
+    func tabDidRequestNewSearch(_ tab: TabViewController) {}
+
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 

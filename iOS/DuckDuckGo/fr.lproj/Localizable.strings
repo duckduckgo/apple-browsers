@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "Accueil";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Les événements multiples ne sont pas pris en charge. Essayez plutôt d'ouvrir le fichier téléchargé.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Ce fichier ne peut pas être traité. Essayez plutôt d'ouvrir le fichier téléchargé.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Fuseau horaire non pris en charge. Essayez plutôt d'ouvrir le fichier téléchargé.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Événement ajouté au calendrier Apple";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Identifiant : %1$@ | %2$@ | %3$@";
 

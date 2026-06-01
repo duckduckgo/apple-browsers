@@ -19,12 +19,8 @@
 import AppKit
 import Foundation
 import FeatureFlags
+import Persistence
 import PrivacyConfig
-
-enum OSSupportWarning {
-    case unsupported(_ minVersion: String)
-    case willDropSupportSoon(_ upcomingMinVersion: String)
-}
 
 enum OSUpgradeCapability: String {
     case capable
@@ -40,9 +36,7 @@ enum OSUpgradeCapability: String {
         }
     }
 
-    /// Boolean view used for RMF rule matching. `.unknown` is treated as `true`
-    /// to match the existing UI fallback in BigSurEndOfSupportNoticePresenter,
-    /// which shows the "Update macOS" CTA for unknown hardware.
+    /// Whether the OS can be upgraded.
     var canUpgradeOS: Bool {
         switch self {
         case .capable, .unknown: return true
@@ -57,12 +51,10 @@ protocol SupportedOSChecking {
     ///
     var showsSupportWarning: Bool { get }
 
-    /// The OS-support warning to show to the user.
+    /// The minimum supported macOS version string (e.g. `"12.3"`) when the current
+    /// OS is unsupported and a warning should be shown; `nil` otherwise.
     ///
-    /// This can be either due to the user's macOS version becoming unsupported or
-    /// to let the user know it will soon be.
-    ///
-    var supportWarning: OSSupportWarning? { get }
+    var unsupportedMinVersion: String? { get }
 
     /// The hardware's capability to upgrade to a macOS version newer than the currently running one.
     ///
@@ -83,7 +75,7 @@ protocol SupportedOSChecking {
 
 extension SupportedOSChecking {
     var showsSupportWarning: Bool {
-        supportWarning != nil
+        unsupportedMinVersion != nil
     }
 }
 
@@ -106,9 +98,6 @@ extension OperatingSystemVersion: @retroactive Comparable {
 }
 
 final class SupportedOSChecker {
-    static let ddgMinBigSurVersion = OperatingSystemVersion(majorVersion: 11,
-                                                            minorVersion: 4,
-                                                            patchVersion: 0)
     static let ddgMinMonterreyVersion = OperatingSystemVersion(majorVersion: 12,
                                                                minorVersion: 3,
                                                                patchVersion: 0)
@@ -173,7 +162,6 @@ final class SupportedOSChecker {
     }
     private var currentOSVersionOverride: OperatingSystemVersion?
     private var minSupportedOSVersionOverride: OperatingSystemVersion?
-    private var upcomingMinSupportedOSVersionOverride: OperatingSystemVersion?
     private let hardwareModel: String?
     private var maxSupportedVersionByModelOverride: [String: Int]?
     private let featureFlagger: FeatureFlagger
@@ -181,18 +169,6 @@ final class SupportedOSChecker {
     var minSupportedOSVersion: OperatingSystemVersion {
         if let minSupportedOSVersionOverride {
             return minSupportedOSVersionOverride
-        }
-
-        return Self.ddgMinBigSurVersion
-    }
-
-    var upcomingMinSupportedOSVersion: OperatingSystemVersion? {
-        if let upcomingMinSupportedOSVersionOverride {
-            return upcomingMinSupportedOSVersionOverride
-        }
-
-        guard featureFlagger.isFeatureOn(.willSoonDropBigSurSupport) else {
-            return nil
         }
 
         return Self.ddgMinMonterreyVersion
@@ -205,13 +181,11 @@ final class SupportedOSChecker {
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          currentOSVersionOverride: OperatingSystemVersion? = nil,
          minSupportedOSVersionOverride: OperatingSystemVersion? = nil,
-         upcomingMinSupportedOSVersionOverride: OperatingSystemVersion? = nil,
          hardwareModel: String? = HardwareModel.model,
          maxSupportedVersionByModelOverride: [String: Int]? = nil) {
 
         self.currentOSVersionOverride = currentOSVersionOverride
         self.minSupportedOSVersionOverride = minSupportedOSVersionOverride
-        self.upcomingMinSupportedOSVersionOverride = upcomingMinSupportedOSVersionOverride
         self.hardwareModel = hardwareModel
         self.maxSupportedVersionByModelOverride = maxSupportedVersionByModelOverride
         self.featureFlagger = featureFlagger
@@ -224,28 +198,16 @@ final class SupportedOSChecker {
 
 extension SupportedOSChecker: SupportedOSChecking {
 
-    var supportWarning: OSSupportWarning? {
+    var unsupportedMinVersion: String? {
 
         // It's best to check feature flags first on their own, since they act as a master
         // override for any other check
         guard !featureFlagger.isFeatureOn(.osSupportForceUnsupportedMessage) else {
-            return .unsupported(osVersionAsString(minSupportedOSVersion))
-        }
-
-        if let upcomingMinSupportedOSVersion {
-            guard !featureFlagger.isFeatureOn(.osSupportForceWillSoonDropSupportMessage) else {
-                return .willDropSupportSoon(osVersionAsString(upcomingMinSupportedOSVersion))
-            }
+            return osVersionAsString(minSupportedOSVersion)
         }
 
         guard currentOSVersion > minSupportedOSVersion else {
-            return .unsupported(osVersionAsString(minSupportedOSVersion))
-        }
-
-        if let upcomingMinSupportedOSVersion {
-            guard currentOSVersion > upcomingMinSupportedOSVersion else {
-                return .willDropSupportSoon(osVersionAsString(upcomingMinSupportedOSVersion))
-            }
+            return osVersionAsString(minSupportedOSVersion)
         }
 
         return nil
@@ -272,5 +234,94 @@ extension SupportedOSChecker: SupportedOSChecking {
             return "latest"
         }
         return "\(maxVersion)"
+    }
+}
+
+// MARK: - Big Sur end-of-support launch notice
+
+struct BigSurEndOfSupportNoticePersistor {
+
+    enum Key: String {
+        case dismissed = "big-sur-end-of-support-notice.dismissed"
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var dismissed: Bool {
+        get { (try? keyValueStore.object(forKey: Key.dismissed.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.dismissed.rawValue) }
+    }
+}
+
+@MainActor
+final class BigSurEndOfSupportNoticePresenter {
+
+    private var persistor: BigSurEndOfSupportNoticePersistor
+    private let osChecker: SupportedOSChecking
+
+    init(keyValueStore: ThrowingKeyValueStoring,
+         osChecker: SupportedOSChecking = SupportedOSChecker()) {
+        self.persistor = BigSurEndOfSupportNoticePersistor(keyValueStore: keyValueStore)
+        self.osChecker = osChecker
+    }
+
+    func showIfNeeded() {
+        guard !persistor.dismissed else { return }
+        // Delay so the first window + NTP can render before the modal
+        // blocks the main runloop.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.show(persistsDismissal: true)
+        }
+    }
+
+    /// Shows the alert. When `persistsDismissal` is true (launch path) the secondary
+    /// button is "Don't show again" and writes to the persistor; otherwise (menu path)
+    /// the secondary button is a neutral "OK" that just dismisses, and the persistor
+    /// is neither checked nor mutated.
+    func show(persistsDismissal: Bool = false) {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = UserText.bigSurEndOfSupportNoticeTitle
+        alert.informativeText = bodyText()
+        // First-added button is the default and sits on the right.
+        let canUpgrade = canUpgradeOS
+        alert.addButton(withTitle: primaryButtonTitle())
+        if persistsDismissal {
+            alert.addButton(withTitle: UserText.bigSurEndOfSupportNoticeDontShowAgain)
+        } else if canUpgrade {
+            // Avoid an [OK] [OK] pair when the primary is already OK.
+            alert.addButton(withTitle: UserText.ok)
+        }
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn where canUpgrade:
+            NSWorkspace.shared.open(Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL)
+        case .alertSecondButtonReturn where persistsDismissal:
+            persistor.dismissed = true
+        default:
+            break
+        }
+    }
+
+    /// Hardware capability after applying the debug-menu override.
+    /// Release builds always see the hardware value (see `OSUpgradeCapabilityOverridePersistor`).
+    private var canUpgradeOS: Bool {
+        OSUpgradeCapabilityOverridePersistor().canUpgradeOS(default: osChecker.osUpgradeCapability.canUpgradeOS)
+    }
+
+    private func bodyText() -> String {
+        canUpgradeOS
+            ? UserText.bigSurEndOfSupportNoticeMessage
+            : UserText.bigSurEndOfSupportNoticeMessageIncapable
+    }
+
+    private func primaryButtonTitle() -> String {
+        canUpgradeOS
+            ? UserText.bigSurEndOfSupportNoticeUpdateMacOS
+            : UserText.ok
     }
 }

@@ -2199,6 +2199,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         }
         return nil
     }
+
+    // MARK: - App-menu forwarding (Duck.ai tab UTI bottom-right)
+
+    func test_appMenuTap_forwardsThroughChainToDelegate() {
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
+        sut.unifiedToggleInputVCDidTapAppMenu(sut.viewController)
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 1)
+    }
+
+    func test_appMenuTap_suppressedWhileOnboardingLocked() {
+        sut.setOnboardingControlsLocked(true)
+        sut.unifiedToggleInputVCDidTapAppMenu(sut.viewController)
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
+    }
 }
 
 // MARK: - Toolbar Layout
@@ -2355,6 +2369,109 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         }
         return nil
     }
+
+    // MARK: - aiChatTabHideToggle truth table
+
+    func test_aiChatTabHideToggle_off_onAITab_togglesShowsAccordingToUserSetting() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertTrue(coord.computeRenderState().cardLayout.showsToggle)
+    }
+
+    func test_aiChatTabHideToggle_on_onAITab_hidesToggleRegardlessOfUserSetting() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertFalse(coord.computeRenderState().cardLayout.showsToggle)
+    }
+
+    func test_aiChatTabHideToggle_on_offAITab_doesNotAffectToggleVisibility() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertFalse(coord.isAITabState)
+        XCTAssertTrue(coord.computeRenderState().cardLayout.showsToggle)
+    }
+
+    // MARK: - isToggleVisible (drives swipe-between-modes gating alongside the toggle row)
+
+    func test_isToggleVisible_returnsFalse_whenUserSettingOff() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: false,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertFalse(coord.isToggleVisible, "Swipe must follow the user setting when off")
+    }
+
+    func test_isToggleVisible_returnsTrue_onAITab_whenKillSwitchOff() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertTrue(coord.isToggleVisible, "AI tab with kill-switch off must keep swipe enabled when user setting is on")
+    }
+
+    func test_isToggleVisible_returnsFalse_onAITab_whenKillSwitchOn() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertFalse(coord.isToggleVisible, "Kill-switch on an AI tab must also disable the swipe gesture, not just the toggle row")
+    }
+
+    func test_isToggleVisible_returnsTrue_offAITab_whenKillSwitchOn() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertFalse(coord.isAITabState)
+        XCTAssertTrue(coord.isToggleVisible, "Kill-switch only applies on Duck.ai tabs — non-AI tabs follow the user setting")
+    }
+
+    /// Mirrors `test_syncInputModeFromExternalSource_toggleDisabled_forcesAIChatInAITabSession`
+    /// for the kill-switch path: the toggle row is hidden by the remote flag (not by the user
+    /// setting), so the user has no way to flip back — `effectiveInputMode` must clamp.
+    func test_syncInputModeFromExternalSource_killSwitchOn_forcesAIChatOnAITab() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        coord.syncInputModeFromExternalSource(.search)
+        XCTAssertEqual(coord.inputMode, .aiChat, "Programmatic .search on a kill-switched Duck.ai tab must clamp to .aiChat")
+    }
 }
 
 // MARK: - Mock Delegate
@@ -2372,6 +2489,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var didRequestVoiceSearchCount = 0
     var didRequestAIVoiceChatCount = 0
     var didRequestAIChatCount = 0
+    var didRequestAppMenuCount = 0
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
         submittedPrompt = prompt
@@ -2394,7 +2512,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         committedMode = mode
     }
     func unifiedToggleInputDidRequestFire() {}
-    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
+    func unifiedToggleInputDidRequestAppMenu() { didRequestAppMenuCount += 1 }
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

@@ -247,6 +247,7 @@ extension TestRunHelper: XCTestObservation {
 
             withExtendedLifetime(waiter) {}
         }
+
         loadedViews = []
     }
 

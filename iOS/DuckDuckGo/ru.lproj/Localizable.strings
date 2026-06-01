@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "Домашняя";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Поддержка множественных событий отсутствует. Попробуйте вместо этого открыть загруженный файл.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Невозможно обработать этот файл. Попробуйте вместо этого открыть загруженный файл.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Неподдерживаемый часовой пояс. Попробуйте вместо этого открыть загруженный файл.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Событие добавлено в Apple Calendar";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Код: %1$@ | %2$@ | %3$@";
 

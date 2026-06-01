@@ -228,6 +228,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func aiComparisonAction() {
+        pixelReporter.measureAiComparisonCTAAction()
         makeNextViewState()
     }
 
@@ -265,12 +266,14 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    func selectDuckAIQueryExperimentAction(selection: DuckAIQueryExperimentMode) {
-        switch selection {
-        case .duckAI:
-            pixelReporter.measureDuckAIQueryExperimentChooseAIChat()
-        case .search:
-            pixelReporter.measureDuckAIQueryExperimentChooseSearchOnly()
+    func selectDuckAIQueryExperimentAction(selection: DuckAIQueryMode) {
+        if resolveDuckAIQueryExperimentCohortID() != nil {
+            switch selection {
+            case .duckAI:
+                pixelReporter.measureDuckAIQueryExperimentChooseAIChat()
+            case .search:
+                pixelReporter.measureDuckAIQueryExperimentChooseSearchOnly()
+            }
         }
         makeNextViewState()
     }
@@ -287,11 +290,18 @@ final class OnboardingIntroViewModel: ObservableObject {
         onSearchFromOnboarding?(query)
     }
 
-    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
-        pixelReporter.measureDuckAIQueryExperimentQuerySubmission(
-            selection: selection,
-            promptSource: promptSource
-        )
+    func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
+        if resolveDuckAIQueryExperimentCohortID() != nil {
+            pixelReporter.measureDuckAIQueryExperimentQuerySubmission(
+                selection: selection,
+                promptSource: promptSource
+            )
+        } else {
+            pixelReporter.measureDuckAIQuerySubmission(
+                selection: selection,
+                promptSource: promptSource
+            )
+        }
     }
 
     func restoreSyncAccountAction() {
@@ -401,7 +411,7 @@ private extension OnboardingIntroViewModel {
             case .duckAIQuerySelection:
                 let isDuckAiTailoredFlow = onboardingManager.currentOnboardingFlow == .duckAI
                 // Duck.ai Tailored flow shows only Duck.ai options while experiment shows toggle with "Search" and "Ask AI"
-                let duckAIQueryMode: DuckAIQueryExperimentMode = isDuckAiTailoredFlow ? .duckAI : duckAIQueryExperimentDefaultMode
+                let duckAIQueryMode: DuckAIQueryMode = isDuckAiTailoredFlow ? .duckAI : duckAIQueryExperimentDefaultMode
                 // Duck.ai Tailored flow shows step counter while experiment does not.
                 let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
                 return .onboarding(
@@ -519,7 +529,7 @@ private extension OnboardingIntroViewModel {
         case .browsersComparisonDialog:
             pixelReporter.measureBrowserComparisonImpression()
         case .aiComparisonDialog:
-            break
+            pixelReporter.measureAiComparisonImpression()
         case .addToDockPromoDialog:
             pixelReporter.measureAddToDockPromoImpression()
         case .chooseAppIconDialog:
@@ -529,7 +539,14 @@ private extension OnboardingIntroViewModel {
         case .chooseSearchExperienceDialog:
             pixelReporter.measureSearchExperienceSelectionImpression()
         case .duckAIQueryExperimentDialog:
-            pixelReporter.measureDuckAIQueryExperimentSelectionImpression()
+            // Both the experiment and the Duck.ai tailored flow reach this view state. Only the
+            // experiment cohort should fire experiment-flavoured pixels; tailored-flow users get
+            // the plain shared toggle-shown pixel.
+            if resolveDuckAIQueryExperimentCohortID() != nil {
+                pixelReporter.measureDuckAIQueryExperimentSelectionImpression()
+            } else {
+                pixelReporter.measureDuckAIQuerySelectionImpression()
+            }
         }
     }
 
@@ -544,7 +561,7 @@ private extension OnboardingIntroViewModel {
         introSteps.insert(.duckAIQuerySelection, at: currentStepIndex + 1)
     }
 
-    var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode {
+    var duckAIQueryExperimentDefaultMode: DuckAIQueryMode {
         switch resolveDuckAIQueryExperimentCohortID() {
         case .treatmentB:
             .search

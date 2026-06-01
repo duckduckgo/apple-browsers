@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "Koti";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Useita tapahtumia ei tueta. Kokeile sen sijaan avata ladattu tiedosto.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Tätä tiedostoa ei voida käsitellä. Kokeile sen sijaan avata ladattu tiedosto.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Aikavyöhykettä ei tueta. Kokeile sen sijaan avata ladattu tiedosto.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Tapahtuma lisätty Apple-kalenteriin";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Tunnus: %1$@ | %2$@ | %3$@";
 

@@ -429,6 +429,7 @@ public extension DesignSystemImages {
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd24) }
             public static var aiChatAddSolid: DesignSystemImage { .init(resource: .aiChatAddSolid24) }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory24) }
+            public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }
             public static var arrowDown: DesignSystemImage { .init(resource: .arrowDown24) }

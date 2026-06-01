@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "Pagrindinis";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Keli įvykiai nepalaikomi. Vietoje to pabandykite atidaryti atsisiųstą failą.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Šio failo negalima apdoroti. Vietoje to pabandykite atidaryti atsisiųstą failą.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Nepalaikoma laiko juosta. Vietoje to pabandykite atidaryti atsisiųstą failą.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Įvykis įtrauktas į „Apple“ kalendorių";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 

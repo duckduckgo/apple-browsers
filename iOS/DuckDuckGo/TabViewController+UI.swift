@@ -23,7 +23,6 @@ import UIKit
 extension TabViewController {
 
     func setupErrorActionButton() {
-        error.addSubview(errorActionButton)
         var buttonConfiguration = UIButton.Configuration.filled()
         buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
         buttonConfiguration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
@@ -35,12 +34,6 @@ extension TabViewController {
             return transformed
         }
         errorActionButton.configuration = buttonConfiguration
-        NSLayoutConstraint.activate([
-            errorActionButton.topAnchor.constraint(equalTo: errorMessage.bottomAnchor, constant: 24),
-            errorActionButton.centerXAnchor.constraint(equalTo: error.centerXAnchor),
-            errorActionButton.leadingAnchor.constraint(greaterThanOrEqualTo: error.leadingAnchor, constant: 24),
-            errorActionButton.trailingAnchor.constraint(lessThanOrEqualTo: error.trailingAnchor, constant: -24)
-        ])
     }
 
     func configureRootView() {
@@ -147,6 +140,7 @@ extension TabViewController {
         labelsStack.addArrangedSubview(errorMessage)
         errorContentStack.addArrangedSubview(errorInfoImage)
         errorContentStack.addArrangedSubview(labelsStack)
+        errorContentStack.addArrangedSubview(errorActionButton)
 
         let safeArea = rootView.safeAreaLayoutGuide
         let minHeightConstraint = error.heightAnchor.constraint(equalToConstant: 400)
@@ -164,7 +158,9 @@ extension TabViewController {
             errorContentStack.topAnchor.constraint(greaterThanOrEqualTo: error.topAnchor),
             errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: error.bottomAnchor),
 
-            labelsStack.widthAnchor.constraint(lessThanOrEqualToConstant: 400)
+            labelsStack.widthAnchor.constraint(lessThanOrEqualToConstant: 400),
+            errorActionButton.leadingAnchor.constraint(greaterThanOrEqualTo: error.leadingAnchor, constant: 24),
+            errorActionButton.trailingAnchor.constraint(lessThanOrEqualTo: error.trailingAnchor, constant: -24)
         ])
     }
 

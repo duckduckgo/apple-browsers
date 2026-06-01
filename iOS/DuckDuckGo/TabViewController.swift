@@ -1413,6 +1413,7 @@ class TabViewController: UIViewController {
         errorActionButton.setTitle(UserText.generalPageProblemOpenInBrowserButton, for: .normal)
         errorActionButton.isHidden = false
         error.layoutIfNeeded()
+        webpageDidFailToLoad()
     }
 
     private func setErrorInfoImage(resource: ImageResource = .errorInfoUniversal) {

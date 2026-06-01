@@ -987,6 +987,8 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "Remote Messaging Framework")
                 .submenu(RemoteMessagingDebugMenu(configurationURLProvider: configurationURLProvider))
+            NSMenuItem(title: "OS Support")
+                .submenu(OSSupportDebugMenu())
             NSMenuItem(title: "User Scripts") {
                 NSMenuItem(title: "Remove user scripts from selected tab", action: #selector(MainViewController.removeUserScripts))
             }

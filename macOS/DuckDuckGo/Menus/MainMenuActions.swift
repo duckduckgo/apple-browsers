@@ -50,13 +50,8 @@ extension AppDelegate {
             PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
             NSWorkspace.shared.open(.appStore)
         } else if StandardApplicationBuildType().isSparkleBuild {
-            if let warning = SupportedOSChecker().supportWarning,
-               case .unsupported = warning {
-                // Show not supported info
-                if NSAlert.osNotSupported(warning).runModal() != .cancel {
-                    let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
-                    NSWorkspace.shared.open(url)
-                }
+            if SupportedOSChecker().showsSupportWarning {
+                BigSurEndOfSupportNoticePresenter(keyValueStore: keyValueStore).show()
             }
             showAbout(sender)
         }

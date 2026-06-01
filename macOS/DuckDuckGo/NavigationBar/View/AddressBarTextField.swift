@@ -809,6 +809,7 @@ final class AddressBarTextField: NSTextField {
         guard !suggestionWindow.isVisible, isFirstResponder else { return }
 
         window.addChildWindow(suggestionWindow, ordered: .above)
+        NotificationCenter.default.post(name: .suggestionWindowDidShow, object: self)
 
         windowFrameCancellable = window.publisher(for: \.frame)
             .sink { [weak self] _ in
@@ -1638,4 +1639,8 @@ extension AddressBarTextField: SharingMenuDelegate {
 
         return (selectedTabViewModel.title, [url])
     }
+}
+
+extension Notification.Name {
+    static let suggestionWindowDidShow = Notification.Name("suggestionWindowDidShow")
 }

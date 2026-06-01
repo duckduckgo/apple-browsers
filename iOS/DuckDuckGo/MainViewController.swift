@@ -1843,7 +1843,10 @@ class MainViewController: UIViewController {
         if isExperimentDuckAIFireFlow {
             // Keep this path scoped to the onboarding experiment: single "Delete This Chat" action only,
             // whether the contextual dialog has already appeared or is still pending.
-            contextualOnboardingPixelReporter.measureDuckAIExperimentFireButtonCTAAction()
+            // Fire experiment pixel only if flow is default.
+            if onboardingManager.currentOnboardingFlow == .default {
+                contextualOnboardingPixelReporter.measureDuckAIExperimentFireButtonCTAAction()
+            }
             presentExperimentDuckAIFireConfirmation()
             performCancel()
             return
@@ -5295,7 +5298,12 @@ extension MainViewController: TabDelegate {
     }
 
     func openAIChatHistory() {
-        present(AIChatHistoryViewController.makePresentableSheet(), animated: true)
+        let viewModel = AIChatHistoryViewModel()
+        viewModel.delegate = self
+        let content = AIChatHistoryViewController(viewModel: viewModel)
+        let navigationController = UINavigationController(rootViewController: content)
+        navigationController.modalPresentationStyle = .automatic
+        present(navigationController, animated: true)
     }
 
     func tabDidRequestBookmarks(tab: TabViewController) {
@@ -5479,6 +5487,17 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
     }
 
+}
+
+// MARK: - AIChatHistoryViewModelDelegate
+
+extension MainViewController: AIChatHistoryViewModelDelegate {
+
+    func viewModelDidRequestOpenDuckAi() {
+        dismiss(animated: true) { [weak self] in
+            self?.openAIChat()
+        }
+    }
 }
 
 extension MainViewController: TabSwitcherDelegate {

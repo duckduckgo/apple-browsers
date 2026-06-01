@@ -1,1 +1,3 @@
-• As usual, we've included some bug fixes and improvements.
+• New! YouTube Ad Blocking—DuckDuckGo now blocks video ads on YouTube, and you can still use Duck Player for a distraction-free theater mode. Set your preferences in Settings > Ad Blocking.
+• You can now long-press the address bar to open a menu with options like Share, Copy Link, Close Tab, and more.
+• This update also includes other improvements and bug fixes.

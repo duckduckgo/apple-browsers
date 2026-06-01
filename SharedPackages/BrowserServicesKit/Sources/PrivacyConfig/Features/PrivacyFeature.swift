@@ -113,9 +113,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Address-bar render-performance instrumentation kill switch.
     case addressBarPerformanceInstrumentation
 
-    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
-    case willSoonDropBigSurSupport
-
     /// Hang reporting feature flag
     case hangReporting
 
@@ -131,10 +128,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Use WKDownload for favicon fetching to bypass App Transport Security restrictions on HTTP URLs
     case faviconWKDownload
-
-    /// New App Store Update flow feature flag
-    /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
-    case appStoreUpdateFlow
 
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly
@@ -182,8 +175,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
-
-    case semaphoreAlwaysVisible
 
     /// Autoplay policy control via WKWebpagePreferences
     case autoplayPolicy
@@ -277,6 +268,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
     case customProductPageDuckAiChat
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215151176422651?focus=true
+    case customProductPageDuckAiOnboardingFlow
 
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843

@@ -128,12 +128,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
     case osSupportForceUnsupportedMessage
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476263589
-    case osSupportForceWillSoonDropSupportMessage
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719124742
-    case willSoonDropBigSurSupport
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
@@ -156,9 +150,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
-    case appStoreUpdateFlow
 
     /// Hide manual update option — always use automatic updates
     case automaticUpdatesOnly
@@ -319,10 +310,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Autoplay policy control via WKWebpagePreferences
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
     case autoplayPolicy
-
-    /// Window Semaphore Fullscreen Behavior Flag
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213585076410725?focus=true
-    case semaphoreAlwaysVisible
 
     /// Enables the promo service to coordinate promos/calls to action
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
@@ -504,10 +491,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarOnboarding), category: .duckAI)
         case .osSupportForceUnsupportedMessage:
             Config(source: .disabled, category: .osSupportWarnings)
-        case .osSupportForceWillSoonDropSupportMessage:
-            Config(source: .disabled, category: .osSupportWarnings)
-        case .willSoonDropBigSurSupport:
-            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport), category: .osSupportWarnings)
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:
@@ -522,8 +505,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
             Config(source: .remoteReleasable(SyncSubfeature.level3AllowCreateAccount))
-        case .appStoreUpdateFlow:
-            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreUpdateFlow), category: .updates)
         case .automaticUpdatesOnly:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.automaticUpdatesOnly), category: .updates)
         case .unifiedURLPredictor:
@@ -618,8 +599,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .semaphoreAlwaysVisible:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
         case .promoQueue:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
         case .websitesHistoryFirstTimeQuitSurvey:

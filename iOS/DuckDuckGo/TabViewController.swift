@@ -1310,6 +1310,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        safariRedirectHandler.reset()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserReload()
         updateContentMode()

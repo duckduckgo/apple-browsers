@@ -198,7 +198,7 @@ final class FireTests: XCTestCase {
         let faviconManager = FaviconManagerMock()
 
         let urls = ["https://duck.com/", "https://spreadprivacy.com/", "https://wikipedia.org/"].map { $0.url! }
-        let pinnedTabs: [Tab] = urls.map { Tab(content: .url($0, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()) }
+        var pinnedTabs: [Tab] = urls.map { Tab(content: .url($0, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()) }
         pinnedTabsManagerProvider.newPinnedTabsManager = PinnedTabsManager(tabCollection: .init(tabs: pinnedTabs))
 
         let fire = Fire(cacheManager: manager,
@@ -214,6 +214,10 @@ final class FireTests: XCTestCase {
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
         Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
         defer {
+            tabCollectionViewModel.removeAllTabs(forceChange: true)
+            tabCollectionViewModel.pinnedTabsManager?.tabCollection.removeAll()
+            pinnedTabsManagerProvider.newPinnedTabsManager.tabCollection.removeAll()
+            pinnedTabs.removeAll()
             window.close()
             window = nil
         }
@@ -228,6 +232,13 @@ final class FireTests: XCTestCase {
         // Verify: No new tab is inserted because pinned tabs exist (window stays open with pinned tabs only)
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0, "No new regular tab should be inserted when pinned tabs exist")
         XCTAssertEqual(tabCollectionViewModel.pinnedTabsCollection?.tabs.map(\.content.userEditableUrl), urls as [URL?], "Pinned tabs should be preserved")
+
+        let tabsToClean = (tabCollectionViewModel.pinnedTabs + pinnedTabs).reduce(into: [Tab]()) { tabs, tab in
+            if !tabs.contains(where: { $0 === tab }) {
+                tabs.append(tab)
+            }
+        }
+        await TabCleanupPreparer().prepareTabsForCleanup(tabsToClean)
     }
 
     @MainActor

@@ -253,9 +253,12 @@ public class FilePresenter {
             self.dispatchSourceCancellable = nil
         }
 
+        dispatchSource.setCancelHandler {
+            close(fileDescriptor)
+        }
+
         self.dispatchSourceCancellable = AnyCancellable {
             dispatchSource.cancel()
-            close(fileDescriptor)
         }
         dispatchSource.resume()
     }

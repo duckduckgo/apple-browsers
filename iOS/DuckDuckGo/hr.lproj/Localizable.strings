@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "Početni zaslon";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Više događaja nije podržano. Pokušaj umjesto toga otvoriti preuzetu datoteku.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Ova datoteka se ne može obraditi. Pokušaj umjesto toga otvoriti preuzetu datoteku.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Nepodržana vremenska zona. Pokušaj umjesto toga otvoriti preuzetu datoteku.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Događaj je dodan u Apple kalendar";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 

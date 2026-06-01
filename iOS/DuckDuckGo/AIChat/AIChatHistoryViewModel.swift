@@ -1,5 +1,5 @@
 //
-//  DuckAIQueryExperimentMode.swift
+//  AIChatHistoryViewModel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,8 +17,21 @@
 //  limitations under the License.
 //
 
-/// The search mode selected by the user in the Duck.ai query experiment onboarding step.
-enum DuckAIQueryExperimentMode {
-    case search
-    case duckAI
+import Foundation
+
+/// View model for the native Duck.ai chat-history sheet.
+@MainActor
+final class AIChatHistoryViewModel: ObservableObject {
+
+    weak var delegate: AIChatHistoryViewModelDelegate?
+
+    func openDuckAiTapped() {
+        delegate?.viewModelDidRequestOpenDuckAi()
+    }
+}
+
+@MainActor
+protocol AIChatHistoryViewModelDelegate: AnyObject {
+    /// Dismiss the sheet and open the Duck.ai web chat.
+    func viewModelDidRequestOpenDuckAi()
 }

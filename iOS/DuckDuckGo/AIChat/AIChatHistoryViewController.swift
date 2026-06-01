@@ -17,28 +17,50 @@
 //  limitations under the License.
 //
 
+import SwiftUI
 import UIKit
 
-/// Placeholder container for the native Duck.ai chat-history sheet.
+/// View controller for the native Duck.ai chat-history sheet.
 final class AIChatHistoryViewController: UIViewController {
 
-    static func makePresentableSheet() -> UIViewController {
-        let content = AIChatHistoryViewController()
-        let navigationController = UINavigationController(rootViewController: content)
-        navigationController.modalPresentationStyle = .automatic
-        return navigationController
+    private let viewModel: AIChatHistoryViewModel
+
+    init(viewModel: AIChatHistoryViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported.")
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        title = UserText.aiChatRecentChatsTitle
+        title = UserText.actionAIChatHistory
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: UserText.navigationTitleDone,
             style: .plain,
             target: self,
             action: #selector(doneButtonTapped)
         )
+
+        embedEmptyState()
+    }
+
+    private func embedEmptyState() {
+        let host = UIHostingController(rootView: AIChatHistoryEmptyStateView(viewModel: viewModel))
+        addChild(host)
+        host.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(host.view)
+        NSLayoutConstraint.activate([
+            host.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        host.didMove(toParent: self)
     }
 
     @objc private func doneButtonTapped() {

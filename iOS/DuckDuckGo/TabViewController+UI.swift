@@ -134,14 +134,14 @@ extension TabViewController {
         errorHeader.font = .systemFont(ofSize: 20, weight: .semibold)
         errorHeader.numberOfLines = 0
         errorHeader.textAlignment = .center
-        errorHeader.text = "DuckDuckGo can't load this page."
+        errorHeader.text = UserText.webPageLoadErrorTitle
 
         errorMessage = UILabel()
         errorMessage.translatesAutoresizingMaskIntoConstraints = false
         errorMessage.font = .systemFont(ofSize: 16)
         errorMessage.numberOfLines = 0
         errorMessage.textAlignment = .center
-        errorMessage.text = "This website has an invalid security certificate and might not be safe to visit."
+        errorMessage.text = UserText.webPageLoadErrorMessage
 
         labelsStack.addArrangedSubview(errorHeader)
         labelsStack.addArrangedSubview(errorMessage)

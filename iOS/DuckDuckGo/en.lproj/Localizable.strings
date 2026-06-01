@@ -3250,6 +3250,12 @@ https://duckduckgo.com/mac";
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "This page only loads in Safari";
 
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "This website has an invalid security certificate and might not be safe to visit.";
+
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo can’t load this page.";
+
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";
 

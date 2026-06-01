@@ -141,13 +141,21 @@ public extension DesignSystemImages {
                     ? .init(resource: .addToDockColor24)
                     : .init(resource: .addToDockColor24Legacy)
             }
-            public static var addWidget: DesignSystemImage { .init(resource: .addWidgetColor24) }
+            public static var addWidget: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .addWidgetColor24)
+                    : .init(resource: .addWidgetColor24Legacy)
+            }
             public static var addressBarBottom: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .addressBarBottomColor24)
                     : .init(resource: .addressBarBottomColor24Legacy)
             }
-            public static var adsBlocked: DesignSystemImage { .init(resource: .adsBlockedColor24) }
+            public static var adsBlocked: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .adsBlockedColor24)
+                    : .init(resource: .adsBlockedColor24Legacy)
+            }
             public static var radar: DesignSystemImage { .init(resource: .radarColor24) }
             public static var adsFewer: DesignSystemImage { .init(resource: .adsFewerColor24) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor24) }
@@ -210,7 +218,11 @@ public extension DesignSystemImages {
                     ? .init(resource: .creditCardCheckColor24)
                     : .init(resource: .creditCardCheckColor24Legacy)
             }
-            public static var defaultBrowserMobile: DesignSystemImage { .init(resource: .defaultBrowserMobileColor24) }
+            public static var defaultBrowserMobile: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .defaultBrowserMobileColor24)
+                    : .init(resource: .defaultBrowserMobileColor24Legacy)
+            }
             public static var deviceAll: DesignSystemImage { .init(resource: .deviceAllColor24) }
             public static var deviceLaptopInstall: DesignSystemImage {
                 AppRebrand.isAppRebranded()
@@ -296,9 +308,15 @@ public extension DesignSystemImages {
             }
             public static var keyAuto: DesignSystemImage { .init(resource: .keyAutoColor24) }
             public static var keyCheck: DesignSystemImage {
-                .init(resource: .keyCheckColor24)
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .keyCheckColor24)
+                    : .init(resource: .keyCheckColor24Legacy)
             }
-            public static var keyImport: DesignSystemImage { .init(resource: .keyColorImport24) }
+            public static var keyImport: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .keyColorImport24)
+                    : .init(resource: .keyColorImport24Legacy)
+            }
             public static var lightning: DesignSystemImage { .init(resource: .lightningColor24) }
             public static var lock: DesignSystemImage {
                 AppRebrand.isAppRebranded()

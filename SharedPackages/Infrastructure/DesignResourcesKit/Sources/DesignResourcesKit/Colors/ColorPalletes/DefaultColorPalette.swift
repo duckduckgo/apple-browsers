@@ -204,13 +204,15 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .surfaceTertiary: return surfaceTertiary
         case .surfaceCanvas: return surfaceCanvas
 
-        case .accent: return accent
+        case .accent:
+            return DesignSystemRebrand.isAppRebranded() ? dynamicColor(for: SingleUseColor.Rebranding.accentPrimary) : accent
         case .accentGlowSecondary: return accentGlowSecondary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .shieldPrivacy: return shieldPrivacy
         case .border: return border
-        case .textLink: return textLink
+        case .textLink:
+            return DesignSystemRebrand.isAppRebranded() ? dynamicColor(for: SingleUseColor.Rebranding.textLink) : textLink
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
         case .textTertiary: return textTertiary

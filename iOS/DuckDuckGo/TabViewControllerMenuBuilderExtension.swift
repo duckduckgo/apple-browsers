@@ -136,33 +136,62 @@ extension TabViewController {
     }
     
     func buildAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
-        var entries = [BrowsingMenuEntry]()
-
-        entries.append(buildNewTabEntry())
-
-        entries.append(buildNewAIChatEntry())
-
-        return entries
+        if unifiedToggleInputFeature.isAvailable {
+            return [
+                buildNewAIChatEntry(),
+                buildAINewSearchHeaderTile(),
+                buildAIChatSettingsHeaderTile(),
+            ]
+        }
+        return [
+            buildNewTabEntry(),
+            buildNewAIChatEntry(),
+        ]
     }
-    
+
     func buildAITabMenu(useSmallIcon: Bool = true,
                         includeSettings: Bool = true,
                         separateUtilityItems: Bool = false,
                         useDetailTextForZoom: Bool = false) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
-        
+
+        if unifiedToggleInputFeature.isAvailable {
+            // Chat-first layout: chat actions lead, Settings last. Zoom/Find/Print intentionally omitted.
+            entries.append(buildAINewVoiceChatEntry(useSmallIcon: useSmallIcon))
+
+            entries.append(.separator)
+
+            entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
+            entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
+
+            if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
+                entries.append(buildAutoFillEntry(useSmallIcon: useSmallIcon))
+            }
+
+            entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
+
+            if includeSettings {
+                entries.append(.separator)
+                entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
+            }
+
+            return entries
+        }
+
+        // Legacy layout (unifiedToggleInput OFF): preserves the Duck.ai Chats list row and
+        // the bottom Duck.ai Settings row that the F9 rework promotes to header tiles.
         entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtilityItems, useDetailTextForZoom: useDetailTextForZoom))
 
         entries.append(.separator)
-        
+
         entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
-        
+
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
             entries.append(buildAutoFillEntry(useSmallIcon: useSmallIcon))
         }
-        
+
         entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
-        
+
         entries.append(buildAIChatSidebarEntry(useSmallIcon: useSmallIcon))
 
         if separateUtilityItems {
@@ -171,7 +200,7 @@ extension TabViewController {
         }
 
         entries.append(.separator)
-        
+
         entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon))
 
         if includeSettings {
@@ -523,6 +552,53 @@ extension TabViewController {
         })
     }
     
+    /// Mirrors the Plus-menu "New Search": opens a fresh tab forced into search mode.
+    private func buildAINewSearchHeaderTile() -> BrowsingMenuEntry {
+        .regular(name: UserText.aiChatHeaderNewSearchTitle,
+                 accessibilityLabel: UserText.aiChatHeaderNewSearchTitle,
+                 image: DesignSystemImages.Glyphs.Size24.findSearchSmall,
+                 action: { [weak self] in
+            guard let self else { return }
+            self.delegate?.tabDidRequestNewSearch(self)
+        })
+    }
+
+    /// Mirrors the Plus-menu "New Voice Chat": starts a Duck.ai voice session.
+    private func buildAINewVoiceChatEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        .regular(name: UserText.aiChatHeaderNewVoiceChatTitle,
+                 accessibilityLabel: UserText.aiChatHeaderNewVoiceChatTitle,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.voice : DesignSystemImages.Glyphs.Size24.voice,
+                 action: { [weak self] in
+            guard let self else { return }
+            self.delegate?.tabDidRequestNewVoiceChat(self)
+        })
+    }
+
+    /// Opens the recent-chats sidebar. Size24 `chats` forced to `.alwaysTemplate` for dark mode;
+    /// Size16 falls back to `aiChatHistory` (no `chats` at 16px).
+    private func buildAIChatsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatHistory
+            : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        return .regular(name: UserText.aiChatAppMenuChats,
+                        accessibilityLabel: UserText.aiChatAppMenuChats,
+                        image: image,
+                        action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
+            self?.submitToggleSidebarAction()
+        })
+    }
+
+    private func buildAIChatSettingsHeaderTile() -> BrowsingMenuEntry {
+        .regular(name: UserText.aiChatAppMenuHeaderChatSettings,
+                 accessibilityLabel: UserText.aiChatAppMenuHeaderChatSettings,
+                 image: DesignSystemImages.Glyphs.Size24.aiChatSettings,
+                 action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
+            self?.submitOpenSettingsAction()
+        })
+    }
+
     private func buildAIChatSidebarEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAIChatHistory,
                  accessibilityLabel: UserText.actionAIChatHistory,
@@ -532,7 +608,7 @@ extension TabViewController {
             self?.submitToggleSidebarAction()
         })
     }
-    
+
     private func buildAIChatSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAIChatSettings,
                  accessibilityLabel: UserText.actionAIChatSettings,
@@ -877,13 +953,19 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeAITabMenu() -> [BrowsingMenuEntry] {
-        buildAITabMenu(useSmallIcon: false, includeSettings: false, separateUtilityItems: true, useDetailTextForZoom: true)
+        buildAITabMenu(useSmallIcon: false,
+                       includeSettings: unifiedToggleInputFeature.isAvailable,
+                       separateUtilityItems: true,
+                       useDetailTextForZoom: true)
     }
-    
+
     func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
-        // Add settings to the header.
-        // It'll be filtered out in `makeAITabMenu`
-        buildAITabMenuHeaderContent() + [makeSettingsEntry()]
+        if unifiedToggleInputFeature.isAvailable {
+            return buildAITabMenuHeaderContent()
+        }
+        // Legacy: the list omits Settings (`includeSettings: false` above) and the sheet header
+        // appends Settings as a third tile alongside [New Tab | New Chat].
+        return buildAITabMenuHeaderContent() + [makeSettingsEntry()]
     }
     
     func makeBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,

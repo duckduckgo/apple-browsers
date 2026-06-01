@@ -100,18 +100,38 @@ final class DuckPlayerPreferencesTests: XCTestCase {
         XCTAssertNil(persistor.duckPlayerModeBool)
     }
 
-    func testWhenPersistorBoolIsNilAndRolloutOnThenCachedModeIsDisabled() {
+    func testWhenPersistorBoolIsNilAndRolloutOnAndFeatureSupportedThenCachedModeIsDisabled() {
         let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .alwaysAsk)
+        let featureFlagger = MockFeatureFlagger(featuresStub: [
+            FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true,
+            FeatureFlag.webExtensions.rawValue: true
+        ])
+        let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
+
+        if #available(macOS 15.4, *) {
+            XCTAssertEqual(model.duckPlayerMode, .disabled)
+        } else {
+            XCTAssertEqual(model.duckPlayerMode, .alwaysAsk)
+        }
+        XCTAssertNil(persistor.duckPlayerModeBool, "Rollout default must not be persisted")
+    }
+
+    func testWhenPersistorBoolIsNilAndRolloutOnButFeatureUnsupportedThenCachedModeIsAlwaysAsk() {
+        let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .alwaysAsk)
+        // Rollout flag on, but webExtensions off => feature unsupported => historical default.
         let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true])
         let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
 
-        XCTAssertEqual(model.duckPlayerMode, .disabled)
+        XCTAssertEqual(model.duckPlayerMode, .alwaysAsk)
         XCTAssertNil(persistor.duckPlayerModeBool, "Rollout default must not be persisted")
     }
 
     func testWhenPersistorBoolIsExplicitThenRolloutDoesNotChangeMode() {
         let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .enabled)
-        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true])
+        let featureFlagger = MockFeatureFlagger(featuresStub: [
+            FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true,
+            FeatureFlag.webExtensions.rawValue: true
+        ])
         let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
 
         XCTAssertEqual(model.duckPlayerMode, .enabled)
@@ -119,8 +139,28 @@ final class DuckPlayerPreferencesTests: XCTestCase {
 
     // MARK: - refreshDefaultModeIfNeeded (publisher-triggered)
 
-    func testPublisherTriggerUpdatesCachedModeForNilPersistor() {
+    func testPublisherTriggerUpdatesCachedModeForNilPersistorWhenFeatureSupported() {
         let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .alwaysAsk)
+        // webExtensions on from the start so support tracks the rollout-flag flip below.
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensions.rawValue: true])
+        let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
+        XCTAssertEqual(model.duckPlayerMode, .alwaysAsk)
+
+        featureFlagger.featuresStub[FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue] = true
+        featureFlagger.triggerUpdate()
+        drainMainQueue()
+
+        if #available(macOS 15.4, *) {
+            XCTAssertEqual(model.duckPlayerMode, .disabled)
+        } else {
+            XCTAssertEqual(model.duckPlayerMode, .alwaysAsk)
+        }
+        XCTAssertNil(persistor.duckPlayerModeBool, "Publisher-driven update must not persist")
+    }
+
+    func testPublisherTriggerKeepsHistoricalDefaultForNilPersistorWhenFeatureUnsupported() {
+        let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .alwaysAsk)
+        // webExtensions off => unsupported, so flipping the rollout flag must not change the default.
         let featureFlagger = MockFeatureFlagger()
         let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
         XCTAssertEqual(model.duckPlayerMode, .alwaysAsk)
@@ -129,13 +169,14 @@ final class DuckPlayerPreferencesTests: XCTestCase {
         featureFlagger.triggerUpdate()
         drainMainQueue()
 
-        XCTAssertEqual(model.duckPlayerMode, .disabled)
-        XCTAssertNil(persistor.duckPlayerModeBool, "Publisher-driven update must not persist")
+        XCTAssertEqual(model.duckPlayerMode, .alwaysAsk)
+        XCTAssertNil(persistor.duckPlayerModeBool)
     }
 
     func testPublisherTriggerDoesNotChangeModeForExplicitPersistor() {
         let persistor = DuckPlayerPreferencesPersistorMock(duckPlayerMode: .enabled)
-        let featureFlagger = MockFeatureFlagger()
+        // webExtensions on so the rollout flag flip below represents a genuinely active rollout.
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensions.rawValue: true])
         let model = DuckPlayerPreferences(persistor: persistor, featureFlagger: featureFlagger)
         XCTAssertEqual(model.duckPlayerMode, .enabled)
 

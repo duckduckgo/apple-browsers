@@ -113,9 +113,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Address-bar render-performance instrumentation kill switch.
     case addressBarPerformanceInstrumentation
 
-    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
-    case willSoonDropBigSurSupport
-
     /// Hang reporting feature flag
     case hangReporting
 
@@ -182,8 +179,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
-
-    case semaphoreAlwaysVisible
 
     /// Autoplay policy control via WKWebpagePreferences
     case autoplayPolicy
@@ -278,6 +273,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
     case customProductPageDuckAiChat
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215151176422651?focus=true
+    case customProductPageDuckAiOnboardingFlow
+
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
@@ -289,6 +287,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
+    case walletPassDownload
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -422,6 +423,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case omnibarDefaultPosition
 
     case unifiedToggleInput
+
+    /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
+    /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
+    /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.
+    case aiChatTabHideToggle
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode

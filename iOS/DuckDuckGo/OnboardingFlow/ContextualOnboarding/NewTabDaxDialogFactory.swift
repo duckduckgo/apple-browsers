@@ -205,7 +205,9 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
             .onboardingContextualBackgroundStyle(background: .illustratedGradient)
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
+                if self?.onboardingFlowProvider.currentOnboardingFlow == .default {
+                    self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
+                }
             }
         )
     }

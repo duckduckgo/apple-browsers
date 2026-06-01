@@ -2479,6 +2479,18 @@
 /* Home tab title */
 "homeTab.title" = "Avaleht";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Mitut sündmust ei toetata. Proovi selle asemel allalaaditud faili avada.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Seda faili ei saa töödelda. Proovi selle asemel allalaaditud faili avada.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Toetamata ajavöönd. Proovi selle asemel allalaaditud faili avada.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Sündmus lisatud Apple Calendari";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 

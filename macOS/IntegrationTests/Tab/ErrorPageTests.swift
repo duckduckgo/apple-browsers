@@ -22,6 +22,7 @@ import ConcurrencyExtensions
 import FoundationExtensions
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -151,6 +152,33 @@ class ErrorPageTests: XCTestCase {
     }
 
     // MARK: - Tests
+
+    @MainActor
+    func testWhenOneSchemeHandlerIsReleased_httpsInterceptionForOtherHandlersIsPreserved() {
+        // GIVEN a live handler that has registered https interception
+        let liveHandler = TestSchemeHandler { _ in .ok(.html(Self.testHtml)) }
+        _ = liveHandler.webViewConfiguration()
+        XCTAssertFalse(WKWebView.handlesURLScheme("https"),
+                       "Precondition: https should be intercepted while a handler is active")
+
+        // and a second (stale) handler, as during an overlapping previous-test teardown.
+        // The handler is retained by the (autoreleased) configuration it vends, so force
+        // both to fully deallocate inside an explicit pool - this is what happens later,
+        // asynchronously, when a previous test's WKWebView/window tears down.
+        weak var weakStaleHandler: TestSchemeHandler?
+        autoreleasepool {
+            let staleHandler = TestSchemeHandler { _ in .ok(.html(Self.testHtml)) }
+            weakStaleHandler = staleHandler
+            _ = staleHandler.webViewConfiguration()
+        }
+
+        // THEN https interception is preserved for the still-alive handler
+        XCTAssertNil(weakStaleHandler, "Stale handler must have deallocated for this test to be meaningful")
+        XCTAssertFalse(WKWebView.handlesURLScheme("https"),
+                       "Releasing one scheme handler must not disable https interception while another handler is still active")
+
+        withExtendedLifetime(liveHandler) {}
+    }
 
     @MainActor
     func testWhenPageFailsToLoad_errorPageShown() async throws {

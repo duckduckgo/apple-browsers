@@ -276,6 +276,36 @@ extension OnboardingManager: OnboardingFlowManaging {
             return
         }
 
+        let resolvedFlow: OnboardingFlowType
+        let onboardingSource: OnboardingSource
+
+#if DEBUG || ALPHA
+        switch appDefaults.onboardingFlowType {
+        case .none:
+            (resolvedFlow, onboardingSource) = resolveOnboardingFromEvaluator(url: url)
+        case .default:
+            Logger.onboarding.debug("Onboarding flow - Debug `.default` flow override active")
+            resolvedFlow = .default
+            onboardingSource = .default
+        case .duckAI:
+            Logger.onboarding.debug("Onboarding flow - Debug `.duckAI` flow override active")
+            resolvedFlow = .duckAI
+            onboardingSource = .duckAICPP
+        }
+#else
+        (resolvedFlow, onboardingSource) = resolveOnboardingFromEvaluator(url: url)
+#endif
+
+        // Clear any stale resume checkpoint persisted before the flow was configured
+        // (e.g. by a previous build that didn't set onboardingFlowType), so we don't
+        // resume into a step that appears at a different point of the flow causing the user to skip important steps.
+        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
+
+        tutorialSettings.onboardingFlowType = resolvedFlow
+        persistOnboardingPixelContext(flow: resolvedFlow, source: onboardingSource)
+    }
+
+    private func resolveOnboardingFromEvaluator(url: URL?) -> (flow: OnboardingFlowType, source: OnboardingSource) {
         let evaluatedOnboarding = onboardingFlowEvaluator.evaluateOnboardingFlow(from: url)
         Logger.onboarding.debug("Configured onboarding flow: \(evaluatedOnboarding.flow.rawValue, privacy: .public)")
 
@@ -290,14 +320,7 @@ extension OnboardingManager: OnboardingFlowManaging {
         default:
             resolvedFlow = evaluatedOnboarding.flow
         }
-
-        // Clear any stale resume checkpoint persisted before the flow was configured
-        // (e.g. by a previous build that didn't set onboardingFlowType), so we don't
-        // resume into a step that appears at a different point of the flow causing the user to skip important steps.
-        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
-
-        tutorialSettings.onboardingFlowType = resolvedFlow
-        persistOnboardingPixelContext(flow: resolvedFlow, source: evaluatedOnboarding.source)
+        return (resolvedFlow, evaluatedOnboarding.source)
     }
 
 }

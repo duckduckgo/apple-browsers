@@ -1,5 +1,5 @@
 //
-//  DuckAIQueryExperimentMode.swift
+//  DuckAIQueryMode.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -18,7 +18,7 @@
 //
 
 /// The search mode selected by the user in the Duck.ai query experiment onboarding step.
-enum DuckAIQueryExperimentMode {
+enum DuckAIQueryMode {
     case search
     case duckAI
 }

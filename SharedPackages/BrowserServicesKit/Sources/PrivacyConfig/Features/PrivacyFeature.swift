@@ -84,7 +84,6 @@ public enum PrivacyFeature: String {
     case attributedMetrics
     case dataImport
     case duckAiChatHistory
-    case serp
     case popupBlocking
     case pageContext
     case webExtensions
@@ -183,8 +182,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Enables lazy reload for the more options menu
     case lazyMenuRebuild
-
-    case addToDockAppStore
 
     case screenTimeCleaning
 
@@ -627,7 +624,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
-    case subscriptionPromoFireWindow
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -748,15 +744,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
-}
-
-public enum SERPSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .serp
-    }
-
-    /// Global switch to disable New Tab Page search box
-    case storeSerpSettings
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

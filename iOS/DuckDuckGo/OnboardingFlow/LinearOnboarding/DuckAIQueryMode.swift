@@ -1,5 +1,5 @@
 //
-//  UnifiedToggleInputOmnibarActivating.swift
+//  DuckAIQueryMode.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,14 +17,8 @@
 //  limitations under the License.
 //
 
-import AIChat
-import Foundation
-
-protocol UnifiedToggleInputOmnibarActivating: AnyObject {
-    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision
-}
-
-enum UnifiedToggleInputActivationDecision {
-    case intercept
-    case allowDefault
+/// The search mode selected by the user in the Duck.ai query experiment onboarding step.
+enum DuckAIQueryMode {
+    case search
+    case duckAI
 }

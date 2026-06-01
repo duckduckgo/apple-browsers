@@ -1107,12 +1107,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         // should load on Web View instantiation?
         case .loadInBackgroundIfNeeded(shouldLoadInBackground: let shouldLoadInBackground):
+#if DEBUG
+            // Prevent background auto-loading when running unit tests, as this can stress out the CI runner.
+            guard AppVersion.runType.requiresEnvironment else { return false }
+#endif
             switch content {
             case .newtab, .bookmarks, .settings:
-#if DEBUG
-                // prevent auto loading when running Unit Tests
-                guard AppVersion.runType.requiresEnvironment else { return false }
-#endif
                 return webView.url == nil // navigate to empty pages loaded for duck:// urls
             default:
                 return shouldLoadInBackground

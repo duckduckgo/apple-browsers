@@ -273,6 +273,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
     case customProductPageDuckAiChat
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215151176422651?focus=true
+    case customProductPageDuckAiOnboardingFlow
+
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle

@@ -1879,6 +1879,7 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatNavigationBarUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatNavigationBarUserSettings(enable: newValue)
+                DailyPixel.fireDailyAndCount(pixel: newValue ? .aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff)
             }
         )
     }

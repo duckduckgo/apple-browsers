@@ -133,6 +133,55 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertNil(delegate.requestedChatId)
     }
 
+    // MARK: - Search
+
+    func testUpdateQuery_filtersChatsByTitleCaseInsensitive() {
+        let sut = makeSUT(chats: [
+            chat(id: "1", title: "Dog walking tips", pinned: false),
+            chat(id: "2", title: "Cat food", pinned: false),
+            chat(id: "3", title: "Doggy daycare", pinned: true)
+        ])
+
+        sut.updateQuery("dog")
+        waitForThrottle()
+
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["3"])
+        XCTAssertEqual(sut.recent.map(\.chatId), ["1"])
+    }
+
+    func testUpdateQuery_whenEmpty_returnsAllChats() {
+        let sut = makeSUT(chats: [
+            chat(id: "1", title: "Foo", pinned: false),
+            chat(id: "2", title: "Bar", pinned: true)
+        ])
+
+        sut.updateQuery("dog")
+        waitForThrottle()
+        sut.updateQuery("")
+        waitForThrottle()
+
+        XCTAssertEqual(sut.pinned.count, 1)
+        XCTAssertEqual(sut.recent.count, 1)
+    }
+
+    func testUpdateQuery_whenWhitespaceOnly_returnsAllChats() {
+        let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
+
+        sut.updateQuery("   ")
+        waitForThrottle()
+
+        XCTAssertEqual(sut.recent.count, 1)
+    }
+
+    func testUpdateQuery_whenNoMatches_isEmpty() {
+        let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
+
+        sut.updateQuery("nonexistent")
+        waitForThrottle()
+
+        XCTAssertTrue(sut.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(chats: [DuckAiChat]) -> AIChatHistoryViewModel {
@@ -154,6 +203,13 @@ final class AIChatHistoryViewModelTests: XCTestCase {
     private func processMainQueue() {
         let drained = expectation(description: "main queue drained")
         DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
+    }
+
+    /// Waits past the 150ms throttle window so the view model can emit the latest query value.
+    private func waitForThrottle() {
+        let drained = expectation(description: "throttle drained")
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(200)) { drained.fulfill() }
         wait(for: [drained], timeout: 1)
     }
 

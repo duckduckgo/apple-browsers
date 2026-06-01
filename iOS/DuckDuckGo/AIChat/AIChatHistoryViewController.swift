@@ -98,6 +98,7 @@ final class AIChatHistoryViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
+        searchBar.delegate = self
         let headerHeight = searchBar.intrinsicContentSize.height
         let headerView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: headerHeight))
         searchBar.translatesAutoresizingMaskIntoConstraints = false
@@ -270,5 +271,14 @@ extension AIChatHistoryViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         viewModel.chatTapped(at: indexPath)
+    }
+}
+
+// MARK: - UISearchBarDelegate
+
+extension AIChatHistoryViewController: UISearchBarDelegate {
+
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        viewModel.updateQuery(searchText)
     }
 }

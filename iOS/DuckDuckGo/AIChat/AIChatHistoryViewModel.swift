@@ -40,6 +40,9 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// "no chats yet" empty state.
     @Published private(set) var loadFailed: Bool = false
 
+    /// Current search query. Empty string means no filter — full chat list is shown.
+    @Published private(set) var query: String = ""
+
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
     private let reader: ChatHistoryReading
@@ -49,25 +52,44 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     init(reader: ChatHistoryReading) {
         self.reader = reader
-        reader.chatsPublisher()
+
+        // Materialize the chats publisher so failures become a sentinel value rather than
+        // terminating the stream — keeps the combined publisher alive while we surface the
+        // error via `loadFailed`.
+        let chats: AnyPublisher<Result<[DuckAiChat], Error>, Never> = reader.chatsPublisher()
+            .map(Result.success)
+            .catch { Just(.failure($0)) }
+            .eraseToAnyPublisher()
+
+        // `throttle(latest: true)` emits the first value immediately (no initial wait on subscribe)
+        // and then forwards the latest value at most once per interval while the user types.
+        let queryStream = $query
+            .throttle(for: .milliseconds(150), scheduler: DispatchQueue.main, latest: true)
+
+        Publishers.CombineLatest(chats, queryStream)
             .receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    if case .failure = completion {
-                        self?.pinned = []
-                        self?.recent = []
-                        self?.loadFailed = true
-                    }
-                    self?.hasLoaded = true
-                },
-                receiveValue: { [weak self] chats in
-                    self?.loadFailed = false
-                    self?.pinned = chats.filter(\.pinned)
-                    self?.recent = chats.filter { !$0.pinned }
-                    self?.hasLoaded = true
-                }
-            )
+            .sink { [weak self] result, query in
+                self?.apply(result: result, query: query)
+            }
             .store(in: &cancellables)
+    }
+
+    private func apply(result: Result<[DuckAiChat], Error>, query: String) {
+        switch result {
+        case .success(let allChats):
+            let trimmed = query.trimmingCharacters(in: .whitespaces)
+            let filtered = trimmed.isEmpty
+                ? allChats
+                : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
+            loadFailed = false
+            pinned = filtered.filter(\.pinned)
+            recent = filtered.filter { !$0.pinned }
+        case .failure:
+            loadFailed = true
+            pinned = []
+            recent = []
+        }
+        hasLoaded = true
     }
 
     // MARK: - Table data source
@@ -104,6 +126,10 @@ final class AIChatHistoryViewModel: ObservableObject {
     func chatTapped(at indexPath: IndexPath) {
         guard let chatId = chat(at: indexPath)?.chatId else { return }
         delegate?.viewModelDidRequestOpenChat(chatId: chatId)
+    }
+
+    func updateQuery(_ newValue: String) {
+        query = newValue
     }
 
     // MARK: - Helpers

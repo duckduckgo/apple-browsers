@@ -173,7 +173,10 @@ final class AIChatHistoryViewController: UIViewController {
             navigationController?.setToolbarHidden(true, animated: false)
             return
         }
-        if viewModel.isEmpty {
+        // Show the illustrated empty state only when the user has no chats AND isn't
+        // searching. A no-matches search keeps the table view (and its search-bar
+        // header) visible so the user can clear the query.
+        if viewModel.isEmpty && viewModel.query.isEmpty {
             showEmptyState()
         } else {
             showList()

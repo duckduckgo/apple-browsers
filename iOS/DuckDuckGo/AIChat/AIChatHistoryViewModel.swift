@@ -128,6 +128,11 @@ final class AIChatHistoryViewModel: ObservableObject {
         delegate?.viewModelDidRequestOpenChat(chatId: chatId)
     }
 
+    func deleteChatTapped(at indexPath: IndexPath) {
+        guard let chatId = chat(at: indexPath)?.chatId else { return }
+        delegate?.viewModelDidRequestDeleteChat(chatId: chatId)
+    }
+
     func updateQuery(_ newValue: String) {
         query = newValue
     }
@@ -167,4 +172,8 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
 
     /// Dismiss the sheet and open the chat identified by `chatId` in Duck.ai.
     func viewModelDidRequestOpenChat(chatId: String)
+
+    /// Delete the chat identified by `chatId` — confirmation has already been collected by the view.
+    /// The sheet stays open; the observation publisher will update the list once the deletion lands.
+    func viewModelDidRequestDeleteChat(chatId: String)
 }

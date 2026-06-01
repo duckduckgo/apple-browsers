@@ -133,6 +133,29 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertNil(delegate.requestedChatId)
     }
 
+    func testDeleteChatTapped_validIndexPath_notifiesDelegateWithChatId() {
+        let sut = makeSUT(chats: [
+            chat(id: "p1", pinned: true),
+            chat(id: "r1", pinned: false)
+        ])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.deleteChatTapped(at: IndexPath(row: 0, section: Section.pinned.rawValue))
+
+        XCTAssertEqual(delegate.deletedChatId, "p1")
+    }
+
+    func testDeleteChatTapped_invalidIndexPath_doesNotNotifyDelegate() {
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.deleteChatTapped(at: IndexPath(row: 99, section: Section.recent.rawValue))
+
+        XCTAssertNil(delegate.deletedChatId)
+    }
+
     // MARK: - Search
 
     func testUpdateQuery_filtersChatsByTitleCaseInsensitive() {
@@ -216,8 +239,10 @@ final class AIChatHistoryViewModelTests: XCTestCase {
     private final class MockDelegate: AIChatHistoryViewModelDelegate {
         private(set) var didRequestOpenNewChat = false
         private(set) var requestedChatId: String?
+        private(set) var deletedChatId: String?
 
         func viewModelDidRequestOpenNewChat() { didRequestOpenNewChat = true }
         func viewModelDidRequestOpenChat(chatId: String) { requestedChatId = chatId }
+        func viewModelDidRequestDeleteChat(chatId: String) { deletedChatId = chatId }
     }
 }

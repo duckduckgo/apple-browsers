@@ -35,6 +35,10 @@ final class AIChatHistoryViewController: UIViewController {
         table.register(AIChatHistoryCell.self, forCellReuseIdentifier: AIChatHistoryCell.reuseIdentifier)
         table.translatesAutoresizingMaskIntoConstraints = false
         table.sectionHeaderTopPadding = 0
+        // Match Bookmarks' storyboard `sectionFooterHeight="18"`. Default 0 leaves the
+        // last-row bottom rounded corner ambiguous against the section background, which
+        // visibly glitches as a trailing swipe action panel collapses.
+        table.sectionFooterHeight = 18
         return table
     }()
 
@@ -274,6 +278,24 @@ extension AIChatHistoryViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         viewModel.chatTapped(at: indexPath)
+    }
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let delete = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completion in
+            self?.viewModel.deleteChatTapped(at: indexPath)
+            completion(true)
+        }
+        delete.image = DesignSystemImages.Glyphs.Size24.trash
+        delete.accessibilityLabel = UserText.aiChatHistoryDeleteSwipeAccessibilityLabel
+
+        let download = UIContextualAction(style: .normal, title: nil) { _, _, completion in
+            // Download wiring lands in a follow-up; dismiss the swipe for now.
+            completion(true)
+        }
+        download.image = DesignSystemImages.Glyphs.Size24.downloads
+        download.accessibilityLabel = UserText.aiChatHistoryDownloadSwipeAccessibilityLabel
+
+        return UISwipeActionsConfiguration(actions: [delete, download])
     }
 }
 

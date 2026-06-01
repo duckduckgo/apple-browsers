@@ -5511,6 +5511,16 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
             self?.onChatHistorySelected(url: url)
         }
     }
+
+    func viewModelDidRequestDeleteChat(chatId: String) {
+        // The chat-history sheet always shows the user's persistent chats, so the
+        // deletion path is always non-fire-mode. `FireExecutor.burnChat` clears local
+        // SQLite, tells Duck.ai's webview to clear its IDB for the chat, and records
+        // the deletion in sync metadata.
+        Task { @MainActor in
+            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+        }
+    }
 }
 
 extension MainViewController: TabSwitcherDelegate {

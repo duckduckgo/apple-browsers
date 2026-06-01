@@ -162,18 +162,18 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
 
     @MainActor
     func visitSiteAction() {
-        guard let errorData else { return }
+        defer {
+            isSpecialErrorPageVisible = false
+            _ = webView?.reload()
+        }
+
+        guard let errorData, let url = webView?.url else { return }
 
         switch errorData {
         case .ssl:
             sslErrorPageNavigationHandler.visitSite()
-            isSpecialErrorPageVisible = false
-            _ = webView?.reload()
         case .maliciousSite:
-            guard let url = webView?.url else { return }
             maliciousSiteProtectionNavigationHandler.visitSite(url: url, errorData: errorData)
-            isSpecialErrorPageVisible = false
-            _ = webView?.reload()
         }
     }
 

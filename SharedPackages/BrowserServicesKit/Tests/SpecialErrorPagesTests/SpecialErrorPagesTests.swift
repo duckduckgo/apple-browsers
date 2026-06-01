@@ -148,6 +148,25 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
     }
 
     @MainActor
+    func test_WhenHandlerForVisitSiteCalled_AndIsEnabledTrue_ThenVisitSiteCalled() async {
+        // GIVEN
+        var encodable: Encodable?
+        userScript.isEnabled = true
+
+        // WHEN
+        let handler = userScript.handler(forMethodNamed: "visitSite")
+        if let handler {
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
+        }
+
+        // THEN
+        XCTAssertNotNil(handler)
+        XCTAssertNil(encodable)
+        XCTAssertTrue(delegate.visitSiteCalled)
+        XCTAssertFalse(delegate.leaveSiteCalled)
+    }
+
+    @MainActor
     func test_WhenHandlerAdvancedInfoPresentedCalled_AndIsEnabledTrue_ThenAdvancedInfoPresentedCalled() async {
         // GIVEN
         var encodable: Encodable?

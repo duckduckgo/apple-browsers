@@ -1347,6 +1347,9 @@ class TabViewController: UIViewController {
 
         if isError {
             hideErrorMessage()
+            if let url = webView.url, safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: url), webView.canGoBack {
+                webView.goBack()
+            }
             url = webView.url
             onWebpageDidStartLoading(httpsForced: false)
             onWebpageDidFinishLoading()

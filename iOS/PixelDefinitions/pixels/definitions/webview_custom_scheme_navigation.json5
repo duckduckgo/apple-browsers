@@ -4,7 +4,7 @@
         "owners": ["dus7", "brindy"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": []
+        "parameters": ["appVersion"]
     },
     "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown": {
         "description": "Fires showing the error page for the redirect loop (detection doesn't always mean we show this page)",

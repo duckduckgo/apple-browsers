@@ -22,6 +22,7 @@ import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import DDGSync
 import History
 import NewTabPage
@@ -166,7 +167,8 @@ extension NewTabPageActionsManager {
             persistor: nextStepsCardsPersistor,
             duckPlayerPreferences: duckPlayerPreferences,
             syncService: syncService,
-            dockCustomization: dockCustomization
+            dockCustomization: dockCustomization,
+            adBlockingAvailability: NSApp.delegateTyped.adBlockingAvailability
         )
         let buildType = StandardApplicationBuildType()
 

@@ -25,6 +25,7 @@ import CoreData
 import Persistence
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Kingfisher
 import os.log
 

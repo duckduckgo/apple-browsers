@@ -32,6 +32,18 @@ protocol TabsModelPersisting {
     func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error>
     func clear(for key: TabsModelStorageKey)
     func clearAll()
+    /// Blocks the caller until any in-flight async save has finished writing.
+    func flush()
+    /// Synchronously persists the model and returns the real outcome (the async `save(...)`
+    /// returns `.success` immediately and surfaces errors only via telemetry).
+    func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error>
+}
+
+extension TabsModelPersisting {
+    func flush() {}
+    func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
+        save(model: model, for: key)
+    }
 }
 
 enum TabsPersistenceError: Error {
@@ -51,6 +63,11 @@ class TabsModelPersistence: TabsModelPersisting {
     private let normalStore: ThrowingKeyValueStoring
     private let fireStore: ThrowingKeyValueStoring
     private let legacyStore: KeyValueStoring
+
+    /// Serial queue for off-main writes. Shared by normal and fire stores so `flush()` drains both.
+    /// `userInitiated` QoS so the queue does not get starved by background work and
+    /// `flushPendingSave()` on terminate / resign-active does not block main on a backlog.
+    private let persistQueue = DispatchQueue(label: "com.duckduckgo.tabsmodel.persist", qos: .userInitiated)
 
     convenience init() throws {
 
@@ -140,18 +157,61 @@ class TabsModelPersistence: TabsModelPersisting {
     }
 
     public func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
+        // `archivalSnapshot` freezes the graph so the encode is safe across threads (PR #4828).
+        let targetStore = store(for: key)
+        let snapshot = model.archivalSnapshot()
+        let data: Data
         do {
-            // Deep-copy to freeze mutable state before archiving
-            let snapshot = model.archivalSnapshot()
-            let data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
-            try store(for: key).set(data, forKey: Constants.storageKey)
-            return .success(())
+            data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
         } catch {
             DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                                          error: error)
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
             return .failure(error)
+        }
+        persistQueue.async {
+            _ = self.write(data: data, into: targetStore)
+        }
+        return .success(())
+    }
+
+    /// Always invoked from the persist queue. The precondition catches any future caller that
+    /// invokes `write` outside the queue (which would race with concurrent writes).
+    @discardableResult
+    private func write(data: Data, into targetStore: ThrowingKeyValueStoring) -> Result<Void, Error> {
+        dispatchPrecondition(condition: .onQueue(persistQueue))
+        do {
+            try targetStore.set(data, forKey: Constants.storageKey)
+            return .success(())
+        } catch {
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
+            Logger.general.error("Something went wrong writing TabsModel: \(error.localizedDescription, privacy: .public)")
+            return .failure(error)
+        }
+    }
+
+    public func flush() {
+        persistQueue.sync { }
+    }
+
+    public func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
+        let targetStore = store(for: key)
+        let snapshot = model.archivalSnapshot()
+        let data: Data
+        do {
+            data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
+        } catch {
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
+            Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
+            return .failure(error)
+        }
+        return persistQueue.sync {
+            self.write(data: data, into: targetStore)
         }
     }
 

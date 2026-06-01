@@ -18,8 +18,10 @@
 
 import Cocoa
 import Combine
+import CombineExtensions
 import Lottie
 import Common
+import FoundationExtensions
 import AIChat
 import UIComponents
 import PixelKit

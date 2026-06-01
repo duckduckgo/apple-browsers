@@ -25,7 +25,7 @@ struct TestModel {
     let items: [String]
     let optionalItems: [String]?
     let status: String
-    let optionalStatus: String? = nil
+    var optionalStatus: String?
 }
 
 enum TestStatus: String {

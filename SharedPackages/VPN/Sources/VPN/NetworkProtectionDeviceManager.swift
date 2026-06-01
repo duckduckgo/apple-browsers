@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import NetworkExtension
 import os.log
 import Subscription

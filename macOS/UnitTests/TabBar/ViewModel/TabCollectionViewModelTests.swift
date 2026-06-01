@@ -1424,6 +1424,51 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertNotNil(vm.tabViewModel(at: 1))
         XCTAssertEqual(vm.selectionIndex, .unpinned(1))
     }
+
+    // MARK: - addressBarSharedTextState survives cross-collection moves
+
+    @MainActor
+    func testWhenTabIsMovedToAnotherCollection_addressBarSharedTextStateSurvives() {
+        let source = TabCollectionViewModel.aTabCollectionViewModel()
+        let dest = TabCollectionViewModel.aTabCollectionViewModel()
+        let tab = Tab(content: .newtab)
+        guard let sourceIndex = source.append(tab: tab, selected: true) else {
+            return XCTFail("Failed to append tab to source")
+        }
+
+        tab.addressBarSharedTextState.updateText("hello duck.ai")
+        tab.addressBarSharedTextState.setDuckAIMode(true)
+        tab.addressBarSharedTextState.setAIChatToolMode(.imageGeneration)
+
+        source.moveTab(at: sourceIndex, to: dest, at: 0)
+
+        let movedVM = dest.tabViewModel(at: 0)
+        XCTAssertTrue(movedVM?.tab === tab, "moveTab must reuse the same Tab instance in the destination")
+        XCTAssertEqual(movedVM?.addressBarSharedTextState.text, "hello duck.ai")
+        XCTAssertEqual(movedVM?.addressBarSharedTextState.isInDuckAIMode, true)
+        XCTAssertEqual(movedVM?.addressBarSharedTextState.aiChatToolMode, .imageGeneration)
+    }
+
+    @MainActor
+    func testWhenTabCollectionViewModelIsInitializedWithStatefulTab_tabViewModelExposesSameState() {
+        // Mirrors the WindowsManager.openNewWindow(with: tab) path: a fresh TabCollectionViewModel
+        // is built around a TabCollection that already contains a Tab carrying live omnibar state.
+        let tab = Tab(content: .newtab)
+        tab.addressBarSharedTextState.updateText("draft prompt")
+        tab.addressBarSharedTextState.setDuckAIMode(true)
+        tab.addressBarSharedTextState.setAIChatToolMode(.webSearch)
+
+        let vm = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [tab]),
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
+        )
+
+        let tabVM = vm.tabViewModel(at: 0)
+        XCTAssertTrue(tabVM?.tab === tab)
+        XCTAssertEqual(tabVM?.addressBarSharedTextState.text, "draft prompt")
+        XCTAssertEqual(tabVM?.addressBarSharedTextState.isInDuckAIMode, true)
+        XCTAssertEqual(tabVM?.addressBarSharedTextState.aiChatToolMode, .webSearch)
+    }
 }
 
 fileprivate extension TabCollectionViewModel {

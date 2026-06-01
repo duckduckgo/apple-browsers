@@ -20,12 +20,14 @@ import AppKit
 import AppLauncher
 import BrowserServicesKit
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import LoginItems
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import PixelKit
 import SystemExtensions
+import VPN
 
 protocol VPNUninstalling {
     func uninstall(

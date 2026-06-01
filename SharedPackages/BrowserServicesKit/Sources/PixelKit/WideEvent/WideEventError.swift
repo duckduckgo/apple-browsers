@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 public enum WideEventError: DDGError, LocalizedError {
     case flowNotFound(pixelName: String)

@@ -25,6 +25,7 @@ import BrowserServicesKit
 import PrivacyConfig
 import PrivacyDashboard
 import Common
+import FoundationExtensions
 import os.log
 import PixelExperimentKit
 

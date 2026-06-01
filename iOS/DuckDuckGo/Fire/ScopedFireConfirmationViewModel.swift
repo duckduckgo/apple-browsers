@@ -131,7 +131,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         case .contextualChat:
             return true
         case .singleTab:
-            return false
+            return tabViewModel?.tab.isAITab == true
         case .duckAIOnboarding, .default:
             return isRefinementsEnabled && tabViewModel?.tab.isAITab == true
         }
@@ -169,10 +169,10 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             return []
         case .singleTab:
             // Single "Delete Tab" button burning only the target tab
-            let isDuckAI = tabViewModel?.tab.isAITab == true
-            let options: FireRequest.Options = isDuckAI ? [.aiChats, .tabs] : [.all]
+            let title = isSingleChatConfirmation ? UserText.scopedFireConfirmationDeleteThisChatButton : UserText.scopedFireConfirmationDeleteTabButton
+            let options: FireRequest.Options = isSingleChatConfirmation ? [.aiChats, .tabs] : [.all]
 
-            return [FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteTabButton,
+            return [FireConfirmationButton(title: title,
                                style: .primary,
                                action: { burnTab(tabViewModel: tabViewModel, options: options, source: source, onConfirm: onConfirm) },
                                accessibilityIdentifier: AccessibilityIdentifiers.thisTab)]
@@ -246,7 +246,9 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         case .contextualChat, .duckAIOnboarding:
             return UserText.contextualChatDeleteConfirmationTitle
         case .singleTab:
-            return UserText.scopedFireConfirmationAlertSingleTabTitle
+            return isSingleChatConfirmation
+                ? UserText.contextualChatDeleteConfirmationTitle
+                : UserText.scopedFireConfirmationAlertSingleTabTitle
         case .default:
             if isSingleChatConfirmation {
                 return UserText.contextualChatDeleteConfirmationTitle

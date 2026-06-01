@@ -339,6 +339,27 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
     }
 
+    func test_legacyExpandedAIChatLayoutTopPlaceholderAlignsWithTextContainerTopInset() throws {
+        let handler = LegacyTextEntryMockHandler(
+            currentToggleState: .aiChat,
+            isTopBarPosition: true,
+            isUsingFadeOutAnimation: true,
+            usesExpandedAIChatTextEntryLayout: true
+        )
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        let height = applyFittingHeight(to: sut)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        let expectedPlaceholderMinY = textView.convert(CGPoint(x: 0, y: textView.textContainerInset.top), to: sut).y
+
+        XCTAssertEqual(height, 68, accuracy: 1)
+        XCTAssertFalse(placeholderLabel.isHidden)
+        XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+    }
+
     func test_barPositionChangeRefreshesExpandedAIChatPose() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         handler.updateBarPosition(isTop: false)
@@ -591,6 +612,7 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isFireTab: Bool = false
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool
+    var usesExpandedAIChatTextEntryLayout: Bool
     var shouldDisableAutocorrectOnEmpty: Bool = false
     var hidesVoiceButton: Bool = false
     var hasSubmittedPrompt: Bool = false
@@ -606,10 +628,14 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
 
-    init(currentToggleState: TextEntryMode, isTopBarPosition: Bool, isUsingFadeOutAnimation: Bool) {
+    init(currentToggleState: TextEntryMode,
+         isTopBarPosition: Bool,
+         isUsingFadeOutAnimation: Bool,
+         usesExpandedAIChatTextEntryLayout: Bool = false) {
         self.currentToggleState = currentToggleState
         self.isTopBarPosition = isTopBarPosition
         self.isUsingFadeOutAnimation = isUsingFadeOutAnimation
+        self.usesExpandedAIChatTextEntryLayout = usesExpandedAIChatTextEntryLayout
     }
 
     func updateCurrentText(_ text: String) {

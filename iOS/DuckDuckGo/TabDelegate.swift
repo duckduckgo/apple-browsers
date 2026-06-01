@@ -34,7 +34,11 @@ protocol TabDelegate: AnyObject {
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
     func tabDidRequestNewTab(_ tab: TabViewController)
-    
+
+    func tabDidRequestNewSearch(_ tab: TabViewController)
+
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController)
+
     func newTab(reuseExisting: Bool)
 
     func tabDidRequestActivate(_ tab: TabViewController)
@@ -91,6 +95,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestDownloads(tab: TabViewController)
 
     func tabDidRequestAIChat(tab: TabViewController)
+
+    func tabDidRequestAIChatHistory(tab: TabViewController)
 
     func tab(_ tab: TabViewController,
              didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
@@ -165,6 +171,12 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestFireMode(tab: TabViewController)
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error)
+
+    func tabDidRequestYouTubeAdBlockPicker(tab: TabViewController)
+
+    func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController)
+
+    func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController)
 }
 
 extension TabDelegate {
@@ -174,6 +186,10 @@ extension TabDelegate {
     }
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
+
+    func tabDidRequestNewSearch(_ tab: TabViewController) {}
+
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 

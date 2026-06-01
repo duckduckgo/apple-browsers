@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 public protocol AutofillUrlMatcher {
     func normalizeUrlForWeb(_ url: String) -> String

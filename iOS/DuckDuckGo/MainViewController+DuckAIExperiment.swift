@@ -171,6 +171,10 @@ extension MainViewController {
         swipeTabsCoordinator?.isEnabled = !locked
         viewCoordinator.omniBar.barView.isUserInteractionEnabled = !locked
         viewCoordinator.omniBar.barView.menuButton.isUserInteractionEnabled = !locked
+
+        // Lock Duck.ai unified input controls during the fire onboarding step.
+        aiChatTabChatHeaderView?.setOnboardingLocked(locked)
+        unifiedToggleInputCoordinator?.setOnboardingControlsLocked(locked)
     }
 
     // MARK: Completion
@@ -336,8 +340,26 @@ extension MainViewController {
     func onboardingCompletedWithExperimentTransition(controller: UIViewController) {
         enforceSingleTabAfterOnboardingIfNeeded()
         let onboardingTransitionSnapshotView = showOnboardingTransitionSnapshot(from: controller)
+
+        // In UTI mode the coordinator is active immediately after openAIChatFromOnboarding fires.
+        // Calling setBarsVisibility(0) would kill the UTI session via dismissOmniBar(), so we take
+        // a simpler snapshot-only path: dismiss the intro modal, let UTI manage chrome, fade snapshot.
+        let isUTIActive = unifiedToggleInputCoordinator != nil
+
         controller.dismiss(animated: false) { [weak self] in
             guard let self else { return }
+
+            if isUTIActive {
+                // UTI manages its own chrome; just fade the snapshot away.
+                UIView.animate(withDuration: 0.3) {
+                    onboardingTransitionSnapshotView?.alpha = 0
+                } completion: { _ in
+                    self.hideOnboardingTransitionSnapshot(onboardingTransitionSnapshotView)
+                }
+                self.newTabPageViewController?.onboardingCompleted()
+                return
+            }
+
             let chromeRevealDelay: TimeInterval = 0.05
             let chromeRevealDuration: CGFloat = 0.25
             let onboardingTransitionBottomFillView = self.showOnboardingTransitionBottomFill()

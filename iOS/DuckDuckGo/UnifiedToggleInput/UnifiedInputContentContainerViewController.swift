@@ -415,7 +415,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installSwipeContainer() {
-        let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
+        let manager = SwipeContainerManager(switchBarHandler: switchBarHandler, contentTransition: .crossfade)
         let containerVC = manager.containerViewController
         addChild(containerVC)
         contentContainerView.addSubview(containerVC.view)
@@ -438,7 +438,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
               let containerViewController = swipeContainerManager?.containerViewController,
               let searchContainer = swipeContainerManager?.searchPageContainer else { return }
 
-        let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
+        let manager = SuggestionTrayManager(
+            switchBarHandler: switchBarHandler,
+            dependencies: dependencies,
+            autocompleteHorizontalInset: Metrics.suggestionsHorizontalInset)
         manager.delegate = self
         let trayEscapeHatchModel = switchBarHandler.isFireTab ? nil : escapeHatchModel
         manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatchModel: trayEscapeHatchModel)
@@ -707,6 +710,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // chain positions the UTI hatch ~10pt below the NTP equivalent.
         static let escapeHatchTrayPullUp: CGFloat = -10
         static let toolbarCompensationOffset: CGFloat = 80
+        static let suggestionsHorizontalInset: CGFloat = 8
     }
 }
 
@@ -889,16 +893,19 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
         DailyPixel.fireDailyAndCount(pixel: pixel)
+        Pixel.fire(pixel: .autocompleteDuckAIClickChatHistory)
 
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.unifiedInputEditingStateDidSelectChatHistory(url: url)
     }
 
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion) {
+        fireDuckAISuggestionClickPixel(for: suggestion)
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
+        Pixel.fire(pixel: .autocompleteDuckAIClickSearchDuckDuckGo)
         // Symmetric with Search-side "Ask privately" (which calls openAIChat with autoSend:true):
         // flip toggle to Search and submit the query in one step.
         switchBarHandler.setToggleState(.search)
@@ -908,6 +915,21 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     func duckAISuggestionsDidRequestSyncSetup() {
         aiChatSyncIntroSheetPresenter.present(from: self) { [weak self] in
             self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
+        }
+    }
+
+    private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {
+        switch suggestion {
+        case .website:
+            Pixel.fire(pixel: .autocompleteDuckAIClickWebsite)
+        case .bookmark(_, _, let isFavorite, _):
+            Pixel.fire(pixel: isFavorite ? .autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
+        case .historyEntry(_, let url, _):
+            Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
+        case .openTab:
+            Pixel.fire(pixel: .autocompleteDuckAIClickSwitchToTab)
+        case .phrase, .internalPage, .unknown, .askAIChat:
+            break
         }
     }
 }

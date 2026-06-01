@@ -23,6 +23,7 @@ import UniformTypeIdentifiers
 import Core
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DesignResourcesKit
 import PixelKit
 

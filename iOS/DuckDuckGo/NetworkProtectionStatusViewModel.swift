@@ -19,6 +19,7 @@
 
 import Foundation
 import Combine
+import CombineExtensions
 import NetworkExtension
 import VPN
 import WidgetKit

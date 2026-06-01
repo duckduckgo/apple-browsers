@@ -22,6 +22,7 @@ import SwiftUI
 import Onboarding
 import Subscription
 import Common
+import FoundationExtensions
 import PrivacyConfig
 
 final class RebrandedNewTabDaxDialogFactory: NewTabDaxDialogProviding {
@@ -101,7 +102,9 @@ extension RebrandedNewTabDaxDialogFactory {
 
     func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         let onDismiss = { [weak self] in
-            self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
+            if self?.onboardingFlowProvider.currentOnboardingFlow == .default {
+                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
+            }
             onDismiss()
         }
 
@@ -123,7 +126,10 @@ extension RebrandedNewTabDaxDialogFactory {
             .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTPChat)
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
+                if self?.onboardingFlowProvider.currentOnboardingFlow == .default {
+                    self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
+                }
+                self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
             }
         )
     }

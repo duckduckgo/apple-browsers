@@ -113,9 +113,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Address-bar render-performance instrumentation kill switch.
     case addressBarPerformanceInstrumentation
 
-    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
-    case willSoonDropBigSurSupport
-
     /// Hang reporting feature flag
     case hangReporting
 
@@ -182,8 +179,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
-
-    case semaphoreAlwaysVisible
 
     /// Autoplay policy control via WKWebpagePreferences
     case autoplayPolicy
@@ -256,8 +251,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
-    case fireproofingETLDPlus1
-
     case screenTimeCleaning
 
     case minimalChromeInLandscape
@@ -280,12 +273,23 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
     case customProductPageDuckAiChat
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215151176422651?focus=true
+    case customProductPageDuckAiOnboardingFlow
+
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
 
+    /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
+    /// Kill switch in case the new path regresses persistence reliability or hang counts.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
+    case tabsSaveOptimization
+
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
+    case walletPassDownload
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -344,6 +348,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case goToMarket
     case webViewUserAgent
     case freemiumPIR
+    case contentBlocking
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -417,10 +422,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the default omnibar toggle position setting for AI Chat
     case omnibarDefaultPosition
 
-    /// Controls showing the Hide AI section in Settings -> AI Features
-    case showHideAiGeneratedImages
-
     case unifiedToggleInput
+
+    /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
+    /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
+    /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.
+    case aiChatTabHideToggle
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
@@ -518,6 +525,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// surfaces a "System microphone disabled" warning when the OS has denied access, and
     /// presents the Permission Center popover when the FE reports `getUserMedia` failure.
     case nativeVoicePermissionFlow
+
+    /// Displays the Duck.ai shortcut in the iPad browser chrome (tabs bar).
+    case iPadChromeShortcut
+
+    /// Enables moving the AI Chat native-storage container from the shared App
+    /// Group into the app's Application Support directory on iOS. Off keeps the
+    /// legacy App Group path.
+    case nativeStoragePathMigration
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -765,6 +780,13 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case embeddedRollout
 }
 
+public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .adBlockingExtension }
+
+    case featureEnabled
+    case featureEnabledByDefault
+}
+
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
 
@@ -787,6 +809,7 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .duckAiChatHistory }
 
     case featureEnabled
+    case nativeChatHistory
 }
 
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
@@ -839,12 +862,6 @@ public enum PageContextSubfeature: String, PrivacySubfeature {
 
 public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .tabSwitcherTrackerCount }
-
-    case featureEnabled
-}
-
-public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .adBlockingExtension }
 
     case featureEnabled
 }

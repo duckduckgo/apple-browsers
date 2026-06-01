@@ -17,20 +17,36 @@
 //
 
 import AppKit
+import ConcurrencyExtensions
+import PrivacyConfig
 import Persistence
 import WebExtensions
 
 @MainActor
 final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
 
+    private static let duckPlayerModeDefaultsKey = "preferences.duck-player"
+
     private var settings: any KeyedStoring<YouTubeAdBlockingSettings> {
         UserDefaults.standard.keyedStoring()
     }
 
+    private var featureFlagger: FeatureFlagger {
+        Application.appDelegate.featureFlagger
+    }
+
+    private var rolloutDefaultsActive: Bool {
+        featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+    }
+
     private let scriptletsItem = NSMenuItem(title: "Scriptlets", action: nil, keyEquivalent: "")
+    private let settingsItem = NSMenuItem(title: "Settings", action: nil, keyEquivalent: "")
+    private let youTubeAdBlockingEnabledItem = NSMenuItem(title: "youTubeAdBlockingEnabled", action: nil, keyEquivalent: "")
+    private let duckPlayerModeItem = NSMenuItem(title: "duckPlayerMode", action: nil, keyEquivalent: "")
     private let flagsItem = NSMenuItem(title: "Flags", action: nil, keyEquivalent: "")
     private let analyticsItem = NSMenuItem(title: "youTubeAnalyticsEnabled", action: nil, keyEquivalent: "")
     private let disclosureItem = NSMenuItem(title: "shouldHideDisclosure", action: nil, keyEquivalent: "")
+    private let unavailableNoticeItem = NSMenuItem(title: "Unavailable notice shown", action: nil, keyEquivalent: "")
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -54,6 +70,37 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
         scriptletsItem.submenu = NSMenu(title: "Scriptlets")
         menu.addItem(scriptletsItem)
 
+        let settingsSubmenu = NSMenu(title: "Settings")
+
+        let youTubeAdBlockingEnabledSubmenu = NSMenu(title: "youTubeAdBlockingEnabled")
+        youTubeAdBlockingEnabledSubmenu.addItem(NSMenuItem(title: "Set to `true`",
+                                                          action: #selector(setYouTubeAdBlockingEnabledTrue),
+                                                          target: self))
+        youTubeAdBlockingEnabledSubmenu.addItem(NSMenuItem(title: "Set to `false`",
+                                                          action: #selector(setYouTubeAdBlockingEnabledFalse),
+                                                          target: self))
+        youTubeAdBlockingEnabledSubmenu.addItem(NSMenuItem(title: "Reset (delete key)",
+                                                          action: #selector(resetYouTubeAdBlockingEnabled),
+                                                          target: self))
+        youTubeAdBlockingEnabledItem.submenu = youTubeAdBlockingEnabledSubmenu
+        settingsSubmenu.addItem(youTubeAdBlockingEnabledItem)
+
+        let duckPlayerModeSubmenu = NSMenu(title: "duckPlayerMode")
+        duckPlayerModeSubmenu.addItem(NSMenuItem(title: "Set to `.enabled`",
+                                                 action: #selector(setDuckPlayerModeEnabled),
+                                                 target: self))
+        duckPlayerModeSubmenu.addItem(NSMenuItem(title: "Set to `.disabled`",
+                                                 action: #selector(setDuckPlayerModeDisabled),
+                                                 target: self))
+        duckPlayerModeSubmenu.addItem(NSMenuItem(title: "Reset (delete key — `.alwaysAsk`)",
+                                                 action: #selector(resetDuckPlayerMode),
+                                                 target: self))
+        duckPlayerModeItem.submenu = duckPlayerModeSubmenu
+        settingsSubmenu.addItem(duckPlayerModeItem)
+
+        settingsItem.submenu = settingsSubmenu
+        menu.addItem(settingsItem)
+
         let flagsSubmenu = NSMenu(title: "Flags")
 
         let analyticsSubmenu = NSMenu(title: "youTubeAnalyticsEnabled")
@@ -75,6 +122,13 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
                                              target: self))
         disclosureItem.submenu = disclosureSubmenu
         flagsSubmenu.addItem(disclosureItem)
+
+        let noticeSubmenu = NSMenu(title: "Unavailable notice shown")
+        noticeSubmenu.addItem(NSMenuItem(title: "Reset (delete key)",
+                                         action: #selector(resetUnavailableNoticeShown),
+                                         target: self))
+        unavailableNoticeItem.submenu = noticeSubmenu
+        flagsSubmenu.addItem(unavailableNoticeItem)
 
         flagsItem.submenu = flagsSubmenu
         menu.addItem(flagsItem)
@@ -102,6 +156,53 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
             .showBadgeNotification(.youTubeAdBlockOn)
     }
 
+    @objc private func setYouTubeAdBlockingEnabledTrue() {
+        var settings = self.settings
+        settings.youTubeAdBlockingEnabled = true
+        notifyYouTubeAdBlockingEnabledChanged()
+    }
+
+    @objc private func setYouTubeAdBlockingEnabledFalse() {
+        var settings = self.settings
+        settings.youTubeAdBlockingEnabled = false
+        notifyYouTubeAdBlockingEnabledChanged()
+    }
+
+    @objc private func resetYouTubeAdBlockingEnabled() {
+        var settings = self.settings
+        settings.removeValue(for: \.youTubeAdBlockingEnabled)
+        notifyYouTubeAdBlockingEnabledChanged()
+    }
+
+    @objc private func setDuckPlayerModeEnabled() {
+        UserDefaults.standard.set(true, forKey: Self.duckPlayerModeDefaultsKey)
+        notifyDuckPlayerModeChanged()
+    }
+
+    @objc private func setDuckPlayerModeDisabled() {
+        UserDefaults.standard.set(false, forKey: Self.duckPlayerModeDefaultsKey)
+        notifyDuckPlayerModeChanged()
+    }
+
+    @objc private func resetDuckPlayerMode() {
+        UserDefaults.standard.removeObject(forKey: Self.duckPlayerModeDefaultsKey)
+        notifyDuckPlayerModeChanged()
+    }
+
+    private func notifyYouTubeAdBlockingEnabledChanged() {
+        NotificationCenter.default.post(
+            name: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification,
+            object: nil
+        )
+    }
+
+    private func notifyDuckPlayerModeChanged() {
+        NotificationCenter.default.post(
+            name: DuckPlayerPreferences.duckPlayerModeDidChangeNotification,
+            object: nil
+        )
+    }
+
     @objc private func setShouldHideDisclosureTrue() {
         var settings = self.settings
         settings.shouldHideYouTubeAdBlockingDisclosure = true
@@ -120,6 +221,11 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
     @objc private func resetYouTubeAnalyticsEnabled() {
         var settings = self.settings
         settings.removeValue(for: \.youTubeAnalyticsEnabled)
+    }
+
+    @objc private func resetUnavailableNoticeShown() {
+        var settings = self.settings
+        settings.removeValue(for: \.youTubeAdBlockUnavailableNoticeShown)
     }
 
     // MARK: - Scriptlets submenu
@@ -161,8 +267,32 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
 
     private func updatePreferenceTitles() {
         let settings = self.settings
+        youTubeAdBlockingEnabledItem.title = title(for: "youTubeAdBlockingEnabled",
+                                                   value: settings.youTubeAdBlockingEnabled,
+                                                   defaultLabel: rolloutDefaultsActive ? "true" : "false")
+        duckPlayerModeItem.title = title(for: "duckPlayerMode",
+                                         value: duckPlayerModeLabel(for: UserDefaults.standard.object(forKey: Self.duckPlayerModeDefaultsKey) as? Bool),
+                                         defaultLabel: rolloutDefaultsActive ? ".disabled" : ".alwaysAsk")
         analyticsItem.title = "youTubeAnalyticsEnabled: \(string(for: settings.youTubeAnalyticsEnabled))"
         disclosureItem.title = "shouldHideDisclosure: \(string(for: settings.shouldHideYouTubeAdBlockingDisclosure))"
+        unavailableNoticeItem.title = "Unavailable notice shown: \(string(for: settings.youTubeAdBlockUnavailableNoticeShown))"
+    }
+
+    private func title(for name: String, value: Bool?, defaultLabel: String) -> String {
+        let raw = string(for: value)
+        return value == nil ? "\(name): \(raw) (default: \(defaultLabel))" : "\(name): \(raw)"
+    }
+
+    private func title(for name: String, value: String, defaultLabel: String) -> String {
+        return value == "nil" ? "\(name): \(value) (default: \(defaultLabel))" : "\(name): \(value)"
+    }
+
+    private func duckPlayerModeLabel(for stored: Bool?) -> String {
+        switch stored {
+        case true?: return ".enabled"
+        case false?: return ".disabled"
+        case nil: return "nil"
+        }
     }
 
     private func string(for value: Bool?) -> String {

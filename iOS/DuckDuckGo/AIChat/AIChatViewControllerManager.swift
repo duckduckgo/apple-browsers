@@ -530,7 +530,6 @@ private extension AIChatViewControllerManager {
                                             images: [AIChatNativePrompt.NativePromptImage]?,
                                             files: [AIChatNativePrompt.NativePromptFile]?) {
         guard images?.isEmpty == false || files?.isEmpty == false else { return }
-        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
         let prompt = AIChatNativePrompt.queryPrompt(
             query,

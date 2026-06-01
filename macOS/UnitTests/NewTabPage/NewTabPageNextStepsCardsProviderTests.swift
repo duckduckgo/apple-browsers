@@ -44,7 +44,8 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
             subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging(),
             persistor: MockHomePageContinueSetUpModelPersisting(),
             pixelHandler: pixelHandler,
-            cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler()
+            cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler(),
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
         provider = NewTabPageNextStepsCardsProvider(
             continueSetUpModel: continueSetUpModel,
@@ -186,5 +187,55 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         provider.willDisplayCards([.duckplayer, .emailProtection, .bringStuff])
 
         XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.duckplayer, .emailProtection, .bringStuff])
+    }
+
+    // MARK: - YouTube Ad Blocking
+
+    func testWhenFeaturesMatrixContainsYouTubeAdBlockingThenCardListContainsYouTubeAdBlocking() {
+        provider.appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        provider.continueSetUpModel.featuresMatrix = [[.youtubeAdBlocking]]
+
+        XCTAssertEqual(provider.cards, [.youtubeAdBlocking])
+    }
+
+    @MainActor
+    func testWhenDismissingYouTubeAdBlockingCardThenLegacyPersistorFlagIsFlipped() {
+        let persistor = MockHomePageContinueSetUpModelPersisting()
+        let model = HomePage.Models.ContinueSetUpModel(
+            defaultBrowserProvider: CapturingDefaultBrowserProvider(),
+            dockCustomizer: DockCustomizerMock(),
+            dataImportProvider: CapturingDataImportProvider(),
+            emailManager: EmailManager(storage: MockEmailStorage()),
+            duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
+            subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging(),
+            persistor: persistor,
+            pixelHandler: pixelHandler,
+            cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler(),
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true)
+        )
+        let testProvider = NewTabPageNextStepsCardsProvider(
+            continueSetUpModel: model,
+            appearancePreferences: AppearancePreferences(
+                persistor: MockAppearancePreferencesPersistor(),
+                privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
+            ),
+            pixelHandler: pixelHandler,
+            scheduler: .immediate
+        )
+
+        XCTAssertTrue(persistor.shouldShowYouTubeAdBlockingSetting)
+
+        testProvider.dismiss(.youtubeAdBlocking)
+
+        XCTAssertFalse(persistor.shouldShowYouTubeAdBlockingSetting)
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithYouTubeAdBlockingThenShownPixelIsFired() {
+        provider.willDisplayCards([.youtubeAdBlocking])
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.youtubeAdBlocking])
     }
 }

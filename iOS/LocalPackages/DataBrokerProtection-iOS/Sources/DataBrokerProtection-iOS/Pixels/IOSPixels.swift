@@ -19,6 +19,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import DataBrokerProtectionCore

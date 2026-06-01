@@ -21,6 +21,7 @@ import UserScript
 import AIChat
 import Persistence
 import Common
+import FoundationExtensions
 
 /// Protocol defining the interface for SERP settings management.
 ///

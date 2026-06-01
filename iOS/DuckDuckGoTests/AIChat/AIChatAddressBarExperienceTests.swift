@@ -152,4 +152,72 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
 
         XCTAssertFalse(testee.shouldShowModeToggle)
     }
+
+    // MARK: - iPad chrome shortcut consolidation
+
+    func testWhenIPadAndChromeShortcutOnAndLargeWidthThenAddressBarButtonHidden() {
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatNavigationBarUserSettingsEnabled: true)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: true))
+
+        XCTAssertFalse(testee.shouldShowDuckAIAddressBarButton)
+    }
+
+    func testWhenIPadAndChromeShortcutOnAndNarrowWidthThenAddressBarButtonShown() {
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatNavigationBarUserSettingsEnabled: true)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
+
+        XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
+    }
+
+    func testWhenIPadAndChromeShortcutOnAndNavigationBarOffThenAddressBarButtonHiddenAtAnyWidth() {
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatNavigationBarUserSettingsEnabled: false)
+
+        let large = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                               aiChatSettings: aiChatSettings,
+                                               largeWidthProvider: MockLargeWidthProvider(isLargeWidth: true))
+        let narrow = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
+
+        XCTAssertFalse(large.shouldShowDuckAIAddressBarButton)
+        XCTAssertFalse(narrow.shouldShowDuckAIAddressBarButton)
+    }
+
+    func testWhenIPadAndChromeShortcutOnThenIgnoresLegacyAddressBarSetting() {
+        // Legacy Address Bar value should not affect address-bar button visibility under the new flag.
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
+                                                        isAIChatNavigationBarUserSettingsEnabled: false)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
+
+        XCTAssertFalse(testee.shouldShowDuckAIAddressBarButton)
+    }
+
+    func testWhenIPhoneAndChromeShortcutFlagOnThenStillReadsLegacyAddressBarSetting() {
+        MockUIDevice.mockUserInterfaceIdiom = .phone
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: false,
+                                                        isAIChatNavigationBarUserSettingsEnabled: true)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings)
+
+        XCTAssertFalse(testee.shouldShowDuckAIAddressBarButton)
+    }
+}
+
+private struct MockLargeWidthProvider: LargeWidthProviding {
+    let isLargeWidth: Bool
 }

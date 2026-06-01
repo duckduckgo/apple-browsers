@@ -23,6 +23,7 @@ import Core
 import DesignResourcesKitIcons
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Networking
 import PixelKit
 import AIChat
@@ -129,18 +130,16 @@ struct SettingsAIFeaturesView: View {
                     }
                     .listRowBackground(Color(designSystemColor: .surface))
 
-                    if viewModel.shouldShowHideAIGeneratedImagesSection {
-                        NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages, featureFlagger: viewModel.featureFlagger)
-                                .onAppear {
-                                    PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
-                                }
-                        ) {
-                            SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
-                                             subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
-                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
-                        }
-                        .listRowBackground(Color(designSystemColor: .surface))
+                    NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages, featureFlagger: viewModel.featureFlagger)
+                            .onAppear {
+                                PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
+                            }
+                    ) {
+                        SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
+                                         subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
+                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
                     }
+                    .listRowBackground(Color(designSystemColor: .surface))
                 }
             }
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,

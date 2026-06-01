@@ -19,6 +19,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import AIChat
 import Persistence
 import UserScript

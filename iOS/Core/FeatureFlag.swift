@@ -243,9 +243,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214336846806516?focus=true
     case onboardingDuckAIFlow
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715575447
-    case showHideAIGeneratedImagesSection
-
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
 
@@ -302,6 +299,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1213651297612976?focus=true
+    case aiChatNativeChatHistory
+
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213651262338059
     case aiChatContextualSheetImprovements
 
@@ -310,6 +310,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
+
+    /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
+    /// default; ship a privacy-config entry to roll back. See
+    /// `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab`.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214995978971487?focus=true
+    case aiChatTabHideToggle
 
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
@@ -380,9 +386,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case duckAIVoiceShortcut
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213687255181524
-    case fireproofingETLDPlus1
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
@@ -393,6 +396,9 @@ public enum FeatureFlag: String {
     case minimalChromeInLandscape
 
     case aiChatNativeStorage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215106459483563?focus=true
+    case duckAINativeStoragePathMigration
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
@@ -407,9 +413,17 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
 
+    /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
+    /// Kill switch in case the new path regresses persistence reliability or hang counts.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
+    case tabsSaveOptimization
+
     /// Failsafe feature flag. Routes tapped .ics calendar links through EKEventEditViewController.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214740849233380
     case icsCalendarLinks
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
+    case walletPassDownload
 
     /// Gates the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
@@ -609,9 +623,15 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment),
                    cohortType: DuckAIQueryExperimentCohort.self)
         case .onboardingDuckAIFlow:
+<<<<<<< HEAD
             Config(source: .disabled, supportsLocalOverriding: true)
         case .showHideAIGeneratedImagesSection:
             Config(source: .remoteReleasable(AIChatSubfeature.showHideAiGeneratedImages))
+=======
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiOnboardingFlow))
+        case .storeSerpSettings:
+            Config(source: .remoteReleasable(SERPSubfeature.storeSerpSettings))
+>>>>>>> main
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration))
         case .allowProTierPurchase:
@@ -647,15 +667,19 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .aiChatSyncPromo:
-            Config(source: .remoteReleasable(SyncSubfeature.aiChatSyncPromo))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.aiChatSyncPromo))
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
+        case .aiChatNativeChatHistory:
+            Config(defaultValue: .disabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
         case .aiChatContextualSheetImprovements:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualSheetImprovements))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.unifiedToggleInput))
+        case .aiChatTabHideToggle:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .tabSwitcherTrackerCount:
@@ -700,8 +724,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:
             Config(source: .remoteReleasable(AIChatSubfeature.voiceShortcut))
-        case .fireproofingETLDPlus1:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireproofingETLDPlus1))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .aiChatContextualFireButton:
@@ -710,6 +732,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.minimalChromeInLandscape))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage))
+        case .duckAINativeStoragePathMigration:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeStoragePathMigration))
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess))
         case .omniBarLongPressMenu:
@@ -718,8 +742,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
+        case .tabsSaveOptimization:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabsSaveOptimization))
         case .icsCalendarLinks:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.icsCalendarLinks))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.icsCalendarLinks))
+        case .walletPassDownload:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         }

@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import Darwin
 import Foundation
 import LoginItems

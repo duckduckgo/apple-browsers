@@ -22,6 +22,7 @@ import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import DDGSync
 import History
 import NewTabPage

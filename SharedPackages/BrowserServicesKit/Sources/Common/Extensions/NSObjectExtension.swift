@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import FoundationExtensions
 import os.log
 
 extension NSObject {

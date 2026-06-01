@@ -123,6 +123,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Otvoriť na karte Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Nová karta";
 
@@ -219,10 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funkcie AI";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Do jednej konverzácie môžeš pripojiť iba %d súborov.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Priložené súbory nemôžeme prečítať, pretože aspoň jeden z nich je zašifrovaný.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Pripojené súbory presahujú celkovú maximálnu veľkosť %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Tento súbor je príliš veľký. Maximálna veľkosť súboru je %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Jeden z priložených súborov má viac strán ako podporujeme. Nahraj súbory s maximálne %d stranami.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Jeden z priložených súborov sa nám nepodarilo prečítať. Skontroluj, či nie je poškodený, a skús to znova.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Do jednej konverzácie môžeš pripojiť iba %d obrázkov.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Naraz môžeš priložiť iba %d obrázkov.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Pridať súbor";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Pridať obrázok";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Urobiť fotografiu";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Táto správa je príliš dlhá na odoslanie s prílohami.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Prílohy sú dočasne nedostupné. Skús to znova neskôr.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Tento typ súboru nie je podporovaný.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Tento typ súboru nie je podporovaný. Prilož súbor %1$@ alebo %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Tento typ súboru nie je podporovaný. Prilož %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Pre analytické úlohy";
@@ -241,6 +285,27 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Odôvodnenie";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Nájdi QR kód v aplikácii DuckDuckGo na svojom druhom zariadení tak, že prejdeš do časti **Nastavenia** › **Sync & Backup** › **Synchronizácia s iným zariadením**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Teraz nie";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Skenovanie QR kódu";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Poďme synchronizovať tvoje chaty na všetkých tvojich zariadeniach!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Synchronizácia s iným zariadením";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Zrušiť výzvu na synchronizáciu";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Pristupuj k svojim chatom zo všetkých zariadení pomocou funkcie Sync & Backup.";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prispôsobiť odpovede";
@@ -1532,9 +1597,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Ladenie (debug)";
 
-/* No comment provided by engineer. */
-"Delete" = "Vymazať";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "zariadenie";
 
@@ -1646,11 +1708,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcie DuckDuckGo AI sú súkromné a voliteľné. Tvoje údaje sa nepoužívajú na trénovanie AI.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Pripoj obsah stránky";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Opýtaj sa na stránku";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Pripoj obsah stránky";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Zhrň túto stránku";
@@ -1715,11 +1777,8 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Hovor s Duck.ai pomocou Siri!";
 
-/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Všetky chaty sú %@ súkromné";
-
-/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "súkromné";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pre iOS";
@@ -1756,6 +1815,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikdy";
+
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Otvoriť v aplikácii YouTube";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -2003,11 +2065,11 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Naposledy použitá karta Fire";
 
-/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
-"escapeHatch.menu.burnTab" = "Karta Burn";
-
 /* Menu item that closes the open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeTab" = "Zatvoriť kartu";
+
+/* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.deleteTab" = "Odstrániť kartu";
 
 /* Menu item that returns the user to the open tab from the escape hatch card */
 "escapeHatch.menu.returnToTab" = "Späť na kartu";
@@ -2368,6 +2430,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Karta Fire";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Prúd vzduchu";
 
@@ -2415,6 +2478,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Domov";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Viaceré udalosti nie sú podporované. Skús radšej otvoriť stiahnutý súbor.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Tento súbor nie je možné spracovať. Skús radšej otvoriť stiahnutý súbor.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Nepodporované časové pásmo. Skús radšej otvoriť stiahnutý súbor.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Udalosť bola pridaná do Apple Kalendára";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
@@ -3535,14 +3610,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Časovač nečinnosti";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Uvítacia obrazovka";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nová karta";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Po nečinnosti";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Skús novú možnosť prepínania medzi vyhľadávaním a Duck.ai v adresnom riadku.";
@@ -4497,6 +4572,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Zatvoriť karta";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Zatvorte kartu domovskej stránky";
 
@@ -4508,6 +4584,7 @@
 
 /* New tab title */
 "tab.new.title" = "Nová karta";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Otvorte kartu Domovská stránka";
 
@@ -4516,6 +4593,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Otvoriť kartu Fire";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otvoriť „%1$@“ na adrese %2$@";
 
@@ -4999,8 +5077,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
-/* Top-level attachment menu option to add a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Pridať súbor";
-
-/* Top-level attachment menu option to add an image to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Pridať obrázok";

@@ -19,6 +19,7 @@
 import Foundation
 import Bookmarks
 import Common
+import FoundationExtensions
 import Persistence
 import PixelKit
 

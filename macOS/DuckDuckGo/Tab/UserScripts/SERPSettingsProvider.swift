@@ -23,6 +23,7 @@ import UserScript
 import AIChat
 import Persistence
 import Common
+import FoundationExtensions
 
 /// macOS implementation of SERP settings provider.
 ///

@@ -93,16 +93,72 @@ public final class CustomToggleControl: NSControl {
     }
 
     public var focusBorderColor: NSColor = NSColor.controlAccentColor {
-        didSet { needsDisplay = true }
+        didSet {
+            updateFocusRingStrokeColors()
+            needsDisplay = true
+        }
     }
 
     public var outerBorderColor: NSColor = NSColor.controlAccentColor {
-        didSet { needsDisplay = true }
+        didSet {
+            updateFocusRingStrokeColors()
+            needsDisplay = true
+        }
     }
 
     public var outerBorderWidth: CGFloat = 2.0 {
-        didSet { needsDisplay = true }
+        didSet {
+            withoutImplicitAnimation {
+                focusOuterRingLayer.lineWidth = outerBorderWidth
+            }
+            needsLayout = true
+            needsDisplay = true
+        }
     }
+
+    /// Suppresses Core Animation's default 0.25s implicit transition on animatable layer
+    /// properties — without this, a theme switch or light/dark flip would cross-fade the
+    /// focus ring colour instead of snapping to it.
+    private func updateFocusRingStrokeColors() {
+        withoutImplicitAnimation {
+            effectiveAppearance.performAsCurrentDrawingAppearance {
+                focusInnerRingLayer.strokeColor = focusBorderColor.cgColor
+                focusOuterRingLayer.strokeColor = outerBorderColor.cgColor
+            }
+        }
+    }
+
+    private func withoutImplicitAnimation(_ block: () -> Void) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        block()
+        CATransaction.commit()
+    }
+
+    /// Inner half of the focus ring. Rendered as a sublayer so it can extend past the
+    /// view's bounds — on macOS Monterey, drawing past bounds inside `draw(_:)` is
+    /// clipped by the (implicit) hosting layer; sublayers with `masksToBounds = false`
+    /// on the host are not.
+    private let focusInnerRingLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.fillColor = nil
+        layer.lineWidth = 2.0
+        layer.lineCap = .round
+        layer.lineJoin = .round
+        layer.isHidden = true
+        return layer
+    }()
+
+    /// Outer half of the focus ring (matches the original two-stroke design).
+    private let focusOuterRingLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.fillColor = nil
+        layer.lineWidth = 2.0
+        layer.lineCap = .round
+        layer.lineJoin = .round
+        layer.isHidden = true
+        return layer
+    }()
 
     public var selectionInnerBorderColor: NSColor = NSColor.white {
         didSet { needsDisplay = true }
@@ -338,7 +394,19 @@ public final class CustomToggleControl: NSControl {
     }
 
     private func setup() {
-        wantsLayer = false
+        // Layer-backed so the focus ring can live in CAShapeLayer sublayers that render
+        // past the view's bounds. `masksToBounds = false` is required for the rings to
+        // be visible at all on macOS Monterey, where the implicit hosting layer would
+        // otherwise clip its sublayers (and any `draw(_:)` overflow) to bounds.
+        wantsLayer = true
+        layer?.masksToBounds = false
+
+        updateFocusRingStrokeColors()
+        withoutImplicitAnimation {
+            focusOuterRingLayer.lineWidth = outerBorderWidth
+        }
+        layer?.addSublayer(focusInnerRingLayer)
+        layer?.addSublayer(focusOuterRingLayer)
 
         let trackingArea = NSTrackingArea(
             rect: bounds,
@@ -347,6 +415,46 @@ public final class CustomToggleControl: NSControl {
             userInfo: nil
         )
         addTrackingArea(trackingArea)
+    }
+
+    public override func layout() {
+        super.layout()
+
+        // Inner stroke: 1pt outside the pill, 2pt thick; outer stroke 3pt outside,
+        // `outerBorderWidth` thick. Matches the geometry the old `draw(_:)` produced.
+        let innerInset: CGFloat = -focusInnerRingLayer.lineWidth / 2
+        let outerInset: CGFloat = -(focusInnerRingLayer.lineWidth + outerBorderWidth / 2)
+        let innerRect = bounds.insetBy(dx: innerInset, dy: innerInset)
+        let outerRect = bounds.insetBy(dx: outerInset, dy: outerInset)
+
+        withoutImplicitAnimation {
+            focusInnerRingLayer.frame = innerRect
+            focusInnerRingLayer.path = CGPath(
+                roundedRect: focusInnerRingLayer.bounds,
+                cornerWidth: innerRect.height / 2,
+                cornerHeight: innerRect.height / 2,
+                transform: nil
+            )
+            focusOuterRingLayer.frame = outerRect
+            focusOuterRingLayer.path = CGPath(
+                roundedRect: focusOuterRingLayer.bounds,
+                cornerWidth: outerRect.height / 2,
+                cornerHeight: outerRect.height / 2,
+                transform: nil
+            )
+        }
+    }
+
+    private func setFocusRingHidden(_ hidden: Bool) {
+        withoutImplicitAnimation {
+            focusInnerRingLayer.isHidden = hidden
+            focusOuterRingLayer.isHidden = hidden
+        }
+    }
+
+    public override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateFocusRingStrokeColors()
     }
 
     // MARK: - Drawing
@@ -361,7 +469,6 @@ public final class CustomToggleControl: NSControl {
         NSGraphicsContext.current?.shouldAntialias = true
 
         let isFocused = window?.firstResponder == self
-        let innerBorderWidth: CGFloat = 2.0
 
         let bgColor = isFocused ? focusedBackgroundColor : backgroundColor
         bgColor.setFill()
@@ -411,34 +518,9 @@ public final class CustomToggleControl: NSControl {
             drawSegmentContent(image: rightImg, label: rightLabel, in: rightRect, isSelected: isRightSelected)
         }
 
-        if isFocused {
-            context.saveGState()
-
-            context.resetClip()
-
-            context.setLineCap(.round)
-            context.setLineJoin(.round)
-            context.setShouldSmoothFonts(true)
-
-            focusBorderColor.setStroke()
-            let innerBorderRect = bounds.insetBy(dx: -innerBorderWidth / 2, dy: -innerBorderWidth / 2)
-            let focusPath = NSBezierPath(roundedRect: innerBorderRect, xRadius: innerBorderRect.height / 2, yRadius: innerBorderRect.height / 2)
-            focusPath.lineWidth = innerBorderWidth
-            focusPath.lineCapStyle = .round
-            focusPath.lineJoinStyle = .round
-            focusPath.stroke()
-
-            outerBorderColor.setStroke()
-            let outerBorderInset = -(innerBorderWidth + outerBorderWidth / 2)
-            let outerBorderRect = bounds.insetBy(dx: outerBorderInset, dy: outerBorderInset)
-            let outerBorderPath = NSBezierPath(roundedRect: outerBorderRect, xRadius: outerBorderRect.height / 2, yRadius: outerBorderRect.height / 2)
-            outerBorderPath.lineWidth = outerBorderWidth
-            outerBorderPath.lineCapStyle = .round
-            outerBorderPath.lineJoinStyle = .round
-            outerBorderPath.stroke()
-
-            context.restoreGState()
-        }
+        // Focus ring is rendered by `focusInnerRingLayer` / `focusOuterRingLayer` sublayers
+        // (see `setup()` / `layout()`). Drawing it here would be clipped to bounds on
+        // macOS Monterey.
     }
 
     private func drawSegmentContent(image: NSImage, label: String?, in rect: NSRect, isSelected: Bool) {
@@ -637,19 +719,21 @@ public final class CustomToggleControl: NSControl {
     }
 
     public override func becomeFirstResponder() -> Bool {
-        let innerBorderWidth: CGFloat = 2.0
-        let totalBorderWidth = innerBorderWidth + outerBorderWidth
-        let expandedRect = bounds.insetBy(dx: -totalBorderWidth, dy: -totalBorderWidth)
-        setNeedsDisplay(expandedRect)
-        return super.becomeFirstResponder()
+        let didBecome = super.becomeFirstResponder()
+        if didBecome {
+            setFocusRingHidden(false)
+            needsDisplay = true  // refresh body for focusedBackgroundColor
+        }
+        return didBecome
     }
 
     public override func resignFirstResponder() -> Bool {
-        let innerBorderWidth: CGFloat = 2.0
-        let totalBorderWidth = innerBorderWidth + outerBorderWidth
-        let expandedRect = bounds.insetBy(dx: -totalBorderWidth, dy: -totalBorderWidth)
-        setNeedsDisplay(expandedRect)
-        return super.resignFirstResponder()
+        let didResign = super.resignFirstResponder()
+        if didResign {
+            setFocusRingHidden(true)
+            needsDisplay = true
+        }
+        return didResign
     }
 
     // MARK: - Layout

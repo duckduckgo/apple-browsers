@@ -21,6 +21,7 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import os.log

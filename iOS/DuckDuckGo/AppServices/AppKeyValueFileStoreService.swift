@@ -20,6 +20,7 @@
 import Persistence
 import Foundation
 import Common
+import FoundationExtensions
 import Core
 
 final class AppKeyValueFileStoreService {

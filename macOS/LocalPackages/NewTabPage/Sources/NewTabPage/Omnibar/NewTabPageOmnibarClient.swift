@@ -19,6 +19,7 @@
 import WebKit
 import Combine
 import Common
+import FoundationExtensions
 
 public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 

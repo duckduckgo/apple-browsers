@@ -33,7 +33,7 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "m_mac_settings_youtubeadblocking_opened": {
         "description": "Fired daily when the YouTube Ad Blocking settings pane is opened",

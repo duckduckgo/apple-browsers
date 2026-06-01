@@ -18,6 +18,7 @@
 
 import BrowserServicesKitTestsUtils
 import Common
+import FoundationExtensions
 import Networking
 import NetworkingTestingUtils
 import SubscriptionTestingUtilities

@@ -1,12 +1,15 @@
 {
   "images" : [
     {
-      "filename" : "Desktop-Mobile-Sync-Pair-Feature-128.svg",
+      "filename" : "Sync-Desktop-Mobile-Pair-Feature-128.svg",
       "idiom" : "universal"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
   }
 }

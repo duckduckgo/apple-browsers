@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Persistence
 import Configuration
 import Common
+import FoundationExtensions
 import Networking
 import PixelKit
 import DataBrokerProtectionCore

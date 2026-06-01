@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import Onboarding
@@ -62,6 +63,22 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         windowControllersManager = nil
         fireCoordinator = nil
     }
+
+    // MARK: - Rebranded Onboarding
+
+    func testWhenMakeRebrandedViewThenDialogShownPixelIsFiredForDialogType() {
+        // GIVEN
+        let dialogType = ContextualDialogType.tryASearch
+        let factory = RebrandedContextualDaxDialogsFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
+
+        // WHEN
+        _ = factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+        // THEN
+        XCTAssertEqual(reporter.shownDialog, dialogType)
+    }
+
+    // MARK: - Default Onboarding
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
         // GIVEN

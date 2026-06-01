@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Navigation
 import Foundation
 import UserScript

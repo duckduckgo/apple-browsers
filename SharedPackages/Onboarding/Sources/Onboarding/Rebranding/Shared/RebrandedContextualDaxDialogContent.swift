@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import ConcurrencyExtensions
 import SwiftUI
 import UIComponents
 
@@ -42,6 +43,7 @@ extension OnboardingRebranding {
         @State private var startTypingTitle = false
         @State private var startTypingMessage = false
         @State private var shouldShowContent = false
+        @State private var alreadyRevealed = false
 
         #if os(iOS)
         public init(
@@ -115,6 +117,7 @@ extension OnboardingRebranding {
                             messageTextAlignment: messageTextAlignment,
                             startTypingTitle: $startTypingTitle,
                             startTypingMessage: $startTypingMessage,
+                            alreadyRevealed: $alreadyRevealed,
                             onTypingFinished: animateContentIn
                         )
                         content
@@ -130,6 +133,7 @@ extension OnboardingRebranding {
                             messageTextAlignment: messageTextAlignment,
                             startTypingTitle: $startTypingTitle,
                             startTypingMessage: $startTypingMessage,
+                            alreadyRevealed: $alreadyRevealed,
                             onTypingFinished: animateContentIn
                         )
                         Spacer(minLength: theme.contentSpacing)
@@ -139,6 +143,7 @@ extension OnboardingRebranding {
                 }
             }
             .onAppear {
+                guard !alreadyRevealed else { return }
                 Task { @MainActor in
                     try await Task.sleep(interval: theme.contentFadeInDelay)
                     if title != nil {
@@ -151,6 +156,7 @@ extension OnboardingRebranding {
         }
 
         private func animateContentIn() {
+            alreadyRevealed = true
             if reduceMotion {
                 shouldShowContent = true
             } else {
@@ -231,13 +237,37 @@ private extension OnboardingRebranding {
 
         @Binding var startTypingTitle: Bool
         @Binding var startTypingMessage: Bool
+        @Binding var alreadyRevealed: Bool
         let onTypingFinished: () -> Void
 
         #if os(iOS)
-        /// Drives the static message's fade-in after the title finishes typing (or after the
-        /// no-title path triggers it).
-        @State private var showStaticMessage = false
+        @State private var showStaticMessage: Bool
         #endif
+
+        init(
+            title: NSAttributedString?,
+            message: NSAttributedString,
+            titleBodyVerticalSpacing: CGFloat,
+            titleTextAlignment: TextAlignment? = nil,
+            messageTextAlignment: TextAlignment? = nil,
+            startTypingTitle: Binding<Bool>,
+            startTypingMessage: Binding<Bool>,
+            alreadyRevealed: Binding<Bool>,
+            onTypingFinished: @escaping () -> Void
+        ) {
+            self.title = title
+            self.message = message
+            self.titleBodyVerticalSpacing = titleBodyVerticalSpacing
+            self.titleTextAlignment = titleTextAlignment
+            self.messageTextAlignment = messageTextAlignment
+            self._startTypingTitle = startTypingTitle
+            self._startTypingMessage = startTypingMessage
+            self._alreadyRevealed = alreadyRevealed
+            self.onTypingFinished = onTypingFinished
+            #if os(iOS)
+            _showStaticMessage = State(initialValue: alreadyRevealed.wrappedValue)
+            #endif
+        }
 
         var body: some View {
             VStack(alignment: .leading, spacing: titleBodyVerticalSpacing) {
@@ -249,19 +279,16 @@ private extension OnboardingRebranding {
                 messageTypingView(alignment: messageAlignment)
             }
             .padding(theme.contextualOnboardingMetrics.titleBodyInset)
-            // Horizontal layouts otherwise truncate to a single line; force vertical sizing.
             .fixedSize(horizontal: false, vertical: true)
         }
 
         #if os(iOS)
-        // iOS: only the title types; message is static and fades in once typing completes.
-        // No-title path: the parent flips `startTypingMessage` directly — handled in
-        // `messageTypingView` below.
         @ViewBuilder
         private func titleTypingView(_ title: NSAttributedString, alignment: TextAlignment) -> some View {
             AnimatableTypingText(
                 title,
                 startAnimating: $startTypingTitle,
+                skipAnimation: $alreadyRevealed,
                 alignment: Alignment(alignment),
                 onTypingFinished: { revealStaticMessageAndFinish() }
             )
@@ -278,7 +305,6 @@ private extension OnboardingRebranding {
                 .frame(maxWidth: .infinity, alignment: Alignment(alignment))
                 .opacity(showStaticMessage ? 1 : 0)
                 .onChange(of: startTypingMessage) { shouldStart in
-                    // No-title path: parent flips this directly; reveal + forward completion here.
                     if shouldStart { revealStaticMessageAndFinish() }
                 }
         }
@@ -303,6 +329,7 @@ private extension OnboardingRebranding {
             AnimatableTypingText(
                 title,
                 startAnimating: $startTypingTitle,
+                skipAnimation: $alreadyRevealed,
                 alignment: Alignment(alignment),
                 onTypingFinished: { startTypingMessage = true }
             )
@@ -316,6 +343,7 @@ private extension OnboardingRebranding {
             AnimatableTypingText(
                 message,
                 startAnimating: $startTypingMessage,
+                skipAnimation: $alreadyRevealed,
                 alignment: Alignment(alignment),
                 onTypingFinished: onTypingFinished
             )

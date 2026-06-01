@@ -18,6 +18,7 @@
 
 import Bookmarks
 import Common
+import FoundationExtensions
 import CoreData
 import DDGSync
 import Foundation

@@ -23,6 +23,7 @@ import Persistence
 import PrivacyConfig
 import SwiftUI
 import Common
+import FoundationExtensions
 import Combine
 import SyncUI_iOS
 import DuckPlayer
@@ -199,10 +200,6 @@ final class SettingsViewModel: ObservableObject {
         get {
             (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
         }
-    }
-
-    var shouldShowHideAIGeneratedImagesSection: Bool {
-        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
 
     var isDefaultOmnibarModeEnabled: Bool {

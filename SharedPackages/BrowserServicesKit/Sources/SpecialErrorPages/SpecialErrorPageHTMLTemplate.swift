@@ -20,6 +20,7 @@ import Foundation
 import ContentScopeScripts
 import WebKit
 import Common
+import FoundationExtensions
 
 public struct SpecialErrorPageHTMLTemplate {
 

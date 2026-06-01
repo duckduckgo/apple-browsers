@@ -12106,6 +12106,306 @@
         }
       }
     },
+    "big-sur-end-of-support.dont-show-again" : {
+      "comment" : "Button that permanently dismisses the Big Sur end-of-support alert",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht erneut anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t Show Again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No volver a mostrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne plus afficher"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non mostrare più"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet meer weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie pokazuj więcej"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não mostrar novamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Больше не показывать"
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.message" : {
+      "comment" : "Body of the on-launch alert shown to users running macOS Big Sur after support has ended",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualisiere macOS auf Monterey oder höher, um weiterhin neue Funktionen, Fehlerbehebungen und Sicherheitsverbesserungen von DuckDuckGo zu erhalten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update macOS to Monterey or later to keep getting new DuckDuckGo features, fixes, and security improvements."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza macOS a Monterey o versiones posteriores para seguir recibiendo nuevas funciones, correcciones y mejoras de seguridad de DuckDuckGo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettez à jour macOS vers Monterey ou une version ultérieure pour continuer à bénéficier des nouvelles fonctionnalités, corrections et améliorations de sécurité de DuckDuckGo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna macOS a Monterey o versioni successive per continuare a ricevere nuove funzionalità, correzioni e miglioramenti di sicurezza di DuckDuckGo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update macOS naar Monterey of later om te blijven profiteren van nieuwe DuckDuckGo-functies, bugfixes en beveiligingsverbeteringen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaktualizuj system macOS do wersji Monterey lub nowszej, aby otrzymywać nowe funkcje, poprawki i ulepszenia zabezpieczeń DuckDuckGo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualiza o macOS para o Monterey ou posterior para continuares a receber novas funcionalidades, correções e melhorias de segurança do DuckDuckGo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновите macOS до Monterey или более поздней версии, чтобы продолжать получать новые функции DuckDuckGo, исправления и улучшения безопасности."
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.message-incapable" : {
+      "comment" : "Body of the on-launch alert shown to users whose Mac cannot upgrade past Big Sur — does not prompt the user to update.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die DuckDuckGo-Updates für macOS Big Sur wurden eingestellt. Dein Browser wird weiterhin wie bisher funktionieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo updates have ended for macOS Big Sur. Your browser will keep working as it does today."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las actualizaciones de DuckDuckGo han finalizado para macOS Big Sur. Tu navegador seguirá funcionando igual que hasta ahora."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les mises à jour de DuckDuckGo pour macOS Big Sur sont terminées. Votre navigateur continuera de fonctionner comme il le fait aujourd'hui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli aggiornamenti di DuckDuckGo per macOS Big Sur sono terminati. Il tuo browser continuerà a funzionare come oggi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De updates voor DuckDuckGo op macOS Big Sur zijn beëindigd. Je browser blijft werken zoals hij nu doet."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualizacje DuckDuckGo dla macOS Big Sur się zakończyły. Twoja przeglądarka będzie działać tak jak dziś."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As atualizações do DuckDuckGo terminaram para o macOS Big Sur. O teu navegador continuará a funcionar como hoje."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo для версии macOS Big Sur больше не будет получать обновления. С сегодняшнего дня ваш браузер продолжит работать без последующих обновлений."
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.title" : {
+      "comment" : "Title of the on-launch alert shown to users running macOS Big Sur after support has ended",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Big Sur wird nicht mehr unterstützt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Big Sur support has ended"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La asistencia para Big Sur ha finalizado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'assistance pour Big Sur a pris fin"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il supporto per Big Sur è terminato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De ondersteuning voor Big Sur is beëindigd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wsparcie Big Sur się zakończyło"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O suporte para o Big Sur terminou"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержка версии Big Sur прекращена"
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.update-macos" : {
+      "comment" : "Primary button on the Big Sur end-of-support alert; matches the RMF message’s primaryActionText",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS aktualisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update macOS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar macOS"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mise à jour de macOS"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna macOS"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS bijwerken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualizacja macOS"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar macOS"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить macOS"
+          }
+        }
+      }
+    },
     "Birthday" : {
       "comment" : "Title of the section of the Identities manager where the user can add/modify a date of birth",
       "localizations" : {
@@ -47863,7 +48163,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Open en ontgrendel **%2$s**\n%3$d Selecteer **Bestand → Kluis exporteren** in de menubalk\n%4$d Selecteer de bestandsindeling: **.csv**\n%5$d Voer je Bitwarden-masterwachtwoord in\n%6$d Klik op %7$@ en bewaar het bestand op een plek waar je het kunt vinden (bijv. het bureaublad)\n%8$d %9$@t"
+            "value" : "Wachtwoorden importeren…"
           }
         },
         "pl" : {
@@ -49291,13 +49591,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Ouvrez **%2$s → Paramètres** et faites défiler l'écran jusqu'à **Outils →**, sélectionnez **Exporter le coffre**\n%3$d Sélectionnez le **Format de fichier : .csv** → Exportez le coffre** et sauvegardez le fichier\n%4$d Téléchargez le fichier CSV exporté sur DuckDuckGo"
+            "value" : "%1$d Ouvrez **%2$s → Paramètres** et faites défiler l'écran jusqu'à **Outils →**, sélectionnez **Exporter le coffre**\n%3$d Sélectionnez le **Format de fichier : .csv → Exportez le coffre** et sauvegardez le fichier\n%4$d Téléchargez le fichier CSV exporté sur DuckDuckGo"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Apri **%2$s → Impostazioni** e scorri verso il basso fino a **Strumenti →** seleziona **Esporta cassaforte**\n%3$d Seleziona il **Formato del file: .csv** → Esporta vault** e salva il file\n%4$d Carica il file CSV esportato su DuckDuckGo"
+            "value" : "%1$d Apri **%2$s → Impostazioni** e scorri verso il basso fino a **Strumenti →** seleziona **Esporta cassaforte**\n%3$d Seleziona il **Formato del file: .csv → Esporta vault** e salva il file\n%4$d Carica il file CSV esportato su DuckDuckGo"
           }
         },
         "nl" : {
@@ -49315,7 +49615,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **%2$s → Definições** e desloca-te para baixo até **Ferramentas →** seleciona **Exportar cofre**\n%3$d Seleciona o **Formato de ficheiro: .csv** → Exporta o cofre** e guarda o ficheiro\n%4$d Carrega o ficheiro CSV exportado para o DuckDuckGo"
+            "value" : "%1$d Abre **%2$s → Definições** e desloca-te para baixo até **Ferramentas →** seleciona **Exportar cofre**\n%3$d Seleciona o **Formato de ficheiro: .csv → Exporta o cofre** e guarda o ficheiro\n%4$d Carrega o ficheiro CSV exportado para o DuckDuckGo"
           }
         },
         "ru" : {
@@ -49825,7 +50125,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **%2$s**\n%3$d Haz clic en %4$@ para abrir el menú de la aplicación y, a continuación, haz clic en **Contraseñas**\n%5$d Haz clic en %6$@ y luego en **Exportar inicios de sesión... **\n%7$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%8$d %9$@"
+            "value" : "%1$d Abre **%2$s**\n%3$d Haz clic en %4$@ para abrir el menú de la aplicación y, a continuación, haz clic en **Contraseñas**\n%5$d Haz clic en %6$@ y luego en **Exportar inicios de sesión...**\n%7$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%8$d %9$@"
           }
         },
         "fr" : {
@@ -50071,7 +50371,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Cliquez sur l'icône **%2$s** de votre navigateur et saisissez votre mot de passe principal\n%3$d Sélectionnez **Ouvrir mon coffre-fort**\n%4$d Dans la barre latérale, sélectionnez **Options avancées → Exporter**\n%5$d Saisissez votre mot de passe LastPass principal\n%6$d Sélectionnez le format de fichier** : **Texte séparé par des virgules (.csv)**\n%7$d %8$@"
+            "value" : "%1$d Cliquez sur l'icône **%2$s** de votre navigateur et saisissez votre mot de passe principal\n%3$d Sélectionnez **Ouvrir mon coffre-fort**\n%4$d Dans la barre latérale, sélectionnez **Options avancées → Exporter**\n%5$d Saisissez votre mot de passe LastPass principal\n%6$d Sélectionnez le format de fichier : **Texte séparé par des virgules (.csv)**\n%7$d %8$@"
           }
         },
         "it" : {
@@ -50305,7 +50605,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre y desbloquea **%2$s**\n%3$d Selecciona **Archivo → Exportar** en la barra de menú y elige la cuenta que deseas exportar\n%4$d Introduce tu contraseña de 1Password\n%5$d Selecciona el formato de archivo: *CSV (solo contraseñas e inicios de sesión)**\n%6$d Haz clic en Exportar datos y guarda el archivo donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%7$d %8$@"
+            "value" : "%1$d Abre y desbloquea **%2$s**\n%3$d Selecciona **Archivo → Exportar** en la barra de menú y elige la cuenta que deseas exportar\n%4$d Introduce tu contraseña de 1Password\n%5$d Selecciona el formato de archivo: **CSV (solo contraseñas e inicios de sesión)**\n%6$d Haz clic en Exportar datos y guarda el archivo donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%7$d %8$@"
           }
         },
         "fr" : {
@@ -50545,7 +50845,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **%2$s**\n%3$d Utiliza la barra de menú para seleccionar **Ver → Mostrar administrador de contraseñas\n%4$d Haz clic en %5$@ (a la derecha de _Contraseñas guardadas_) y selecciona **Exportar contraseñas**\n%6$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%7$d %8$@"
+            "value" : "%1$d Abre **%2$s**\n%3$d Utiliza la barra de menú para seleccionar **Ver → Mostrar administrador de contraseñas**\n%4$d Haz clic en %5$@ (a la derecha de _Contraseñas guardadas_) y selecciona **Exportar contraseñas**\n%6$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%7$d %8$@"
           }
         },
         "fr" : {
@@ -50725,7 +51025,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **Safari → Archivo → Exportar datos de navegación a un archivo... **\n%2$d Selecciona **contraseñas** y guarda el archivo\n%3$d Haz doble clic en el archivo .zip para descomprimirlo y, a continuación, sube el archivo CSV a DuckDuckGo"
+            "value" : "%1$d Abre **Safari → Archivo → Exportar datos de navegación a un archivo...**\n%2$d Selecciona **contraseñas** y guarda el archivo\n%3$d Haz doble clic en el archivo .zip para descomprimirlo y, a continuación, sube el archivo CSV a DuckDuckGo"
           }
         },
         "fr" : {
@@ -51343,7 +51643,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Open je vorige browser\n%2$d Open **Bladwijzerbeheerder**\n%3$d Exporteer je bladwijzers naar HTML …\n%4$d Bewaar het bestand op een plek waar je het kunt vinden (bijv. het bureaublad)\n%5$d %6$d %$@"
+            "value" : "Handmatig importeren…"
           }
         },
         "pl" : {
@@ -51877,7 +52177,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Apri **%2$s\n**%3$d Usa la barra dei menu per selezionare **Segnalibri → Gestore segnalibri**\n%4$d Fai clic su %5$@, quindi su **Esporta segnalibri**\n%6$d Salva il file dove puoi trovarlo (ad esempio, sul desktop)\n%7$d %8$@"
+            "value" : "%1$d Apri **%2$s**\n%3$d Usa la barra dei menu per selezionare **Segnalibri → Gestore segnalibri**\n%4$d Fai clic su %5$@, quindi su **Esporta segnalibri**\n%6$d Salva il file dove puoi trovarlo (ad esempio, sul desktop)\n%7$d %8$@"
           }
         },
         "nl" : {
@@ -52237,7 +52537,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Apri **%2$s**\n%3$d Usa la Barra dei menu per selezionare **Segnalibri → Segnalibri\n**%4$d Fai clic su **Apri la visualizzazione Segnalibri completa…** in basso a sinistra\n%5$d Fai clic su **Importa/Esporta…** in basso a sinistra e seleziona **Esporta segnalibri**\n%6$d Salva il file dove puoi trovarlo (ad esempio, sul desktop)\n%7$d %8$@"
+            "value" : "%1$d Apri **%2$s**\n%3$d Usa la Barra dei menu per selezionare **Segnalibri → Segnalibri**\n%4$d Fai clic su **Apri la visualizzazione Segnalibri completa…** in basso a sinistra\n%5$d Fai clic su **Importa/Esporta…** in basso a sinistra e seleziona **Esporta segnalibri**\n%6$d Salva il file dove puoi trovarlo (ad esempio, sul desktop)\n%7$d %8$@"
           }
         },
         "nl" : {
@@ -52351,7 +52651,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Ouvrez **%2$s**\n%3$d Passez par la barre de menu pour sélectionner **Signets → Signets **\n%4$d Cliquez sur **Importer/Exporter…** en bas à gauche et sélectionnez **Exporter les signets**\n%5$d Enregistrez le fichier à un endroit où le trouver facilement (par exemple, sur le bureau)\n%6$d %7$@"
+            "value" : "%1$d Ouvrez **%2$s**\n%3$d Passez par la barre de menu pour sélectionner **Signets → Signets**\n%4$d Cliquez sur **Importer/Exporter…** en bas à gauche et sélectionnez **Exporter les signets**\n%5$d Enregistrez le fichier à un endroit où le trouver facilement (par exemple, sur le bureau)\n%6$d %7$@"
           }
         },
         "it" : {
@@ -83830,7 +84130,7 @@
     },
     "preferences.about.unsupported-device-info1" : {
       "comment" : "This string represents a message informing the user that DuckDuckGo is no longer providing browser updates for their version of macOS",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -83890,7 +84190,7 @@
     },
     "preferences.about.unsupported-device-info2" : {
       "comment" : "Copy in section that tells the user to update their macOS version since their current version is unsupported",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84250,7 +84550,7 @@
     },
     "preferences.about.will-soon-be-unsupported-device-info-alert-header" : {
       "comment" : "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84310,7 +84610,7 @@
     },
     "preferences.about.will-soon-be-unsupported-device-info1" : {
       "comment" : "This string informs the user that DuckDuckGo will soon discontinue browser updates for their version of macOS",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84370,7 +84670,7 @@
     },
     "preferences.about.will-soon-be-unsupported-device-info2" : {
       "comment" : "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

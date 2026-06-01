@@ -1,3 +1,6 @@
+/* No comment provided by engineer. */
+"%@\n%@" = "%@\n%@";
+
 /* Auto-Restore - Description */
 "auto.restore.description" = "Uygulama yeniden yüklendiğinde bu cihazdaki veriler de otomatik olarak geri yüklenir.";
 

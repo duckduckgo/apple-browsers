@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import UIKit
 import Core
 import DesignResourcesKit

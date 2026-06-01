@@ -50,10 +50,10 @@ extension OnboardingView {
         static let multilineFieldHeight: CGFloat = 56
         static let queryFieldActionButtonSize: CGFloat = 28
         static let queryFieldCornerRadius: CGFloat = 14
-        static let queryFieldInnerBorderInset: CGFloat = 2
         static let maxSuggestionCount = 3
-        static let legacyQueryFieldBorderWidth: CGFloat = 1
-        static let rebrandedQueryFieldBorderWidth: CGFloat = 1
+        static let queryFieldShadowColor: Color = .black.opacity(0.16)
+        static let queryFieldShadowRadius: CGFloat = 16
+        static let queryFieldShadowOffset = CGPoint(x: 0, y: 8)
 
         // MARK: Animation
         static let controlsRevealDelayAfterTitleAnimation: TimeInterval = 0.3
@@ -265,16 +265,8 @@ extension OnboardingView {
             visualStyle == .rebranded ? Metrics.rebrandedTitleToPickerTopPadding : Metrics.legacyTitleToPickerTopPadding
         }
 
-        private var accentSecondaryColor: Color {
-            visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentAltGlowPrimary)) : Color(designSystemColor: .accentGlowSecondary)
-        }
-
         private var queryFieldBackgroundColor: Color {
             visualStyle == .rebranded ? onboardingTheme.colorPalette.background : Color(designSystemColor: .surface)
-        }
-
-        private var queryFieldBorderWidth: CGFloat {
-            visualStyle == .rebranded ? Metrics.rebrandedQueryFieldBorderWidth : Metrics.legacyQueryFieldBorderWidth
         }
 
         private var initialInputFocusDelayAfterAppear: TimeInterval {
@@ -366,17 +358,9 @@ extension OnboardingView {
             .padding(.horizontal, Metrics.queryFieldHorizontalPadding)
             .padding(.vertical, Metrics.queryFieldVerticalPadding)
             .background(queryFieldBackgroundColor)
-            .overlay(
-                RoundedRectangle(cornerRadius: Metrics.queryFieldCornerRadius)
-                    .strokeBorder(accentSecondaryColor, lineWidth: queryFieldBorderWidth)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Metrics.queryFieldCornerRadius)
-                    .inset(by: Metrics.queryFieldInnerBorderInset)
-                    .strokeBorder(accentColor, lineWidth: queryFieldBorderWidth)
-            )
             .cornerRadius(Metrics.queryFieldCornerRadius)
             .frame(maxWidth: .infinity)
+            .shadow(color: Metrics.queryFieldShadowColor, radius: Metrics.queryFieldShadowRadius, x: Metrics.queryFieldShadowOffset.x, y: Metrics.queryFieldShadowOffset.y)
             .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
         }
 

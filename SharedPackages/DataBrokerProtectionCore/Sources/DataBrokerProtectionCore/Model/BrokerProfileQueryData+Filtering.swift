@@ -34,10 +34,6 @@ public extension Array where Element == BrokerProfileQueryData {
         filter { !$0.dataBroker.scanRequiresSubscription }
     }
 
-    var containsBrokersRequiringSubscription: Bool {
-        contains { $0.dataBroker.scanRequiresSubscription }
-    }
-
     func excludingIneligibleBrokers(isAuthenticatedUser: Bool) -> [BrokerProfileQueryData] {
         var result = excludingRemovedBrokers
         if !isAuthenticatedUser {

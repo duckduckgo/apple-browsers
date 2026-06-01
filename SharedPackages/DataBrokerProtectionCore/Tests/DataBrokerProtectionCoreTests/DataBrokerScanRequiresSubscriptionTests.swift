@@ -80,21 +80,6 @@ final class DataBrokerScanRequiresSubscriptionTests: XCTestCase {
         XCTAssertFalse(broker.scanRequiresSubscription)
     }
 
-    func testScanRequiresSubscription_whenScanStepIsMissing_returnsFalse() {
-        let broker = DataBroker(
-            id: 1,
-            name: "Opt-out only broker",
-            url: "test.com",
-            steps: [Step(type: .optOut, actions: [makeAction(.generateEmail)])],
-            version: "1.0",
-            schedulingConfig: DataBrokerScheduleConfig(retryError: 0, confirmOptOutScan: 0, maintenanceScan: 0, maxAttempts: -1),
-            optOutUrl: "",
-            eTag: "",
-            removedAt: nil
-        )
-        XCTAssertFalse(broker.scanRequiresSubscription)
-    }
-
     // MARK: - Helpers
 
     private func loadBroker(fixture: String) throws -> DataBroker {

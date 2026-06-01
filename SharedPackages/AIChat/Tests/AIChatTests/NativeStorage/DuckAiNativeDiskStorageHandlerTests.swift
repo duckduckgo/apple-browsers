@@ -257,7 +257,7 @@ final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
 
 // MARK: - Mock
 
-private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
+private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeChatsRecordObserving {
 
     var putChatCallCount = 0
     var lastPutChatId: String?

@@ -21,7 +21,6 @@ import Combine
 import Foundation
 import AIChat
 
-#if DEBUG
 final class MockChatHistoryReader: ChatHistoryReading {
 
     let subject: CurrentValueSubject<[DuckAiChat], Error>
@@ -34,4 +33,3 @@ final class MockChatHistoryReader: ChatHistoryReading {
         subject.eraseToAnyPublisher()
     }
 }
-#endif

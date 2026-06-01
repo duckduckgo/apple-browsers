@@ -5867,6 +5867,7 @@
 				97B908642F75457100372B50 /* DuckAIVoiceControlWidgetTests.swift */,
 				CB6D17A92FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift */,
 				B4E5D6C7A8F9012345678901 /* AIChatTabChatHeaderViewTests.swift */,
+				5AB12C3D4E5F60718293A4C0 /* MockChatHistoryReader.swift */,
 			);
 			path = AIChat;
 			sourceTree = "<group>";
@@ -5897,7 +5898,6 @@
 				5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */,
 				5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */,
 				5AB12C3D4E5F60718293A4BC /* AIChatHistoryCell.swift */,
-				5AB12C3D4E5F60718293A4C0 /* MockChatHistoryReader.swift */,
 				31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */,
 				C150EB1F2F0D814C00A98C97 /* AIChatFeatureFlagProvider.swift */,
 				316AA4592CF8E31F00A2ED28 /* AIChatSettings.swift */,
@@ -13229,7 +13229,6 @@
 				5AB12C3D4E5F60718293A4B7 /* AIChatHistoryEmptyStateView.swift in Sources */,
 				5AB12C3D4E5F60718293A4B9 /* AIChatHistoryViewModel.swift in Sources */,
 				5AB12C3D4E5F60718293A4BB /* AIChatHistoryCell.swift in Sources */,
-				5AB12C3D4E5F60718293A4BF /* MockChatHistoryReader.swift in Sources */,
 				9F0B19B72EA5E74F001FA867 /* ModalPromptCoordinationManager.swift in Sources */,
 				CBD4F13C279EBF4A00B20FD7 /* HomeMessage.swift in Sources */,
 				6FB2A67E2C2DAFB4004D20C8 /* NewTabPageGridView.swift in Sources */,
@@ -13991,6 +13990,7 @@
 				56D2D65C2D5F748200C59354 /* NetworkProtectionDNSSettingsViewModelTests.swift in Sources */,
 				9F60CBA92E9892CF004D2367 /* SurveyLastSearchStateRefresherTests.swift in Sources */,
 				3124186D2F48C9FE0023B9DE /* IPadModeToggleTextModelTests.swift in Sources */,
+				5AB12C3D4E5F60718293A4BF /* MockChatHistoryReader.swift in Sources */,
 				CB6D17992FA24B9800ECD5AE /* DuckAISuggestionsViewControllerTests.swift in Sources */,
 				9F60CBAA2E9892CF004D2367 /* RemoteMessagingActionHandlerTests.swift in Sources */,
 				6F23316E2DD52E1B004D102D /* TabSwitcherStaticButtonTests.swift in Sources */,

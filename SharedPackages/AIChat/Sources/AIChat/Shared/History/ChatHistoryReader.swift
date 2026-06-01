@@ -24,16 +24,27 @@ public protocol ChatHistoryReading {
     func chatsPublisher() -> AnyPublisher<[DuckAiChat], Error>
 }
 
+public enum ChatHistoryError: Error, Equatable {
+    /// Native chat storage failed to configure (e.g. at launch), so there is no observer to read from.
+    case storageUnavailable
+}
+
 public final class ChatHistoryReader: ChatHistoryReading {
 
-    private let observer: DuckAiNativeChatsObserving
+    private let observer: DuckAiNativeChatsObserving?
 
-    public init(observer: DuckAiNativeChatsObserving) {
+    /// - Parameter observer: the observing storage backend, or `nil` when native storage failed to
+    ///   configure. A `nil` observer produces a `.storageUnavailable` failure rather than a silent
+    ///   empty list, so callers can distinguish "no chats" from "storage broken".
+    public init(observer: DuckAiNativeChatsObserving?) {
         self.observer = observer
     }
 
     public func chatsPublisher() -> AnyPublisher<[DuckAiChat], Error> {
-        observer.chatsPublisher()
+        guard let observer else {
+            return Fail(error: ChatHistoryError.storageUnavailable).eraseToAnyPublisher()
+        }
+        return observer.chatsPublisher()
             .map { records in
                 records
                     .compactMap { try? DuckAiChat.decode(from: $0.data).chat }

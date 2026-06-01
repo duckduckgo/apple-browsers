@@ -143,6 +143,27 @@ final class AIChatHistoryViewController: UIViewController {
                 self?.refreshContent()
             }
             .store(in: &cancellables)
+
+        // On a load failure the list is cleared (so the empty screen shows); we surface the
+        // failure as a simple alert on top of it. `removeDuplicates` keeps it to one alert.
+        viewModel.$loadFailed
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] failed in
+                guard failed else { return }
+                self?.presentLoadErrorAlert()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func presentLoadErrorAlert() {
+        let alert = UIAlertController(
+            title: UserText.aiChatHistoryLoadErrorTitle,
+            message: UserText.aiChatHistoryLoadErrorMessage,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: UserText.actionOK, style: .default))
+        present(alert, animated: true)
     }
 
     private func refreshContent() {

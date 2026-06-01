@@ -35,6 +35,11 @@ final class AIChatHistoryViewModel: ObservableObject {
     @Published private(set) var recent: [DuckAiChat] = []
     @Published private(set) var hasLoaded: Bool = false
 
+    /// `true` when the chats publisher finished with an error (e.g. native storage failed to
+    /// configure). Distinct from `isEmpty` so the UI can show an error state rather than the
+    /// "no chats yet" empty state.
+    @Published private(set) var loadFailed: Bool = false
+
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
     private let reader: ChatHistoryReading
@@ -51,10 +56,12 @@ final class AIChatHistoryViewModel: ObservableObject {
                     if case .failure = completion {
                         self?.pinned = []
                         self?.recent = []
+                        self?.loadFailed = true
                     }
                     self?.hasLoaded = true
                 },
                 receiveValue: { [weak self] chats in
+                    self?.loadFailed = false
                     self?.pinned = chats.filter(\.pinned)
                     self?.recent = chats.filter { !$0.pinned }
                     self?.hasLoaded = true
@@ -70,8 +77,8 @@ final class AIChatHistoryViewModel: ObservableObject {
     func title(forSection section: Int) -> String? {
         guard let section = Section(rawValue: section) else { return nil }
         switch section {
-        case .pinned: return pinned.isEmpty ? nil : "PINNED"
-        case .recent: return recent.isEmpty ? nil : "RECENT"
+        case .pinned: return pinned.isEmpty ? nil : UserText.aiChatHistoryPinnedSectionTitle
+        case .recent: return recent.isEmpty ? nil : UserText.aiChatHistoryRecentSectionTitle
         }
     }
 

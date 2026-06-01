@@ -5229,13 +5229,12 @@ extension MainViewController: TabDelegate {
     }
 
     func openAIChatHistory() {
-        // The native storage wrapper conforms to `DuckAiNativeChatsObserving` and
-        // forwards to its observing backing (disk → GRDB `ValueObservation`).
-        // The fallback handles the edge case where storage failed to configure
-        // at launch — we show an empty list rather than crash.
-        let observer: DuckAiNativeChatsObserving =
-            (duckAiNativeStorageHandler as? DuckAiNativeChatsObserving) ?? EmptyChatsObserver()
-        let reader = ChatHistoryReader(observer: observer)
+        // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
+        // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
+        // configure at launch the cast yields `nil`, and the reader surfaces a
+        // `.storageUnavailable` failure so the screen shows an error rather than a
+        // misleading empty list.
+        let reader = ChatHistoryReader(observer: duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)
         let viewModel = AIChatHistoryViewModel(reader: reader)
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel)

@@ -415,7 +415,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installSwipeContainer() {
-        let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
+        let manager = SwipeContainerManager(switchBarHandler: switchBarHandler, contentTransition: .crossfade)
         let containerVC = manager.containerViewController
         addChild(containerVC)
         contentContainerView.addSubview(containerVC.view)
@@ -438,7 +438,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
               let containerViewController = swipeContainerManager?.containerViewController,
               let searchContainer = swipeContainerManager?.searchPageContainer else { return }
 
-        let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
+        let manager = SuggestionTrayManager(
+            switchBarHandler: switchBarHandler,
+            dependencies: dependencies,
+            autocompleteHorizontalInset: Metrics.suggestionsHorizontalInset)
         manager.delegate = self
         let trayEscapeHatchModel = switchBarHandler.isFireTab ? nil : escapeHatchModel
         manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatchModel: trayEscapeHatchModel)
@@ -707,6 +710,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // chain positions the UTI hatch ~10pt below the NTP equivalent.
         static let escapeHatchTrayPullUp: CGFloat = -10
         static let toolbarCompensationOffset: CGFloat = 80
+        static let suggestionsHorizontalInset: CGFloat = 8
     }
 }
 

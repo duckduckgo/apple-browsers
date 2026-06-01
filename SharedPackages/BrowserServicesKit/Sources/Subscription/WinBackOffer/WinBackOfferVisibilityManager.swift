@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 /// Manages the visibility of the win-back offer.
 public protocol WinBackOfferVisibilityManaging {

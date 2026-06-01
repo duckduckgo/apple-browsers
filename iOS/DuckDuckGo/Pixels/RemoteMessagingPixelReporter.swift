@@ -39,6 +39,8 @@ protocol RemoteMessagingPixelReporting {
     func measureRemoteMessageCardClicked(_ remoteMessage: RemoteMessageModel, cardId: String)
     func measureRemoteMessageImageLoadSuccess(_ remoteMessage: RemoteMessageModel)
     func measureRemoteMessageImageLoadFailed(_ remoteMessage: RemoteMessageModel)
+    func measureRemoteMessageCardImageLoadSuccess(_ remoteMessage: RemoteMessageModel, cardId: String)
+    func measureRemoteMessageCardImageLoadFailed(_ remoteMessage: RemoteMessageModel, cardId: String)
 }
 
 extension RemoteMessagingPixelReporting {
@@ -104,6 +106,14 @@ final class RemoteMessagePixelReporter: RemoteMessagingPixelReporting {
 
     func measureRemoteMessageImageLoadFailed(_ remoteMessage: RemoteMessageModel) {
         firePixelIfMetricsEnabled(.remoteMessageImageLoadFailed, for: remoteMessage)
+    }
+
+    func measureRemoteMessageCardImageLoadSuccess(_ remoteMessage: RemoteMessageModel, cardId: String) {
+        firePixelIfMetricsEnabled(.remoteMessageCardImageLoadSuccess, for: remoteMessage, additionalParameters: [PixelParameters.card: cardId])
+    }
+
+    func measureRemoteMessageCardImageLoadFailed(_ remoteMessage: RemoteMessageModel, cardId: String) {
+        firePixelIfMetricsEnabled(.remoteMessageCardImageLoadFailed, for: remoteMessage, additionalParameters: [PixelParameters.card: cardId])
     }
 
     private func firePixelIfMetricsEnabled(_ pixel: Pixel.Event, for remoteMessage: RemoteMessageModel, additionalParameters: [String: String] = [:]) {

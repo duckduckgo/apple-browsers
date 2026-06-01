@@ -19,6 +19,7 @@
 
 import AIChat
 import Core
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckAiDataStore
 import Persistence
@@ -70,6 +71,11 @@ struct Launching: LaunchingHandling {
         // Consumed by `DesignSystemImages` accessors and the `Image(rebrandable:)` initializer
         // so call sites don't need to read the flag directly.
         AppRebrand.isAppRebranded = { [featureFlagger] in
+            featureFlagger.isFeatureOn(.appRebranding)
+        }
+
+        // Temporary feature flag and wiring during rebrand rollout – used to enable color palette updates.
+        DesignSystemRebrand.isAppRebranded = { [featureFlagger] in
             featureFlagger.isFeatureOn(.appRebranding)
         }
 

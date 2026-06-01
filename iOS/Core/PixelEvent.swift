@@ -392,7 +392,10 @@ extension Pixel {
         case icsCalendarFallbackParseFailure
         case icsCalendarRoutedByExtension
         case icsCalendarUnsupportedRRule
-        
+
+        case walletPassPreviewRequested
+        case walletPassPreviewFailed
+
         case downloadsListOngoingDownloadCancelled
         case downloadsListCompleteDownloadDeleted
         case downloadsListAllCompleteDownloadsDeleted
@@ -839,6 +842,8 @@ extension Pixel {
         case remoteMessageCardClicked
         case remoteMessageImageLoadSuccess
         case remoteMessageImageLoadFailed
+        case remoteMessageCardImageLoadSuccess
+        case remoteMessageCardImageLoadFailed
 
         // MARK: debug pixels
         case dbCrashDetected(appIdentifier: String?)
@@ -2277,6 +2282,9 @@ extension Pixel.Event {
         case .icsCalendarFallbackParseFailure: return "m_ics_calendar_fallback_parse_failure"
         case .icsCalendarRoutedByExtension: return "m_ics_calendar_routed_by_extension"
         case .icsCalendarUnsupportedRRule: return "m_ics_calendar_unsupported_rrule"
+
+        case .walletPassPreviewRequested: return "wallet_pass_preview_requested"
+        case .walletPassPreviewFailed: return "wallet_pass_preview_failed"
             
         case .downloadsListOngoingDownloadCancelled: return "m_downloads_list_ongoing_download_cancelled"
         case .downloadsListCompleteDownloadDeleted: return "m_downloads_list_complete_download_deleted"
@@ -2688,6 +2696,8 @@ extension Pixel.Event {
         case .remoteMessageCardClicked: return "m_remote_message_card_clicked"
         case .remoteMessageImageLoadSuccess: return "m_remote_message_image_load_success"
         case .remoteMessageImageLoadFailed: return "m_remote_message_image_load_failed"
+        case .remoteMessageCardImageLoadSuccess: return "m_remote_message_card_image_load_success"
+        case .remoteMessageCardImageLoadFailed: return "m_remote_message_card_image_load_failed"
 
             // MARK: debug pixels
 

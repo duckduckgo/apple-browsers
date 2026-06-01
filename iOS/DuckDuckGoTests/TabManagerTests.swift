@@ -17,15 +17,16 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Core
-@testable import DuckDuckGo
-import SubscriptionTestingUtilities
 import BrowserServicesKit
 import Persistence
-import PersistenceTestingUtils
 import BrowserServicesKitTestsUtils
 import Combine
+import ConcurrencyExtensions
+import Core
+import PersistenceTestingUtils
+import SubscriptionTestingUtilities
+import XCTest
+@testable import DuckDuckGo
 
 @MainActor
 final class TabManagerTests: XCTestCase {

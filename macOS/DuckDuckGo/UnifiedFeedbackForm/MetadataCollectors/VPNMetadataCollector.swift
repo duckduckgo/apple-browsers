@@ -19,6 +19,7 @@
 import Foundation
 import AppKit
 import Common
+import FoundationExtensions
 import LoginItems
 import Network
 import NetworkProtectionIPC

@@ -1816,6 +1816,9 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Ποτέ";
 
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Άνοιγμα στην εφαρμογή YouTube";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
@@ -2475,6 +2478,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Αρχική σελίδα";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Δεν υποστηρίζονται πολλαπλά συμβάντα. Αντ' αυτού δοκίμασε να ανοίξεις το αρχείο που κατέβασες.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Δεν είναι δυνατή η επεξεργασία αυτού του αρχείου. Αντ' αυτού δοκίμασε να ανοίξεις το αρχείο που κατέβασες.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Μη υποστηριζόμενη ζώνη ώρας. Αντ' αυτού δοκίμασε να ανοίξεις το αρχείο που κατέβασες.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Το συμβάν προστέθηκε στο Ημερολόγιο Apple";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Αναγνωριστικό: %1$@ | %2$@ | %3$@";
@@ -3595,14 +3610,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Χρονόμετρο αδράνειας";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Οθόνη έναρξης";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Νέα καρτέλα";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Μετά από αδράνεια";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Δοκιμάστε τη νέα επιλογή για εναλλαγή μεταξύ αναζήτησης και Duck.ai στη γραμμή διευθύνσεων.";

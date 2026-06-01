@@ -21,7 +21,7 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
-import FeatureFlags
+import FoundationExtensions
 import Foundation
 import os.log
 import Persistence
@@ -39,12 +39,10 @@ import Subscription
 extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     /// Instantiates the App Store update controller.
     public static func instantiate(internalUserDecider: InternalUserDecider,
-                                   featureFlagger: FeatureFlagger,
                                    pixelFiring: PixelFiring?,
                                    notificationPresenter: any UpdateNotificationPresenting,
                                    isOnboardingFinished: @escaping () -> Bool) -> any UpdateController {
         AppStoreUpdateController(internalUserDecider: internalUserDecider,
-                                 featureFlagger: featureFlagger,
                                  pixelFiring: pixelFiring,
                                  notificationPresenter: notificationPresenter,
                                  isOnboardingFinished: isOnboardingFinished)
@@ -83,7 +81,6 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     private let updateCheckState: UpdateCheckState
     private let updaterChecker: AppStoreUpdaterAvailabilityChecker
     private let releaseChecker: LatestReleaseChecker
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
     private let internalUserDecider: InternalUserDecider
     private let appStoreOpener: AppStoreOpener?
@@ -93,7 +90,6 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
 
     /// Protocol-conforming initializer for production use.
     public init(internalUserDecider: InternalUserDecider,
-                featureFlagger: FeatureFlagger,
                 pixelFiring: PixelFiring?,
                 notificationPresenter: any UpdateNotificationPresenting,
                 isOnboardingFinished: @escaping () -> Bool) {
@@ -101,26 +97,22 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.notificationPresenter = notificationPresenter
         self.releaseChecker = LatestReleaseChecker()
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.internalUserDecider = internalUserDecider
         self.appStoreOpener = DefaultAppStoreOpener()
         self.isOnboardingFinished = isOnboardingFinished
         super.init()
 
-        // Only setup cloud checking if feature flag is on
-        if featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
-            // Observe needsNotificationDot changes
-            $needsNotificationDot
-                .sink { [weak self] value in
-                    self?.notificationDotSubject.send(value)
-                }
-                .store(in: &cancellables)
+        // Observe needsNotificationDot changes
+        $needsNotificationDot
+            .sink { [weak self] value in
+                self?.notificationDotSubject.send(value)
+            }
+            .store(in: &cancellables)
 
-            // Start automatic update checking
-            checkForUpdateAutomatically()
-            subscribeToWindowResignKeyNotifications()
-        }
+        // Start automatic update checking
+        checkForUpdateAutomatically()
+        subscribeToWindowResignKeyNotifications()
     }
 
     // MARK: - Convenience Initializers
@@ -128,7 +120,6 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     /// Convenience internal initializer for testing with minimal dependencies.
     init(appStoreOpener: AppStoreOpener? = nil,
          internalUserDecider: InternalUserDecider? = nil,
-         featureFlagger: FeatureFlagger? = nil,
          pixelFiring: PixelFiring? = nil,
          notificationPresenter: any UpdateNotificationPresenting,
          isOnboardingFinished: @escaping () -> Bool = { true }) {
@@ -136,7 +127,6 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.notificationPresenter = notificationPresenter
         self.releaseChecker = LatestReleaseChecker()
-        self.featureFlagger = featureFlagger ?? MockFeatureFlagger()
         self.pixelFiring = pixelFiring
         self.internalUserDecider = internalUserDecider ?? MockInternalUserDecider(isInternalUser: false)
         self.appStoreOpener = appStoreOpener
@@ -158,11 +148,6 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
 
     /// Checks for updates respecting automatic update settings and rate limiting
     func checkForUpdateAutomatically() {
-        // Only do automatic checks if feature flag is on
-        guard featureFlagger.isFeatureOn(.appStoreUpdateFlow) else {
-            return // Legacy mode: no automatic checks
-        }
-
         Task { @UpdateCheckActor in
             await performUpdateCheck()
         }
@@ -170,21 +155,15 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
 
     /// User-initiated update check (bypasses automatic update settings and rate limiting)
     public func checkForUpdateSkippingRollout() {
-        if featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
-            // New flow - check cloud for updates
-            Task { @UpdateCheckActor in
-                // User-initiated checks skip rate limiting but still log the attempt
-                guard await updateCheckState.canStartNewCheck(updater: updaterChecker, latestUpdate: latestUpdate, minimumInterval: 0) else {
-                    Logger.updates.debug("User-initiated App Store update check skipped - updater not available")
-                    return
-                }
-
-                Logger.updates.debug("User-initiated App Store update check starting")
-                await performUpdateCheck(dismissRateLimiting: true)
+        Task { @UpdateCheckActor in
+            // User-initiated checks skip rate limiting but still log the attempt
+            guard await updateCheckState.canStartNewCheck(updater: updaterChecker, latestUpdate: latestUpdate, minimumInterval: 0) else {
+                Logger.updates.debug("User-initiated App Store update check skipped - updater not available")
+                return
             }
-        } else {
-            // Legacy flow - direct to App Store (no cloud checking)
-            openUpdatesPage()
+
+            Logger.updates.debug("User-initiated App Store update check starting")
+            await performUpdateCheck(dismissRateLimiting: true)
         }
     }
 

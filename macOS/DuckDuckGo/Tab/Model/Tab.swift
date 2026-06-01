@@ -19,9 +19,12 @@
 import AutoconsentStats
 import BrowserServicesKit
 import Combine
+import CombineExtensions
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
 import Foundation
+import FoundationExtensions
 import History
 import MaliciousSiteProtection
 import Navigation
@@ -86,6 +89,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private let fireproofDomains: FireproofDomains
     let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
+
+    /// Per-tab Duck.ai omnibar state (prompt text, selection, mode, tool, attachments).
+    /// Owned by Tab so it survives TabViewModel recreation when the tab moves to a new window.
+    let addressBarSharedTextState = AddressBarSharedTextState()
 
     private let webViewConfiguration: WKWebViewConfiguration
 
@@ -1100,12 +1107,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         // should load on Web View instantiation?
         case .loadInBackgroundIfNeeded(shouldLoadInBackground: let shouldLoadInBackground):
+#if DEBUG
+            // Prevent background auto-loading when running unit tests, as this can stress out the CI runner.
+            guard AppVersion.runType.requiresEnvironment else { return false }
+#endif
             switch content {
             case .newtab, .bookmarks, .settings:
-#if DEBUG
-                // prevent auto loading when running Unit Tests
-                guard AppVersion.runType.requiresEnvironment else { return false }
-#endif
                 return webView.url == nil // navigate to empty pages loaded for duck:// urls
             default:
                 return shouldLoadInBackground

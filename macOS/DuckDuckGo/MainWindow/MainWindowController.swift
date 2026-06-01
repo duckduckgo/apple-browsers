@@ -19,6 +19,8 @@
 import Cocoa
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import os.log
 import PixelKit
 import PrivacyConfig
@@ -224,7 +226,7 @@ final class MainWindowController: NSWindowController {
 
     private var trafficLightsAlphaCancellables = [AnyCancellable]()
     private func subscribeToTrafficLightsAlpha() {
-        guard let window, let featureFlagger, featureFlagger.isFeatureOn(.semaphoreAlwaysVisible) else {
+        guard let window else {
             return
         }
 

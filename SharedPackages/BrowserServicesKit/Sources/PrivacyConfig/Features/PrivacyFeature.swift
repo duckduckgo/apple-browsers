@@ -84,7 +84,6 @@ public enum PrivacyFeature: String {
     case attributedMetrics
     case dataImport
     case duckAiChatHistory
-    case serp
     case popupBlocking
     case pageContext
     case webExtensions
@@ -113,9 +112,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Address-bar render-performance instrumentation kill switch.
     case addressBarPerformanceInstrumentation
 
-    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
-    case willSoonDropBigSurSupport
-
     /// Hang reporting feature flag
     case hangReporting
 
@@ -131,10 +127,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Use WKDownload for favicon fetching to bypass App Transport Security restrictions on HTTP URLs
     case faviconWKDownload
-
-    /// New App Store Update flow feature flag
-    /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
-    case appStoreUpdateFlow
 
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly
@@ -183,8 +175,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
-    case semaphoreAlwaysVisible
-
     /// Autoplay policy control via WKWebpagePreferences
     case autoplayPolicy
 
@@ -192,8 +182,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Enables lazy reload for the more options menu
     case lazyMenuRebuild
-
-    case addToDockAppStore
 
     case screenTimeCleaning
 
@@ -278,6 +266,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
     case customProductPageDuckAiChat
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215151176422651?focus=true
+    case customProductPageDuckAiOnboardingFlow
+
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
@@ -289,6 +280,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
+    case walletPassDownload
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -422,6 +416,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case omnibarDefaultPosition
 
     case unifiedToggleInput
+
+    /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
+    /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
+    /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.
+    case aiChatTabHideToggle
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
@@ -625,7 +624,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
-    case subscriptionPromoFireWindow
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -748,15 +746,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case dataImportSummarySyncPromotion
 }
 
-public enum SERPSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .serp
-    }
-
-    /// Global switch to disable New Tab Page search box
-    case storeSerpSettings
-}
-
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .popupBlocking
@@ -803,6 +792,7 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .duckAiChatHistory }
 
     case featureEnabled
+    case nativeChatHistory
 }
 
 public enum PromoQueueSubfeature: String, PrivacySubfeature {

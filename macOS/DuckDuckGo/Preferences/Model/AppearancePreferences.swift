@@ -18,15 +18,17 @@
 
 import AppKit
 import Bookmarks
-import PrivacyConfig
+import Combine
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
 import Foundation
+import FoundationExtensions
 import NewTabPage
+import os.log
 import Persistence
 import PixelKit
-import os.log
-import Combine
+import PrivacyConfig
 
 protocol AppearancePreferencesPersistor {
     var showFullURL: Bool { get set }

@@ -30,7 +30,7 @@ struct AIChatSyncIntroSheetView: View {
     var body: some View {
         VStack(spacing: 24) {
             VStack(spacing: 24) {
-                Image(.syncDesktopMobilePairFeature128)
+                Image(rebrandable: "Sync-Desktop-Mobile-Pair-Feature-128")
 
                 Text(UserText.aiChatSyncIntroSheetTitle)
                     .daxTitle1()

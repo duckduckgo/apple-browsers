@@ -23,6 +23,7 @@ import XCTest
 import Foundation
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import os.log
 
 class DomainMatchingReportTests: XCTestCase {

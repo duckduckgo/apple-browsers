@@ -1,0 +1,20 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#92540c" d="M5.759 15.022a.625.625 0 0 1 1.233.206l-.31 1.856a2.264 2.264 0 0 0 4.146 1.584l1.27-2.003a.625.625 0 0 1 1.055.67l-1.27 2.002a3.514 3.514 0 0 1-6.434-2.459z"/>
+  <path fill="url(#Announce-Color-24_svg__a)" d="m16.375 4.438-13.75 6.018v3.104l13.75 5.94z"/>
+  <path fill="url(#Announce-Color-24_svg__b)" d="M16.375 3c.345 0 .625.28.625.625v16.75a.625.625 0 1 1-1.25 0v-.45l-12.5-5.414v.113a.625.625 0 1 1-1.25 0v-5.25a.625.625 0 1 1 1.25 0v.13l12.5-5.43v-.449c0-.345.28-.625.625-.625M3.25 10.866v2.283l12.464 5.4V5.452z"/>
+  <path fill="url(#Announce-Color-24_svg__c)" d="M18.545 16.392a.625.625 0 0 1 .812-.348l1.563.624a.625.625 0 0 1-.465 1.161l-1.562-.625a.625.625 0 0 1-.348-.812m2.83-5.393a.625.625 0 1 1 0 1.25H19.75a.625.625 0 0 1 0-1.25zm-.92-5.267a.625.625 0 0 1 .465 1.16l-1.563.626a.625.625 0 0 1-.464-1.16z"/>
+  <defs>
+    <linearGradient id="Announce-Color-24_svg__a" x1="9.5" x2="9.5" y1="5.125" y2="18.875" gradientUnits="userSpaceOnUse">
+      <stop offset=".505" stop-color="#ffd65c"/>
+      <stop offset="1" stop-color="#e2a412"/>
+    </linearGradient>
+    <linearGradient id="Announce-Color-24_svg__b" x1="9.476" x2="9.476" y1="4.56" y2="20.164" gradientUnits="userSpaceOnUse">
+      <stop offset=".008" stop-color="#e2a412"/>
+      <stop offset="1" stop-color="#c18010"/>
+    </linearGradient>
+    <linearGradient id="Announce-Color-24_svg__c" x1="20.25" x2="20.25" y1="17.874" y2="5.687" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#aaa"/>
+    </linearGradient>
+  </defs>
+</svg>

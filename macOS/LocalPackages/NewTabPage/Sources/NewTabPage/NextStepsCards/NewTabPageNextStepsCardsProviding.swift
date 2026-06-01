@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Combine
 import PixelKit
 import UserScript

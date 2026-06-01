@@ -19,6 +19,7 @@
 import Foundation
 import os.log
 import Common
+import FoundationExtensions
 import Persistence
 
 public final class PixelKit {

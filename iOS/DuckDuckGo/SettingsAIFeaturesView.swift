@@ -23,6 +23,7 @@ import Core
 import DesignResourcesKitIcons
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Networking
 import PixelKit
 import AIChat

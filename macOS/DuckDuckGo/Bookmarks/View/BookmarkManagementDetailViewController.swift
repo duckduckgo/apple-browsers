@@ -20,6 +20,7 @@ import AppKit
 import Carbon
 import Combine
 import Common
+import FoundationExtensions
 import SwiftUI
 import PixelKit
 
@@ -488,6 +489,10 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         let menu = sortBookmarksViewModel.menu
         managementDetailViewModel.onSortButtonTapped()
         menu.popUpAtMouseLocation(in: sortItemsButton)
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.alignItemTextWithIconsRecursively()
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {

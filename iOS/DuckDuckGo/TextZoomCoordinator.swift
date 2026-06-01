@@ -20,6 +20,7 @@
 import Foundation
 import WebKit
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import Core
 import DesignResourcesKit

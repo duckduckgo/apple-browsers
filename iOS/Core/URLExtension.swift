@@ -22,6 +22,7 @@ import JavaScriptCore
 import BrowserServicesKit
 import Network
 import Common
+import FoundationExtensions
 
 extension URL {
     

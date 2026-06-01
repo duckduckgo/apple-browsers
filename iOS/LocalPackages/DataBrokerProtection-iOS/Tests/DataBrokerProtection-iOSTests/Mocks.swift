@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import SwiftUI
 @testable import DataBrokerProtection_iOS
 import DataBrokerProtectionCore

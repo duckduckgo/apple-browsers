@@ -91,7 +91,6 @@ public extension OnboardingTheme {
             contentInnerSpacing: 20,
             buttonSpacing: 12,
             bubbleMaxWidth: 360,
-            bubbleTailOffset: 0.8,
             topMarginRatio: 0.18,
             minTopMargin: 16,
             maxTopMargin: 16,

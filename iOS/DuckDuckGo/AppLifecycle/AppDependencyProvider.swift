@@ -24,6 +24,7 @@ import DDGSync
 import Bookmarks
 import Subscription
 import Common
+import FoundationExtensions
 import VPN
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS

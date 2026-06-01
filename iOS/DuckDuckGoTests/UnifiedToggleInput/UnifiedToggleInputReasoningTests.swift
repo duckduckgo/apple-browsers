@@ -366,7 +366,7 @@ private final class MockUnifiedToggleInputReasoningDelegate: UnifiedToggleInputD
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
-    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
+    func unifiedToggleInputDidRequestAppMenu() {}
 }
 
 private final class MockAIChatReasoningPreferences: AIChatPreferencesPersisting {

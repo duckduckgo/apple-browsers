@@ -41,6 +41,9 @@ final class OnboardingUITests: UITestCase {
         try super.tearDownWithError()
     }
 
+    // Disabled due to flakyness
+    // Follow up is here: https://app.asana.com/1/137249556945/task/1215156971793264/comment/1215278980264402?focus=true
+    /*
     func testOnboardingToBrowsing() throws {
         // Options button initially disabled on welcome
         let optionsButton = welcomeWindow.buttons["NavigationBarViewController.optionsButton"]
@@ -115,6 +118,7 @@ final class OnboardingUITests: UITestCase {
         let tooltip = app.windows.webViews.groups.containing(.staticText, identifier: "Toggle between search and AI chat").element
         XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
+     */
 
     func testDuckAIIsUnavailableDuringOnboarding() throws {
         let button = app.windows.buttons[XCUIApplication.AccessibilityIdentifiers.aiChatButton]

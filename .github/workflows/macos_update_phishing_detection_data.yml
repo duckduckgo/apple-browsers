@@ -36,7 +36,7 @@ jobs:
           branch: update-phishing-protection-${{ env.REVISION }}
           title: Update phishing protection datasets to ${{ env.REVISION }}
           body: "${{ env.PR_BODY_MACOS }}"
-          reviewers: alessandroboron,mallexxx
+          reviewers: alessandroboron,mallexxx,sabrinatardio
       # Only notify for scheduled (cron) runs; manual dispatches are ignored.
       - name: Resolve Asana assignee
         id: asana-assignee

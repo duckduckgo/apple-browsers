@@ -121,8 +121,8 @@ final class AIChatHistoryViewController: UIViewController {
         let compose = UIBarButtonItem(
             image: DesignSystemImages.Glyphs.Size24.compose,
             style: .plain,
-            target: nil,
-            action: nil
+            target: self,
+            action: #selector(composeButtonTapped)
         )
         let gap = UIBarButtonItem(systemItem: .fixedSpace)
         gap.width = 12
@@ -209,6 +209,10 @@ final class AIChatHistoryViewController: UIViewController {
     @objc private func doneButtonTapped() {
         dismiss(animated: true)
     }
+
+    @objc private func composeButtonTapped() {
+        viewModel.newChatTapped()
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -265,5 +269,6 @@ extension AIChatHistoryViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        viewModel.chatTapped(at: indexPath)
     }
 }

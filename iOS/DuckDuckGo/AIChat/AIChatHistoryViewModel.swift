@@ -97,8 +97,13 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     // MARK: - Intents
 
-    func openDuckAiTapped() {
-        delegate?.viewModelDidRequestOpenDuckAi()
+    func newChatTapped() {
+        delegate?.viewModelDidRequestOpenNewChat()
+    }
+
+    func chatTapped(at indexPath: IndexPath) {
+        guard let chatId = chat(at: indexPath)?.chatId else { return }
+        delegate?.viewModelDidRequestOpenChat(chatId: chatId)
     }
 
     // MARK: - Helpers
@@ -131,5 +136,9 @@ final class AIChatHistoryViewModel: ObservableObject {
 
 @MainActor
 protocol AIChatHistoryViewModelDelegate: AnyObject {
-    func viewModelDidRequestOpenDuckAi()
+    /// Dismiss the sheet and open Duck.ai on a fresh chat.
+    func viewModelDidRequestOpenNewChat()
+
+    /// Dismiss the sheet and open the chat identified by `chatId` in Duck.ai.
+    func viewModelDidRequestOpenChat(chatId: String)
 }

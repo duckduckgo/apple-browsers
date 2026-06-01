@@ -100,14 +100,37 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(sut.loadFailed, "Storage failure should set loadFailed so the UI can show an error, not the empty state")
     }
 
-    func testOpenDuckAiTapped_notifiesDelegate() {
+    func testNewChatTapped_notifiesDelegate() {
         let sut = makeSUT(chats: [])
         let delegate = MockDelegate()
         sut.delegate = delegate
 
-        sut.openDuckAiTapped()
+        sut.newChatTapped()
 
-        XCTAssertTrue(delegate.didRequestOpenDuckAi)
+        XCTAssertTrue(delegate.didRequestOpenNewChat)
+    }
+
+    func testChatTapped_validIndexPath_notifiesDelegateWithChatId() {
+        let sut = makeSUT(chats: [
+            chat(id: "p1", pinned: true),
+            chat(id: "r1", pinned: false)
+        ])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.chatTapped(at: IndexPath(row: 0, section: Section.recent.rawValue))
+
+        XCTAssertEqual(delegate.requestedChatId, "r1")
+    }
+
+    func testChatTapped_invalidIndexPath_doesNotNotifyDelegate() {
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.chatTapped(at: IndexPath(row: 99, section: Section.recent.rawValue))
+
+        XCTAssertNil(delegate.requestedChatId)
     }
 
     // MARK: - Helpers
@@ -135,7 +158,10 @@ final class AIChatHistoryViewModelTests: XCTestCase {
     }
 
     private final class MockDelegate: AIChatHistoryViewModelDelegate {
-        private(set) var didRequestOpenDuckAi = false
-        func viewModelDidRequestOpenDuckAi() { didRequestOpenDuckAi = true }
+        private(set) var didRequestOpenNewChat = false
+        private(set) var requestedChatId: String?
+
+        func viewModelDidRequestOpenNewChat() { didRequestOpenNewChat = true }
+        func viewModelDidRequestOpenChat(chatId: String) { requestedChatId = chatId }
     }
 }

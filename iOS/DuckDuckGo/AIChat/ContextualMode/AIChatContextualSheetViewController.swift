@@ -20,6 +20,7 @@
 import AIChat
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -344,6 +345,13 @@ final class AIChatContextualSheetViewController: UIViewController {
         removeKeyboardObserver()
         pixelHandler.fireSheetDismissed()
         hideDimmingView(animated: animated)
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isBeingDismissed {
+            delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -1090,10 +1098,6 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
 
     func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
         isCurrentlyMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
-    }
-
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
     }
 }
 

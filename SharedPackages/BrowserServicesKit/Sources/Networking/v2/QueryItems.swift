@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 public typealias QueryItem = Dictionary<String, String>.Element
 public typealias QueryItems = [QueryItem]

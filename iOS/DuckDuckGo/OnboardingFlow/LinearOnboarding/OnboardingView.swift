@@ -259,14 +259,14 @@ struct OnboardingView: View {
         .onboardingDaxDialogStyle()
     }
 
-    private func experimentSearchExperienceSelectionView(defaultMode: DuckAIQueryExperimentMode) -> some View {
+    private func experimentSearchExperienceSelectionView(defaultMode: DuckAIQueryMode) -> some View {
         DuckAIExperimentSearchContent(
             defaultMode: defaultMode,
             animateTitle: $model.introState.animateIntroText,
             onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
             openAIChatAction: model.openAIChatFromOnboarding,
             openSearchAction: model.searchFromOnboarding,
-            measureQuerySubmissionAction: model.measureDuckAIQueryExperimentQuerySubmission,
+            measureQuerySubmissionAction: model.measureDuckAIQuerySubmission,
             startExitTransitionAction: {
                 beginExperimentExitTransition()
             }
@@ -353,7 +353,7 @@ extension OnboardingView.ViewState.Intro {
         case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
         case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
-        case duckAIQueryExperimentDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryExperimentMode)
+        case duckAIQueryExperimentDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode)
     }
 
     struct StepInfo: Equatable {
@@ -374,7 +374,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         }
     }
 
-    var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode? {
+    var duckAIQueryExperimentDefaultMode: DuckAIQueryMode? {
         if case .duckAIQueryExperimentDialog(_, let mode) = self {
             return mode
         }

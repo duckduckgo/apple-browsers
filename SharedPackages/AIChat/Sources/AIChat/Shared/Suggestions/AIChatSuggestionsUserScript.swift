@@ -21,6 +21,7 @@ import UserScript
 import WebKit
 import os.log
 import Common
+import FoundationExtensions
 
 // MARK: - AIChatSuggestionsUserScript
 

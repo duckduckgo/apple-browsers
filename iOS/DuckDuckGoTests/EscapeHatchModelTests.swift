@@ -30,6 +30,7 @@ struct EscapeHatchModelTests {
     private final class SpyRouter: EscapeHatchActionRouter {
         private(set) var burnImmediatelyCalls: [Tab] = []
         private(set) var closeCalls: [Tab] = []
+        private(set) var openingScreenOptionChanges: [AfterInactivityOption] = []
 
         func escapeHatchDidRequestSwitch(to tab: Tab) {}
         func escapeHatchDidRequestClose(_ tab: Tab) { closeCalls.append(tab) }
@@ -38,6 +39,10 @@ struct EscapeHatchModelTests {
 
         func escapeHatchDidRequestBurnImmediately(_ tab: Tab) {
             burnImmediatelyCalls.append(tab)
+        }
+
+        func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {
+            openingScreenOptionChanges.append(option)
         }
     }
 
@@ -80,7 +85,7 @@ struct EscapeHatchModelTests {
 
         sut.primarySwipeAction.perform()
 
-        #expect(sut.primarySwipeAction.label == UserText.escapeHatchMenuBurnTab)
+        #expect(sut.primarySwipeAction.label == UserText.escapeHatchMenuDeleteTab)
         #expect(router.burnImmediatelyCalls.count == 1)
         #expect(router.burnImmediatelyCalls.first === targetTab)
         #expect(router.closeCalls.isEmpty)

@@ -19,6 +19,7 @@
 import AppUpdaterShared
 import Combine
 import Common
+import FoundationExtensions
 import FeatureFlags
 import os.log
 import Persistence
@@ -190,8 +191,13 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     let displayableAboutURL: String = URL.aboutDuckDuckGo
         .toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: false)
 
-    var osSupportWarning: OSSupportWarning? {
-        supportedOSChecker.supportWarning
+    var unsupportedMinVersion: String? {
+        supportedOSChecker.unsupportedMinVersion
+    }
+
+    var canUpgradeOS: Bool {
+        OSUpgradeCapabilityOverridePersistor()
+            .canUpgradeOS(default: supportedOSChecker.osUpgradeCapability.canUpgradeOS)
     }
 
     @MainActor

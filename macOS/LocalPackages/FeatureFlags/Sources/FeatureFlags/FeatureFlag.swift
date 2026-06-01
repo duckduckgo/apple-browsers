@@ -128,12 +128,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
     case osSupportForceUnsupportedMessage
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476263589
-    case osSupportForceWillSoonDropSupportMessage
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719124742
-    case willSoonDropBigSurSupport
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
@@ -197,9 +191,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721557461
-    case showHideAIGeneratedImagesSection
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
@@ -319,10 +310,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Autoplay policy control via WKWebpagePreferences
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
     case autoplayPolicy
-
-    /// Window Semaphore Fullscreen Behavior Flag
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213585076410725?focus=true
-    case semaphoreAlwaysVisible
 
     /// Enables the promo service to coordinate promos/calls to action
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
@@ -504,10 +491,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarOnboarding), category: .duckAI)
         case .osSupportForceUnsupportedMessage:
             Config(source: .disabled, category: .osSupportWarnings)
-        case .osSupportForceWillSoonDropSupportMessage:
-            Config(source: .disabled, category: .osSupportWarnings)
-        case .willSoonDropBigSurSupport:
-            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport), category: .osSupportWarnings)
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:
@@ -548,8 +531,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
-        case .showHideAIGeneratedImagesSection:
-            Config(source: .remoteReleasable(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration), category: .duckAI)
         case .allowProTierPurchase:
@@ -618,8 +599,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .semaphoreAlwaysVisible:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
         case .promoQueue:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
         case .websitesHistoryFirstTimeQuitSurvey:
@@ -662,7 +641,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.autoplayPolicy), supportsLocalOverriding: true)
         case .bookmarksBarMenusCustomWindow:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow))
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow))
         case .newErrorPageReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.newErrorPageReload))
         case .aiChatSettingsLinkInAiFeatures:

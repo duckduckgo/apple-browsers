@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import Navigation
 import BrowserServicesKit
@@ -1399,23 +1400,15 @@ struct UserText {
 
     // MARK: - macOS Version is unsupported
 
-    static let aboutUnsupportedDeviceInfo1 = NSLocalizedString("preferences.about.unsupported-device-info1", value: "DuckDuckGo is no longer providing browser updates for your version of macOS.", comment: "This string represents a message informing the user that DuckDuckGo is no longer providing browser updates for their version of macOS")
-    static func aboutUnsupportedDeviceInfo2(version: String) -> String {
-        let localized = NSLocalizedString("preferences.about.unsupported-device-info2", value: "Please update to macOS %@ or later to use the most recent version of DuckDuckGo. You can also keep using your current version of the browser, but it will not receive further updates.", comment: "Copy in section that tells the user to update their macOS version since their current version is unsupported")
-        return String(format: localized, version)
-    }
-
     static let unsupportedDeviceInfoAlertHeader = NSLocalizedString("unsupported.device.info.alert.header", value: "Your version of macOS is no longer supported.", comment: "his string represents the header for an alert informing the user that their version of macOS is no longer supported")
 
-    // MARK: - macOS Version will soon be unsupported
+    // MARK: - Big Sur end-of-support launch notice
 
-    static let aboutWillSoonBeUnsupportedDeviceInfo1 = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info1", value: "DuckDuckGo will soon stop providing browser updates for your version of macOS.", comment: "This string informs the user that DuckDuckGo will soon discontinue browser updates for their version of macOS")
-    static func aboutWillSoonBeUnsupportedDeviceInfo2(version: String) -> String {
-        let localized = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info2", value: "Please update to macOS %@ or later to continue receiving DuckDuckGo browser updates. You can still use your current browser version, but updates will be discontinued soon.", comment: "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported")
-        return String(format: localized, version)
-    }
-
-    static let aboutWillSoonBeUnsupportedDeviceInfoAlertHeader = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info-alert-header", value: "Your version of macOS will soon be unsupported.", comment: "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported")
+    static let bigSurEndOfSupportNoticeTitle = NSLocalizedString("big-sur-end-of-support.title", value: "Big Sur support has ended", comment: "Title of the on-launch alert shown to users running macOS Big Sur after support has ended")
+    static let bigSurEndOfSupportNoticeMessage = NSLocalizedString("big-sur-end-of-support.message", value: "Update macOS to Monterey or later to keep getting new DuckDuckGo features, fixes, and security improvements.", comment: "Body of the on-launch alert shown to users running macOS Big Sur after support has ended")
+    static let bigSurEndOfSupportNoticeDontShowAgain = NSLocalizedString("big-sur-end-of-support.dont-show-again", value: "Don’t Show Again", comment: "Button that permanently dismisses the Big Sur end-of-support alert")
+    static let bigSurEndOfSupportNoticeUpdateMacOS = NSLocalizedString("big-sur-end-of-support.update-macos", value: "Update macOS", comment: "Primary button on the Big Sur end-of-support alert; matches the RMF message’s primaryActionText")
+    static let bigSurEndOfSupportNoticeMessageIncapable = NSLocalizedString("big-sur-end-of-support.message-incapable", value: "DuckDuckGo updates have ended for macOS Big Sur. Your browser will keep working as it does today.", comment: "Body of the on-launch alert shown to users whose Mac cannot upgrade past Big Sur — does not prompt the user to update.")
 
     static func moreAt(url: String) -> String {
         let localized = NSLocalizedString("preferences.about.more-at", value: "More at %@", comment: "Link to the about page")

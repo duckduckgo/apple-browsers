@@ -344,6 +344,70 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
+    // MARK: - Pending attached context (provider for prompt payload)
+
+    func test_pendingAttachedContextData_noAttachment_returnsNil() {
+        makeSUT()
+        XCTAssertNil(sut.pendingAttachedContextData)
+    }
+
+    func test_pendingAttachedContextData_afterSetAttached_returnsContextData() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT()
+        sut.setAttached(makeContext(title: "Cat", url: url))
+        XCTAssertEqual(sut.pendingAttachedContextData?.title, "Cat")
+    }
+
+    func test_pendingAttachedContextData_afterMarkPromptSubmitted_returnsNil() {
+        // Once the chip flips to `.delivered`, every
+        // subsequent prompt must ship `pageContext: nil` — otherwise duck.ai renders a
+        // "Page content from..." attribution beneath each follow-up prompt.
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT()
+        sut.setAttached(makeContext(title: "Cat", url: url))
+        sut.markPromptSubmitted()
+        XCTAssertNil(sut.pendingAttachedContextData)
+    }
+
+    func test_pendingAttachedContextData_initialDelivered_returnsNil() {
+        // Carry-over from half-sheet arrives `.delivered` — the FE already has it for the
+        // initial submission, so the next prompt's payload must not duplicate it.
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(
+            initialAttachedContext: makeContext(title: "Cat", url: url),
+            initialAttachmentDeliveryState: .delivered
+        )
+        XCTAssertNil(sut.pendingAttachedContextData)
+    }
+
+    func test_pendingAttachedContextData_initialPending_returnsContextData() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(
+            initialAttachedContext: makeContext(title: "Cat", url: url),
+            initialAttachmentDeliveryState: .pendingSubmit
+        )
+        XCTAssertEqual(sut.pendingAttachedContextData?.title, "Cat")
+    }
+
+    func test_pendingAttachedContextData_reAttachAfterSubmit_returnsContextData() {
+        // Detach + re-attach is a fresh user action that restarts the pending cycle — the next
+        // prompt should carry the newly attached context.
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT()
+        sut.setAttached(makeContext(title: "Cat", url: url))
+        sut.markPromptSubmitted()
+        XCTAssertNil(sut.pendingAttachedContextData)
+
+        sut.clearAttached()
+        sut.setAttached(makeContext(title: "Cat", url: url))
+        XCTAssertEqual(sut.pendingAttachedContextData?.title, "Cat")
+    }
+
     // MARK: - Helpers
 
     private func makeContext(title: String, url: String) -> AIChatPageContext {

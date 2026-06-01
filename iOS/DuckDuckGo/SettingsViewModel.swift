@@ -23,6 +23,7 @@ import Persistence
 import PrivacyConfig
 import SwiftUI
 import Common
+import FoundationExtensions
 import Combine
 import SyncUI_iOS
 import DuckPlayer
@@ -199,10 +200,6 @@ final class SettingsViewModel: ObservableObject {
         get {
             (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
         }
-    }
-
-    var shouldShowHideAIGeneratedImagesSection: Bool {
-        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
 
     var isDefaultOmnibarModeEnabled: Bool {
@@ -735,7 +732,7 @@ final class SettingsViewModel: ObservableObject {
         adBlockingAvailability.isRemotelyDisabled
     }
 
-      var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
+    var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
                 return self.state.duckPlayerNativeYoutubeMode

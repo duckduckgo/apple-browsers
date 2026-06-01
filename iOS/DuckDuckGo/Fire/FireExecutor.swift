@@ -19,6 +19,7 @@
 
 import Core
 import Common
+import FoundationExtensions
 import DDGSync
 import Bookmarks
 import AIChat

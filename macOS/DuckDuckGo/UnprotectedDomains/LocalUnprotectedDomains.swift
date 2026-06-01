@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import CoreData
 import Foundation
 import os.log

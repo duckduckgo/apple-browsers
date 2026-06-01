@@ -18,6 +18,7 @@
 
 import Cocoa
 import Common
+import FoundationExtensions
 import DesignResourcesKitIcons
 
 /// A text field that doesn't intercept mouse events, allowing clicks to pass through to views underneath

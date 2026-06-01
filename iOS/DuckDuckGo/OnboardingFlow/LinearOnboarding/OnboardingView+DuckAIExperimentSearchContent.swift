@@ -84,10 +84,10 @@ extension OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         private let content: OnboardingDuckAIQueryContent
-        private let onModeConfirmed: (DuckAIQueryExperimentMode) -> Void
+        private let onModeConfirmed: (DuckAIQueryMode) -> Void
         private let openAIChatAction: (String?, Bool) -> Void
         private let openSearchAction: (String) -> Void
-        private let measureQuerySubmissionAction: (DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void
+        private let measureQuerySubmissionAction: (DuckAIQueryMode, DuckAIQueryPromptSource) -> Void
         private let startExitTransitionAction: () -> Void
         private let visualStyle: VisualStyle
         private var animateTitle: Binding<Bool>
@@ -96,7 +96,7 @@ extension OnboardingView {
 
         // MARK: State
         @State private var query = ""
-        @State private var selectedMode: DuckAIQueryExperimentMode
+        @State private var selectedMode: DuckAIQueryMode
         @State private var isInputFocused = false
         @State private var visibleSuggestionCount = 0
         @State private var isTransitioningOut = false
@@ -130,13 +130,13 @@ extension OnboardingView {
                 aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder,
                 isToggleVisible: true
             ),
-            defaultMode: DuckAIQueryExperimentMode,
+            defaultMode: DuckAIQueryMode,
             visualStyle: VisualStyle = .legacy,
             animateTitle: Binding<Bool> = .constant(false),
-            onModeConfirmed: @escaping (DuckAIQueryExperimentMode) -> Void,
+            onModeConfirmed: @escaping (DuckAIQueryMode) -> Void,
             openAIChatAction: @escaping (String?, Bool) -> Void,
             openSearchAction: @escaping (String) -> Void,
-            measureQuerySubmissionAction: @escaping (DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void,
+            measureQuerySubmissionAction: @escaping (DuckAIQueryMode, DuckAIQueryPromptSource) -> Void,
             startExitTransitionAction: @escaping () -> Void
         ) {
             self.content = content
@@ -192,7 +192,7 @@ extension OnboardingView {
                             .frame(width: Metrics.pickerWidth, height: Metrics.pickerContainerHeight)
                         // Drive content mode (Search vs Duck.ai) from user picker selection.
                             .onChange(of: pickerViewModel.selectedItem) { [reduceMotion] selectedItem in
-                                let newMode: DuckAIQueryExperimentMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
+                                let newMode: DuckAIQueryMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
                                 if reduceMotion {
                                     selectedMode = newMode
                                 } else {
@@ -416,7 +416,7 @@ extension OnboardingView {
             !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
 
-        private func openSelectedExperience(prompt: String?, autoSend: Bool, promptSource: DuckAIQueryExperimentPromptSource) {
+        private func openSelectedExperience(prompt: String?, autoSend: Bool, promptSource: DuckAIQueryPromptSource) {
             if autoSend {
                 measureQuerySubmissionAction(selectedMode, promptSource)
             }
@@ -743,7 +743,7 @@ private struct OnboardingSuggestionChips: View {
     let isDuckAIMode: Bool
     let visibleCount: Int
     let visualStyle: OnboardingView.DuckAIExperimentSearchContent.VisualStyle
-    let onItemTap: (ContextualOnboardingListItem, DuckAIQueryExperimentPromptSource) -> Void
+    let onItemTap: (ContextualOnboardingListItem, DuckAIQueryPromptSource) -> Void
 
     // MARK: Computed Properties
     private var visibleItems: [ContextualOnboardingListItem] {
@@ -774,7 +774,7 @@ private struct OnboardingSuggestionChips: View {
         return OnboardingSuggestionsChipsMetrics.interChipSpacingLegacy
     }
 
-    private func promptSource(for index: Int) -> DuckAIQueryExperimentPromptSource {
+    private func promptSource(for index: Int) -> DuckAIQueryPromptSource {
         switch index {
         case 0: return .option1
         case 1: return .option2

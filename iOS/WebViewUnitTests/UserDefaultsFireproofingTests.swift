@@ -29,150 +29,110 @@ class UserDefaultsFireproofingTests: XCTestCase {
         UserDefaultsWrapper<Any>.clearAll()
     }
 
-
-    private func makeLegacyFireproofing() -> UserDefaultsFireproofing {
-        UserDefaultsFireproofing(isFireproofingETLDPlus1Enabled: { false })
-    }
-
-    private func makeETLDPlus1Fireproofing() -> UserDefaultsFireproofing {
-        UserDefaultsFireproofing(isFireproofingETLDPlus1Enabled: { true })
+    private func makeFireproofing() -> UserDefaultsFireproofing {
+        UserDefaultsFireproofing()
     }
 
 
-    func testLegacy_WhenAllowedDomainsContainsFireproofedDomainThenReturnsTrue() {
-        let fireproofing = makeLegacyFireproofing()
-        XCTAssertFalse(fireproofing.isAllowed(fireproofDomain: "example.com"))
-        fireproofing.addToAllowed(domain: "example.com")
-        XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "example.com"))
-    }
-
-    func testLegacy_AllowedCookieDomains() {
-        let fireproofing = makeLegacyFireproofing()
-        fireproofing.addToAllowed(domain: "example.com")
-        XCTAssertTrue(fireproofing.isAllowed(cookieDomain: ".example.com"))
-        XCTAssertFalse(fireproofing.isAllowed(cookieDomain: "subdomain.example.com"))
-        XCTAssertFalse(fireproofing.isAllowed(cookieDomain: ".subdomain.example.com"))
-    }
-
-    func testLegacy_WhenNewThenAllowedDomainsIsEmpty() {
-        let fireproofing = makeLegacyFireproofing()
-        XCTAssertTrue(fireproofing.allowedDomains.isEmpty)
-    }
-
-    func testLegacy_DuckDuckGoIsFireproofed() {
-        let fireproofing = makeLegacyFireproofing()
-        XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "duckduckgo.com"))
-        XCTAssertTrue(fireproofing.isAllowed(cookieDomain: "duckduckgo.com"))
-        XCTAssertFalse(fireproofing.isAllowed(cookieDomain: "test.duckduckgo.com"))
-    }
-
-    func testLegacy_DuckAiIsFireproofed() {
-        let fireproofing = makeLegacyFireproofing()
-        XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "duck.ai"))
-        XCTAssertTrue(fireproofing.isAllowed(cookieDomain: "duck.ai"))
-        XCTAssertFalse(fireproofing.isAllowed(cookieDomain: "test.duck.ai"))
-    }
-
-
-    func testETLDPlus1_WhenSubdomainFireproofed_ThenSiblingSubdomainIsAllowed() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenSubdomainFireproofed_ThenSiblingSubdomainIsAllowed() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "login.example.com")
         XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "docs.example.com"))
         XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "example.com"))
     }
 
-    func testETLDPlus1_WhenSubdomainFireproofed_ThenCookieForParentDomainIsAllowed() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenSubdomainFireproofed_ThenCookieForParentDomainIsAllowed() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "login.example.com")
         XCTAssertTrue(fireproofing.isAllowed(cookieDomain: ".example.com"))
         XCTAssertTrue(fireproofing.isAllowed(cookieDomain: "example.com"))
         XCTAssertTrue(fireproofing.isAllowed(cookieDomain: "docs.example.com"))
     }
 
-    func testETLDPlus1_WhenSubdomainFireproofed_ThenUnrelatedDomainIsNotAllowed() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenSubdomainFireproofed_ThenUnrelatedDomainIsNotAllowed() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "login.example.com")
         XCTAssertFalse(fireproofing.isAllowed(fireproofDomain: "other.com"))
         XCTAssertFalse(fireproofing.isAllowed(cookieDomain: "other.com"))
     }
 
-    func testETLDPlus1_WhenBarePublicSuffixAdded_ThenNotFireproofed() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenBarePublicSuffixAdded_ThenNotFireproofed() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "github.io")
         XCTAssertFalse(fireproofing.isAllowed(fireproofDomain: "github.io"))
         XCTAssertFalse(fireproofing.isAllowed(fireproofDomain: "myproject.github.io"))
     }
 
-    func testETLDPlus1_WhenPSLSubdomainFireproofed_ThenOnlyThatSiteIsFireproofed() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenPSLSubdomainFireproofed_ThenOnlyThatSiteIsFireproofed() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "myproject.github.io")
         XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "myproject.github.io"))
         XCTAssertFalse(fireproofing.isAllowed(fireproofDomain: "otherproject.github.io"))
     }
 
-    func testETLDPlus1_WhenMultiPartTLDFireproofed_ThenMatchesCorrectly() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenMultiPartTLDFireproofed_ThenMatchesCorrectly() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "login.example.co.uk")
         XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "shop.example.co.uk"))
         XCTAssertFalse(fireproofing.isAllowed(fireproofDomain: "other.co.uk"))
     }
 
-    func testETLDPlus1_WhenCookieDomainHasLeadingDot_ThenDotIsStrippedBeforeNormalization() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenCookieDomainHasLeadingDot_ThenDotIsStrippedBeforeNormalization() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "example.com")
         XCTAssertTrue(fireproofing.isAllowed(cookieDomain: ".example.com"))
     }
 
-    func testETLDPlus1_WhenCookieDomainIsBareTLD_ThenNotAllowed() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenCookieDomainIsBareTLD_ThenNotAllowed() {
+        let fireproofing = makeFireproofing()
         XCTAssertFalse(fireproofing.isAllowed(cookieDomain: ".com"))
         XCTAssertFalse(fireproofing.isAllowed(cookieDomain: ".co.uk"))
     }
 
-    func testETLDPlus1_DuckDuckGoRemainsFireproofed() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testDuckDuckGoRemainsFireproofed() {
+        let fireproofing = makeFireproofing()
         XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "duckduckgo.com"))
         XCTAssertTrue(fireproofing.isAllowed(cookieDomain: ".duckduckgo.com"))
         XCTAssertTrue(fireproofing.isAllowed(cookieDomain: "duckduckgo.com"))
     }
 
-    func testETLDPlus1_DuckAiRemainsFireproofed() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testDuckAiRemainsFireproofed() {
+        let fireproofing = makeFireproofing()
         XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "duck.ai"))
         XCTAssertTrue(fireproofing.isAllowed(cookieDomain: "duck.ai"))
     }
 
 
-    func testETLDPlus1_WhenDomainAdded_ThenAllowedDomainsShowsNormalized() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenDomainAdded_ThenAllowedDomainsShowsNormalized() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "login.example.com")
         XCTAssertTrue(fireproofing.allowedDomains.contains("example.com"))
         XCTAssertFalse(fireproofing.allowedDomains.contains("login.example.com"))
     }
 
-    func testETLDPlus1_WhenDomainRemoved_ThenAllowedDomainsIsEmpty() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenDomainRemoved_ThenAllowedDomainsIsEmpty() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "login.example.com")
         fireproofing.remove(domain: "example.com")
         XCTAssertTrue(fireproofing.allowedDomains.isEmpty)
     }
 
-    func testETLDPlus1_WhenClearAllCalled_ThenAllowedDomainsIsEmpty() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenClearAllCalled_ThenAllowedDomainsIsEmpty() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "example.com")
         fireproofing.addToAllowed(domain: "other.org")
         fireproofing.clearAll()
         XCTAssertTrue(fireproofing.allowedDomains.isEmpty)
     }
 
-    func testETLDPlus1_WhenPublicSuffixAdded_ThenNotInAllowedDomains() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenPublicSuffixAdded_ThenNotInAllowedDomains() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "github.io")
         XCTAssertTrue(fireproofing.allowedDomains.isEmpty)
     }
 
-    func testETLDPlus1_WhenDuplicateSubdomainsAdded_ThenSingleEntryInAllowedDomains() {
-        let fireproofing = makeETLDPlus1Fireproofing()
+    func testWhenDuplicateSubdomainsAdded_ThenSingleEntryInAllowedDomains() {
+        let fireproofing = makeFireproofing()
         fireproofing.addToAllowed(domain: "login.example.com")
         fireproofing.addToAllowed(domain: "docs.example.com")
         XCTAssertEqual(fireproofing.allowedDomains, ["example.com"])
@@ -180,12 +140,8 @@ class UserDefaultsFireproofingTests: XCTestCase {
 
 
     func testMigration_NormalizesAndDeduplicates() {
-        let fireproofing = makeLegacyFireproofing()
-        fireproofing.addToAllowed(domain: "old.reddit.com")
-        fireproofing.addToAllowed(domain: "www.reddit.com")
-        fireproofing.addToAllowed(domain: "fantasy.premierleague.com")
-        fireproofing.addToAllowed(domain: "myproject.github.io")
-        fireproofing.etldPlus1AllowedDomains = []
+        let fireproofing = makeFireproofing()
+        fireproofing.legacyAllowedDomains = ["old.reddit.com", "www.reddit.com", "fantasy.premierleague.com", "myproject.github.io"]
 
         let didMigrate = fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded()
 
@@ -193,32 +149,30 @@ class UserDefaultsFireproofingTests: XCTestCase {
         let migrated = Set(fireproofing.etldPlus1AllowedDomains)
         XCTAssertEqual(migrated, ["reddit.com", "premierleague.com", "myproject.github.io"])
         XCTAssertEqual(migrated.count, 3, "Two reddit subdomains should collapse into one entry")
+        XCTAssertTrue(fireproofing.legacyAllowedDomains.isEmpty)
     }
 
     func testMigration_IsIdempotent() {
-        let fireproofing = makeLegacyFireproofing()
-        fireproofing.addToAllowed(domain: "example.com")
-        fireproofing.etldPlus1AllowedDomains = []
+        let fireproofing = makeFireproofing()
+        fireproofing.legacyAllowedDomains = ["example.com"]
 
         XCTAssertTrue(fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded())
         XCTAssertFalse(fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded())
     }
 
     func testMigration_SkipsUnresolvableDomains() {
-        let fireproofing = makeLegacyFireproofing()
-        fireproofing.addToAllowed(domain: "example.com")
-        fireproofing.addToAllowed(domain: "github.io")
-        fireproofing.etldPlus1AllowedDomains = []
+        let fireproofing = makeFireproofing()
+        fireproofing.legacyAllowedDomains = ["example.com", "github.io"]
 
         fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded()
 
         XCTAssertTrue(fireproofing.etldPlus1AllowedDomains.contains("example.com"))
         XCTAssertFalse(fireproofing.etldPlus1AllowedDomains.contains("github.io"))
-        XCTAssertTrue(fireproofing.legacyAllowedDomains.contains("github.io"))
+        XCTAssertTrue(fireproofing.legacyAllowedDomains.isEmpty)
     }
 
     func testMigration_WithEmptyLegacyStore_SetsFlagAndReturnsFalse() {
-        let fireproofing = makeLegacyFireproofing()
+        let fireproofing = makeFireproofing()
 
         XCTAssertFalse(fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded())
         XCTAssertFalse(fireproofing.migrateFireproofDomainsToETLDPlus1IfNeeded())

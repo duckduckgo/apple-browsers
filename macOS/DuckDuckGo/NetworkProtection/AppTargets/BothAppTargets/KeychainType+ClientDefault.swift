@@ -19,6 +19,7 @@
 import Foundation
 import VPN
 import Common
+import FoundationExtensions
 
 /// Implements convenience default for the client apps making use of this.
 ///

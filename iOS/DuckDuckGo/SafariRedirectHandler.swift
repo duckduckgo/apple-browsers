@@ -47,7 +47,6 @@ final class SafariRedirectHandler: SafariRedirectHandling {
     }
 
     private struct HostState {
-        var redirectCount: Int = 0
         var isSafariRedirectSuppressed: Bool = false
         var loopErrorPageShown: Bool = false
     }
@@ -72,19 +71,17 @@ final class SafariRedirectHandler: SafariRedirectHandling {
         guard let host = domain(for: url) else { return false }
         var state = hostStates[host, default: HostState()]
 
-        if !state.isSafariRedirectSuppressed {
+        if state.isSafariRedirectSuppressed {
+            // Second time through we're obviously in a loop
+            delegate?.safariRedirectHandler(self, didRequestShowSafariRedirectLoopErrorForURL: url)
+        } else {
             state.isSafariRedirectSuppressed = true
             hostStates[host] = state
-        }
 
-        if state.redirectCount == 0 {
+            // First time through try to show the https version
             convertAndLoad(url: url)
-        } else if state.redirectCount > 0 {
-            delegate?.safariRedirectHandler(self, didRequestShowSafariRedirectLoopErrorForURL: url)
         }
-
-        state.redirectCount += 1
-        hostStates[host] = state
+        
         return true
     }
 

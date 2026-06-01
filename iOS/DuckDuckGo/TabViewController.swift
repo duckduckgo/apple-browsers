@@ -2401,6 +2401,14 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
+        // There is an `isUserInitiated` var on navigationAction that uses private API
+        //  but this approach is public API.  Unfortunately this means that on iOS 17 and older
+        //  if the user visits the a domain where as a loop has already been detected
+        //  we'll show the error page but that is a small number at this point already.
+        if #available(iOS 18.4, *), navigationAction.buttonNumber.contains(.primary) {
+            safariRedirectHandler.reset()
+        }
+
         if let url = navigationAction.request.url {
             if !tabURLInterceptor.allowsNavigatingTo(url: url) {
                 decisionHandler(.cancel)
@@ -2634,10 +2642,6 @@ extension TabViewController: WKNavigationDelegate {
 
         let schemeType = SchemeHandler.schemeType(for: url)
         self.blobDownloadTargetFrame = nil
-
-        if (navigationAction.value(forKey: "isUserInitiated") as? Bool) == true {
-            safariRedirectHandler.reset()
-        }
 
         if safariRedirectHandler.handleRedirect(to: url) {
             completion(.cancel)

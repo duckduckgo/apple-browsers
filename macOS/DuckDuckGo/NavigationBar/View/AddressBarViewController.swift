@@ -440,7 +440,6 @@ final class AddressBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        // hide Suggestions when child window is shown (Suggestions, Bookmarks, Downloads etc…, excluding Tab Previews and Suggestions)
         window.publisher(for: \.childWindows)
             .debounce(for: 0.05, scheduler: DispatchQueue.main)
             .sink { [weak self] childWindows in

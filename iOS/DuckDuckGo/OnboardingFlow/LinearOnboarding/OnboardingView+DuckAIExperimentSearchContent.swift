@@ -498,9 +498,6 @@ extension OnboardingView {
 
 // MARK: - OnboardingQueryField
 private struct OnboardingQueryField: UIViewRepresentable {
-    private static let singleLineTopInset: CGFloat = 5.0 / 3.0
-    private static let multiLineTopInset: CGFloat = 10.0 / 3.0
-
     @Binding var text: String
     let placeholder: String
     @Binding var isFocused: Bool
@@ -557,14 +554,6 @@ private struct OnboardingQueryField: UIViewRepresentable {
         if context.coordinator.isSingleLine != isSingleLine {
             context.coordinator.isSingleLine = isSingleLine
             applyModeConfiguration(to: textView, isSingleLine: isSingleLine, context: context)
-        }
-
-        let topInset = isSingleLine ? Self.singleLineTopInset : Self.multiLineTopInset
-
-        UIView.performWithoutAnimation {
-            textView.textContainerInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
-            context.coordinator.placeholderTopConstraint?.constant = topInset
-            textView.layoutIfNeeded()
         }
 
         if isFocused {

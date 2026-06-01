@@ -623,15 +623,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment),
                    cohortType: DuckAIQueryExperimentCohort.self)
         case .onboardingDuckAIFlow:
-<<<<<<< HEAD
-            Config(source: .disabled, supportsLocalOverriding: true)
-        case .showHideAIGeneratedImagesSection:
-            Config(source: .remoteReleasable(AIChatSubfeature.showHideAiGeneratedImages))
-=======
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiOnboardingFlow))
-        case .storeSerpSettings:
-            Config(source: .remoteReleasable(SERPSubfeature.storeSerpSettings))
->>>>>>> main
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration))
         case .allowProTierPurchase:

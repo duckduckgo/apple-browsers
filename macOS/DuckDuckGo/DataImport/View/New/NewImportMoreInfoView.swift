@@ -32,7 +32,7 @@ struct NewImportMoreInfoView: View {
                     ProgrammaticallyDismissedPopover(
                         isPresented: $showPopover,
                     ) {
-                        if #available(macOS 12, *), let attr = try? AttributedString(markdown: UserText.importChromeAllowKeychainIntructions) {
+                        if let attr = try? AttributedString(markdown: UserText.importChromeAllowKeychainIntructions) {
                             Text(attr)
                                 .padding()
                                 .frame(width: 280)

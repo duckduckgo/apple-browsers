@@ -22,7 +22,7 @@ import PackageDescription
 
 let package = Package(
     name: "Waitlist-macOS",
-    platforms: [ .macOS("11.4") ],
+    platforms: [ .macOS("12.3") ],
     products: [
         .library(name: "Waitlist-macOS", targets: ["Waitlist-macOS"]),
     ],

@@ -463,15 +463,10 @@ private struct AdaptiveTextEditor: View {
     @Binding var text: String
 
     var body: some View {
-        if #available(macOS 12, *) {
-            AutoFocusTextEditor(text: $text)
-        } else {
-            TextEditor(text: $text)
-        }
+        AutoFocusTextEditor(text: $text)
     }
 }
 
-@available(macOS 12.0, *)
 private struct AutoFocusTextEditor: View {
     @Binding var text: String
     @FocusState private var focusState: Bool

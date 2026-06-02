@@ -264,15 +264,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         helpItem.submenu = HelpSubMenu(targetting: self, featureFlagger: featureFlagger)
         addItem(helpItem)
 
-        if StandardApplicationBuildType().isAppStoreBuild && !featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
-            let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
-                                                     action: #selector(checkForUpdates(_:)),
-                                                     keyEquivalent: "")
-                .withImage(DesignSystemImages.Glyphs.Size16.update)
-                .targetting(self)
-            addItem(checkForAppStoreUpdates)
-        }
-
         let preferencesItem = NSMenuItem(title: UserText.settings, action: #selector(openPreferences(_:)), keyEquivalent: "")
             .targetting(self)
             .withImage(moreOptionsMenuIconsProvider.settingsIcon)
@@ -342,11 +333,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         PixelKit.fire(MoreOptionsMenuPixel.fireproofSiteActionClicked, frequency: .daily)
         selectedTabViewModel.tab.requestFireproofToggle()
-    }
-
-    @objc func checkForUpdates(_ sender: NSMenuItem) {
-        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .moreOptionsMenu))
-        NSWorkspace.shared.open(.appStore)
     }
 
     @objc func bookmarkPage(_ sender: NSMenuItem) {

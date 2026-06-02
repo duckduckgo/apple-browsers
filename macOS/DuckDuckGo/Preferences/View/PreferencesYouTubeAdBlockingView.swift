@@ -113,6 +113,7 @@ extension Preferences {
                     if model.isRemotelyDisabled {
                         AdBlockingUnavailableMessageView()
                             .frame(width: 512)
+                            .accessibilityIdentifier("Preferences.YouTubeAdBlocking.unavailableMessage")
                     }
 
                     TextMenuItemCaption(UserText.youTubeAdBlockingExplanation)
@@ -127,9 +128,11 @@ extension Preferences {
                             spacing: 4
                         )
                         .disabled(model.isRemotelyDisabled)
+                        .accessibilityIdentifier("Preferences.YouTubeAdBlocking.enabledToggle")
                     } else {
                         ToggleMenuItem(UserText.youTubeAdBlockingToggle, isOn: youTubeAdBlockingEnabledBinding)
                             .disabled(model.isRemotelyDisabled)
+                            .accessibilityIdentifier("Preferences.YouTubeAdBlocking.enabledToggle")
                     }
 
                     if !model.isDisclosureHidden {

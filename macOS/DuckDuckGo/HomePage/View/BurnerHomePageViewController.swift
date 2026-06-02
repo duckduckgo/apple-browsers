@@ -37,14 +37,12 @@ final class BurnerHomePageViewController: NSViewController {
     init(appearancePreferences: AppearancePreferences? = nil,
          themeManager: ThemeManager? = nil,
          subscriptionManager: any SubscriptionManager,
-         featureFlagger: FeatureFlagger,
          promoDelegate: FireWindowSubscriptionPromoDelegate?,
          dateProvider: @escaping () -> Date = Date.init) {
         self.appearancePreferences = appearancePreferences ?? NSApp.delegateTyped.appearancePreferences
         self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
         self.subscriptionPromoViewModel = SubscriptionPromoViewModel(
             subscriptionManager: subscriptionManager,
-            featureFlagger: featureFlagger,
             dateProvider: dateProvider,
             promoDelegate: promoDelegate
         )

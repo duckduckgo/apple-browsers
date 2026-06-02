@@ -40,7 +40,6 @@ class OnboardingManagerTests: XCTestCase {
     var dataClearingPreferences: DataClearingPreferences!
     var startupPersistor: StartupPreferencesUserDefaultsPersistor!
     var importProvider: CapturingDataImportProvider!
-    var applicationBuildType: MockApplicationBuildType!
     private var onboardingSharedPixelHandler: MockOnboardingSharedPixelHandler!
 
     @MainActor override func setUp() {
@@ -64,7 +63,6 @@ class OnboardingManagerTests: XCTestCase {
         )
         startupPreferences = StartupPreferences(pinningManager: MockPinningManager(), persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
-        applicationBuildType = MockApplicationBuildType()
         onboardingSharedPixelHandler = MockOnboardingSharedPixelHandler()
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
@@ -74,7 +72,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
     }
@@ -90,7 +87,6 @@ class OnboardingManagerTests: XCTestCase {
         dataClearingPreferences = nil
         fireButtonPreferencesPersistor = nil
         importProvider = nil
-        applicationBuildType = nil
         onboardingSharedPixelHandler = nil
     }
 
@@ -111,9 +107,9 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(manager.configuration, expectedConfig)
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenAppStoreBuild_DoesNotShowDockRow() {
+    func testReturnsExpectedOnboardingConfig_WhenDockCustomization_DoesNotSupportAddingToDock() {
         // Given
-        applicationBuildType.isAppStoreBuild = true
+        dockCustomization.supportsAddingToDock = false
         let appStoreManager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -122,10 +118,9 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
-        let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["import"]))
+        let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["dock-instructions", "import"]))
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
@@ -151,7 +146,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
@@ -182,7 +176,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
@@ -213,7 +206,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
@@ -547,7 +539,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
@@ -574,7 +565,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 

@@ -551,11 +551,11 @@ extension TabViewController {
     }
 
     /// Duck.ai header tile shown on website/NTP menus when Unified Toggle Input is on:
-    /// the colored dax logo branded "Duck.ai", opening a new chat (same action as New Chat).
+    /// the monochrome Duck.ai mark branded "Duck.ai", opening a new chat (same action as New Chat).
     private func buildDuckAIHeaderTile() -> BrowsingMenuEntry {
         .regular(name: UserText.duckAiFeatureName,
                  accessibilityLabel: UserText.duckAiFeatureName,
-                 image: DesignSystemImages.Color.Size24.duckAI,
+                 image: DesignSystemImages.Glyphs.Size24.duckAi,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             Pixel.fire(pixel: .browsingMenuAIChat)

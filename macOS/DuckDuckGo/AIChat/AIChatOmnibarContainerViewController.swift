@@ -1182,48 +1182,57 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// collectively overshoot. Images keep the `displayCap` (one-over) cue since they have no
     /// size / page dimension and a single submission is bounded to the per-turn image count.
     private func addPickedAttachments(from urls: [URL]) {
-        var imagesAdded = omnibarController.activeImageAttachments.count
-        let imageCap = omnibarController.imageAttachmentsDisplayCap
-        var pendingFiles = omnibarController.activeFileAttachments.map(AIChatAttachmentValidator.FileDescriptor.init)
-        var firstFileError: String?
+        // Reading bytes off disk and parsing PDFs (page count / encryption) is offloaded to a
+        // background task per file — a large PDF would otherwise block the main thread. Validation,
+        // attachment, and label updates stay on the main actor; files are processed in order so the
+        // cumulative count / total-size checks remain correct.
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            var imagesAdded = self.omnibarController.activeImageAttachments.count
+            let imageCap = self.omnibarController.imageAttachmentsDisplayCap
+            var pendingFiles = self.omnibarController.activeFileAttachments.map(AIChatAttachmentValidator.FileDescriptor.init)
+            var firstFileError: String?
 
-        for url in urls {
-            let utType = UTType(filenameExtension: url.pathExtension.lowercased())
-            if let utType, utType.conforms(to: .image) {
-                guard imagesAdded < imageCap else { continue }
-                addImageAttachment(from: url)
-                imagesAdded += 1
-            } else {
-                guard let attachment = makeFileAttachment(from: url) else { continue }
-                let descriptor = AIChatAttachmentValidator.FileDescriptor(attachment)
+            for url in urls {
+                let utType = UTType(filenameExtension: url.pathExtension.lowercased())
+                if let utType, utType.conforms(to: .image) {
+                    guard imagesAdded < imageCap else { continue }
+                    self.addImageAttachment(from: url)
+                    imagesAdded += 1
+                } else {
+                    guard let attachment = await Task.detached(priority: .userInitiated, operation: {
+                        Self.makeFileAttachment(from: url)
+                    }).value else { continue }
+                    let descriptor = AIChatAttachmentValidator.FileDescriptor(attachment)
 
-                // Size / total-size / page / type / encryption reject the file outright. Count is
-                // handled separately by the `displayCap` (one-over) cue below, so we pass
-                // `enforceCount: false` here — otherwise an over-count file would be rejected with a
-                // count message instead of getting the "+1" visual cue that images also use.
-                if omnibarController.attachmentLimits != nil {
-                    let validator = omnibarController.makeAttachmentValidator(
-                        pendingImageCount: imagesAdded,
-                        pendingFiles: pendingFiles
-                    )
-                    if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
-                        if firstFileError == nil { firstFileError = error.message }
-                        continue
+                    // Size / total-size / page / type / encryption reject the file outright. Count is
+                    // handled separately by the `displayCap` (one-over) cue below, so we pass
+                    // `enforceCount: false` here — otherwise an over-count file would be rejected with a
+                    // count message instead of getting the "+1" visual cue that images also use.
+                    if self.omnibarController.attachmentLimits != nil {
+                        let validator = self.omnibarController.makeAttachmentValidator(
+                            pendingImageCount: imagesAdded,
+                            pendingFiles: pendingFiles
+                        )
+                        if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
+                            if firstFileError == nil { firstFileError = error.message }
+                            continue
+                        }
                     }
+
+                    // Count cue: allow up to `displayCap` (one over the limit) so the carousel renders
+                    // the over-limit state and the error label calls it out; submit stays blocked while over.
+                    guard pendingFiles.count < self.omnibarController.fileAttachmentsDisplayCap else { continue }
+
+                    self.omnibarController.addFileAttachmentToActiveTab(attachment)
+                    PixelKit.fire(AIChatPixel.aiChatAddressBarFileAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                    pendingFiles.append(descriptor)
                 }
-
-                // Count cue: allow up to `displayCap` (one over the limit) so the carousel renders
-                // the over-limit state and the error label calls it out; submit stays blocked while over.
-                guard pendingFiles.count < omnibarController.fileAttachmentsDisplayCap else { continue }
-
-                omnibarController.addFileAttachmentToActiveTab(attachment)
-                PixelKit.fire(AIChatPixel.aiChatAddressBarFileAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                pendingFiles.append(descriptor)
             }
-        }
 
-        lastAttachmentError = firstFileError
-        updateAttachmentsLayout()
+            self.lastAttachmentError = firstFileError
+            self.updateAttachmentsLayout()
+        }
     }
 
     /// Union of the UTTypes the picker should allow:
@@ -1395,7 +1404,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// count / encryption so the validator can enforce the page-count limit and reject encrypted or
     /// unreadable files. MIME type comes from the URL's UTType so it matches the model's
     /// `supportedFileTypes` (which are MIME types). Returns `nil` if the bytes can't be read.
-    private func makeFileAttachment(from url: URL) -> AIChatFileAttachment? {
+    private nonisolated static func makeFileAttachment(from url: URL) -> AIChatFileAttachment? {
         guard let data = try? Data(contentsOf: url) else { return nil }
         let mimeType = UTType(filenameExtension: url.pathExtension.lowercased())?.preferredMIMEType
             ?? "application/octet-stream"

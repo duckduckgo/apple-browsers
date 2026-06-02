@@ -67,6 +67,12 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         }
     }
 
+    /// Appends a section for the given entries, skipping the section entirely when there are none.
+    private func appendSection(_ items: [BrowsingMenuModel.Entry], to sections: inout [BrowsingMenuModel.Section]) {
+        guard !items.isEmpty else { return }
+        sections.append(BrowsingMenuModel.Section(items: items))
+    }
+
     // MARK: - New Tab Page
 
     private func buildNewTabPageMenu(mobileCustomization: MobileCustomization,
@@ -185,15 +191,10 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             .init(entryBuilder.makeDownloadsEntry())
         ].compactMap { $0 }
 
-        if !shortcutItems.isEmpty {
-            sections.append(BrowsingMenuModel.Section(items: shortcutItems))
-        }
+        appendSection(shortcutItems, to: &sections)
 
         // MARK: Duck.ai group
-        let duckAIGroupItems: [BrowsingMenuModel.Entry] = duckAIItems.compactMap { .init($0) }
-        if !duckAIGroupItems.isEmpty {
-            sections.append(BrowsingMenuModel.Section(items: duckAIGroupItems))
-        }
+        appendSection(duckAIItems.compactMap { .init($0) }, to: &sections)
 
         // MARK: Privacy group
         let privacyItems: [BrowsingMenuModel.Entry] = [

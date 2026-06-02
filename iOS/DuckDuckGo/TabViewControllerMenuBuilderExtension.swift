@@ -160,7 +160,7 @@ extension TabViewController {
             entries.append(buildNewAIChatEntry(withSmallIcon: useSmallIcon))
             entries.append(buildAINewVoiceChatEntry(useSmallIcon: useSmallIcon))
             entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
-            entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon))
+            entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon, useAIGlyph: true))
 
             entries.append(.separator)
 
@@ -623,10 +623,11 @@ extension TabViewController {
         })
     }
 
-    private func buildAIChatSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionAIChatSettings,
+    private func buildAIChatSettingsEntry(useSmallIcon: Bool = true, useAIGlyph: Bool = false) -> BrowsingMenuEntry {
+        let largeIcon = useAIGlyph ? DesignSystemImages.Glyphs.Size24.aiChatSettings : DesignSystemImages.Glyphs.Size24.settings
+        return .regular(name: UserText.actionAIChatSettings,
                  accessibilityLabel: UserText.actionAIChatSettings,
-                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatSettings : DesignSystemImages.Glyphs.Size24.aiChatSettings,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatSettings : largeIcon,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
             self?.submitOpenSettingsAction()

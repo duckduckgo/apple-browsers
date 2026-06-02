@@ -51,6 +51,6 @@ struct FireTabsTip: Tip {
     }
 
     var options: [TipOption] {
-        [MaxDisplayCount(5)]
+        [MaxDisplayCount(1)]
     }
 }

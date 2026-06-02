@@ -20,6 +20,7 @@
 import XCTest
 import CoreData
 import Common
+import FoundationExtensions
 import Persistence
 import Bookmarks
 import DuckDuckGo

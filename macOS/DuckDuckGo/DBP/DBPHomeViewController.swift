@@ -21,6 +21,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import AppKit
 import Common
+import FoundationExtensions
 import SwiftUI
 import BrowserServicesKit
 import PixelKit

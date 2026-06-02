@@ -18,8 +18,10 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import ContentScopeScripts
 import Foundation
+import FoundationExtensions
 import MaliciousSiteProtection
 import Navigation
 import os

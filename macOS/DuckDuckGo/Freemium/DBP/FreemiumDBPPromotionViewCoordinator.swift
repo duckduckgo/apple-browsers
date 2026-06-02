@@ -23,6 +23,7 @@ import OSLog
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import Common
+import FoundationExtensions
 
 /// Default implementation of `FreemiumDBPPromotionViewCoordinating`, responsible for managing
 /// the visibility of the promotion and responding to user interactions with the promotion view.

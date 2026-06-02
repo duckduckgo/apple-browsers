@@ -138,6 +138,69 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_addressbar_file_removed": {
+        "description": "Fired when user removes an attached file (PDF etc.) in the duck.ai omnibar by clicking the × on the carousel card",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_attach_tabs_picker_shown": {
+        "description": "Fired when user opens the duck.ai omnibar attach menu's 'Add Page Content' submenu, which lists open tabs whose page content can be attached",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_attach_tab_chosen": {
+        "description": "Fired when user toggles a tab ON in the duck.ai omnibar's 'Add Page Content' submenu — i.e. adds that tab's page content as an attachment",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_attach_tab_removed": {
+        "description": "Fired when user toggles a tab OFF from inside the duck.ai omnibar's 'Add Page Content' submenu — i.e. removes that tab's page content attachment by clicking its row again",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_attach_picker_canceled": {
+        "description": "Fired when user dismisses the duck.ai omnibar's 'Add Page Content' submenu without toggling any tab on or off during that open session",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_mention_picker_shown": {
+        "description": "Fired when the duck.ai omnibar's @-mention tab picker appears — i.e. the user typed @ in the prompt and the picker became visible",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_mention_tab_chosen": {
+        "description": "Fired when user picks a previously-unattached tab in the duck.ai omnibar's @-mention picker — i.e. adds that tab as an attachment via @",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_mention_tab_removed": {
+        "description": "Fired when user picks an already-attached tab in the duck.ai omnibar's @-mention picker — i.e. removes that tab's page-content attachment via @",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_mention_picker_canceled": {
+        "description": "Fired when user dismisses the duck.ai omnibar's @-mention picker without accepting any row (Esc, click outside, caret leaves the @-token, etc.). Pressing Enter while the picker shows the empty-state row also counts here: it falls through to the omnibar's prompt submit, the panel dismisses on focus loss, and the user never picked a tab — semantically a cancel.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_aichat_addressbar_submit_with_files": {
         "description": "Fired when user submits a prompt that includes one or more file (PDF etc.) attachments",
         "owners": ["tomasstrba"],
@@ -166,14 +229,14 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_new_voice_chat_omnibar_native": {
         "description": "Fired when user opens a new Duck.ai voice chat from the native omnibar",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_recent_chat_delete_button_clicked": {
         "description": "Fired when user clicks the delete button on a recent chat suggestion in the address bar",
@@ -229,20 +292,20 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_web_search_deactivated": {
         "description": "Fired when user dismisses the web search chip (X button)",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_web_search_submitted": {
         "description": "Fired when user submits a prompt while web search mode is active",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

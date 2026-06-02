@@ -2362,121 +2362,121 @@
       }
     },
     "aichat.attach-menu.image-or-file" : {
-      "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker",
+      "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker. PDF is the only file format the menu currently accepts on the file side, so the copy names it explicitly rather than the more abstract 'file'.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bild oder Datei hinzufügen"
+            "value" : "Bilder oder PDFs hinzufügen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add Image or File"
+            "value" : "Add Images or PDFs"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añadir imagen o archivo"
+            "value" : "Añadir imágenes o archivos PDF"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajouter une image ou un fichier"
+            "value" : "Ajouter des images ou des PDF"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi immagine o file"
+            "value" : "Aggiungi immagini o PDF"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afbeelding of bestand toevoegen"
+            "value" : "Afbeeldingen of PDF's toevoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaj obraz lub plik"
+            "value" : "Dodaj obrazy lub pliki PDF"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicionar Imagem ou Ficheiro"
+            "value" : "Adicionar Imagens ou PDFs"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить изображение или файл"
+            "value" : "Добавить изображения или PDF-файлы"
           }
         }
       }
     },
     "aichat.attach-menu.no-open-tabs" : {
-      "comment" : "Placeholder shown inside the AI chat omnibar add-attachment menu when the user has no open browser tabs to choose from",
+      "comment" : "Placeholder shown inside the AI chat omnibar add-attachment menu when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine offenen Tabs"
+            "value" : "Kein Seiteninhalt verfügbar"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "No open tabs"
+            "value" : "No page content available"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No hay pestañas abiertas"
+            "value" : "No hay contenido de página disponible"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucun onglet ouvert"
+            "value" : "Aucun contenu de page disponible"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuna scheda aperta"
+            "value" : "Nessun contenuto della pagina disponibile"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geen open tabbladen"
+            "value" : "Geen pagina-inhoud beschikbaar"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brak otwartych kart"
+            "value" : "Brak dostępnej zawartości strony"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nenhum separador aberto"
+            "value" : "Não há conteúdo disponível da página"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет открытых вкладок"
+            "value" : "Содержимое страницы недоступно"
           }
         }
       }
@@ -3557,6 +3557,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить изображение"
+          }
+        }
+      }
+    },
+    "aichat.mention-picker.no-matches" : {
+      "comment" : "Placeholder shown inside the @-mention tab picker when the typed filter doesn't match any open browser tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine passenden Tabs"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No matching tabs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay pestañas coincidentes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun onglet correspondant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna scheda corrispondente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen overeenkomende tabbladen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak pasujących kart"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum separador correspondente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет соответствующих вкладок"
           }
         }
       }
@@ -12046,6 +12106,306 @@
         }
       }
     },
+    "big-sur-end-of-support.dont-show-again" : {
+      "comment" : "Button that permanently dismisses the Big Sur end-of-support alert",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht erneut anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t Show Again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No volver a mostrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne plus afficher"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non mostrare più"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet meer weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie pokazuj więcej"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não mostrar novamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Больше не показывать"
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.message" : {
+      "comment" : "Body of the on-launch alert shown to users running macOS Big Sur after support has ended",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualisiere macOS auf Monterey oder höher, um weiterhin neue Funktionen, Fehlerbehebungen und Sicherheitsverbesserungen von DuckDuckGo zu erhalten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update macOS to Monterey or later to keep getting new DuckDuckGo features, fixes, and security improvements."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza macOS a Monterey o versiones posteriores para seguir recibiendo nuevas funciones, correcciones y mejoras de seguridad de DuckDuckGo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettez à jour macOS vers Monterey ou une version ultérieure pour continuer à bénéficier des nouvelles fonctionnalités, corrections et améliorations de sécurité de DuckDuckGo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna macOS a Monterey o versioni successive per continuare a ricevere nuove funzionalità, correzioni e miglioramenti di sicurezza di DuckDuckGo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update macOS naar Monterey of later om te blijven profiteren van nieuwe DuckDuckGo-functies, bugfixes en beveiligingsverbeteringen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaktualizuj system macOS do wersji Monterey lub nowszej, aby otrzymywać nowe funkcje, poprawki i ulepszenia zabezpieczeń DuckDuckGo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualiza o macOS para o Monterey ou posterior para continuares a receber novas funcionalidades, correções e melhorias de segurança do DuckDuckGo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновите macOS до Monterey или более поздней версии, чтобы продолжать получать новые функции DuckDuckGo, исправления и улучшения безопасности."
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.message-incapable" : {
+      "comment" : "Body of the on-launch alert shown to users whose Mac cannot upgrade past Big Sur — does not prompt the user to update.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die DuckDuckGo-Updates für macOS Big Sur wurden eingestellt. Dein Browser wird weiterhin wie bisher funktionieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo updates have ended for macOS Big Sur. Your browser will keep working as it does today."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las actualizaciones de DuckDuckGo han finalizado para macOS Big Sur. Tu navegador seguirá funcionando igual que hasta ahora."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les mises à jour de DuckDuckGo pour macOS Big Sur sont terminées. Votre navigateur continuera de fonctionner comme il le fait aujourd'hui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli aggiornamenti di DuckDuckGo per macOS Big Sur sono terminati. Il tuo browser continuerà a funzionare come oggi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De updates voor DuckDuckGo op macOS Big Sur zijn beëindigd. Je browser blijft werken zoals hij nu doet."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualizacje DuckDuckGo dla macOS Big Sur się zakończyły. Twoja przeglądarka będzie działać tak jak dziś."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As atualizações do DuckDuckGo terminaram para o macOS Big Sur. O teu navegador continuará a funcionar como hoje."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo для версии macOS Big Sur больше не будет получать обновления. С сегодняшнего дня ваш браузер продолжит работать без последующих обновлений."
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.title" : {
+      "comment" : "Title of the on-launch alert shown to users running macOS Big Sur after support has ended",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Big Sur wird nicht mehr unterstützt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Big Sur support has ended"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La asistencia para Big Sur ha finalizado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'assistance pour Big Sur a pris fin"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il supporto per Big Sur è terminato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De ondersteuning voor Big Sur is beëindigd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wsparcie Big Sur się zakończyło"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O suporte para o Big Sur terminou"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержка версии Big Sur прекращена"
+          }
+        }
+      }
+    },
+    "big-sur-end-of-support.update-macos" : {
+      "comment" : "Primary button on the Big Sur end-of-support alert; matches the RMF message’s primaryActionText",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS aktualisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update macOS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar macOS"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mise à jour de macOS"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna macOS"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS bijwerken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualizacja macOS"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar macOS"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить macOS"
+          }
+        }
+      }
+    },
     "Birthday" : {
       "comment" : "Title of the section of the Identities manager where the user can add/modify a date of birth",
       "localizations" : {
@@ -14951,7 +15311,7 @@
     },
     "bookmarks.bar.prompt.message.fallback" : {
       "comment" : " message show for bookmarks bar prompt",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -27748,6 +28108,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отключить Duck.ai?"
+          }
+        }
+      }
+    },
+    "duckai.duckai-settings.link" : {
+      "comment" : "Button to open the Duck.ai Settings in a new tab from Settings → AI Features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Einstellungen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir ajustes de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les paramètres Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le impostazioni di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-instellingen openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz ustawienia Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir as definições do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки Duck.ai"
           }
         }
       }
@@ -43191,7 +43611,7 @@
     },
     "history.delete.dialog.message" : {
       "comment" : "Message in a dialog asking the user to confirm deleting history. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (%@) will be deleted.'",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -43551,7 +43971,7 @@
     },
     "history.item.delete.dialog.message" : {
       "comment" : "Message in a dialog asking the user to confirm deleting a single history item.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -45097,7 +45517,7 @@
     },
     "home.page.promotion.freemium.dbp.description" : {
       "comment" : "Description for the Freemium DBP Home Page Promotion",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -47743,7 +48163,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Open en ontgrendel **%2$s**\n%3$d Selecteer **Bestand → Kluis exporteren** in de menubalk\n%4$d Selecteer de bestandsindeling: **.csv**\n%5$d Voer je Bitwarden-masterwachtwoord in\n%6$d Klik op %7$@ en bewaar het bestand op een plek waar je het kunt vinden (bijv. het bureaublad)\n%8$d %9$@t"
+            "value" : "Wachtwoorden importeren…"
           }
         },
         "pl" : {
@@ -49171,13 +49591,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Ouvrez **%2$s → Paramètres** et faites défiler l'écran jusqu'à **Outils →**, sélectionnez **Exporter le coffre**\n%3$d Sélectionnez le **Format de fichier : .csv** → Exportez le coffre** et sauvegardez le fichier\n%4$d Téléchargez le fichier CSV exporté sur DuckDuckGo"
+            "value" : "%1$d Ouvrez **%2$s → Paramètres** et faites défiler l'écran jusqu'à **Outils →**, sélectionnez **Exporter le coffre**\n%3$d Sélectionnez le **Format de fichier : .csv → Exportez le coffre** et sauvegardez le fichier\n%4$d Téléchargez le fichier CSV exporté sur DuckDuckGo"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Apri **%2$s → Impostazioni** e scorri verso il basso fino a **Strumenti →** seleziona **Esporta cassaforte**\n%3$d Seleziona il **Formato del file: .csv** → Esporta vault** e salva il file\n%4$d Carica il file CSV esportato su DuckDuckGo"
+            "value" : "%1$d Apri **%2$s → Impostazioni** e scorri verso il basso fino a **Strumenti →** seleziona **Esporta cassaforte**\n%3$d Seleziona il **Formato del file: .csv → Esporta vault** e salva il file\n%4$d Carica il file CSV esportato su DuckDuckGo"
           }
         },
         "nl" : {
@@ -49195,7 +49615,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **%2$s → Definições** e desloca-te para baixo até **Ferramentas →** seleciona **Exportar cofre**\n%3$d Seleciona o **Formato de ficheiro: .csv** → Exporta o cofre** e guarda o ficheiro\n%4$d Carrega o ficheiro CSV exportado para o DuckDuckGo"
+            "value" : "%1$d Abre **%2$s → Definições** e desloca-te para baixo até **Ferramentas →** seleciona **Exportar cofre**\n%3$d Seleciona o **Formato de ficheiro: .csv → Exporta o cofre** e guarda o ficheiro\n%4$d Carrega o ficheiro CSV exportado para o DuckDuckGo"
           }
         },
         "ru" : {
@@ -49705,7 +50125,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **%2$s**\n%3$d Haz clic en %4$@ para abrir el menú de la aplicación y, a continuación, haz clic en **Contraseñas**\n%5$d Haz clic en %6$@ y luego en **Exportar inicios de sesión... **\n%7$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%8$d %9$@"
+            "value" : "%1$d Abre **%2$s**\n%3$d Haz clic en %4$@ para abrir el menú de la aplicación y, a continuación, haz clic en **Contraseñas**\n%5$d Haz clic en %6$@ y luego en **Exportar inicios de sesión...**\n%7$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%8$d %9$@"
           }
         },
         "fr" : {
@@ -49951,7 +50371,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Cliquez sur l'icône **%2$s** de votre navigateur et saisissez votre mot de passe principal\n%3$d Sélectionnez **Ouvrir mon coffre-fort**\n%4$d Dans la barre latérale, sélectionnez **Options avancées → Exporter**\n%5$d Saisissez votre mot de passe LastPass principal\n%6$d Sélectionnez le format de fichier** : **Texte séparé par des virgules (.csv)**\n%7$d %8$@"
+            "value" : "%1$d Cliquez sur l'icône **%2$s** de votre navigateur et saisissez votre mot de passe principal\n%3$d Sélectionnez **Ouvrir mon coffre-fort**\n%4$d Dans la barre latérale, sélectionnez **Options avancées → Exporter**\n%5$d Saisissez votre mot de passe LastPass principal\n%6$d Sélectionnez le format de fichier : **Texte séparé par des virgules (.csv)**\n%7$d %8$@"
           }
         },
         "it" : {
@@ -50185,7 +50605,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre y desbloquea **%2$s**\n%3$d Selecciona **Archivo → Exportar** en la barra de menú y elige la cuenta que deseas exportar\n%4$d Introduce tu contraseña de 1Password\n%5$d Selecciona el formato de archivo: *CSV (solo contraseñas e inicios de sesión)**\n%6$d Haz clic en Exportar datos y guarda el archivo donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%7$d %8$@"
+            "value" : "%1$d Abre y desbloquea **%2$s**\n%3$d Selecciona **Archivo → Exportar** en la barra de menú y elige la cuenta que deseas exportar\n%4$d Introduce tu contraseña de 1Password\n%5$d Selecciona el formato de archivo: **CSV (solo contraseñas e inicios de sesión)**\n%6$d Haz clic en Exportar datos y guarda el archivo donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%7$d %8$@"
           }
         },
         "fr" : {
@@ -50425,7 +50845,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **%2$s**\n%3$d Utiliza la barra de menú para seleccionar **Ver → Mostrar administrador de contraseñas\n%4$d Haz clic en %5$@ (a la derecha de _Contraseñas guardadas_) y selecciona **Exportar contraseñas**\n%6$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%7$d %8$@"
+            "value" : "%1$d Abre **%2$s**\n%3$d Utiliza la barra de menú para seleccionar **Ver → Mostrar administrador de contraseñas**\n%4$d Haz clic en %5$@ (a la derecha de _Contraseñas guardadas_) y selecciona **Exportar contraseñas**\n%6$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%7$d %8$@"
           }
         },
         "fr" : {
@@ -50605,7 +51025,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre **Safari → Archivo → Exportar datos de navegación a un archivo... **\n%2$d Selecciona **contraseñas** y guarda el archivo\n%3$d Haz doble clic en el archivo .zip para descomprimirlo y, a continuación, sube el archivo CSV a DuckDuckGo"
+            "value" : "%1$d Abre **Safari → Archivo → Exportar datos de navegación a un archivo...**\n%2$d Selecciona **contraseñas** y guarda el archivo\n%3$d Haz doble clic en el archivo .zip para descomprimirlo y, a continuación, sube el archivo CSV a DuckDuckGo"
           }
         },
         "fr" : {
@@ -51223,7 +51643,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Open je vorige browser\n%2$d Open **Bladwijzerbeheerder**\n%3$d Exporteer je bladwijzers naar HTML …\n%4$d Bewaar het bestand op een plek waar je het kunt vinden (bijv. het bureaublad)\n%5$d %6$d %$@"
+            "value" : "Handmatig importeren…"
           }
         },
         "pl" : {
@@ -51757,7 +52177,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Apri **%2$s\n**%3$d Usa la barra dei menu per selezionare **Segnalibri → Gestore segnalibri**\n%4$d Fai clic su %5$@, quindi su **Esporta segnalibri**\n%6$d Salva il file dove puoi trovarlo (ad esempio, sul desktop)\n%7$d %8$@"
+            "value" : "%1$d Apri **%2$s**\n%3$d Usa la barra dei menu per selezionare **Segnalibri → Gestore segnalibri**\n%4$d Fai clic su %5$@, quindi su **Esporta segnalibri**\n%6$d Salva il file dove puoi trovarlo (ad esempio, sul desktop)\n%7$d %8$@"
           }
         },
         "nl" : {
@@ -52117,7 +52537,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Apri **%2$s**\n%3$d Usa la Barra dei menu per selezionare **Segnalibri → Segnalibri\n**%4$d Fai clic su **Apri la visualizzazione Segnalibri completa…** in basso a sinistra\n%5$d Fai clic su **Importa/Esporta…** in basso a sinistra e seleziona **Esporta segnalibri**\n%6$d Salva il file dove puoi trovarlo (ad esempio, sul desktop)\n%7$d %8$@"
+            "value" : "%1$d Apri **%2$s**\n%3$d Usa la Barra dei menu per selezionare **Segnalibri → Segnalibri**\n%4$d Fai clic su **Apri la visualizzazione Segnalibri completa…** in basso a sinistra\n%5$d Fai clic su **Importa/Esporta…** in basso a sinistra e seleziona **Esporta segnalibri**\n%6$d Salva il file dove puoi trovarlo (ad esempio, sul desktop)\n%7$d %8$@"
           }
         },
         "nl" : {
@@ -52231,7 +52651,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Ouvrez **%2$s**\n%3$d Passez par la barre de menu pour sélectionner **Signets → Signets **\n%4$d Cliquez sur **Importer/Exporter…** en bas à gauche et sélectionnez **Exporter les signets**\n%5$d Enregistrez le fichier à un endroit où le trouver facilement (par exemple, sur le bureau)\n%6$d %7$@"
+            "value" : "%1$d Ouvrez **%2$s**\n%3$d Passez par la barre de menu pour sélectionner **Signets → Signets**\n%4$d Cliquez sur **Importer/Exporter…** en bas à gauche et sélectionnez **Exporter les signets**\n%5$d Enregistrez le fichier à un endroit où le trouver facilement (par exemple, sur le bureau)\n%6$d %7$@"
           }
         },
         "it" : {
@@ -83710,7 +84130,7 @@
     },
     "preferences.about.unsupported-device-info1" : {
       "comment" : "This string represents a message informing the user that DuckDuckGo is no longer providing browser updates for their version of macOS",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -83770,7 +84190,7 @@
     },
     "preferences.about.unsupported-device-info2" : {
       "comment" : "Copy in section that tells the user to update their macOS version since their current version is unsupported",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84130,7 +84550,7 @@
     },
     "preferences.about.will-soon-be-unsupported-device-info-alert-header" : {
       "comment" : "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84190,7 +84610,7 @@
     },
     "preferences.about.will-soon-be-unsupported-device-info1" : {
       "comment" : "This string informs the user that DuckDuckGo will soon discontinue browser updates for their version of macOS",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84250,7 +84670,7 @@
     },
     "preferences.about.will-soon-be-unsupported-device-info2" : {
       "comment" : "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84364,6 +84784,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Универсальный доступ"
+          }
+        }
+      }
+    },
+    "preferences.ad-blocking.description" : {
+      "comment" : "Description of the Ad Blocking feature in preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiert invasive Tracker, bevor sie geladen werden, und eliminiert so effektiv Werbung, die auf Tracking basiert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea los rastreadores invasivos antes de que se carguen, eliminando de manera efectiva los anuncios que se basan en el rastreo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloque les traqueurs invasifs avant leur chargement, ce qui permet d'éliminer efficacement les publicités reposant sur le pistage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca i sistemi di tracciamento prima che vengano caricati, eliminando di fatto gli annunci che si basano sul tracciamento"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkeert invasieve trackers voordat ze worden geladen, waardoor advertenties die afhankelijk zijn van tracking effectief worden geëlimineerd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuje inwazyjne mechanizmy śledzące przed ich załadowaniem, skutecznie eliminując reklamy, które opierają się na śledzeniu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia os rastreadores invasivos antes de serem carregados, eliminando eficazmente os anúncios que usam rastreio"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокирует навязчивые трекеры до их загрузки, устраняя рекламу с отслеживанием"
+          }
+        }
+      }
+    },
+    "preferences.ad-blocking.youtube-section-header" : {
+      "comment" : "Section header for YouTube-specific ad blocking settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-Werbeblocker"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YouTube Ad Blocking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueo de anuncios en YouTube"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocage des publicités sur YouTube"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocco degli annunci su YouTube"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-advertentieblokkering"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokowanie reklam na YouTube"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueio de anúncios do YouTube"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка рекламы на YouTube"
           }
         }
       }
@@ -84550,7 +85090,7 @@
     },
     "preferences.add-to-dock.instructions-caption" : {
       "comment" : "Instructions for adding the app to the Dock.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -88989,61 +89529,121 @@
       }
     },
     "preferences.youtube-ad-blocking" : {
-      "comment" : "Title of the option to show the YouTube Ad Blocking preferences",
+      "comment" : "Title of the option to show the Ad Blocking preferences",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "YouTube-Werbung blockieren"
+            "value" : "Werbeblockierung"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "YouTube Ad Blocking"
+            "value" : "Ad Blocking"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bloqueo de anuncios en YouTube"
+            "value" : "Bloqueo de anuncios"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blocage des publicités sur YouTube"
+            "value" : "Blocage des publicités"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blocco degli annunci su YouTube"
+            "value" : "Blocco degli annunci"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blokkering van YouTube-advertenties"
+            "value" : "Advertentieblokkering"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blokowanie reklam w serwisie YouTube"
+            "value" : "Blokowanie reklam"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bloqueio de anúncios do YouTube"
+            "value" : "Bloqueio de anúncios"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Блокировка рекламы на YouTube"
+            "value" : "Блокировка рекламы"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.disabled-until-relaunch" : {
+      "comment" : "Sub-line shown below the YouTube Ad Blocking toggle when the user has temporarily disabled ad blocking for the current app session",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deaktiviert bis zum Neustart."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disabled until relaunch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivado hasta volver a iniciar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivé jusqu'au redémarrage."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattivato fino al rilancio."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uitgeschakeld tot opnieuw opstarten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłączone do ponownego uruchomienia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativado até ao relançamento."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключено до перезапуска."
           }
         }
       }
@@ -89055,55 +89655,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo entfernt Video-Werbung auf YouTube, sodass du Videos ohne Unterbrechungen ansehen kannst."
+            "value" : "DuckDuckGo blockiert Video-Werbung auf YouTube, sodass du Videos ohne Unterbrechungen ansehen kannst."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption."
+            "value" : "DuckDuckGo blocks video ads on YouTube, so you can watch videos without interruption."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo elimina los anuncios de vídeo en YouTube, para que puedas ver vídeos sin interrupciones."
+            "value" : "DuckDuckGo bloquea los anuncios de vídeo en YouTube, para que puedas ver vídeos sin interrupciones."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo supprime les publicités vidéo sur YouTube, afin que vous puissiez regarder des vidéos sans interruption."
+            "value" : "DuckDuckGo bloque les publicités vidéo sur YouTube, afin que vous puissiez regarder des vidéos sans interruption."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo rimuove gli annunci video su YouTube, così puoi guardare i video senza interruzioni."
+            "value" : "DuckDuckGo blocca gli annunci video su YouTube, così puoi guardare video senza interruzioni."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo verwijdert videoadvertenties op YouTube, zodat je ongestoord video's kunt bekijken."
+            "value" : "DuckDuckGo blokkeert videoadvertenties op YouTube, zodat je video's zonder onderbreking kunt bekijken."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo usuwa reklamy wideo z YouTube, dzięki czemu możesz oglądać filmy bez przerw."
+            "value" : "DuckDuckGo blokuje reklamy wideo w serwisie YouTube, dzięki czemu możesz oglądać filmy bez przerw."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O DuckDuckGo remove os anúncios nos vídeos no YouTube para que possas ver vídeos sem interrupções."
+            "value" : "O DuckDuckGo bloqueia anúncios em vídeo no YouTube, para que possas ver vídeos sem interrupções."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo удаляет рекламу на YouTube, позволяя вам смотреть видео без перерыва."
+            "value" : "DuckDuckGo блокирует видеорекламу на YouTube, чтобы вы могли смотреть видео без перерывов."
           }
         }
       }
@@ -89164,6 +89764,486 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подробнее"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.always-off" : {
+      "comment" : "YouTube Ad Block popover dropdown option that keeps ad blocking always off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Immer aus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siempre desactivado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toujours désactivé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sempre disattivato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altijd uit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zawsze wyłączone"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sempre desligado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всегда выключено"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.always-on" : {
+      "comment" : "YouTube Ad Block popover dropdown option that keeps ad blocking always on",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Immer aktiviert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always On"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siempre activado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toujours activé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sempre attivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altijd aan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zawsze włączone"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sempre ligado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всегда включено"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.breakage-report.description" : {
+      "comment" : "Description below the breakage report send button in the YouTube Ad Blocking popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sende einen anonymen Störungsbericht an DuckDuckGo. Hilf mit, den Werbeblocker für alle zu verbessern!"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send an anonymous breakage report to DuckDuckGo. Help make Ad Blocking better for everyone!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía un informe anónimo de fallos a DuckDuckGo. ¡Ayuda a que el bloqueo de anuncios sea mejor para todos!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyez un rapport anonyme de dysfonctionnement à DuckDuckGo. Contribuez à améliorer le blocage des publicités pour tous !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia una segnalazione anonima di malfunzionamento a DuckDuckGo. Aiuta a migliorare il blocco degli annunci per tutti!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuur een anoniem functioneringsrapport naar DuckDuckGo. Help mee om advertentieblokkering voor iedereen te verbeteren!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij anonimowy raport o awarii do DuckDuckGo. Pomóż usprawnić blokowanie reklam dla wszystkich!"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envia um relatório anónimo de falha à DuckDuckGo. Ajuda a melhorar o bloqueio de anúncios para toda a gente!"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправьте анонимное сообщение о проблеме в DuckDuckGo. Помогите улучшить блокировку рекламы для всех!"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.breakage-report.send-button" : {
+      "comment" : "Button label that sends a breakage report from the YouTube Ad Blocking popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bericht senden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send Report"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar informe"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer un rapport"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia la segnalazione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapport verzenden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij raport"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar relatório"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сообщить о проблеме"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.breakage-report.title" : {
+      "comment" : "Title of the breakage report card shown in the YouTube Ad Blocking popover after the user disables ad blocking",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-Werbeblockierung funktioniert nicht?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YouTube Ad Blocking not working?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿El bloqueo de anuncios de YouTube no funciona?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le blocage des publicités sur YouTube ne fonctionne pas ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il blocco degli annunci di YouTube non funziona?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werkt de blokkering van YouTube-advertenties niet?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokowanie reklam w serwisie YouTube nie działa?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O bloqueio de anúncios do YouTube não funciona?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка рекламы на YouTube не работает?"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.disable-until-relaunch" : {
+      "comment" : "YouTube Ad Block popover dropdown option that disables ad blocking for the current app session only",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deaktivieren bis zum Neustart"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disable Until Relaunch"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivar hasta volver a iniciar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactiver jusqu'au redémarrage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattiva fino al rilancio"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uitschakelen tot opnieuw opstarten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłącz do ponownego uruchomienia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativar até ao relançamento"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить до перезапуска"
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.row-description" : {
+      "comment" : "Description below the on/off dropdown in the YouTube Ad Blocking address bar popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du Probleme mit der Videowiedergabe hast, könnte das Deaktivieren der Werbeblockierung das Problem möglicherweise beheben."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If you encounter video playback issues, disabling Ad Blocking may fix the issue."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si tienes problemas con la reproducción del vídeo, deshabilitar el bloqueo de anuncios puede solucionar el problema."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si vous rencontrez des problèmes de lecture vidéo, la désactivation du blocage des publicités peut résoudre le problème."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se riscontri problemi nella riproduzione dei video, la disattivazione del blocco degli annunci potrebbe risolverli."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je problemen hebt met het afspelen van video, kan het helpen om advertentieblokkering uit te schakelen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeśli napotkasz problemy z odtwarzaniem wideo, wyłączenie blokowania reklam może rozwiązać problem."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se tiveres problemas de reprodução de vídeo, desativar o bloqueio de anúncios pode resolver o problema."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если возникают проблемы с воспроизведением видео, попробуйте отключить блокировку рекламы."
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.popover.row-title" : {
+      "comment" : "Title row in the YouTube Ad Blocking address bar popover, next to the on/off dropdown",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-Werbung blockieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YouTube Ad Blocking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueo de anuncios en YouTube"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocage des publicités sur YouTube"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocco degli annunci di YouTube"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-advertentieblokkering"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokowanie reklam w serwisie YouTube"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueio de anúncios do YouTube"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка рекламы на YouTube"
           }
         }
       }
@@ -89284,6 +90364,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Если функция включена, DuckDuckGo будет анонимно выявлять проблемы при блокировке рекламы и ошибки YouTube, чтобы улучшить работу сервиса для всех. DuckDuckGo не получает данные о просмотренных вами видео или ваши персональные данные."
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.unavailable.message" : {
+      "comment" : "Body text of the message shown when YouTube Ad Blocking is currently unavailable due to remote changes",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Werbeblockierung wurde durch die jüngsten Änderungen bei YouTube beeinträchtigt. Vielen Dank für dein Verständnis, während wir daran arbeiten, diese Probleme zu beheben."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El bloqueo de anuncios se ha visto afectado por los cambios recientes en YouTube. Estamos trabajando para solucionar estos problemas y agradecemos tu comprensión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les récents changements apportés à YouTube ont affecté le blocage des publicités. Nous nous efforçons de résoudre ces problèmes et vous remercions de votre compréhension."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il blocco degli annunci è stato influenzato dalle recenti modifiche a YouTube. Stiamo lavorando per risolvere questi problemi. Grazie per la comprensione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Door recente wijzigingen in YouTube werkt advertentieblokkering niet meer naar behoren. We werken aan een oplossing voor deze problemen. Bedankt voor je begrip."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostatnie zmiany w serwisie YouTube wpłynęły na blokowanie reklam. Pracujemy nad rozwiązaniem tych problemów i dziękujemy za zrozumienie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O bloqueio de anúncios foi afetado por alterações recentes ao YouTube. Estamos a trabalhar para resolver estes problemas e agradecemos a tua compreensão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недавние изменения на YouTube повлияли на работу блокировки рекламы. Мы занимаемся решением этой проблемы и благодарим вас за понимание."
+          }
+        }
+      }
+    },
+    "preferences.youtube-ad-blocking.unavailable.title" : {
+      "comment" : "Title of the message shown when YouTube Ad Blocking is currently unavailable due to remote changes",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-Werbeblocker nicht verfügbar"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YouTube Ad Blocking Unavailable"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El bloqueo de anuncios en YouTube no está disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocage des publicités sur YouTube indisponible"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocco degli annunci su YouTube non disponibile"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-advertentieblokkering niet beschikbaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokowanie reklam na YouTube jest niedostępne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueio de anúncios do YouTube indisponível"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка рекламы на YouTube недоступна"
           }
         }
       }
@@ -97661,7 +98861,7 @@
     },
     "session.restore.prompt.explanation" : {
       "comment" : "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -106367,6 +107567,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть новую вкладку"
+          }
+        }
+      }
+    },
+    "tooltip.youtube-ad-blocking.show" : {
+      "comment" : "Tooltip for the YouTube Ad Blocking address bar button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-Werbeblocker"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YouTube Ad Blocking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueo de anuncios en YouTube"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocage des publicités sur YouTube"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocco degli annunci su YouTube"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-advertentieblokkering"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokowanie reklam na YouTube"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueio de anúncios do YouTube"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка рекламы на YouTube"
           }
         }
       }

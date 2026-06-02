@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import WebKit
@@ -60,6 +61,7 @@ enum FireModeSwitchSource: String {
     case longPressLink = "long_press_link"
     case tabSwitcherLongPress = "tab_switcher_long_press"
     case keyCommand = "key_command"
+    case aiChatHeaderPlusMenu = "ai_chat_header_plus_menu"
 }
 
 /// Receives lifecycle events for TabViewController instances managed by TabManager.
@@ -163,6 +165,17 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
+    // Save debouncing. Fires after `saveDebounceInterval` of quiet, or `saveMaxWait` since
+    // the first call in the burst (whichever comes first) so sustained activity cannot push
+    // the save out indefinitely.
+    private static let saveDebounceInterval: DispatchTimeInterval = .milliseconds(300)
+    private static let saveMaxWait: DispatchTimeInterval = .seconds(1)
+    private var pendingSaveWorkItem: DispatchWorkItem?
+    private var pendingSaveBurstDeadline: DispatchTime?
+
+    /// Single app-lifetime instance shared across all tabs, MainViewController, and SettingsViewModel.
+    let adBlockingAvailability: AdBlockingAvailabilityProviding
+
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
     weak var fireModeDelegate: TabManagerFireModeDelegate?
@@ -208,7 +221,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-         fireModePromotionEligibility: FireModePromotionCoordinating? = nil
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
+         adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
@@ -248,14 +262,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.toggleModeStorage = toggleModeStorage
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.fireModePromotionEligibility = fireModePromotionEligibility
+        self.adBlockingAvailability = adBlockingAvailability
         registerForNotifications()
     }
 
-    private func resolvedTextEntryMode() -> TextEntryMode {
-        aiChatSettings.defaultOmnibarMode
-            .resolvedTextEntryMode { toggleModeStorage.restore() }
-            .displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
+
 
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
         self.webExtensionManager = manager
@@ -341,7 +355,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                                                              adBlockingAvailability: adBlockingAvailability)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -410,12 +425,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             configCopy.webExtensionController = webExtensionManager.controller
         }
 
-        let preferredMode = resolvedTextEntryMode()
         let tab: Tab
         if let request {
-            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: preferredMode))
+            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab)
         } else {
-            tab = Tab(fireTab: shouldCreateFireTab, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: preferredMode))
+            tab = Tab(fireTab: shouldCreateFireTab)
         }
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: true)
 
@@ -458,7 +472,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                                                              adBlockingAvailability: adBlockingAvailability)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -476,7 +491,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
-        let tab = Tab(fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
+        let tab = Tab(fireTab: model.shouldCreateFireTabs)
         model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         _ = save()
     }
@@ -535,7 +550,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
 
         let link = url == nil ? nil : Link(title: nil, url: url!)
-        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
+        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs)
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
 
@@ -564,7 +579,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     func remove(tab: Tab, clearTabHistory: Bool = true, in tabsModel: TabsModelManaging? = nil) {
-        let model = tabsModel ?? currentTabsModel
+        // Always ensure we're removing the Tab from its owner. This allows us to remove Fire Tabs, while in normal mode
+        let model = tabsModel ?? self.tabsModel(for: tab.mode)
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
         _ = save()
@@ -625,9 +641,67 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
 
+    /// Schedules a debounced save. Returns immediately; the write is async. Callers that need
+    /// the write on disk before returning, or that need the real write `Result`, must use
+    /// `flushPendingSave()` instead. When the `tabsSaveOptimization` feature flag is off, falls
+    /// back to a synchronous save (old behavior) but the result is still discarded.
     @MainActor
-    func save() -> Result<Void, Error> {
-        return tabsModelProvider.save()
+    func save() {
+        guard featureFlagger.isFeatureOn(.tabsSaveOptimization) else {
+            _ = tabsModelProvider.flushPendingSave()
+            return
+        }
+        scheduleDebouncedSave()
+    }
+
+    /// Cancels any pending debounced save and persists synchronously, blocking until the write
+    /// lands on disk. Used at lifecycle boundaries and the data-clearing path. Must run on the
+    /// main actor: the inner `persistQueue.sync` would deadlock if invoked from a queue waiting
+    /// on main.
+    @MainActor
+    @discardableResult
+    func flushPendingSave() -> Result<Void, Error> {
+        cancelPendingSave()
+        return tabsModelProvider.flushPendingSave()
+    }
+
+    private func scheduleDebouncedSave() {
+        // Debouncer state is main-queue only. Callers may invoke `save()` from any thread.
+        let perform = { [weak self] in
+            guard let self else { return }
+            self.pendingSaveWorkItem?.cancel()
+            let now = DispatchTime.now()
+            let burstDeadline = self.pendingSaveBurstDeadline ?? (now + Self.saveMaxWait)
+            self.pendingSaveBurstDeadline = burstDeadline
+            let fireAt = min(now + Self.saveDebounceInterval, burstDeadline)
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.pendingSaveWorkItem = nil
+                self.pendingSaveBurstDeadline = nil
+                _ = self.tabsModelProvider.save()
+            }
+            self.pendingSaveWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: fireAt, execute: workItem)
+        }
+        if Thread.isMainThread {
+            perform()
+        } else {
+            DispatchQueue.main.async(execute: perform)
+        }
+    }
+
+    private func cancelPendingSave() {
+        let perform = { [weak self] in
+            guard let self else { return }
+            self.pendingSaveWorkItem?.cancel()
+            self.pendingSaveWorkItem = nil
+            self.pendingSaveBurstDeadline = nil
+        }
+        if Thread.isMainThread {
+            perform()
+        } else {
+            DispatchQueue.main.sync(execute: perform)
+        }
     }
 
     /// Prepares all tabs for upcoming data clearing, skipping the current tab
@@ -771,7 +845,8 @@ extension TabManager {
 
         let interactionResult = interactionStateSource?.removeAll(excluding: tabsData.tabsToPreserve)
         removeTabHistory(for: Array(tabsData.tabIDsToDelete))
-        let saveResult = save()
+        // Data-clearing must land on disk before returning; debounced save is not sufficient here.
+        let saveResult = flushPendingSave()
 
         if case .failure(let error) = previewsResult {
             return .failure(error)
@@ -819,11 +894,43 @@ extension TabManager {
                                                selector: #selector(onApplicationBecameActive),
                                                name: UIApplication.didBecomeActiveNotification,
                                                object: nil)
+        // Force-flush at lifecycle boundaries so a debounced save is not lost on suspend.
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onApplicationWillResignActive),
+                                               name: UIApplication.willResignActiveNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onApplicationWillTerminate),
+                                               name: UIApplication.willTerminateNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onMemoryWarning),
+                                               name: UIApplication.didReceiveMemoryWarningNotification,
+                                               object: nil)
     }
 
+    @MainActor
     @objc
     private func onApplicationBecameActive(_ notification: NSNotification) {
         assertTabPreviewCount()
+    }
+
+    @MainActor
+    @objc
+    private func onApplicationWillResignActive(_ notification: NSNotification) {
+        flushPendingSave()
+    }
+
+    @MainActor
+    @objc
+    private func onApplicationWillTerminate(_ notification: NSNotification) {
+        flushPendingSave()
+    }
+
+    @MainActor
+    @objc
+    private func onMemoryWarning(_ notification: NSNotification) {
+        flushPendingSave()
     }
 
     private func assertTabPreviewCount() {

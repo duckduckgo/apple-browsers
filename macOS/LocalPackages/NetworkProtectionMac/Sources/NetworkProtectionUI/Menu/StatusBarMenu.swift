@@ -20,6 +20,7 @@ import AppKit
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import LoginItems
 import VPN
 import NetworkProtectionProxy

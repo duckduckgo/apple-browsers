@@ -33,7 +33,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true
-    let modeParameters: [String: String] = [:]
+    var modeParameters: [String: String] { ["mode": currentToggleState.rawValue] }
     var isFireTab: Bool
 
     // MARK: - SwitchBarHandling — Dynamic State
@@ -57,6 +57,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     var isGenerating: Bool = false {
         didSet {
             guard isGenerating != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
+    /// When true, the stop-generating button is suppressed regardless of generating state.
+    var isOnboardingLocked: Bool = false {
+        didSet {
+            guard isOnboardingLocked != oldValue else { return }
             updateButtonState()
         }
     }
@@ -240,7 +248,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 
-        if isGenerating && !isExpanded && currentToggleState == .aiChat {
+        if isGenerating && !isExpanded && currentToggleState == .aiChat && !isOnboardingLocked {
             nextButtonState = .stopGeneratingOnly
         } else if !currentText.isEmpty && !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
             nextButtonState = .clearAndAIChatShortcut

@@ -26,6 +26,7 @@ import Persistence
 import PersistenceTestingUtils
 @testable import Core
 import Common
+import FoundationExtensions
 @testable import BrowserServicesKitTestsUtils
 
 final class AutofillSettingsViewModelTests: XCTestCase {

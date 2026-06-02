@@ -29,7 +29,7 @@ struct AutofillItemsEmptyView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Image(.passwordsAdd96X96)
+            Image(rebrandable: "Passwords-Add-96x96")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 96, height: 96)

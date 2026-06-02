@@ -34,12 +34,26 @@ public enum ICSParser {
         case malformedRecurrenceRule(raw: String)
     }
 
+    /// Non-fatal signal: in-scope content the parser knowingly dropped or downgraded.
+    public enum Warning: String, Equatable {
+        /// An RRULE contained parts the parser ignores (e.g. BYSETPOS, BYWEEKNO, BYYEARDAY,
+        /// BYHOUR, BYMINUTE, BYSECOND, WKST).
+        case unsupportedRRulePart
+    }
+
+    /// Events in document order; `warnings` deduplicated across the whole file.
+    public struct ParseResult {
+        public let events: [ICSEvent]
+        public let warnings: [Warning]
+    }
+
     /// Parses the given .ics file data.
     ///
     /// - Parameter data: UTF-8-encoded contents of an .ics file.
-    /// - Returns: A non-empty array of `ICSEvent`s in document order, one per VEVENT block.
+    /// - Returns: A `ParseResult` with a non-empty `events` array (document order) and any
+    ///   warnings raised during parsing.
     /// - Throws: `ICSParser.Error` describing the parse failure mode.
-    public static func parse(data: Data) throws -> [ICSEvent] {
+    public static func parse(data: Data) throws -> ParseResult {
         guard let raw = String(data: data, encoding: .utf8) else {
             throw Error.decodingFailed
         }
@@ -47,11 +61,20 @@ public enum ICSParser {
     }
 
     /// Parses the given .ics file content from a string. Internal entry point for tests.
-    static func parse(string raw: String) throws -> [ICSEvent] {
+    static func parse(string raw: String) throws -> ParseResult {
         // Windows .ics exports often include a UTF-8 BOM that survives UTF-8 decoding.
         let stripped = raw.first == "\u{FEFF}" ? String(raw.dropFirst()) : raw
         let lines = LineUnfolder.unfold(stripped)
         let blocks = try VEventExtractor.extract(from: lines)
-        return try blocks.map { try PropertyParser.parseEvent(from: $0) }
+        var events: [ICSEvent] = []
+        var warnings: [Warning] = []
+        for block in blocks {
+            let outcome = try PropertyParser.parseEvent(from: block)
+            events.append(outcome.event)
+            for warning in outcome.warnings where !warnings.contains(warning) {
+                warnings.append(warning)
+            }
+        }
+        return ParseResult(events: events, warnings: warnings)
     }
 }

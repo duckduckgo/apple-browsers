@@ -19,6 +19,7 @@
 
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckUI
 import SwiftUI
 
 struct FireModePromotionCardView: View {
@@ -81,22 +82,13 @@ struct FireModePromotionCardView: View {
         HStack(spacing: Metrics.buttonSpacing) {
             Button(action: onDismiss) {
                 Text(UserText.fireModeNTPPromotionDismiss)
-                    .daxButton()
-                    .foregroundColor(Color(designSystemColor: .buttonsPrimaryDefault))
             }
-            .frame(height: Metrics.buttonHeight)
-            .padding(.horizontal, Metrics.buttonHorizontalPadding)
-            .contentShape(Rectangle())
+            .buttonStyle(GhostButtonStyle(compact: true))
 
             Button(action: onTryFireTabs) {
                 Text(UserText.fireModeNTPPromotionPrimaryAction)
-                    .daxButton()
-                    .foregroundColor(Color(designSystemColor: .accentContentPrimary))
             }
-            .frame(height: Metrics.buttonHeight)
-            .padding(.horizontal, Metrics.buttonHorizontalPadding)
-            .background(Color(designSystemColor: .buttonsPrimaryDefault))
-            .cornerRadius(Metrics.buttonCornerRadius)
+            .buttonStyle(PrimaryButtonStyle(compact: true))
         }
         .padding(Metrics.buttonSectionPadding)
     }
@@ -128,9 +120,6 @@ private enum Metrics {
     static let iconSize: CGFloat = 48
 
     static let buttonSpacing: CGFloat = 8
-    static let buttonHeight: CGFloat = 40
-    static let buttonHorizontalPadding: CGFloat = 16
-    static let buttonCornerRadius: CGFloat = 12
     static let buttonSectionPadding: CGFloat = 8
 
     static let closeButtonSize: CGFloat = 36

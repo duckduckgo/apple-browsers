@@ -19,6 +19,7 @@
 import XCTest
 import Combine
 import Common
+import FoundationExtensions
 import VPN
 import PrivacyConfig
 import SubscriptionTestingUtilities

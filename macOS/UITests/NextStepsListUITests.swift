@@ -94,7 +94,7 @@ private extension NextStepsListUITests {
     }
 
     var nextStepsFirstCardCTAButton: XCUIElement {
-        webView.buttons["Try Duck Player"]
+        webView.buttons["Get Email Protection"]
     }
 
     var nextStepsCardDismissButton: XCUIElement {

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 import SwiftUIExtensions
 
@@ -38,15 +39,15 @@ struct AutofillToolbarOnboardingView: View {
 
             HStack {
                 createButton(title: UserText.autofillOnboardingPopoverCTAReject,
-                             style: StandardButtonStyle(),
+                             style: StandardButtonStyle(pillShape: true),
                              action: viewModel.rejectToolbarIcon)
 
                 createButton(title: UserText.autofillOnboardingPopoverCTAAccept,
-                             style: DefaultActionButtonStyle(enabled: true),
+                             style: DefaultActionButtonStyle(enabled: true, pillShape: true),
                              action: viewModel.acceptToolbarIcon)
             }
         }
-        .padding()
+        .padding(AppVersion.isLiquidGlassSupported ? 20 : 16)
         .frame(width: Constants.panelWidth, height: Constants.panelHeight)
     }
 

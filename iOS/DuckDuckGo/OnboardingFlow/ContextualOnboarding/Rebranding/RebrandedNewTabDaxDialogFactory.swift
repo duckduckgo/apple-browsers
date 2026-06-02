@@ -22,23 +22,31 @@ import SwiftUI
 import Onboarding
 import Subscription
 import Common
+import FoundationExtensions
+import PrivacyConfig
 
 final class RebrandedNewTabDaxDialogFactory: NewTabDaxDialogProviding {
     private var delegate: OnboardingNavigationDelegate?
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
+    private let onboardingFlowProvider: OnboardingFlowProviding
+    private let featureFlagger: FeatureFlagger
 
     init(
         delegate: OnboardingNavigationDelegate?,
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
+        onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
+        onboardingFlowProvider: OnboardingFlowProviding = OnboardingManager(),
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         self.delegate = delegate
         self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+        self.onboardingFlowProvider = onboardingFlowProvider
+        self.featureFlagger = featureFlagger
     }
 
     @ViewBuilder
@@ -94,7 +102,9 @@ extension RebrandedNewTabDaxDialogFactory {
 
     func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         let onDismiss = { [weak self] in
-            self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
+            if self?.onboardingFlowProvider.currentOnboardingFlow == .default {
+                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
+            }
             onDismiss()
         }
 
@@ -116,7 +126,10 @@ extension RebrandedNewTabDaxDialogFactory {
             .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTPChat)
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
+                if self?.onboardingFlowProvider.currentOnboardingFlow == .default {
+                    self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
+                }
+                self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
             }
         )
     }
@@ -237,7 +250,16 @@ private extension RebrandedNewTabDaxDialogFactory {
 
         let isChatPath = daxDialogsFlowCoordinator.isChatFirstPath
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
-        let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
+        let message = switch onboardingFlowProvider.currentOnboardingFlow {
+        case .default:
+            if featureFlagger.isFeatureOn(.paidAIChat){
+                createSubscriptionPromoMessage()
+            } else {
+                createSubscriptionPromoMessageDeprecated()
+            }
+        case .duckAI:
+            AttributedString(UserText.Onboarding.DuckAICPP.Contextual.subscriptionMessage)
+        }
         let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip
         let manualDismissAction: (() -> Void)? = isChatPath ? nil : { [weak self] in
             self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
@@ -253,7 +275,8 @@ private extension RebrandedNewTabDaxDialogFactory {
                 proceedAction: { [weak self] in
                     self?.onboardingPixelReporter.measureSubscriptionPromoEngageCTAAction()
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
-                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
+                    let featurePage: OnboardingSubscriptionPromotionPage? = self?.onboardingFlowProvider.currentOnboardingFlow == .duckAI ? .duckAI : nil
+                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents(featurePage: featurePage)
                     // Pass onDismiss as a post-presentation callback so it fires only after
                     // the settings sheet is fully on screen — keeping the promo dialog visible
                     // until the sheet covers it completely, avoiding an NTP flash.

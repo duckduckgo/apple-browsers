@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 extension Dictionary where Key == String, Value == String {
 

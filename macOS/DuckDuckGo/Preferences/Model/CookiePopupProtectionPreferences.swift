@@ -20,6 +20,7 @@ import Foundation
 import AppKit
 import Bookmarks
 import Common
+import FoundationExtensions
 
 protocol CookiePopupProtectionPreferencesPersistor {
     var autoconsentEnabled: Bool { get set }

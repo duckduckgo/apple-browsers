@@ -68,6 +68,7 @@ final class SuggestionTrayManager: NSObject {
 
     private let switchBarHandler: SwitchBarHandling
     private let dependencies: SuggestionTrayDependencies
+    private let autocompleteHorizontalInset: CGFloat
     private var cancellables = Set<AnyCancellable>()
     
     private(set) var suggestionTrayViewController: SuggestionTrayViewController?
@@ -109,9 +110,10 @@ final class SuggestionTrayManager: NSObject {
 
     // MARK: - Initialization
     
-    init(switchBarHandler: SwitchBarHandling, dependencies: SuggestionTrayDependencies) {
+    init(switchBarHandler: SwitchBarHandling, dependencies: SuggestionTrayDependencies, autocompleteHorizontalInset: CGFloat = 0) {
         self.switchBarHandler = switchBarHandler
         self.dependencies = dependencies
+        self.autocompleteHorizontalInset = autocompleteHorizontalInset
         super.init()
         setupBindings()
     }
@@ -134,8 +136,16 @@ final class SuggestionTrayManager: NSObject {
         suggestionTrayViewController?.additionalTopInset = inset
     }
 
-    /// Installs the suggestion tray in the provided container view
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatchModel: EscapeHatchModel? = nil) {
+    /// Installs the suggestion tray in the provided container view.
+    ///
+    /// - Parameter deferAutocompleteReveal: When `true`, the autocomplete surface stays hidden until
+    ///   its first results arrive, so the underlying content (favorites NTP / Dax) isn't briefly
+    ///   covered by an empty surface flashing in. Only the unified toggle input surface opts in;
+    ///   other hosts (legacy omnibar editing, iPad chat history, swipe container) keep the default (false).
+    func installInContainerView(_ containerView: UIView,
+                                parentViewController: UIViewController,
+                                escapeHatchModel: EscapeHatchModel? = nil,
+                                deferAutocompleteReveal: Bool = false) {
         guard suggestionTrayViewController == nil else { return }
         
 
@@ -153,6 +163,7 @@ final class SuggestionTrayManager: NSObject {
             hideBorder: true)
 
         controller.coversFullScreen = true
+        controller.deferAutocompleteReveal = deferAutocompleteReveal
 
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)
@@ -200,7 +211,7 @@ final class SuggestionTrayManager: NSObject {
         if canShow {
             // Don't set view.isHidden = false here — the tray stays hidden until
             // results arrive. autocompleteDidReloadResults shows it if non-empty.
-            suggestionTray.fill()
+            suggestionTray.fill(horizontalInset: autocompleteHorizontalInset)
             suggestionTray.show(for: .autocomplete(query: query), animated: animated)
         } else {
             suggestionTray.didHide(animated: animated)
@@ -269,10 +280,19 @@ final class SuggestionTrayManager: NSObject {
 
         if canShowSuggestion {
             suggestionTray.view.isHidden = false
-            suggestionTray.fill()
+            suggestionTray.fill(horizontalInset: horizontalInset(for: type))
             suggestionTray.show(for: type, animated: animated)
         } else {
             suggestionTray.didHide(animated: animated)
+        }
+    }
+
+    private func horizontalInset(for type: SuggestionTrayViewController.SuggestionType) -> CGFloat {
+        switch type {
+        case .autocomplete:
+            return autocompleteHorizontalInset
+        case .favorites:
+            return 0
         }
     }
     

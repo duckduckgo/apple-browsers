@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import PrivacyConfig
@@ -373,6 +374,16 @@ final class SuggestionContainerViewModel {
     private func updateSelectedSuggestionViewModel() {
         if let selectionIndex {
             selectedSuggestionViewModel = suggestionViewModel(at: selectionIndex)
+        } else if selectedRowContent == .aiChatCell, let userStringValue, !userStringValue.isEmpty {
+            // Synthesize an .askAIChat view model so the address bar renders the
+            // " – Duck.ai" context clue when the synthetic Ask-privately row is selected.
+            selectedSuggestionViewModel = SuggestionViewModel(
+                isHomePage: isHomePage,
+                suggestion: .askAIChat(value: userStringValue),
+                userStringValue: userStringValue,
+                themeManager: themeManager,
+                featureFlagger: featureFlagger
+            )
         } else {
             selectedSuggestionViewModel = nil
         }
@@ -428,7 +439,7 @@ final class SuggestionContainerViewModel {
             nextRow += 1
         }
 
-        wrapAroundOrClearSelection(using: firstSelectableRow)
+        clearRowSelection()
     }
 
     func selectPreviousIfPossible() {
@@ -448,16 +459,7 @@ final class SuggestionContainerViewModel {
             prevRow -= 1
         }
 
-        wrapAroundOrClearSelection(using: lastSelectableRow)
-    }
-
-    /// Wraps around to the given row when aiChatOmnibarToggle is on, otherwise clears selection
-    private func wrapAroundOrClearSelection(using selectableRow: () -> Int?) {
-        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle), let row = selectableRow() {
-            selectRow(at: row)
-        } else {
-            clearRowSelection()
-        }
+        clearRowSelection()
     }
 
     private func firstSelectableRow() -> Int? {

@@ -19,7 +19,9 @@
 import AIChat
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import OSLog
 import UserScript
 import WebKit

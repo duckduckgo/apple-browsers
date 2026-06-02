@@ -20,6 +20,7 @@ import Combine
 import SwiftUI
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 
 // MARK: - Feature Model
 

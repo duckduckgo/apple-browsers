@@ -275,6 +275,59 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         XCTAssertTrue(cell.shouldShowChevron)
     }
 
+    @MainActor
+    func testWhenDroppingBookmarkIntoClippedItemsMenu_AndPrecedingRowIsBookmark_ThenMoveIndexIsRealTopLevelIndex() throws {
+        // GIVEN: top-level entities where bar-visible items come first (folderInBar, bookmarkInBar1, bookmarkInBar2)
+        //        and clippedBookmark1 / clippedBookmark2 are the clipped overflow items.
+        let folderInBar = BookmarkFolder(id: "folder-in-bar", title: "Folder In Bar")
+        let bookmarkInBar1 = Bookmark(id: "bm-bar-1", url: "https://1.example.com", title: "Bar 1", isFavorite: false)
+        let bookmarkInBar2 = Bookmark(id: "bm-bar-2", url: "https://2.example.com", title: "Bar 2", isFavorite: false)
+        let clippedBookmark1 = Bookmark(id: "bm-clipped-1", url: "https://3.example.com", title: "Clipped 1", isFavorite: false)
+        let clippedBookmark2 = Bookmark(id: "bm-clipped-2", url: "https://4.example.com", title: "Clipped 2", isFavorite: false)
+        let topLevel: [BaseBookmarkEntity] = [folderInBar, bookmarkInBar1, bookmarkInBar2, clippedBookmark1, clippedBookmark2]
+
+        // The clipped-items menu uses a synthetic folder whose id matches PseudoFolder.bookmarks.id;
+        // its children are only the clipped entries.
+        let clippedMenuRoot = BookmarkFolder(id: PseudoFolder.bookmarks.id, title: "Clipped", children: [clippedBookmark1, clippedBookmark2])
+
+        let bookmarkStoreMock = BookmarkStoreMock(bookmarks: topLevel)
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
+        bookmarkManager.loadBookmarks()
+
+        let treeDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
+        let treeController = BookmarkTreeController(dataSource: treeDataSource,
+                                                    sortMode: .manual,
+                                                    rootFolder: clippedMenuRoot,
+                                                    isBookmarksBarMenu: true)
+        let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .bookmarksMenu,
+                                                      bookmarkManager: bookmarkManager,
+                                                      treeController: treeController,
+                                                      dragDropManager: dragDropManager,
+                                                      sortMode: .manual)
+        let outlineView = BookmarksOutlineView()
+        outlineView.addTableColumn(NSTableColumn(identifier: NSUserInterfaceItemIdentifier("test")))
+        outlineView.dataSource = dataSource
+        outlineView.reloadData()
+
+        let draggedBookmark = Bookmark(id: "dragged-bookmark", url: "https://dragged.example.com", title: "Dragged", isFavorite: false)
+        let pasteboard = NSPasteboard.test()
+        pasteboard.writeObjects([draggedBookmark.pasteboardWriter])
+        let draggingInfo = MockDraggingInfo(draggingPasteboard: pasteboard)
+
+        // WHEN: drop at outline child index 1 — between clippedBookmark1 and clippedBookmark2.
+        // The row preceding the drop point is clippedBookmark1, a Bookmark (not a folder).
+        _ = dataSource.outlineView(outlineView, acceptDrop: draggingInfo, item: nil, childIndex: 1)
+
+        // THEN: the move must target the real top-level index just after clippedBookmark1 (which lives at
+        // index 3 in the top-level list) — i.e. 4. The raw outline-child index 1 would put it back inside
+        // the bookmarks bar, which is the bug we are guarding against.
+        XCTAssertTrue(bookmarkStoreMock.moveObjectUUIDCalled)
+        XCTAssertEqual(bookmarkStoreMock.capturedObjectUUIDs, [draggedBookmark.id])
+        XCTAssertEqual(bookmarkStoreMock.capturedParentFolderType, .root)
+        XCTAssertEqual(bookmarkStoreMock.capturedToIndex, 4)
+    }
+
     // MARK: - Private
 
     @MainActor

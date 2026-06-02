@@ -19,6 +19,7 @@
 
 import UIKit
 import Common
+import FoundationExtensions
 import Core
 import Bookmarks
 import BrowserServicesKit
@@ -59,25 +60,23 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller: Onboarding = if featureFlagger.isFeatureOn(.onboardingRebranding) {
-            OnboardingIntroViewController.rebranded(
-                onboardingPixelReporter: contextualOnboardingPixelReporter,
-                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler,
-                onboardingManager: onboardingManager
-            )
-        } else {
-            OnboardingIntroViewController.legacy(
-                onboardingPixelReporter: contextualOnboardingPixelReporter,
-                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler,
-                onboardingManager: onboardingManager
-            )
-        }
-        controller.delegate = self
+        let viewModel = OnboardingIntroFactory.makeViewModel(
+            pixelReporter: contextualOnboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager,
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            onboardingManager: onboardingManager
+        )
+        let controller = OnboardingIntroFactory.makeController(
+            viewModel: viewModel,
+            isRebranded: featureFlagger.isFeatureOn(.onboardingRebranding),
+            delegate: self
+        )
         controller.modalPresentationStyle = .overFullScreen
+        linearOnboardingContext = OnboardingIntroContext(
+            onboardingViewController: controller,
+            onboardingViewModel: viewModel
+        )
         present(controller, animated: false, completion: completion)
     }
 
@@ -455,8 +454,7 @@ extension MainViewController {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
-        let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
-                                                        featureFlagger: featureFlagger)
+        let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
         let whatsNewCoordinator = WhatsNewCoordinator(
             displayContext: .onDemand,
             repository: whatsNewRepository,
@@ -483,6 +481,7 @@ extension MainViewController {
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
                                                   idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                                  afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,

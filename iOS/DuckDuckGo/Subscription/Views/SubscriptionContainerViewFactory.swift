@@ -20,6 +20,7 @@
 import SwiftUI
 import Subscription
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PrivacyConfig
 import DataBrokerProtection_iOS

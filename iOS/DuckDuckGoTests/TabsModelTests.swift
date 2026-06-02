@@ -199,6 +199,22 @@ class TabsModelTests: XCTestCase {
         XCTAssertEqual(testee.currentIndex, 0)
     }
 
+    func testWhenCurrentIsLastItemAndItIsRemovedThenCurrentMovesToNewLast() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[2])
+        let tabToRemove = testee.tabs[2]
+        testee.remove(tab: tabToRemove)
+        XCTAssertEqual(testee.currentIndex, 1)
+    }
+
+    func testWhenCurrentIsMiddleItemAndItIsRemovedThenCurrentMovesToPrevious() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[1])
+        let tabToRemove = testee.tabs[1]
+        testee.remove(tab: tabToRemove)
+        XCTAssertEqual(testee.currentIndex, 0)
+    }
+
     func testWhenLastIsRemovedThenHomeTabCreated() {
         let testee = singleModel
         let tab = testee.tabs[0]
@@ -359,8 +375,7 @@ class TabsModelTests: XCTestCase {
     func testWhenTabSnapshotTakenThenAllPersistedFieldsArePreserved() {
         let link = Link(title: "Example", url: URL(string: "https://example.com")!, localPath: URL(string: "file:///tmp/local")!)
         let date = Date(timeIntervalSince1970: 1_000_000)
-        let unifiedState = UnifiedInputTabState(preferredTextEntryMode: .aiChat,
-                                                selectedModelID: "gpt-4",
+        let unifiedState = UnifiedInputTabState(selectedModelID: "gpt-4",
                                                 selectedReasoningMode: nil,
                                                 selectedTool: nil)
         let tab = Tab(uid: "test-uid",

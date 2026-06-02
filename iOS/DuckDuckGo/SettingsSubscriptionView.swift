@@ -37,6 +37,7 @@ struct SettingsSubscriptionView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
+
     @State var isShowingDBP = false
     @State var isShowingITP = false
     @State var isShowingVPN = false

@@ -25,7 +25,6 @@ import PixelKitTestingUtilities
 import PrivacyConfig
 import enum StoreKit.StoreKitError
 
-@available(macOS 12.0, *)
 final class SubscriptionAppStoreRestorerTests: XCTestCase {
 
     private struct Constants {

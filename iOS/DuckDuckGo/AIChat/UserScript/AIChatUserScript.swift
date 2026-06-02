@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import UserScript
 import Foundation
 import AIChat
@@ -232,6 +233,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.voiceSessionStarted
         case .voiceSessionEnded:
             return handler.voiceSessionEnded
+        case .newImageGenerationChatStarted:
+            return handler.newImageGenerationChatStarted
         default:
             return nil
         }
@@ -286,6 +289,10 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     // MARK: - AI Chat Actions
+
+    var canDispatchBridgeMessages: Bool {
+        webView != nil && broker != nil
+    }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         submitPrompt(prompt, pageContext: pageContext, modelId: nil)

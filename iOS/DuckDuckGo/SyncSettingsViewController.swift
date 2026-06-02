@@ -23,6 +23,7 @@ import Combine
 import SyncUI_iOS
 import DDGSync
 import Common
+import FoundationExtensions
 import os.log
 import PrivacyConfig
 import AttributedMetric
@@ -38,6 +39,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         static let dataImportSummarySyncPromotion = "promotion_data_import_summary"
         static let bookmarksPromotion = "promotion_bookmarks"
         static let passwordsPromotion = "promotion_passwords"
+        static let aiChatPromotion = "promotion_ai_chat"
     }
 
     enum AutoRestorePromptSource: String {
@@ -391,7 +393,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     }
 
     private func startSyncWithAnotherDeviceIfNecessary() {
-        guard source == SourceConstants.startSyncFlow,
+        let autoStartPairingSources = [SourceConstants.startSyncFlow, SourceConstants.aiChatPromotion]
+        guard let source, autoStartPairingSources.contains(source),
               syncService.authState == .inactive else {
             return
         }

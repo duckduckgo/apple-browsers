@@ -195,21 +195,6 @@ extension OnboardingRebranding {
             self.model = model
         }
 
-        /// Direction the bubble's tail arrow points toward.
-        private enum BubbleTailDirection {
-            case leading
-            case trailing
-        }
-
-        /// Per-step layout configuration for the bubble dialog (tail position, spacing, visibility).
-        private struct BubbleBackedDialogConfiguration {
-            let tailOffset: CGFloat
-            let tailDirection: BubbleTailDirection
-            var additionalTopMargin: CGFloat = 0
-            let isVisible: Bool
-            let showsStepCounter: Bool
-        }
-
         var body: some View {
             ZStack(alignment: .topTrailing) {
                 switch model.state {
@@ -413,7 +398,7 @@ extension OnboardingRebranding {
         private func aiComparisonView(content: OnboardingAIComparisonContent) -> some View {
             AIComparisonContent(
                 content: content,
-                showContent: $showBubbleContent,
+                isVisible: $showBubbleContent,
                 continueAction: {
                     animateContentTransition {
                         model.aiComparisonAction()
@@ -426,13 +411,8 @@ extension OnboardingRebranding {
             state: ViewState.Intro,
             configuration: BubbleBackedDialogConfiguration
         ) -> some View {
-            let stepInfo: ViewState.Intro.StepInfo = if configuration.showsStepCounter {
-                .init(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
-            } else {
-                .hidden
-            }
             let isIntroStep: Bool = if case .startOnboardingDialog = state.type { true } else { false }
-            return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
+            return makeBubbleView(configuration: configuration, stepInfo: state.step) {
                 VStack {
                     bubbleBackedDialogContent(for: state.type)
                         .opacity(showBubbleContent ? 1 : 0)
@@ -466,17 +446,18 @@ extension OnboardingRebranding {
         ) -> some View {
             // Leading tails are mirrored (theme 0.8 → 0.2 from left); trailing tails use the
             // offset directly. Hidden on compact viewports / AX text sizes.
-            let tail: OnboardingBubbleView<Content>.TailPosition? = OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? nil : {
-                switch configuration.tailDirection {
-                case .leading: return .bottom(offset: 1 - configuration.tailOffset, direction: .leading)
-                case .trailing: return .bottom(offset: configuration.tailOffset, direction: .trailing)
+            let tail: OnboardingBubbleView<Content>.TailPosition? = configuration.tail.flatMap { tail in
+                guard !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) else { return nil }
+                switch tail.direction {
+                case .leading: return .bottom(offset: 1 - tail.offset, direction: .leading)
+                case .trailing: return .bottom(offset: tail.offset, direction: .trailing)
                 }
-            }()
+            }
             OnboardingBubbleView.withStepProgressIndicator(
                 tailPosition: tail,
                 currentStep: stepInfo.currentStep,
                 totalSteps: stepInfo.totalSteps,
-                isVisible: configuration.showsStepCounter
+                isVisible: stepInfo != .hidden
             ) {
                 content()
             }
@@ -501,64 +482,6 @@ extension OnboardingRebranding {
                 searchExperienceSelectionView(content: content)
             case let .duckAIQueryExperimentDialog(content, defaultMode):
                 experimentSearchExperienceSelectionView(content: content, defaultMode: defaultMode)
-            }
-        }
-
-        private func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration {
-            let tailLeadingOffset = 0.7
-            let tailTrailingOffset = 0.2
-            switch type {
-            case .startOnboardingDialog:
-                return BubbleBackedDialogConfiguration(
-                    tailOffset: tailLeadingOffset,
-                    tailDirection: .leading,
-                    additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
-                    isVisible: model.introState.showIntroViewContent,
-                    showsStepCounter: false
-                )
-            case .browsersComparisonDialog, .aiComparisonDialog:
-                return BubbleBackedDialogConfiguration(
-                    tailOffset: tailTrailingOffset,
-                    tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
-            case .addToDockPromoDialog:
-                return BubbleBackedDialogConfiguration(
-                    tailOffset: tailLeadingOffset,
-                    tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
-            case .chooseAppIconDialog:
-                return BubbleBackedDialogConfiguration(
-                    tailOffset: tailLeadingOffset,
-                    tailDirection: .trailing,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
-            case .chooseAddressBarPositionDialog:
-                return BubbleBackedDialogConfiguration(
-                    tailOffset: tailTrailingOffset,
-                    tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
-            case .chooseSearchExperienceDialog:
-                return BubbleBackedDialogConfiguration(
-                    tailOffset: tailLeadingOffset,
-                    tailDirection: .leading,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
-            case .duckAIQueryExperimentDialog:
-                return BubbleBackedDialogConfiguration(
-                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
-                    tailDirection: .leading,
-                    additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
-                    isVisible: true,
-                    showsStepCounter: false
-                )
             }
         }
 
@@ -659,7 +582,7 @@ extension OnboardingRebranding {
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
+        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode) -> some View {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
                 content: content,
                 defaultMode: defaultMode,
@@ -667,7 +590,7 @@ extension OnboardingRebranding {
                 onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
                 openAIChatAction: model.openAIChatFromOnboarding,
                 openSearchAction: model.searchFromOnboarding,
-                measureQuerySubmissionAction: model.measureDuckAIQueryExperimentQuerySubmission,
+                measureQuerySubmissionAction: model.measureDuckAIQuerySubmission,
                 startExitTransitionAction: {
                     beginExperimentExitTransition()
                 }
@@ -750,6 +673,88 @@ extension OnboardingRebranding {
             }
         }
 
+    }
+
+}
+
+// MARK: - OnboardingView + Configuration
+
+private extension OnboardingRebranding.OnboardingView {
+
+    struct BubbleTail {
+        /// Direction the bubble's tail arrow points toward.
+        enum Direction {
+            case leading
+            case trailing
+        }
+
+        let offset: CGFloat
+        let direction: BubbleTail.Direction
+    }
+
+    /// Per-step layout configuration for the bubble dialog (tail position, spacing, visibility).
+    struct BubbleBackedDialogConfiguration {
+        let tail: BubbleTail?
+        var additionalTopMargin: CGFloat = 0
+        let isVisible: Bool
+    }
+
+    func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration {
+        let tailLeadingOffset = 0.7
+        let tailTrailingOffset = 0.2
+        switch type {
+        case .startOnboardingDialog:
+            return BubbleBackedDialogConfiguration(
+                tailOffset: tailLeadingOffset,
+                tailDirection: .leading,
+                additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
+                isVisible: model.introState.showIntroViewContent
+            )
+        case .browsersComparisonDialog, .aiComparisonDialog:
+            return BubbleBackedDialogConfiguration(
+                tailOffset: tailTrailingOffset,
+                tailDirection: .leading,
+                isVisible: true
+            )
+        case .addToDockPromoDialog:
+            return BubbleBackedDialogConfiguration(
+                tailOffset: tailLeadingOffset,
+                tailDirection: .leading,
+                isVisible: true
+            )
+        case .chooseAppIconDialog:
+            return BubbleBackedDialogConfiguration(
+                tailOffset: tailLeadingOffset,
+                tailDirection: .trailing,
+                isVisible: true
+            )
+        case .chooseAddressBarPositionDialog:
+            return BubbleBackedDialogConfiguration(
+                tailOffset: tailTrailingOffset,
+                tailDirection: .leading,
+                isVisible: true
+            )
+        case .chooseSearchExperienceDialog:
+            return BubbleBackedDialogConfiguration(
+                tailOffset: tailLeadingOffset,
+                tailDirection: .leading,
+                isVisible: true
+            )
+        case .duckAIQueryExperimentDialog:
+            return BubbleBackedDialogConfiguration(
+                tail: nil,
+                additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
+                isVisible: true
+            )
+        }
+    }
+    
+}
+
+private extension OnboardingRebranding.OnboardingView.BubbleBackedDialogConfiguration {
+
+    init(tailOffset: CGFloat, tailDirection: OnboardingRebranding.OnboardingView.BubbleTail.Direction, additionalTopMargin: CGFloat = 0, isVisible: Bool) {
+        self.init(tail: .init(offset: tailOffset, direction: tailDirection), additionalTopMargin: additionalTopMargin, isVisible: isVisible)
     }
 
 }

@@ -19,6 +19,7 @@
 import Foundation
 import AppKit
 import Common
+import FoundationExtensions
 import LoginItems
 import Network
 import NetworkProtectionIPC
@@ -202,13 +203,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private func collectDeviceInfoMetadata() -> VPNMetadata.DeviceInfo {
         let buildFlavor = AppVersion.isAppStoreBuild ? "appstore" : "dmg"
         let osVersion = AppVersion.shared.osVersionMajorMinorPatch
-        let lowPowerModeEnabled: Bool
-
-        if #available(macOS 12.0, *) {
-            lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
-        } else {
-            lowPowerModeEnabled = false
-        }
+        let lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
 
         let architecture = getMachineArchitecture()
 

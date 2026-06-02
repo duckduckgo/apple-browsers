@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Carbon.HIToolbox
 import Combine
 import Common
+import FoundationExtensions
 import PixelKit
 import Suggestions
 import Subscription
@@ -156,11 +157,11 @@ final class AddressBarTextField: NSTextField {
         suggestionResultCancellable = suggestionContainerViewModel?.suggestionContainer.$result
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self = self else { return }
-                if self.suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
-                    self.performanceCoordinator?.markSuggestionsUpdated()
-                    self.showSuggestionWindow()
-                }
+                guard let self,
+                      let viewModel = self.suggestionContainerViewModel,
+                      viewModel.numberOfRows > 0 else { return }
+                self.performanceCoordinator?.markSuggestionsUpdated()
+                self.showSuggestionWindow()
             }
     }
 
@@ -808,6 +809,7 @@ final class AddressBarTextField: NSTextField {
         guard !suggestionWindow.isVisible, isFirstResponder else { return }
 
         window.addChildWindow(suggestionWindow, ordered: .above)
+        NotificationCenter.default.post(name: .suggestionWindowDidShow, object: self)
 
         windowFrameCancellable = window.publisher(for: \.frame)
             .sink { [weak self] _ in
@@ -1120,12 +1122,15 @@ extension AddressBarTextField {
                 }
             case .openTab(title: _, url: let url, _, _):
                 self = .openTab(url)
-            case .unknown, .askAIChat:
+            case .askAIChat:
+                self = Suffix.aiChat
+            case .unknown:
                 self = Suffix.search
             }
         }
 
         case search
+        case aiChat
         case visit(host: String)
         case url(URL)
         case title(String)
@@ -1141,6 +1146,7 @@ extension AddressBarTextField {
         }
 
         static let searchSuffix = " – \(UserText.searchDuckDuckGoSuffix)"
+        static let aiChatSuffix = " – \(UserText.aiChatAddressBarTrustedIndicator)"
         static let searchOpenTabSuffix = " – \(UserText.duckDuckGoSearchSuffix)"
         static let internalPageOpenTabSuffix = " – \(UserText.duckDuckGo)"
         static let visitSuffix = " – \(UserText.addressBarVisitSuffix)"
@@ -1149,6 +1155,8 @@ extension AddressBarTextField {
             switch self {
             case .search:
                 return Self.searchSuffix
+            case .aiChat:
+                return Self.aiChatSuffix
             case .visit(host: let host):
                 return "\(Self.visitSuffix) \(host)"
             case .openTab(let url) where url.isDuckDuckGoSearch:
@@ -1273,6 +1281,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
         if commandSelector == #selector(insertNewline)
             || commandSelector == #selector(insertNewlineIgnoringFieldEditor)
             || commandSelector == Selector(("noop:")) && NSApp.isReturnOrEnterPressed {
+            // The window-level key monitor should catch the common IME flow first; keep this guard for any input path that
+            // reaches the delegate with marked text.
+            if Application.appDelegate.featureFlagger.isFeatureOn(.addressBarIMEConfirmFix),
+               textView.hasMarkedText() {
+                return false
+            }
             self.addressBarEnterPressed()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
@@ -1625,4 +1639,8 @@ extension AddressBarTextField: SharingMenuDelegate {
 
         return (selectedTabViewModel.title, [url])
     }
+}
+
+extension Notification.Name {
+    static let suggestionWindowDidShow = Notification.Name("suggestionWindowDidShow")
 }

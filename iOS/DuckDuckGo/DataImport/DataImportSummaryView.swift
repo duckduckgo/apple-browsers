@@ -399,33 +399,11 @@ struct DataImportSummaryView: View {
                     .padding(.top, 12)
 
                 HStack(spacing: 8) {
-                    Button {
-                        onDismissTapped()
-                    } label: {
-                        Text(dismissButtonTitle)
-                            .daxButton()
-                            .foregroundStyle(Color(designSystemColor: .textPrimary))
-                            .lineLimit(nil)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.vertical, Metrics.textVerticalPadding)
-                            .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
+                    Button(dismissButtonTitle, action: onDismissTapped)
+                        .buttonStyle(SecondaryFillButtonStyle(compact: true))
 
-                    Button {
-                        onContinueTapped()
-                    } label: {
-                        Text(continueButtonTitle)
-                            .daxButton()
-                            .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
-                            .lineLimit(nil)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.vertical, Metrics.textVerticalPadding)
-                            .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
+                    Button(continueButtonTitle, action: onContinueTapped)
+                        .buttonStyle(DuckUI.PrimaryButtonStyle(compact: true))
                 }
                 .padding(.top, 24)
                 .padding(.horizontal, 20)
@@ -439,26 +417,7 @@ struct DataImportSummaryView: View {
         }
 
         fileprivate enum Metrics {
-            static let buttonCornerRadius: CGFloat = 12
-            static let buttonHeight: CGFloat = 40
             static let imageSize: CGFloat = 64
-            static let textVerticalPadding: CGFloat = 6
-        }
-
-        private struct SecondaryButtonStyle: ButtonStyle {
-            func makeBody(configuration: Configuration) -> some View {
-                configuration.label
-                    .background(configuration.isPressed ? Color(designSystemColor: .controlsFillSecondary) : Color(designSystemColor: .controlsFillPrimary))
-                    .cornerRadius(Metrics.buttonCornerRadius)
-            }
-        }
-
-        private struct PrimaryButtonStyle: ButtonStyle {
-            func makeBody(configuration: Configuration) -> some View {
-                configuration.label
-                    .background(configuration.isPressed ? Color(designSystemColor: .buttonsPrimaryPressed) : Color(designSystemColor: .buttonsPrimaryDefault))
-                    .cornerRadius(Metrics.buttonCornerRadius)
-            }
         }
     }
 
@@ -469,7 +428,7 @@ struct DataImportSummaryView: View {
         
         var body: some View {
             VStack(alignment: .center, spacing: 0) {
-                Image("Sync-Pending-96")
+                Image(rebrandable: "Sync-Pending-96")
                     .resizable()
                     .frame(width: Metrics.imageSize, height: Metrics.imageSize)
                     .padding(.top, 16)
@@ -481,31 +440,14 @@ struct DataImportSummaryView: View {
                     .padding(.top, 12)
                 
                 HStack(spacing: 8) {
-                    Button {
-                        viewModel.dismissSyncPromo()
-                    } label: {
-                        Text(UserText.syncPromoDismissAction)
-                            .font(Font(UIFont.boldSystemFont(ofSize: Metrics.buttonFontSize)))
-                            .foregroundStyle(Color(designSystemColor: .textPrimary))
-                            .padding(.vertical, Metrics.textVerticalPadding)
-                            .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
-                    }
-                    .buttonStyle(SecondarySyncButtonStyle())
-                    
-                    Button {
-                        onSyncTapped()
-                    } label: {
-                        Text(UserText.syncPromoConfirmAction)
-                            .font(Font(UIFont.boldSystemFont(ofSize: Metrics.buttonFontSize)))
-                            .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
-                            .padding(.vertical, Metrics.textVerticalPadding)
-                            .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
+                    Button(UserText.syncPromoDismissAction, action: viewModel.dismissSyncPromo)
+                        .buttonStyle(SecondaryFillButtonStyle(compact: true))
 
-                    }
-                    .buttonStyle(PrimarySyncButtonStyle())
-                    .onFirstAppear {
-                        viewModel.fireSyncButtonShownPixel()
-                    }
+                    Button(UserText.syncPromoConfirmAction, action: onSyncTapped)
+                        .buttonStyle(DuckUI.PrimaryButtonStyle(compact: true))
+                        .onFirstAppear {
+                            viewModel.fireSyncButtonShownPixel()
+                        }
                 }
                 .padding(.top, 24)
                 .padding(.horizontal, 20)
@@ -517,29 +459,9 @@ struct DataImportSummaryView: View {
                     .fill(Color(designSystemColor: .surface))
             )
         }
-        
+
         fileprivate enum Metrics {
-            static let buttonCornerRadius: CGFloat = 12
-            static let buttonHeight: CGFloat = 40
-            static let buttonFontSize: CGFloat = 15
             static let imageSize: CGFloat = 64
-            static let textVerticalPadding: CGFloat = 6
-        }
-        
-        private struct SecondarySyncButtonStyle: ButtonStyle {
-            func makeBody(configuration: Configuration) -> some View {
-                configuration.label
-                    .background(configuration.isPressed ? Color(designSystemColor: .controlsFillSecondary) : Color(designSystemColor: .controlsFillPrimary))
-                    .cornerRadius(Metrics.buttonCornerRadius)
-            }
-        }
-        
-        private struct PrimarySyncButtonStyle: ButtonStyle {
-            func makeBody(configuration: Configuration) -> some View {
-                configuration.label
-                    .background(configuration.isPressed ? Color(designSystemColor: .buttonsPrimaryPressed) : Color(designSystemColor: .buttonsPrimaryDefault))
-                    .cornerRadius(Metrics.buttonCornerRadius)
-            }
         }
     }
 

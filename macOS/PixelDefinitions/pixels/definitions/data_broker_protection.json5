@@ -29,7 +29,8 @@
                 "description": "Whether the user is internal",
                 "type": "string",
                 "enum": ["true", "false"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_start": {
@@ -361,7 +362,7 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_optoutjob_at-42-days_unconfirmed": {
         "description": "Fired when a successfully submitted opt-out reaches 42 days since submission and remains unconfirmed (record not removed).",
@@ -384,7 +385,8 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpActionId",
-            "dbpActionDuration"
+            "dbpActionDuration",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_condition-not-found": {
@@ -407,7 +409,8 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpActionId",
-            "dbpActionDuration"
+            "dbpActionDuration",
+            "channel"
         ]
     },
     "m_mac_dbp_service_generate-email_http-error": {
@@ -466,7 +469,8 @@
                 "key": "broker_version",
                 "description": "The version of the broker JSON file (unknown when not available)",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation-link_client-received": {
@@ -983,7 +987,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with an HTTP error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -1004,7 +1008,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with a non-HTTP, non-action error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",

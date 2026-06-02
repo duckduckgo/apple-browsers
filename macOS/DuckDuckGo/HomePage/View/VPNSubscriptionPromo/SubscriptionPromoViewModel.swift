@@ -18,7 +18,7 @@
 
 import Combine
 import Common
-import FeatureFlags
+import FoundationExtensions
 import Foundation
 import Persistence
 import PixelKit
@@ -97,7 +97,6 @@ enum SubscriptionPromoConstants {
 final class SubscriptionPromoViewModel: ObservableObject {
 
     private let subscriptionManager: any SubscriptionManager
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
     private var persistor: SubscriptionPromoPersisting
     private let locale: Locale
@@ -121,23 +120,19 @@ final class SubscriptionPromoViewModel: ObservableObject {
     var onPromoDismissed: (() -> Void)?
 
     init(subscriptionManager: any SubscriptionManager,
-         featureFlagger: FeatureFlagger,
          pixelFiring: PixelFiring? = PixelKit.shared,
          persistor: SubscriptionPromoPersisting? = nil,
          locale: Locale = .current,
          dateProvider: @escaping () -> Date = Date.init,
          promoDelegate: FireWindowSubscriptionPromoDelegate? = nil) {
         self.subscriptionManager = subscriptionManager
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
         self.locale = locale
         self.dateProvider = dateProvider
         self.promoDelegate = promoDelegate
 
-        if featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
-            checkPurchaseEligibility()
-        }
+        checkPurchaseEligibility()
     }
 
     deinit {
@@ -187,7 +182,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
         }
     }
 
-    /// Display conditions (feature flag and purchase eligibility are checked before evaluation in `updateForTab`):
+    /// Display conditions (purchase eligibility is checked before evaluation in `updateForTab`):
     /// - en_US locale only
     /// - Non-subscriber only
     /// - Fire Tab visited >= 3 times

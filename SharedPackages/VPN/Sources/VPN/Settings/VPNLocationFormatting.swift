@@ -26,7 +26,7 @@ public protocol VPNLocationFormatting {
     func string(from location: String?,
                 preferredLocation: VPNSettings.SelectedLocation) -> String
 
-    @available(macOS 12, iOS 15, *)
+    @available(iOS 15, *)
     func string(from location: String?,
                 preferredLocation: VPNSettings.SelectedLocation,
                 locationTextColor: Color,

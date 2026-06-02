@@ -54,7 +54,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             Logger.unifiedInputState.debug("state(for:) hit for tab [\(uid)]: \(existing.summary)")
             return existing
         }
-        let seeded = seededState(toggleMode: trackedLastUsed.toggleMode)
+        let seeded = seededState()
         Logger.unifiedInputState.debug("state(for:) miss for tab [\(uid)] — returning fresh seed: \(seeded.summary)")
         return seeded
     }
@@ -64,16 +64,17 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         Logger.unifiedInputState.debug("update flush for tab [\(uid)]: \(state.summary)")
     }
 
-    func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID, isNewChatContext: Bool) {
         states[uid] = state
+        // Toggle mode is committed on submit only (see `commitToggleMode`), not on every
+        // in-flight toggle change — otherwise a non-committed toggle would leak into
+        // `toggleModeStorage` and dirty the next UTI activation on the same tab.
         trackedLastUsed = LastUsedInputDefaults(
-            toggleMode: state.toggleMode,
-            selectedModelID: state.selectedModelID,
+            toggleMode: trackedLastUsed.toggleMode,
+            selectedModelID: isNewChatContext ? state.selectedModelID : trackedLastUsed.selectedModelID,
             selectedReasoningMode: state.selectedReasoningMode,
             selectedTool: state.selectedTool
         )
-        toggleModeStorage.save(state.toggleMode)
-        preferences.selectedModelId = state.selectedModelID
         preferences.selectedReasoningMode = state.selectedReasoningMode
         preferences.selectedTool = state.selectedTool
 
@@ -84,7 +85,18 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             inputState.selectedTool = state.selectedTool
             tab.unifiedInputState = inputState
         }
-        Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)]: \(state.summary)")
+        Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)] (newChat=\(isNewChatContext)): \(state.summary)")
+    }
+
+    func commitToggleMode(_ mode: TextEntryMode) {
+        trackedLastUsed = LastUsedInputDefaults(
+            toggleMode: mode,
+            selectedModelID: trackedLastUsed.selectedModelID,
+            selectedReasoningMode: trackedLastUsed.selectedReasoningMode,
+            selectedTool: trackedLastUsed.selectedTool
+        )
+        toggleModeStorage.save(mode)
+        Logger.unifiedInputState.debug("commitToggleMode \(String(describing: mode))")
     }
 
     func remove(for uid: TabUID) {
@@ -127,7 +139,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private func seededState(from inputState: UnifiedInputTabState) -> TabInputState {
         TabInputState(
             text: "",
-            toggleMode: inputState.preferredTextEntryMode,
+            toggleMode: trackedLastUsed.toggleMode,
             attachments: [],
             selectedModelID: inputState.selectedModelID ?? trackedLastUsed.selectedModelID,
             selectedReasoningMode: inputState.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode,
@@ -135,10 +147,10 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         )
     }
 
-    private func seededState(toggleMode: TextEntryMode) -> TabInputState {
+    private func seededState() -> TabInputState {
         TabInputState(
             text: "",
-            toggleMode: toggleMode,
+            toggleMode: trackedLastUsed.toggleMode,
             attachments: [],
             selectedModelID: trackedLastUsed.selectedModelID,
             selectedReasoningMode: trackedLastUsed.selectedReasoningMode,

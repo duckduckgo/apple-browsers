@@ -85,6 +85,8 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureAutoRestoreOnboardingSkipCTAAction()
     func measureBrowserComparisonImpression()
     func measureChooseBrowserCTAAction()
+    func measureAiComparisonImpression()
+    func measureAiComparisonCTAAction()
     func measureChooseAppIconImpression()
     func measureChooseAppIconColor(_ color: AppIcon)
     func measureAddressBarPositionSelectionImpression()
@@ -95,7 +97,9 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureDuckAIQueryExperimentSelectionImpression()
     func measureDuckAIQueryExperimentChooseSearchOnly()
     func measureDuckAIQueryExperimentChooseAIChat()
-    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource)
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource)
+    func measureDuckAIQuerySelectionImpression()
+    func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource)
     func measureSkipOnboardingScreenImpression()
     func measureSetDefaultBrowserSkipped()
 }
@@ -126,6 +130,7 @@ protocol OnboardingDaxDialogsReporting {
     func measureTrackersDialogDismissButtonTapped()
     func measureFireDialogDismissButtonTapped()
     func measureDuckAIExperimentFireButtonCTAAction()
+    func measureDuckAIExperimentFireDialogImpression()
     func measureDuckAIExperimentFinalDialogImpression()
     func measureDuckAIExperimentFinalDialogCTAAction()
     func measureEndOfJourneyDialogNewTabDismissButtonTapped()
@@ -195,7 +200,7 @@ final class OnboardingPixelReporter {
 
 }
 
-enum DuckAIQueryExperimentPromptSource: String {
+enum DuckAIQueryPromptSource: String {
     case custom
     case option1
     case option2
@@ -322,6 +327,18 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
                                 flow: sharedPixelsStorage.onboardingFlow)
     }
 
+    func measureAiComparisonImpression() {
+        sharedPixelHandler.fire(.aiComparison(.shown),
+                                source: sharedPixelsStorage.onboardingSource,
+                                flow: sharedPixelsStorage.onboardingFlow)
+    }
+
+    func measureAiComparisonCTAAction() {
+        sharedPixelHandler.fire(.aiComparison(.clicked(.engage)),
+                                source: sharedPixelsStorage.onboardingSource,
+                                flow: sharedPixelsStorage.onboardingFlow)
+    }
+
     func measureChooseAppIconImpression() {
         fire(event: .onboardingIntroChooseAppIconImpressionUnique, unique: true)
         sharedPixelHandler.fire(.appIconColor(.shown),
@@ -383,9 +400,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureDuckAIQueryExperimentSelectionImpression() {
         fire(event: .onboardingIntroDuckAIExperimentToggleImpressionUnique, unique: true)
         fireExperimentScreenImpressionPixel(value: .toggleScreen)
-        sharedPixelHandler.fire(.searchChatToggle(.shown),
-                                source: sharedPixelsStorage.onboardingSource,
-                                flow: sharedPixelsStorage.onboardingFlow)
+        measureDuckAIQuerySelectionImpression()
     }
 
     func measureDuckAIQueryExperimentChooseSearchOnly() {
@@ -398,7 +413,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         fireExperimentCTAPressedPixel(value: .continuePressedAI)
     }
 
-    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
         let metricName: DuckAIQueryExperimentMetric.Name
         switch selection {
         case .duckAI:
@@ -415,28 +430,34 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
                 value: promptSource.rawValue
             )
         }
+        sharedPixelsStorage.onboardingVariant = OnboardingPixelParameter.Variant(selection)
+        measureDuckAIQuerySubmission(selection: selection, promptSource: promptSource)
+    }
 
+    func measureDuckAIQuerySelectionImpression() {
+        sharedPixelHandler.fire(.searchChatToggle(.shown),
+                                source: sharedPixelsStorage.onboardingSource,
+                                flow: sharedPixelsStorage.onboardingFlow)
+    }
+
+    func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
         switch (promptSource, selection) {
         case (.custom, .duckAI):
             sharedPixelHandler.fire(.searchChatToggle(.clicked(.customChat)),
                                     source: sharedPixelsStorage.onboardingSource,
                                     flow: sharedPixelsStorage.onboardingFlow)
-            sharedPixelsStorage.onboardingVariant = .duckAIChat
         case (.custom, .search):
             sharedPixelHandler.fire(.searchChatToggle(.clicked(.customSearch)),
                                     source: sharedPixelsStorage.onboardingSource,
                                     flow: sharedPixelsStorage.onboardingFlow)
-            sharedPixelsStorage.onboardingVariant = .duckAISearch
         case (_, .duckAI):
             sharedPixelHandler.fire(.searchChatToggle(.clicked(.suggestedChat)),
                                     source: sharedPixelsStorage.onboardingSource,
                                     flow: sharedPixelsStorage.onboardingFlow)
-            sharedPixelsStorage.onboardingVariant = .duckAIChat
         case (_, .search):
             sharedPixelHandler.fire(.searchChatToggle(.clicked(.suggestedSearch)),
                                     source: sharedPixelsStorage.onboardingSource,
                                     flow: sharedPixelsStorage.onboardingFlow)
-            sharedPixelsStorage.onboardingVariant = .duckAISearch
         }
     }
 
@@ -499,9 +520,6 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureScreenImpression(event: Pixel.Event) {
         fire(event: event, unique: true)
-        if case .onboardingDuckAIExperimentFireDialogShownUnique = event {
-            fireExperimentScreenImpressionPixel(value: .fireDialog)
-        }
     }
 
     func measureScreenImpression(_ event: OnboardingSharedPixelEvent) {
@@ -620,6 +638,11 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
         fireExperimentCTAPressedPixel(value: .fireButtonPressed)
     }
 
+    func measureDuckAIExperimentFireDialogImpression() {
+        fire(event: .onboardingDuckAIExperimentFireDialogShownUnique, unique: true)
+        fireExperimentScreenImpressionPixel(value: .fireDialog)
+    }
+
     func measureDuckAIExperimentFinalDialogImpression() {
         fire(event: .onboardingDuckAIExperimentFinalDialogShownUnique, unique: true)
         fireExperimentScreenImpressionPixel(value: .finalDialog)
@@ -693,6 +716,19 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
     
     func measureAddToDockTutorialDismissCTAAction() {
         fire(event: .onboardingAddToDockTutorialDismissCTATapped, unique: false)
+    }
+
+}
+
+extension OnboardingPixelParameter.Variant {
+
+    init(_ mode: DuckAIQueryMode) {
+        switch mode {
+        case .duckAI:
+            self = .duckAIChat
+        case .search:
+            self = .duckAISearch
+        }
     }
 
 }

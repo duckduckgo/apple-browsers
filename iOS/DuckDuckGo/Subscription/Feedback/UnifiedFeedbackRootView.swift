@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DuckUI
 import VPN
 
 struct UnifiedFeedbackRootView: View {
@@ -219,7 +220,7 @@ private struct CompactIssueDescriptionFormView: View {
         } label: {
             Text(UserText.vpnFeedbackFormButtonSubmit)
         }
-        .buttonStyle(UnifiedFeedbackFormButtonStyle())
+        .buttonStyle(DuckUI.PrimaryButtonStyle(disabled: !viewModel.submitButtonEnabled))
         .padding(16)
     }
 }
@@ -345,7 +346,7 @@ private struct IssueDescriptionFormView: View {
         } label: {
             Text(UserText.vpnFeedbackFormButtonSubmit)
         }
-        .buttonStyle(UnifiedFeedbackFormButtonStyle())
+        .buttonStyle(DuckUI.PrimaryButtonStyle(disabled: !viewModel.submitButtonEnabled))
         .padding(16)
     }
 }
@@ -388,25 +389,6 @@ private struct IssueDescriptionTextEditor: View {
             }
         }
     }
-}
-
-private struct UnifiedFeedbackFormButtonStyle: ButtonStyle {
-
-    @Environment(\.isEnabled) private var isEnabled: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundColor(Color.white)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal)
-            .frame(height: 50)
-            .background(Color(designSystemColor: .accent))
-            .cornerRadius(12)
-            .daxButton()
-            .opacity(isEnabled ? 1.0 : 0.4)
-
-    }
-
 }
 
 private struct TextEditorWithPlaceholder: View {

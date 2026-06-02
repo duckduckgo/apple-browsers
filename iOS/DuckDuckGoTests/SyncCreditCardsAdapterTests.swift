@@ -24,6 +24,7 @@ import DDGSync
 import SecureStorage
 import Core
 import Common
+import FoundationExtensions
 import PersistenceTestingUtils
 @testable import DuckDuckGo
 

@@ -26,7 +26,7 @@ jobs:
 
         - name: Find PR review subtask for the reviewer
           id: find-subtask
-          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@main
+          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@alessandro/apple-proposal-comment-on-changes-requested
           with:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
             asana-task-id: ${{ steps.get-task-id.outputs.task_id }}
@@ -40,7 +40,7 @@ jobs:
             exit 1
 
         - name: Post changes-requested comment
-          uses: duckduckgo/apple-toolbox/actions/asana-add-changes-requested-comment@main
+          uses: duckduckgo/apple-toolbox/actions/asana-add-changes-requested-comment@alessandro/apple-proposal-comment-on-changes-requested
           with:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
             task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}

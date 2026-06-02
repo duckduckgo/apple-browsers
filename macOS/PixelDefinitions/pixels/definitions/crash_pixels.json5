@@ -11,6 +11,21 @@
                 "key": "failedToReadCrashVersion",
                 "description": "Set to true when the crash version could not be read from the crash report",
                 "type": "boolean"
+            },
+            {
+                "key": "code",
+                "type": "string",
+                "description": "MXDiagnostic exception code (App Store builds only); '-1' when unavailable"
+            },
+            {
+                "key": "signal",
+                "type": "string",
+                "description": "MXDiagnostic POSIX signal number (App Store builds only); '-1' when unavailable"
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "MXDiagnostic Mach exception type (App Store builds only); '-1' when unavailable"
             }
         ]
     },
@@ -22,6 +37,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "failedToReadCrashVersion",
                 "description": "Set to true when the crash version could not be read from the crash report",
@@ -52,6 +68,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "failedToReadCrashVersion",
                 "description": "Set to true when the crash version could not be read from the crash report",

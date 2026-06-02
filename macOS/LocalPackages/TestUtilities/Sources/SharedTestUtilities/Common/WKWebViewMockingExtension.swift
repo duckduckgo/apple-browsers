@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import ObjectiveC
 import SharedObjCTestsUtils
@@ -46,6 +47,31 @@ public extension WKWebView {
         return self.swizzled_handlesURLScheme(urlScheme) // call original
     }
 
+    // Track live `TestSchemeHandler`s so that a stale handler deallocating mid-test - which
+    // happens asynchronously as a previous test's WKWebView/window tears down - cannot reset
+    // the process-global `customHandlerSchemes` and silently disable scheme interception for a
+    // handler that another, still-running test is depending on. Only the last live handler
+    // releasing resets the schemes.
+    private static let customSchemeHandlerLock = NSLock()
+    private static var liveCustomSchemeHandlerCount = 0
+
+    fileprivate static func didCreateCustomSchemeHandler() {
+        customSchemeHandlerLock.lock()
+        liveCustomSchemeHandlerCount += 1
+        customSchemeHandlerLock.unlock()
+    }
+
+    fileprivate static func didReleaseCustomSchemeHandler() {
+        customSchemeHandlerLock.lock()
+        defer { customSchemeHandlerLock.unlock() }
+
+        liveCustomSchemeHandlerCount -= 1
+        if liveCustomSchemeHandlerCount <= 0 {
+            liveCustomSchemeHandlerCount = 0
+            customHandlerSchemes = []
+        }
+    }
+
 }
 
 @available(macOS 12.0, *)
@@ -55,6 +81,8 @@ public class TestSchemeHandler: NSObject, WKURLSchemeHandler {
 
     public init(middleware: ((URLRequest) -> WKURLSchemeTaskHandler?)? = nil) {
         self.middleware = middleware.map { [$0] } ?? []
+        super.init()
+        WKWebView.didCreateCustomSchemeHandler()
     }
 
     public func webViewConfiguration(withCustomSchemeHandlersFor navigationalSchemes: [URL.NavigationalScheme] = [.http, .https]) -> WKWebViewConfiguration {
@@ -82,7 +110,7 @@ public class TestSchemeHandler: NSObject, WKURLSchemeHandler {
     public func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
 
     deinit {
-        WKWebView.customHandlerSchemes = []
+        WKWebView.didReleaseCustomSchemeHandler()
     }
 }
 

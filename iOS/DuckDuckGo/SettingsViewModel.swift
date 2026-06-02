@@ -23,6 +23,7 @@ import Persistence
 import PrivacyConfig
 import SwiftUI
 import Common
+import FoundationExtensions
 import Combine
 import SyncUI_iOS
 import DuckPlayer
@@ -199,10 +200,6 @@ final class SettingsViewModel: ObservableObject {
         get {
             (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
         }
-    }
-
-    var shouldShowHideAIGeneratedImagesSection: Bool {
-        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
 
     var isDefaultOmnibarModeEnabled: Bool {
@@ -1873,6 +1870,15 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatNavigationBarEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatNavigationBarUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatNavigationBarUserSettings(enable: newValue)
             }
         )
     }

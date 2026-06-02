@@ -21,6 +21,7 @@ import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import ContentBlocking
 import Foundation
 import History

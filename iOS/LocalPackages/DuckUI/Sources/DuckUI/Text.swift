@@ -66,3 +66,65 @@ extension Font {
         self = Font(uiFont as CTFont)
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+
+private struct TextStylesGallery: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                section("Label4Style — default") {
+                    Text(verbatim: "Primary label using callout + textPrimary token.")
+                        .label4Style()
+                }
+
+                section("Label4Style — monospaced design") {
+                    Text(verbatim: "Primary label with monospaced design.")
+                        .label4Style(design: .monospaced)
+                }
+
+                section("Label4Style — custom foregrounds") {
+                    Text(verbatim: "Custom blue in light / orange in dark.")
+                        .label4Style(
+                            foregroundColorLight: .blue,
+                            foregroundColorDark: .orange
+                        )
+                }
+
+                section("Label4SubtitleStyle") {
+                    Text(verbatim: "Subtitle label using callout + textSecondary token.")
+                        .modifier(Label4SubtitleStyle())
+                    Text(verbatim: "Subtitle label, monospaced design.")
+                        .modifier(Label4SubtitleStyle(design: .monospaced))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 24)
+        }
+        .background(Color(designSystemColor: .background))
+    }
+
+    @ViewBuilder
+    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+            content()
+        }
+    }
+}
+
+#Preview("Text styles / Light") {
+    TextStylesGallery()
+        .preferredColorScheme(.light)
+}
+
+#Preview("Text styles / Dark") {
+    TextStylesGallery()
+        .preferredColorScheme(.dark)
+}
+
+#endif

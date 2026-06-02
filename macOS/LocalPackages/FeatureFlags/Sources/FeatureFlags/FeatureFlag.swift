@@ -128,12 +128,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
     case osSupportForceUnsupportedMessage
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476263589
-    case osSupportForceWillSoonDropSupportMessage
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719124742
-    case willSoonDropBigSurSupport
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
@@ -156,9 +150,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
-    case appStoreUpdateFlow
 
     /// Hide manual update option — always use automatic updates
     case automaticUpdatesOnly
@@ -185,9 +176,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620653515
-    case storeSerpSettings
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141
     case blurryAddressBarTahoeFix
 
@@ -200,9 +188,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721557461
-    case showHideAIGeneratedImagesSection
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
@@ -323,10 +308,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
     case autoplayPolicy
 
-    /// Window Semaphore Fullscreen Behavior Flag
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213585076410725?focus=true
-    case semaphoreAlwaysVisible
-
     /// Enables the promo service to coordinate promos/calls to action
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
     case promoQueue
@@ -340,10 +321,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
     case lazyMenuRebuild
-
-    /// Enables the "Add to dock" onboarding step and setting for App Store builds
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725466401987?focus=true
-    case addToDockAppStore
 
     /// Enables removing individual AI chat suggestions from the omnibar
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
@@ -374,10 +351,6 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatViewAllChatsNativeOmnibar
 
     case aiChatNativeStorage
-
-    /// Enables the VPN subscription promo card on the Fire Window home page
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213996219850960?focus=true
-    case subscriptionPromoFireWindow
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
@@ -507,10 +480,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarOnboarding), category: .duckAI)
         case .osSupportForceUnsupportedMessage:
             Config(source: .disabled, category: .osSupportWarnings)
-        case .osSupportForceWillSoonDropSupportMessage:
-            Config(source: .disabled, category: .osSupportWarnings)
-        case .willSoonDropBigSurSupport:
-            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport), category: .osSupportWarnings)
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:
@@ -525,8 +494,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
             Config(source: .remoteReleasable(SyncSubfeature.level3AllowCreateAccount))
-        case .appStoreUpdateFlow:
-            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreUpdateFlow), category: .updates)
         case .automaticUpdatesOnly:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.automaticUpdatesOnly), category: .updates)
         case .unifiedURLPredictor:
@@ -543,8 +510,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncIdentities))
         case .dataImportNewSafariFilePicker:
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newSafariFilePicker))
-        case .storeSerpSettings:
-            Config(source: .remoteReleasable(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:
@@ -553,8 +518,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
-        case .showHideAIGeneratedImagesSection:
-            Config(source: .remoteReleasable(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration), category: .duckAI)
         case .allowProTierPurchase:
@@ -623,8 +586,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .semaphoreAlwaysVisible:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible))
         case .promoQueue:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
         case .websitesHistoryFirstTimeQuitSurvey:
@@ -633,8 +594,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.tabAnimations))
         case .lazyMenuRebuild:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
-        case .addToDockAppStore:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addToDockAppStore))
         case .aiChatRemoveSuggestion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.removeSuggestion), category: .duckAI)
         case .screenTimeCleaning:
@@ -655,8 +614,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .duckAI)
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage), category: .duckAI)
-        case .subscriptionPromoFireWindow:
-            Config(defaultValue: .disabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoFireWindow), supportsLocalOverriding: true, category: .subscription)
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:
@@ -667,7 +624,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.autoplayPolicy), supportsLocalOverriding: true)
         case .bookmarksBarMenusCustomWindow:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow))
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow))
         case .newErrorPageReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.newErrorPageReload))
         case .aiChatSettingsLinkInAiFeatures:

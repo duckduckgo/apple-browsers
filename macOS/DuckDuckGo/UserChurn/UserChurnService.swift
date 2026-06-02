@@ -21,6 +21,7 @@ import os.log
 import Persistence
 import PixelKit
 import Common
+import FoundationExtensions
 
 final class UserChurnService {
 

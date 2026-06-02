@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import ConcurrencyExtensions
 import PrivacyConfig
 import Persistence
 import WebExtensions
@@ -158,28 +159,48 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
     @objc private func setYouTubeAdBlockingEnabledTrue() {
         var settings = self.settings
         settings.youTubeAdBlockingEnabled = true
+        notifyYouTubeAdBlockingEnabledChanged()
     }
 
     @objc private func setYouTubeAdBlockingEnabledFalse() {
         var settings = self.settings
         settings.youTubeAdBlockingEnabled = false
+        notifyYouTubeAdBlockingEnabledChanged()
     }
 
     @objc private func resetYouTubeAdBlockingEnabled() {
         var settings = self.settings
         settings.removeValue(for: \.youTubeAdBlockingEnabled)
+        notifyYouTubeAdBlockingEnabledChanged()
     }
 
     @objc private func setDuckPlayerModeEnabled() {
         UserDefaults.standard.set(true, forKey: Self.duckPlayerModeDefaultsKey)
+        notifyDuckPlayerModeChanged()
     }
 
     @objc private func setDuckPlayerModeDisabled() {
         UserDefaults.standard.set(false, forKey: Self.duckPlayerModeDefaultsKey)
+        notifyDuckPlayerModeChanged()
     }
 
     @objc private func resetDuckPlayerMode() {
         UserDefaults.standard.removeObject(forKey: Self.duckPlayerModeDefaultsKey)
+        notifyDuckPlayerModeChanged()
+    }
+
+    private func notifyYouTubeAdBlockingEnabledChanged() {
+        NotificationCenter.default.post(
+            name: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification,
+            object: nil
+        )
+    }
+
+    private func notifyDuckPlayerModeChanged() {
+        NotificationCenter.default.post(
+            name: DuckPlayerPreferences.duckPlayerModeDidChangeNotification,
+            object: nil
+        )
     }
 
     @objc private func setShouldHideDisclosureTrue() {

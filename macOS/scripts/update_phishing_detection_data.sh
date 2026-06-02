@@ -6,6 +6,7 @@
 API_URL="https://duckduckgo.com/api/protection"
 
 work_dir="${PWD}/DuckDuckGo/MaliciousSiteProtection"
+resources_dir="${work_dir}/Resources"
 def_filename="${work_dir}/MaliciousSiteProtectionManager.swift"
 
 old_revision="$(grep "static let embeddedDataRevision =" "${def_filename}" | awk -F '[=,]' '{print $2}' | xargs)"
@@ -84,14 +85,14 @@ updateRevision() {
 }
 
 if [[ "$old_revision" -lt "$server_revision" ]] || [[ "$*" == *"-f"* ]]; then
-    performUpdate phishing hashPrefix "${work_dir}/phishingHashPrefixes.json"
-    performUpdate phishing filterSet "${work_dir}/phishingFilterSet.json"
+    performUpdate phishing hashPrefix "${resources_dir}/phishingHashPrefixes.json"
+    performUpdate phishing filterSet "${resources_dir}/phishingFilterSet.json"
 
-    performUpdate malware hashPrefix "${work_dir}/malwareHashPrefixes.json"
-    performUpdate malware filterSet "${work_dir}/malwareFilterSet.json"
+    performUpdate malware hashPrefix "${resources_dir}/malwareHashPrefixes.json"
+    performUpdate malware filterSet "${resources_dir}/malwareFilterSet.json"
 
-    performUpdate scam hashPrefix "${work_dir}/scamHashPrefixes.json"
-    performUpdate scam filterSet "${work_dir}/scamFilterSet.json"
+    performUpdate scam hashPrefix "${resources_dir}/scamHashPrefixes.json"
+    performUpdate scam filterSet "${resources_dir}/scamFilterSet.json"
 
     # Find the smallest revision
     min_revision=$phishing_revision

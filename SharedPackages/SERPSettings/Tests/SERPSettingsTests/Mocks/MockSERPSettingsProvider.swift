@@ -27,7 +27,6 @@ import PersistenceTestingUtils
 final class MockSERPSettingsProvider: SERPSettingsProviding {
 
     // Configurable mock properties
-    var mockIsSERPSettingsFeatureOn: Bool = true
     var mockIsAIChatEnabled: Bool = false
 
     // Required protocol properties
@@ -42,10 +41,8 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
     var aiChatPreferencesStorage: AIChatPreferencesStorage
 #endif
 
-    init(keyValueStore: ThrowingKeyValueStoring,
-         mockIsSERPSettingsFeatureOn: Bool = true) {
+    init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
-        self.mockIsSERPSettingsFeatureOn = mockIsSERPSettingsFeatureOn
 
 #if os(iOS)
         self.aiChatProvider = MockAIChatSettingsProvider()
@@ -57,10 +54,6 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
 
     func buildMessageOriginRules() -> [HostnameMatchingRule] {
         return [.exact(hostname: "duckduckgo.com")]
-    }
-
-    func isSERPSettingsFeatureOn() -> Bool {
-        return mockIsSERPSettingsFeatureOn
     }
 
     func storeSERPSettings(settings: [String: Any]) {
@@ -95,6 +88,7 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool = false
     var isAIChatVoiceSearchUserSettingsEnabled: Bool = false
     var isAIChatTabSwitcherUserSettingsEnabled: Bool = false
+    var isAIChatNavigationBarUserSettingsEnabled: Bool = false
     var isAIChatFullModeEnabled: Bool = false
     var isAutomaticContextAttachmentEnabled: Bool = false
     var isChatSuggestionsEnabled: Bool = true
@@ -107,6 +101,7 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     func enableAIChatAddressBarUserSettings(enable: Bool) {}
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {}
     func enableAIChatTabSwitcherUserSettings(enable: Bool) {}
+    func enableAIChatNavigationBarUserSettings(enable: Bool) {}
     func enableAIChatSearchInputUserSettings(enable: Bool) {}
     func enableAIChatFullModeSetting(enable: Bool) {}
     func enableAutomaticContextAttachment(enable: Bool) {}

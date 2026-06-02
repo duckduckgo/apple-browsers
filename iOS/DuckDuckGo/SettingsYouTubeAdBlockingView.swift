@@ -45,23 +45,6 @@ struct SettingsYouTubeAdBlockingView: View {
             SettingsDescriptionView(content: description)
                 .listRowBackground(Color.clear)
 
-            if viewModel.isYouTubeAdBlockingRemotelyDisabled {
-                Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
-                    remotelyDisabledRow
-                        .listRowBackground(Color(designSystemColor: .surface))
-                }
-            } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
-                Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
-                        footer: Text(UserText.youTubeAdBlockingExplanation)) {
-                    adBlockingToggleCell
-                }
-            } else {
-                Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
-                        footer: Text(footerAttributedString)) {
-                    adBlockingToggleCell
-                }
-            }
-
             if viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 Section {
                     ContingencyMessageView {
@@ -71,6 +54,25 @@ struct SettingsYouTubeAdBlockingView: View {
                             Pixel.fire(pixel: .duckPlayerContingencySettingsDisplayed)
                             hasFiredSettingsDisplayedPixel = true
                         }
+                    }
+                }
+            }
+
+            if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
+                if viewModel.isYouTubeAdBlockingRemotelyDisabled {
+                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
+                        remotelyDisabledRow
+                            .listRowBackground(Color(designSystemColor: .surface))
+                    }
+                } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
+                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
+                            footer: Text(UserText.youTubeAdBlockingExplanation)) {
+                        adBlockingToggleCell
+                    }
+                } else {
+                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
+                            footer: Text(footerAttributedString)) {
+                        adBlockingToggleCell
                     }
                 }
             }

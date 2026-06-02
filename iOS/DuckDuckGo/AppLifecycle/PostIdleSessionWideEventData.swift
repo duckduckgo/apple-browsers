@@ -19,6 +19,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import PixelKit
 
 /// Wide-event payload for the post-idle session pixel

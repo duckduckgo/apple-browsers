@@ -71,8 +71,7 @@ final class RootViewV2Tests: XCTestCase {
                 featureFlagger: MockFeatureFlagger()
             ),
             aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: sharedDuckPlayerPreferences,

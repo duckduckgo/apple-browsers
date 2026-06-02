@@ -19,6 +19,7 @@
 import Foundation
 import os.log
 import Common
+import FoundationExtensions
 
 /// Protocol for handling WireGuard adapter events.
 public protocol WireGuardAdapterEventHandling {

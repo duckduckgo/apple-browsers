@@ -1,0 +1,42 @@
+# duckai_chrome_shortcut_long_press_hide.yaml
+#
+# Scenario 4: Long-pressing the shortcut shows a menu; "Hide Duck.ai Shortcut"
+# hides the chrome shortcut, and the Settings toggle reflects the new (off) state.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - release
+
+---
+
+- runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
+
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+
+# Long-press the shortcut -> context menu -> Hide Duck.ai Shortcut.
+- longPressOn:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+- assertVisible: "Hide Duck.ai Shortcut"
+- tapOn: "Hide Duck.ai Shortcut"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# The chrome shortcut disappears.
+- assertNotVisible:
+    id: "Browser.TabsBar.AIChatChip"
+
+# The Settings toggle reflects the off state: it is now off, so turning it back
+# on restores the chrome shortcut.
+- runFlow: ../shared/open_manage_duckai_shortcuts.yaml
+- assertVisible:
+    id: "Settings.AIChat.NavigationBarToggle"
+- tapOn:
+    id: "Settings.AIChat.NavigationBarToggle"
+- tapOn: "AI Features"
+- tapOn: "Settings"
+- tapOn: "Done"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip"

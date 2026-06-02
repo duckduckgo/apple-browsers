@@ -1,0 +1,46 @@
+# duckai_chrome_shortcut_hidden_on_duckai_page.yaml
+#
+# Scenario 3: On a Duck.ai page the chip is text-only (icon half + divider hidden);
+# navigating away brings the icon half back.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - release
+
+---
+
+- runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
+
+# First land on a regular page so the icon half is showing.
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://example.com"
+- pressKey: Enter
+- assertVisible: ".*Example Domain.*"
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
+
+# Navigate to a Duck.ai page.
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://duck.ai"
+- pressKey: Enter
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# The chip is now text-only: text half stays, icon half (and divider) are gone.
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+- assertNotVisible:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
+
+# Navigate away from Duck.ai -> the icon half reappears.
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://example.com"
+- pressKey: Enter
+- assertVisible: ".*Example Domain.*"
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"

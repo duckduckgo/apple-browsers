@@ -58,7 +58,6 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
     }
 
     func testWhenNoSubscriptionAndAppPlatformAppStoreThenFetchesAppleTierOptions() async throws {
-        guard #available(iOS 15.0, *) else { throw XCTSkip("Requires iOS 15") }
         let expectedOptions = SubscriptionTierOptions(platform: .ios, products: [])
         mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedOptions)
 
@@ -100,7 +99,6 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
     }
 
     func testWhenActiveAppleSubscriptionAndAppStoreAppThenFetchesAppleTierOptions() async throws {
-        guard #available(iOS 15.0, *) else { throw XCTSkip("Requires iOS 15") }
         let expectedOptions = SubscriptionTierOptions(platform: .ios, products: [])
         mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedOptions)
         let activeAppleSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple)

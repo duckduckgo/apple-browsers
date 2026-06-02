@@ -266,11 +266,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         if initForPurchase {
             switch currentEnvironment.purchasePlatform {
             case .appStore:
-                if #available(iOS 15.0, *) {
-                    setupForAppStore()
-                } else {
-                    assertionFailure("Trying to setup AppStore where not supported")
-                }
+                setupForAppStore()
             case .stripe:
                 break
             }
@@ -724,11 +720,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public var currentStorefrontRegion: SubscriptionRegion {
         switch currentEnvironment.purchasePlatform {
         case .appStore:
-            if #available(iOS 15.0, *) {
-                return storePurchaseManager().currentStorefrontRegion
-            } else {
-                return .usa
-            }
+            return storePurchaseManager().currentStorefrontRegion
         case .stripe:
             return .usa
         }
@@ -772,18 +764,16 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     /// Checks if the user is eligible for a free trial.
     ///
-    /// Returns `true` for Stripe-based purchases (on all macOS versions)
+    /// Returns `true` for Stripe-based purchases
     /// or delegates to the store purchase manager for App Store purchases.
     ///
     /// - Returns:
-    ///   - `true` for Stripe platform regardless of macOS version
-    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()`.
-    ///   - `false` for App Store on macOS < 12.0
+    ///   - `true` for Stripe platform
+    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store.
     public func isUserEligibleForFreeTrial() -> Bool {
         if currentEnvironment.purchasePlatform == .stripe {
             return true
         }
-        guard #available(iOS 15.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 

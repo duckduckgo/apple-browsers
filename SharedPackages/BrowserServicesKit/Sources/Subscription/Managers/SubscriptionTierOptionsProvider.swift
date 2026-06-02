@@ -78,9 +78,6 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
         guard subscriptionEnvironmentPlatform == .appStore else {
             return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
         }
-        guard #available(iOS 15.0, *) else {
-            return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
-        }
         guard let storePurchaseManager else {
             return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
         }

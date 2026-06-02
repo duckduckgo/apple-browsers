@@ -205,9 +205,7 @@ final class PacketTunnelMessageHandler {
             // No-op since this is intended for the agent app
             break
         case .createLogSnapshot:
-            if #available(iOS 15.0, *) {
-                handleCreateLogSnapshot(completionHandler: completionHandler)
-            }
+            handleCreateLogSnapshot(completionHandler: completionHandler)
         case .triggerLeakCheck:
             Task { [weak self] in
                 await self?.leakCheckController?.triggerLeakCheckFromDebugMenu()

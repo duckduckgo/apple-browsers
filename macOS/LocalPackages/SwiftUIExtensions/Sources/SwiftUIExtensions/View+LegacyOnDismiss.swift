@@ -33,6 +33,10 @@ public extension View {
             // hacky way to set the @Environment.presentationMode.
             // here we downcast a (non-writable) \.presentationMode KeyPath to a WritableKeyPath
             self.environment(presentationModeKey, Binding<PresentationMode>(onDismiss: onDismiss))
+
+        } else {
+            // Fallback if the downcast ever fails: render the content unchanged rather than an empty view.
+            self
         }
     }
 }

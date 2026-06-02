@@ -804,6 +804,8 @@
 		85371D242121B9D500920548 /* new_tab.json in Resources */ = {isa = PBXBuildFile; fileRef = 85371D232121B9D400920548 /* new_tab.json */; };
 		85372447220DD103009D09CD /* UIKeyCommandExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85372446220DD103009D09CD /* UIKeyCommandExtension.swift */; };
 		853807922D6E638000CE1455 /* AlertPlaygroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853807912D6E638000CE1455 /* AlertPlaygroundView.swift */; };
+		86CFB2CDD7994EA2BDE8B9C9 /* JSBridgePlayground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3547B661FE5E43D481720B23 /* JSBridgePlayground.swift */; };
+		4981777E82734C27BC55EFFA /* SubscriptionBridgePlaygroundFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4825F1E60DD344C7AAD838D0 /* SubscriptionBridgePlaygroundFeature.swift */; };
 		853A717620F62FE800FE60BC /* Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853A717520F62FE800FE60BC /* Pixel.swift */; };
 		853A717820F645FB00FE60BC /* PixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853A717720F645FB00FE60BC /* PixelTests.swift */; };
 		853C5F6121C277C7001F7A05 /* global.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853C5F6021C277C7001F7A05 /* global.swift */; };
@@ -3368,6 +3370,9 @@
 		85371D232121B9D400920548 /* new_tab.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = new_tab.json; sourceTree = "<group>"; };
 		85372446220DD103009D09CD /* UIKeyCommandExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKeyCommandExtension.swift; sourceTree = "<group>"; };
 		853807912D6E638000CE1455 /* AlertPlaygroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPlaygroundView.swift; sourceTree = "<group>"; };
+		3547B661FE5E43D481720B23 /* JSBridgePlayground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSBridgePlayground.swift; sourceTree = "<group>"; };
+		4825F1E60DD344C7AAD838D0 /* SubscriptionBridgePlaygroundFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionBridgePlaygroundFeature.swift; sourceTree = "<group>"; };
+		9915A189A9C64BD28067CBFA /* JSBridgePlaygroundAddingFeatures.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = JSBridgePlaygroundAddingFeatures.md; sourceTree = "<group>"; };
 		853A717520F62FE800FE60BC /* Pixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pixel.swift; sourceTree = "<group>"; };
 		853A717720F645FB00FE60BC /* PixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelTests.swift; sourceTree = "<group>"; };
 		853C5F6021C277C7001F7A05 /* global.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = global.swift; sourceTree = "<group>"; };
@@ -7683,6 +7688,9 @@
 				4B67012A2E3BE3660066176A /* LogViewer */,
 				31206F6F2D3804E800A95D76 /* AIChatDebugView.swift */,
 				853807912D6E638000CE1455 /* AlertPlaygroundView.swift */,
+				3547B661FE5E43D481720B23 /* JSBridgePlayground.swift */,
+				4825F1E60DD344C7AAD838D0 /* SubscriptionBridgePlaygroundFeature.swift */,
+				9915A189A9C64BD28067CBFA /* JSBridgePlaygroundAddingFeatures.md */,
 				C1047CA32CA59BDC00B916FD /* Autofill */,
 				98A860EE2C4682E00077FE4D /* BookmarksDebugViewController.swift */,
 				857917E12D806C1900E23CDC /* BulkGeneratorView.swift */,
@@ -12650,6 +12658,8 @@
 				366A93042FCE0E0B00211BA8 /* SubscriptionExpirationReminderScheduler.swift in Sources */,
 				317A247F2D8336650033A0D6 /* DownloadsDirectoryHandling.swift in Sources */,
 				853807922D6E638000CE1455 /* AlertPlaygroundView.swift in Sources */,
+				86CFB2CDD7994EA2BDE8B9C9 /* JSBridgePlayground.swift in Sources */,
+				4981777E82734C27BC55EFFA /* SubscriptionBridgePlaygroundFeature.swift in Sources */,
 				C14D43012B45D6CD00ACA4DC /* AutofillDebugViewController.swift in Sources */,
 				5608B5132F2125CC00ABC3F4 /* UITestOverridesDebugView.swift in Sources */,
 				856F28D72D3EC5FA00A88211 /* TabSwitcherViewController+MultiSelect.swift in Sources */,

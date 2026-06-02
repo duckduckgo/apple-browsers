@@ -33,7 +33,7 @@ extension OnboardingView {
         static let legacyTitleToPickerTopPadding: CGFloat = 8
         static let rebrandedTitleToPickerTopPadding: CGFloat = 16
         static let fieldToFirstChipTopPadding: CGFloat = 16
-        static let queryFieldBottomPadding: CGFloat = -8
+        static let queryFieldBottomPadding: CGFloat = 0
         static let queryFieldTopPadding: CGFloat = -12
         static let queryFieldContentSpacing: CGFloat = 8
         static let queryFieldHorizontalPadding: CGFloat = 16

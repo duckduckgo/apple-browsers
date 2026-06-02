@@ -1379,7 +1379,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// - Returns: `true` if the image was accepted, `false` if attachments are full.
     func addImageAttachmentFromDrop(_ url: URL) -> Bool {
         guard omnibarController.activeImageAttachments.count < omnibarController.imageAttachmentsDisplayCap else { return false }
+        // A successful drop is a pick action from the user's perspective, so clear any stale
+        // pick-time rejection error (matching the file/image picker path).
+        lastAttachmentError = nil
         addImageAttachment(from: url)
+        updateAttachmentsLayout()
         return true
     }
 

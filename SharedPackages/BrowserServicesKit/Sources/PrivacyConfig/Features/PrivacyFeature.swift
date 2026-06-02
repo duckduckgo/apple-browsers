@@ -84,7 +84,6 @@ public enum PrivacyFeature: String {
     case attributedMetrics
     case dataImport
     case duckAiChatHistory
-    case serp
     case popupBlocking
     case pageContext
     case webExtensions
@@ -128,10 +127,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Use WKDownload for favicon fetching to bypass App Transport Security restrictions on HTTP URLs
     case faviconWKDownload
-
-    /// New App Store Update flow feature flag
-    /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
-    case appStoreUpdateFlow
 
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly
@@ -187,8 +182,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Enables lazy reload for the more options menu
     case lazyMenuRebuild
-
-    case addToDockAppStore
 
     case screenTimeCleaning
 
@@ -631,7 +624,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
-    case subscriptionPromoFireWindow
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -752,15 +744,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
-}
-
-public enum SERPSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .serp
-    }
-
-    /// Global switch to disable New Tab Page search box
-    case storeSerpSettings
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

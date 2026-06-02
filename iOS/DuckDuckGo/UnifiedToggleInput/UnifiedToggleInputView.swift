@@ -538,6 +538,8 @@ final class UnifiedToggleInputView: UIView {
         aiTabCollapsedMenuButton.isEnabled = !dimmed
         // Block the text view from directly becoming first responder when the user taps the pill.
         textEntryView.isUserInteractionEnabled = !dimmed
+        // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
+        handler.isOnboardingLocked = dimmed
     }
 
     // MARK: - Fire Mode

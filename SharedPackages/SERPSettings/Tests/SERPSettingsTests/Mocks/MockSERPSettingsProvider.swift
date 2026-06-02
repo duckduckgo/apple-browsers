@@ -27,7 +27,6 @@ import PersistenceTestingUtils
 final class MockSERPSettingsProvider: SERPSettingsProviding {
 
     // Configurable mock properties
-    var mockIsSERPSettingsFeatureOn: Bool = true
     var mockIsAIChatEnabled: Bool = false
 
     // Required protocol properties
@@ -42,10 +41,8 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
     var aiChatPreferencesStorage: AIChatPreferencesStorage
 #endif
 
-    init(keyValueStore: ThrowingKeyValueStoring,
-         mockIsSERPSettingsFeatureOn: Bool = true) {
+    init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
-        self.mockIsSERPSettingsFeatureOn = mockIsSERPSettingsFeatureOn
 
 #if os(iOS)
         self.aiChatProvider = MockAIChatSettingsProvider()
@@ -57,10 +54,6 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
 
     func buildMessageOriginRules() -> [HostnameMatchingRule] {
         return [.exact(hostname: "duckduckgo.com")]
-    }
-
-    func isSERPSettingsFeatureOn() -> Bool {
-        return mockIsSERPSettingsFeatureOn
     }
 
     func storeSERPSettings(settings: [String: Any]) {

@@ -1256,7 +1256,6 @@ final class BrowserTabViewController: NSViewController {
             }
             let burnerHomePageViewController = BurnerHomePageViewController(
                 subscriptionManager: subscriptionManager,
-                featureFlagger: featureFlagger,
                 promoDelegate: subscriptionPromoDelegate,
                 dateProvider: dateProvider
             )

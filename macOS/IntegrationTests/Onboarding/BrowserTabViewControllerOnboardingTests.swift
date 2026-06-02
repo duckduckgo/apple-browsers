@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import Common
+import FoundationExtensions
 import FeatureFlags
 import History
 import HistoryView
@@ -188,14 +189,14 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     featureFlagger: MockFeatureFlagger()
                 ),
                 aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-                dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
-                                                      dockCustomizer: DockCustomizerMock(),
+                dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                       pixelFiring: nil),
                 accessibilityPreferences: AccessibilityPreferences(),
                 duckPlayer: DuckPlayer(
                     preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                    internalUserDecider: featureFlagger.internalUserDecider
+                    internalUserDecider: featureFlagger.internalUserDecider,
+                    featureFlagger: featureFlagger
                 ),
                 pinningManager: MockPinningManager()
             )

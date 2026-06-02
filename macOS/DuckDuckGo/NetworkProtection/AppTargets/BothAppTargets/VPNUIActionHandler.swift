@@ -18,6 +18,7 @@
 
 import AppLauncher
 import Common
+import FoundationExtensions
 import Foundation
 import NetworkProtectionIPC
 import NetworkProtectionProxy

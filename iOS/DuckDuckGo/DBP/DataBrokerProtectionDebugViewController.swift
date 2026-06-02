@@ -19,6 +19,7 @@
 
 import UIKit
 import Common
+import FoundationExtensions
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core

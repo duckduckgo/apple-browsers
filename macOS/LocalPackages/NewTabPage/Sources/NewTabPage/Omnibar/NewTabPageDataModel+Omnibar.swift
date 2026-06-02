@@ -73,6 +73,13 @@ public extension NewTabPageDataModel {
         /// `aiChatOmnibarVoiceChatAccess` feature flag and reactive over `omnibar_onConfigUpdate`
         /// so the affordance appears/disappears without a page reload when the flag flips.
         let enableVoiceChatAccess: Bool?
+        /// When false, the omnibar must not render the inline "Ask Duck.ai: <query>" entry in
+        /// the suggestions dropdown. Native sets this to the value of the user's "Autocomplete
+        /// suggestions" preference so the dropdown matches the address bar (which hides the
+        /// equivalent `.askAIChat` entry when the preference is off). Reactive over
+        /// `omnibar_onConfigUpdate`. `nil` means "treat as true" for back-compat with web
+        /// clients that don't know about this field yet.
+        let enableAskAiSuggestion: Bool?
         let selectedModelId: String?
         let aiModelSections: [AIModelSection]?
         /// The user's persisted reasoning effort (e.g. `"none"`, `"low"`, `"medium"`). `nil` when

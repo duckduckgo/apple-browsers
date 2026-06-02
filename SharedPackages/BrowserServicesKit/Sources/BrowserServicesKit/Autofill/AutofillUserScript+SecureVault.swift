@@ -18,6 +18,7 @@
 
 import WebKit
 import Common
+import FoundationExtensions
 import UserScript
 
 public enum RequestVaultDataAction: String, Codable {

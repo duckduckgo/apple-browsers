@@ -29,7 +29,7 @@ struct SyncAnotherDevicePromptView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
-                Image("Desktop-Sync-New-Feature-128")
+                Image(rebrandable: "Desktop-Sync-New-Feature-128")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 128, height: 96)

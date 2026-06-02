@@ -21,6 +21,7 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Cocoa
 import Common
+import FoundationExtensions
 import Configuration
 import Networking
 import Crashes
@@ -49,13 +50,8 @@ extension AppDelegate {
             PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
             NSWorkspace.shared.open(.appStore)
         } else if StandardApplicationBuildType().isSparkleBuild {
-            if let warning = SupportedOSChecker().supportWarning,
-               case .unsupported = warning {
-                // Show not supported info
-                if NSAlert.osNotSupported(warning).runModal() != .cancel {
-                    let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
-                    NSWorkspace.shared.open(url)
-                }
+            if SupportedOSChecker().showsSupportWarning {
+                BigSurEndOfSupportNoticePresenter(keyValueStore: keyValueStore).show()
             }
             showAbout(sender)
         }
@@ -1250,17 +1246,29 @@ extension MainViewController {
     }
 
     @objc func zoomIn(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.zoomIn()
+        performZoomIn(entryPoint: .forMainMenuBarZoomAction)
+    }
+
+    func performZoomIn(entryPoint: WebViewZoomEntryPoint) {
+        activeTabViewModel?.zoomIn(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
     @objc func zoomOut(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.zoomOut()
+        performZoomOut(entryPoint: .forMainMenuBarZoomAction)
+    }
+
+    func performZoomOut(entryPoint: WebViewZoomEntryPoint) {
+        activeTabViewModel?.zoomOut(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
     @objc func actualSize(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.resetZoomLevel()
+        performActualSize(entryPoint: .actualSize)
+    }
+
+    func performActualSize(entryPoint: WebViewZoomEntryPoint) {
+        activeTabViewModel?.resetZoom(entryPoint: entryPoint)
     }
 
     @objc func summarize(_ sender: Any) {

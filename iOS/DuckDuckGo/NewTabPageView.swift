@@ -127,7 +127,7 @@ private extension NewTabPageView {
     @ViewBuilder
     private var emptyStateView: some View {
         if viewModel.fireTab {
-            FireModeEmptyStateView(type: .tab, escapeHatch: viewModel.escapeHatch)
+            FireModeEmptyStateView(type: .tab)
         } else {
             logoEmptyView
         }

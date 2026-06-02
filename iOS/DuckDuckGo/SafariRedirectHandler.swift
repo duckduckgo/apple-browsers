@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import Common
+import FoundationExtensions
 import PrivacyConfig
 
 protocol SafariRedirectHandling: AnyObject {

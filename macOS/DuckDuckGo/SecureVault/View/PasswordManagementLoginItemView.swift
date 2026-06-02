@@ -17,11 +17,11 @@
 //
 
 import Foundation
-
 import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
 import DesignResourcesKit
+import Common
 
 private let interItemSpacing: CGFloat = 20
 private let itemSpacing: CGFloat = 6
@@ -136,7 +136,7 @@ private struct Buttons: View {
                 .keyboardShortcut(.cancelAction)
 
                 Button(UserText.pmSave) {
-                    model.save()
+                    _ = model.save()
                 }
                 .disabled(!model.isDirty)
                 .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty))
@@ -376,15 +376,22 @@ private struct PasswordView: View {
 
                     HiddenText(isVisible: isPasswordVisible, text: model.password, hiddenTextLength: 12)
 
-                    if (isHovering || isPasswordVisible) && model.password != "" {
+                    if model.password != "" {
+                        let showEyeButton = isHovering || isPasswordVisible
                         SecureTextFieldButton(isVisible: $isPasswordVisible, toolTipHideText: UserText.hidePasswordTooltip, toolTipShowText: UserText.showPasswordTooltip)
-                    }
+                            .opacity(showEyeButton ? 1 : 0)
+                            .disabled(!showEyeButton)
+                            .allowsHitTesting(showEyeButton)
+                            .accessibilityHidden(!showEyeButton)
 
-                    if isHovering && model.password != "" {
                         CopyButton {
                             model.copy(model.password, fieldType: .password)
                         }
                         .tooltip(UserText.copyPasswordTooltip)
+                        .opacity(isHovering ? 1 : 0)
+                        .disabled(!isHovering)
+                        .allowsHitTesting(isHovering)
+                        .accessibilityHidden(!isHovering)
                     }
 
                     Spacer()
@@ -394,6 +401,7 @@ private struct PasswordView: View {
             }
 
         }
+        .contentShape(Rectangle())
         .onHover {
             isHovering = $0
         }
@@ -575,3 +583,36 @@ extension NSTextView {
     }
   }
 }
+
+#if DEBUG
+private extension PasswordManagementLoginModel {
+    static func preview(password: String = "MyStrongPassw0rd!",
+                        username: String = "user@example.com",
+                        domain: String = "example.com") -> PasswordManagementLoginModel {
+        let model = PasswordManagementLoginModel(
+            onSaveRequested: { _ in },
+            onDeleteRequested: { _ in },
+            urlMatcher: AutofillDomainNameUrlMatcher(),
+            emailManager: EmailManager(),
+            tld: TLD(),
+            urlSort: AutofillDomainNameUrlSort()
+        )
+        model.credentials = .init(
+            account: .init(id: "preview",
+                           title: nil,
+                           username: username,
+                           domain: domain,
+                           created: Date(),
+                           lastUpdated: Date()),
+            password: password.data(using: .utf8)
+        )
+        return model
+    }
+}
+
+#Preview("Login item view") {
+    PasswordManagementLoginItemView()
+        .environmentObject(PasswordManagementLoginModel.preview())
+        .frame(width: 480, height: 600)
+}
+#endif

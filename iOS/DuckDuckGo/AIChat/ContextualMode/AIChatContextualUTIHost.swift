@@ -182,7 +182,7 @@ final class AIChatContextualUTIHost {
             coordinator.restoreLastUsedModel(forChatID: chatID)
         }
         userScript.attachedPageContextProvider = { [weak self] in
-            self?.chipViewModel.attachedContext?.contextData
+            self?.chipViewModel.pendingAttachedContextData
         }
         userScript.onPromptSubmitted = { [weak self] in
             self?.chipViewModel.markPromptSubmitted()

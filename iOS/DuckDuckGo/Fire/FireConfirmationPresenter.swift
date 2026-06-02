@@ -21,6 +21,7 @@ import Foundation
 import UIKit
 import SwiftUI
 import Common
+import FoundationExtensions
 import Core
 
 struct FireConfirmationPresenter {

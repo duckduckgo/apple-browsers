@@ -19,6 +19,7 @@
 import AppKit
 import Foundation
 import Common
+import FoundationExtensions
 import CryptoKit
 import GRDB
 import os.log

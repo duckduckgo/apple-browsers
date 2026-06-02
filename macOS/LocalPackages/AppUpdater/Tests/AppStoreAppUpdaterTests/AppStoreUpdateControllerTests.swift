@@ -240,40 +240,15 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
-    // MARK: - Feature Flag Tests
+    // MARK: - Check For Update Tests
 
-    func testCheckForUpdate_FeatureFlagOff_GoesDirectlyToAppStore() {
+    func testCheckForUpdateSkippingRollout_PerformsCloudCheck() {
         autoreleasepool {
             // Given
-            let mockFeatureFlagger = MockFeatureFlagger()
             let mockAppStoreOpener = MockAppStoreOpener()
-            // Feature flag is OFF by default
 
             let controller = AppStoreUpdateController(
                 appStoreOpener: mockAppStoreOpener,
-                featureFlagger: mockFeatureFlagger,
-                notificationPresenter: MockNotificationPresenter()
-            )
-
-            // When
-            controller.checkForUpdateSkippingRollout()
-
-            // Then - Should go directly to App Store
-            XCTAssertTrue(mockAppStoreOpener.openAppStoreCalled, "Should open App Store when feature flag is off")
-            XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 1)
-        }
-    }
-
-    func testCheckForUpdate_FeatureFlagOn_PerformsCloudCheck() {
-        autoreleasepool {
-            // Given
-            let mockFeatureFlagger = MockFeatureFlagger()
-            let mockAppStoreOpener = MockAppStoreOpener()
-            mockFeatureFlagger.enabledUpdateFeatureFlags = [.appStoreUpdateFlow]
-
-            let controller = AppStoreUpdateController(
-                appStoreOpener: mockAppStoreOpener,
-                featureFlagger: mockFeatureFlagger,
                 notificationPresenter: MockNotificationPresenter()
             )
 
@@ -281,42 +256,18 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             controller.checkForUpdateSkippingRollout()
 
             // Then - Should attempt cloud check, NOT open App Store directly
-            XCTAssertFalse(mockAppStoreOpener.openAppStoreCalled, "Should not open App Store when feature flag is on")
+            XCTAssertFalse(mockAppStoreOpener.openAppStoreCalled, "Should not open App Store; cloud check should be attempted instead")
             XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 0)
         }
     }
 
-    func testCheckForUpdateAutomatically_FeatureFlagOff_DoesNothing() {
+    func testCheckForUpdateAutomatically_PerformsCheck() {
         autoreleasepool {
             // Given
-            let mockFeatureFlagger = MockFeatureFlagger()
             let mockAppStoreOpener = MockAppStoreOpener()
-            // Feature flag is OFF by default
 
             let controller = AppStoreUpdateController(
                 appStoreOpener: mockAppStoreOpener,
-                featureFlagger: mockFeatureFlagger,
-                notificationPresenter: MockNotificationPresenter()
-            )
-
-            // When
-            controller.checkForUpdateAutomatically()
-
-            // Then - Should do nothing (no cloud check, no crash, no App Store opening)
-            XCTAssertFalse(mockAppStoreOpener.openAppStoreCalled, "Should not open App Store on automatic check when feature flag is off")
-        }
-    }
-
-    func testCheckForUpdateAutomatically_FeatureFlagOn_PerformsCheck() {
-        autoreleasepool {
-            // Given
-            let mockFeatureFlagger = MockFeatureFlagger()
-            let mockAppStoreOpener = MockAppStoreOpener()
-            mockFeatureFlagger.enabledUpdateFeatureFlags = [.appStoreUpdateFlow]
-
-            let controller = AppStoreUpdateController(
-                appStoreOpener: mockAppStoreOpener,
-                featureFlagger: mockFeatureFlagger,
                 notificationPresenter: MockNotificationPresenter()
             )
 
@@ -328,38 +279,14 @@ final class AppStoreUpdateControllerTests: XCTestCase {
         }
     }
 
-    func testInitialization_FeatureFlagOff_SkipsSetup() {
+    func testInitialization_PerformsSetup() {
         autoreleasepool {
             // Given
-            let mockFeatureFlagger = MockFeatureFlagger()
             let mockAppStoreOpener = MockAppStoreOpener()
-            // Feature flag is OFF by default
 
             // When
             let controller = AppStoreUpdateController(
                 appStoreOpener: mockAppStoreOpener,
-                featureFlagger: mockFeatureFlagger,
-                notificationPresenter: MockNotificationPresenter()
-            )
-
-            // Then - Should initialize without setting up automatic checks
-            XCTAssertNotNil(controller)
-            XCTAssertFalse(controller.hasPendingUpdate)
-            XCTAssertFalse(controller.needsNotificationDot)
-        }
-    }
-
-    func testInitialization_FeatureFlagOn_PerformsSetup() {
-        autoreleasepool {
-            // Given
-            let mockFeatureFlagger = MockFeatureFlagger()
-            let mockAppStoreOpener = MockAppStoreOpener()
-            mockFeatureFlagger.enabledUpdateFeatureFlags = [.appStoreUpdateFlow]
-
-            // When
-            let controller = AppStoreUpdateController(
-                appStoreOpener: mockAppStoreOpener,
-                featureFlagger: mockFeatureFlagger,
                 notificationPresenter: MockNotificationPresenter()
             )
 
@@ -384,29 +311,7 @@ final class AppStoreUpdateControllerTests: XCTestCase {
             // When
             controller.runUpdate()
 
-            // Then - Should always open App Store regardless of feature flag
-            XCTAssertTrue(mockAppStoreOpener.openAppStoreCalled, "runUpdate should always open App Store")
-            XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 1)
-        }
-    }
-
-    func testRunUpdate_AlwaysOpensAppStore_EvenWithFeatureFlagOn() {
-        autoreleasepool {
-            // Given
-            let mockFeatureFlagger = MockFeatureFlagger()
-            mockFeatureFlagger.enabledUpdateFeatureFlags = [.appStoreUpdateFlow]
-            let mockAppStoreOpener = MockAppStoreOpener()
-
-            let controller = AppStoreUpdateController(
-                appStoreOpener: mockAppStoreOpener,
-                featureFlagger: mockFeatureFlagger,
-                notificationPresenter: MockNotificationPresenter()
-            )
-
-            // When
-            controller.runUpdate()
-
-            // Then - Should open App Store even when feature flag is on
+            // Then - Should always open App Store
             XCTAssertTrue(mockAppStoreOpener.openAppStoreCalled, "runUpdate should always open App Store")
             XCTAssertEqual(mockAppStoreOpener.openAppStoreCallCount, 1)
         }

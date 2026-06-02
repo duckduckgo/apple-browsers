@@ -27,12 +27,6 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     private var longPressRecognizer: UILongPressGestureRecognizer!
     weak var delegate: TabSwitcherButtonDelegate?
 
-    /// Fires the moment a touch lands on the button — *before* UIControl starts tracking
-    /// and before any gesture recognizer can cancel the touch. Set by the host (currently
-    /// the AI-chat header) to feed the unresponsive-tab-switcher diagnostic overlay's tap
-    /// counter; the standard `.touchUpInside` action wouldn't fire if tracking gets
-    /// cancelled, which is exactly the case we want to surface.
-    var onTouchDown: (() -> Void)?
     var showMenuOnLongPress: Bool {
         didSet {
             configureLongPressBehavior()
@@ -84,19 +78,8 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
     var tabCount: Int = 0 {
         didSet {
-            refresh()
+            tabSwitcherView.updateCount(tabCount)
         }
-    }
-
-    private func refresh() {
-        if tabCount == 0 {
-            tabSwitcherView.updateCount(nil, isSymbol: false)
-            return
-        }
-
-        let useSymbol = tabCount >= Constants.maxTextTabs
-        let text = useSymbol ? "∞" : "\(tabCount)"
-        tabSwitcherView.updateCount(text, isSymbol: useSymbol)
     }
 
     var hasUnread: Bool {
@@ -134,11 +117,6 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
         }
 
         animator1.startAnimation()
-    }
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        onTouchDown?()
-        super.touchesBegan(touches, with: event)
     }
 
     override func tintColorDidChange() {
@@ -196,10 +174,6 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         delegate?.launchNewTabWithCurrentMode(self)
-    }
-
-    private struct Constants {
-        static let maxTextTabs = 100
     }
 }
 

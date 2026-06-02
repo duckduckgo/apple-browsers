@@ -21,6 +21,7 @@ import Foundation
 import Persistence
 import PrivacyConfig
 import Common
+import FoundationExtensions
 
 public final class LaunchOptionsHandler {
 

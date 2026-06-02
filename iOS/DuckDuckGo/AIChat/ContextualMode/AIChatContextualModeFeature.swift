@@ -19,6 +19,7 @@
 
 import AIChat
 import Common
+import FoundationExtensions
 import Foundation
 import PrivacyConfig
 

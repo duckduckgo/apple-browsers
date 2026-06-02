@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 
 struct SettingsYouTubeAdBlockingView: View {
@@ -28,10 +29,22 @@ struct SettingsYouTubeAdBlockingView: View {
     /// This property ensures that the associated action is only triggered once per viewing session, preventing redundant executions.
     @State private var hasFiredSettingsDisplayedPixel = false
 
+    @State private var showDuckPlayer = false
+
     @EnvironmentObject var viewModel: SettingsViewModel
+
+    var description: SettingsDescription {
+        SettingsDescription(imageName: "SettingsDuckPlayerHero",
+                            title: UserText.youTubeAdBlockingTitle,
+                            status: .alwaysOn,
+                            explanation: UserText.adBlockingDescription)
+    }
 
     var body: some View {
         List {
+            SettingsDescriptionView(content: description)
+                .listRowBackground(Color.clear)
+
             if viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 Section {
                     ContingencyMessageView {
@@ -46,46 +59,29 @@ struct SettingsYouTubeAdBlockingView: View {
             }
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
-                Section {
-                    VStack(alignment: .center, spacing: 16) {
-                        Image(rebrandable: "SettingsDuckPlayerHero")
-                            .padding(.top, 8)
-
-                        Text(UserText.youTubeAdBlockingTitle)
-                            .daxTitle3()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-
-                        Text(UserText.youTubeAdBlockingExplanation)
-                            .daxBodyRegular()
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .padding(.horizontal, 16)
+                if viewModel.isYouTubeAdBlockingRemotelyDisabled {
+                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
+                        remotelyDisabledRow
+                            .listRowBackground(Color(designSystemColor: .surface))
                     }
-                    .frame(maxWidth: .infinity)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-                    .padding(.vertical, 8)
-                }
-
-                if viewModel.isYouTubeAdBlockingDisclosureHidden {
-                    Section {
-                        SettingsCellView(
-                            label: UserText.youTubeAdBlockingToggle,
-                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
-                        )
+                } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
+                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
+                            footer: Text(UserText.youTubeAdBlockingExplanation)) {
+                        adBlockingToggleCell
                     }
                 } else {
-                    Section(footer: Text(footerAttributedString)) {
-                        SettingsCellView(
-                            label: UserText.youTubeAdBlockingToggle,
-                            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
-                        )
+                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
+                            footer: Text(footerAttributedString)) {
+                        adBlockingToggleCell
                     }
                 }
             }
 
             Section(footer: Text(UserText.duckPlayerEnableFooter)) {
-                NavigationLink(destination: SettingsDuckPlayerView().environmentObject(viewModel)) {
+                NavigationLink(
+                    destination: SettingsDuckPlayerView().environmentObject(viewModel),
+                    isActive: $showDuckPlayer
+                ) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName)
                 }
                 .listRowBackground(Color(designSystemColor: .surface))
@@ -99,12 +95,46 @@ struct SettingsYouTubeAdBlockingView: View {
             DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         }
+        .onFirstAppear {
+            if viewModel.deepLinkTarget == .duckPlayer,
+               !viewModel.shouldDisplayDuckPlayerContingencyMessage {
+                DispatchQueue.main.async {
+                    showDuckPlayer = true
+                }
+            }
+        }
+    }
+
+    private var adBlockingToggleCell: some View {
+        SettingsCellView(
+            label: UserText.youTubeAdBlockingToggle,
+            subtitle: viewModel.isYouTubeAdBlockingDisabledUntilRelaunch ? UserText.youTubeAdBlockingDisabledUntilRelaunch : nil,
+            accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)
+        )
+    }
+
+    private var remotelyDisabledRow: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(uiImage: DesignSystemImages.Color.Size24.exclamationMedium)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(UserText.youTubeAdBlockingToggle)
+                    .daxHeadline()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                Text(UserText.youTubeAdBlockingUnavailableMessage)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     private static let learnMoreURL = URL(string: "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/detecting-ad-blocking-interference-anonymously")
 
     private var footerAttributedString: AttributedString {
-        var base = AttributedString(UserText.youTubeAdBlockingToggleFooter)
+        var base = AttributedString(UserText.youTubeAdBlockingExplanation)
+        base.append(AttributedString("\n\n"))
+        base.append(AttributedString(UserText.youTubeAdBlockingToggleFooter))
         base.append(AttributedString(" "))
         var link = AttributedString(UserText.youTubeAdBlockingLearnMoreButton)
         link.foregroundColor = Color(designSystemColor: .accent)

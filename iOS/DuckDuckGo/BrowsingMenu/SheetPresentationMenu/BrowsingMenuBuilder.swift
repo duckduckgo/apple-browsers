@@ -82,6 +82,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         // MARK: Shortcuts group
         let shortcutsItems: [BrowsingMenuModel.Entry] = [
+            .init(entryBuilder.makeDuckAiChatsEntry()),
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
             .init(entryBuilder.makeDownloadsEntry())
@@ -128,6 +129,11 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         var sections = [BrowsingMenuModel.Section]()
 
+        // MARK: YouTube Ad Block toggle
+        if let youTubeAdBlockEntry = BrowsingMenuModel.Entry(entryBuilder.makeYouTubeAdBlockToggleEntry()) {
+            sections.append(BrowsingMenuModel.Section(items: [youTubeAdBlockEntry]))
+        }
+
         // MARK: Fire Mode Promotion
         if let fireModePromotionEntry = BrowsingMenuModel.Entry(entryBuilder.makeFireModePromotionEntry()) {
             sections.append(BrowsingMenuModel.Section(items: [fireModePromotionEntry]))
@@ -171,6 +177,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         // MARK: Shortcuts group
         let shortcutItems: [BrowsingMenuModel.Entry] = [
+            .init(entryBuilder.makeDuckAiChatsEntry()),
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
             .init(entryBuilder.makeDownloadsEntry())

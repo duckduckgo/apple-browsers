@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Configuration
 import Core
 import Foundation
@@ -377,11 +378,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                     withAdditionalParameters: [:],
                     includedParameters: [.appVersion]) { _ in }
             }
-        case .tunnelStartOnDemandWithoutAccessToken:
+        case .tunnelStartOnDemandWithoutAccessToken(let error):
             Logger.networkProtection.error("🔴 Starting tunnel without an auth token")
             if loopDetector.connectionLoopDetected { return }
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                         error: error)
         case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure, error: error)
         case .adapterEndTemporaryShutdownStateRecoverySuccess:

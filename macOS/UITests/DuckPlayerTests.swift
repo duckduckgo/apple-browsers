@@ -65,29 +65,48 @@ class DuckPlayerTests: UITestCase {
         return nil
     }
 
-    private func openDuckPlayerSettings() {
+    private func openYouTubeAdBlockingSettings() {
         app.openPreferencesWindow()
 
         let scrollView = app.scrollViews.element(boundBy: 0)
         scrollView.swipeUp()
 
-        let duckPlayerButton = app.buttons["PreferencesSidebar.duckplayerButton"]
-        duckPlayerButton.click()
+        let youTubeAdBlockingButton = app.buttons["PreferencesSidebar.youTubeAdBlockingButton"]
+        youTubeAdBlockingButton.click()
     }
 
     private func selectAlwaysOpenInDuckPlayer() {
-        let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.enabled"]
-        alwaysOpenRadioButton.click()
+        let enableToggle = app.checkBoxes["DuckPlayer.enableToggle"]
+        XCTAssertTrue(enableToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if !enableToggle.isOn {
+            enableToggle.click()
+        }
+        let alwaysOpenToggle = app.checkBoxes["DuckPlayer.alwaysOpenToggle"]
+        XCTAssertTrue(alwaysOpenToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if !alwaysOpenToggle.isOn {
+            alwaysOpenToggle.click()
+        }
     }
 
     private func selectNeverOpenInDuckPlayer() {
-        let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.disabled"]
-        alwaysOpenRadioButton.click()
+        let enableToggle = app.checkBoxes["DuckPlayer.enableToggle"]
+        XCTAssertTrue(enableToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if enableToggle.isOn {
+            enableToggle.click()
+        }
     }
 
     private func selectAskOpenInDuckPlayer() {
-        let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.alwaysAsk"]
-        alwaysOpenRadioButton.click()
+        let enableToggle = app.checkBoxes["DuckPlayer.enableToggle"]
+        XCTAssertTrue(enableToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if !enableToggle.isOn {
+            enableToggle.click()
+        }
+        let alwaysOpenToggle = app.checkBoxes["DuckPlayer.alwaysOpenToggle"]
+        XCTAssertTrue(alwaysOpenToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if alwaysOpenToggle.isOn {
+            alwaysOpenToggle.click()
+        }
     }
 
     private func verifyDuckPlayerLoads() {
@@ -161,7 +180,7 @@ class DuckPlayerTests: UITestCase {
         }
 
         // Settings
-        openDuckPlayerSettings()
+        openYouTubeAdBlockingSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
 
@@ -186,7 +205,7 @@ class DuckPlayerTests: UITestCase {
         }
 
         // Settings
-        openDuckPlayerSettings()
+        openYouTubeAdBlockingSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
 
@@ -211,7 +230,7 @@ class DuckPlayerTests: UITestCase {
 
     func test_DuckPlayer_Disabled_DoesNotOpen_FromSERPOrganic() throws {
         // Settings
-        openDuckPlayerSettings()
+        openYouTubeAdBlockingSettings()
         selectNeverOpenInDuckPlayer()
         app.closeCurrentTab()
 
@@ -233,7 +252,7 @@ class DuckPlayerTests: UITestCase {
 
     func test_DuckPlayer_Disabled_DoesNotOpen_FromSERPVideo() throws {
         // Settings
-        openDuckPlayerSettings()
+        openYouTubeAdBlockingSettings()
         selectNeverOpenInDuckPlayer()
         app.closeCurrentTab()
 
@@ -261,7 +280,7 @@ class DuckPlayerTests: UITestCase {
     func test_DuckPlayer_AskMode_ShowsOverlay_FromSERPAndOpensInDuckPlayer() throws {
 
         // Settings
-        openDuckPlayerSettings()
+        openYouTubeAdBlockingSettings()
         selectAskOpenInDuckPlayer()
         app.closeCurrentTab()
 
@@ -294,7 +313,7 @@ class DuckPlayerTests: UITestCase {
 
     func test_DuckPlayer_AskMode_Opens_FromDirectNavigation() throws {
         // Settings
-        openDuckPlayerSettings()
+        openYouTubeAdBlockingSettings()
         selectAskOpenInDuckPlayer()
         app.closeCurrentTab()
 
@@ -305,7 +324,7 @@ class DuckPlayerTests: UITestCase {
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromDirectYouTubeNavigation() throws {
         // Settings
-        openDuckPlayerSettings()
+        openYouTubeAdBlockingSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
 

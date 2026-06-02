@@ -29,6 +29,7 @@ import DataBrokerProtection_iOS
 import Combine
 import SubscriptionTestingUtilities
 import Common
+import FoundationExtensions
 import PersistenceTestingUtils
 @testable import DuckDuckGo
 @testable import Core

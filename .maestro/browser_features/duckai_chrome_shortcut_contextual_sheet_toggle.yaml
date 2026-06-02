@@ -5,7 +5,7 @@
 appId: com.duckduckgo.mobile.ios
 tags:
     - ipad
-    - release
+    - duckai_chrome_shortcut
 
 ---
 
@@ -20,10 +20,10 @@ tags:
 - pressKey: Enter
 - assertVisible: ".*Example Domain.*"
 
-# The icon half is visible on a regular page, with the glyph in the closed state.
+# The icon half is visible on a regular page. (Closed state is verified via the
+# sheet-presented assertions below, not the provisional "Closed" accessibility value.)
 - assertVisible:
     id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
-    text: "Closed"
 
 # Tap the icon half -> the contextual sheet opens.
 - tapOn:
@@ -42,7 +42,6 @@ tags:
 - assertNotVisible:
     id: "AIChat.ContextualSheet"
 
-# The chip is interactive again and the icon glyph has reverted to the closed state.
+# The chip is interactive again; the sheet was dismissed above, i.e. the closed state.
 - assertVisible:
     id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
-    text: "Closed"

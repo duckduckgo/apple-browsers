@@ -1,0 +1,48 @@
+name: Shared - Add Asana Comment on PR Review
+
+on:
+    pull_request_review:
+        types: [submitted]
+
+jobs:
+
+    add-changes-requested-comment:
+        if: ${{ github.event.review.state == 'changes_requested' }}
+        name: "Add 'Changes Requested' comment on PR subtask"
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: Get Task ID
+          id: get-task-id
+          env:
+            BODY: ${{ github.event.pull_request.body }}
+          run: |
+            task_id=$(grep -i "task/issue url.*https://app.asana.com/" <<< "$BODY" \
+              | perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
+                s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
+                s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)(?:\?focus=true)?|\1|'
+            )
+            echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
+
+        - name: Find PR review subtask for the reviewer
+          id: find-subtask
+          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@main
+          with:
+            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ steps.get-task-id.outputs.task_id }}
+            github-reviewer-user: ${{ github.event.review.user.login }}
+            github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+        - name: Fail if reviewer's Asana mapping is missing
+          if: ${{ steps.find-subtask.outputs.subtask-ids == '[]' }}
+          run: |
+            echo "::error::No PR review subtask found for @${{ github.event.review.user.login }}. They may not be in the GitHub→Asana mapping. Add them in duckduckgo/native-github-asana-sync and re-run."
+            exit 1
+
+        - name: Post changes-requested comment
+          uses: duckduckgo/apple-toolbox/actions/asana-add-changes-requested-comment@main
+          with:
+            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
+            github-reviewer-user: ${{ github.event.review.user.login }}
+            github-review-url: ${{ github.event.review.html_url }}

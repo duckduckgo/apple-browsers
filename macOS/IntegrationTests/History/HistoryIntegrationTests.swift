@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import History
 import Navigation
 import PrivacyConfigTestsUtils
@@ -26,7 +27,6 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
 class HistoryIntegrationTests: XCTestCase {
 
     var schemeHandler: TestSchemeHandler!

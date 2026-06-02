@@ -19,6 +19,7 @@
 import AIChat
 import Cocoa
 import Common
+import FoundationExtensions
 import os.log
 import Suggestions
 

@@ -23,6 +23,7 @@ import WebKit
 import UIKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import os.log
 import DataBrokerProtectionCore
 import PrivacyConfig

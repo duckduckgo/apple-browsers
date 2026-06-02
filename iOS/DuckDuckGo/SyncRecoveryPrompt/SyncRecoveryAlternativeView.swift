@@ -70,13 +70,7 @@ struct SyncRecoveryAlternativeView: View {
                 Button(action: { onSyncFlowSelected(SyncSettingsViewController.SourceConstants.startBackupFlow) }) {
                     Text(UserText.syncRecoveryAlternativePromptBackupButton)
                 }
-                .buttonStyle(GhostButtonStyle())
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(designSystemColor: .accent),
-                                lineWidth: 1)
-                        .padding(1)
-                )
+                .buttonStyle(SecondaryButtonStyle())
 
                 Text(UserText.syncRecoveryAlternativePromptFooter)
                     .daxFootnoteRegular()

@@ -21,6 +21,7 @@ import XCTest
 import NewTabPage
 import AIChat
 import Common
+import FoundationExtensions
 import Combine
 
 final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {

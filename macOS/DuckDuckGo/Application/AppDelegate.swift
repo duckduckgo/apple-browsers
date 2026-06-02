@@ -21,13 +21,15 @@ import AppKitExtensions
 import AppUpdaterShared
 import AttributedMetric
 import AutoconsentStats
-import BWManagementShared
 import Bookmarks
 import BrokenSitePrompt
 import BrowserServicesKit
+import BWManagementShared
 import Cocoa
 import Combine
+import CombineExtensions
 import Common
+import ConcurrencyExtensions
 import Configuration
 import ContentScopeScripts
 import CoreData
@@ -38,6 +40,7 @@ import DataBrokerProtectionCore
 import DDGSync
 import DuckAiDataStore
 import FeatureFlags
+import FoundationExtensions
 import Freemium
 import History
 import HistoryView
@@ -69,7 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if DEBUG
     let disableCVDisplayLinkLogs: Void = {
-        // Disable CVDisplayLink logs
+        // Disable noisy CVDisplayLink logs
         CFPreferencesSetValue("cv_note" as CFString,
                               0 as CFPropertyList,
                               "com.apple.corevideo" as CFString,
@@ -760,9 +763,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let isInternalUserEnabled = { featureFlagger.internalUserDecider.isInternalUser }
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: pixelHandler)
-        let defaultSubscriptionManager: DefaultSubscriptionManager
-        if #available(macOS 12.0, *) {
-            defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
+        let defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                                                                       subscriptionFeatureFlagger: subscriptionFeatureFlagger,
                                                                                                                       pendingTransactionHandler: pendingTransactionHandler),
                                                                     oAuthClient: authClient,
@@ -771,23 +772,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     subscriptionEnvironment: subscriptionEnvironment,
                                                                     pixelHandler: pixelHandler,
                                                                     isInternalUserEnabled: isInternalUserEnabled)
-        } else {
-            defaultSubscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
-                                                                    userDefaults: subscriptionUserDefaults,
-                                                                    subscriptionEndpointService: subscriptionEndpointService,
-                                                                    subscriptionEnvironment: subscriptionEnvironment,
-                                                                    pixelHandler: pixelHandler,
-                                                                    isInternalUserEnabled: isInternalUserEnabled)
-        }
 
         // Expired refresh token recovery
-        if #available(iOS 15.0, macOS 12.0, *) {
-            let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
-                                                         storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
-                                                         pendingTransactionHandler: pendingTransactionHandler)
-            defaultSubscriptionManager.tokenRecoveryHandler = {
-                try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
-            }
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
+                                                     storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
+                                                     pendingTransactionHandler: pendingTransactionHandler)
+        defaultSubscriptionManager.tokenRecoveryHandler = {
+            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
         }
 
         subscriptionManager = defaultSubscriptionManager
@@ -919,7 +910,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: UserDefaults.standard
         )
         dockPreferences = DockPreferencesModel(
-            featureFlagger: featureFlagger,
             dockCustomizer: dockCustomization,
             pixelFiring: PixelKit.shared
         )
@@ -1469,6 +1459,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
+        if SupportedOSChecker().showsSupportWarning {
+            BigSurEndOfSupportNoticePresenter(keyValueStore: keyValueStore).showIfNeeded()
+        }
+
         // This messaging system has been replaced by RMF, but we need to clean up the message manifest for any users who had it stored.
         let deprecatedRemoteMessagingStorage = DefaultSurveyRemoteMessagingStorage.surveys()
         deprecatedRemoteMessagingStorage.removeStoredMessagesIfNecessary()
@@ -1656,7 +1650,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             self.updateController = appStoreFactory.instantiate(
                 internalUserDecider: internalUserDecider,
-                featureFlagger: featureFlagger,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }

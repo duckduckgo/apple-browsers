@@ -20,6 +20,7 @@ import Foundation
 import UserScript
 import WebKit
 import Common
+import FoundationExtensions
 import Combine
 
 public protocol SpecialErrorPageUserScriptDelegate: AnyObject {

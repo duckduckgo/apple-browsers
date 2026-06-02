@@ -17,11 +17,11 @@
 //
 
 import Foundation
-
 import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
 import DesignResourcesKit
+import Common
 
 private let interItemSpacing: CGFloat = 20
 private let itemSpacing: CGFloat = 6
@@ -136,7 +136,7 @@ private struct Buttons: View {
                 .keyboardShortcut(.cancelAction)
 
                 Button(UserText.pmSave) {
-                    model.save()
+                    _ = model.save()
                 }
                 .disabled(!model.isDirty)
                 .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty))
@@ -284,7 +284,6 @@ private struct PrivateEmailMessage: View {
 
     @State private var hover: Bool = false
 
-    @available(macOS 12, *)
     var attributedString: AttributedString {
         let text = String(format: UserText.pmSignInToManageEmail, UserText.pmEnableEmailProtection)
         var attributedString = AttributedString(text)
@@ -307,37 +306,25 @@ private struct PrivateEmailMessage: View {
                     }
 
                 } else {
-
-                    if #available(macOS 12.0, *) {
-                        let combinedText = Text(attributedString)
-                            .font(.subheadline)
-                            .lineLimit(nil)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                        combinedText
-                            .onTapGesture {
-                                model.enableEmailProtection()
-                            }
-                            .onHover { isHovered in
-                                self.hover = isHovered
-                                DispatchQueue.main.async {
-                                    if hover {
-                                        NSCursor.pointingHand.push()
-                                    } else {
-                                        NSCursor.pop()
-                                    }
+                    let combinedText = Text(attributedString)
+                        .font(.subheadline)
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    combinedText
+                        .onTapGesture {
+                            model.enableEmailProtection()
+                        }
+                        .onHover { isHovered in
+                            self.hover = isHovered
+                            DispatchQueue.main.async {
+                                if hover {
+                                    NSCursor.pointingHand.push()
+                                } else {
+                                    NSCursor.pop()
                                 }
                             }
-                    } else {
-                        Text(String(format: UserText.pmSignInToManageEmail, UserText.pmEnableEmailProtection))
-                            .font(.subheadline)
-                            .lineLimit(nil)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .onTapGesture {
-                                model.enableEmailProtection()
-                            }
-                    }
+                        }
                 }
             }
         }
@@ -376,15 +363,22 @@ private struct PasswordView: View {
 
                     HiddenText(isVisible: isPasswordVisible, text: model.password, hiddenTextLength: 12)
 
-                    if (isHovering || isPasswordVisible) && model.password != "" {
+                    if model.password != "" {
+                        let showEyeButton = isHovering || isPasswordVisible
                         SecureTextFieldButton(isVisible: $isPasswordVisible, toolTipHideText: UserText.hidePasswordTooltip, toolTipShowText: UserText.showPasswordTooltip)
-                    }
+                            .opacity(showEyeButton ? 1 : 0)
+                            .disabled(!showEyeButton)
+                            .allowsHitTesting(showEyeButton)
+                            .accessibilityHidden(!showEyeButton)
 
-                    if isHovering && model.password != "" {
                         CopyButton {
                             model.copy(model.password, fieldType: .password)
                         }
                         .tooltip(UserText.copyPasswordTooltip)
+                        .opacity(isHovering ? 1 : 0)
+                        .disabled(!isHovering)
+                        .allowsHitTesting(isHovering)
+                        .accessibilityHidden(!isHovering)
                     }
 
                     Spacer()
@@ -394,6 +388,7 @@ private struct PasswordView: View {
             }
 
         }
+        .contentShape(Rectangle())
         .onHover {
             isHovering = $0
         }
@@ -448,28 +443,7 @@ private struct NotesView: View {
             .padding(.bottom, itemSpacing)
 
         if model.isEditing || model.isNew {
-            if #available(macOS 12, *) {
-                FocusableTextEditor(text: $model.notes)
-            } else {
-                TextEditor(text: $model.notes)
-                    .frame(height: 197.0)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                    .onChange(of: model.notes) {
-                        model.notes = String($0.prefix(characterLimit))
-                    }
-                    .padding(EdgeInsets(top: 3.0, leading: 6.0, bottom: 5.0, trailing: 0.0))
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius,
-                                                style: .continuous))
-                    .background(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: cornerRadius)
-                                .stroke(Color(designSystemColor: .controlsBorderPrimary, palette: themeManager.designColorPalette), lineWidth: borderWidth)
-                            RoundedRectangle(cornerRadius: cornerRadius)
-                                .fill(Color(designSystemColor: .controlsFillPrimary, palette: themeManager.designColorPalette))
-                        }
-                    )
-            }
+            FocusableTextEditor(text: $model.notes)
         } else {
             Text(model.notes)
                 .padding(.bottom, interItemSpacing)
@@ -488,12 +462,8 @@ private struct NotesView: View {
 private struct TextSelectionModifier: ViewModifier {
 
     func body(content: Content) -> some View {
-        if #available(macOS 12, *) {
-            content
-                .textSelection(.enabled)
-        } else {
-            content
-        }
+        content
+            .textSelection(.enabled)
     }
 
 }
@@ -575,3 +545,36 @@ extension NSTextView {
     }
   }
 }
+
+#if DEBUG
+private extension PasswordManagementLoginModel {
+    static func preview(password: String = "MyStrongPassw0rd!",
+                        username: String = "user@example.com",
+                        domain: String = "example.com") -> PasswordManagementLoginModel {
+        let model = PasswordManagementLoginModel(
+            onSaveRequested: { _ in },
+            onDeleteRequested: { _ in },
+            urlMatcher: AutofillDomainNameUrlMatcher(),
+            emailManager: EmailManager(),
+            tld: TLD(),
+            urlSort: AutofillDomainNameUrlSort()
+        )
+        model.credentials = .init(
+            account: .init(id: "preview",
+                           title: nil,
+                           username: username,
+                           domain: domain,
+                           created: Date(),
+                           lastUpdated: Date()),
+            password: password.data(using: .utf8)
+        )
+        return model
+    }
+}
+
+#Preview("Login item view") {
+    PasswordManagementLoginItemView()
+        .environmentObject(PasswordManagementLoginModel.preview())
+        .frame(width: 480, height: 600)
+}
+#endif

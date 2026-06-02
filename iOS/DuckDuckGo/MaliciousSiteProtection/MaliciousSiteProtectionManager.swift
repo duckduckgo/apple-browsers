@@ -20,6 +20,7 @@
 import Foundation
 import MaliciousSiteProtection
 import Common
+import FoundationExtensions
 import Core
 
 typealias MaliciousSiteProtectionManaging = MaliciousSiteDetecting & MaliciousSiteProtectionDatasetsFetching

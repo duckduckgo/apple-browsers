@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import Common
+import FoundationExtensions
 
 struct AboutView: View {
 

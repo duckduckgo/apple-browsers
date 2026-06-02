@@ -19,6 +19,7 @@
 import Foundation
 import CoreData
 import Common
+import FoundationExtensions
 
 public protocol CoreDataStoring {
 

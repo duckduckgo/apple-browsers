@@ -20,6 +20,7 @@ import Foundation
 import os.log
 import Networking
 import Common
+import FoundationExtensions
 
 public enum KeychainErrorSource: String {
     case browser

@@ -61,6 +61,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
+    /// When true, the stop-generating button is suppressed regardless of generating state.
+    var isOnboardingLocked: Bool = false {
+        didSet {
+            guard isOnboardingLocked != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
     var isExpanded: Bool = false {
         didSet {
             guard isExpanded != oldValue else { return }
@@ -240,7 +248,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 
-        if isGenerating && !isExpanded && currentToggleState == .aiChat {
+        if isGenerating && !isExpanded && currentToggleState == .aiChat && !isOnboardingLocked {
             nextButtonState = .stopGeneratingOnly
         } else if !currentText.isEmpty && !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
             nextButtonState = .clearAndAIChatShortcut

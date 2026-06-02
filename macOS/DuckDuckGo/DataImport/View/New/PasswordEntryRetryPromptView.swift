@@ -56,7 +56,7 @@ struct PasswordEntryRetryPromptView: View {
 
     @ViewBuilder
     private var instructionsText: some View {
-        if #available(macOS 12, *), let instructionsAttr = try? AttributedString(markdown: UserText.passwordEntryHelpInstructions) {
+        if let instructionsAttr = try? AttributedString(markdown: UserText.passwordEntryHelpInstructions) {
             Text(instructionsAttr)
                 .font(.body)
                 .foregroundColor(.primary)

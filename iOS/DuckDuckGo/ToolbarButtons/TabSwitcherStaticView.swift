@@ -61,6 +61,20 @@ final class TabSwitcherStaticView: UIView {
         label.text = count
     }
 
+    /// Renders an integer tab count using the shared overflow threshold so the toolbar and
+    /// the Duck.ai chat header stay in sync without duplicating the formatting rule.
+    func updateCount(_ count: Int) {
+        if count <= 0 {
+            updateCount(nil, isSymbol: false)
+            return
+        }
+        let useSymbol = count >= TabSwitcherStaticView.maxTextTabs
+        updateCount(useSymbol ? "∞" : "\(count)", isSymbol: useSymbol)
+    }
+
+    /// Overflow threshold above which the count renders as "∞" instead of a number.
+    static let maxTextTabs = 100
+
     func incrementAnimated(_ increment: @escaping () -> Void) {
         increment()
     }

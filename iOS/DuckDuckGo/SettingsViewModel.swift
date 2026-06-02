@@ -23,6 +23,7 @@ import Persistence
 import PrivacyConfig
 import SwiftUI
 import Common
+import FoundationExtensions
 import Combine
 import SyncUI_iOS
 import DuckPlayer
@@ -1878,6 +1879,7 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatNavigationBarUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatNavigationBarUserSettings(enable: newValue)
+                DailyPixel.fireDailyAndCount(pixel: newValue ? .aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff)
             }
         )
     }

@@ -259,6 +259,7 @@ struct YouTubeAdBlockRowView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
                     .fixedSize()
+                    .accessibilityIdentifier("YouTubeAdBlockPopover.rowTitle")
 
                 Spacer()
 
@@ -290,6 +291,7 @@ struct YouTubeAdBlockRowView: View {
             return button
         }
         .fixedSize()
+        .accessibilityIdentifier("YouTubeAdBlockPopover.modePicker")
     }
 }
 
@@ -335,6 +337,7 @@ struct YouTubeAdBlockBreakageReportRowView: View {
                         )
                 }
                 .buttonStyle(PlainButtonStyle())
+                .accessibilityIdentifier("YouTubeAdBlockPopover.sendReportButton")
             }
 
             Text(UserText.youTubeAdBlockingPopoverBreakageReportDescription)
@@ -398,6 +401,7 @@ struct YouTubeAdBlockUnavailableRowView: View {
                         .strokeBorder(Color(designSystemColor: .lines), lineWidth: 1)
                 )
         )
+        .accessibilityIdentifier("YouTubeAdBlockPopover.unavailableMessage")
     }
 }
 

@@ -633,7 +633,6 @@ extension GeolocationProviderTests: WKUIDelegate, WKNavigationDelegate {
     }
 
     @objc(_webView:requestGeolocationPermissionForOrigin:initiatedByFrame:decisionHandler:)
-    @available(macOS 12, *)
     func webView(_ webView: WKWebView,
                  requestGeolocationPermissionFor origin: WKSecurityOrigin,
                  initiatedBy frame: WKFrameInfo,

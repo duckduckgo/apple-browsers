@@ -18,6 +18,7 @@
 
 import SwiftUI
 import Common
+import FoundationExtensions
 import SyncUI_macOS
 import SwiftUIExtensions
 import BrowserServicesKit

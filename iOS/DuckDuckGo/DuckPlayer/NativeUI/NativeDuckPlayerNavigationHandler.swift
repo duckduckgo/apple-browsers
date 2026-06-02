@@ -22,6 +22,7 @@ import ContentScopeScripts
 import WebKit
 import Core
 import Common
+import FoundationExtensions
 import PrivacyConfig
 import DuckPlayer
 import os.log

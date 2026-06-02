@@ -130,10 +130,6 @@ public struct SystemExtensionManager {
     }
 
     public func activationState() async -> SystemExtensionActivationState {
-        guard #available(macOS 12.0, *) else {
-            return .unknown
-        }
-
         do {
             let properties = try await SystemExtensionPropertiesRequest.properties(
                 forExtensionWithIdentifier: extensionBundleID,
@@ -214,7 +210,6 @@ public struct SystemExtensionManager {
     }
 }
 
-@available(macOS 12.0, *)
 private final class SystemExtensionPropertiesRequest: NSObject {
 
     private let request: OSSystemExtensionRequest
@@ -263,7 +258,6 @@ private final class SystemExtensionPropertiesRequest: NSObject {
     }
 }
 
-@available(macOS 12.0, *)
 extension SystemExtensionPropertiesRequest: OSSystemExtensionRequestDelegate {
     func request(_ request: OSSystemExtensionRequest,
                  actionForReplacingExtension existing: OSSystemExtensionProperties,

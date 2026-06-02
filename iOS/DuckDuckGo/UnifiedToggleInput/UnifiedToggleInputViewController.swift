@@ -39,7 +39,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapAppMenu(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -428,8 +428,8 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
         delegate?.unifiedToggleInputVCDidTapFire(self)
     }
 
-    func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView) {
-        delegate?.unifiedToggleInputVCDidTapVoice(self)
+    func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapAppMenu(self)
     }
 }
 

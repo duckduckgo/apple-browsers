@@ -392,6 +392,7 @@ class MainViewCoordinator {
     }
 
     func hideAITabChrome() {
+        cancelInFlightLayoutAnimations()
         hideAIChatTabChatHeader()
         setNavigationChromeHidden(false)
     }
@@ -501,7 +502,7 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            UIColor(designSystemColor: .surface)
+            UIColor(designSystemColor: .surfaceCanvas)
         }
     }
 

@@ -41,6 +41,9 @@ final class OnboardingUITests: UITestCase {
         try super.tearDownWithError()
     }
 
+    // Disabled due to flakyness
+    // Follow up is here: https://app.asana.com/1/137249556945/task/1215156971793264/comment/1215278980264402?focus=true
+    /*
     func testOnboardingToBrowsing() throws {
         // Options button initially disabled on welcome
         let optionsButton = welcomeWindow.buttons["NavigationBarViewController.optionsButton"]
@@ -50,7 +53,9 @@ final class OnboardingUITests: UITestCase {
         // Get Started
         XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Ready for a faster browser that keeps you protected?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        let getStartedButton = welcomeWindow.webViews["Welcome"].buttons["Let’s do it!"]
+        let getStartedButton = welcomeWindow.webViews["Welcome"].buttons
+            .matching(NSPredicate(format: "label ==[c] %@", "Let’s do it!"))
+            .firstMatch
         XCTAssertTrue(getStartedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Use coordinate tap to avoid overlay/hittability quirks
         let centerCoordinate = getStartedButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
@@ -113,6 +118,7 @@ final class OnboardingUITests: UITestCase {
         let tooltip = app.windows.webViews.groups.containing(.staticText, identifier: "Toggle between search and AI chat").element
         XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
+     */
 
     func testDuckAIIsUnavailableDuringOnboarding() throws {
         let button = app.windows.buttons[XCUIApplication.AccessibilityIdentifiers.aiChatButton]

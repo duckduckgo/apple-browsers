@@ -20,6 +20,7 @@ import Foundation
 import AppKit
 import Bookmarks
 import Common
+import FoundationExtensions
 import PixelKit
 
 protocol SearchPreferencesPersistor {

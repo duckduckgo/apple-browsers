@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Core
 import Common
+import FoundationExtensions
 import SecureStorage
 import os.log
 

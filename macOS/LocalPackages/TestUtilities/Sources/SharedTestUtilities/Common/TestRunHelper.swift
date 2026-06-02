@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import CommonObjCExtensions
 import Foundation
 import os.log
@@ -194,9 +195,7 @@ extension TestRunHelper: XCTestObservation {
             FileManager.default.cleanupTemporaryDirectory()
         }
         NSApp.swizzled_currentEvent = nil
-        if #available(macOS 12.0, *) {
-            WKWebView.customHandlerSchemes = []
-        }
+        WKWebView.customHandlerSchemes = []
 
         // Check for non-nil variables that should be cleaned up
         if ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true {
@@ -246,6 +245,7 @@ extension TestRunHelper: XCTestObservation {
 
             withExtendedLifetime(waiter) {}
         }
+
         loadedViews = []
     }
 

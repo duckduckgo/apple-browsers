@@ -292,13 +292,14 @@ class SuggestionTrayViewController: UIViewController {
 
         variableWidthConstraint.constant = width
         fullWidthConstraint.isActive = false
+        fullWidthConstraint.constant = 0
         fullHeightConstraint.isActive = false
         fullHeightSafeAreaConstraint.isActive = false
         fullHeightSafeAreaInequalityConstraint.isActive = true
         applyTopConstraintForLayoutMode()
     }
 
-    func fill(bottomOffset: CGFloat = 0.0) {
+    func fill(bottomOffset: CGFloat = 0.0, horizontalInset: CGFloat = 0.0) {
         additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomOffset, right: 0)
 
         containerView.layer.shadowColor = UIColor.clear.cgColor
@@ -311,6 +312,7 @@ class SuggestionTrayViewController: UIViewController {
         backgroundView.backgroundColor = UIColor.clear
 
         fullWidthConstraint.isActive = true
+        fullWidthConstraint.constant = -(horizontalInset * 2)
         fullHeightConstraint.isActive = coversFullScreen
         fullHeightSafeAreaConstraint.isActive = !coversFullScreen
         fullHeightSafeAreaInequalityConstraint.isActive = !coversFullScreen

@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import WebKit
 import UserScript
 
@@ -42,12 +43,7 @@ extension WKWebViewConfiguration {
         }
 
         allowsAirPlayForMediaPlayback = true
-
-        if #available(macOS 12.3, *) {
-            preferences.isElementFullscreenEnabled = true
-        } else {
-            preferences[.fullScreenEnabled] = true
-        }
+        preferences.isElementFullscreenEnabled = true
 
         if !NSApp.isSandboxed {
             preferences[.allowsPictureInPictureMediaPlayback] = true

@@ -20,6 +20,7 @@
 import Foundation
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import Networking
 import os.log
 

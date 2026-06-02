@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import DesignResourcesKitIcons
 
 class FeedbackFormViewController: UIViewController {
     
@@ -83,7 +84,7 @@ class FeedbackFormViewController: UIViewController {
         loadViewIfNeeded()
         hideWebsiteField()
 
-        headerImage.image = UIImage(resource: .happyFace)
+        headerImage.image = AppRebrand.isAppRebranded() ? UIImage(named: "Response-Good-56") : UIImage(named: "happyFace-legacy")
 
         headerText.setAttributedTextString(UserText.feedbackPositiveFormHeader)
         supplementaryText.setAttributedTextString(UserText.feedbackPositiveFormSupplementary)
@@ -101,7 +102,7 @@ class FeedbackFormViewController: UIViewController {
 
         loadViewIfNeeded()
         
-        headerImage.image = UIImage(resource: .sadFace)
+        headerImage.image = AppRebrand.isAppRebranded() ? UIImage(named: "Response-Bad-56") : UIImage(named: "sadFace-legacy")
         self.headerText.text = FeedbackPresenter.title(for: category)
         
         switch type {

@@ -39,7 +39,7 @@ final class AIChatAttachmentValidatorTests: XCTestCase {
     }
 
     func testWhenLimitsAreNil_ThenUnavailableError() {
-        let validator = makeValidator(limits: nil)
+        let validator = makeValidator(includeLimits: false)
         let error = validator.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)
         XCTAssertEqual(error?.reason, .other)
         XCTAssertEqual(error?.message, "unavailable")

@@ -1490,6 +1490,38 @@ final class LocalBookmarkStoreTests: XCTestCase {
         waitForExpectations(timeout: 3, handler: nil)
     }
 
+    func testWhenBookmarksAreImported_AndURLUsesUnsafeScheme_ThenBookmarkIsDroppedAndCountedAsFailed() {
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        let javascriptBookmark = ImportedBookmarks.BookmarkOrFolder(name: "JS", type: .bookmark, urlString: "javascript:alert(1)", children: nil)
+        let dataBookmark = ImportedBookmarks.BookmarkOrFolder(name: "Data", type: .bookmark, urlString: "data:text/html,<script>alert(1)</script>", children: nil)
+        let safeBookmark = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [javascriptBookmark, dataBookmark, safeBookmark])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        let result = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.safari))
+
+        XCTAssertEqual(result.successful, 1)
+        XCTAssertEqual(result.failed, 2)
+
+        let loadingExpectation = self.expectation(description: "Loading")
+
+        bookmarkStore.loadAll(type: .bookmarks) { bookmarks, error in
+            XCTAssertNotNil(bookmarks)
+            XCTAssertNil(error)
+            // Only the safe bookmark should be persisted; the unsafe-scheme ones are dropped.
+            XCTAssert(bookmarks?.count == 1)
+
+            loadingExpectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 3, handler: nil)
+    }
+
     @MainActor
     func testWhenBookmarksAreImported_AndDuplicatesExist_ThenBookmarksAreStillImported() async throws {
         let context = container.viewContext

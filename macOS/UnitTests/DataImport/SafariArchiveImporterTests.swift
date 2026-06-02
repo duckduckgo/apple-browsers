@@ -225,6 +225,22 @@ final class SafariArchiveImporterTests: XCTestCase {
 
         return archiveURL
     }
+
+    // MARK: - ImportArchiveReader double-extension validation
+
+    func testWhenArchiveContainsDoubleExtensionEntryThenItIsSkippedButValidFileIsRead() throws {
+        let archiveURL = try createZipArchive(files: [
+            "evil.swift.html": "<html>disguised</html>",
+            "subfolder/payload.exe.csv": "user,pass",
+            "bookmarks.html": "<html>bookmark data</html>"
+        ])
+
+        let contents = try ImportArchiveReader().readContents(from: archiveURL)
+
+        XCTAssertEqual(contents.bookmarks, ["<html>bookmark data</html>"])
+        XCTAssertTrue(contents.passwords.isEmpty)
+        XCTAssertTrue(contents.creditCards.isEmpty)
+    }
 }
 
 // MARK: - Helpers

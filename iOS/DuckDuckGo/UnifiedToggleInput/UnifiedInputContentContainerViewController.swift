@@ -252,6 +252,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
+        let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
         // The model self-updates `openTabCount` from `TabManaging.tabsModel(for:).tabsPublisher`, so SwiftUI consumers redraw reactively.
         suggestionTrayManager?.setEscapeHatch(model)
@@ -259,6 +260,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let duckAIHatchModel = switchBarHandler.isFireTab ? nil : model
         duckAISuggestionsCoordinator?.setEscapeHatch(duckAIHatchModel)
         updateEscapeHatchTopInset()
+        // The dax offset depends on hatch presence (`hatchClearance` is added when present),
+        // so refresh visibility when the hatch is added or removed mid-session.
+        if hatchPresenceChanged {
+            updateDaxVisibility()
+        }
     }
 
     private var escapeHatchTopInset: CGFloat {

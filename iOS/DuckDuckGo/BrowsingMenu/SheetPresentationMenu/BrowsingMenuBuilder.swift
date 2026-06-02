@@ -87,8 +87,10 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         ].compactMap { $0 }
 
         // MARK: Shortcuts group
+        // With Unified Toggle Input on, the Duck.ai "Chats" row moves into its own Duck.ai cluster below.
+        let duckAIItems = entryBuilder.makeDuckAIMenuItems()
         let shortcutsItems: [BrowsingMenuModel.Entry] = [
-            .init(entryBuilder.makeDuckAiChatsEntry()),
+            .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil),
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
             .init(entryBuilder.makeDownloadsEntry())
@@ -109,6 +111,10 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         }
 
         sections.append(BrowsingMenuModel.Section(items: shortcutsItems))
+
+        // MARK: Duck.ai group
+        appendSection(duckAIItems.compactMap { .init($0) }, to: &sections)
+
         sections.append(BrowsingMenuModel.Section(items: privacyItems))
 
         return BrowsingMenuModel(

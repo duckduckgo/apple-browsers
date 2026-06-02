@@ -5190,11 +5190,6 @@ extension MainViewController: TabDelegate {
         newTab()
     }
 
-    func tabDidRequestNewSearch(_ tab: TabViewController) {
-        // Same as the Duck.ai header Plus-menu "New Search".
-        aiChatTabChatHeaderDidTapNewSearch()
-    }
-
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {
         // Same as the Duck.ai header Plus-menu "New Voice Chat".
         aiChatTabChatHeaderDidTapNewVoiceChat()

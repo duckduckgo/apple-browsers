@@ -138,9 +138,8 @@ extension TabViewController {
     func buildAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
         if unifiedToggleInputFeature.isAvailable {
             return [
-                buildNewAIChatEntry(),
-                buildAINewSearchHeaderTile(),
-                buildAIChatSettingsHeaderTile(),
+                buildNewTabEntry(),
+                buildSettingsEntry(useSmallIcon: false),
             ]
         }
         return [
@@ -156,12 +155,15 @@ extension TabViewController {
         var entries = [BrowsingMenuEntry]()
 
         if unifiedToggleInputFeature.isAvailable {
-            // Chat-first layout: chat actions lead, Settings last. Zoom/Find/Print intentionally omitted.
+            // Duck.ai-first layout: a Duck.ai cluster leads, then the standard shortcut cluster and
+            // the site-utility cluster. Settings lives in the header tiles; Zoom/Find are omitted.
+            entries.append(buildNewAIChatEntry(withSmallIcon: useSmallIcon))
             entries.append(buildAINewVoiceChatEntry(useSmallIcon: useSmallIcon))
+            entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
+            entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon))
 
             entries.append(.separator)
 
-            entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
             entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
 
             if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
@@ -170,10 +172,15 @@ extension TabViewController {
 
             entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
 
-            if includeSettings {
-                entries.append(.separator)
-                entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
+            entries.append(.separator)
+
+            if link != nil {
+                entries.append(buildReportBrokenSiteEntry(useSmallIcon: useSmallIcon))
             }
+            if let domain = privacyInfo?.domain {
+                entries.append(buildToggleProtectionEntry(forDomain: domain, useSmallIcon: useSmallIcon))
+            }
+            entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
 
             return entries
         }
@@ -543,6 +550,19 @@ extension TabViewController {
         })
     }
 
+    /// Duck.ai header tile shown on website/NTP menus when Unified Toggle Input is on:
+    /// the colored dax logo branded "Duck.ai", opening a new chat (same action as New Chat).
+    private func buildDuckAIHeaderTile() -> BrowsingMenuEntry {
+        .regular(name: UserText.duckAiFeatureName,
+                 accessibilityLabel: UserText.duckAiFeatureName,
+                 image: DesignSystemImages.Color.Size24.duckAI,
+                 action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
+            Pixel.fire(pixel: .browsingMenuAIChat)
+            self?.openNewChatInNewTab()
+        })
+    }
+
     private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionChats,
                  accessibilityLabel: UserText.actionChats,
@@ -552,17 +572,6 @@ extension TabViewController {
         })
     }
     
-    /// Mirrors the Plus-menu "New Search": opens a fresh tab forced into search mode.
-    private func buildAINewSearchHeaderTile() -> BrowsingMenuEntry {
-        .regular(name: UserText.aiChatHeaderNewSearchTitle,
-                 accessibilityLabel: UserText.aiChatHeaderNewSearchTitle,
-                 image: DesignSystemImages.Glyphs.Size24.findSearchSmall,
-                 action: { [weak self] in
-            guard let self else { return }
-            self.delegate?.tabDidRequestNewSearch(self)
-        })
-    }
-
     /// Mirrors the Plus-menu "New Voice Chat": starts a Duck.ai voice session.
     private func buildAINewVoiceChatEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.aiChatHeaderNewVoiceChatTitle,
@@ -589,13 +598,18 @@ extension TabViewController {
         })
     }
 
-    private func buildAIChatSettingsHeaderTile() -> BrowsingMenuEntry {
-        .regular(name: UserText.aiChatAppMenuHeaderChatSettings,
-                 accessibilityLabel: UserText.aiChatAppMenuHeaderChatSettings,
-                 image: DesignSystemImages.Glyphs.Size24.aiChatSettings,
-                 action: { [weak self] in
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
-            self?.submitOpenSettingsAction()
+    /// Website app-menu "Chats": opens Duck.ai in a new tab with the chats sidebar showing.
+    /// Used off a Duck.ai tab, where the in-page sidebar toggle isn't available.
+    private func buildOpenChatListEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatHistory
+            : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        return .regular(name: UserText.aiChatAppMenuChats,
+                        accessibilityLabel: UserText.aiChatAppMenuChats,
+                        image: image,
+                        action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
+            self?.openChatListInNewTab()
         })
     }
 
@@ -612,7 +626,7 @@ extension TabViewController {
     private func buildAIChatSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAIChatSettings,
                  accessibilityLabel: UserText.actionAIChatSettings,
-                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatSettings : DesignSystemImages.Glyphs.Size24.settings,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatSettings : DesignSystemImages.Glyphs.Size24.aiChatSettings,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
             self?.submitOpenSettingsAction()
@@ -989,6 +1003,10 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
         guard settings.isAIChatBrowsingMenuUserSettingsEnabled else { return nil }
 
+        if unifiedToggleInputFeature.isAvailable {
+            return buildDuckAIHeaderTile()
+        }
+
         if aiChatFullModeFeature.isAvailable {
             return buildNewAIChatEntry(withSmallIcon: false)
         } else {
@@ -1000,7 +1018,23 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         guard featureFlagger.isFeatureOn(.aiChatNativeChatHistory) else { return nil }
         return buildDuckAiChatsEntry(withSmallIcon: false)
     }
-    
+
+    /// The Duck.ai cluster shown in the website app menu when Unified Toggle Input is on.
+    /// Returns no entries when the user has disabled AI Chat (same gate as the header chat tile),
+    /// which lets the builder skip the whole section.
+    func makeDuckAIMenuItems() -> [BrowsingMenuEntry] {
+        guard unifiedToggleInputFeature.isAvailable, shouldShowAIChatInMenu else { return [] }
+
+        // Duck.ai Settings is intentionally omitted here for now: there's no settings-open Duck.ai URL,
+        // and the in-page submitOpenSettingsAction is a no-op off a Duck.ai tab. It will return once the
+        // frontend exposes a settings-open URL (scoped as a follow-up), wired like Chats below.
+        return [
+            buildNewAIChatEntry(withSmallIcon: false),
+            buildAINewVoiceChatEntry(useSmallIcon: false),
+            buildOpenChatListEntry(useSmallIcon: false)
+        ]
+    }
+
     func makeSettingsEntry() -> BrowsingMenuEntry {
         buildSettingsEntry(useSmallIcon: false)
     }

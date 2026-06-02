@@ -1002,6 +1002,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // intact — cleanup is panel teardown, not a user-driven clear.
         cancelAllImageResizeTasks()
 
+        // The pick-time rejection error is transient panel UI, so drop it on teardown rather than
+        // letting it resurface when the panel is reopened.
+        lastAttachmentError = nil
+
         // Restore model picker to persisted value
         modelPickerButton.modelName = persistedModelShortName
 
@@ -1452,6 +1456,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // is handled by the controller calling `persistAttachmentsToActiveTab([])` directly.
         omnibarController.onAttachmentsClearRequested = { [weak self] in
             self?.cancelAllImageResizeTasks()
+            // Submit clears all attachments, so a leftover pick-time rejection no longer applies.
+            self?.lastAttachmentError = nil
+            self?.updateAttachmentsLayout()
         }
         // Block submit until in-flight resize tasks finish so the prompt carries the resized
         // image, not the placeholder.

@@ -60,6 +60,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     private(set) var isLoadingInstalledExtensions = false
 
+    /// Parsed extensions captured by `unloadAllExtensions()` so that `reloadInstalledExtensions()`
+    /// can re-create their contexts without re-reading and re-parsing them from disk. Cleared once
+    /// consumed by a reload.
+    private var unloadedExtensionsCache: [String: WKWebExtension] = [:]
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
 
@@ -266,6 +271,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         for context in contexts {
             let identifier = context.uniqueIdentifier
+            // Capture the parsed extension so reloadInstalledExtensions() can re-create the
+            // context without re-reading and re-parsing it from disk.
+            unloadedExtensionsCache[identifier] = context.webExtension
             do {
                 try controller.unload(context)
                 unregisterHandlers(for: identifier)
@@ -383,6 +391,54 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
         }
 
+        notifyUpdate()
+    }
+
+    /// Reloads the extensions that the most recent `unloadAllExtensions()` removed, reusing the
+    /// parsed `WKWebExtension` objects captured at unload time. This deliberately skips the disk
+    /// resolution, manifest parsing, installed-store reads and orphaned-file cleanup performed by
+    /// `loadInstalledExtensions()`; the only retained work is the `controller.load` that restarts
+    /// each extension's background page (resetting its in-memory state).
+    ///
+    /// Intended for the data-clearing (fire) flow, where the installed set is unchanged. Falls back
+    /// to `loadInstalledExtensions()` when there is nothing cached, or when a cached extension fails
+    /// to reload.
+    @MainActor
+    public func reloadInstalledExtensions() async {
+        guard !unloadedExtensionsCache.isEmpty else {
+            await loadInstalledExtensions()
+            return
+        }
+
+        let cachedExtensions = unloadedExtensionsCache
+        unloadedExtensionsCache.removeAll()
+
+        eventsListener.controller = controller
+
+        var successCount = 0
+        var didFail = false
+        for (identifier, webExtension) in cachedExtensions {
+            // Yield between extensions so the main run loop can service system events,
+            // mirroring loadWebExtensions' watchdog (0x8badf00d) mitigation.
+            await Task.yield()
+            do {
+                try await loader.reloadWebExtension(webExtension, identifier: identifier, into: controller)
+                successCount += 1
+            } catch {
+                Logger.webExtensions.error("❌ Failed to reload web extension '\(identifier)': \(error.localizedDescription)")
+                didFail = true
+            }
+        }
+
+        if didFail {
+            // Recover anything that failed the lightweight reload via a full load from disk.
+            // Already-loaded contexts are skipped by the idempotent loader.
+            Logger.webExtensions.error("⚠️ Lightweight reload incomplete; falling back to loadInstalledExtensions()")
+            await loadInstalledExtensions()
+            return
+        }
+
+        Logger.webExtensions.info("✅ Reloaded \(successCount) extension(s) from memory")
         notifyUpdate()
     }
 

@@ -776,7 +776,7 @@ final class Fire: FireProtocol {
     @MainActor
     private func reloadWebExtensions() async {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            await webExtensionManager.loadInstalledExtensions()
+            await webExtensionManager.reloadInstalledExtensions()
         }
     }
 

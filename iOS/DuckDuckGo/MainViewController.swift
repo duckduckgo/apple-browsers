@@ -6133,7 +6133,7 @@ extension MainViewController: FireExecutorDelegate {
         }
         if #available(iOS 18.4, *) {
             Task { @MainActor [weak self] in
-                await self?.webExtensionManager?.loadInstalledExtensions()
+                await self?.webExtensionManager?.reloadInstalledExtensions()
                 self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
         }

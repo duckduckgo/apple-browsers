@@ -27,9 +27,9 @@ struct ReportSiteIssuesView: ModalView {
     let domain: String
     @Environment(\.dismiss) private var dismiss
 
-    let defaultAction: @MainActor (_ dismiss: () -> Void) -> Void
-    let cancelAction: @MainActor (_ dismiss: () -> Void) -> Void
-    let dontAskAgainAction: @MainActor (_ dismiss: () -> Void) -> Void
+    let defaultAction: @MainActor (_ dismiss: DismissAction) -> Void
+    let cancelAction: @MainActor (_ dismiss: DismissAction) -> Void
+    let dontAskAgainAction: @MainActor (_ dismiss: DismissAction) -> Void
 
     public var body: some View {
         Dialog {

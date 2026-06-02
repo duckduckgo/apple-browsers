@@ -65,7 +65,6 @@ final class OnboardingPageTests: XCTestCase {
         XCTAssertTrue(ucc.registeredScriptHandlerNames.contains("specialPages"))
     }
 
-    @available(macOS 12.0, *)
     @MainActor func testWhenNavigatingToOnboarding_OnboardingPageIsPresented() async throws {
         // Given
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))

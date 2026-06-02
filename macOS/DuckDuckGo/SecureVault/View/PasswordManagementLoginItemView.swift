@@ -284,7 +284,6 @@ private struct PrivateEmailMessage: View {
 
     @State private var hover: Bool = false
 
-    @available(macOS 12, *)
     var attributedString: AttributedString {
         let text = String(format: UserText.pmSignInToManageEmail, UserText.pmEnableEmailProtection)
         var attributedString = AttributedString(text)
@@ -307,37 +306,25 @@ private struct PrivateEmailMessage: View {
                     }
 
                 } else {
-
-                    if #available(macOS 12.0, *) {
-                        let combinedText = Text(attributedString)
-                            .font(.subheadline)
-                            .lineLimit(nil)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                        combinedText
-                            .onTapGesture {
-                                model.enableEmailProtection()
-                            }
-                            .onHover { isHovered in
-                                self.hover = isHovered
-                                DispatchQueue.main.async {
-                                    if hover {
-                                        NSCursor.pointingHand.push()
-                                    } else {
-                                        NSCursor.pop()
-                                    }
+                    let combinedText = Text(attributedString)
+                        .font(.subheadline)
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    combinedText
+                        .onTapGesture {
+                            model.enableEmailProtection()
+                        }
+                        .onHover { isHovered in
+                            self.hover = isHovered
+                            DispatchQueue.main.async {
+                                if hover {
+                                    NSCursor.pointingHand.push()
+                                } else {
+                                    NSCursor.pop()
                                 }
                             }
-                    } else {
-                        Text(String(format: UserText.pmSignInToManageEmail, UserText.pmEnableEmailProtection))
-                            .font(.subheadline)
-                            .lineLimit(nil)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .onTapGesture {
-                                model.enableEmailProtection()
-                            }
-                    }
+                        }
                 }
             }
         }
@@ -456,28 +443,7 @@ private struct NotesView: View {
             .padding(.bottom, itemSpacing)
 
         if model.isEditing || model.isNew {
-            if #available(macOS 12, *) {
-                FocusableTextEditor(text: $model.notes)
-            } else {
-                TextEditor(text: $model.notes)
-                    .frame(height: 197.0)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                    .onChange(of: model.notes) {
-                        model.notes = String($0.prefix(characterLimit))
-                    }
-                    .padding(EdgeInsets(top: 3.0, leading: 6.0, bottom: 5.0, trailing: 0.0))
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius,
-                                                style: .continuous))
-                    .background(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: cornerRadius)
-                                .stroke(Color(designSystemColor: .controlsBorderPrimary, palette: themeManager.designColorPalette), lineWidth: borderWidth)
-                            RoundedRectangle(cornerRadius: cornerRadius)
-                                .fill(Color(designSystemColor: .controlsFillPrimary, palette: themeManager.designColorPalette))
-                        }
-                    )
-            }
+            FocusableTextEditor(text: $model.notes)
         } else {
             Text(model.notes)
                 .padding(.bottom, interItemSpacing)
@@ -496,12 +462,8 @@ private struct NotesView: View {
 private struct TextSelectionModifier: ViewModifier {
 
     func body(content: Content) -> some View {
-        if #available(macOS 12, *) {
-            content
-                .textSelection(.enabled)
-        } else {
-            content
-        }
+        content
+            .textSelection(.enabled)
     }
 
 }

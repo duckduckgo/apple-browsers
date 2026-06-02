@@ -96,12 +96,13 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var daxDialogsManager: DaxDialogsManaging?
     var fireModeCapability: FireModeCapable? {
         didSet {
+            configureTabSwitcherLongPressMenu()
             configureAddTabButtonLongPressMenu()
         }
     }
     private weak var tabsModel: TabsModelManaging?
 
-    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton()
+    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
     private var cancellables = Set<AnyCancellable>()
@@ -269,10 +270,14 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     @objc private func onAIChatPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .openAIChatFromNavigationBarShortcut)
         delegate?.tabsBarDidRequestAIChat(self)
     }
 
     @objc private func onAIChatContextualSheetIconPressed() {
+        if aiChatChip.sheetState == .closed {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarContextualSheetOpened)
+        }
         delegate?.tabsBarDidRequestToggleAIChatContextualSheet(self)
     }
 
@@ -408,6 +413,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
 
+    private func configureTabSwitcherLongPressMenu() {
+        tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
+    }
+
     private func configureAddTabButtonLongPressMenu() {
         guard fireModeCapability?.isFireModeEnabled ?? false else {
             addTabButton.menu = nil
@@ -454,12 +463,15 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private func makeAIChatChipMenu() -> UIMenu {
         UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
+                DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpened)
                 completion([
                     UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
+                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
                         self?.aiChatSettings?.enableAIChatNavigationBarUserSettings(enable: false)
                     },
                     UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
                         guard let self else { return }
+                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpenSettingsTapped)
                         self.delegate?.tabsBarDidRequestOpenAISettings(self)
                     }
                 ])
@@ -498,6 +510,14 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
     
     func launchNewTabWithCurrentMode(_ button: any TabSwitcherButton) {
         requestNewTab(type: .currentMode)
+    }
+    
+    func launchNewNormalTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .normal)
+    }
+
+    func launchNewFireTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .fire)
     }
 }
 

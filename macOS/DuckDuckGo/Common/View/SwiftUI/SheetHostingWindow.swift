@@ -19,6 +19,7 @@
 import AppKit
 import Foundation
 import SwiftUI
+import SwiftUIExtensions
 
 internal class SheetHostingWindow<Content: View>: NSWindow {
 

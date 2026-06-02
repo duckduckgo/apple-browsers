@@ -21,7 +21,7 @@ import StoreKit
 
 /// A protocol that defines the properties of an introductory offer for a subscription product.
 /// Use this protocol to represent trial periods, introductory prices, or other special offers.
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public protocol SubscriptionProductIntroductoryOffer {
     /// The unique identifier of the introductory offer.
     var id: String? { get }
@@ -37,7 +37,7 @@ public protocol SubscriptionProductIntroductoryOffer {
 }
 
 /// Extends StoreKit's Product.SubscriptionOffer to conform to SubscriptionProductIntroductoryOffer.
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 extension Product.SubscriptionOffer: SubscriptionProductIntroductoryOffer {
     /// Calculates the total number of days in the offer period by multiplying
     /// the base period length by the period count.
@@ -51,7 +51,7 @@ extension Product.SubscriptionOffer: SubscriptionProductIntroductoryOffer {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 private extension Product.SubscriptionPeriod {
 
     var periodInDays: Int {

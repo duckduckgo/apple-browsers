@@ -15311,7 +15311,7 @@
     },
     "bookmarks.bar.prompt.message.fallback" : {
       "comment" : " message show for bookmarks bar prompt",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -43611,7 +43611,7 @@
     },
     "history.delete.dialog.message" : {
       "comment" : "Message in a dialog asking the user to confirm deleting history. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (%@) will be deleted.'",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -43971,7 +43971,7 @@
     },
     "history.item.delete.dialog.message" : {
       "comment" : "Message in a dialog asking the user to confirm deleting a single history item.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -45517,7 +45517,7 @@
     },
     "home.page.promotion.freemium.dbp.description" : {
       "comment" : "Description for the Freemium DBP Home Page Promotion",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85090,7 +85090,7 @@
     },
     "preferences.add-to-dock.instructions-caption" : {
       "comment" : "Instructions for adding the app to the Dock.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -98861,7 +98861,7 @@
     },
     "session.restore.prompt.explanation" : {
       "comment" : "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

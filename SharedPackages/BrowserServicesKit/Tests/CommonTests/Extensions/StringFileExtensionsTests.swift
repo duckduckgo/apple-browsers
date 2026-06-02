@@ -21,7 +21,8 @@ import Testing
 
 struct StringFileExtensionsTests {
 
-    @Test("Single extension is allowed", arguments: [
+    @available(iOS 16, macOS 13, *)
+    @Test("Single extension is allowed", .timeLimit(.minutes(1)), arguments: [
         "bookmarks.html",
         "passwords.csv",
         "cards.json",
@@ -34,7 +35,8 @@ struct StringFileExtensionsTests {
         #expect(path.hasMultipleFileExtensions == false)
     }
 
-    @Test("Double extension is rejected", arguments: [
+    @available(iOS 16, macOS 13, *)
+    @Test("Double extension is rejected", .timeLimit(.minutes(1)), arguments: [
         "foo.swift.html",
         "a/b.exe.csv",
         "x.html.html",
@@ -45,7 +47,8 @@ struct StringFileExtensionsTests {
         #expect(path.hasMultipleFileExtensions == true)
     }
 
-    @Test("Dots in directory components are ignored")
+    @available(iOS 16, macOS 13, *)
+    @Test("Dots in directory components are ignored", .timeLimit(.minutes(1)))
     func dotsInDirectoryComponentsAreIgnored() {
         // Only the last path component is considered.
         #expect("a.b.c/bookmarks.html".hasMultipleFileExtensions == false)

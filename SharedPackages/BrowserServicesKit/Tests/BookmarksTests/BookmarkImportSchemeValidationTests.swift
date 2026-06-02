@@ -21,7 +21,8 @@ import Testing
 
 struct BookmarkImportSchemeValidationTests {
 
-    @Test("Unsafe schemes are detected", arguments: [
+    @available(iOS 16, macOS 13, *)
+    @Test("Unsafe schemes are detected", .timeLimit(.minutes(1)), arguments: [
         "javascript:alert(1)",
         "JavaScript:alert(1)",
         "  javascript:alert(1)",
@@ -32,7 +33,8 @@ struct BookmarkImportSchemeValidationTests {
         #expect(urlString.hasUnsafeBookmarkImportScheme() == true)
     }
 
-    @Test("Safe URLs are not flagged", arguments: [
+    @available(iOS 16, macOS 13, *)
+    @Test("Safe URLs are not flagged", .timeLimit(.minutes(1)), arguments: [
         "https://duckduckgo.com",
         "http://example.com",
         "ftp://files.example.com",
@@ -43,7 +45,8 @@ struct BookmarkImportSchemeValidationTests {
         #expect(urlString.hasUnsafeBookmarkImportScheme() == false)
     }
 
-    @Test("Bookmark or favorite with an unsafe scheme is invalid")
+    @available(iOS 16, macOS 13, *)
+    @Test("Bookmark or favorite with an unsafe scheme is invalid", .timeLimit(.minutes(1)))
     func unsafeSchemeBookmarkIsInvalid() {
         let jsBookmark = BookmarkOrFolder(name: "x", type: .bookmark, urlString: "javascript:alert(1)", children: nil)
         let dataFavorite = BookmarkOrFolder(name: "x", type: .favorite, urlString: "data:text/html,x", children: nil)
@@ -52,21 +55,24 @@ struct BookmarkImportSchemeValidationTests {
         #expect(dataFavorite.isInvalidBookmark)
     }
 
-    @Test("Bookmark with a safe scheme is valid")
+    @available(iOS 16, macOS 13, *)
+    @Test("Bookmark with a safe scheme is valid", .timeLimit(.minutes(1)))
     func safeSchemeBookmarkIsValid() {
         let bookmark = BookmarkOrFolder(name: "x", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
 
         #expect(bookmark.isInvalidBookmark == false)
     }
 
-    @Test("Bookmark with no URL is invalid")
+    @available(iOS 16, macOS 13, *)
+    @Test("Bookmark with no URL is invalid", .timeLimit(.minutes(1)))
     func bookmarkWithoutURLIsInvalid() {
         let bookmark = BookmarkOrFolder(name: "x", type: .bookmark, urlString: nil, children: nil)
 
         #expect(bookmark.isInvalidBookmark)
     }
 
-    @Test("Folder is never invalidated by the scheme check")
+    @available(iOS 16, macOS 13, *)
+    @Test("Folder is never invalidated by the scheme check", .timeLimit(.minutes(1)))
     func folderIsValid() {
         let folder = BookmarkOrFolder(name: "f", type: .folder, urlString: nil, children: [])
 

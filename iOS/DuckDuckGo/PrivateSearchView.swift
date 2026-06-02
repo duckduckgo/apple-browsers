@@ -20,15 +20,17 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct PrivateSearchView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: SettingsDescription {
-        SettingsDescription(imageName: "SettingsPrivateSearchContent",
-                                     title: UserText.privateSearch,
-                                     status: .alwaysOn,
-                                     explanation: UserText.privateSearchExplanation)
+        let imageName = AppRebrand.isAppRebranded() ? "Search-pondwater-128" : "SettingsPrivateSearchContent"
+        return SettingsDescription(imageName: imageName,
+                                   title: UserText.privateSearch,
+                                   status: .alwaysOn,
+                                   explanation: UserText.privateSearchExplanation)
     }
 
     var body: some View {

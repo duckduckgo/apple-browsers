@@ -20,8 +20,6 @@ jobs:
       matrix:
         user-mode: [external, internal]
 
-    continue-on-error: ${{ matrix.user-mode == 'internal' }}
-
     steps:
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1

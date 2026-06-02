@@ -221,8 +221,6 @@ jobs:
         user-mode: ${{ fromJSON(needs.setup-tests.outputs.user-modes) }}
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
 
-    continue-on-error: ${{ matrix.user-mode == 'internal' }}
-
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}-${{ matrix.user-mode }}-${{ inputs.build-type }}
       cancel-in-progress: true

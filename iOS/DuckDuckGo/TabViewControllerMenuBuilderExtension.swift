@@ -155,8 +155,8 @@ extension TabViewController {
         var entries = [BrowsingMenuEntry]()
 
         if unifiedToggleInputFeature.isAvailable {
-            // Duck.ai-first layout: a Duck.ai cluster leads, then the standard shortcut cluster and
-            // the site-utility cluster. Settings lives in the header tiles; Zoom/Find are omitted.
+            // Duck.ai-first layout: a Duck.ai cluster leads, then the standard shortcut cluster.
+            // Settings lives in the header tiles; Zoom/Find/Print and site-utility items are omitted.
             entries.append(buildNewAIChatEntry(withSmallIcon: useSmallIcon))
             entries.append(buildAINewVoiceChatEntry(useSmallIcon: useSmallIcon))
             entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
@@ -171,16 +171,6 @@ extension TabViewController {
             }
 
             entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
-
-            entries.append(.separator)
-
-            if link != nil {
-                entries.append(buildReportBrokenSiteEntry(useSmallIcon: useSmallIcon))
-            }
-            if let domain = privacyInfo?.domain {
-                entries.append(buildToggleProtectionEntry(forDomain: domain, useSmallIcon: useSmallIcon))
-            }
-            entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
 
             return entries
         }

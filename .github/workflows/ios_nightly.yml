@@ -112,13 +112,13 @@ jobs:
         retention-days: 7
 
     - name: Mark user-mode failure
-      if: failure() && github.ref_name == 'main'
+      if: (failure() || cancelled()) && github.ref_name == 'main'
       working-directory: ${{ github.workspace }}
       run: |
         mkdir -p failure-marker
         echo "atb:${{ matrix.user-mode }}" > failure-marker/marker.txt
     - name: Upload failure marker
-      if: failure() && github.ref_name == 'main'
+      if: (failure() || cancelled()) && github.ref_name == 'main'
       uses: actions/upload-artifact@v4
       with:
         name: failure-marker-atb-${{ matrix.user-mode }}

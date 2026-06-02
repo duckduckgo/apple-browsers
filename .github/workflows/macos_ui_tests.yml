@@ -528,13 +528,13 @@ jobs:
         retention-days: 1
 
     - name: Mark user-mode failure
-      if: failure()
+      if: failure() || cancelled()
       working-directory: ${{ github.workspace }}
       run: |
         mkdir -p failure-marker
         echo "macos-ui:${{ matrix.user-mode }}:${{ matrix.test }}:${{ matrix.os-version }}" > failure-marker/marker.txt
     - name: Upload failure marker
-      if: failure()
+      if: failure() || cancelled()
       uses: actions/upload-artifact@v4
       with:
         name: failure-marker-macos-ui-${{ matrix.user-mode }}-${{ matrix.test }}-${{ matrix.os-version }}

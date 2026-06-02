@@ -292,13 +292,13 @@ jobs:
         pixel-name: m_ci_apple_status_ios_e2e_${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device }}_${{ steps.upload.outcome }}
 
     - name: Mark user-mode failure (e2e)
-      if: failure() && github.ref_name == 'main'
+      if: (failure() || cancelled()) && github.ref_name == 'main'
       working-directory: ${{ github.workspace }}
       run: |
         mkdir -p failure-marker
         echo "e2e:${{ matrix.user-mode }}:${{ matrix.test-tag }}:${{ matrix.device }}" > failure-marker/marker.txt
     - name: Upload failure marker (e2e)
-      if: failure() && github.ref_name == 'main'
+      if: (failure() || cancelled()) && github.ref_name == 'main'
       uses: actions/upload-artifact@v4
       with:
         name: failure-marker-e2e-${{ matrix.user-mode }}-${{ matrix.test-tag }}-${{ matrix.device }}

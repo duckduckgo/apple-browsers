@@ -1,6 +1,210 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "aichat.attach-menu.images" : {
+      "comment" : "Item in the AI chat omnibar add-attachment menu shown when the selected model supports image upload but not file upload",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Images"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.files" : {
+      "comment" : "Item in the AI chat omnibar add-attachment menu shown when the selected model supports file upload but not image upload. PDF is the only file format currently accepted, so the copy names it explicitly.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add PDFs"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.images-or-files-typed" : {
+      "comment" : "Item in the AI chat omnibar add-attachment menu when the selected model supports both image upload and a non-PDF file type. Parameter is the accepted file-type name(s), e.g. 'Add Images or DOCX'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Images or %@"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.files-typed" : {
+      "comment" : "Item in the AI chat omnibar add-attachment menu when the selected model supports a non-PDF file type but not image upload. Parameter is the accepted file-type name(s), e.g. 'Add DOCX'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add %@"
+          }
+        }
+      }
+    },
+    "aichat.attachment.file.too.large" : {
+      "comment" : "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This file is too large. The maximum file size is %d MB."
+          }
+        }
+      }
+    },
+    "aichat.attachment.file.exceeds.conversation.limit" : {
+      "comment" : "Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The attached files exceed the total size limit of %d MB."
+          }
+        }
+      }
+    },
+    "aichat.attachment.file.too.many.pages" : {
+      "comment" : "Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "One of the files attached has more pages than we support. Please upload files with %d pages or fewer."
+          }
+        }
+      }
+    },
+    "aichat.attachment.file.encrypted" : {
+      "comment" : "Error message displayed when one or more attached files are encrypted and cannot be read",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We can't read the files attached because at least one of them is encrypted."
+          }
+        }
+      }
+    },
+    "aichat.attachment.file.unreadable" : {
+      "comment" : "Error message displayed when one or more attached files cannot be read",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We can't read one of the files attached. Please check that it isn't corrupted and try again."
+          }
+        }
+      }
+    },
+    "aichat.attachment.unavailable" : {
+      "comment" : "Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Attachments are temporarily unavailable. Please try again later."
+          }
+        }
+      }
+    },
+    "aichat.attachment.unsupported.file.type" : {
+      "comment" : "Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This file type is not supported."
+          }
+        }
+      }
+    },
+    "aichat.attachment.unsupported.file.type.single" : {
+      "comment" : "Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This file type is not supported, please attach a %@."
+          }
+        }
+      }
+    },
+    "aichat.attachment.unsupported.file.type.multiple" : {
+      "comment" : "Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This file type is not supported, please attach a %@ or %@."
+          }
+        }
+      }
+    },
+    "aichat.attachment.image.count.limit" : {
+      "comment" : "Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can only attach %d images per conversation."
+          }
+        }
+      }
+    },
+    "aichat.attachment.image.turn.limit" : {
+      "comment" : "Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can only attach %d images at a time."
+          }
+        }
+      }
+    },
+    "aichat.attachment.file.count.limit" : {
+      "comment" : "Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can only attach %d files per conversation."
+          }
+        }
+      }
+    },
+    "aichat.attachment.prompt.too.long" : {
+      "comment" : "Alert message shown when an AI chat message exceeds the allowed length while attachments are included",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That message is too long to send with attachments."
+          }
+        }
+      }
+    },
     "" : {
       "localizations" : {
         "de" : {

@@ -104,15 +104,6 @@ final class WebViewMock: WKWebView {
     var setCameraCaptureStateHandler: ((Bool?) -> Void)?
     var setMicCaptureStateHandler: ((Bool?) -> Void)?
 
-    var mediaCaptureState: _WKMediaCaptureStateDeprecated = [] {
-        didSet {
-            (self.uiDelegate as? WebViewPermissionsDelegate)!
-                .webView(self, mediaCaptureStateDidChange: mediaCaptureState.rawValue)
-        }
-    }
-    @objc(_mediaCaptureState)
-    var objcMediaCaptureState: UInt { mediaCaptureState.rawValue }
-
     var stopMediaCaptureHandler: (() -> Void)?
 
     var mediaMutedStateValue: _WKMediaMutedState = []

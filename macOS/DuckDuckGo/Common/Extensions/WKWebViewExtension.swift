@@ -68,29 +68,6 @@ extension WKWebView {
             @unknown default: self = .none
             }
         }
-
-        init(permissionType: PermissionType, mediaCaptureState: _WKMediaCaptureStateDeprecated) {
-            switch permissionType {
-            case .microphone:
-                if mediaCaptureState.contains(.activeMicrophone) {
-                    self = .active
-                } else if mediaCaptureState.contains(.mutedMicrophone) {
-                    self = .muted
-                } else {
-                    self = .none
-                }
-            case .camera:
-                if mediaCaptureState.contains(.activeCamera) {
-                    self = .active
-                } else if mediaCaptureState.contains(.mutedCamera) {
-                    self = .muted
-                } else {
-                    self = .none
-                }
-            default:
-                fatalError("Not implemented")
-            }
-        }
     }
 
     var microphoneState: CaptureState {
@@ -431,16 +408,6 @@ extension WKWebView {
         return nil
     }
 
-}
-
-struct _WKMediaCaptureStateDeprecated: OptionSet {
-    let rawValue: UInt
-
-    static let none = Self([])
-    static let activeMicrophone = Self(rawValue: (1 << 0))
-    static let activeCamera = Self(rawValue: 1 << 1)
-    static let mutedMicrophone = Self(rawValue: 1 << 2)
-    static let mutedCamera = Self(rawValue: 1 << 3)
 }
 
 struct _WKMediaMutedState: OptionSet {

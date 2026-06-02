@@ -410,6 +410,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             return
         }
 
+        // Mirror loadInstalledExtensions(): block syncEmbeddedExtensions from interleaving across
+        // this method's await points, so a concurrent sync (e.g. a remote config change during a
+        // fire) can't mutate the installed set while the reload is in progress.
+        isLoadingInstalledExtensions = true
+        defer { isLoadingInstalledExtensions = false }
+
         let cachedExtensions = unloadedExtensionsCache
         unloadedExtensionsCache.removeAll()
 

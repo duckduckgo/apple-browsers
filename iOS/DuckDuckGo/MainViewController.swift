@@ -974,13 +974,13 @@ class MainViewController: UIViewController {
         )
     }
 
-    func presentNetworkProtectionStatusSettingsModal() {
+    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
         Task {
             if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
                canShowVPNInUI {
                 segueToVPN()
             } else {
-                segueToDuckDuckGoSubscription(origin: nil)
+                segueToDuckDuckGoSubscription(origin: origin.rawValue)
             }
         }
     }
@@ -6282,7 +6282,7 @@ extension MainViewController {
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
 
         case .vpn:
-            self.presentNetworkProtectionStatusSettingsModal()
+            self.presentNetworkProtectionStatusSettingsModal(origin: .toolbarVPN)
 
         case .share:
             self.shareCurrentURLFromToolbar()
@@ -6345,7 +6345,7 @@ extension MainViewController {
             onFirePressed()
 
         case .vpn:
-            presentNetworkProtectionStatusSettingsModal()
+            presentNetworkProtectionStatusSettingsModal(origin: .addressBarVPN)
 
         case .zoom:
             showTextZoomEditorIfPossible()

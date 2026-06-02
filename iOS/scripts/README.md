@@ -87,6 +87,8 @@ See: https://app.asana.com/0/0/1195919669085073/f for more info.
 
 This script updates localization strings for app targets by running `xcrun extractLocStrings` command on each Swift file in the specified target sub-directories. It then converts the extracted strings to UTF-8 format and moves them to the `en.lproj/Localizable.strings` file for each target.
 
+When `Localizable.strings` already exists for a target, the script first checks whether any `.swift` files are newer than that output file. If no source files are newer, extraction is skipped for that target to keep no-op build phase runs fast.
+
 ### Requirements
 
 No 3rd party software is required to run the script. It uses built-in command line utilities.

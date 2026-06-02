@@ -23,6 +23,14 @@ update_localizable_strings() {
 	target_strings="${output_dir}/Localizable.strings"
 
 	echo "Processing ${source_dir}"
+	if [ -f "${target_strings}" ]; then
+		newer_source_file=$(find "${source_dir}/" -name "*.swift" -newer "${target_strings}" -print -quit)
+		if [ -z "${newer_source_file}" ]; then
+			echo "  Localizable.strings up to date"
+			return
+		fi
+	fi
+
 	mkdir -p "${tmp_output_dir}"
 	if ! find "${source_dir}/" -name "*.swift" -print0 | xargs -0 xcrun extractLocStrings -o "${tmp_output_dir}"; then
 		echo "error: Failed to extract localization strings from ${source_dir}" >&2

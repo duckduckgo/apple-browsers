@@ -30,4 +30,5 @@ jobs:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
             asana-task-id: ${{ steps.get-task-id.outputs.task_id }}
             github-reviewer-user: ${{ github.event.requested_reviewer.login }}
+            github-pr-author-user: ${{ github.event.pull_request.user.login }}
             github-token: ${{ secrets.APPLE_GH_RO_PAT }}

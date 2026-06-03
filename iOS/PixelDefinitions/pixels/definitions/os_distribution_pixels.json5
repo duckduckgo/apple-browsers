@@ -7,7 +7,8 @@
         "suffixes": [
             {
                 "description": "OS major version",
-                "type": "integer"
+                "type": "string",
+                "pattern": "^[0-9]{1,2}$"
             },
             "platform",
             "form_factor",
@@ -25,7 +26,8 @@
         "suffixes": [
             {
                 "description": "OS major version",
-                "type": "integer"
+                "type": "string",
+                "pattern": "^[0-9]{1,2}$"
             },
             "platform",
             "form_factor",
@@ -43,7 +45,8 @@
         "suffixes": [
             {
                 "description": "OS major version",
-                "type": "integer"
+                "type": "string",
+                "pattern": "^[0-9]{1,2}$"
             },
             "platform",
             "form_factor",

@@ -24,6 +24,12 @@ jobs:
             )
             echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
 
+        - name: Fail if no Asana task URL in PR body
+          if: ${{ steps.get-task-id.outputs.task_id == '' }}
+          run: |
+            echo "::error::No Asana task URL found in the PR body. Add a 'Task/Issue URL: https://app.asana.com/...' line to enable PR review subtask comments."
+            exit 1
+
         - name: Find PR review subtask for the reviewer
           id: find-subtask
           uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@alessandro/apple-proposal-comment-on-changes-requested

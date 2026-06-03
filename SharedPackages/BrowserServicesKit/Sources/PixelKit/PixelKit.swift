@@ -42,6 +42,9 @@ public final class PixelKit {
         case daily
 
         /// Sent once per calendar month (UTC). The last timestamp for this pixel is stored and compared to the current date. Pixels of this type will have `_monthly` appended to their name.
+        /// Note that these monthly pixels do not behave the same as ATB-based monthly measures like our official MAU stats, and thus direct comparisons between monthly pixel derrived values
+        /// and ATB-derrived monthly stats should _not_ be made. Tech Design for monthly pixels is available here:
+        /// https://app.asana.com/1/137249556945/project/481882893211075/task/1214950124367781?focus=true
         case monthly
 
         /// Sent once per day with a `_daily` suffix, in addition to every time it is called with a `_count` suffix.

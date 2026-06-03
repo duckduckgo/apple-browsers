@@ -45,7 +45,7 @@ jobs:
 
         - name: Find PR review subtask for the reviewer
           id: find-subtask
-          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@alessandro/apple-proposal-comment-on-changes-requested
+          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@main
           with:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
             asana-task-id: ${{ steps.get-task-id.outputs.task_id }}

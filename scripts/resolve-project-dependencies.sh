@@ -27,4 +27,7 @@ echo "Resolving packages for SharedPackages/DataBrokerProtectionCore..."
 ( cd SharedPackages/DataBrokerProtectionCore && swift package resolve >/dev/null )
 
 echo "Done. Review and commit any changed Package.resolved files:"
+# git pathspec, not a shell glob: '*' matches '/' (no FNM_PATHNAME), so this
+# catches nested lockfiles like iOS/.../Package.resolved at any depth. The
+# quotes stop the shell expanding '*' before git sees the pathspec.
 git status --short '*Package.resolved'

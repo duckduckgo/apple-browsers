@@ -164,12 +164,12 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
     }
 
-    // MARK: - Dead-token recovery wide event completion
+    // MARK: - Invalid-token recovery wide event completion
 
     func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_CompletesWideEventAsRecoveredWithoutError() async throws {
-        // Simulate the refresh flow the OAuthClient event mapping leaves pending on a dead token:
-        // marked .recoverDeadToken, carrying the originating error, with the recovery clock started.
-        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverDeadToken,
+        // Simulate the refresh flow the OAuthClient event mapping leaves pending on an invalid token:
+        // marked .recoverInvalidToken, carrying the originating error, with the recovery clock started.
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
                                                           globalData: WideEventGlobalData(id: "refresh-1"))
         pendingFlow.errorData = WideEventErrorData(error: OAuthClientError.invalidTokenRequest(.reused))
         pendingFlow.recoveryDuration = .startingNow()
@@ -196,7 +196,7 @@ class SubscriptionManagerTests: XCTestCase {
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_CompletesWideEventAsFailure() async throws {
-        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverDeadToken,
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
                                                           globalData: WideEventGlobalData(id: "refresh-1"))
         pendingFlow.recoveryDuration = .startingNow()
         mockWideEvent.startFlow(pendingFlow)
@@ -222,12 +222,12 @@ class SubscriptionManagerTests: XCTestCase {
 
     func testGetTokenContainer_InvalidTokenRequest_SelectsNewestPendingFlow() async throws {
         // An older orphan from the recovery-less callback path must NOT be the one completed.
-        let staleFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverDeadToken,
+        let staleFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
                                                         globalData: WideEventGlobalData(id: "stale"))
         staleFlow.recoveryDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSinceNow: -120), end: nil)
         mockWideEvent.startFlow(staleFlow)
 
-        let freshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverDeadToken,
+        let freshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
                                                         globalData: WideEventGlobalData(id: "fresh"))
         freshFlow.recoveryDuration = .startingNow()
         mockWideEvent.startFlow(freshFlow)

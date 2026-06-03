@@ -211,14 +211,14 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.refresh_token_latency_ms_bucketed"], "1000")
     }
 
-    // MARK: - Dead-token recovery schema
+    // MARK: - Invalid-token recovery schema
 
-    func testPixelParameters_recoverDeadTokenStep() {
-        let eventData = AuthV2TokenRefreshWideEventData(failingStep: .recoverDeadToken)
+    func testPixelParameters_recoverInvalidTokenStep() {
+        let eventData = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
 
         let parameters = eventData.pixelParameters()
 
-        XCTAssertEqual(parameters["feature.data.ext.failing_step"], "recover_dead_token")
+        XCTAssertEqual(parameters["feature.data.ext.failing_step"], "recover_invalid_token")
     }
 
     func testPixelParameters_recoveryLatency_bucketing() {
@@ -244,7 +244,6 @@ final class AuthV2WideEventTests: XCTestCase {
     // MARK: - Refresh trigger
 
     func testPixelParameters_refreshTrigger_alwaysEmitted_defaultsToClient() {
-        // Unset trigger (e.g. a flow rehydrated from an older build) must still ship a non-null value.
         let eventData = AuthV2TokenRefreshWideEventData()
 
         XCTAssertEqual(eventData.pixelParameters()["feature.data.ext.refresh_trigger"], "client")
@@ -294,7 +293,7 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertTrue(mock.completions.isEmpty)
         // The pending flow must be marked AND have a recovery start time so the recovery layer can locate the newest one.
         let pending = mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self)
-        XCTAssertEqual(pending.first?.failingStep, .recoverDeadToken)
+        XCTAssertEqual(pending.first?.failingStep, .recoverInvalidToken)
         XCTAssertNotNil(pending.first?.recoveryDuration?.start)
     }
 
@@ -315,7 +314,6 @@ final class AuthV2WideEventTests: XCTestCase {
     // MARK: - Token adoption source
 
     func testAdoptionPixelParameters_adoptionSource_absentWhenUnset() {
-        // Unknown source is left absent rather than defaulted, so it reads as "unknown" not misattributed.
         let data = AuthV2TokenAdoptionWideEventData()
 
         XCTAssertNil(data.pixelParameters()["feature.data.ext.adoption_source"])

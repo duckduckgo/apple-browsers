@@ -138,9 +138,8 @@ public protocol OAuthClient {
 }
 
 public extension OAuthClient {
-    /// Convenience overload that defaults the refresh trigger to `.client`. Most refreshes are
-    /// client-initiated; callers with a more specific origin (e.g. token adoption) pass `trigger`
-    /// explicitly. Keeping this overload means existing call sites compile unchanged.
+    /// Convenience overload defaulting the refresh trigger to `.client` (most refreshes are
+    /// client-initiated); callers with a more specific origin pass `trigger` explicitly.
     func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         try await getTokens(policy: policy, trigger: .client)
     }

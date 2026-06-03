@@ -73,7 +73,7 @@ extension AuthV2TokenRefreshWideEventData {
         case verifyingAccessToken = "verify_access_token"
         case verifyingRefreshToken = "verify_refresh_token"
         case tokenWrite = "token_write"
-        case recoverDeadToken = "recover_dead_token"
+        case recoverInvalidToken = "recover_invalid_token"
     }
 
     public enum StatusReason: String {
@@ -100,7 +100,7 @@ extension AuthV2TokenRefreshWideEventData {
 
     public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
         // A refresh flow still pending at app launch never reached a terminal point - for example a
-        // dead-token refresh on the recovery-less API refresher path, or a process kill mid-refresh.
+        // invalid-token refresh on the recovery-less API refresher path, or a process kill mid-refresh.
         // Reconcile it as UNKNOWN rather than leaving it pending forever.
         .complete(.unknown(reason: StatusReason.partialData.rawValue))
     }
@@ -173,11 +173,11 @@ extension AuthV2TokenRefreshWideEventData {
                 if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
                     data.errorData = WideEventErrorData(error: error)
                     if case OAuthClientError.invalidTokenRequest = error {
-                        // Dead refresh token: the journey is not over. DefaultSubscriptionManager will attempt
+                        // Invalid refresh token: the journey is not over. DefaultSubscriptionManager will attempt
                         // recovery and complete this flow at the true terminal point. Mark the step and start
                         // the recovery clock at detection so the recovery layer can locate the newest pending
                         // flow and record detection-to-outcome latency.
-                        data.failingStep = .recoverDeadToken
+                        data.failingStep = .recoverInvalidToken
                         data.recoveryDuration = .startingNow()
                         wideEvent.updateFlow(data)
                     } else {

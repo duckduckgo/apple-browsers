@@ -583,7 +583,7 @@
                     "verify_access_token",
                     "verify_refresh_token",
                     "token_write",
-                    "recover_dead_token"
+                    "recover_invalid_token"
                 ]
             },
             {
@@ -601,13 +601,13 @@
             {
                 "key": "feature.data.ext.recovery_latency_ms_bucketed",
                 "type": "integer",
-                "description": "Bucketed latency from dead-token detection to recovery outcome (ms)",
+                "description": "Bucketed latency from invalid-token detection to recovery outcome (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
                 "key": "feature.data.ext.performed_token_recovery",
                 "type": "boolean",
-                "description": "Whether a dead-token recovery was performed during this journey"
+                "description": "Whether an invalid-token recovery was performed during this journey"
             }
         ]
     },

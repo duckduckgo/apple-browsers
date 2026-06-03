@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Zadaj kladný počet dní. Dátum inštalácie bude nastavený na dátum spred toľkoto dní.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Otvoriť v inej aplikácii?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Prejsť späť";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Skúsili sme to načítať súkromne, ale nezobrazuje sa to.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Chcel/-a by si túto stránku otvoriť v Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Otvoriť v Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Žiaľ, stránku sa nepodarilo načítať.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Táto stránka sa načíta iba v prehliadači Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Otvoriť v Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Táto webová stránka má neplatný certifikát zabezpečenia a jej návšteva nemusí byť bezpečná.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Zostať na DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Niektoré funkcie webových stránok nemusia byť v tomto prehliadači kompatibilné.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Táto stránka sa chce otvoriť v Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo nemôže načítať túto stránku.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedávne záznamy o spracovaní";

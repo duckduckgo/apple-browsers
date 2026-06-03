@@ -3241,26 +3241,20 @@ https://duckduckgo.com/mac";
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Open in Another App?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Go Back";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "We tried to load it privately, but it won't display.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Would you like to open this page in Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Open in Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Unfortunately, the page couldn't load.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "This page only loads in Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Open in Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "This website has an invalid security certificate and might not be safe to visit.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Stay in DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Some website features may not be compatible in this browser.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "This site wants to open in Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo can’t load this page.";
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";

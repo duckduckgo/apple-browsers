@@ -428,6 +428,8 @@ public enum FeatureFlag: String {
     /// Gates the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
     case aiChatChromeShortcutIPad
+
+    case removeChatHistory
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -742,6 +744,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
+        case .removeChatHistory:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
         }
     }
 

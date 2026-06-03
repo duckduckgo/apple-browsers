@@ -491,11 +491,17 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
             chatSuggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
         }
+
+        let historyCleaner = HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger,
+                                            privacyConfig: privacyConfigurationManager,
+                                            nativeStorageHandler: duckAiNativeStorageHandler)
+
         chatViewModel = AIChatSuggestionsViewModel(maxSuggestions: chatSuggestionsReader.maxHistoryCount)
         chatManager = AIChatHistoryManager(
             suggestionsReader: chatSuggestionsReader,
             aiChatSettings: aiChatSettings,
-            viewModel: chatViewModel
+            viewModel: chatViewModel,
+            historyCleaner: historyCleaner
         )
 
         // Build the URL-side fetcher reusing the Search-side suggestion stream + ranking.

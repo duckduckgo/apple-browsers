@@ -26,11 +26,13 @@ import DesignResourcesKitIcons
 import Suggestions
 import SwiftUI
 import UIKit
+import PrivacyConfig
 
 protocol DuckAISuggestionsViewControllerDelegate: AnyObject {
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion)
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion)
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String)
+    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController)
     func duckAISuggestionsDidRequestSyncSetup()
 }
 
@@ -48,6 +50,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let cellIdentifier = "DuckAISuggestionsCell"
         static let iconSize: CGFloat = 24
         static let iconTextSpacing: CGFloat = 10
+        static let fireSize = CGSize(width: 44, height: 44)
         static let cellHeight: CGFloat = 44
         static let cellHeightWithSubtitle: CGFloat = 58
         static let horizontalInset: CGFloat = 16
@@ -86,6 +89,7 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     weak var delegate: DuckAISuggestionsViewControllerDelegate?
 
+    private let featureFlagger: FeatureFlagger
     private let chatViewModel: AIChatSuggestionsViewModel
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let queryProvider: () -> String
@@ -149,7 +153,8 @@ final class DuckAISuggestionsViewController: UIViewController {
          layoutConfiguration: LayoutConfiguration = .standard,
          syncPromoManager: SyncPromoManaging? = nil,
          syncService: DDGSyncing? = nil,
-         syncPromoViewModel: AIChatSyncPromoViewModel? = nil) {
+         syncPromoViewModel: AIChatSyncPromoViewModel? = nil,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.queryProvider = queryProvider
@@ -157,6 +162,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         self.syncService = syncService
         self.syncPromoViewModel = syncPromoViewModel
             ?? syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -423,7 +429,9 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private func configureChatCell(_ cell: UITableViewCell, with chat: AIChatSuggestion) {
         let icon = chat.isPinned ? DesignSystemImages.Glyphs.Size24.pin : DesignSystemImages.Glyphs.Size24.aiChat
+
         applyConfiguration(to: cell, title: chat.title, subtitle: nil, icon: icon)
+        applyDeleteAccessoryViewIfNeeded(to: cell, chat: chat)
     }
 
     private func configureURLCell(_ cell: UITableViewCell, with suggestion: Suggestion) {
@@ -496,6 +504,37 @@ final class DuckAISuggestionsViewController: UIViewController {
         config.imageToTextPadding = Constants.iconTextSpacing
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.accessoryView = nil
+    }
+}
+
+private extension DuckAISuggestionsViewController {
+
+    func applyDeleteAccessoryViewIfNeeded(to cell: UITableViewCell, chat: AIChatSuggestion) {
+        guard featureFlagger.isFeatureOn(.removeChatHistory) else {
+            return
+        }
+
+        cell.accessoryView = buildDeleteAccessoryView(chat: chat)
+    }
+
+    func buildDeleteAccessoryView(chat: AIChatSuggestion) -> UIView {
+        let fireImage = DesignSystemImages.Glyphs.Size16.fire.withRenderingMode(.alwaysTemplate)
+        let deleteAction = UIAction { [weak self] _ in
+            self?.requestChatDeletion(for: chat)
+        }
+
+        let button = UIButton(type: .system)
+        button.setImage(fireImage, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .icons)
+        button.frame.size = Constants.fireSize
+        button.contentHorizontalAlignment = .trailing
+        button.addAction(deleteAction, for: .touchUpInside)
+        return button
+    }
+
+    func requestChatDeletion(for chat: AIChatSuggestion) {
+        delegate?.duckAISuggestionsDidRequestChatDeletion(chat, sender: self)
     }
 }
 

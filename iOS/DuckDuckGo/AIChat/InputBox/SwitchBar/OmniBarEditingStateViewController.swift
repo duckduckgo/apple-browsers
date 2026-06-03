@@ -433,9 +433,16 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
         }
 
+        let historyCleaner = HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger,
+                                            privacyConfig: privacyConfigurationManager,
+                                            nativeStorageHandler: duckAiNativeStorageHandler)
+
+        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
+
         return AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                     aiChatSettings: aiChatSettings,
-                                    viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
+                                    viewModel: viewModel,
+                                    historyCleaner: historyCleaner)
     }
 
     private func installDaxLogoView() {

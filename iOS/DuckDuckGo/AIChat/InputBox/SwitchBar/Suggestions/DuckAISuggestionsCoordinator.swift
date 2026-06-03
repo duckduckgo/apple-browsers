@@ -22,6 +22,7 @@ import Combine
 import DDGSync
 import Suggestions
 import UIKit
+import PrivacyConfig
 
 protocol DuckAISuggestionsCoordinatorDelegate: AnyObject {
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion)
@@ -185,6 +186,12 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
         delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: query)
+    }
+
+    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController) {
+        RecentChatDeletionAlert.show(for: chat, presenter: sender) { [weak chatManager] in
+            chatManager?.removeChatSuggestion(suggestion: chat)
+        }
     }
 
     func duckAISuggestionsDidRequestSyncSetup() {

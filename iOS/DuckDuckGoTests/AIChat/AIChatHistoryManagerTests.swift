@@ -28,6 +28,7 @@ final class AIChatHistoryManagerTests: XCTestCase {
     private var mockSuggestionsReader: MockAIChatSuggestionsReader!
     private var mockAIChatSettings: MockAIChatSettingsProvider!
     private var viewModel: AIChatSuggestionsViewModel!
+    private var mockHistoryCleaner: MockHistoryCleaner!
     private var sut: AIChatHistoryManager!
 
     override func setUp() {
@@ -35,16 +36,19 @@ final class AIChatHistoryManagerTests: XCTestCase {
         mockSuggestionsReader = MockAIChatSuggestionsReader()
         mockAIChatSettings = MockAIChatSettingsProvider()
         viewModel = AIChatSuggestionsViewModel()
+        mockHistoryCleaner = MockHistoryCleaner()
         sut = AIChatHistoryManager(
             suggestionsReader: mockSuggestionsReader,
             aiChatSettings: mockAIChatSettings,
-            viewModel: viewModel
+            viewModel: viewModel,
+            historyCleaner: mockHistoryCleaner
         )
     }
 
     override func tearDown() {
         sut = nil
         viewModel = nil
+        mockHistoryCleaner = nil
         mockAIChatSettings = nil
         mockSuggestionsReader = nil
         super.tearDown()
@@ -257,6 +261,24 @@ private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
 
     func tearDown() {
         tearDownCalled = true
+    }
+}
+
+private final class MockHistoryCleaner: HistoryCleaning {
+    var cleanAIChatHistoryResult: Result<Void, Error> = .success(())
+    private(set) var cleanAIChatHistoryCallCount = 0
+
+    var deleteAIChatResult: Result<Void, Error> = .success(())
+    private(set) var deleteAIChatCalls: [String] = []
+
+    func cleanAIChatHistory() async -> Result<Void, Error> {
+        cleanAIChatHistoryCallCount += 1
+        return cleanAIChatHistoryResult
+    }
+
+    func deleteAIChat(chatID: String) async -> Result<Void, Error> {
+        deleteAIChatCalls.append(chatID)
+        return deleteAIChatResult
     }
 }
 

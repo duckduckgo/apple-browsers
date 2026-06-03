@@ -24,6 +24,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 import UIKit
+import PrivacyConfig
 
 /// A view controller displaying the list of recent AI chats
 final class AIChatHistoryListViewController: UIViewController {
@@ -35,6 +36,7 @@ final class AIChatHistoryListViewController: UIViewController {
         static let iconSize: CGFloat = 16
         static let iconTextSpacing: CGFloat = 12
         static let cellHeight: CGFloat = 44
+        static let fireSize: CGSize = CGSize(width: 44, height: 44)
         static let horizontalInset: CGFloat = 16
         static let topContentInset: CGFloat = -20
         // Use a tighter top padding when a section title sits below the hatch so they feel grouped;
@@ -80,8 +82,10 @@ final class AIChatHistoryListViewController: UIViewController {
         }
     }
 
+    private let featureFlagger: FeatureFlagger
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
+    private let onChatDeleted: (AIChatSuggestion) -> Void
     private let isIPadExperience: Bool
     private var cancellables = Set<AnyCancellable>()
 
@@ -133,10 +137,15 @@ final class AIChatHistoryListViewController: UIViewController {
 
     init(viewModel: AIChatSuggestionsViewModel,
          isIPadExperience: Bool,
-         onChatSelected: @escaping (AIChatSuggestion) -> Void) {
+         onChatSelected: @escaping (AIChatSuggestion) -> Void,
+         onChatDeleted: @escaping (AIChatSuggestion) -> Void,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger)
+    {
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
+        self.onChatDeleted = onChatDeleted
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -312,6 +321,42 @@ final class AIChatHistoryListViewController: UIViewController {
 
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor(designSystemColor: .surface)
+
+        applyDeleteAccessoryViewIfNeeded(to: cell, chat: chat)
+    }
+}
+
+// MARK: - Chat Deletion
+
+private extension AIChatHistoryListViewController {
+
+    func applyDeleteAccessoryViewIfNeeded(to cell: UITableViewCell, chat: AIChatSuggestion) {
+        guard featureFlagger.isFeatureOn(.removeChatHistory) else {
+            return
+        }
+
+        cell.accessoryView = buildDeleteAccessoryView(chat: chat)
+    }
+
+    func buildDeleteAccessoryView(chat: AIChatSuggestion) -> UIView {
+        let fireImage = DesignSystemImages.Glyphs.Size16.fire.withRenderingMode(.alwaysTemplate)
+        let deleteAction = UIAction { [weak self] _ in
+            self?.presentChatDeletionConfirmation(chat: chat)
+        }
+
+        let button = UIButton(type: .system)
+        button.setImage(fireImage, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .icons)
+        button.frame.size = Constants.fireSize
+        button.contentHorizontalAlignment = .trailing
+        button.addAction(deleteAction, for: .touchUpInside)
+        return button
+    }
+
+    func presentChatDeletionConfirmation(chat: AIChatSuggestion) {
+        RecentChatDeletionAlert.show(for: chat, presenter: self) { [weak self] in
+            self?.onChatDeleted(chat)
+        }
     }
 }
 

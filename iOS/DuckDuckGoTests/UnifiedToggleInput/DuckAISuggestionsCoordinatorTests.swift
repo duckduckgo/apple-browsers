@@ -53,7 +53,8 @@ final class DuckAISuggestionsCoordinatorTests: XCTestCase {
         let chatManager = AIChatHistoryManager(
             suggestionsReader: MockAIChatSuggestionsReader(),
             aiChatSettings: MockAIChatSettingsProvider(),
-            viewModel: viewModel
+            viewModel: viewModel,
+            historyCleaner: MockHistoryCleaner()
         )
         let coordinator = DuckAISuggestionsCoordinator(
             chatManager: chatManager,
@@ -279,6 +280,11 @@ private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
     }
 
     func tearDown() {}
+}
+
+private final class MockHistoryCleaner: HistoryCleaning {
+    func cleanAIChatHistory() async -> Result<Void, Error> { .success(()) }
+    func deleteAIChat(chatID: String) async -> Result<Void, Error> { .success(()) }
 }
 
 @MainActor

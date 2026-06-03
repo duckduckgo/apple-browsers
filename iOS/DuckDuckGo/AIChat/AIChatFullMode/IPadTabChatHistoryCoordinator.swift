@@ -180,10 +180,15 @@ final class IPadTabChatHistoryCoordinator {
             suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
         }
 
+        let historyCleaner = HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger,
+                                            privacyConfig: privacyConfigurationManager,
+                                            nativeStorageHandler: duckAiNativeStorageHandler)
+
         let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                            aiChatSettings: aiChatSettings,
                                            viewModel: viewModel,
+                                           historyCleaner: historyCleaner,
                                            isIPadExperience: true)
         return (manager, viewModel)
     }

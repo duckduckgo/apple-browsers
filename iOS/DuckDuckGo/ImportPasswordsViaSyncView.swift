@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import Core
 import DuckUI
 
@@ -58,7 +59,11 @@ struct ImportPasswordsViaSyncView: View {
         @State private var navigate = false
 
         var body: some View {
-            Image(.syncDesktopNew128)
+            if AppRebrand.isAppRebranded() {
+                Image("Desktop-Sync-Passwords-128")
+            } else {
+                Image(.syncDesktopNew128)
+            }
 
             Text(UserText.autofillImportPasswordsViaSyncTitle)
                 .daxTitle2()

@@ -521,7 +521,7 @@ final class PixelKitTests: XCTestCase {
         wait(for: [fireCallbackCalled], timeout: 0.5)
     }
 
-    func testUniqueNyNameAndParameterPixel() {
+    func testUniqueByNameAndParameterPixel() {
         // Prepare test parameters
         let appVersion = "1.0.5"
         let headers = ["a": "2", "b": "3", "c": "2000"]

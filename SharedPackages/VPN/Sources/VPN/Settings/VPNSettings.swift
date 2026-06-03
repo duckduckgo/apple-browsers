@@ -232,7 +232,6 @@ public final class VPNSettings {
 
     public func resetToDefaults() {
         defaults.resetNetworkProtectionSettingConnectOnLogin()
-        defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
         defaults.resetNetworkProtectionSettingExcludeAPNs()
         defaults.resetNetworkProtectionSettingExcludeCellularServices()
@@ -243,15 +242,16 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingSelectedServer()
         defaults.resetDNSSettings()
         defaults.resetNetworkProtectionSettingShowInMenuBar()
+        defaults.resetVPNSettingEnforceRoutes()
     }
 
     public func resetTunnelFlagsToDefaults() {
-        defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingIncludeAllNetworks()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
         defaults.resetNetworkProtectionSettingExcludeAPNs()
         defaults.resetNetworkProtectionSettingExcludeCellularServices()
         defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
+        defaults.resetVPNSettingEnforceRoutes()
     }
 
     // MARK: - Applying Changes
@@ -326,16 +326,16 @@ public final class VPNSettings {
     // MARK: - Enforce Routes
 
     public var enforceRoutesPublisher: AnyPublisher<Bool, Never> {
-        defaults.networkProtectionSettingEnforceRoutesPublisher
+        defaults.vpnSettingEnforceRoutesPublisher
     }
 
     public var enforceRoutes: Bool {
         get {
-            defaults.networkProtectionSettingEnforceRoutes
+            defaults.vpnSettingEnforceRoutes
         }
 
         set {
-            defaults.networkProtectionSettingEnforceRoutes = newValue
+            defaults.vpnSettingEnforceRoutes = newValue
         }
     }
 
@@ -345,12 +345,10 @@ public final class VPNSettings {
     /// Callers pass the resolved availability (not a feature flagger) so this stays free of the
     /// app-side flag system — keeping it usable from contexts that can't evaluate flags.
     public func resetEnforceRoutesIfUnavailable(strictRoutingAvailable: Bool) {
-        guard !strictRoutingAvailable,
-              enforceRoutes != UserDefaults.enforceRoutesDefaultValue else {
+        guard strictRoutingAvailable else {
+            defaults.resetVPNSettingEnforceRoutes()
             return
         }
-
-        enforceRoutes = UserDefaults.enforceRoutesDefaultValue
     }
 
     // MARK: - Exclude Local Routes

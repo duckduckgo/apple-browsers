@@ -1379,7 +1379,7 @@
 "data.import.detail.passwords.description" = "Du musst die Passwort-App öffnen und dann den Schritten zum Importieren folgen.";
 
 /* Step 1 instruction for importing from the Passwords app */
-"data.import.detail.passwords.step1" = "Tippe auf **···** > ** Daten in eine andere App exportieren**";
+"data.import.detail.passwords.step1" = "Tippe auf **···** > **Daten in eine andere App exportieren**";
 
 /* Step 2 instruction for importing from the Passwords app */
 "data.import.detail.passwords.step2" = "Tippe auf **Alles auswählen** > **Weiter**";
@@ -2022,6 +2022,9 @@
 
 /* No comment provided by engineer. */
 "Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Gib eine nicht-negative Anzahl von Tagen ein. Das Installationsdatum wird auf die entsprechende Anzahl von Tagen zurückgesetzt.";
 
 /* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "In einer anderen App öffnen?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Zurück";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Wir haben versucht, es privat zu laden, aber es wird nicht angezeigt.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Möchtest du diese Seite in Safari öffnen?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "In Safari öffnen";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Leider konnte die Seite nicht geladen werden.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Diese Seite lässt sich nur in Safari laden";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "In Safari öffnen";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Diese Website hat ein ungültiges Sicherheitszertifikat und ist möglicherweise nicht sicher zu besuchen.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Bleib auf DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Einige Funktionen der Website sind mit diesem Browser möglicherweise nicht kompatibel.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Diese Seite möchte in Safari geöffnet werden.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo kann diese Seite nicht laden.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Aktuelle Verarbeitungsprotokolle";

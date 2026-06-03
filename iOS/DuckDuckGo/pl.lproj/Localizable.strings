@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Wpisz nieujemną liczbę dni. Data instalacji zostanie ustawiona na tyle dni temu.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Otworzyć w innej aplikacji?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Wróć";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Próbowaliśmy załadować to prywatnie, ale nie wyświetla się.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Czy chcesz otworzyć tę stronę w Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Otwórz w Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Niestety nie udało się załadować strony.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Ta strona ładuje się tylko w Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Otwórz w Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Ta witryna ma nieprawidłowy certyfikat bezpieczeństwa i jej odwiedzanie może nie być bezpieczne.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Zostań w DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Niektóre funkcje strony mogą nie działać w tej przeglądarce.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Ta strona chce otworzyć się w przeglądarce Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo nie może wczytać tej strony.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Ostatnie dzienniki przetwarzania";

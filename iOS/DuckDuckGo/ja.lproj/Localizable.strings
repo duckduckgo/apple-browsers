@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "負でない日数を入力してください。インストール日はその日数前に設定されます。";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "別のアプリで開きますか？";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "戻る";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "プライベートで読み込もうとしましたが、表示されません。";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "このページをSafariで開きますか？";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Safariで開く";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "残念ながら、ページを読み込めませんでした。";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "このページはSafariでのみ読み込めます";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Safariで開く";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "このウェブサイトには無効なセキュリティ証明書があり、安全に訪問できない可能性があります。";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "DuckDuckGoを使用し続ける";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "一部のウェブサイト機能はこのブラウザと互換性がない場合があります。";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "このサイトはSafariで開こうとしています。";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGoはこのページを読み込めません。";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "最近の処理ログ";

@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Ange ett icke-negativt antal dagar. Det angivna installationsdatumet kommer att vara för så många dagar sedan.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Öppna i annan app?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Gå tillbaka";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Vi försökte ladda upp den privat, men den visas inte.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Vill du öppna den här sidan i Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Öppna i Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Det gick tyvärr inte att läsa in sidan.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Den här sidan laddas bara i Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Öppna i Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Webbplatsen har ett ogiltigt säkerhetscertifikat och kan vara riskabel att besöka.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Stanna kvar på DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Vissa webbplatsfunktioner kanske inte är kompatibla med den här webbläsaren.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Webbplatsen vill öppnas i Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo kan inte läsa in den här sidan.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Senaste bearbetningsloggar";

@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Ievadi dienu skaitu, kas nav negatīvs. Instalēšanas datums tiks iestatīts uz tik daudzām dienām pagātnē.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Vai atvērt citā lietotnē?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Atgriezties";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Mēs mēģinājām to ielādēt privāti, bet tas netiek parādīts.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Vai vēlies atvērt šo lapu pārlūkprogrammā Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Atvērt ar Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Diemžēl lapu neizdevās ielādēt.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Šī lapa ielādējas tikai pārlūkprogrammā Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Atvērt Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Šai vietnei ir nederīgs drošības sertifikāts, un tās apmeklēšana var nebūt droša.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Paliec DuckDuckGo platformā";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Dažas vietnes funkcijas var nebūt saderīgas ar šo pārlūkprogrammu.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Šī vietne vēlas atvērties Safari pārlūkprogrammā.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo nevar ielādēt šo lapu.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Jaunākie apstrādes žurnāli";

@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Введите неотрицательное количество дней. Дата установки будет сдвинута назад на указанное количество дней.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Открыть в другом приложении?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Вернуться";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Не удалось отобразить эту страницу в приватном режиме.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Открыть эту страницу в Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Открыть в Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Страница не загрузилась";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Эта страница открывается только в Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Открыть в Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Сертификат безопасности этого сайта недействителен. Посещение сайта может быть небезопасным.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Остаться в DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Некоторые функции сайта могут не работать в этом браузере.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Этот сайт пытается открыться в Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo не удалось загрузить эту страницу.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Журналы недавней обработки";

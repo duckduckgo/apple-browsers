@@ -103,6 +103,8 @@ public final class PixelKit {
             }
         }
 
+        /// Caution: These values are used by `pixelHasBeenFiredDailyToday...` methods.  Changing these values may cause data store lookup
+        /// failures and lead to re-firing pixels that otherwise should not be fired.
         fileprivate var mapKey: String {
             switch self {
             case .standard: return "standard"

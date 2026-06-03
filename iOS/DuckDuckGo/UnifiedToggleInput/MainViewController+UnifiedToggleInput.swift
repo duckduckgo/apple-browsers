@@ -87,6 +87,7 @@ extension MainViewController {
             toggleModeStorage: toggleModeStorage,
             stateStore: stateStore,
             syncService: syncService,
+            aiChatSyncCleaner: aiChatSyncCleaner,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
         )
         coordinator.delegate = self

@@ -61,6 +61,7 @@ final class AIChatHistoryManager {
     private let viewModel: AIChatSuggestionsViewModel
     private let historyCleaner: HistoryCleaning
     private let isIPadExperience: Bool
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
 
     var titleLayoutConfiguration: AIChatHistoryListViewController.TitleLayoutConfiguration?
     private(set) var hasCompletedInitialFetch = false
@@ -77,12 +78,14 @@ final class AIChatHistoryManager {
          aiChatSettings: AIChatSettingsProvider,
          viewModel: AIChatSuggestionsViewModel,
          historyCleaner: HistoryCleaning,
-         isIPadExperience: Bool = false) {
+         isIPadExperience: Bool = false,
+         aiChatSyncCleaner: AIChatSyncCleaning? = nil) {
         self.suggestionsReader = suggestionsReader
         self.aiChatSettings = aiChatSettings
         self.viewModel = viewModel
         self.historyCleaner = historyCleaner
         self.isIPadExperience = isIPadExperience
+        self.aiChatSyncCleaner = aiChatSyncCleaner
     }
 
     // MARK: - Public Methods
@@ -170,6 +173,7 @@ final class AIChatHistoryManager {
 
         Task { @MainActor in
             let _ = await historyCleaner.deleteAIChat(chatID: suggestion.chatId)
+            await aiChatSyncCleaner?.recordChatDeletion(chatID: suggestion.chatId)
             refreshSuggestions()
         }
     }

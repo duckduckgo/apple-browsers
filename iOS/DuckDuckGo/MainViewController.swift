@@ -169,6 +169,7 @@ class MainViewController: UIViewController {
     let bookmarksDatabase: CoreDataDatabase
     private var favoritesViewModel: FavoritesListInteracting
     let syncService: DDGSyncing
+    let aiChatSyncCleaner: AIChatSyncCleaning?
     let syncDataProviders: SyncDataProviders
     let syncPausedStateManager: any SyncPausedStateManaging
 
@@ -357,7 +358,8 @@ class MainViewController: UIViewController {
         privacyConfigurationManager: privacyConfigurationManager,
         aiChatSettings: aiChatSettings,
         iPadTabFeature: aichatIPadTabFeature,
-        duckAiNativeStorageHandler: duckAiNativeStorageHandler
+        duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+        aiChatSyncCleaner: aiChatSyncCleaner
     )
     private var iPadAIChatQuery = ""
     private var allowIPadAIAutocompleteShow = false
@@ -384,6 +386,7 @@ class MainViewController: UIViewController {
         historyManager: HistoryManaging,
         homePageConfiguration: HomePageConfiguration,
         syncService: DDGSyncing,
+        aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         syncDataProviders: SyncDataProviders,
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
@@ -457,6 +460,7 @@ class MainViewController: UIViewController {
         self.historyManager = historyManager
         self.homePageConfiguration = homePageConfiguration
         self.syncService = syncService
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.syncDataProviders = syncDataProviders
         self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -630,7 +634,8 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              aiChatSyncCleaner: aiChatSyncCleaner)
 
         if featureFlagger.isFeatureOn(.iPadAIToggle) {
             viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
@@ -815,7 +820,8 @@ class MainViewController: UIViewController {
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization,
-                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                      aiChatSyncCleaner: aiChatSyncCleaner)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,

@@ -61,6 +61,7 @@ final class IPadTabChatHistoryCoordinator {
     private let aiChatSettings: AIChatSettingsProvider
     private let iPadTabFeature: AIChatIPadTabFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let textSubject = PassthroughSubject<String, Never>()
     private var currentQuery = ""
 
@@ -70,12 +71,14 @@ final class IPadTabChatHistoryCoordinator {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          aiChatSettings: AIChatSettingsProvider,
          iPadTabFeature: AIChatIPadTabFeatureProviding,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         aiChatSyncCleaner: AIChatSyncCleaning? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.iPadTabFeature = iPadTabFeature
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.aiChatSyncCleaner = aiChatSyncCleaner
     }
 
     // MARK: - Public Methods
@@ -189,7 +192,8 @@ final class IPadTabChatHistoryCoordinator {
                                            aiChatSettings: aiChatSettings,
                                            viewModel: viewModel,
                                            historyCleaner: historyCleaner,
-                                           isIPadExperience: true)
+                                           isIPadExperience: true,
+                                           aiChatSyncCleaner: aiChatSyncCleaner)
         return (manager, viewModel)
     }
 

@@ -119,6 +119,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let aiChatSettings: AIChatSettingsProvider
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
 
     // MARK: - Manager Components
 
@@ -163,6 +164,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
                   voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                  aiChatSyncCleaner: AIChatSyncCleaning? = nil,
                   escapeHatchModel: EscapeHatchModel? = nil,
                   initialLogoHidden: Bool = false) {
         self.switchBarHandler = switchBarHandler
@@ -178,6 +180,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.aiChatSettings = aiChatSettings
         self.voiceShortcutFeature = voiceShortcutFeature
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.escapeHatchModel = escapeHatchModel
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
@@ -442,7 +445,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         return AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                     aiChatSettings: aiChatSettings,
                                     viewModel: viewModel,
-                                    historyCleaner: historyCleaner)
+                                    historyCleaner: historyCleaner,
+                                    aiChatSyncCleaner: aiChatSyncCleaner)
     }
 
     private func installDaxLogoView() {

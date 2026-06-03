@@ -65,7 +65,8 @@ class MainViewFactory {
                                     daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
                                     daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
                                     mobileCustomization: MobileCustomization,
-                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> MainViewCoordinator {
+                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                                    aiChatSyncCleaner: AIChatSyncCleaning? = nil) -> MainViewCoordinator {
 
         let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
@@ -77,7 +78,8 @@ class MainViewFactory {
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: presenter,
                                                       mobileCustomization: mobileCustomization,
-                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                      aiChatSyncCleaner: aiChatSyncCleaner)
 
         let factory = MainViewFactory(parentController: parentController,
                                       omnibarDependencies: omnibarDependencies,

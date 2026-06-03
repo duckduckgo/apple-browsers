@@ -35,6 +35,7 @@ protocol OmnibarDependencyProvider {
     var daxEasterEggPresenter: DaxEasterEggPresenting { get }
     var mobileCustomization: MobileCustomization { get }
     var duckAiNativeStorageHandler: DuckAiNativeStorageHandling? { get }
+    var aiChatSyncCleaner: AIChatSyncCleaning? { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
@@ -48,4 +49,5 @@ struct OmnibarDependencies: OmnibarDependencyProvider {
     let daxEasterEggPresenter: DaxEasterEggPresenting
     let mobileCustomization: MobileCustomization
     var duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    var aiChatSyncCleaner: AIChatSyncCleaning? = nil
 }

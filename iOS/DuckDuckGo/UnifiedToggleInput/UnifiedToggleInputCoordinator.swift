@@ -367,6 +367,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
         stateStore: UnifiedInputStateStoring? = nil,
         syncService: DDGSyncing? = nil,
+        aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
         sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard),
@@ -398,7 +399,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            syncService: syncService
+            syncService: syncService,
+            aiChatSyncCleaner: aiChatSyncCleaner
         )
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()

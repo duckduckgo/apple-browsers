@@ -89,6 +89,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let aiChatSettings: AIChatSettingsProvider
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let syncPromoManager: SyncPromoManaging?
     private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
 
@@ -118,6 +119,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          syncService: DDGSyncing? = nil,
+         aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
@@ -128,6 +130,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.syncService = syncService
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
                                                                   featureFlagger: featureFlagger,
                                                                   privacyConfigurationManager: privacyConfigurationManager) }
@@ -501,7 +504,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             suggestionsReader: chatSuggestionsReader,
             aiChatSettings: aiChatSettings,
             viewModel: chatViewModel,
-            historyCleaner: historyCleaner
+            historyCleaner: historyCleaner,
+            aiChatSyncCleaner: aiChatSyncCleaner
         )
 
         // Build the URL-side fetcher reusing the Search-side suggestion stream + ranking.

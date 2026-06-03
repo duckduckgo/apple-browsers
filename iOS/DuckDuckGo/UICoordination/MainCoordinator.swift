@@ -250,6 +250,7 @@ final class MainCoordinator {
                                         historyManager: historyManager,
                                         homePageConfiguration: homePageConfiguration,
                                         syncService: syncService.sync,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         syncDataProviders: syncService.syncDataProviders,
                                         userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                                         contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,

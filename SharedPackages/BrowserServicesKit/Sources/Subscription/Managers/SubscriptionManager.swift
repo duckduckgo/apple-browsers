@@ -669,16 +669,23 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public func adopt(accessToken: String, refreshToken: String) async throws {
         Logger.subscriptionTokensManagement.log("Adopting and decoding token container")
         let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken, refreshID: nil)
-        try await adopt(tokenContainer: tokenContainer)
+        // This entry point is the subscription page email-restore flow.
+        try await adopt(tokenContainer: tokenContainer, source: .webRestore)
     }
 
     public func adopt(tokenContainer: TokenContainer) async throws {
+        // Protocol entry point with no known source; the source-aware overload carries the instrumentation.
+        try await adopt(tokenContainer: tokenContainer, source: nil)
+    }
+
+    public func adopt(tokenContainer: TokenContainer, source: AuthV2TokenAdoptionWideEventData.AdoptionSource?) async throws {
         let adoptionID = UUID().uuidString
 
         if isAuthV2WideEventEnabled(), let wideEvent {
             let globalData = WideEventGlobalData(id: adoptionID)
             let data = AuthV2TokenAdoptionWideEventData(globalData: globalData)
             data.failingStep = .adoptingToken
+            data.adoptionSource = source
             wideEvent.startFlow(data)
         }
 
@@ -695,7 +702,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
             // It’s important to force refresh the token to immediately branch from the one received.
             // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-            let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
+            let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh, trigger: .tokenAdoption)
 
             updateCachedIsUserAuthenticated(true)
             updateCachedUserEntitlements(refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements)

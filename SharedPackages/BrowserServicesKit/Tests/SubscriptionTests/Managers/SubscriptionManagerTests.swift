@@ -241,6 +241,33 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(data.globalData.id, "fresh")
     }
 
+    func testAdopt_FromWebRestore_RecordsWebRestoreAdoptionSource() async throws {
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.decodeResponse = .success(tokenContainer)
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+
+        try await subscriptionManager.adopt(accessToken: "at", refreshToken: "rt")
+
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertEqual(status, .success(reason: nil))
+        let adoptionData = try XCTUnwrap(data as? AuthV2TokenAdoptionWideEventData)
+        XCTAssertEqual(adoptionData.adoptionSource, .webRestore)
+    }
+
+    func testAdoptToken_FromVPN_RecordsVPNAdoptionSource() async throws {
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+
+        try await subscriptionManager.adoptToken(tokenContainer)
+
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertEqual(status, .success(reason: nil))
+        let adoptionData = try XCTUnwrap(data as? AuthV2TokenAdoptionWideEventData)
+        XCTAssertEqual(adoptionData.adoptionSource, .vpn)
+    }
+
     func testGetTokenContainer_OtherError_ReportsPixelAndUnderlyingError() async throws {
         let expectedError = OAuthServiceError.invalidResponseCode(.badRequest)
         mockOAuthClient.getTokensResponse = .failure(expectedError)

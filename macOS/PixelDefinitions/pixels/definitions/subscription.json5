@@ -576,7 +576,15 @@
                 "key": "feature.data.ext.failing_step",
                 "type": "string",
                 "description": "The step at which the flow failed, when applicable",
-                "enum": ["token_read", "refresh_access_token", "fetch_jwks", "verify_access_token", "verify_refresh_token", "token_write", "recover_dead_token"]
+                "enum": [
+                    "token_read",
+                    "refresh_access_token",
+                    "fetch_jwks",
+                    "verify_access_token",
+                    "verify_refresh_token",
+                    "token_write",
+                    "recover_dead_token"
+                ]
             },
             {
                 "key": "feature.data.ext.refresh_token_latency_ms_bucketed",
@@ -736,6 +744,12 @@
                 "type": "string",
                 "description": "The step at which the flow failed, when applicable",
                 "enum": ["token_refresh"]
+            },
+            {
+                "key": "feature.data.ext.adoption_source",
+                "type": "string",
+                "description": "What caused the token to be adopted, when known",
+                "enum": ["web_restore", "vpn"]
             }
         ]
     },

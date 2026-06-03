@@ -241,6 +241,33 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(recovered.pixelParameters()["feature.data.ext.performed_token_recovery"], "true")
     }
 
+    // MARK: - Refresh trigger
+
+    func testPixelParameters_refreshTrigger_alwaysEmitted_defaultsToClient() {
+        // Unset trigger (e.g. a flow rehydrated from an older build) must still ship a non-null value.
+        let eventData = AuthV2TokenRefreshWideEventData()
+
+        XCTAssertEqual(eventData.pixelParameters()["feature.data.ext.refresh_trigger"], "client")
+    }
+
+    func testPixelParameters_refreshTrigger_emitsSetValue() {
+        let eventData = AuthV2TokenRefreshWideEventData()
+        eventData.refreshTrigger = .tokenAdoption
+
+        XCTAssertEqual(eventData.pixelParameters()["feature.data.ext.refresh_trigger"], "token_adoption")
+    }
+
+    func testRefreshEventMapping_startCarriesTrigger() {
+        let mock = WideEventMock()
+        let mapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: mock, isFeatureEnabled: { true })
+
+        mapping.fire(.tokenRefreshStarted(refreshID: "refresh-trigger", trigger: .tokenAdoption))
+
+        let pending = mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self)
+        XCTAssertEqual(pending.first?.refreshTrigger, .tokenAdoption)
+        XCTAssertEqual(pending.first?.pixelParameters()["feature.data.ext.refresh_trigger"], "token_adoption")
+    }
+
     func testCompletionDecision_appLaunch_reconcilesToUnknown() async {
         let eventData = AuthV2TokenRefreshWideEventData()
 
@@ -259,7 +286,7 @@ final class AuthV2WideEventTests: XCTestCase {
         let mapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: mock, isFeatureEnabled: { true })
         let refreshID = "refresh-1"
 
-        mapping.fire(.tokenRefreshStarted(refreshID: refreshID))
+        mapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
         mapping.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
         mapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.invalidTokenRequest(.reused)))
 
@@ -276,12 +303,31 @@ final class AuthV2WideEventTests: XCTestCase {
         let mapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: mock, isFeatureEnabled: { true })
         let refreshID = "refresh-2"
 
-        mapping.fire(.tokenRefreshStarted(refreshID: refreshID))
+        mapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
         mapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.unknownAccount))
 
         XCTAssertEqual(mock.completions.count, 1)
         guard case .failure = mock.completions.first?.1 else {
             return XCTFail("Expected FAILURE completion for a non-recoverable error")
         }
+    }
+
+    // MARK: - Token adoption source
+
+    func testAdoptionPixelParameters_adoptionSource_absentWhenUnset() {
+        // Unknown source is left absent rather than defaulted, so it reads as "unknown" not misattributed.
+        let data = AuthV2TokenAdoptionWideEventData()
+
+        XCTAssertNil(data.pixelParameters()["feature.data.ext.adoption_source"])
+    }
+
+    func testAdoptionPixelParameters_adoptionSource_emitsSetValue() {
+        let webRestore = AuthV2TokenAdoptionWideEventData()
+        webRestore.adoptionSource = .webRestore
+        XCTAssertEqual(webRestore.pixelParameters()["feature.data.ext.adoption_source"], "web_restore")
+
+        let vpn = AuthV2TokenAdoptionWideEventData()
+        vpn.adoptionSource = .vpn
+        XCTAssertEqual(vpn.pixelParameters()["feature.data.ext.adoption_source"], "vpn")
     }
 }

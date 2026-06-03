@@ -114,7 +114,8 @@ public protocol OAuthClient {
     /// - `.localForceRefresh`: Returns what's in the storage but forces a refresh first. throws an error if no refresh token is available.
     /// - `.createIfNeeded`: Returns what's in the storage, if the stored token is expired refreshes it, if not token is available creates a new account/token
     /// All options store new or refreshed tokens via the tokensStorage
-    func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer
+    /// - Parameter trigger: What initiated this token request, surfaced on the refresh wide event.
+    func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer
 
     /// Use the TokenContainer provided
     func adopt(tokenContainer: TokenContainer) throws
@@ -136,8 +137,28 @@ public protocol OAuthClient {
     func removeLocalAccount() throws
 }
 
+public extension OAuthClient {
+    /// Convenience overload that defaults the refresh trigger to `.client`. Most refreshes are
+    /// client-initiated; callers with a more specific origin (e.g. token adoption) pass `trigger`
+    /// explicitly. Keeping this overload means existing call sites compile unchanged.
+    func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
+        try await getTokens(policy: policy, trigger: .client)
+    }
+}
+
+/// What initiated a token refresh. Recorded on the AuthV2 refresh wide event as `refresh_trigger`
+/// so the refresh SLO can be segmented by origin. Raw values match the schema enum.
+public enum TokenRefreshTrigger: String, Codable {
+    /// A refresh driven by a backend interaction (e.g. an API rejecting the current token).
+    case backend
+    /// A client-initiated refresh: proactive, lazy expiry refresh, or an explicit force refresh.
+    case client
+    /// The forced refresh performed as part of adopting an externally-provided token container.
+    case tokenAdoption = "token_adoption"
+}
+
 public enum OAuthClientRefreshEvent {
-    case tokenRefreshStarted(refreshID: String)
+    case tokenRefreshStarted(refreshID: String, trigger: TokenRefreshTrigger)
     case tokenRefreshRefreshingAccessToken(refreshID: String)
     case tokenRefreshRefreshedAccessToken(refreshID: String)
     case tokenRefreshFetchingJWKS(refreshID: String)
@@ -245,7 +266,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
-    public func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
+    public func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer {
         let localTokenContainer = try tokenStorage.getTokenContainer()
 
         switch policy {
@@ -270,7 +291,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             let expiresSoon = expirationInterval < Constants.tokenExpiryBufferInterval
             if localTokenContainer.decodedAccessToken.isExpired() || expiresSoon {
                 Logger.OAuthClient.log("Refreshing local already expired token")
-                return try await getTokens(policy: .localForceRefresh)
+                return try await getTokens(policy: .localForceRefresh, trigger: trigger)
             } else {
                 return localTokenContainer
             }
@@ -282,7 +303,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             }
 
             let refreshID = UUID().uuidString
-            refreshEventMapping?.fire(.tokenRefreshStarted(refreshID: refreshID))
+            refreshEventMapping?.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: trigger))
 
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
@@ -336,7 +357,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
         case .createIfNeeded:
             do {
-                return try await getTokens(policy: .localValid)
+                return try await getTokens(policy: .localValid, trigger: trigger)
             } catch {
                 Logger.OAuthClient.log("Local token not found, creating a new account")
                 do {

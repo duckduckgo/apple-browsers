@@ -47,6 +47,10 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
 
+    /// What initiated this refresh. Optional for decode safety with flows persisted by older builds;
+    /// always emitted (defaulting to `.client`) so `refresh_trigger` is never null on the wire.
+    public var refreshTrigger: TokenRefreshTrigger?
+
     public init(failingStep: FailingStep? = nil,
                 errorData: WideEventErrorData? = nil,
                 contextData: WideEventContextData = WideEventContextData(),
@@ -81,6 +85,8 @@ extension AuthV2TokenRefreshWideEventData {
 
         var parameters: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.AuthV2RefreshFeature.failingStep, failingStep?.rawValue),
+            // Always emitted: a refresh always has an origin, so fall back to `.client` rather than dropping it.
+            (WideEventParameter.AuthV2RefreshFeature.refreshTrigger, (refreshTrigger ?? .client).rawValue),
             (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.recoveryLatency, recoveryDuration?.intValue(bucket)),
@@ -122,10 +128,11 @@ extension AuthV2TokenRefreshWideEventData {
             }
 
             switch event {
-            case .tokenRefreshStarted(let refreshID):
+            case .tokenRefreshStarted(let refreshID, let trigger):
                 let globalData = WideEventGlobalData(id: refreshID)
                 let data = AuthV2TokenRefreshWideEventData(globalData: globalData)
                 data.failingStep = .tokenRead
+                data.refreshTrigger = trigger
                 wideEvent.startFlow(data)
             case .tokenRefreshRefreshingAccessToken(refreshID: let refreshID):
                 wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
@@ -188,6 +195,7 @@ extension WideEventParameter {
 
     public enum AuthV2RefreshFeature {
         static let failingStep = "feature.data.ext.failing_step"
+        static let refreshTrigger = "feature.data.ext.refresh_trigger"
         static let refreshTokenLatency = "feature.data.ext.refresh_token_latency_ms_bucketed"
         static let fetchJWKSLatency = "feature.data.ext.fetch_jwks_latency_ms_bucketed"
         static let recoveryLatency = "feature.data.ext.recovery_latency_ms_bucketed"

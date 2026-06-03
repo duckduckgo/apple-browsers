@@ -1080,3 +1080,38 @@ private final class CapturingAIChatUserScriptErrorEventMapper: EventMapping<AICh
     }
 }
 // swiftlint:enable inclusive_language
+
+/// Covers the install-type / install-age values that `AIChatMessageHandler` adds to the
+/// native config for the `web.conversion.duckai.prompt` pixel. The providers are injected so
+/// the test doesn't depend on the real ATB store or build channel.
+struct AIChatMessageHandlerInstallInfoTests {
+
+    private func makeHandler(installDate: Date?, installType: AIChatInstallType) -> AIChatMessageHandler {
+        AIChatMessageHandler(
+            featureFlagger: MockFeatureFlagger(),
+            installDateProvider: { installDate },
+            installTypeProvider: { installType }
+        )
+    }
+
+    @Test("installType is propagated to the native config")
+    func testInstallTypeIsPropagated() {
+        for type in [AIChatInstallType.new, .returning, .unknown] {
+            let config = makeHandler(installDate: nil, installType: type).getNativeConfigValues(isFireWindow: false)
+            #expect(config.installType == type)
+        }
+    }
+
+    @Test("installAge is bucketed from the install date")
+    func testInstallAgeIsBucketed() {
+        let twentyFourDaysAgo = Calendar.current.date(byAdding: .day, value: -24, to: Date())
+        let config = makeHandler(installDate: twentyFourDaysAgo, installType: .new).getNativeConfigValues(isFireWindow: false)
+        #expect(config.installAge == 4) // 22–28 -> bucket 4
+    }
+
+    @Test("nil install date buckets to same-day (0)")
+    func testNilInstallDateBucketsToZero() {
+        let config = makeHandler(installDate: nil, installType: .new).getNativeConfigValues(isFireWindow: false)
+        #expect(config.installAge == 0)
+    }
+}

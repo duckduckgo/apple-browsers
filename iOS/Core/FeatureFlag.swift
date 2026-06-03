@@ -429,6 +429,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
     case aiChatChromeShortcutIPad
 
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
     case removeChatHistory
 }
 

@@ -696,7 +696,8 @@ public struct GhostButtonStyle: ButtonStyle {
         let isPressed = configuration.isPressed || pressed
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
-            .foregroundColor(foregroundColor(isPressed))
+            // Figma --ds-accent-primary (#75B6EB in dark) for all states; press is signalled by the glow background only.
+            .foregroundColor(Color(singleUseColor: .rebranding(.accentPrimary)))
             .padding()
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(backgroundColor(isPressed))
@@ -704,12 +705,6 @@ public struct GhostButtonStyle: ButtonStyle {
             .contentShape(Capsule())
             .opacity(disabled ? Consts.disabledOpacity : 1)
             .ddgButtonDynamicTypeCap()
-    }
-
-    private func foregroundColor(_ isPressed: Bool) -> Color {
-        isPressed
-            ? Color(singleUseColor: .rebranding(.accentPrimaryPressed))
-            : Color(singleUseColor: .rebranding(.accentPrimary))
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {
@@ -839,6 +834,7 @@ private struct ButtonStylesGallery: View {
                 section("PrimaryButtonStyle") {
                     Button("Default") {}.buttonStyle(PrimaryButtonStyle())
                     Button("Disabled") {}.buttonStyle(PrimaryButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(PrimaryButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(PrimaryButtonStyle(compact: true))
                     Button("Hug content") {}.buttonStyle(PrimaryButtonStyle(fullWidth: false))
                 }
@@ -854,6 +850,7 @@ private struct ButtonStylesGallery: View {
                 section("PrimaryDestructiveButtonStyle") {
                     Button("Default") {}.buttonStyle(PrimaryDestructiveButtonStyle())
                     Button("Disabled") {}.buttonStyle(PrimaryDestructiveButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(PrimaryDestructiveButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(PrimaryDestructiveButtonStyle(compact: true))
                     Button("Hug content") {}.buttonStyle(PrimaryDestructiveButtonStyle(fullWidth: false))
                 }
@@ -868,29 +865,35 @@ private struct ButtonStylesGallery: View {
                 section("SecondaryDestructiveButtonStyle") {
                     Button("Default") {}.buttonStyle(SecondaryDestructiveButtonStyle())
                     Button("Disabled") {}.buttonStyle(SecondaryDestructiveButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(SecondaryDestructiveButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(SecondaryDestructiveButtonStyle(compact: true))
                     Button("Hug content") {}.buttonStyle(SecondaryDestructiveButtonStyle(fullWidth: false))
                 }
 
                 section("SecondaryButtonStyle (deprecated)") {
                     Button("Default") {}.buttonStyle(SecondaryButtonStyle())
+                    Button("Pressed") {}.buttonStyle(SecondaryButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(SecondaryButtonStyle(compact: true))
                 }
 
                 section("SecondaryFillButtonStyle") {
                     Button("Default") {}.buttonStyle(SecondaryFillButtonStyle())
                     Button("Disabled") {}.buttonStyle(SecondaryFillButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(SecondaryFillButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(SecondaryFillButtonStyle(compact: true))
                     Button("Hug content") {}.buttonStyle(SecondaryFillButtonStyle(fullWidth: false))
                 }
 
                 section("GhostButtonStyle") {
                     Button("Default") {}.buttonStyle(GhostButtonStyle())
+                    Button("Disabled") {}.buttonStyle(GhostButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(GhostButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(GhostButtonStyle(compact: true))
                 }
 
                 section("GhostAltButtonStyle") {
                     Button("Default") {}.buttonStyle(GhostAltButtonStyle())
+                    Button("Pressed") {}.buttonStyle(GhostAltButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(GhostAltButtonStyle(compact: true))
                 }
             }

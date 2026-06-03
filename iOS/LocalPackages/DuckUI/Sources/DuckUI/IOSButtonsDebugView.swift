@@ -198,27 +198,28 @@ private struct IOSButtonsDebugView: View {
 
     @ViewBuilder
     private func statesStack(label: String, inactive: Bool) -> some View {
+        let title = inactive ? "Inactive" : "Pressed"
         VStack(alignment: .leading, spacing: 12) {
             caption(label)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(BrandButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(PrimaryButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(SecondaryFillButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(GhostButtonStyle(disabled: inactive, pressed: !inactive))
                 .fixedSize(horizontal: true, vertical: false)
 
             Spacer().frame(height: 16)
 
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(PrimaryDestructiveButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(SecondaryDestructiveButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(DestructiveGhostButtonStyle(disabled: inactive, pressed: !inactive))
                 .fixedSize(horizontal: true, vertical: false)
         }

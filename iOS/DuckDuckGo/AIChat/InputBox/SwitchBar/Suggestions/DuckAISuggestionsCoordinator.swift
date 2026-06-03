@@ -113,6 +113,11 @@ final class DuckAISuggestionsCoordinator {
         )
         vc.delegate = self
 
+        vc.onBecameVisible = { [weak self] in
+            guard let self else { return }
+            self.chatManager.refreshSuggestions(query: self.queryProvider())
+        }
+
         // Hide the hatch the moment the user starts typing; restore on backspace-to-empty (mirrors Search-side autocomplete covering NTP).
         textPublisher
             .map { !$0.isEmpty }

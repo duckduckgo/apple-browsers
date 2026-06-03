@@ -54,6 +54,24 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
+    func test_dismissPoseFadesAttachmentsStripOutSoItAnimatesWithTheCollapse() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        sut.addAttachment(makeFileAttachment())
+        flushMainQueue()
+
+        let strip = try XCTUnwrap(firstDescendant(of: UnifiedToggleInputAttachmentsStripView.self, in: sut))
+        XCTAssertEqual(strip.alpha, 1, accuracy: 0.001)
+
+        // The top + toggle-on dismiss pose. Without fading the strip here it stays fully opaque
+        // through the collapse and then blinks out when the container is hidden.
+        sut.applyToggleHideChanges()
+
+        XCTAssertEqual(strip.alpha, 0, accuracy: 0.001)
+    }
+
     func test_attachmentStripScrollsToTrailingEdgeAfterAttachmentLayoutChange() throws {
         let sut = UnifiedToggleInputAttachmentsStripView()
         sut.frame = .zero

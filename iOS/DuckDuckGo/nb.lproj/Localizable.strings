@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Skriv inn et antall dager som ikke er negativt. Installasjonsdatoen blir satt til for det antallet dager siden.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Åpne i en annen app?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Gå tilbake";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Vi prøvde å laste det privat, men det vises ikke.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Vil du åpne denne siden i Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Åpne i Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Dessverre kunne ikke siden lastes inn.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Denne siden lastes bare i Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Åpne i Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Dette nettstedet har et ugyldig sikkerhetssertifikat og kan være utrygt å gå til.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Bruk DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Enkelte nettstedsfunksjoner er kanskje ikke kompatible med denne nettleseren.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Dette nettstedet ønsker å åpnes i Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo kan ikke laste inn denne siden.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nylige behandlingslogger";
@@ -5077,3 +5074,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Chatter";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Chattehistorikk";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Chat-innstillinger";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Ny";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Ny Fire-fane";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Nytt søk";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Ny fane";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Ny talechat";

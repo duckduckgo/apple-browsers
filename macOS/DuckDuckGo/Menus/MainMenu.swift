@@ -157,6 +157,12 @@ final class MainMenu: NSMenu {
         action: #selector(MainViewController.toggleDuckAIChromeSidebarButtonVisibility(_:)),
         keyEquivalent: "U"
     )
+    private let toggleDuckAISidebarMenuItem = NSMenuItem(
+        title: UserText.aiChatShowSidebar,
+        action: #selector(MainViewController.toggleDuckAISidebar(_:)),
+        keyEquivalent: [.option, .command, "l"]
+    )
+    private let toggleDuckAISidebarSeparatorMenuItem = NSMenuItem.separator()
 
     var homeButtonMenuItem = NSMenuItem(title: "HomeButtonPlaceholder")
     var showTabsAndBookmarksBarOnFullScreenMenuItem = NSMenuItem(title: "ShowTabsAndBookmarksBarOnFullScreenMenuItem")
@@ -449,6 +455,8 @@ final class MainMenu: NSMenu {
                 .withImage(DesignSystemImages.Glyphs.Size12.home)
             NSMenuItem.separator()
 
+            toggleDuckAISidebarMenuItem
+            toggleDuckAISidebarSeparatorMenuItem
             toggleDuckAIChromeButtonMenuItem
             toggleDuckAIChromeSidebarButtonMenuItem
             duckAIChromeButtonsSeparatorMenuItem
@@ -873,6 +881,8 @@ final class MainMenu: NSMenu {
     private func updateDuckAIChromeButtonMenuItems() {
         let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
             && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
+        toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
         toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
         toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
         duckAIChromeButtonsSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems

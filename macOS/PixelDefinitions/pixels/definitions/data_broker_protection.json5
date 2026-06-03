@@ -12,7 +12,8 @@
                 "description": "Whether the user is internal",
                 "type": "string",
                 "enum": ["true", "false"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_start": {
@@ -451,7 +452,8 @@
                 "key": "broker_version",
                 "description": "The version of the broker JSON file (unknown when not available)",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation-link_client-received": {

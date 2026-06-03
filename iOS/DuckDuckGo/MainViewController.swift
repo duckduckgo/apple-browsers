@@ -3821,6 +3821,9 @@ extension MainViewController: BrowserChromeDelegate {
             loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
 
         case .askAIChat(let value):
+            // We intentionally don't forward the resolved model config: the suggestion is offered
+            // from Search mode where the model chip is hidden and the user hasn't chosen a model.
+            _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
             openAIChat(value, autoSend: true)
 
         case .unknown(value: let value), .internalPage(title: let value, url: _, _):
@@ -5188,11 +5191,6 @@ extension MainViewController: TabDelegate {
             omniBar.setEditingStateLogoHidden(true)
         }
         newTab()
-    }
-
-    func tabDidRequestNewSearch(_ tab: TabViewController) {
-        // Same as the Duck.ai header Plus-menu "New Search".
-        aiChatTabChatHeaderDidTapNewSearch()
     }
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {

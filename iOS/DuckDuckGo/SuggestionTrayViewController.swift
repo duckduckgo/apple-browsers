@@ -76,6 +76,11 @@ class SuggestionTrayViewController: UIViewController {
     private var autocompleteController: AutocompleteViewController?
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
+
+    /// Allows to defer autocomplete presentation to avoid short UI glitch (blink) when presenting
+    /// autocomplete suggestions when unifiedToggleInput flag is on.
+    var deferAutocompleteReveal = false
+    private var pendingDeferredAutocompleteReveal = false
     private var pendingEscapeHatchModel: EscapeHatchModel?
     private var pendingSuggestionsSectionTitle: String?
     private var pendingFavoritesSectionTitle: String?
@@ -430,7 +435,11 @@ class SuggestionTrayViewController: UIViewController {
                                                     featureDiscovery: featureDiscovery,
                                                     productSurfaceTelemetry: productSurfaceTelemetry)
         controller.suggestionFilter = suggestionFilter
-        install(controller: controller, animated: animated)
+        install(controller: controller, animated: deferAutocompleteReveal ? false : animated)
+        if deferAutocompleteReveal {
+            controller.view.isHidden = true
+            pendingDeferredAutocompleteReveal = true
+        }
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self
         autocompleteController = controller
@@ -441,8 +450,9 @@ class SuggestionTrayViewController: UIViewController {
 
     private func removeAutocomplete(animated: Bool) {
         guard let controller = autocompleteController else { return }
-        removeController(controller, animated: animated)
+        removeController(controller, animated: deferAutocompleteReveal ? false : animated)
         autocompleteController = nil
+        pendingDeferredAutocompleteReveal = false
     }
 
     private func removeNewTabPage(animated: Bool) {
@@ -511,9 +521,15 @@ extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDe
     }
 
     func autocompleteDidReloadResults(_ controller: AutocompleteViewController) {
-        guard controller.suggestionFilter == .urlsOnly else { return }
-        view.isHidden = controller.isEmpty
-        onURLFallbackVisibilityChanged?()
+        if controller.suggestionFilter == .urlsOnly {
+            view.isHidden = controller.isEmpty
+            onURLFallbackVisibilityChanged?()
+            return
+        }
+        if pendingDeferredAutocompleteReveal, controller === autocompleteController {
+            pendingDeferredAutocompleteReveal = false
+            controller.view.isHidden = false
+        }
     }
 
 }

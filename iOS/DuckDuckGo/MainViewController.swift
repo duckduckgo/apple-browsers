@@ -184,8 +184,6 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
-    private lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(featureFlagger: featureFlagger)
-    private let floatingUIChromeStyler = FloatingUIChromeStyler()
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
@@ -6205,15 +6203,18 @@ extension MainViewController {
 
         viewCoordinator.toolbar.barTintColor = theme.barBackgroundColor
         viewCoordinator.toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
-        applyFloatingUIChromeIfNeeded()
 
         viewCoordinator.toolbarTabSwitcherButton.tintColor = UIColor(singleUseColor: .toolbarButton)
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
+
+        // This may move when the feature is further developed.
+        applyFloatingUIIfNeeded()
     }
 
-    private func applyFloatingUIChromeIfNeeded() {
-        floatingUIChromeStyler.applyIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
+    private func applyFloatingUIIfNeeded() {
+        let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
     }
 
 }

@@ -21,8 +21,14 @@ import UIKit
 
 struct FloatingUIChromeStyler {
 
-    func applyIfNeeded(manager: FloatingUIManaging, coordinator: MainViewCoordinator) {
+    func decorateMainViewIfNeeded(manager: FloatingUIManaging, coordinator: MainViewCoordinator) {
         guard manager.isFloatingUIEnabled else { return }
         coordinator.omniBar.barView.backgroundColor = .red
     }
+
+    func decorateTabSwitcherIfNeeded(manager: FloatingUIManaging, view: UIView) {
+        guard manager.isFloatingUIEnabled else { return }
+        view.backgroundColor = .red
+    }
+
 }

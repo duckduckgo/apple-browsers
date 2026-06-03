@@ -220,6 +220,15 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI-functies";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Chats";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Chatgeschiedenis";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Chatinstellingen";
+
 /* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
 "aichat.attachment.file.count.limit" = "Je kunt per gesprek maximaal %d bestanden bijvoegen.";
 
@@ -267,6 +276,21 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Dit bestandstype wordt niet ondersteund. Voeg een %@ toe.";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Nieuw";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Nieuw Fire-tabblad";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Nieuw zoeken";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Nieuw tabblad";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Nieuwe spraakchat";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Voor analytische taken";
@@ -1460,7 +1484,7 @@
 "data.import.passwords.instructions.header" = "Wachtwoorden exporteren";
 
 /* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
-"data.import.passwords.instructions.safari.step1" = "Open ⚙️ Instellingen, typ “Exporteren” in de zoekbalk en kies het resultaat **Exporteren** voor Safari om direct naar de optie te gaan (of ga naar Apps > Safari in Instellingen).";
+"data.import.passwords.instructions.safari.step1" = "Open ⚙️ **Instellingen**, typ “Exporteren” in de zoekbalk en kies het resultaat **Exporteren** voor Safari om direct naar de optie te gaan (of ga naar Apps > Safari in Instellingen).";
 
 /* Text next to selector for which browser to export passwords from (Safari | Chrome) */
 "data.import.passwords.instructions.selector" = "Exporteren vanuit";
@@ -2022,6 +2046,9 @@
 
 /* No comment provided by engineer. */
 "Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Voer een niet-negatief aantal dagen in. De installatiedatum wordt ingesteld op dat aantal dagen geleden.";
 
 /* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
@@ -3421,26 +3448,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Openen in een andere app?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Terug";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "We hebben geprobeerd de pagina in de privémodus te laden, maar hij wordt niet weergegeven.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Wilt u deze pagina openen in Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Open in Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Helaas kon de pagina niet worden geladen.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Deze pagina wordt alleen geladen in Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Open in Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Deze website heeft een ongeldig beveiligingscertificaat en is mogelijk niet veilig.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Blijf in DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Sommige functies van de website zijn mogelijk niet compatibel in deze browser.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Deze site wil Safari openen.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo kan deze pagina niet laden.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Recente verwerkingslogboeken";

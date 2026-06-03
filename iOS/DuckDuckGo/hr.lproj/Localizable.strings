@@ -212,13 +212,22 @@
 "addWidget.settings.secondParagraph.%@" = "Dodirnite gumb plus %@.";
 
 /* No comment provided by engineer. */
-"addWidget.settings.title" = "Pronađi i odaberi DuckDuckGo. Zatim odaberi widget.";
+"addWidget.settings.title" = "Pronađi i odaberi **DuckDuckGo**. Zatim odaberi widget.";
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Jednim dodirom do vaših omiljenih stranica.";
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI značajke";
+
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Čavrljanja";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Povijest čavrljanja";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Postavke čavrljanja";
 
 /* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
 "aichat.attachment.file.count.limit" = "Možeš priložiti samo %d datoteke/a po razgovoru.";
@@ -267,6 +276,21 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Ova vrsta datoteke nije podržana, priloži %@.";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Novo";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Nova Fire kartica";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Novo pretraživanje";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Nova kartica";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Novo glasovno čavrljanje";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Za analitičke zadatke";
@@ -2024,6 +2048,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Unesi nenegativan broj dana. Datum instalacije bit će postavljen na prije toliko dana.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3448,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Otvori u drugoj aplikaciji?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Vrati se";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Pokušali smo ga privatno učitati, ali se ne prikazuje.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Želiš li otvoriti ovu stranicu u Safariju?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Otvori u Safariju";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Nažalost, stranica se nije mogla učitati.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Ova se stranica učitava samo u Safariju";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Otvori u Safariju";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Ovo web-mjesto ima nevažeći sigurnosni certifikat i možda ga nije sigurno posjetiti.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Ostani u DuckDuckGou";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Neke značajke mrežne lokacije možda nisu kompatibilne u ovom pregledniku.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Ova stranica želi se otvoriti u Safariju.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo ne može učitati ovo web-mjesto.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedavni zapisnici obrade";

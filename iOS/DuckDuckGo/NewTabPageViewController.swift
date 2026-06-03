@@ -147,17 +147,16 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        // Dismiss the UTI completion dialog first — sets the seen flag and handles the promo
-        // chain. Must run before the hostingController parent-check below so that check does
-        // not zero isShowingDuckAICompletionDialog before the seen flag is recorded.
-        dismissDuckAICompletionDialogIfNeededOnEditingEnd()
         // In UTI mode the visit-site dialog's hostingController is parented to MainViewController
-        // (not to self).  When navigation replaces this NTP the container can reappear and show
-        // the stale dialog.  Clean it up here; dismissHostingController nils hostingController,
-        // so this guard only fires when the completion-dialog path did NOT already clean up.
+        // (not to self) so it lives in unifiedInputContentContainer.  When navigation replaces
+        // this NTP with a web view or a fresh NTP, the container can reappear later and show the
+        // stale dialog.  Clean it up here before this NTP leaves the screen.
         if let hc = hostingController, hc.parent !== self {
             dismissHostingController(didFinishNTPOnboarding: false)
         }
+        // Dismiss the UTI completion dialog when the NTP leaves the screen (tab switch,
+        // navigation). The dialog is marked as seen so the subscription promo surfaces cleanly.
+        dismissDuckAICompletionDialogIfNeededOnEditingEnd()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -709,7 +708,6 @@ extension NewTabPageViewController {
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
-        hostingController = nil
         if updateUnifiedInputContentOverlaySuppression {
             chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }

@@ -58,8 +58,8 @@ public struct VPNWidgetTunnelController: Sendable {
         // tunnel started solely from the widget, in the window after the flag is withdrawn but
         // before the app next runs and resets the setting, could apply the relaxed value. Changing
         // the toggle happens in VPN settings (in the app), so the app runs whenever the value
-        // changes; acceptable while Strict routing is internal-only. Closing it fully would require
-        // persisting flag availability to shared defaults for this process to read.
+        // changes, which keeps the window small. Closing it fully would require persisting flag
+        // availability to shared defaults for this process to read.
         manager.applyDuckDuckGoConfiguration(from: settings)
         manager.isOnDemandEnabled = true
 

@@ -147,10 +147,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        // In UTI mode the visit-site dialog's hostingController is parented to MainViewController
-        // (not to self) so it lives in unifiedInputContentContainer.  When navigation replaces
-        // this NTP with a web view or a fresh NTP, the container can reappear later and show the
-        // stale dialog.  Clean it up here before this NTP leaves the screen.
+        // Must run before the parent-check below, which would zero isShowingDuckAICompletionDialog
+        // and prevent the seen flag from being set (e.g. on a tab switch without editing ending).
+        dismissDuckAICompletionDialogIfNeededOnEditingEnd()
+        // Clean up any stale hosting controller parented to mainVC before this NTP leaves.
         if let hc = hostingController, hc.parent !== self {
             dismissHostingController(didFinishNTPOnboarding: false)
         }
@@ -483,8 +483,14 @@ extension NewTabPageViewController {
     }
 
     // Mirrors showDuckAIOnboardingCompletionDialog for UTI mode where no editing-state VC exists.
-    // The completion dialog is embedded directly in unifiedInputContentContainer below the UTI bar,
-    // and the onDismiss closure mirrors the legacy path's subscription-promo check.
+    // Uses the same overlay-suppression mechanism as showNextDaxDialogNew:
+    //   • setUnifiedInputContentOverlaySuppressed(true) hides unifiedInputContentContainer so
+    //     the NTP (contentContainer) shows through, keeping the dialog visible while the address
+    //     bar is active.  dismissHostingController re-enables the overlay on teardown.
+    //   • A single copy in self.view.superview (contentContainer's plain UIView) avoids the
+    //     nested-UIHostingController warning from adding _UIHostingView into another HC's view.
+    // viewWillDisappear ensures cleanup on any navigation or tab switch.
+    // The onDismiss closure mirrors the legacy path's subscription-promo check.
     private func showDuckAIOnboardingCompletionDialogInUTI(
         mainVC: MainViewController,
         coordinator: UnifiedToggleInputCoordinator,
@@ -500,6 +506,10 @@ extension NewTabPageViewController {
         setLogoHidden(true)
         coordinator.contentViewController.setLogoHidden(true)
         view.alpha = 1
+        // Mirror showNextDaxDialogNew: suppress the UTI content overlay so the NTP
+        // (contentContainer) remains visible while the address bar is active.
+        // dismissHostingController re-enables the overlay when the dialog is torn down.
+        chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
 
         let onDismiss = { [weak self, weak mainVC, weak coordinator] in
             guard let self else { return }
@@ -567,36 +577,26 @@ extension NewTabPageViewController {
             }
         }
 
-        let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
-        let hostingController = UIHostingController(rootView: root)
-        hostingController.view.backgroundColor = UIColor.clear
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        guard let container = mainVC.viewCoordinator.unifiedInputContentContainer else {
-            assertionFailure("unifiedInputContentContainer is nil in UTI completion dialog path")
-            isShowingDuckAICompletionDialog = false
-            setLogoHidden(false)
-            coordinator.contentViewController.setLogoHidden(false)
-            return
-        }
-        self.hostingController = hostingController
-        mainVC.addChild(hostingController)
-        container.addSubview(hostingController.view)
-        // In top-bar mode the UTI bar is above the content area: pin the dialog below the bar.
-        // In bottom-bar mode the UTI bar is at the bottom: pin the dialog above the bar so it
-        // fills the visible content area instead of collapsing to zero height.
-        let isBottomBar = coordinator.cardPosition.isBottom
+        // NTP copy — overlays the NTP view, visible after the omnibar closes.
+        // Parented to mainVC (not self) because self is UIHostingController<NewTabPageView>:
+        // adding one _UIHostingView as a subview of another UIHostingController.view is
+        // unsupported and triggers a UIKit warning. self.view.superview is the plain UIView
+        // of UnifiedInputContentContainerViewController, so it is safe to host into.
+        let ntpRoot = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
+        let ntpHC = UIHostingController(rootView: ntpRoot)
+        ntpHC.view.backgroundColor = .clear
+        ntpHC.view.translatesAutoresizingMaskIntoConstraints = false
+        self.hostingController = ntpHC
+        let ntpContainer: UIView = view.superview ?? mainVC.view
+        mainVC.addChild(ntpHC)
+        ntpContainer.addSubview(ntpHC.view)
         NSLayoutConstraint.activate([
-            isBottomBar
-                ? hostingController.view.topAnchor.constraint(equalTo: container.topAnchor)
-                : hostingController.view.topAnchor.constraint(equalTo: coordinator.viewController.view.bottomAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            isBottomBar
-                ? hostingController.view.bottomAnchor.constraint(equalTo: coordinator.viewController.view.topAnchor)
-                : hostingController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            ntpHC.view.topAnchor.constraint(equalTo: view.topAnchor),
+            ntpHC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            ntpHC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            ntpHC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
-        hostingController.didMove(toParent: mainVC)
+        ntpHC.didMove(toParent: mainVC)
     }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
@@ -705,6 +705,7 @@ extension NewTabPageViewController {
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
+        hostingController = nil
         if updateUnifiedInputContentOverlaySuppression {
             chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }
@@ -726,6 +727,9 @@ extension NewTabPageViewController {
 
     func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {
         guard isShowingDuckAICompletionDialog else { return }
+        // Mark EOJ seen before peeking subscriptionPromotionPending — the promo requires
+        // finalDaxDialogSeen == true, so checking before this call always returns false.
+        daxDialogsManager.setFinalOnboardingDialogSeen()
         let promoPending = daxDialogsManager.subscriptionPromotionPending
         dismissHostingController(didFinishNTPOnboarding: true)
         if !promoPending {
@@ -739,6 +743,13 @@ extension NewTabPageViewController {
     private func notifyDuckAICompletionDismissedIfNeeded() {
         guard isShowingDuckAICompletionDialog else { return }
         isShowingDuckAICompletionDialog = false
+        // Mirror dismissDuckAICompletionDialogIfNeededOnEditingEnd: mark EOJ seen and
+        // dismiss the dialog system so the subscription promo state is consistent
+        // regardless of whether the user tapped dismiss or navigated away.
+        daxDialogsManager.setFinalOnboardingDialogSeen()
+        if !daxDialogsManager.subscriptionPromotionPending {
+            daxDialogsManager.dismiss()
+        }
         view.alpha = 1
         delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
     }

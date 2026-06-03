@@ -47,10 +47,6 @@ private struct PrimaryButtonColors {
         textDisabled: Color(designSystemColor: .buttonsWhite).opacity(0.36)
     )
 
-    // Rebranded sets keep `disabled`/`textDisabled` equal to their active counterparts;
-    // `makeRebrandedPrimaryBody` ignores those fields and dims the composite via a single
-    // outer `.opacity(Consts.disabledOpacity)` instead. The fields stay on the struct only
-    // for compatibility with legacy bodies that still consume them.
     static let rebrandedPrimary = PrimaryButtonColors(
         standard: Color(singleUseColor: .rebranding(.accentPrimary)),
         pressed: Color(singleUseColor: .rebranding(.accentPrimaryPressed)),
@@ -792,19 +788,17 @@ private enum Consts {
     static let disabledOpacity: CGFloat = 0.36
 }
 
-// MARK: - Previews
+// MARK: - Debug galleries
 
-#if DEBUG
-
-/// Scoped override of `AppRebrand.isAppRebranded` for the preview's lifetime.
+/// Scoped override of `AppRebrand.isAppRebranded` for the host view's lifetime.
 ///
-/// Captures the previous closure at init and restores it on deinit, so the preview
-/// doesn't permanently mutate global state. Held by `@StateObject` so its lifetime
-/// matches the view's, and its mutation runs once (in `init`, before `body`) rather
-/// than on every body re-evaluation.
+/// Captures the previous closure at init and restores it on deinit, so it doesn't
+/// permanently mutate global state. Held by `@StateObject` so its lifetime matches
+/// the view's, and its mutation runs once (in `init`, before `body`) rather than on
+/// every body re-evaluation.
 ///
-/// Internal (not `private`) so debug-preview files in the same module can reuse it
-/// — e.g. `IOSButtonsDebugView.swift`.
+/// Internal so the galleries (Xcode previews and the runtime debug menu) can reuse it
+/// within the module, e.g. `IOSButtonsDebugView.swift`.
 final class RebrandPreviewOverride: ObservableObject {
     private let previous: () -> Bool
 
@@ -818,17 +812,17 @@ final class RebrandPreviewOverride: ObservableObject {
     }
 }
 
-private struct ButtonStylesGallery: View {
+public struct ButtonStylesGallery: View {
     let isRebranded: Bool
 
     @StateObject private var override: RebrandPreviewOverride
 
-    init(isRebranded: Bool) {
+    public init(isRebranded: Bool) {
         self.isRebranded = isRebranded
         _override = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
     }
 
-    var body: some View {
+    public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 section("PrimaryButtonStyle") {
@@ -906,7 +900,7 @@ private struct ButtonStylesGallery: View {
     @ViewBuilder
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+            Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
             content()
@@ -914,23 +908,28 @@ private struct ButtonStylesGallery: View {
     }
 }
 
+#if DEBUG
 #Preview("Buttons Legacy / Light") {
     ButtonStylesGallery(isRebranded: false)
+        .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
 }
 
 #Preview("Buttons Legacy / Dark") {
     ButtonStylesGallery(isRebranded: false)
+        .environment(\.colorScheme, .dark)
         .preferredColorScheme(.dark)
 }
 
 #Preview("Buttons Rebranded / Light") {
     ButtonStylesGallery(isRebranded: true)
+        .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
 }
 
 #Preview("Buttons Rebranded / Dark") {
     ButtonStylesGallery(isRebranded: true)
+        .environment(\.colorScheme, .dark)
         .preferredColorScheme(.dark)
 }
 

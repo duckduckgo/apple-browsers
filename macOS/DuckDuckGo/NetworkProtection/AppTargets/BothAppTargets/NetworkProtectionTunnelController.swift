@@ -211,26 +211,16 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private func handleStatusChange(_ notification: Notification) {
         Logger.networkProtection.log("VPN handle status change: \(notification.debugDescription, privacy: .public)")
         guard let session = (notification.object as? NETunnelProviderSession),
-              session.status != previousStatus,
-              let manager = session.manager as? NETunnelProviderManager else {
-
+              session.status != previousStatus else {
             return
         }
 
         Task { @MainActor in
             previousStatus = session.status
 
-            switch session.status {
-            case .connected:
-                if #unavailable(macOS 12) {
-                    try await enableOnDemand(tunnelManager: manager)
-                }
-            case .invalid:
+            if session.status == .invalid {
                 clearInternalManager()
-            default:
-                break
             }
-
         }
     }
 
@@ -802,11 +792,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             Logger.networkProtection.log("🚀 Starting NetworkProtectionTunnelController, options: \(options, privacy: .public)")
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
-
-            if #available(macOS 12, *) {
-                try await startupMonitor.waitForStartSuccess(tunnelManager)
-                try await self.enableOnDemand(tunnelManager: tunnelManager)
-            }
+            try await startupMonitor.waitForStartSuccess(tunnelManager)
+            try await self.enableOnDemand(tunnelManager: tunnelManager)
 
             self.connectionWideEventData?.tunnelStartDuration?.complete()
         } catch {

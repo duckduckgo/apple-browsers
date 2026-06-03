@@ -270,10 +270,14 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     @objc private func onAIChatPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .openAIChatFromNavigationBarShortcut)
         delegate?.tabsBarDidRequestAIChat(self)
     }
 
     @objc private func onAIChatContextualSheetIconPressed() {
+        if aiChatChip.sheetState == .closed {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarContextualSheetOpened)
+        }
         delegate?.tabsBarDidRequestToggleAIChatContextualSheet(self)
     }
 
@@ -459,12 +463,15 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private func makeAIChatChipMenu() -> UIMenu {
         UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
+                DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpened)
                 completion([
                     UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
+                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
                         self?.aiChatSettings?.enableAIChatNavigationBarUserSettings(enable: false)
                     },
                     UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
                         guard let self else { return }
+                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpenSettingsTapped)
                         self.delegate?.tabsBarDidRequestOpenAISettings(self)
                     }
                 ])

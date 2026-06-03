@@ -33,7 +33,6 @@ final class AddressBarTextEditor: NSTextView {
         return addressBar
     }
 
-    @available(macOS 12.0, *)
     override var textLayoutManager: NSTextLayoutManager? {
         // uses NSTextLayoutManager by default in macOS 13, ignored in macOS 12
         if let textLayoutManager = super.textLayoutManager,

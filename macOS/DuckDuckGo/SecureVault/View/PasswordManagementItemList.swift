@@ -527,12 +527,8 @@ private struct PasswordManagementAddButton: View {
 private struct HideMenuIndicatorModifier: ViewModifier {
 
     func body(content: Content) -> some View {
-        if #available(macOS 12, *) {
-            content
-                .menuIndicator(.hidden)
-        } else {
-            content
-        }
+        content
+            .menuIndicator(.hidden)
     }
 
 }

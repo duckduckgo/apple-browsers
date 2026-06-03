@@ -613,7 +613,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 internalUserDecider: internalUserDecider,
                 privacyConfigManager: privacyConfigurationManager,
                 localOverrides: featureFlagOverrides,
-                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
+                allowOverrides: { [internalUserDecider, isRunningUITests=[.uiTests, .uiTestsOnboarding].contains(AppVersion.runType)] in
                     internalUserDecider.isInternalUser || isRunningUITests
                 },
                 experimentManager: ExperimentCohortsManager(
@@ -763,9 +763,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let isInternalUserEnabled = { featureFlagger.internalUserDecider.isInternalUser }
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: pixelHandler)
-        let defaultSubscriptionManager: DefaultSubscriptionManager
-        if #available(macOS 12.0, *) {
-            defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
+        let defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                                                                       subscriptionFeatureFlagger: subscriptionFeatureFlagger,
                                                                                                                       pendingTransactionHandler: pendingTransactionHandler),
                                                                     oAuthClient: authClient,
@@ -774,23 +772,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     subscriptionEnvironment: subscriptionEnvironment,
                                                                     pixelHandler: pixelHandler,
                                                                     isInternalUserEnabled: isInternalUserEnabled)
-        } else {
-            defaultSubscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
-                                                                    userDefaults: subscriptionUserDefaults,
-                                                                    subscriptionEndpointService: subscriptionEndpointService,
-                                                                    subscriptionEnvironment: subscriptionEnvironment,
-                                                                    pixelHandler: pixelHandler,
-                                                                    isInternalUserEnabled: isInternalUserEnabled)
-        }
 
         // Expired refresh token recovery
-        if #available(iOS 15.0, macOS 12.0, *) {
-            let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
-                                                         storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
-                                                         pendingTransactionHandler: pendingTransactionHandler)
-            defaultSubscriptionManager.tokenRecoveryHandler = {
-                try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
-            }
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
+                                                     storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
+                                                     pendingTransactionHandler: pendingTransactionHandler)
+        defaultSubscriptionManager.tokenRecoveryHandler = {
+            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
         }
 
         subscriptionManager = defaultSubscriptionManager
@@ -2392,7 +2380,7 @@ extension AppDelegate: UserScriptDependenciesProviding {}
 private extension FeatureFlagLocalOverrides {
 
     func applyUITestsFeatureFlagsIfNeeded() {
-        guard AppVersion.runType == .uiTests else { return }
+        guard [.uiTests, .uiTestsOnboarding].contains(AppVersion.runType) else { return }
 
         for item in ProcessInfo().environment["FEATURE_FLAGS", default: ""].split(separator: " ") {
             let keyValue = item.split(separator: "=")

@@ -513,8 +513,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         sut.fireCustomStatsPixelsIfNeeded()
 
         // Then
-        XCTAssertTrue(database.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
-        XCTAssertEqual(database.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers for custom stats")
+        XCTAssertTrue(database.wasFetchActiveBrokerProfileQueryDataCalled, "Should fetch active broker data for custom stats")
 
         // Verify the trigger was set to fire custom stats pixels
         XCTAssertTrue(repository.didSetCustomStatsPixelsLastSentTimestamp, "Should update timestamp after firing")

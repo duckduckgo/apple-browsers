@@ -951,7 +951,7 @@ class MainViewController: UIViewController {
         bindAIChatChromeChipToCurrentTab()
     }
 
-    /// Rebinds chip subscriptions to the current tab's URL + contextual sheet publishers.
+    /// Rebinds the chip's contextual-sheet subscription to the current tab.
     /// Called whenever the active tab changes (transitionTo) or the tabs bar is created.
     func bindAIChatChromeChipToCurrentTab() {
         aiChatChromeChipCancellables.removeAll()
@@ -960,11 +960,6 @@ class MainViewController: UIViewController {
             refreshAIChatChromeChip()
             return
         }
-
-        currentTab.urlPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
-            .store(in: &aiChatChromeChipCancellables)
 
         currentTab.aiChatContextualSheetCoordinator.$isSheetPresented
             .receive(on: DispatchQueue.main)
@@ -976,16 +971,8 @@ class MainViewController: UIViewController {
 
     private func refreshAIChatChromeChip() {
         guard let tabsBarController else { return }
-        // Read from the Tab model (always available); the VC may not be instantiated yet.
-        let currentTabModel = tabManager.currentTabsModel.currentTab
-        let isAIChat = currentTabModel?.isAITab ?? false
-        let isHome = currentTabModel?.isHomeTab ?? false
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
-        tabsBarController.updateAIChatChipState(
-            isCurrentTabAIChat: isAIChat,
-            isCurrentTabHome: isHome,
-            isContextualSheetPresented: isSheetPresented
-        )
+        tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
     }
 
     func startAddFavoriteFlow() {

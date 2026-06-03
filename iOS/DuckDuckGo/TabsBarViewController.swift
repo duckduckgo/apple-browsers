@@ -227,13 +227,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     /// Pushes per-tab state into the chip. Called by `MainViewController` when the
-    /// current tab changes, its URL changes (Duck.ai vs not), or its contextual sheet
-    /// is presented/dismissed.
-    func updateAIChatChipState(isCurrentTabAIChat: Bool, isCurrentTabHome: Bool, isContextualSheetPresented: Bool) {
+    /// current tab changes or its contextual sheet is presented/dismissed.
+    func updateAIChatChipState(isContextualSheetPresented: Bool) {
         aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
-        // The icon half toggles the page-context sheet; hide it where there's no page to attach
-        // — Duck.ai tabs and the New Tab Page.
-        aiChatChip.setIconVisible(!isCurrentTabAIChat && !isCurrentTabHome)
     }
 
     @IBAction func onFireButtonPressed() {

@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import WebKit
 import os.log
 import PixelKit
@@ -142,18 +143,15 @@ public class WebCacheManager: WebsiteDataManaging {
     let dataStoreIDManager: DataStoreIDManaging
     let dataStoreCleaner: WebsiteDataStoreCleaning
     let observationsCleaner: ObservationsDataCleaning
-    let isFireproofingETLDPlus1Enabled: () -> Bool
 
     public init(cookieStorage: MigratableCookieStorage,
                 fireproofing: Fireproofing,
                 dataStoreIDManager: DataStoreIDManaging,
-                isFireproofingETLDPlus1Enabled: @escaping () -> Bool = { true },
                 dataStoreCleaner: WebsiteDataStoreCleaning = DefaultWebsiteDataStoreCleaner(),
                 observationsCleaner: ObservationsDataCleaning = DefaultObservationsDataCleaner()) {
         self.cookieStorage = cookieStorage
         self.fireproofing = fireproofing
         self.dataStoreIDManager = dataStoreIDManager
-        self.isFireproofingETLDPlus1Enabled = isFireproofingETLDPlus1Enabled
         self.dataStoreCleaner = dataStoreCleaner
         self.observationsCleaner = observationsCleaner
     }
@@ -242,8 +240,6 @@ extension WebCacheManager {
             return true
         }
 
-        guard isFireproofingETLDPlus1Enabled() else { return false }
-
         let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
         guard let cookieETLDPlus1 = tld.eTLDplus1(cookieDomain) else { return false }
         return domains.contains(where: { tld.eTLDplus1($0) == cookieETLDPlus1 })
@@ -273,7 +269,7 @@ extension WebCacheManager {
     }
 
     private func removeContainersIfNeeded(previousCount: Int) async {
-        await dataStoreCleaner.removeAllContainersAfterDelay(previousCount: previousCount)
+        _ = await dataStoreCleaner.removeAllContainersAfterDelay(previousCount: previousCount)
     }
 
     private func clearData(inDataStore dataStore: any DDGWebsiteDataStore,

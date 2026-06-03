@@ -25,8 +25,10 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
+    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12206-52621&m=dev
     struct OnboardingSubscriptionPromoDialog: View {
         @Environment(\.onboardingTheme) private var theme
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
         let title: String
         let message: AttributedString
@@ -34,40 +36,68 @@ extension OnboardingRebranding {
         let dismissText: String
         let proceedAction: () -> Void
         let dismissAction: () -> Void
-        let onManualDismiss: () -> Void
+        /// When `nil` the X dismiss button is hidden (e.g. chat-path onboarding).
+        let onManualDismiss: (() -> Void)?
+
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-FloatingLeft",
+            size: CGSize(width: 112, height: 222),
+            position: .left(bottomPadding: 18)
+        )
 
         var body: some View {
-            ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                    VStack {
-                        OnboardingRebrandingImages.Contextual.promoShield
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 96, height: 96)
-                        OnboardingRebranding.ContextualDaxDialogContent(
-                            title: AttributedString(title),
-                            titleTextAlignment: .center,
-                            message: message,
-                            messageTextAlignment: .center
-                        ) {
-                            VStack(spacing: 8) {
-                                Button(action: proceedAction) {
-                                    Text(proceedText)
-                                }
-                                .buttonStyle(theme.primaryButtonStyle.style)
-
-                                Button(action: dismissAction) {
-                                    Text(dismissText)
-                                }
-                                .buttonStyle(theme.secondaryButtonStyle.style)
-                            }
-                        }
-                    }
+            ZStack(alignment: .top) {
+                if !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                    DaxAnimationOverlay(animation: Self.daxAnimation, playForward: true, isExiting: false)
                 }
-                .padding(theme.contextualOnboardingMetrics.containerPadding)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                if let onManualDismiss {
+                    OnboardingBubbleView.withDismissButton(
+                        tailPosition: OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? nil : .bottom(offset: 0.2, direction: .leading),
+                        onDismiss: onManualDismiss
+                    ) {
+                        promoContent
+                    }
+                    .padding(theme.contextualOnboardingMetrics.containerPadding)
+                } else {
+                    OnboardingBubbleView(tailPosition: nil) {
+                        promoContent
+                    }
+                    .padding(theme.contextualOnboardingMetrics.containerPadding)
+                }
             }
             .scrollIfNeeded()
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+            } // ZStack
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+
+        private var promoContent: some View {
+            VStack {
+                OnboardingRebrandingImages.Contextual.promoShield
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 96, height: 96)
+                OnboardingRebranding.ContextualDaxDialogContent(
+                    title: AttributedString(title),
+                    titleTextAlignment: .center,
+                    message: message,
+                    messageTextAlignment: .center
+                ) {
+                    VStack(spacing: 8) {
+                        Button(action: proceedAction) {
+                            Text(proceedText)
+                        }
+                        .buttonStyle(theme.primaryButtonStyle.style)
+
+                        Button(action: dismissAction) {
+                            Text(dismissText)
+                        }
+                        .buttonStyle(theme.secondaryButtonStyle.style)
+                    }
+                }
+            }
         }
     }
 

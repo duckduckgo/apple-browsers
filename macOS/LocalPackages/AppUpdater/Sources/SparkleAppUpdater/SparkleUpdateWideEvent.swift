@@ -18,6 +18,7 @@
 
 import AppUpdaterShared
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import Persistence
@@ -201,7 +202,7 @@ public final class SparkleUpdateWideEvent {
         }
         defer { currentFlowID = nil }
 
-        var data = flowData
+        let data = flowData
         data.totalDuration?.complete()
         data.downloadDuration?.complete()
         data.extractionDuration?.complete()

@@ -182,6 +182,18 @@ extension BookmarksBarCollectionViewItem: MouseOverViewDelegate {
         }
     }
 
+    // Only accept first-mouse when our bookmarks-bar custom-window menu panel currently
+    // holds key status (so re-clicking the bar folder toggles the menu closed in one
+    // click). Without this gate the override would also fire when the main window lost
+    // key for unrelated reasons — e.g., another app is focused — and a single click
+    // would both activate the window and trigger the action instead of the standard
+    // two-step behavior. The `BookmarksBarMenuWindow` child only exists on the
+    // custom-window path (the legacy NSPopover path doesn't use it), so this naturally
+    // tracks the feature flag without an explicit check.
+    func mouseOverView(_ mouseOverView: MouseOverView, acceptsFirstMouseFor event: NSEvent?) -> Bool {
+        view.window?.childWindows?.contains(where: { $0 is BookmarksBarMenuWindow }) ?? false
+    }
+
     func mouseClickView(_ mouseClickView: MouseClickView, otherMouseDownEvent: NSEvent) {
         if case .middle = otherMouseDownEvent.button {
             delegate?.bookmarksBarCollectionViewItemClicked(self)

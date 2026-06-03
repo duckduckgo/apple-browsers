@@ -57,7 +57,9 @@ final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
     }
 
     private var factory: ContextualDaxDialogsFactory {
-        if featureFlagger.isFeatureOn(.onboardingRebranding) {
+        // Rebranded panel layout breaks on macOS 12 and below. For now, we'll just
+        // ensure we show the legacy contextual dialogs on those versions.
+        if #available(macOS 13.0, *), featureFlagger.isFeatureOn(.onboardingRebranding) {
             rebrandedDaxDialogsFactory
         } else {
             legacyDaxDialogsFactory
@@ -67,4 +69,5 @@ final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
         factory.makeView(for: type, delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onSuggestionPressed: onSuggestionPressed)
     }
+
 }

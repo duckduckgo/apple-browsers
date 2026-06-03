@@ -18,6 +18,38 @@
 
 import Foundation
 
+public enum MessageTrigger: String, Codable {
+    case afterIdle = "after_idle"
+}
+
+/// Controls which messages are returned based on their `displayConditions.trigger` value.
+public enum TriggerFilter: Equatable {
+    /// Matches every message regardless of trigger (used by prefetch and cleanup paths).
+    case any
+    /// Matches only messages that have no trigger (i.e. `displayConditions` is nil or its `trigger` is nil).
+    case noTrigger
+    /// Matches only messages whose trigger equals the associated value.
+    case specific(MessageTrigger)
+
+    func matches(_ trigger: MessageTrigger?) -> Bool {
+        switch self {
+        case .any: return true
+        case .noTrigger: return trigger == nil
+        case .specific(let required): return trigger == required
+        }
+    }
+}
+
+public struct DisplayConditions: Codable, Equatable {
+    public let trigger: MessageTrigger?
+    public let dismissAfterDaysShown: Int?
+
+    public init(trigger: MessageTrigger? = nil, dismissAfterDaysShown: Int? = nil) {
+        self.trigger = trigger
+        self.dismissAfterDaysShown = dismissAfterDaysShown
+    }
+}
+
 public struct RemoteMessageModel: Equatable, Codable {
 
     public let id: String
@@ -27,14 +59,22 @@ public struct RemoteMessageModel: Equatable, Codable {
     public let matchingRules: [Int]
     public let exclusionRules: [Int]
     public let isMetricsEnabled: Bool
+    public let displayConditions: DisplayConditions?
 
-    public init(id: String, surfaces: RemoteMessageSurfaceType, content: RemoteMessageModelType?, matchingRules: [Int], exclusionRules: [Int], isMetricsEnabled: Bool) {
+    public init(id: String,
+                surfaces: RemoteMessageSurfaceType,
+                content: RemoteMessageModelType?,
+                matchingRules: [Int],
+                exclusionRules: [Int],
+                isMetricsEnabled: Bool,
+                displayConditions: DisplayConditions? = nil) {
         self.id = id
         self.surfaces = surfaces
         self.content = content
         self.matchingRules = matchingRules
         self.exclusionRules = exclusionRules
         self.isMetricsEnabled = isMetricsEnabled
+        self.displayConditions = displayConditions
     }
 
     enum CodingKeys: CodingKey {
@@ -44,6 +84,7 @@ public struct RemoteMessageModel: Equatable, Codable {
         case matchingRules
         case exclusionRules
         case isMetricsEnabled
+        case displayConditions
     }
 
     public init(from decoder: Decoder) throws {
@@ -54,6 +95,7 @@ public struct RemoteMessageModel: Equatable, Codable {
         self.matchingRules = try container.decode([Int].self, forKey: .matchingRules)
         self.exclusionRules = try container.decode([Int].self, forKey: .exclusionRules)
         self.isMetricsEnabled = try container.decodeIfPresent(Bool.self, forKey: .isMetricsEnabled) ?? true
+        self.displayConditions = try container.decodeIfPresent(DisplayConditions.self, forKey: .displayConditions)
     }
 
     mutating func localizeContent(translation: RemoteMessageResponse.JsonContentTranslation) {
@@ -104,19 +146,21 @@ public struct RemoteMessageModel: Equatable, Codable {
 
                 let translatedItemType: RemoteMessageModelType.ListItem.ListItemType
                 switch item.type {
-                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, primaryActionText, primaryAction):
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, imageUrl, primaryActionText, primaryAction):
                     translatedItemType = .featuredTwoLinesSingleActionItem(
                         titleText: translatedItem.titleText ?? titleText,
                         descriptionText: translatedItem.descriptionText ?? descriptionText,
                         placeholderImage: placeholderImage,
+                        imageUrl: imageUrl,
                         primaryActionText: translatedItem.primaryActionText ?? primaryActionText,
                         primaryAction: primaryAction
                     )
-                case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
+                case let .twoLinesItem(titleText, descriptionText, placeholderImage, imageUrl, action):
                     translatedItemType = .twoLinesItem(
                         titleText: translatedItem.titleText ?? titleText,
                         descriptionText: translatedItem.descriptionText ?? descriptionText,
                         placeholderImage: placeholderImage,
+                        imageUrl: imageUrl,
                         action: action
                     )
                 case let .titledSection(titleText, itemIDs):
@@ -222,6 +266,34 @@ extension RemoteMessageModelType {
             return imageUrl
         }
     }
+
+    /// All remote image URLs referenced by this message: the header URL plus, for
+    /// `cardsList` messages, every per-item `imageUrl` in document order. Used by callers
+    /// (e.g. prefetchers) that need to warm the image cache for the whole message.
+    public var allImageUrls: [URL] {
+        var urls: [URL] = []
+        if let headerUrl = imageUrl {
+            urls.append(headerUrl)
+        }
+        if case let .cardsList(_, _, _, items, _, _) = self {
+            urls.append(contentsOf: items.compactMap(\.type.imageUrl))
+        }
+        return urls
+    }
+}
+
+extension RemoteMessageModelType.ListItem.ListItemType {
+    /// The remote image URL associated with this list item, or nil for types that don't
+    /// support per-item images (`titledSection`).
+    var imageUrl: URL? {
+        switch self {
+        case .titledSection:
+            return nil
+        case let .twoLinesItem(_, _, _, imageUrl, _),
+             let .featuredTwoLinesSingleActionItem(_, _, _, imageUrl, _, _):
+            return imageUrl
+        }
+    }
 }
 
 public extension RemoteMessageModelType {
@@ -248,18 +320,20 @@ public extension RemoteMessageModelType.ListItem {
         /// - Parameters:
         ///   - titleText: The main title of the card (required, translatable)
         ///   - descriptionText: Supporting description text (required, translatable)
-        ///   - placeholderImage: Image to display alongside the text
+        ///   - placeholderImage: Local placeholder image, shown when no remote image is available or while one loads
+        ///   - imageUrl: Optional remote image URL. When present, takes precedence over `placeholderImage`
         ///   - primaryActionText: Optional title for the action triggered when the card is tapped
         ///   - primaryAction: Optional action triggered when the card is tapped
-        case featuredTwoLinesSingleActionItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, primaryActionText: String?, primaryAction: RemoteAction?)
+        case featuredTwoLinesSingleActionItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, imageUrl: URL?, primaryActionText: String?, primaryAction: RemoteAction?)
 
         /// Represents a standard two-line card with an icon, title, description, and optional action.
         /// - Parameters:
         ///   - titleText: The main title of the card (required, translatable)
         ///   - descriptionText: Supporting description text (required, translatable)
-        ///   - placeholderImage: Image to display alongside the text
+        ///   - placeholderImage: Local placeholder image, shown when no remote image is available or while one loads
+        ///   - imageUrl: Optional remote image URL. When present, takes precedence over `placeholderImage`
         ///   - action: Optional action triggered when the card is tapped
-        case twoLinesItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, action: RemoteAction?)
+        case twoLinesItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, imageUrl: URL?, action: RemoteAction?)
 
         /// Represents a section header with a title and an array of item IDs belonging to this section.
         /// - Parameters:
@@ -282,6 +356,7 @@ public extension RemoteMessageModelType.ListItem {
 public enum NavigationTarget: String, Codable, Equatable {
     case duckAISettings = "duckai.settings"
     case settings
+    case settingsGeneral = "settings.general"
     case feedback
     case sync
     case importPasswords = "import.passwords"
@@ -324,4 +399,5 @@ public enum RemotePlaceholder: String, Codable, CaseIterable {
     case veryCriticalUpdate = "RemoteMessageVeryCriticalUpdate"
     case newTabOptions = "RemoteMessageNewTabOptions"
     case splitBarMobile = "RemoteMessageSplitBarMobile"
+    case youtubeNew = "RemoteMessageYoutubeNew" // macOS only
 }

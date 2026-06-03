@@ -77,6 +77,9 @@ struct PostIdleSessionInstrumentationTests {
         sut.pageEngaged()
         sut.toggleUsed()
         sut.backPressed()
+        sut.openingScreenChanged()
+        sut.closeTabTapped()
+        sut.burnTabTapped()
         #expect(wideEvent.updates.isEmpty)
     }
 
@@ -153,6 +156,45 @@ struct PostIdleSessionInstrumentationTests {
         sut.backPressed()
         let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
         #expect(last?.backPressed == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("openingScreenChanged sets flag and marks first interaction", .timeLimit(.minutes(1)))
+    func openingScreenChangedSetsFlagsAndFirstInteraction() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(surface: .ntp)
+        clock.advance(by: 0.75)
+        sut.openingScreenChanged()
+
+        let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
+        #expect(last?.openingScreenChanged == true)
+        #expect(last?.firstInteractionInterval.end == clock.now)
+    }
+
+    @available(iOS 16, *)
+    @Test("closeTabTapped sets closeTabTapped=true and marks first interaction", .timeLimit(.minutes(1)))
+    func closeTabTappedSetsFlagAndFirstInteraction() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(surface: .ntp)
+        clock.advance(by: 0.5)
+        sut.closeTabTapped()
+
+        let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
+        #expect(last?.closeTabTapped == true)
+        #expect(last?.firstInteractionInterval.end == clock.now)
+    }
+
+    @available(iOS 16, *)
+    @Test("burnTabTapped sets burnTabTapped=true and marks first interaction", .timeLimit(.minutes(1)))
+    func burnTabTappedSetsFlagAndFirstInteraction() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(surface: .ntp)
+        clock.advance(by: 0.75)
+        sut.burnTabTapped()
+
+        let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
+        #expect(last?.burnTabTapped == true)
+        #expect(last?.firstInteractionInterval.end == clock.now)
     }
 
     @available(iOS 16, *)
@@ -267,5 +309,72 @@ struct PostIdleSessionInstrumentationTests {
         sut.sessionCancelledByBackground()
         sut.sessionCancelledByBackground()
         #expect(wideEvent.completions.count == 1)
+    }
+
+    // MARK: - Orphan cleanup
+
+    @available(iOS 16, *)
+    @Test("sessionStarted completes orphaned flows as UNKNOWN with app_terminated", .timeLimit(.minutes(1)))
+    func sessionStartedCompletesOrphansAsAppTerminated() {
+        let (sut, wideEvent, _) = makeSUT()
+        let orphan = PostIdleSessionWideEventData(surface: .ntp)
+        wideEvent.startFlow(orphan)
+
+        sut.sessionStarted(surface: .ntp)
+
+        let orphanCompletion = wideEvent.completions.first {
+            ($0.0 as? PostIdleSessionWideEventData)?.globalData.id == orphan.globalData.id
+        }
+        guard let orphanCompletion else {
+            Issue.record("Expected the orphan to be completed")
+            return
+        }
+        if case .unknown(let reason) = orphanCompletion.1 {
+            #expect(reason == PostIdleSessionWideEventData.appTerminatedReason)
+        } else {
+            Issue.record("Expected .unknown status, got \(orphanCompletion.1)")
+        }
+    }
+
+    @available(iOS 16, *)
+    @Test("Orphan cleanup happens before the new flow is started", .timeLimit(.minutes(1)))
+    func orphanCleanupHappensBeforeNewFlowStarts() {
+        let (sut, wideEvent, _) = makeSUT()
+        let orphan = PostIdleSessionWideEventData(surface: .ntp)
+        wideEvent.startFlow(orphan)
+
+        sut.sessionStarted(surface: .lut)
+
+        #expect(wideEvent.started.count == 2)
+        #expect((wideEvent.started[1] as? PostIdleSessionWideEventData)?.surface == .lut)
+        let orphanCompleted = wideEvent.completions.contains {
+            ($0.0 as? PostIdleSessionWideEventData)?.globalData.id == orphan.globalData.id
+        }
+        #expect(orphanCompleted)
+    }
+
+    @available(iOS 16, *)
+    @Test("Multiple orphans are all completed", .timeLimit(.minutes(1)))
+    func multipleOrphansAllCompleted() {
+        let (sut, wideEvent, _) = makeSUT()
+        let firstOrphan = PostIdleSessionWideEventData(surface: .ntp)
+        let secondOrphan = PostIdleSessionWideEventData(surface: .lut)
+        wideEvent.startFlow(firstOrphan)
+        wideEvent.startFlow(secondOrphan)
+
+        sut.sessionStarted(surface: .ntp)
+
+        let unknownCompletions = wideEvent.completions.filter {
+            if case .unknown = $0.1 { return true } else { return false }
+        }
+        #expect(unknownCompletions.count == 2)
+    }
+
+    @available(iOS 16, *)
+    @Test("sessionStarted with no orphans does not produce spurious completions", .timeLimit(.minutes(1)))
+    func sessionStartedWithoutOrphansProducesNoCompletions() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(surface: .ntp)
+        #expect(wideEvent.completions.isEmpty)
     }
 }

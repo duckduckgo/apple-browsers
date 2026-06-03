@@ -17,16 +17,16 @@
 //  limitations under the License.
 //
 
-import UIKit
 import Core
 import Common
+import FoundationExtensions
 import PrivacyConfig
 
 protocol SafariRedirectHandling: AnyObject {
-    /// Whether the given URL was loaded after a suppressed x-safari-https redirect (for breakage reports).
+    /// Whether the given URL was loaded after a suppressed x-safari redirect (for breakage reports).
     func isAfterSuppressedXSafariRedirect(for url: URL) -> Bool
 
-    /// Called from decidePolicyFor when an x-safari-https URL is encountered.
+    /// Called from decidePolicyFor when an x-safari URL is encountered.
     /// Returns true if the handler consumed the navigation (caller should .cancel).
     @discardableResult
     func handleRedirect(to url: URL) -> Bool
@@ -37,25 +37,18 @@ protocol SafariRedirectHandling: AnyObject {
 
 protocol SafariRedirectHandlerDelegate: AnyObject {
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestLoadURL url: URL)
-    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestOpenExternallyURL url: URL)
-    func safariRedirectHandlerDidRequestGoBack(_ handler: SafariRedirectHandling)
-    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestPresentAlert alert: UIAlertController)
+    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL)
 }
 
 final class SafariRedirectHandler: SafariRedirectHandling {
 
     private enum Constants {
-        static let safariRedirectScheme = "x-safari-https"
+        static let safariHTTPSRedirectScheme = "x-safari-https"
     }
 
     private struct HostState {
-        var redirectCount: Int = 0
         var isSafariRedirectSuppressed: Bool = false
-        var alertShown: Bool = false
-        var loopAlertShown: Bool = false
-
-        var isAwaitingInitialChoice: Bool { !isSafariRedirectSuppressed && !alertShown }
-
+        var loopErrorPageShown: Bool = false
     }
 
     private let tld: TLD
@@ -73,22 +66,23 @@ final class SafariRedirectHandler: SafariRedirectHandling {
     }
 
     func handleRedirect(to url: URL) -> Bool {
-        guard url.scheme == Constants.safariRedirectScheme else { return false }
+        guard isSafariRedirectScheme(url.scheme) else { return false }
 
         guard let host = domain(for: url) else { return false }
         var state = hostStates[host, default: HostState()]
 
-        if state.isAwaitingInitialChoice {
-            state.alertShown = true
-            hostStates[host] = state
-            showTryOpenAlert(url: url, host: host)
-            return true
-        } else if state.isSafariRedirectSuppressed {
-            return handleSubsequentRedirect(url: url, host: host)
+        if state.isSafariRedirectSuppressed {
+            // Second time through we're obviously in a loop
+            delegate?.safariRedirectHandler(self, didRequestShowSafariRedirectLoopErrorForURL: url)
         } else {
-            // Alert is shown but user hasn't responded yet — consume the redirect silently
-            return true
+            state.isSafariRedirectSuppressed = true
+            hostStates[host] = state
+
+            // First time through try to show the https version
+            convertAndLoad(url: url)
         }
+        
+        return true
     }
 
     func reset() {
@@ -102,76 +96,28 @@ final class SafariRedirectHandler: SafariRedirectHandling {
         return tld.eTLDplus1(host) ?? host
     }
 
-    private func handleSubsequentRedirect(url: URL, host: String) -> Bool {
-        var state = hostStates[host, default: HostState()]
-        state.redirectCount += 1
-        hostStates[host] = state
-        if state.redirectCount > 2 && !state.loopAlertShown {
-            state.loopAlertShown = true
-            hostStates[host] = state
-            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPSLoopDetected, error: nil, withAdditionalParameters: [:])
-            showLoopAlert(url: url, host: host)
-        } else if state.redirectCount <= 2 {
-            convertAndLoad(url: url)
-        }
-        return true
-    }
-
     private func convertAndLoad(url: URL) {
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        components?.scheme = "https"
-        if let httpsURL = components?.url {
-            delegate?.safariRedirectHandler(self, didRequestLoadURL: httpsURL)
+        if let convertedURL = convertToHTTPOrHTTPSURL(url: url) {
+            delegate?.safariRedirectHandler(self, didRequestLoadURL: convertedURL)
         }
     }
 
-    private func showTryOpenAlert(url: URL, host: String) {
-        let alert = UIAlertController(
-            title: UserText.xSafariHTTPSTryOpenTitle,
-            message: UserText.xSafariHTTPSTryOpenMessage,
-            preferredStyle: .alert
-        )
+    private func convertToHTTPOrHTTPSURL(url: URL) -> URL? {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
 
-        let stayAction = UIAlertAction(title: UserText.xSafariHTTPSStayInDDG, style: .default, handler: { [weak self] _ in
-            guard let self else { return }
-            DailyPixel.fireDaily(.webViewExternalSchemeNavigationXSafariHTTPSStay)
-            self.hostStates[host] = HostState(isSafariRedirectSuppressed: true, alertShown: true)
-            self.convertAndLoad(url: url)
-        })
-        alert.addAction(stayAction)
+        switch url.scheme {
+        case Constants.safariHTTPSRedirectScheme:
+            components.scheme = "https"
+        default:
+            return nil
+        }
 
-        alert.addAction(UIAlertAction(title: UserText.xSafariHTTPSOpenInSafari, style: .default, handler: { [weak self] _ in
-            guard let self else { return }
-            DailyPixel.fireDaily(.webViewExternalSchemeNavigationXSafariHTTPSOpenInSafari)
-            self.hostStates[host]?.alertShown = false
-            self.delegate?.safariRedirectHandler(self, didRequestOpenExternallyURL: url)
-        }))
-
-        alert.preferredAction = stayAction
-
-        delegate?.safariRedirectHandler(self, didRequestPresentAlert: alert)
+        return components.url
     }
 
-    private func showLoopAlert(url: URL, host: String) {
-        let alert = UIAlertController(
-            title: UserText.xSafariHTTPSLoopTitle,
-            message: UserText.xSafariHTTPSLoopMessage,
-            preferredStyle: .alert
-        )
-
-        alert.addAction(UIAlertAction(title: UserText.xSafariHTTPSGoBack, style: .cancel, handler: { [weak self] _ in
-            guard let self else { return }
-            self.hostStates[host] = HostState()
-            self.delegate?.safariRedirectHandlerDidRequestGoBack(self)
-        }))
-
-        alert.addAction(UIAlertAction(title: UserText.xSafariHTTPSOpenInSafari, style: .default, handler: { [weak self] _ in
-            guard let self else { return }
-            DailyPixel.fireDaily(.webViewExternalSchemeNavigationXSafariHTTPSLoopOpenInSafari)
-            self.hostStates[host] = HostState()
-            self.delegate?.safariRedirectHandler(self, didRequestOpenExternallyURL: url)
-        }))
-
-        delegate?.safariRedirectHandler(self, didRequestPresentAlert: alert)
+    private func isSafariRedirectScheme(_ scheme: String?) -> Bool {
+        scheme == Constants.safariHTTPSRedirectScheme
     }
 }

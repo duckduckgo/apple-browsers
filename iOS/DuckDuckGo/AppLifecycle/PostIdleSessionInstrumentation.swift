@@ -41,6 +41,15 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// User pressed back / cancel from the post-idle surface.
     func backPressed()
 
+    /// User changed the Opening Screen option from the escape hatch's settings menu.
+    func openingScreenChanged()
+
+    /// User closed the open tab from the escape hatch's menu. Idempotent within a session.
+    func closeTabTapped()
+
+    /// User burned the open tab from the escape hatch's menu. Idempotent within a session.
+    func burnTabTapped()
+
     /// Terminal user action ended the session (bar used, return-to-page, etc.).
     func sessionEnded(reason: PostIdleSessionWideEventData.StatusReason)
 
@@ -70,6 +79,12 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
             sessionCancelledByBackground()
         }
 
+        // Complete any orphaned flows left in storage from a previous app lifecycle
+        // (e.g., the app was killed before the session could complete). This runs
+        // synchronously before the new flow is created, avoiding a race with
+        // WideEventService.resume() which would otherwise complete new flows as UNKNOWN.
+        completeOrphanedFlows()
+
         let data = PostIdleSessionWideEventData(surface: surface, startedAt: dateProvider())
         activeSessionID = data.globalData.id
         pageEngagedSent = false
@@ -95,6 +110,27 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     func backPressed() {
         updateActiveSession { data in
             data.backPressed = true
+            markFirstInteractionIfNeeded(on: data, at: dateProvider())
+        }
+    }
+
+    func openingScreenChanged() {
+        updateActiveSession { data in
+            data.openingScreenChanged = true
+            markFirstInteractionIfNeeded(on: data, at: dateProvider())
+        }
+    }
+
+    func closeTabTapped() {
+        updateActiveSession { data in
+            data.closeTabTapped = true
+            markFirstInteractionIfNeeded(on: data, at: dateProvider())
+        }
+    }
+
+    func burnTabTapped() {
+        updateActiveSession { data in
+            data.burnTabTapped = true
             markFirstInteractionIfNeeded(on: data, at: dateProvider())
         }
     }
@@ -130,6 +166,15 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     }
 
     // MARK: - Helpers
+
+    private func completeOrphanedFlows() {
+        for orphan in wideEvent.getAllFlowData(PostIdleSessionWideEventData.self) {
+            wideEvent.completeFlow(
+                orphan,
+                status: .unknown(reason: PostIdleSessionWideEventData.appTerminatedReason),
+                onComplete: { _, _ in })
+        }
+    }
 
     private func updateActiveSession(_ mutate: (inout PostIdleSessionWideEventData) -> Void) {
         guard let globalID = activeSessionID else { return }

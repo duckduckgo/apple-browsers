@@ -21,13 +21,17 @@ import UIKit
 import AttributedMetric
 import PixelKit
 import Common
+import FoundationExtensions
+import Core
 
 final class AttributedMetricsDebugViewController: UITableViewController {
 
     var attributedMetricDataStorage: any AttributedMetricDataStoring
+    private let installDateProvider: any AttributedMetricInstallDateProviding
 
     required init?(coder: NSCoder) {
         self.attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: UserDefaults.standard, errorHandler: nil)
+        self.installDateProvider = AttributedMetricATBInstallDateProvider()
         super.init(coder: coder)
     }
 
@@ -45,14 +49,21 @@ final class AttributedMetricsDebugViewController: UITableViewController {
         case resetAll
         case setCurrentTime
         case setOrigin
+        case resetReturningUser
     }
 
     enum Section2Rows: Int, CaseIterable {
         case installDate
+        case debugDate
         case lastRetentionThreshold
+        case debugOrigin
         case search8Days
+        case activeSearchDaysLastThreshold
+        case searchLastThreshold
         case adClick8Days
+        case adClickLastThreshold
         case duckAIChat8Days
+        case duckAILastThreshold
         case subscriptionDate
         case subscriptionFreeTrialFired
         case subscriptionMonth1Fired
@@ -87,6 +98,8 @@ final class AttributedMetricsDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Set Current time"
             case .setOrigin:
                 cell.textLabel?.text = "Set Origin"
+            case .resetReturningUser:
+                cell.textLabel?.text = "Reset Returning User Status"
             case .none:
                 break
             }
@@ -95,19 +108,37 @@ final class AttributedMetricsDebugViewController: UITableViewController {
             switch Section2Rows(rawValue: indexPath.row) {
             case .installDate:
                 cell.textLabel?.text = "Install Date"
-                cell.detailTextLabel?.text = attributedMetricDataStorage.installDate?.ISO8601Format() ?? "nil"
+                cell.detailTextLabel?.text = installDateProvider.installDate?.ISO8601Format() ?? "nil"
+            case .debugDate:
+                cell.textLabel?.text = "Debug Date"
+                cell.detailTextLabel?.text = attributedMetricDataStorage.debugDate?.ISO8601Format() ?? "nil"
             case .lastRetentionThreshold:
                 cell.textLabel?.text = "Last Retention Threshold"
                 cell.detailTextLabel?.text = attributedMetricDataStorage.lastRetentionThreshold?.description ?? "nil"
+            case .debugOrigin:
+                cell.textLabel?.text = "Debug Origin"
+                cell.detailTextLabel?.text = attributedMetricDataStorage.debugOrigin ?? "nil"
             case .search8Days:
                 cell.textLabel?.text = "Search (8 days)"
                 cell.detailTextLabel?.text = attributedMetricDataStorage.search8Days.debugDescription
+            case .activeSearchDaysLastThreshold:
+                cell.textLabel?.text = "Active Search Days Last Threshold"
+                cell.detailTextLabel?.text = attributedMetricDataStorage.activeSearchDaysLastThreshold?.description ?? "nil"
+            case .searchLastThreshold:
+                cell.textLabel?.text = "Search Last Threshold"
+                cell.detailTextLabel?.text = attributedMetricDataStorage.searchLastThreshold?.description ?? "nil"
             case .adClick8Days:
                 cell.textLabel?.text = "Ad Click (8 days)"
                 cell.detailTextLabel?.text = attributedMetricDataStorage.adClick8Days.debugDescription
+            case .adClickLastThreshold:
+                cell.textLabel?.text = "Ad Click Last Threshold"
+                cell.detailTextLabel?.text = attributedMetricDataStorage.adClickLastThreshold?.description ?? "nil"
             case .duckAIChat8Days:
                 cell.textLabel?.text = "Duck AI Chat (8 days)"
                 cell.detailTextLabel?.text = attributedMetricDataStorage.duckAIChat8Days.debugDescription
+            case .duckAILastThreshold:
+                cell.textLabel?.text = "Duck AI Last Threshold"
+                cell.detailTextLabel?.text = attributedMetricDataStorage.duckAILastThreshold?.description ?? "nil"
             case .subscriptionDate:
                 cell.textLabel?.text = "Subscription Date"
                 cell.detailTextLabel?.text = attributedMetricDataStorage.subscriptionDate?.ISO8601Format() ?? "nil"
@@ -145,6 +176,7 @@ final class AttributedMetricsDebugViewController: UITableViewController {
             case .resetAll: handleResetAll()
             case .setCurrentTime: handleSetCurrentTime()
             case .setOrigin: handleSetOrigin()
+            case .resetReturningUser: handleResetReturningUser()
             default: break
             }
         case .section2:
@@ -235,6 +267,27 @@ final class AttributedMetricsDebugViewController: UITableViewController {
         alertController.addAction(saveAction)
         alertController.addAction(cancelAction)
 
+        present(alertController, animated: true, completion: nil)
+    }
+
+    private func handleResetReturningUser() {
+        let statisticsStore = StatisticsUserDefaults()
+        guard statisticsStore.variant == VariantIOS.returningUser.name else {
+            showAlert(title: "Not a returning user", message: "Current variant: \(statisticsStore.variant ?? "nil"). No change made.")
+            return
+        }
+
+        let alertController = UIAlertController(
+            title: "Reset Returning User Status",
+            message: "Clears the '\(VariantIOS.returningUser.name)' variant from StatisticsStore so AttributedMetric treats this user as a non-returning user.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "Reset", style: .destructive) { [weak self] _ in
+            statisticsStore.variant = nil
+            self?.tableView.reloadData()
+            self?.showAlert(title: "Done", message: "Returning user variant cleared.")
+        })
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         present(alertController, animated: true, completion: nil)
     }
 

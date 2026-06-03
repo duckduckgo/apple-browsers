@@ -47,6 +47,7 @@ final class UnifiedToggleInputToggleView: UIView {
     private lazy var backgroundView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor(designSystemColor: .controlsRaisedBackdrop)
+        view.alpha = 0.5
         view.layer.cornerRadius = Constants.cornerRadius
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
@@ -100,9 +101,9 @@ final class UnifiedToggleInputToggleView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        // Clip subviews to bounds so labels don't protrude past the pill while the height
-        // constraint animates 0→40 during the reveal animation.
+        // Clip to pill so the indicator shadow doesn't leak past the pill edge.
         clipsToBounds = true
+        layer.cornerRadius = Constants.cornerRadius
         setupUI()
     }
 
@@ -123,9 +124,10 @@ final class UnifiedToggleInputToggleView: UIView {
     // MARK: - Setup
 
     private func setupUI() {
+        // Siblings, not children of backgroundView — its 0.5 alpha would cascade onto labels/indicator.
         addSubview(backgroundView)
-        backgroundView.addSubview(indicator)
-        backgroundView.addSubview(stackView)
+        addSubview(indicator)
+        addSubview(stackView)
 
         indicatorToSearch = indicator.leadingAnchor.constraint(equalTo: searchButton.leadingAnchor)
         indicatorToSearch.priority = .defaultHigh
@@ -143,27 +145,27 @@ final class UnifiedToggleInputToggleView: UIView {
                 return heightConstraint
             }(),
 
-            stackView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: Constants.horizontalPadding),
-            stackView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -Constants.horizontalPadding),
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
             {
-                let topConstraint = stackView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding)
+                let topConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.horizontalPadding)
                 topConstraint.priority = .defaultHigh
                 return topConstraint
             }(),
             {
-                let bottomConstraint = stackView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.horizontalPadding)
+                let bottomConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.horizontalPadding)
                 bottomConstraint.priority = .defaultHigh
                 return bottomConstraint
             }(),
 
             indicatorToDuckAI,
             {
-                let topConstraint = indicator.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding)
+                let topConstraint = indicator.topAnchor.constraint(equalTo: topAnchor, constant: Constants.horizontalPadding)
                 topConstraint.priority = .defaultHigh
                 return topConstraint
             }(),
             {
-                let bottomConstraint = indicator.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.horizontalPadding)
+                let bottomConstraint = indicator.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.horizontalPadding)
                 bottomConstraint.priority = .defaultHigh
                 return bottomConstraint
             }(),
@@ -177,6 +179,9 @@ final class UnifiedToggleInputToggleView: UIView {
         var config = UIButton.Configuration.plain()
         config.imagePadding = Constants.iconTextSpacing
         config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        // Without this, the segment label wraps onto a second line when the toggle is squeezed
+        // by the inline back button + the AI-tab bottom margins. Truncate instead of wrap.
+        config.titleLineBreakMode = .byTruncatingTail
 
         let fontMetrics = UIFontMetrics(forTextStyle: .body)
         config.attributedTitle = AttributedString(title, attributes: .init([
@@ -188,6 +193,7 @@ final class UnifiedToggleInputToggleView: UIView {
         let button = UIButton(configuration: config)
         button.tag = tag
         button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.titleLabel?.numberOfLines = 1
         button.addTarget(self, action: #selector(segmentTapped(_:)), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button

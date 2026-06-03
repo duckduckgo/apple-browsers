@@ -28,7 +28,6 @@ public class TabInstrumentation {
     static var tabMaxIdentifier: UInt64 = 0
 
     private var siteLoadingSPID: Any?
-    private var currentURL: String?
     private var currentTabIdentifier: UInt64
 
     public init() {
@@ -47,7 +46,6 @@ public class TabInstrumentation {
     }
 
     public func willLoad(url: URL) {
-        currentURL = url.absoluteString
         if #available(iOSApplicationExtension 12.0, *) {
             let id = OSSignpostID(log: type(of: self).tabsLog)
             siteLoadingSPID = id
@@ -69,47 +67,4 @@ public class TabInstrumentation {
                         "Loading Finished: %{private}@", "T")
         }
     }
-
-    // MARK: - JS events
-
-    public func request(url: String, allowedIn timeInMs: Double) {
-        request(url: url, isTracker: false, blocked: false, in: timeInMs)
-    }
-
-    public func tracker(url: String, allowedIn timeInMs: Double, reason: String?) {
-        request(url: url, isTracker: true, blocked: false, reason: reason ?? "?", in: timeInMs)
-    }
-
-    public func tracker(url: String, blockedIn timeInMs: Double) {
-        request(url: url, isTracker: true, blocked: true, in: timeInMs)
-    }
-
-    private func request(url: String, isTracker: Bool, blocked: Bool, reason: String = "", in timeInMs: Double) {
-        if #available(iOSApplicationExtension 12.0, *) {
-            let currentURL = self.currentURL ?? "unknown"
-            let requestType = isTracker ? "Tracker" : "Regular"
-            let status = blocked ? "Blocked" : "Allowed"
-
-            // 0 is treated as 1ms
-            let timeInNS: UInt64 = timeInMs.asNanos
-            Logger.general.debug("[\(currentURL)] Request: \(url) - \(requestType) - \(status) (\(reason)) in \(timeInNS)")
-        }
-    }
-
-    public func jsEvent(name: String, executedIn timeInMs: Double) {
-        if #available(iOSApplicationExtension 12.0, *) {
-            let currentURL = self.currentURL ?? "unknown"
-            // 0 is treated as 1ms
-            let timeInNS: UInt64 = timeInMs.asNanos
-            Logger.general.debug("[\(currentURL)] JSEvent: \(name) executedIn: \(timeInNS)")
-        }
-    }
-}
-
-extension Double {
-
-    var asNanos: UInt64 {
-        return self > 0 ? UInt64(self * 1000 * 1000) : 1000000
-    }
-
 }

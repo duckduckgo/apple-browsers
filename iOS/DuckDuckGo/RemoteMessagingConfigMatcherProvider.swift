@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Core
 import Foundation
 import BrowserServicesKit
@@ -43,7 +44,9 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         themeManager: ThemeManaging = ThemeManager.shared,
         syncService: DDGSyncing,
         winBackOfferService: WinBackOfferService,
-        dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
+        dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil,
+        freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -54,6 +57,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.syncService = syncService
         self.winBackOfferService = winBackOfferService
         self.dbpRunPrerequisitesDelegate = dbpRunPrerequisitesDelegate
+        self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -65,6 +70,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let syncService: DDGSyncing
     let winBackOfferService: WinBackOfferService
     let dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
+    let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
+    let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -113,9 +120,13 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             isCurrentPIRUser = false
         }
 
+        let isFreemiumPIREligible = freemiumPIREligibilityChecker.canShowEntryPoint()
+        let didActivateFreemiumPIR = freemiumDBPUserStateManager.didActivate
+        let freemiumPIRFirstScanResult = freemiumDBPUserStateManager.firstScanResult?.rawValue
+
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
-        if let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) {
+        if let subscription = try? await subscriptionManager.getSubscription() {
             subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             subscriptionPurchasePlatform = subscription.platform.rawValue
@@ -178,6 +189,9 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        enabledFeatureFlags: enabledFeatureFlags,
                                                        isSyncEnabled: isSyncEnabled,
                                                        shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage,
+                                                       isFreemiumPIREligible: isFreemiumPIREligible,
+                                                       isFreemiumPIRActivated: didActivateFreemiumPIR,
+                                                       freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
                                                        isCurrentPIRUser: isCurrentPIRUser),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,

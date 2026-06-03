@@ -1,5 +1,5 @@
 {
-  "originHash" : "b4cd7fe46a916ad3fd028a60b5d667a722aaedc3dd5414beb3f0a1cc4abb5867",
+  "originHash" : "bd771ea52b7e4b14f6cb79f3e03909b17fc2a32c12c4feae819b4c371a4c78e0",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "1e417da9e53e44c3d683b5d8d15837df80a3dd16",
-        "version" : "14.3.0"
+        "revision" : "0d678e5ea42dd082c22237469599186b5d3a753a",
+        "version" : "14.14.0"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "c8ce2e7cdcca4226c96350dcd49323298b941592",
-        "version" : "19.0.0"
+        "revision" : "84b5e3019b2c7b3c90e8d296f30fcfd53768bcd8",
+        "version" : "19.1.0"
       }
     },
     {
@@ -195,8 +195,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-snapshot-testing",
       "state" : {
-        "revision" : "bf8d8c27f0f0c6d5e77bff0db76ab68f2050d15d",
-        "version" : "1.18.9"
+        "revision" : "ad5e3190cc63dc288f28546f9c6827efc1e9d495",
+        "version" : "1.19.2"
       }
     },
     {

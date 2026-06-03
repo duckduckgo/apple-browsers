@@ -19,6 +19,7 @@
 
 import AIChat
 import ContentBlocking
+import Persistence
 import PrivacyConfig
 import Core
 import DDGSync
@@ -31,6 +32,7 @@ final class ContentBlockingService {
     public let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     public let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     public let fireModeStorageController: FireModeNativeStorageController?
+    public let adBlockingAvailability: AdBlockingAvailabilityProviding
     public var duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? { fireModeStorageController }
 
     init(appSettings: AppSettings,
@@ -40,12 +42,15 @@ final class ContentBlockingService {
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          internalUserDecider: InternalUserDecider,
          syncErrorHandler: SyncErrorHandler,
+         keyValueStore: ThrowingKeyValueStoring,
          webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         fireModeStorageController: FireModeNativeStorageController? = nil) {
+         fireModeStorageController: FireModeNativeStorageController? = nil,
+         adBlockingAvailability: AdBlockingAvailabilityProviding) {
 
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.fireModeStorageController = fireModeStorageController
+        self.adBlockingAvailability = adBlockingAvailability
         common = contentBlocking
 
         userScriptsDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: appSettings,
@@ -59,6 +64,8 @@ final class ContentBlockingService {
                                                                            webExtensionAvailability: webExtensionAvailability)
 
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
-                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                           keyValueStore: keyValueStore,
+                                           adBlockingAvailability: adBlockingAvailability)
     }
 }

@@ -17,7 +17,9 @@
 //
 
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
 class CapturingDefaultBrowserProvider: DefaultBrowserProvider {

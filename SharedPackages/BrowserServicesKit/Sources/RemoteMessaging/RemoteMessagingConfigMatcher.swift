@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 public struct RemoteMessagingConfigMatcher {
@@ -194,7 +195,8 @@ extension RemoteMessageModel {
             content: content?.withNewItems(items),
             matchingRules: self.matchingRules,
             exclusionRules: self.exclusionRules,
-            isMetricsEnabled: self.isMetricsEnabled
+            isMetricsEnabled: self.isMetricsEnabled,
+            displayConditions: self.displayConditions
         )
     }
 

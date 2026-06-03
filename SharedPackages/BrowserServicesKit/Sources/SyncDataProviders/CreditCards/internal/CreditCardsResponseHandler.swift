@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DDGSync
 import Foundation
 import GRDB
@@ -315,6 +316,7 @@ extension SecureVaultModels.SyncableCreditCard {
             creditCard?.cardholderName = cardholderName
             if let cardNumber, let cardNumberData = cardNumber.data(using: .utf8) {
                 creditCard?.cardNumberData = cardNumberData
+                creditCard?.cardSuffix = SecureVaultModels.CreditCard.suffix(from: cardNumber)
             }
             creditCard?.cardSecurityCode = cardSecurityCode
             creditCard?.expirationMonth = expirationMonthInt

@@ -21,6 +21,7 @@ import Combine
 import Foundation
 import Lottie
 import Common
+import FoundationExtensions
 
 final class MouseOverAnimationButton: AddressBarButton {
 

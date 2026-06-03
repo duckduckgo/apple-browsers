@@ -121,13 +121,13 @@ extension SimplifiedSyncSettingsView {
         Section {
             VStack(spacing: 20) {
                 ZStack {
-                    Image("Sync-New-128")
+                    Image(rebrandable: "Sync-New-128")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
                         .opacity(model.isSyncEnabled ? 0 : 1)
 
-                    Image("Sync-Pair-96")
+                    Image(rebrandable: "Sync-Pair-96")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
@@ -206,6 +206,7 @@ extension SimplifiedSyncSettingsView {
                     get: { model.isSyncEnabled },
                     set: { newValue in
                         if newValue {
+                            model.delegate?.fireSyncSetupPixel(event: .backUpThisDeviceTapped)
                             model.enableSyncToggleTapped()
                         } else {
                             model.disableSyncToggleTapped()
@@ -238,6 +239,7 @@ extension SimplifiedSyncSettingsView {
             .disabled(!model.isAccountCreationAvailable)
 
             Button {
+                model.delegate?.fireSyncSetupPixel(event: .recoverSyncedDataTapped)
                 model.beginRecoverFlow()
             } label: {
                 HStack(spacing: 8) {

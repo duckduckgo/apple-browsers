@@ -20,6 +20,7 @@
 import BrowserServicesKitTestsUtils
 import Combine
 import Common
+import FoundationExtensions
 @testable import DDGSync
 import PixelKitTestingUtilities
 import PrivacyConfig
@@ -73,6 +74,7 @@ struct AIChatUserScriptHandlerTests {
     private var windowControllersManager: WindowControllersManagerMock
     private var notificationCenter = NotificationCenter()
     private var pixelFiring = PixelKitMock()
+    private var userScriptErrorEventMapper = CapturingAIChatUserScriptErrorEventMapper()
     private var syncErrorHandler = SyncErrorHandler(alertPresenter: CapturingAlertPresenter())
     private var handler: AIChatUserScriptHandler
     private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
@@ -91,6 +93,7 @@ struct AIChatUserScriptHandlerTests {
             syncServiceProvider: { nil },
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
+            aiChatUserScriptErrorEventMapper: userScriptErrorEventMapper,
             freeTrialConversionService: mockFreeTrialConversionService,
             notificationCenter: notificationCenter
         )
@@ -784,10 +787,12 @@ struct AIChatUserScriptHandlerTests {
     // MARK: - Sync helpers
 
     private func makeFeatureFlagger(aiChatSyncEnabled: Bool = false,
-                                    aiChatNativeStorageEnabled: Bool = false) -> MockFeatureFlagger {
+                                    aiChatNativeStorageEnabled: Bool = false,
+                                    aiChatNativeVoicePermissionFlowEnabled: Bool = false) -> MockFeatureFlagger {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub["aiChatSync"] = aiChatSyncEnabled
         featureFlagger.featuresStub["aiChatNativeStorage"] = aiChatNativeStorageEnabled
+        featureFlagger.featuresStub["aiChatNativeVoicePermissionFlow"] = aiChatNativeVoicePermissionFlowEnabled
         return featureFlagger
     }
 
@@ -849,6 +854,43 @@ struct AIChatUserScriptHandlerTests {
         await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: WKScriptMessage.mock())
 
         #expect(!mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When reportMetric cannot decode payload, user-script error event is fired", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenReportMetricDecodeFailsThenUserScriptErrorEventIsFired() async {
+        _ = await handler.reportMetric(params: "not-a-dictionary", message: WKScriptMessage.mock())
+
+        guard case .reportMetricDecodingFailed(let error, let failureReason) = userScriptErrorEventMapper.events.first else {
+            Issue.record("Expected reportMetricDecodingFailed event")
+            return
+        }
+        #expect(error == nil)
+        #expect(failureReason == .typeMismatch)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("AIChatUserScriptErrorEventMapper maps reportMetric decode failures to pixels", .timeLimit(.minutes(1)))
+    @MainActor
+    func testUserScriptErrorEventMapperMapsReportMetricDecodeFailureToPixel() {
+        let error = DecodingError.typeMismatch(
+            AIChatMetricName.self,
+            DecodingError.Context(codingPath: [], debugDescription: "Expected metric name")
+        )
+        let nsError = error as NSError
+        let mapper = AIChatUserScriptErrorEventMapper(pixelFiring: pixelFiring)
+
+        mapper.fire(.reportMetricDecodingFailed(error: error, failureReason: .typeMismatch))
+
+        #expect(pixelFiring.actualFireCalls.count == 1)
+        #expect(pixelFiring.actualFireCalls.first?.pixel.name == AIChatPixel.aiChatReportMetricDecodeError(
+            nsError,
+            failureReason: .typeMismatch
+        ).name)
+        #expect(pixelFiring.actualFireCalls.first?.frequency == .dailyAndCount)
+        #expect(pixelFiring.actualFireCalls.first?.pixel.error == nsError)
+        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["failureReason": "type_mismatch"])
     }
 
     // MARK: - AIChatMessageHandler config values
@@ -929,6 +971,112 @@ struct AIChatUserScriptHandlerTests {
                                            isNativeStorageBridgeAvailable: true)
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeStorage == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatNativeVoicePermissionFlow is enabled, supportsNativeVoicePermissionHandler is true", .timeLimit(.minutes(1)))
+    func testWhenAIChatNativeVoicePermissionFlowEnabledThenSupportsNativeVoicePermissionHandlerIsTrue() {
+        let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoicePermissionHandler == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatNativeVoicePermissionFlow is disabled, supportsNativeVoicePermissionHandler is false", .timeLimit(.minutes(1)))
+    func testWhenAIChatNativeVoicePermissionFlowDisabledThenSupportsNativeVoicePermissionHandlerIsFalse() {
+        let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: false)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoicePermissionHandler == false)
+    }
+
+    // MARK: - voiceChatStartFailed flag gating
+
+    @available(iOS 16, macOS 13, *)
+    @MainActor
+    @Test("voiceChatStartFailed dispatches to the failure handler when flag is enabled", .timeLimit(.minutes(1)))
+    func testVoiceChatStartFailedDispatchesWhenFlagEnabled() async {
+        let failureHandler = MockDuckAiVoiceChatFailureHandling()
+        let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: true)
+        let handler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: featureFlagger,
+            freeTrialConversionService: mockFreeTrialConversionService,
+            notificationCenter: notificationCenter,
+            voiceChatFailureHandler: failureHandler
+        )
+
+        _ = await handler.voiceChatStartFailed(
+            params: ["reason": "NotAllowedError"],
+            message: WKScriptMessage.mock()
+        )
+
+        #expect(failureHandler.handleCalls.count == 1)
+        #expect(failureHandler.handleCalls.first?.reason == "NotAllowedError")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @MainActor
+    @Test("voiceChatStartFailed is a no-op when flag is disabled", .timeLimit(.minutes(1)))
+    func testVoiceChatStartFailedNoOpWhenFlagDisabled() async {
+        let failureHandler = MockDuckAiVoiceChatFailureHandling()
+        let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: false)
+        let handler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: featureFlagger,
+            freeTrialConversionService: mockFreeTrialConversionService,
+            notificationCenter: notificationCenter,
+            voiceChatFailureHandler: failureHandler
+        )
+
+        _ = await handler.voiceChatStartFailed(
+            params: ["reason": "NotAllowedError"],
+            message: WKScriptMessage.mock()
+        )
+
+        #expect(failureHandler.handleCalls.isEmpty)
+    }
+}
+
+// MARK: - Mock failure handler
+
+final class MockDuckAiVoiceChatFailureHandling: DuckAiVoiceChatFailureHandling {
+    struct HandleCall {
+        let reason: String
+        let sourceWebView: WKWebView?
+    }
+    private(set) var handleCalls: [HandleCall] = []
+
+    @MainActor
+    func handleVoiceChatStartFailed(reason: String, sourceWebView: WKWebView?) {
+        handleCalls.append(HandleCall(reason: reason, sourceWebView: sourceWebView))
+    }
+}
+
+private final class CapturingAIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> {
+
+    private(set) var events: [AIChatUserScriptErrorEvent] = []
+
+    init() {
+        super.init { _, _, _, _ in }
+        eventMapper = { [weak self] event, _, _, _ in
+            self?.events.append(event)
+        }
     }
 }
 // swiftlint:enable inclusive_language

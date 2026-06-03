@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import Subscription
 import VPN
@@ -108,7 +109,7 @@ final class VPNSubscriptionEventsHandler {
 
     @MainActor
     private func handleClientCheckFailure(error: Error, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
-        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+        let isSubscriptionActive = (try? await subscriptionManager.getSubscription())?.isActive
 
         PixelKit.fire(
             VPNSubscriptionClientCheckPixel.failed(
@@ -126,7 +127,7 @@ final class VPNSubscriptionEventsHandler {
             return
         }
 
-        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+        let isSubscriptionActive = (try? await subscriptionManager.getSubscription())?.isActive
 
         if hasEntitlements {
             PixelKit.fire(
@@ -147,7 +148,7 @@ final class VPNSubscriptionEventsHandler {
 
     @MainActor
     private func handleEntitlementsChangeNotification(hasEntitlements: Bool, sourceObject: Any?) async {
-        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+        let isSubscriptionActive = (try? await subscriptionManager.getSubscription())?.isActive
 
         // For notifications we assume they are fired on actual changes, so we want to fire
         // pixels without additional checks.
@@ -191,7 +192,7 @@ final class VPNSubscriptionEventsHandler {
                 return
             }
 
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+            let isSubscriptionActive = (try? await subscriptionManager.getSubscription())?.isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedIn(
@@ -205,7 +206,7 @@ final class VPNSubscriptionEventsHandler {
         Task { @MainActor in
             print("[NetP Subscription] Deleted NetP auth token after signing out from Subscription")
 
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+            let isSubscriptionActive = (try? await subscriptionManager.getSubscription())?.isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedOut(

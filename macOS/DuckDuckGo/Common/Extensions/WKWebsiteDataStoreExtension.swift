@@ -49,12 +49,7 @@ extension WKWebsiteDataStore {
         var types = Self.allWebsiteDataTypesExceptCookies
 
         types.remove(WKWebsiteDataTypeLocalStorage)
-
-        // Only Fireproof IndexedDB on macOS 12.2+. Earlier versions have a privacy flaw that can expose browsing history.
-        // More info: https://fingerprintjs.com/blog/indexeddb-api-browser-vulnerability-safari-15
-        if #available(macOS 12.2, *) {
-            types.remove(WKWebsiteDataTypeIndexedDBDatabases)
-        }
+        types.remove(WKWebsiteDataTypeIndexedDBDatabases)
 
         return types
     }

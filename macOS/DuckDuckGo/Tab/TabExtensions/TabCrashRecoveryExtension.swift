@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import Navigation
 import WebKit
@@ -134,6 +136,10 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             NSLocalizedDescriptionKey: UserText.webProcessCrashPageMessage,
             NSUnderlyingErrorKey: NSError(domain: WKErrorDomain, code: terminationReason)
         ])
+
+        if webView.url?.isDuckAIURL == true || content?.urlForWebView?.isDuckAIURL == true {
+            PixelKit.fire(AIChatPixel.aiChatTabDidTerminate(error: error), frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
 
         attemptTabCrashRecovery(for: error, in: webView)
 

@@ -35,6 +35,12 @@ public enum SingleUseColor {
 
     /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
     case unifiedToggleInputCardBackground
+    case unifiedToggleInputAttachmentErrorBannerBackground
+    case unifiedToggleInputAttachmentErrorText
+    case unifiedToggleInputAttachmentErrorIcon
+
+    /// Stop-generating button background in the unified toggle input bar: translucent overlay on the card (6% black in light, 12% white in dark).
+    case unifiedToggleInputStopButtonBackground
 
     /// Tab switcher tracker count info panel background color
     case tabSwitcherTrackerCountBackground
@@ -65,6 +71,9 @@ public extension SingleUseColor {
         case textLink
 
         case accentPrimary
+        case accentPrimaryPressed
+        case accentPrimaryText
+        case accentGlowPrimary
 
         case accentAltPrimary
         case accentAltGlowPrimary
@@ -81,6 +90,11 @@ public extension SingleUseColor {
         case buttonsSecondaryPressed
         case buttonsSecondaryText
         case backgroundAccent // This in Figma is accentAltGlowPrimary but in the components screen default value is different than onboarding value
+
+        case destructivePrimary
+        case destructivePrimaryPressed
+        case destructivePrimaryText
+        case destructiveGlowPrimary
 
         case controlsFillPrimary
 

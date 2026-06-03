@@ -48,7 +48,6 @@ struct SettingsMainSettingsView: View {
         SettingsEntry(label: UserText.settingsLogins, build: Self.viewBuilder.buildPasswords),
         SettingsEntry(label: UserText.accessibility, build: Self.viewBuilder.buildAccessibility),
         SettingsEntry(label: UserText.dataClearing, build: Self.viewBuilder.buildDataClearing),
-        SettingsEntry(label: UserText.youTubeAdBlockingTitle, build: Self.viewBuilder.buildYouTubeAdBlocking),
         SettingsEntry(label: UserText.duckPlayerFeatureName, build: Self.viewBuilder.buildDuckPlayer),
     ].sorted(by: { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending })
 
@@ -100,7 +99,7 @@ struct SettingsMainSettingsView: View {
         }
 
         @ViewBuilder func buildDuckPlayer(viewModel: SettingsViewModel) -> AnyView? {
-            if viewModel.state.duckPlayerEnabled {
+            if viewModel.state.duckPlayerEnabled, !viewModel.state.youTubeAdBlockingAvailable {
                 AnyView(NavigationLink(destination: SettingsDuckPlayerView().environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName,
                                      image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayer))
@@ -108,17 +107,8 @@ struct SettingsMainSettingsView: View {
             }
         }
 
-        @ViewBuilder func buildYouTubeAdBlocking(viewModel: SettingsViewModel) -> AnyView? {
-            if viewModel.state.youTubeAdBlockingAvailable {
-                AnyView(NavigationLink(destination: SettingsYouTubeAdBlockingView().environmentObject(viewModel)) {
-                    SettingsCellView(label: UserText.youTubeAdBlockingTitle,
-                                     image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayerBlocked))
-                })
-            }
-        }
-
         @ViewBuilder func buildSyncEntry(viewModel: SettingsViewModel) -> AnyView {
-            let statusIndicator = viewModel.syncStatus == .on ? StatusIndicatorView(status: viewModel.syncStatus, isDotHidden: true) : nil
+            let statusIndicator = StatusIndicatorView(status: viewModel.syncStatus)
             let label = viewModel.state.sync.title
             AnyView(SettingsCellView(label: label,
                              image: Image(uiImage: DesignSystemImages.Color.Size24.sync),

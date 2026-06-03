@@ -23,6 +23,7 @@ import Combine
 import SyncUI_iOS
 import DDGSync
 import Common
+import FoundationExtensions
 import os.log
 import PrivacyConfig
 import AttributedMetric
@@ -38,6 +39,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         static let dataImportSummarySyncPromotion = "promotion_data_import_summary"
         static let bookmarksPromotion = "promotion_bookmarks"
         static let passwordsPromotion = "promotion_passwords"
+        static let aiChatPromotion = "promotion_ai_chat"
     }
 
     enum AutoRestorePromptSource: String {
@@ -346,7 +348,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     }
 
     func dismissPresentedViewController(completion: (() -> Void)? = nil) {
-        viewModel.isSyncWithSetUpSheetVisible = false
+        viewModel.dismissSyncWithSetUpSheet()
         viewModel.isRecoverSyncedDataSheetVisible = false
         guard let presentedViewController = navigationController?.presentedViewController,
               !(presentedViewController is SyncSettingsViewController) else {
@@ -391,7 +393,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     }
 
     private func startSyncWithAnotherDeviceIfNecessary() {
-        guard source == SourceConstants.startSyncFlow,
+        let autoStartPairingSources = [SourceConstants.startSyncFlow, SourceConstants.aiChatPromotion]
+        guard let source, autoStartPairingSources.contains(source),
               syncService.authState == .inactive else {
             return
         }
@@ -535,12 +538,14 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         refreshAutoRestoreDecisionState()
     }
 
-    func codeCollectionCancelled() {
+    func codeCollectionCancelled(source: CodeCollectionSource) {
         assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
         needsPreservedAccountCleanupBeforeServerOperation = false
         autoRestorePromptSource = nil
         dismissPresentedViewController()
-        Pixel.fire(pixel: .syncSetupEndedAbandoned)
+        Pixel.fire(pixel: .syncSetupEndedAbandoned,
+                   withAdditionalParameters: [PixelParameters.source: source.rawValue],
+                   includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireSetupEndedAbandoned()
     }
 
@@ -599,6 +604,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidFinishTransmittingRecoveryKey() {
+        Pixel.fire(pixel: .syncSetupEndedSuccessful,
+                   withAdditionalParameters: [PixelParameters.source: SyncSetupSource.exchange.rawValue],
+                   includedParameters: [.appVersion])
         dismissPresentedViewController()
     }
     
@@ -633,6 +641,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         presentSyncCompletionAfterDelay()
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
+            // .sharer reaches here only via the connect flow (exchange-sharer terminates in controllerDidFinishTransmittingRecoveryKey).
+            Pixel.fire(pixel: .syncSetupEndedSuccessful,
+                       withAdditionalParameters: [PixelParameters.source: SyncSetupSource.connect.rawValue],
+                       includedParameters: [.appVersion])
             return
         }
 
@@ -670,7 +682,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        guard setupSource != .recovery, setupSource != .unknown else { return }
+        guard setupSource != .unknown else { return }
         let parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
         switch codeSource {
         case .qrCode:
@@ -702,7 +714,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        guard setupSource != .recovery, setupSource != .unknown else { return }
+        guard setupSource != .unknown else { return }
         let parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
         switch codeSource {
         case .pastedCode, .qrCode:
@@ -746,7 +758,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     private func handleRecoveryKeyPollingTimeout(setupRole: SyncSetupRole) {
-        guard case .receiver(let setupSource, let codeSource) = setupRole else {
+        guard case .receiver(_, let codeSource) = setupRole else {
             return
         }
         guard case .deepLink = codeSource else {

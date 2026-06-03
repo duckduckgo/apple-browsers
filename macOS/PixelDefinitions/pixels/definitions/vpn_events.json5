@@ -20,6 +20,34 @@
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
+    "m_mac_netp_ev_enable_attempt": {
+        "description": "Fired at the start of a VPN connection attempt",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource"]
+    },
+    "m_mac_netp_ev_enable_attempt_success": {
+        "description": "Fired when a VPN connection attempt succeeds",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource"]
+    },
+    "m_mac_netp_ev_enable_attempt_failure": {
+        "description": "Fired when a VPN connection attempt fails",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource"]
+    },
+    "m_mac_netp_tunnel_start_attempt_on_demand_without_access_token": {
+        "description": "Fired when an on-demand VPN start attempt fails before reaching the actual tunnel start, due to a prerequisite failure such as a missing or unfetchable subscription token, missing settings, or other startup errors. Error parameters identify the underlying cause.",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211597559231997
     "m_mac_wide_vpn_connection": {
         "description": "Wide pixel sent at the end of a vpn connection flow",
@@ -37,10 +65,28 @@
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
+            {
+                "key": "feature.data.ext.error.error_description",
+                "type": "string",
+                "description": "Description of the failure when the VPN connection flow ends in error. Mix of stable case-name tokens and human-readable messages, depending on which error type surfaced.",
+                "examples": [
+                    "noAuthToken",
+                    "cancelled",
+                    "connectionStatusInvalid",
+                    "simulateControllerFailureError",
+                    "startTunnelFailure",
+                    "failedToFetchAuthToken",
+                    "notAuthorizedToEnableLoginItem",
+                    "enableLoginItemError",
+                    "ipcControlError",
+                    "VPN settings are missing or invalid",
+                    "VPN disconnected due to expired subscription",
+                    "Abnormal situation caused the token to be reset"
+                ]
+            },
             {
                 "key": "meta.type",
                 "type": "string",
@@ -133,7 +179,8 @@
                 "type": "string",
                 "description": "Context name for the flow",
                 "enum": ["funnel_appsettings_macos", "funnel_agent_macos", "funnel_systemsettings_multiple", "funnel_others_multiple"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_wide_vpn_ip_leak_check": {
@@ -152,7 +199,6 @@
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",

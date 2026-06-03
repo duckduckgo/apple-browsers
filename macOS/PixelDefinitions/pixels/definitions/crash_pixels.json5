@@ -11,6 +11,21 @@
                 "key": "failedToReadCrashVersion",
                 "description": "Set to true when the crash version could not be read from the crash report",
                 "type": "boolean"
+            },
+            {
+                "key": "code",
+                "type": "string",
+                "description": "MXDiagnostic exception code (App Store builds only); '-1' when unavailable"
+            },
+            {
+                "key": "signal",
+                "type": "string",
+                "description": "MXDiagnostic POSIX signal number (App Store builds only); '-1' when unavailable"
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "MXDiagnostic Mach exception type (App Store builds only); '-1' when unavailable"
             }
         ]
     },
@@ -22,6 +37,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "failedToReadCrashVersion",
                 "description": "Set to true when the crash version could not be read from the crash report",
@@ -52,6 +68,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "failedToReadCrashVersion",
                 "description": "Set to true when the crash version could not be read from the crash report",
@@ -80,5 +97,12 @@
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_crash-report_sent": {
+        "description": "Fired when a crash report is successfully submitted (HTTP 200) to the crash reporting service. Counterpart to m_windows_crash-report_sent for cross-platform parity.",
+        "owners": ["ayoy", "mallexxx", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

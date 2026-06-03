@@ -98,10 +98,15 @@ struct BrokerProfileScanSubJob {
         )
 
         do {
+            let shouldFireFirstScanPixel = try !dependencies.database.hasScanHistoryEvents()
             try markScanStarted(brokerId: brokerId,
                                 profileQueryId: profileQueryId,
                                 stageCalculator: stageCalculator,
                                 database: dependencies.database)
+
+            if shouldFireFirstScanPixel {
+                dependencies.pixelHandler.fire(.firstScan(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
+            }
 
             let runner = makeScanRunner(brokerProfileQueryData: brokerProfileQueryData,
                                         stageCalculator: stageCalculator,
@@ -559,7 +564,7 @@ struct BrokerProfileScanSubJob {
                                                      database: DataBrokerProtectionRepository) {
 
         // Jobs for removed brokers will already be prevented from being scheduled upstream
-        guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
             .flatMap({ $0.extractedProfiles }),
               savedExtractedProfiles.count > 0 else {
             return

@@ -17,17 +17,60 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import PixelKit
 
 public protocol OnboardingSharedPixelHandling {
-    func fire(_ event: OnboardingSharedPixelEvent)
+    func fire(_ event: OnboardingSharedPixelEvent,
+              source: OnboardingPixelParameter.Source?,
+              flow: OnboardingPixelParameter.Flow?,
+              variant: OnboardingPixelParameter.Variant?)
+}
+
+public extension OnboardingSharedPixelHandling {
+    #if os(macOS)
+    /// Fires the provided shared onboarding pixel event with nil source and flow parameters.
+    /// For use on macOS only, which has no non-default onboarding sources, flows, or variants.
+    func fire(_ event: OnboardingSharedPixelEvent) {
+        fire(event, source: nil, flow: nil, variant: nil)
+    }
+    #endif
+
+    func fire(_ event: OnboardingSharedPixelEvent,
+              source: OnboardingPixelParameter.Source?,
+              flow: OnboardingPixelParameter.Flow?) {
+        fire(event, source: source, flow: flow, variant: nil)
+    }
+}
+
+public enum OnboardingPixelParameter {
+    /// Pixel parameter for the entry point into the onboarding flow.
+    public enum Source: String {
+        case `default` = "default"
+        case duckAICustomProductPage = "duckai_cpp"
+    }
+
+    /// Pixel parameter for the type of onboarding flow the user started.
+    public enum Flow: String {
+        case `default` = "default"
+        case duckAI = "duckai"
+    }
+
+    /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
+    public enum Variant: String {
+        case duckAISearch = "search_plus_duckai-search"
+        case duckAIChat = "search_plus_duckai-chat"
+    }
 }
 
 final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     private struct ParameterKeys {
         static let installType = "it"
         static let daysSinceInstall = "d"
+        static let source = "source"
+        static let flow = "flow"
+        static let variant = "variant"
     }
 
     public enum InstallType: String {
@@ -49,21 +92,21 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         }
     }
 
-    let platform: Platform
-    let installType: InstallType?
-    let installDateProvider: () -> Date?
-    let currentDateProvider: () -> Date
-    let pixelFiring: PixelFiring?
+    private let platform: Platform
+    private let installTypeProvider: () -> InstallType?
+    private let installDateProvider: () -> Date?
+    private let currentDateProvider: () -> Date
+    private let pixelFiring: PixelFiring?
 
-    var daysSinceInstall: Int? {
+    private var daysSinceInstall: Int? {
         guard let installDate = installDateProvider() else { return nil }
         return Calendar.current.numberOfDaysBetween(installDate, and: currentDateProvider())
     }
 
-    var installParameters: [String: String] {
+    private var installParameters: [String: String] {
         var additionalParameters: [String: String] = [:]
 
-        if let installType {
+        if let installType = installTypeProvider() {
             additionalParameters[ParameterKeys.installType] = installType.rawValue
         }
 
@@ -75,22 +118,35 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     }
 
     public init(platform: Platform,
-                installType: InstallType?,
+                installTypeProvider: @escaping () -> InstallType?,
                 installDateProvider: @escaping () -> Date?,
                 currentDateProvider: @escaping () -> Date = { Date() },
                 pixelFiring: PixelFiring? = PixelKit.shared) {
         self.platform = platform
-        self.installType = installType
+        self.installTypeProvider = installTypeProvider
         self.installDateProvider = installDateProvider
         self.currentDateProvider = currentDateProvider
         self.pixelFiring = pixelFiring
     }
 
-    public func fire(_ event: OnboardingSharedPixelEvent) {
+    public func fire(_ event: OnboardingSharedPixelEvent,
+                     source: OnboardingPixelParameter.Source?,
+                     flow: OnboardingPixelParameter.Flow?,
+                     variant: OnboardingPixelParameter.Variant?) {
+        var additionalParameters = installParameters
+        if let source {
+            additionalParameters[ParameterKeys.source] = source.rawValue
+        }
+        if let flow {
+            additionalParameters[ParameterKeys.flow] = flow.rawValue
+        }
+        if let variant {
+            additionalParameters[ParameterKeys.variant] = variant.rawValue
+        }
 
         pixelFiring?.fire(event,
                           frequency: .uniqueByNameAndParameters,
-                          withAdditionalParameters: installParameters,
+                          withAdditionalParameters: additionalParameters,
                           withNamePrefix: platform.pixelPrefix)
     }
 
@@ -99,20 +155,26 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
     // Linear onboarding events
     case welcome(EngagementEvent)
+    case skipOnboarding(EngagementEvent) // iOS only
     case setDefault(EngagementEvent)
+    case aiComparison(EngagementEvent) // iOS only (AI Protections Activated!)
     case addToDock(EngagementEvent)
-    case importData(EngagementEvent)
-    case duckPlayer(EngagementEvent)
-    case customization(CustomizeEvent)
+    case appIconColor(AppIconColorEvent) // iOS only
+    case addressBarPosition(AddressBarPositionEvent) // iOS only
+    case importData(EngagementEvent) // macOS only
+    case duckPlayer(EngagementEvent) // macOS only
+    case customization(CustomizeEvent) // macOS only
     case searchExperience(SearchExperienceEvent)
 
     // Contextual onboarding events
     case search(SuggestedOrCustomEvent)
+    case searchChatToggle(SuggestionOrCustomToggleEvent) // iOS only
     case searchResults(EngagementEvent)
     case visitSite(SuggestedOrCustomEvent)
     case trackersBlocked(EngagementEvent)
     case fireButton(EngagementEvent)
     case end(EngagementEvent)
+    case subscriptionPromo(EngagementEvent) // iOS only
 
     public enum EngagementEvent: Equatable {
         public enum Value: String {
@@ -146,6 +208,18 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
         case clicked(Value)
     }
 
+    public enum SuggestionOrCustomToggleEvent: Equatable {
+        public enum Value: String {
+            case suggestedChat = "suggested_chat"
+            case suggestedSearch = "suggested_search"
+            case customChat = "custom_chat"
+            case customSearch = "custom_search"
+        }
+
+        case shown
+        case clicked(Value)
+    }
+
     public enum CustomizeEvent: Equatable {
         public enum Value: String {
             case bookmarksBar = "bookmarks_bar"
@@ -155,6 +229,32 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
 
         case shown
         case clicked([Value])
+    }
+
+    /// Matches alternate app icon colors (`AppIcon`) in the iOS app.
+    public enum AppIconColorEvent: Equatable {
+        public enum Value: String {
+            case red
+            case pink
+            case yellow
+            case green
+            case blue
+            case purple
+            case black
+        }
+
+        case shown
+        case clicked(Value)
+    }
+
+    public enum AddressBarPositionEvent: Equatable {
+        public enum Value: String {
+            case top
+            case bottom
+        }
+
+        case shown
+        case clicked(Value)
     }
 }
 
@@ -176,14 +276,7 @@ public extension OnboardingSharedPixelEvent {
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
-        switch self {
-        case .addToDock:
-            // Include pixel source for Add to Dock step, to measure engagement in macOS App Store vs DMG versions.
-            // The DMG step adds the app to the Dock programmatically while the App Store step only shows instructions.
-            return [.pixelSource]
-        default:
-            return nil
-        }
+        [.pixelSource]
     }
 
     var error: NSError? {
@@ -195,18 +288,24 @@ private extension OnboardingSharedPixelEvent {
     var stepName: String {
         switch self {
         case .welcome: return "welcome"
+        case .skipOnboarding: return "skip-onboarding"
         case .setDefault: return "set-default"
+        case .aiComparison: return "ai-intro"
         case .addToDock: return "add-to-dock"
+        case .appIconColor: return "app-icon-color"
+        case .addressBarPosition: return "address-bar-position"
         case .importData: return "import-data"
         case .duckPlayer: return "duck-player"
         case .customization: return "customization"
         case .searchExperience: return "search-experience"
         case .search: return "search"
+        case .searchChatToggle: return "search-chat-toggle"
         case .searchResults: return "search-results"
         case .visitSite: return "visit-site"
         case .trackersBlocked: return "trackers-blocked"
         case .fireButton: return "fire-button"
         case .end: return "end"
+        case .subscriptionPromo: return "subscription-promo"
         }
     }
 
@@ -221,13 +320,16 @@ private extension OnboardingSharedPixelEvent {
         switch self {
         case .welcome(let event),
                 .setDefault(let event),
+                .aiComparison(let event),
                 .addToDock(let event),
                 .importData(let event),
                 .duckPlayer(let event),
+                .skipOnboarding(let event),
                 .searchResults(let event),
                 .trackersBlocked(let event),
                 .fireButton(let event),
-                .end(let event):
+                .end(let event),
+                .subscriptionPromo(let event):
             switch event {
             case .shown:
                 return ParameterValues.shown
@@ -235,6 +337,20 @@ private extension OnboardingSharedPixelEvent {
                 return ParameterValues.clicked
             case .confirmed:
                 return ParameterValues.confirmed
+            }
+        case .appIconColor(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .addressBarPosition(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
             }
         case .searchExperience(let event):
             switch event {
@@ -258,6 +374,13 @@ private extension OnboardingSharedPixelEvent {
             case .clicked:
                 return ParameterValues.clicked
             }
+        case .searchChatToggle(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
         }
     }
 
@@ -265,15 +388,32 @@ private extension OnboardingSharedPixelEvent {
         switch self {
         case .welcome(let event),
                 .setDefault(let event),
+                .aiComparison(let event),
                 .addToDock(let event),
                 .importData(let event),
                 .duckPlayer(let event),
+                .skipOnboarding(let event),
                 .searchResults(let event),
                 .trackersBlocked(let event),
                 .fireButton(let event),
-                .end(let event):
+                .end(let event),
+                .subscriptionPromo(let event):
             switch event {
             case .shown, .confirmed:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
+            }
+        case .appIconColor(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
+            }
+        case .addressBarPosition(let event):
+            switch event {
+            case .shown:
                 return nil
             case .clicked(let value):
                 return value.rawValue
@@ -303,6 +443,13 @@ private extension OnboardingSharedPixelEvent {
                 } else {
                     return value.map { $0.rawValue }.joined(separator: ",")
                 }
+            }
+        case .searchChatToggle(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
             }
         }
     }

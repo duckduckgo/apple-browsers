@@ -17,6 +17,7 @@
 //
 
 import Combine
+import CombineExtensions
 import Foundation
 
 /// A convenience class for publishing the active domain

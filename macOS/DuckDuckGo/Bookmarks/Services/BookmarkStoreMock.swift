@@ -238,9 +238,11 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
 
     var moveObjectUUIDCalled = false
     var capturedObjectUUIDs: [String]?
+    var capturedToIndex: Int?
     func move(objectUUIDs: [String], toIndex: Int?, withinParentFolder: ParentFolderType, completion: @escaping (Error?) -> Void) {
         moveObjectUUIDCalled = true
         capturedObjectUUIDs = objectUUIDs
+        capturedToIndex = toIndex
         capturedParentFolderType = withinParentFolder
         store?.move(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder, completion: completion)
     }

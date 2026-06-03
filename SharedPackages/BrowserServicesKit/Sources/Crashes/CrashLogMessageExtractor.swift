@@ -41,6 +41,7 @@
 //
 
 import Common
+import FoundationExtensions
 import CxxCrashHandler
 import Foundation
 import os.log

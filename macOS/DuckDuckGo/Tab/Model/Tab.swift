@@ -19,9 +19,12 @@
 import AutoconsentStats
 import BrowserServicesKit
 import Combine
+import CombineExtensions
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
 import Foundation
+import FoundationExtensions
 import History
 import MaliciousSiteProtection
 import Navigation
@@ -86,6 +89,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private let fireproofDomains: FireproofDomains
     let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
+
+    /// Per-tab Duck.ai omnibar state (prompt text, selection, mode, tool, attachments).
+    /// Owned by Tab so it survives TabViewModel recreation when the tab moves to a new window.
+    let addressBarSharedTextState = AddressBarSharedTextState()
 
     private let webViewConfiguration: WKWebViewConfiguration
 
@@ -689,7 +696,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.title = webView.title?.trimmingWhitespace()
 
         if let wkBackForwardListItem = webView.backForwardList.currentItem,
-           content.urlForWebView == wkBackForwardListItem.url,
+           let itemURL = wkBackForwardListItem.safeURL,
+           content.urlForWebView == itemURL,
            !webView.isLoading,
            title?.isEmpty == false {
             wkBackForwardListItem.tabTitle = title
@@ -771,11 +779,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         guard webView.url != nil else { return nil }
 
-        if #available(macOS 12.0, *) {
-            self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
-        } else {
-            self.interactionState = webView.sessionStateData().map { .webViewProvided($0) } ?? .none
-        }
+        self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
 
         return self.interactionState.data
     }
@@ -973,9 +977,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             setContent(.onboarding)
             return
         }
-        if #available(macOS 12.0, *) {
-            Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
-        }
+
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
         setContent(.onboarding)
     }
 
@@ -993,14 +996,24 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         // In the case of an error only reload web URLs to prevent uxss attacks via redirecting to javascript://
         if let error = error,
            let failingUrl = error.failingUrl ?? content.urlForWebView,
-           failingUrl.isHttp || failingUrl.isHttps,
-           // navigate in-place to preserve back-forward history
-           // launch navigation using javascript: URL navigation to prevent WebView from
-            // interpreting the action as user-initiated link navigation causing a new tab opening when Cmd is pressed
-            let redirectUrl = URL(string: "javascript:location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')") {
+           failingUrl.isHttp || failingUrl.isHttps {
 
+            // Use location.replace to retry the failed URL in-place without adding a back/forward
+            // entry. Invoke without user gesture so the resulting navigation arrives at the policy
+            // chain as user-initiated=false .other — PopupHandlingTabExtension would otherwise
+            // classify a user-initiated .other as a link activation and (for pinned, cross-origin
+            // navigations) cancel it.
+            let script = "location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')"
             self.content = .url(failingUrl, credential: nil, source: .reload)
-            webView.load(URLRequest(url: redirectUrl))
+            if featureFlagger.isFeatureOn(.newErrorPageReload),
+               webView.evaluateJavaScriptWithoutUserGesture(script) {
+                return nil
+            }
+            // Kill-switch fallback: legacy `javascript:` URL trampoline. Reintroduces the
+            // transient address-bar flash but preserves all the navigation semantics.
+            if let redirectUrl = URL(string: "javascript:\(script)") {
+                webView.load(URLRequest(url: redirectUrl))
+            }
             return nil
         }
 
@@ -1056,7 +1069,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         var request = URLRequest(url: url, cachePolicy: source.cachePolicy)
-        if #available(macOS 12.0, *), content.isUserEnteredUrl {
+        if content.isUserEnteredUrl {
             request.attribution = .user
         }
 
@@ -1089,12 +1102,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         // should load on Web View instantiation?
         case .loadInBackgroundIfNeeded(shouldLoadInBackground: let shouldLoadInBackground):
+#if DEBUG
+            // Prevent background auto-loading when running unit tests, as this can stress out the CI runner.
+            guard AppVersion.runType.requiresEnvironment else { return false }
+#endif
             switch content {
             case .newtab, .bookmarks, .settings:
-#if DEBUG
-                // prevent auto loading when running Unit Tests
-                guard AppVersion.runType.requiresEnvironment else { return false }
-#endif
                 return webView.url == nil // navigate to empty pages loaded for duck:// urls
             default:
                 return shouldLoadInBackground
@@ -1138,10 +1151,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     private func restoreInteractionState(with interactionStateData: Data) {
-        guard #available(macOS 12.0, *) else {
-            webView.restoreSessionState(from: interactionStateData)
-            return
-        }
         webView.interactionState = interactionStateData
     }
 
@@ -1306,7 +1315,6 @@ extension Tab: UserContentControllerDelegate {
         Logger.contentBlocking.info("didInstallContentRuleLists")
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
-        userScripts.debugScript.instrumentation = instrumentation
         userScripts.pageObserverScript.delegate = self
         userScripts.serpSettingsUserScript?.delegate = self
         userScripts.serpSettingsUserScript?.webView = self.webView

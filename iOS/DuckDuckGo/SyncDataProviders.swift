@@ -21,6 +21,7 @@ import Bookmarks
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import DDGSync
 import Persistence
 import PrivacyConfig
@@ -57,6 +58,7 @@ public class SyncDataProviders: DataProvidersSource {
             creditCardsAdapter?.setUpProviderIfNeeded(
                 secureVaultFactory: secureVaultFactory,
                 metadataStore: syncMetadata,
+                keyValueStore: keyValueStore,
                 metricsEventsHandler: metricsEventsHandler,
                 privacyConfigurationManager: privacyConfigurationManager
             )
@@ -128,6 +130,7 @@ public class SyncDataProviders: DataProvidersSource {
         bookmarksDatabase: CoreDataDatabase,
         secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
         secureVaultErrorReporter: SecureVaultReporting,
+        keyValueStore: ThrowingKeyValueStoring,
         settingHandlers: [SettingSyncHandler],
         favoritesDisplayModeStorage: FavoritesDisplayModeStoring,
         syncErrorHandler: SyncErrorHandling,
@@ -139,6 +142,7 @@ public class SyncDataProviders: DataProvidersSource {
         self.bookmarksDatabase = bookmarksDatabase
         self.secureVaultFactory = secureVaultFactory
         self.secureVaultErrorReporter = secureVaultErrorReporter
+        self.keyValueStore = keyValueStore
         self.featureFlagger = featureFlagger
 
         bookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase,
@@ -193,4 +197,5 @@ public class SyncDataProviders: DataProvidersSource {
     private let bookmarksDatabase: CoreDataDatabase
     private let secureVaultFactory: AutofillVaultFactory
     private let secureVaultErrorReporter: SecureVaultReporting
+    private let keyValueStore: ThrowingKeyValueStoring
 }

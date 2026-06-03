@@ -22,6 +22,9 @@ import Foundation
 import BrowserServicesKit
 import Core
 import Combine
+import CombineExtensions
+import Persistence
+import WebExtensions
 import WebKit
 
 protocol ContentBlockerRulesManagerProtocol: CompiledRuleListsSource {
@@ -40,9 +43,14 @@ public final class ContentBlockingUpdating {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+        let keyValueStore: ThrowingKeyValueStoring
+        let adBlockingAvailability: AdBlockingAvailabilityProviding
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [duckAiNativeStorageHandler] sourceProvider in
-                UserScripts(with: sourceProvider, duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+            { [duckAiNativeStorageHandler, keyValueStore, adBlockingAvailability] sourceProvider in
+                UserScripts(with: sourceProvider,
+                            keyValueStore: keyValueStore,
+                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                            adBlockingAvailability: adBlockingAvailability)
             }
         }
     }
@@ -53,11 +61,17 @@ public final class ContentBlockingUpdating {
     private(set) var userContentBlockingAssets: AnyPublisher<NewContent, Never>!
 
     init(userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         keyValueStore: ThrowingKeyValueStoring,
+         adBlockingAvailability: AdBlockingAvailabilityProviding) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
-            return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+            return NewContent(rulesUpdate: rulesUpdate,
+                              sourceProvider: sourceProvider,
+                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                              keyValueStore: keyValueStore,
+                              adBlockingAvailability: adBlockingAvailability)
         }
 
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {

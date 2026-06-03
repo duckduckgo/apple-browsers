@@ -29,6 +29,7 @@ import UIComponents
 import RemoteMessaging
 import AIChat
 import Subscription
+import Onboarding
 
 class SuggestionTrayViewController: UIViewController {
     
@@ -75,6 +76,11 @@ class SuggestionTrayViewController: UIViewController {
     private var autocompleteController: AutocompleteViewController?
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
+
+    /// Allows to defer autocomplete presentation to avoid short UI glitch (blink) when presenting
+    /// autocomplete suggestions when unifiedToggleInput flag is on.
+    var deferAutocompleteReveal = false
+    private var pendingDeferredAutocompleteReveal = false
     private var pendingEscapeHatchModel: EscapeHatchModel?
     private var pendingSuggestionsSectionTitle: String?
     private var pendingFavoritesSectionTitle: String?
@@ -126,6 +132,7 @@ class SuggestionTrayViewController: UIViewController {
         let subscriptionDataReporting: SubscriptionDataReporting?
         let newTabDialogFactory: NewTabDaxDialogsProvider
         let newTabDaxDialogManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
+        let onboardingFlowProvider: OnboardingFlowProviding
         let faviconLoader: FavoritesFaviconLoading
         let faviconsCache: FavoritesFaviconCaching
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
@@ -290,13 +297,14 @@ class SuggestionTrayViewController: UIViewController {
 
         variableWidthConstraint.constant = width
         fullWidthConstraint.isActive = false
+        fullWidthConstraint.constant = 0
         fullHeightConstraint.isActive = false
         fullHeightSafeAreaConstraint.isActive = false
         fullHeightSafeAreaInequalityConstraint.isActive = true
         applyTopConstraintForLayoutMode()
     }
 
-    func fill(bottomOffset: CGFloat = 0.0) {
+    func fill(bottomOffset: CGFloat = 0.0, horizontalInset: CGFloat = 0.0) {
         additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomOffset, right: 0)
 
         containerView.layer.shadowColor = UIColor.clear.cgColor
@@ -309,6 +317,7 @@ class SuggestionTrayViewController: UIViewController {
         backgroundView.backgroundColor = UIColor.clear
 
         fullWidthConstraint.isActive = true
+        fullWidthConstraint.constant = -(horizontalInset * 2)
         fullHeightConstraint.isActive = coversFullScreen
         fullHeightSafeAreaConstraint.isActive = !coversFullScreen
         fullHeightSafeAreaInequalityConstraint.isActive = !coversFullScreen
@@ -374,6 +383,7 @@ class SuggestionTrayViewController: UIViewController {
             subscriptionDataReporting: dependencies.subscriptionDataReporting,
             newTabDialogFactory: dependencies.newTabDialogFactory,
             daxDialogsManager: dependencies.newTabDaxDialogManager,
+            onboardingFlowProvider: dependencies.onboardingFlowProvider,
             faviconLoader: dependencies.faviconLoader,
             remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
@@ -425,7 +435,11 @@ class SuggestionTrayViewController: UIViewController {
                                                     featureDiscovery: featureDiscovery,
                                                     productSurfaceTelemetry: productSurfaceTelemetry)
         controller.suggestionFilter = suggestionFilter
-        install(controller: controller, animated: animated)
+        install(controller: controller, animated: deferAutocompleteReveal ? false : animated)
+        if deferAutocompleteReveal {
+            controller.view.isHidden = true
+            pendingDeferredAutocompleteReveal = true
+        }
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self
         autocompleteController = controller
@@ -436,8 +450,9 @@ class SuggestionTrayViewController: UIViewController {
 
     private func removeAutocomplete(animated: Bool) {
         guard let controller = autocompleteController else { return }
-        removeController(controller, animated: animated)
+        removeController(controller, animated: deferAutocompleteReveal ? false : animated)
         autocompleteController = nil
+        pendingDeferredAutocompleteReveal = false
     }
 
     private func removeNewTabPage(animated: Bool) {
@@ -506,9 +521,15 @@ extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDe
     }
 
     func autocompleteDidReloadResults(_ controller: AutocompleteViewController) {
-        guard controller.suggestionFilter == .urlsOnly else { return }
-        view.isHidden = controller.isEmpty
-        onURLFallbackVisibilityChanged?()
+        if controller.suggestionFilter == .urlsOnly {
+            view.isHidden = controller.isEmpty
+            onURLFallbackVisibilityChanged?()
+            return
+        }
+        if pendingDeferredAutocompleteReveal, controller === autocompleteController {
+            pendingDeferredAutocompleteReveal = false
+            controller.view.isHidden = false
+        }
     }
 
 }

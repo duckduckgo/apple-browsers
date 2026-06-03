@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DataBrokerProtectionCore
 import BrowserServicesKit
+import ConcurrencyExtensions
 import DataBrokerProtectionCoreTestsUtils
 import WebKit
+import XCTest
+@testable import DataBrokerProtectionCore
 
 final class WebViewHandlerTests: XCTestCase {
 

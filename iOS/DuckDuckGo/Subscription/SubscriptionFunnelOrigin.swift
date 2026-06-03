@@ -25,13 +25,25 @@ enum SubscriptionFunnelOrigin: String {
     case onboarding = "funnel_onboarding_ios"
 
     /// User entered the funnel via the skipped-onboarding promo modal.
-    case skippedOnboarding = "funnel_skippedonboarding_ios"
+    case skippedOnboarding = "funnel_modal_ios__skippedonboardingupsell"
 
     /// User entered the funnel via the App Settings screen.
     case appSettings = "funnel_appsettings_ios"
 
     /// User entered the funnel via the VPN menu item in the New Tab Page app menu.
     case newTabMenu = "funnel_appmenu_ios"
+
+    /// User entered the funnel by tapping a gated model in the Unified Toggle Input model picker from the address bar.
+    case addressBarModelPicker = "funnel_addressbar_ios__modelpicker"
+
+    /// User entered the funnel by tapping a gated reasoning level in the Unified Toggle Input reasoning picker from the address bar.
+    case addressBarReasoningPicker = "funnel_addressbar_ios__reasoningpicker"
+
+    /// User entered the funnel by tapping a gated model in the Unified Toggle Input model picker from the Duck.ai tab.
+    case duckAIModelPicker = "funnel_duckai_ios__modelpicker"
+
+    /// User entered the funnel by tapping a gated reasoning level in the Unified Toggle Input reasoning picker from the Duck.ai tab.
+    case duckAIReasoningPicker = "funnel_duckai_ios__reasoningpicker"
 
     // MARK: - Win-Back Offer Origins
     

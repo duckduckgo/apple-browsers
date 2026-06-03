@@ -60,6 +60,13 @@ enum WebExtensionPixel: PixelKitEvent {
     case adBlockingExtensionEnabled
     case adBlockingExtensionDisabled
 
+    case adBlockingExtensionAddressBarActiveClicked
+    case adBlockingExtensionAddressBarInactiveClicked
+    case adBlockingExtensionPopoverAlwaysOn
+    case adBlockingExtensionPopoverAlwaysOff
+    case adBlockingExtensionPopoverDisableUntilRelaunch
+    case adBlockingExtensionBreakageReportEntered
+
     // MARK: - Scriptlet Lifecycle
 
     case scriptletFetchSuccess(extensionType: String, version: String, count: Int)
@@ -70,7 +77,15 @@ enum WebExtensionPixel: PixelKitEvent {
 
     // MARK: - Daily State
 
-    case dailyAdBlockingState(isEnabled: Bool)
+    case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
+
+    // MARK: - Ad Blocking Detection Events
+
+    case adBlockingDetectedAdBlocker(loginState: String)
+    case adBlockingDetectedPlayabilityError(loginState: String)
+    case adBlockingDetectedVideoAd(loginState: String)
+    case adBlockingDetectedStaticAd(loginState: String)
+    case adBlockingDetectedBuffering(loginState: String)
 
     // MARK: - PixelKitEvent
 
@@ -118,6 +133,18 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_ad_blocking_enabled"
         case .adBlockingExtensionDisabled:
             return "m_mac_web_extension_ad_blocking_disabled"
+        case .adBlockingExtensionAddressBarActiveClicked:
+            return "m_mac_web_extension_ad_blocking_addressbar_active_clicked"
+        case .adBlockingExtensionAddressBarInactiveClicked:
+            return "m_mac_web_extension_ad_blocking_addressbar_inactive_clicked"
+        case .adBlockingExtensionPopoverAlwaysOn:
+            return "m_mac_web_extension_ad_blocking_popover_always_on"
+        case .adBlockingExtensionPopoverAlwaysOff:
+            return "m_mac_web_extension_ad_blocking_popover_always_off"
+        case .adBlockingExtensionPopoverDisableUntilRelaunch:
+            return "m_mac_web_extension_ad_blocking_popover_disable_until_relaunch"
+        case .adBlockingExtensionBreakageReportEntered:
+            return "m_mac_web_extension_ad_blocking_breakage_report_entered"
         case .scriptletFetchSuccess:
             return "m_mac_web_extension_scriptlet_fetch_success"
         case .scriptletFetchError:
@@ -130,6 +157,16 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_scriptlet_install_error"
         case .dailyAdBlockingState:
             return "m_mac_web_extension_daily_ad_blocking_state"
+        case .adBlockingDetectedAdBlocker:
+            return "m_mac_web_extension_adblocking_detected_ad_blocker"
+        case .adBlockingDetectedPlayabilityError:
+            return "m_mac_web_extension_adblocking_detected_playability_error"
+        case .adBlockingDetectedVideoAd:
+            return "m_mac_web_extension_adblocking_detected_video_ad"
+        case .adBlockingDetectedStaticAd:
+            return "m_mac_web_extension_adblocking_detected_static_ad"
+        case .adBlockingDetectedBuffering:
+            return "m_mac_web_extension_adblocking_detected_buffering"
         }
     }
 
@@ -154,8 +191,17 @@ enum WebExtensionPixel: PixelKitEvent {
             return ["extension_type": extensionType]
         case .scriptletInstalled(let extensionType, let version):
             return ["extension_type": extensionType, "version": version]
-        case .dailyAdBlockingState(let isEnabled):
-            return ["is_enabled": isEnabled ? "true" : "false"]
+        case .dailyAdBlockingState(let isEnabled, let analyticsEnabled):
+            return [
+                "is_enabled": isEnabled ? "true" : "false",
+                "analytics_enabled": analyticsEnabled ? "true" : "false"
+            ]
+        case .adBlockingDetectedAdBlocker(let loginState),
+             .adBlockingDetectedPlayabilityError(let loginState),
+             .adBlockingDetectedVideoAd(let loginState),
+             .adBlockingDetectedStaticAd(let loginState),
+             .adBlockingDetectedBuffering(let loginState):
+            return ["loginState": loginState]
         default:
             return nil
         }
@@ -163,6 +209,19 @@ enum WebExtensionPixel: PixelKitEvent {
 
     var standardParameters: [PixelKitStandardParameter]? {
         return [.pixelSource]
+    }
+
+    /// Maps a C-S-S `webEvent` `type` string to the matching pixel case.
+    /// Returns `nil` for unknown types so the caller can no-op.
+    static func adBlockingDetectedEvent(type: String, loginState: String) -> WebExtensionPixel? {
+        switch type {
+        case "youtube_adBlocker": return .adBlockingDetectedAdBlocker(loginState: loginState)
+        case "youtube_playabilityError": return .adBlockingDetectedPlayabilityError(loginState: loginState)
+        case "youtube_videoAd": return .adBlockingDetectedVideoAd(loginState: loginState)
+        case "youtube_staticAd": return .adBlockingDetectedStaticAd(loginState: loginState)
+        case "youtube_buffering": return .adBlockingDetectedBuffering(loginState: loginState)
+        default: return nil
+        }
     }
 }
 

@@ -19,6 +19,9 @@
 
 
 import Combine
+import Common
+import FoundationExtensions
+import Core
 import DDGSync
 import XCTest
 @testable import DuckDuckGo
@@ -34,6 +37,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     var mockAIChatSyncHandler: MockAIChatSyncHandling!
     var mockAIChatFullModeFeature: MockAIChatFullModeFeatureProviding!
     var mockAIChatContextualModeFeature: MockAIChatContextualModeFeatureProviding!
+    private var mockUserScriptErrorEventMapper: CapturingAIChatUserScriptErrorEventMapper!
     private var mockUserDefaults: UserDefaults!
 
     private var mockSuiteName: String {
@@ -47,6 +51,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockAIChatSyncHandler = MockAIChatSyncHandling()
         mockAIChatFullModeFeature = MockAIChatFullModeFeatureProviding()
         mockAIChatContextualModeFeature = MockAIChatContextualModeFeatureProviding()
+        mockUserScriptErrorEventMapper = CapturingAIChatUserScriptErrorEventMapper()
 
         mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
         mockUserDefaults.removePersistentDomain(forName: mockSuiteName)
@@ -62,10 +67,13 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockAIChatSyncHandler = nil
         mockAIChatFullModeFeature = nil
         mockAIChatContextualModeFeature = nil
+        mockUserScriptErrorEventMapper = nil
+        PixelFiringMock.tearDown()
         super.tearDown()
     }
 
-    private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false) -> AIChatUserScriptHandler {
+    private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false,
+                                             aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil) -> AIChatUserScriptHandler {
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
         return AIChatUserScriptHandler(
             experimentalAIChatManager: experimentalAIChatManager,
@@ -74,6 +82,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             keyValueStore: mockUserDefaults,
             aichatFullModeFeature: mockAIChatFullModeFeature,
             aichatContextualModeFeature: mockAIChatContextualModeFeature,
+            aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
             isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
         )
     }
@@ -241,6 +250,126 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         await fulfillment(of: [expectation])
     }
 
+    @MainActor
+    func testOpenAIChatLinkCallsOpenLinkHandler() async {
+        let urlString = "https://duckduckgo.com/?q=cat%20breeds&t=duck_ai"
+        let params: [String: Any] = [
+            "url": urlString
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openAIChatLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertEqual(openedURL?.absoluteString, urlString)
+    }
+
+    @MainActor
+    func testOpenAIChatLinkIgnoresUnusedTargetAndNameFields() async {
+        let urlString = "https://duckduckgo.com/?q=cat%20breeds&t=duck_ai"
+        let params: [String: Any] = [
+            "url": urlString,
+            "target": "external-app",
+            "name": "future-source"
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openAIChatLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertEqual(openedURL?.absoluteString, urlString)
+    }
+
+    @MainActor
+    func testOpenSummarizationSourceLinkCallsOpenLinkHandler() async {
+        let urlString = "https://example.com/source"
+        let params: [String: Any] = [
+            "url": urlString
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openSummarizationSourceLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertEqual(openedURL?.absoluteString, urlString)
+    }
+
+    @MainActor
+    func testOpenTranslationSourceLinkCallsOpenLinkHandler() async {
+        let urlString = "https://example.com/source"
+        let params: [String: Any] = [
+            "url": urlString
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openTranslationSourceLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertEqual(openedURL?.absoluteString, urlString)
+    }
+
+    @MainActor
+    func testOpenAIChatLinkIgnoresInvalidURL() async {
+        let params: [String: Any] = [
+            "url": "invalid"
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openAIChatLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertNil(openedURL)
+    }
+
+    @MainActor
+    func testOpenAIChatLinkIgnoresNonHTTPURL() async {
+        let params: [String: Any] = [
+            "url": "intent://example.com/path"
+        ]
+        var openedURL: URL?
+        aiChatUserScriptHandler.setOpenLinkHandler { url in
+            openedURL = url
+        }
+
+        let result = await aiChatUserScriptHandler.openAIChatLink(
+            params: params,
+            message: MockUserScriptMessage(name: "test", body: params)
+        )
+
+        XCTAssertNil(result)
+        XCTAssertNil(openedURL)
+    }
+
     func testResponseReceivedPostsNotification() async {
         // Given
         let expectation = expectation(forNotification: .aiChatResponseReceived, object: nil)
@@ -248,6 +377,27 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         // When
         let result = await aiChatUserScriptHandler.responseReceived(params: [:], message: message)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [expectation])
+    }
+
+    @MainActor
+    func testNewImageGenerationChatStartedPostsNotificationCarryingSourceWebView() async {
+        // Given
+        let webView = WKWebView()
+        let expectation = expectation(forNotification: .aiChatNewImageGenerationChatStarted, object: webView)
+        let message = MockUserScriptMessage(
+            messageName: "test",
+            messageBody: [:],
+            messageHost: "duck.ai",
+            isMainFrame: true,
+            messageWebView: webView
+        )
+
+        // When
+        let result = await aiChatUserScriptHandler.newImageGenerationChatStarted(params: [:], message: message)
 
         // Then
         XCTAssertNil(result)
@@ -270,6 +420,66 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNil(result)
         await fulfillment(of: [expectation])
+    }
+
+    func testReportMetricDecodeFailureReportsEvent() async {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(aiChatUserScriptErrorEventMapper: mockUserScriptErrorEventMapper)
+
+        _ = await aiChatUserScriptHandler.reportMetric(
+            params: "not-a-dictionary",
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        guard case .reportMetricDecodingFailed(let error, let failureReason) = mockUserScriptErrorEventMapper.events.first else {
+            XCTFail("Expected reportMetricDecodingFailed event")
+            return
+        }
+        XCTAssertNil(error)
+        XCTAssertEqual(failureReason, .typeMismatch)
+    }
+
+    @MainActor
+    func testGetResponseStateDecodeFailureReportsEvent() async {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(aiChatUserScriptErrorEventMapper: mockUserScriptErrorEventMapper)
+
+        _ = await aiChatUserScriptHandler.getResponseState(
+            params: ["status": "not-a-real-status"],
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        guard case .responseStateDecodingFailed(let error, let failureReason) = mockUserScriptErrorEventMapper.events.first else {
+            XCTFail("Expected responseStateDecodingFailed event")
+            return
+        }
+        XCTAssertNotNil(error)
+        XCTAssertEqual(failureReason, .dataCorrupted)
+    }
+
+    func testUserScriptErrorEventMapperMapsReportMetricDecodeFailureToPixel() {
+        let error = DecodingError.typeMismatch(
+            AIChatMetricName.self,
+            DecodingError.Context(codingPath: [], debugDescription: "Expected metric name")
+        )
+        let mapper = AIChatUserScriptErrorEventMapper(dailyPixelFiring: PixelFiringMock.self)
+
+        mapper.fire(.reportMetricDecodingFailed(error: error, failureReason: .typeMismatch))
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatReportMetricDecodeError.name)
+        XCTAssertNotNil(PixelFiringMock.lastDailyPixelInfo?.error)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["failureReason": "type_mismatch"])
+    }
+
+    func testUserScriptErrorEventMapperMapsResponseStateDecodeFailureToPixel() {
+        let error = DecodingError.valueNotFound(
+            AIChatStatusValue.self,
+            DecodingError.Context(codingPath: [], debugDescription: "Expected status")
+        )
+        let mapper = AIChatUserScriptErrorEventMapper(dailyPixelFiring: PixelFiringMock.self)
+
+        mapper.fire(.responseStateDecodingFailed(error: error, failureReason: .valueNotFound))
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatResponseStateDecodeError.name)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["failureReason": "value_not_found"])
     }
 
     func testResponseReceivedPostsNilUserInfoWhenParamsAreNotDictionary() async {
@@ -495,6 +705,18 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNil(response)
         XCTAssertEqual(mockAIChatSyncHandler.setAIChatHistoryEnabledCalls, [true])
+    }
+}
+
+private final class CapturingAIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> {
+
+    private(set) var events: [AIChatUserScriptErrorEvent] = []
+
+    init() {
+        super.init { _, _, _, _ in }
+        eventMapper = { [weak self] event, _, _, _ in
+            self?.events.append(event)
+        }
     }
 }
 

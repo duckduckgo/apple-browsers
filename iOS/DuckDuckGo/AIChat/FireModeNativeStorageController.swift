@@ -23,14 +23,19 @@ import Core
 import DuckAiDataStore
 import Foundation
 import os.log
+import Persistence
 import PrivacyConfig
 /// Owns the iOS fire-mode Duck.ai native storage handler and rotates it on burn.
 ///
 /// The underlying disk-backed handler lives at
-/// `<group>/DuckAiNativeStorage-fireMode/<UUID>/`, where `<UUID>` is
+/// `<Application Support>/DuckAiNativeStorage-fireMode/<UUID>/`, where `<UUID>` is
 /// `DataStoreIDManager.currentFireModeID` — matching the WebKit fire-mode data
 /// store identity. On burn we invalidate the current ID, swap in a fresh handler at
 /// the new ID's directory, and asynchronously delete the old directory on disk.
+///
+/// On first launch after upgrading from a build that stored fire-mode data in the
+/// shared app-group container, the existing directory is moved into Application
+/// Support; see `DuckAiNativeStorageContainerMigration`.
 ///
 /// Conforms to `DuckAiNativeStorageHandling` so consumers don't need to know about
 /// rotation; only `FireExecutor` calls `syncWithCurrentFireModeID()` directly on the concrete type.
@@ -60,18 +65,49 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     private let pixelFiring: DuckAiNativeStoragePixelFiring
     private let keyStoreAccessGroup: String
 
-    /// Returns `nil` if `aiChatNativeStorage` is off, the app group container is missing,
-    /// or the underlying store can't be opened.
+    /// Returns `nil` if `aiChatNativeStorage` is off, the required container is
+    /// unavailable, or the underlying store can't be opened.
     init?(featureFlagger: FeatureFlagger,
           dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared,
           consentSeedSource: DuckAiNativeStorageHandling?,
           appConfigurationGroupName: String,
+          keyValueStore: ThrowingKeyValueStoring,
           pixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter()) {
-        guard featureFlagger.isFeatureOn(.aiChatNativeStorage),
-              let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appConfigurationGroupName) else {
-            return nil
+        guard featureFlagger.isFeatureOn(.aiChatNativeStorage) else { return nil }
+
+        let baseDirectoryURL: URL
+        if featureFlagger.isFeatureOn(.duckAINativeStoragePathMigration) {
+            guard let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+                return nil
+            }
+            baseDirectoryURL = appSupportURL.appendingPathComponent(Constants.fireModeDirectoryName)
+
+            if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appConfigurationGroupName) {
+                let outcome = DuckAiNativeStorageContainerMigration(
+                    oldURL: groupContainer.appendingPathComponent(Constants.fireModeDirectoryName),
+                    newURL: baseDirectoryURL,
+                    migrationKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup",
+                    label: .fireMode,
+                    keyValueStore: keyValueStore,
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                ).run()
+                if outcome == .skip {
+                    return nil
+                }
+            }
+
+            DuckAiNativeStorageContainerMigration.excludeFromBackup(baseDirectoryURL,
+                                                                    label: .fireMode,
+                                                                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter())
+        } else {
+            // Path migration disabled: keep the legacy App Group container.
+            guard let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appConfigurationGroupName) else {
+                return nil
+            }
+            baseDirectoryURL = groupContainer.appendingPathComponent(Constants.fireModeDirectoryName)
         }
-        self.baseDirectoryURL = groupContainer.appendingPathComponent(Constants.fireModeDirectoryName)
+
+        self.baseDirectoryURL = baseDirectoryURL
         self.dataStoreIDManager = dataStoreIDManager
         self.consentSeedSource = consentSeedSource
         self.pixelFiring = pixelFiring
@@ -130,6 +166,10 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
                                     keyStoreAccessGroup: String,
                                     pixelFiring: DuckAiNativeStoragePixelFiring) -> DuckAiNativeStorageHandling? {
         let containerURL = baseDirectoryURL.appendingPathComponent(id.uuidString)
+        let dbURL = containerURL.appendingPathComponent("chats.db")
+        if !FileManager.default.fileExists(atPath: dbURL.path) {
+            Logger.aiChat.info("[NativeStorage] fire-mode DB does not exist yet for id \(id), will be created at: \(dbURL.path)")
+        }
         do {
             return try DuckAiNativeStorageHandler(
                 .disk(path: containerURL,
@@ -204,4 +244,6 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     func isMigrationDone() throws -> Bool { try inner.isMigrationDone() }
     func isMigrationDone(key: String) throws -> Bool { try inner.isMigrationDone(key: key) }
     func markMigrationDone(key: String) throws { try inner.markMigrationDone(key: key) }
+
+    var setupSucceeded: Bool? { inner.setupSucceeded }
 }

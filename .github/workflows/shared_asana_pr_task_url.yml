@@ -1,0 +1,130 @@
+name: Shared - Asana PR Task URL
+
+on:
+  workflow_call:
+    inputs:
+      asana-project-id:
+        required: true
+        type: string
+      asana-pr-section-id:
+        required: true
+        type: string
+      asana-waiting-for-release-section-id:
+        required: true
+        type: string
+
+jobs:
+
+  # This job is used to check if the task linked in the PR description belongs to the specified project (App Board).
+  # If that's not the case, the task is added to the project's PR section.
+  add-task-to-project:
+
+    name: Add Task to App Board Project
+
+    runs-on: ubuntu-latest
+
+    if: ${{ !github.event.pull_request.draft }}
+
+    outputs:
+      task_id: ${{ steps.get-task-id.outputs.task_id }}
+      task_in_project: ${{ steps.check-board-membership.outputs.task_in_project }}
+
+    steps:
+    - name: Get Task ID
+      id: get-task-id
+      env:
+        BODY: ${{ github.event.pull_request.body }}
+      run: |
+        task_id=$(grep -i "task/issue url.*https://app.asana.com/" <<< "$BODY" \
+          | perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
+            s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
+            s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)(?:\?focus=true)?|\1|'
+        )
+        echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
+
+    - name: Check App Board Project Membership
+      id: check-board-membership
+      env:
+        ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        ASANA_PROJECT_ID: ${{ inputs.asana-project-id }}
+      run: |
+        project_ids="$(curl -fLSs "https://app.asana.com/api/1.0/tasks/${{ steps.get-task-id.outputs.task_id }}?opt_fields=projects" \
+          -H "Authorization: Bearer ${{ env.ASANA_ACCESS_TOKEN }}" \
+          | jq -r .data.projects[].gid)"
+
+        if grep -q "\b${{ env.ASANA_PROJECT_ID }}\b" <<< $project_ids; then
+          echo "task_in_project=1" >> $GITHUB_OUTPUT
+        else
+          echo "task_in_project=0" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Add Task to the App Board Project
+      id: add-task-to-project
+      if: ${{ (github.event.action == 'opened' || github.event.action == 'ready_for_review') && steps.check-board-membership.outputs.task_in_project == '0' }}
+      env:
+        ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        ASANA_PROJECT_ID: ${{ inputs.asana-project-id }}
+        ASANA_PR_SECTION_ID: ${{ inputs.asana-pr-section-id }}
+      run: |
+        curl -fLSs -X POST "https://app.asana.com/api/1.0/tasks/${{ steps.get-task-id.outputs.task_id }}/addProject" \
+          -H "Authorization: Bearer ${{ env.ASANA_ACCESS_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --output /dev/null \
+          -d "{\"data\": {\"project\": \"${{ env.ASANA_PROJECT_ID }}\", \"section\": \"${{ env.ASANA_PR_SECTION_ID }}\"}}"
+
+  # When a PR is merged, move the task to the Waiting for Release section of the App Board.
+  mark-waiting-for-release:
+
+    name: Move to Waiting for Release on Merge
+
+    runs-on: ubuntu-latest
+    if: >
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      (
+        github.base_ref == 'main' ||
+        startsWith(github.base_ref, 'hotfix/') ||
+        startsWith(github.base_ref, 'release/')
+      )
+
+    needs: [add-task-to-project]
+
+    steps:
+    - name: Move to Waiting for Release
+      if: ${{ needs.add-task-to-project.outputs.task_in_project == '1' }}
+      env:
+        ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+      run: |
+        curl -fLSs -X POST "https://app.asana.com/api/1.0/sections/${{ inputs.asana-waiting-for-release-section-id }}/addTask" \
+          -H "Authorization: Bearer ${{ env.ASANA_ACCESS_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --output /dev/null \
+          -d "{\"data\": {\"task\": \"${{ needs.add-task-to-project.outputs.task_id }}\"}}"
+
+  comment-not-moved-to-release:
+
+    name: Comment when not moved to Waiting for Release
+
+    runs-on: ubuntu-latest
+    needs: [add-task-to-project]
+    if: >
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      needs.add-task-to-project.outputs.task_in_project == '1' &&
+      !(
+        github.base_ref == 'main' ||
+        startsWith(github.base_ref, 'hotfix/') ||
+        startsWith(github.base_ref, 'release/')
+      )
+
+    steps:
+    - name: Add Asana comment
+      env:
+        ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        TASK_ID: ${{ needs.add-task-to-project.outputs.task_id }}
+      run: |
+        curl -fLSs -X POST "https://app.asana.com/api/1.0/tasks/${TASK_ID}/stories" \
+          -H "Authorization: Bearer $ASANA_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          --output /dev/null \
+          -d "{\"data\": {\"text\": \"PR #${{ github.event.pull_request.number }} was merged into '${{ github.base_ref }}'. Task is already in the App Board project, but it was not moved to Waiting for Release because the base branch is not main, hotfix/*, or release/*.\"}}"

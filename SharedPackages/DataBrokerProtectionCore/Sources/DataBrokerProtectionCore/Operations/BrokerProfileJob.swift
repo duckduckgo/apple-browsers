@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
-import os.log
 import BrowserServicesKit
+import Common
+import ConcurrencyExtensions
+import Foundation
+import os.log
 
 public enum JobType {
     case manualScan
@@ -157,13 +158,16 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         do {
             // Jobs for removed brokers will already be prevented from being scheduled upstream and are filtered below to the specific broker ID
-            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(reason: .specificBrokerJobDispatch)
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
         }
 
-        let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
+        let isAuthenticatedUser = await jobDependencies.isAuthenticatedUser()
+        let brokerProfileQueriesData = allBrokerProfileQueryData
+            .filter { $0.dataBroker.id == dataBrokerID }
+            .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
         let filteredAndSortedJobData = Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
                                                                jobType: jobType,
@@ -188,7 +192,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
             Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
 
-            let isFreeScan = !(await jobDependencies.isAuthenticatedUser())
+            let isFreeScan = !isAuthenticatedUser
             let stepType: StepType? = {
                 switch jobData {
                 case is ScanJobData:

@@ -24,13 +24,7 @@ import SwiftUI
 import SwiftUIExtensions
 
 fileprivate extension Preferences.Const {
-    static let autoLockWarningOffset: CGFloat = {
-        if #available(macOS 12.0, *) {
-            return 18
-        } else {
-            return 20
-        }
-    }()
+    static let autoLockWarningOffset: CGFloat = 18
 }
 
 extension Preferences {

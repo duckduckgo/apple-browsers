@@ -20,6 +20,7 @@
 import UIKit
 import SwiftUI
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import WebKit
@@ -27,6 +28,7 @@ import Combine
 import DataBrokerProtectionCore
 import os.log
 import PrivacyConfig
+import Subscription
 
 final public class DataBrokerProtectionViewController: UIViewController {
 
@@ -45,12 +47,19 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     private let isWebViewInspectable: Bool
 
-    private lazy var webUIViewModel: DBPUIViewModel = {
+    private lazy var sharedPixelsHandler: DataBrokerProtectionSharedPixelsHandler = {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
-        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+        return DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+    }()
 
+    private lazy var interactionPixels = DataBrokerProtectionInteractionPixels(
+        handler: sharedPixelsHandler,
+        repository: DataBrokerProtectionInteractionPixelsUserDefaults(userDefaults: .dbp)
+    )
+
+    private lazy var webUIViewModel: DBPUIViewModel = {
         return DBPUIViewModel(authenticationDelegate: authenticationDelegate,
                               databaseDelegate: databaseDelegate,
                               feedbackFormDelegate: self,
@@ -148,6 +157,12 @@ final public class DataBrokerProtectionViewController: UIViewController {
         super.viewDidAppear(animated)
         webUIViewModel.viewDidAppear()
         subscribeToBackgroundRefreshNotifications()
+        Task { [weak self] in
+            guard let self else { return }
+            let isAuthenticated = await self.authenticationDelegate.isUserAuthenticated()
+            self.interactionPixels.fireInteractionPixel(isAuthenticated: isAuthenticated)
+            self.sharedPixelsHandler.fire(.dashboardOpen(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
+        }
     }
 
     override public func viewDidDisappear(_ animated: Bool) {
@@ -175,6 +190,16 @@ final public class DataBrokerProtectionViewController: UIViewController {
         Task { @MainActor in
             await webUIViewModel.sendBackgroundAppRefreshDidChange(into: webView)
         }
+    }
+
+    private func shouldOpenExternally(_ url: URL) -> Bool {
+        guard let selectedURL = URL(string: webUISettings.selectedURL),
+              let selectedHost = selectedURL.host,
+              url.host?.caseInsensitiveCompare(selectedHost) == .orderedSame else {
+            return false
+        }
+
+        return SubscriptionPurchaseFlowPath.contains(url.path)
     }
 }
 
@@ -217,6 +242,17 @@ extension DataBrokerProtectionViewController: WKNavigationDelegate {
         }
 
         return .allow
+    }
+
+    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        guard navigationAction.targetFrame?.isMainFrame == true,
+              let url = navigationAction.request.url,
+              shouldOpenExternally(url) else {
+            return .allow
+        }
+
+        openURLHandler(url)
+        return .cancel
     }
 
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {

@@ -77,14 +77,11 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         menu.addItem(NSMenuItem(title: "Validate Token", action: #selector(validateToken), target: self))
         menu.addItem(NSMenuItem(title: "Check Entitlements", action: #selector(checkEntitlements), target: self))
         menu.addItem(NSMenuItem(title: "Get Subscription Details", action: #selector(getSubscriptionDetails), target: self))
-
-        if #available(macOS 12.0, *) {
-            menu.addItem(.separator())
-            menu.addItem(NSMenuItem(title: "Sync App Store AppleID Account (re- sign-in)", action: #selector(syncAppleIDAccount), target: self))
-            menu.addItem(NSMenuItem(title: "Purchase Subscription from App Store", action: #selector(showPurchaseView), target: self))
-            menu.addItem(NSMenuItem(title: "Change Tier", action: #selector(showBuyProductionSubscriptions), target: self))
-            menu.addItem(NSMenuItem(title: "Restore Subscription from App Store transaction", action: #selector(restorePurchases), target: self))
-        }
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Sync App Store AppleID Account (re- sign-in)", action: #selector(syncAppleIDAccount), target: self))
+        menu.addItem(NSMenuItem(title: "Purchase Subscription from App Store", action: #selector(showPurchaseView), target: self))
+        menu.addItem(NSMenuItem(title: "Change Tier", action: #selector(showBuyProductionSubscriptions), target: self))
+        menu.addItem(NSMenuItem(title: "Restore Subscription from App Store transaction", action: #selector(restorePurchases), target: self))
 
         menu.addItem(.separator())
 
@@ -273,7 +270,10 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     func getSubscriptionDetails() {
         Task {
             do {
-                let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+                guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else {
+                    showAlert(title: "Subscription info", message: "No subscription available")
+                    return
+                }
                 showAlert(title: "Subscription info", message: subscription.debugDescription)
             } catch {
                 showAlert(title: "Subscription info", message: "\(error)")
@@ -281,7 +281,6 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         }
     }
 
-    @available(macOS 12.0, *)
     @objc
     func syncAppleIDAccount() {
         Task { @MainActor in
@@ -290,18 +289,16 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     }
 
     @IBAction func showPurchaseView(_ sender: Any?) {
-        if #available(macOS 12.0, *) {
-            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
-                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
-            let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
-                                                                     storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                     wideEvent: wideEvent)
-            // swiftlint:disable:next force_cast
-            let vc = DebugPurchaseViewControllerV2(storePurchaseManager: subscriptionManager.storePurchaseManager() as! DefaultStorePurchaseManager,
-                                                   appStorePurchaseFlow: appStorePurchaseFlow)
-            currentViewController()?.presentAsSheet(vc)
-        }
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                               storePurchaseManager: subscriptionManager.storePurchaseManager())
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
+                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                 wideEvent: wideEvent)
+        // swiftlint:disable:next force_cast
+        let vc = DebugPurchaseViewControllerV2(storePurchaseManager: subscriptionManager.storePurchaseManager() as! DefaultStorePurchaseManager,
+                                               appStorePurchaseFlow: appStorePurchaseFlow)
+        currentViewController()?.presentAsSheet(vc)
     }
 
     // MARK: - Platform
@@ -425,10 +422,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     private func updateRegionOverride(to region: SubscriptionRegion?) {
         self.subscriptionUserDefaults.storefrontRegionOverride = region
 
-        if #available(macOS 12.0, *) {
-            Task {
-                await subscriptionManager.storePurchaseManager().updateAvailableProducts()
-            }
+        Task {
+            await subscriptionManager.storePurchaseManager().updateAvailableProducts()
         }
     }
 
@@ -436,25 +431,21 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     @objc
     func restorePurchases(_ sender: Any?) {
-        if #available(macOS 12.0, *) {
-            Task {
-                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
-                                                                       storePurchaseManager: subscriptionManager.storePurchaseManager())
-                await appStoreRestoreFlow.restoreAccountFromPastPurchase()
-            }
+        Task {
+            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
+            await appStoreRestoreFlow.restoreAccountFromPastPurchase()
         }
     }
 
     @objc
     func showBuyProductionSubscriptions(_ sender: Any?) {
-        if #available(macOS 12.0, *) {
-            let viewController = ProductionSubscriptionPurchaseViewController(
-                subscriptionManager: subscriptionManager,
-                subscriptionSelectionHandler: subscriptionSelectionHandler
-            )
-            viewController.title = "Change Tier"
-            currentViewController()?.presentAsSheet(viewController)
-        }
+        let viewController = ProductionSubscriptionPurchaseViewController(
+            subscriptionManager: subscriptionManager,
+            subscriptionSelectionHandler: subscriptionSelectionHandler
+        )
+        viewController.title = "Change Tier"
+        currentViewController()?.presentAsSheet(viewController)
     }
 
     private func showAlert(title: String, message: String? = nil) {

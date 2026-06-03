@@ -49,6 +49,9 @@ protocol OmniBarDelegate: AnyObject {
     func onSettingsPressed()
 
     func onMenuLongPressed()
+    
+    func menuForOmniBarLongPress(in state: OmniBarState) -> UIMenu?
+    func onOmniBarLongPressMenuDisplayed()
 
     func onClearTextPressed()
 
@@ -122,6 +125,7 @@ protocol OmniBarDelegate: AnyObject {
     // MARK: - Escape Hatch
     func escapeHatchForEditingState() -> EscapeHatchModel?
     func onSwitchToTab(_ tab: Tab)
+    func onTabSwitcherRequested()
 
     // MARK: - Toggle
     func onToggleModeSwitched()
@@ -173,6 +177,13 @@ extension OmniBarDelegate {
 
     }
 
+    func menuForOmniBarLongPress(in state: OmniBarState) -> UIMenu? {
+        nil
+    }
+
+    func onOmniBarLongPressMenuDisplayed() {
+    }
+
     func onCancelPressed() {
         
     }
@@ -222,6 +233,8 @@ extension OmniBarDelegate {
     }
 
     func onSwitchToTab(_ tab: Tab) {}
+
+    func onTabSwitcherRequested() {}
 
     func onToggleModeSwitched() {}
 

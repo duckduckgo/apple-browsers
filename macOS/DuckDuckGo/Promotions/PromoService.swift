@@ -25,7 +25,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Tracks state for a promo that is currently being shown.
     private struct ActiveShowSession {
         let promoId: String
-        let delegate: any PromoDelegate
+        let delegate: any InternalPromoDelegate
         let promoType: PromoType
 
         /// First-write-wins flag. Once true, ignore further results from show(), timeout, or eligibility.
@@ -100,7 +100,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
 
     /// Attaches a delegate to a promo by ID. Call when the delegate object is ready.
     /// If all delegates are ready and start() was already called, completes registration immediately.
-    func setDelegate(for promoId: String, delegate: any AnyPromoDelegate) {
+    func setDelegate(for promoId: String, delegate: any PromoDelegate) {
         stateQueue.async { [weak self] in
             guard let self else { return }
             guard let index = promos.firstIndex(where: { $0.id == promoId }) else {
@@ -184,7 +184,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
                 Logger.general.warning("PromoService: forceShow unknown promo ID \(promoId)")
                 return
             }
-            guard let delegate = promo.delegate as? PromoDelegate else {
+            guard let delegate = promo.delegate as? InternalPromoDelegate else {
                 Logger.general.warning("PromoService: forceShow - external promos control their own visibility")
                 return
             }
@@ -272,6 +272,16 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Serial queue that protects all mutable state and runs trigger evaluation off the main thread.
     private let stateQueue: DispatchQueue
 
+    /// Per-instance key used to tag `stateQueue` so callers can non-fatally check whether they are
+    /// already on it. See `isOnStateQueue`.
+    private static let stateQueueKey = DispatchSpecificKey<ObjectIdentifier>()
+
+    /// Non-fatal check for whether the current execution context is `stateQueue`. Use this to
+    /// re-dispatch off-queue callers via `stateQueue.async` rather than trap.
+    private var isOnStateQueue: Bool {
+        DispatchQueue.getSpecific(key: Self.stateQueueKey) == ObjectIdentifier(self)
+    }
+
     // MARK: - Init
 
     init(
@@ -305,6 +315,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             }
         }
         self.recordsSubject = CurrentValueSubject(initialSnapshot)
+        // Tag the queue so `isOnStateQueue` can identify this instance's queue without trapping.
+        // Using ObjectIdentifier(self) lets multiple PromoService instances safely share a queue.
+        stateQueue.setSpecific(key: Self.stateQueueKey, value: ObjectIdentifier(self))
 
         triggerPublisher
             .receive(on: stateQueue)
@@ -385,7 +398,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         processBufferedTriggersIfReady()
     }
 
-    private func subscribeToExternalDelegateIfNeeded(promoId: String, delegate: (any AnyPromoDelegate)?) {
+    private func subscribeToExternalDelegateIfNeeded(promoId: String, delegate: (any PromoDelegate)?) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         guard let externalDelegate = delegate as? ExternalPromoDelegate else { return }
         guard externalSubscriptions[promoId] == nil else { return }
@@ -403,15 +416,36 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     }
 
     private func applyExternalVisibility(visible: Bool, promoId: String, delegate: ExternalPromoDelegate) {
-        dispatchPrecondition(condition: .onQueue(stateQueue))
+        guard isOnStateQueue else {
+            stateQueue.async { [weak self] in
+                self?.applyExternalVisibility(visible: visible, promoId: promoId, delegate: delegate)
+            }
+            return
+        }
         if visible {
             externalVisiblePromoIds.insert(promoId)
             var record = historyStore.record(for: promoId)
             record.lastShown = currentDate
             historyStore.save(record)
             notifyRecordChanged(for: promoId, record: record)
+            // External visibility is not gated by checkRules; retract conflicting internal promos shown earlier.
+            hideInternalPromosConflictingWithCurrentVisibility()
         } else if externalVisiblePromoIds.remove(promoId) != nil {
             applyResult(delegate.resultWhenHidden, toRecordFor: promoId)
+        }
+    }
+
+    /// Retracts visible internal promos that would fail `checkRules` now that an external promo may be visible.
+    private func hideInternalPromosConflictingWithCurrentVisibility() {
+        dispatchPrecondition(condition: .onQueue(stateQueue))
+        let visiblePromos = Array(activeSessions.keys)
+        for promoID in visiblePromos {
+            guard activeSessions[promoID] != nil,
+                  let promo = promos.first(where: { $0.id == promoID }),
+                  promo.delegate is InternalPromoDelegate else { continue }
+            if !checkRules(for: promo) {
+                recordResultAndCleanup(promoId: promoID, result: .noChange)
+            }
         }
     }
 
@@ -436,7 +470,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         guard !externalActivationSuppression.isSet else { return }
 
         for promo in promos {
-            guard let delegate = promo.delegate as? PromoDelegate else { continue }
+            guard let delegate = promo.delegate as? InternalPromoDelegate else { continue }
             let record = historyStore.record(for: promo.id)
 
             guard let lastShown = record.lastShown else { continue }
@@ -459,12 +493,12 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
 
         let matchingPromos = promos.filter { $0.triggers.contains(where: triggers.contains) }
         for promo in matchingPromos {
-            (promo.delegate as? PromoDelegate)?.refreshEligibility()
+            (promo.delegate as? InternalPromoDelegate)?.refreshEligibility()
         }
 
         for promo in matchingPromos {
             guard activeSessions[promo.id] == nil,
-                  let delegate = promo.delegate as? PromoDelegate,
+                  let delegate = promo.delegate as? InternalPromoDelegate,
                   checkRules(for: promo) else { continue }
 
             let record = historyStore.record(for: promo.id)
@@ -520,7 +554,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
 
     // MARK: - Show / Session Management
 
-    private func performShow(promo: Promo, delegate: PromoDelegate, record: PromoHistoryRecord, isRestore: Bool = false) {
+    private func performShow(promo: Promo, delegate: InternalPromoDelegate, record: PromoHistoryRecord, isRestore: Bool = false) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         let promoId = promo.id
         var recordToUse = record
@@ -585,7 +619,12 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     }
 
     private func recordResultAndCleanup(promoId: String, result: PromoResult) {
-        dispatchPrecondition(condition: .onQueue(stateQueue))
+        guard isOnStateQueue else {
+            stateQueue.async { [weak self] in
+                self?.recordResultAndCleanup(promoId: promoId, result: result)
+            }
+            return
+        }
         guard var session = activeSessions[promoId] else { return }
         if session.isResultRecorded { return }
 

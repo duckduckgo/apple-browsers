@@ -69,6 +69,17 @@ public extension NewTabPageDataModel {
         let enableAiChatTools: Bool?
         let enableImageGeneration: Bool?
         let enableWebSearch: Bool?
+        /// When true, the omnibar shows a 1-click voice-chat button. Driven by the native
+        /// `aiChatOmnibarVoiceChatAccess` feature flag and reactive over `omnibar_onConfigUpdate`
+        /// so the affordance appears/disappears without a page reload when the flag flips.
+        let enableVoiceChatAccess: Bool?
+        /// When false, the omnibar must not render the inline "Ask Duck.ai: <query>" entry in
+        /// the suggestions dropdown. Native sets this to the value of the user's "Autocomplete
+        /// suggestions" preference so the dropdown matches the address bar (which hides the
+        /// equivalent `.askAIChat` entry when the preference is off). Reactive over
+        /// `omnibar_onConfigUpdate`. `nil` means "treat as true" for back-compat with web
+        /// clients that don't know about this field yet.
+        let enableAskAiSuggestion: Bool?
         let selectedModelId: String?
         let aiModelSections: [AIModelSection]?
         /// The user's persisted reasoning effort (e.g. `"none"`, `"low"`, `"medium"`). `nil` when
@@ -277,13 +288,15 @@ public extension NewTabPageDataModel {
         let pinned: Bool?
         let lastEdit: String?
         let firstUserMessageContent: String?
+        let model: String?
 
-        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil) {
+        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil, model: String? = nil) {
             self.chatId = chatId
             self.title = title
             self.pinned = pinned
             self.lastEdit = lastEdit
             self.firstUserMessageContent = firstUserMessageContent
+            self.model = model
         }
     }
 

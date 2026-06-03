@@ -24,7 +24,8 @@
                 "key": "minutesSinceSidebarHidden",
                 "description": "Number of minutes since sidebar was last hidden. Omitted if sidebar is opened for the first time on a given tab",
                 "type": "integer"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_aichat_translate_text": {
@@ -46,35 +47,35 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_history_autoclear_disabled": {
         "description": "Fired when user disables the setting to auto-clear Duck.ai chat history in Data Clearing preferences",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_history_delete_requested": {
         "description": "Fired when user requests to delete Duck.ai chat history from the fire button or history delete dialog",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_history_delete_successful": {
         "description": "Fired when Duck.ai chat history is deleted successfully",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_history_delete_failed": {
         "description": "Fired when Duck.ai chat history fails to be deleted",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_start_new_conversation": {
         "description": "Fired when user submits their first prompt in a new Duck.ai conversation",
@@ -100,7 +101,8 @@
                 "key": "width",
                 "description": "The final sidebar width in points",
                 "type": "integer"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_aichat_models_fetch_failed": {
@@ -108,42 +110,70 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_report_metric_decode_error": {
+        "description": "Fired when the Duck.ai frontend sends a reportMetric payload that native code cannot decode",
+        "owners": ["aataraxiaa", "Bunn", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
+            {
+                "key": "failureReason",
+                "description": "The native decode failure category",
+                "type": "string",
+                "enum": ["key_not_found", "type_mismatch", "value_not_found", "data_corrupted", "unknown_decoding_error"]
+            }
+        ]
     },
     "m_mac_aichat_sidebar_detached": {
         "description": "Fired when user detaches the AI Chat sidebar into a floating window",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sidebar_attached": {
         "description": "Fired when user re-docks the floating AI Chat window via the attach button",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sidebar_floating_closed": {
         "description": "Fired when user closes the floating AI Chat window via the close button",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sidebar_floating_tab_activated": {
         "description": "Fired when user clicks the floating title button to activate the associated tab",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_tabbar_button_clicked": {
         "description": "Fired when user clicks the Duck.ai button in the tab bar to open a new chat tab",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_tab_did_terminate": {
+        "description": "Fired when a Duck.ai tab's WebKit web content process terminates",
+        "owners": ["aataraxiaa", "Bunn", "samsymons"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_mac_aichat_sidebar_closed": {
         "description": "Fired when the AI Chat sidebar is closed",
@@ -158,7 +188,8 @@
                 "description": "What triggered the sidebar to close",
                 "type": "string",
                 "enum": ["address-bar-button", "sidebar-close-button", "context-menu", "tabbar-button"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_aichat_is_enabled": {
@@ -174,7 +205,25 @@
                 "description": "Whether AI Chat features are currently enabled",
                 "type": "string",
                 "enum": ["0", "1"]
-            }
+            },
+            "channel"
+        ]
+    },
+    "m_mac_aichat_voice_chat_start_failed": {
+        "description": "Fired when the Duck.ai FE reports that getUserMedia() rejected while starting a voice chat. 'mic_os_denied' means the OS has denied microphone access to the app and native requested the Permission Center remediation popover (the request is dispatched synchronously to the address-bar observer; if no observer matches the popover is not actually shown). 'other' means any other reason (transient WebKit error, etc.) where native took no action.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "reason",
+                "description": "Classification of the FE-reported failure reason",
+                "type": "string",
+                "enum": ["mic_os_denied", "other"]
+            },
+            "channel"
         ]
     }
 }

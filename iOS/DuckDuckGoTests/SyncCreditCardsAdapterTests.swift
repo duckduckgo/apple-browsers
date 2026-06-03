@@ -24,6 +24,8 @@ import DDGSync
 import SecureStorage
 import Core
 import Common
+import FoundationExtensions
+import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 final class SyncCreditCardsAdapterTests: XCTestCase {
@@ -31,6 +33,7 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
     var errorHandler: CapturingAdapterErrorHandler!
     var adapter: SyncCreditCardsAdapter!
     let metadataStore = MockMetadataStore()
+    var keyValueStore: MockThrowingKeyValueStore!
     var cancellables: Set<AnyCancellable>!
 
     override func setUpWithError() throws {
@@ -40,12 +43,14 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
             secureVaultErrorReporter: MockSecureVaultReporting(),
             syncErrorHandler: errorHandler
         )
+        keyValueStore = MockThrowingKeyValueStore()
         cancellables = []
     }
 
     override func tearDownWithError() throws {
         errorHandler = nil
         adapter = nil
+        keyValueStore = nil
         cancellables = nil
     }
 
@@ -53,7 +58,9 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Sync did fail")
         let expectedError = NSError(domain: "some error", code: 400)
         adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory,
-                                      metadataStore: metadataStore, privacyConfigurationManager: MockPrivacyConfigurationManager())
+                                      metadataStore: metadataStore,
+                                      keyValueStore: keyValueStore,
+                                      privacyConfigurationManager: MockPrivacyConfigurationManager())
         adapter.provider!.syncErrorPublisher
             .sink { _ in
                 expectation.fulfill()
@@ -71,6 +78,7 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Sync Did Update")
         adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory,
                                       metadataStore: metadataStore,
+                                      keyValueStore: keyValueStore,
                                       privacyConfigurationManager: MockPrivacyConfigurationManager())
 
         Task {

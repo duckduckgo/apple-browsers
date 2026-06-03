@@ -18,7 +18,9 @@
 
 import AppKit
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import DesignResourcesKitIcons
 import FeatureFlags
 import PrivacyConfig
@@ -32,6 +34,7 @@ struct OtherTabBarViewItemsState {
 }
 
 protocol TabBarViewModel {
+    var uuid: TabIdentifier { get }
     var tabContent: Tab.TabContent { get }
     var isPinned: Bool { get }
     var title: String { get }
@@ -52,6 +55,7 @@ protocol TabBarViewModel {
 }
 
 extension TabViewModel: TabBarViewModel {
+    var uuid: TabIdentifier { tab.uuid }
     var isPinned: Bool {
         tab.isPinned
     }
@@ -247,7 +251,6 @@ final class TabBarItemCellView: NSView {
         return view
     }()
 
-    /// Deprecated: Always hidden when `tabAnimations` is enabled
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
     /// Deprecated: Replaced by `TabBackgroundView`
@@ -603,6 +606,7 @@ extension TabBarItemCellView: ThemeUpdateListening {
         if displaysTabsAnimations {
             backgroundView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundView.overlayColor = tabStyleProvider.hoverTabColor
+            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
         } else {
             leftRampView.rampColor = colorsProvider.navigationBackgroundColor
             rightRampView.rampColor = colorsProvider.navigationBackgroundColor
@@ -1405,6 +1409,8 @@ extension TabBarViewItem: NSMenuDelegate {
             addCrashMenuItem(to: menu)
             addCrashMultipleTimesMenuItem(to: menu)
         }
+
+        menu.alignItemTextWithIconsRecursively()
     }
 
     private func addCrashMenuItem(to menu: NSMenu) {
@@ -1421,12 +1427,14 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addNewToTheRightMenuItem(to menu: NSMenu) {
         let newTabMenuItem = NSMenuItem(title: UserText.newTabToTheRight, action: #selector(newToTheRightAction(_:)), keyEquivalent: "")
+        newTabMenuItem.image = DesignSystemImages.Glyphs.Size12.tabNew
         newTabMenuItem.target = self
         menu.addItem(newTabMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
         let duplicateMenuItem = NSMenuItem(title: UserText.duplicateTab, action: #selector(duplicateAction(_:)), keyEquivalent: "")
+        duplicateMenuItem.image = DesignSystemImages.Glyphs.Size12.windowDuplicate
         duplicateMenuItem.target = self
         duplicateMenuItem.isEnabled = delegate?.tabBarViewItemCanBeDuplicated(self) ?? false
         menu.addItem(duplicateMenuItem)
@@ -1442,6 +1450,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addPinMenuItem(to menu: NSMenu) {
         let pinMenuItem = NSMenuItem(title: isPinned ? UserText.unpinTab : UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
+        pinMenuItem.image = isPinned ? DesignSystemImages.Glyphs.Size12.pinRemove : DesignSystemImages.Glyphs.Size12.pin
         pinMenuItem.target = self
         if !isPinned {
             pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false
@@ -1451,6 +1460,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addBookmarkMenuItem(to menu: NSMenu) {
         let bookmarkMenuItem = NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(bookmarkThisPageAction(_:)), keyEquivalent: "")
+        bookmarkMenuItem.image = DesignSystemImages.Glyphs.Size12.bookmarkAdd
         bookmarkMenuItem.target = self
         bookmarkMenuItem.isEnabled = delegate?.tabBarViewItemCanBeBookmarked(self) ?? false
         menu.addItem(bookmarkMenuItem)
@@ -1483,6 +1493,7 @@ extension TabBarViewItem: NSMenuDelegate {
             }
             menuItem.isEnabled = true
         }
+        menuItem.image = DesignSystemImages.Glyphs.Size12.fireproof
         menuItem.target = self
         menu.addItem(menuItem)
     }
@@ -1492,6 +1503,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
         let menuItemTitle = audioState.isMuted ? UserText.unmuteTab : UserText.muteTab
         let muteUnmuteMenuItem = NSMenuItem(title: menuItemTitle, action: #selector(muteUnmuteSiteAction(_:)), keyEquivalent: "")
+        muteUnmuteMenuItem.image = audioState.isMuted ? DesignSystemImages.Glyphs.Size12.audio : DesignSystemImages.Glyphs.Size12.audioMute
         muteUnmuteMenuItem.target = self
         menu.addItem(muteUnmuteMenuItem)
     }
@@ -1533,6 +1545,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addCloseMenuItem(to menu: NSMenu) {
         let closeMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(closeButtonAction(_:)), keyEquivalent: "")
+        closeMenuItem.image = DesignSystemImages.Glyphs.Size12.close
         closeMenuItem.target = self
         menu.addItem(closeMenuItem)
     }
@@ -1761,6 +1774,7 @@ extension TabBarViewItem {
         func tabBarViewItemSuspendAction(_: TabBarViewItem) {}
 
         final class TabBarViewModelMock: TabBarViewModel {
+            let uuid: TabIdentifier = UUID().uuidString
             var url: URL?
             var width: CGFloat
             var isSelected: Bool

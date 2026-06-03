@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import History
@@ -445,7 +446,7 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
-            if isBurner, featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
+            if isBurner {
                 var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
                 if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
                     persistor.fireTabVisitCount += 1
@@ -453,11 +454,10 @@ final class TabCollectionViewModel: NSObject {
             }
         }
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
-        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
-        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         if selected {
             selectUnpinnedTab(at: insertionIndex, forceChange: forceChange)
         }
+        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         return insertionIndex
     }
 
@@ -478,13 +478,20 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        tabCollection.append(tabs: tabs)
-        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
+        // Materialize the to-be-selected last tab before insertion — see `insert(_:at:selected:)`.
+        var tabsToAppend = tabs
+        if shouldSelectLastTab,
+           let lastIndex = tabsToAppend.indices.last,
+           case .unloaded(let unloaded) = tabsToAppend[lastIndex] {
+            tabsToAppend[lastIndex] = .loaded(unloaded.materialize())
+        }
+
+        tabCollection.append(tabs: tabsToAppend)
         if shouldSelectLastTab {
             let newSelectionIndex = tabCollection.tabs.count - 1
             selectUnpinnedTab(at: newSelectionIndex)
         }
+        delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
     func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {
@@ -514,16 +521,21 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        tabCollection.insert(tab, at: index.item)
-        // Notify the delegate before updating selection: setting `selectionIndex`
-        // publishes `selectedTabViewModel`, which can synchronously re-enter via
-        // `TabLazyLoader` → `materialize` → `replaceTab` → `didReplaceTabAt` and
-        // call `reloadItems` on the collection view while it still has the
-        // pre-insert item count, raising NSInternalInconsistencyException.
-        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
+        // Selection requires a loaded tab (see `AnyTab` doc-comment). Materialize
+        // before insertion so the materialize-on-select branch in
+        // `selectUnpinnedTab` is a no-op when `select(at:)` runs.
+        let tabToInsert: AnyTab = {
+            if selected, case .unloaded(let unloaded) = tab {
+                return .loaded(unloaded.materialize())
+            }
+            return tab
+        }()
+
+        tabCollection.insert(tabToInsert, at: index.item)
         if selected {
             select(at: index)
         }
+        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
     }
 
     func insert(_ tab: Tab, at index: TabIndex, selected: Bool = true) {

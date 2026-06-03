@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import PixelKit
 import PrivacyConfig
 import SecureStorage
@@ -383,7 +384,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
             PixelKit.fire(GeneralPixel.jsPixel(pixel), doNotEnforcePrefix: true)
         } else {
             var existingParameters = pixel.pixelParameters ?? [:]
-            var parameters = usageProvider.formattedFillDate.flatMap {
+            let parameters = usageProvider.formattedFillDate.flatMap {
                 existingParameters[AutofillPixelKitEvent.Parameter.lastUsed] = $0
                 return existingParameters
             } ?? existingParameters

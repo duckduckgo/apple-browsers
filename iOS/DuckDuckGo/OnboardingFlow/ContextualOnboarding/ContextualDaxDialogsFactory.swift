@@ -32,6 +32,12 @@ protocol ContextualOnboardingEventDelegate: AnyObject {
     func didAcknowledgeContextualOnboardingTrackersDialog()
     /// Inform the delegate that the user dismissed the contextual dialog.
     func didTapDismissContextualOnboardingAction()
+    /// Inform the delegate that the user advanced past the visit-site dialog by picking a
+    /// suggestion. Unlike `didTapDismissContextualOnboardingAction`, this only collapses the
+    /// dialog UI — it does **not** reset `lastShownDaxDialogType` / `lastVisitedOnboardingWebsiteURL`
+    /// — so the natural next contextual spec (e.g. trackers) can still surface once the chosen
+    /// page finishes loading.
+    func didNavigateAwayFromContextualOnboardingDialog()
 }
 
 // Composed delegate for Contextual Onboarding to decorate events also needed in New Tab Page.
@@ -91,12 +97,13 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                     onSizeUpdate: onSizeUpdate
                 )
             )
-        case .fire:
+        case .fire(let fireVariant):
             rootView = AnyView(
                 fireDialog(
                     title: spec.title,
                     message: spec.message,
                     delegate: delegate,
+                    fireVariant: fireVariant,
                     pixelName: spec.pixelName,
                     allowsManualDismiss: spec.allowsManualDismiss
                 )
@@ -134,18 +141,28 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             return message.attributed.with(attribute: .font, value: UIFont.daxBodyBold(), in: boldRange)
         }
 
-        let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider, delegate: delegate)
+        let viewModel = OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider,
+            delegate: delegate,
+            onSuggestionPressed: { [weak self] in
+                self?.contextualOnboardingPixelReporter.measureTryVisitSiteDialogSuggestedSiteTapped()
+            }
+        )
 
         // If should not show websites search after searching inform the delegate that the user dimissed the dialog, otherwise let the dialog handle it.
         let gotItAction: () -> Void = if shouldFollowUpToWebsiteSearch {
             { [weak delegate, weak self] in
+                self?.contextualOnboardingPixelReporter.measureSearchResultsDialogGotItAction()
                 onSizeUpdate()
                 delegate?.didAcknowledgeContextualOnboardingSearch()
                 self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
             }
         } else {
-            { [weak delegate] in
+            { [weak delegate, weak self] in
+                self?.contextualOnboardingPixelReporter.measureSearchResultsDialogGotItAction()
                 delegate?.didTapDismissContextualOnboardingAction()
             }
         }
@@ -168,6 +185,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         )
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: afterSearchPixelEvent)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.searchResults(.shown))
         }
     }
 
@@ -175,7 +193,10 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
             suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider,
-            delegate: delegate
+            delegate: delegate,
+            onSuggestionPressed: { [weak self] in
+                self?.contextualOnboardingPixelReporter.measureTryVisitSiteDialogSuggestedSiteTapped()
+            }
         )
 
         let onManualDismiss: () -> Void = { [weak delegate, weak self] in
@@ -191,6 +212,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
         }
     }
 
@@ -220,6 +242,8 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             shouldFollowUp: shouldFollowUpToFireDialog,
             message: attributedMessage,
             blockedTrackersCTAAction: { [weak self, weak delegate] in
+                self?.contextualOnboardingPixelReporter.measureTrackersDialogGotItAction()
+
                 // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
                 if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
                     delegate?.didTapDismissContextualOnboardingAction()
@@ -227,6 +251,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                     onSizeUpdate()
                     delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
                     self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
+                    self?.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
                 }
             },
             onManualDismiss: onManualDismiss
@@ -235,7 +260,13 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             delegate?.didShowContextualOnboardingTrackersDialog()
         }
         .onFirstAppear { [weak self] in
+            // Fire the general dialog impression pixel for all users, plus an additional
+            // chat-path-specific pixel when the user is in the Duck.ai experiment flow.
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
+            if self?.contextualOnboardingSettings.chatPathPhase == .trackerToEOJ {
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTrackersBlockedUnique)
+            }
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.trackersBlocked(.shown))
         }
     }
 
@@ -243,6 +274,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         title: String?,
         message: String,
         delegate: ContextualOnboardingDelegate,
+        fireVariant: DaxDialogs.BrowsingSpec.SpecType.FireVariant,
         pixelName: Pixel.Event,
         allowsManualDismiss: Bool
     ) -> some View {
@@ -253,7 +285,16 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
         return OnboardingFireDialog(title: title, message: message, onManualDismiss: onManualDismiss)
             .onFirstAppear { [weak self] in
-                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+                guard let self else { return }
+                switch fireVariant {
+                case .standard:
+                    self.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+                case .duckAIOnboarding:
+                    if self.onboardingManager.currentOnboardingFlow == .default {
+                        self.contextualOnboardingPixelReporter.measureDuckAIExperimentFireDialogImpression()
+                    }
+                }
+                self.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
             }
     }
 
@@ -281,6 +322,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.end(.shown))
         }
     }
 
@@ -292,6 +334,8 @@ protocol ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool { get }
     var userHasSeenFireDialog: Bool { get }
     var userHasSeenTryVisitSiteDialog: Bool { get }
+    /// The current phase of the Duck.ai chat-first onboarding path.
+    var chatPathPhase: DaxDialogs.ChatPathPhase { get }
 }
 
 extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {

@@ -8,7 +8,7 @@ let package = Package(
         // These are the current minimum targets for these platforms but this code will silently not
         //  work unless iOS/macOS 26 is available.
         .iOS("15.0"),
-        .macOS("11.4"),
+        .macOS("12.3"),
     ],
     products: [
         .library(
@@ -22,6 +22,9 @@ let package = Package(
         .target(
             name: "ScreenTimeDataCleaner",
             dependencies: [
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
     ]

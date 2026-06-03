@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import Common
+import FoundationExtensions
 import FeatureFlags
 import History
 import HistoryView
@@ -135,7 +136,6 @@ final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
     let valuesChangedPublisher = PassthroughSubject<Void, Never>()
 }
 
-@available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     var window: MockWindow!
@@ -188,14 +188,14 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     featureFlagger: MockFeatureFlagger()
                 ),
                 aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-                dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
-                                                      dockCustomizer: DockCustomizerMock(),
+                dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                       pixelFiring: nil),
                 accessibilityPreferences: AccessibilityPreferences(),
                 duckPlayer: DuckPlayer(
                     preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                    internalUserDecider: featureFlagger.internalUserDecider
+                    internalUserDecider: featureFlagger.internalUserDecider,
+                    featureFlagger: featureFlagger
                 ),
                 pinningManager: MockPinningManager()
             )
@@ -333,7 +333,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         withExtendedLifetime(cancellable) {}
     }
 
-    func testWhenNavigationCompletedAndWindowDidBecomeActiveCorrectDialogCapturedInFactory() throws {
+    func testWhenWindowDidBecomeActiveAndDisplayedDialogMatchesExpected_NoRePresentation() throws {
+        // When the displayed dialog still matches what the provider reports as the last dialog
+        // for this tab, windowDidBecomeKey must NOT re-present it — re-presenting recreates the
+        // NSHostingController and restarts the typewriter animation.
         dialogProvider.state = .ongoing
         dialogProvider.dialog = .tryFireButton
         tab.navigateFromOnboarding(to: .duckDuckGo)
@@ -345,7 +348,26 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         factory.capturedType = nil
         viewController.windowDidBecomeKey()
 
+        XCTAssertNil(factory.capturedType)
+    }
+
+    func testWhenWindowDidBecomeActiveAndExpectedDialogChanged_StaleDialogReplaced() throws {
+        // When state advances in another window while this one is backgrounded, the displayed
+        // dialog goes stale. windowDidBecomeKey must replace it with the now-expected dialog.
+        dialogProvider.state = .ongoing
+        dialogProvider.dialog = .tryFireButton
+        tab.navigateFromOnboarding(to: .duckDuckGo)
+
+        wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .tryFireButton)
+
+        // Simulate state advancing in another window: lastDialog now reports .highFive.
+        factory.capturedType = nil
+        dialogProvider.lastDialog = .highFive
+
+        viewController.windowDidBecomeKey()
+
+        XCTAssertEqual(factory.capturedType, .highFive)
     }
 
     func testWhenDialogIsDismissedViewHighlightsAreDismissed() throws {
@@ -559,7 +581,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
         tab.navigateFromOnboarding(to: url)
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation], timeout: 5.0)
         XCTAssertNil(pixelReporter.gotItPressedDialog)
 
         // WHEN

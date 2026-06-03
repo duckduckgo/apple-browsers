@@ -19,6 +19,7 @@
 import WebKit
 import Combine
 import Common
+import FoundationExtensions
 
 public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
@@ -60,7 +61,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.modePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.showViewAllAiChatsPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.selectedModelIdPublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.selectedReasoningEffortPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.selectedReasoningEffortPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.isVoiceChatAccessEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.showAskAiSuggestionPublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -106,6 +109,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
+            enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(aiModelSections),
             selectedReasoningEffort: configProvider.selectedReasoningEffort
@@ -177,6 +182,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
+            enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(modelsProvider?.lastFetchedSections),
             selectedReasoningEffort: configProvider.selectedReasoningEffort

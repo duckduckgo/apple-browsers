@@ -40,25 +40,30 @@ public struct PlatformLinksView: View {
     }
 
     public var body: some View {
-            ScrollView {
-                VStack {
-                    content
-                    Spacer()
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity)
+        ScrollView {
+            VStack {
+                content
+                Spacer()
             }
-        .background(Rectangle()
-            .foregroundColor(Color(designSystemColor: .backgroundSheets))
-            .ignoresSafeArea())
-
+            .padding(16)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Color(designSystemColor: .background))
+        .ignoresSafeArea()
         .navigationTitle(UserText.syncGetOtherDevicesScreenTitle)
+    }
+
+    private var isiOS26: Bool {
+        if #available(iOS 26, *) {
+            return true
+        }
+        return false
     }
 
     private var content: some View {
         VStack(alignment: .center, spacing: 0) {
 
-            Image("Sync-App-Download-128")
+            Image(rebrandable: "Sync-App-Download-128")
                 .resizable()
                 .frame(width: 96, height: 72)
 
@@ -112,11 +117,12 @@ public struct PlatformLinksView: View {
                 }
             }
             .padding(.horizontal, 24)
+            .padding(.bottom, 8)
 
         }
         .padding(.vertical, 24)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: isiOS26 ? 24 : 12)
                 .fill(Color(designSystemColor: .surface))
         )
         .onAppear {

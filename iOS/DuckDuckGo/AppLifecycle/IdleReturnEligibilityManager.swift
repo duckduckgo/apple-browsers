@@ -53,10 +53,11 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
         self.tutorialSettings = tutorialSettings
         self.isStillOnboarding = isStillOnboarding
         let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
-        self.effectiveOptionResolver = AfterInactivityEffectiveOptionResolver(storage: storage)
+        self.effectiveOptionResolver = AfterInactivityEffectiveOptionResolver(storage: storage, featureFlagger: featureFlagger)
         self.thresholdResolver = IdleReturnThresholdResolver(
             privacyConfigurationManager: privacyConfigurationManager,
-            debugOverridesStorage: debugOverridesStorage
+            debugOverridesStorage: debugOverridesStorage,
+            userPreferenceStorage: storage
         )
     }
 

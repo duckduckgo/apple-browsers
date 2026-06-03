@@ -22,6 +22,7 @@ import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
+import FoundationExtensions
 import History
 import NetworkProtectionIPC
 import NetworkQualityMonitor
@@ -298,7 +299,8 @@ final class MainViewController: NSViewController {
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager,
-            pinningManager: pinningManager
+            pinningManager: pinningManager,
+            featureFlagger: featureFlagger
         )
 
         // Create the shared AI Chat omnibar controller
@@ -597,10 +599,6 @@ final class MainViewController: NSViewController {
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
     }
 
-    func toggleDuckAISidebar() {
-        aiChatCoordinator.toggleSidebar()
-    }
-
     private func wireToggleReferenceToAIChatTextContainer() {
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
@@ -681,6 +679,17 @@ final class MainViewController: NSViewController {
         wireToggleReferenceToAIChatTextContainer()
         wireAIChatOmnibarHeightUpdates()
         wireAIChatOmnibarHitTesting()
+        wireAIChatOmnibarEscapeHandling()
+    }
+
+    /// When the duck.ai omnibar's `@`-mention picker is open, Esc should dismiss only the
+    /// picker — without touching the omnibar's focus or duck.ai mode. The address bar's
+    /// `escapeKeyDown()` consults the closure we install here BEFORE running its own
+    /// focus-resign logic; returning `true` short-circuits all of that.
+    private func wireAIChatOmnibarEscapeHandling() {
+        navigationBarViewController.addressBarViewController?.aiChatOmnibarHandledEscape = { [weak self] in
+            self?.aiChatOmnibarTextContainerViewController.dismissMentionPickerIfPresented() ?? false
+        }
     }
 
     @objc private func windowDidResize() {
@@ -1138,7 +1147,13 @@ extension MainViewController {
 
     private func handleReturnKey(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
         guard event.keyCode == kVK_Return,
-              navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true else {
+              let addressBarTextField = navigationBarViewController.addressBarViewController?.addressBarTextField,
+              addressBarTextField.isFirstResponder else {
+            return false
+        }
+
+        if featureFlagger.isFeatureOn(.addressBarIMEConfirmFix),
+           addressBarTextField.editor?.hasMarkedText() == true {
             return false
         }
 
@@ -1148,18 +1163,18 @@ extension MainViewController {
             let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
             if isSwitchingToAIChatMode {
-                let currentText = navigationBarViewController.addressBarViewController?.addressBarTextField.stringValueWithoutSuffix ?? ""
+                let currentText = addressBarTextField.stringValueWithoutSuffix
                 self.aiChatOmnibarTextContainerViewController.insertNewlineIfHasContent(addressBarText: currentText)
             }
             return true
         } else if flags.contains(.control),
                   featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            navigationBarViewController.addressBarViewController?.addressBarTextField.openAIChatWithPrompt()
+            addressBarTextField.openAIChatWithPrompt()
             return true
         } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
             navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
         } else {
-            navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+            addressBarTextField.addressBarEnterPressed()
         }
         return true
     }

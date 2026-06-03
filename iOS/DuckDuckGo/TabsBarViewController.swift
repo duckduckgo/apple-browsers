@@ -18,12 +18,14 @@
 //
 
 import UIKit
+import Combine
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import BrowserServicesKit
 import AIChat
 import Persistence
+import PrivacyConfig
 
 protocol TabsBarDelegate: NSObjectProtocol {
     
@@ -36,6 +38,9 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
+    func tabsBarDidRequestAIChat(_ controller: TabsBarViewController)
+    func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
+    func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController)
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
@@ -69,11 +74,24 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         createButton(image: DesignSystemImages.Glyphs.Size24.add)
     }()
 
+    lazy var aiChatChip: DuckAIChromeChipView = {
+        let chip = DuckAIChromeChipView()
+        // Hidden until updateAIChatButtonVisibility() runs (viewWillAppear / settings change).
+        // Prevents a brief visible-then-hidden flicker if the flag or per-shortcut preference is off.
+        chip.isHidden = true
+        return chip
+    }()
+
     weak var delegate: TabsBarDelegate?
     var tabManager: TabManaging?
     var historyManager: HistoryManaging?
     var fireproofing: Fireproofing?
     var aiChatSettings: AIChatSettingsProvider?
+    var featureFlagger: FeatureFlagger? {
+        didSet {
+            registerForFeatureFlagChanges()
+        }
+    }
     var keyValueStore: ThrowingKeyValueStoring?
     var daxDialogsManager: DaxDialogsManaging?
     var fireModeCapability: FireModeCapable? {
@@ -87,6 +105,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
+    private var cancellables = Set<AnyCancellable>()
     
     private weak var pressedCell: TabsBarCell?
     
@@ -121,6 +140,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         decorate()
         configureGestures()
         enableInteractionsWithPointer()
+        registerForAIChatSettingsChanges()
     }
 
     private func setUpSubviews() {
@@ -133,16 +153,21 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
 
         buttonsStack.spacing = Constants.stackSpacing
+        buttonsStack.alignment = .center
 
         buttonsStack.addArrangedSubview(addTabButton)
+        buttonsStack.addArrangedSubview(aiChatChip)
         buttonsStack.addArrangedSubview(fireButton)
         buttonsStack.addArrangedSubview(tabSwitcherButton)
 
         addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
+        aiChatChip.textButton.addTarget(self, action: #selector(onAIChatPressed), for: .touchUpInside)
+        aiChatChip.iconButton.addTarget(self, action: #selector(onAIChatContextualSheetIconPressed), for: .touchUpInside)
+        configureAIChatChipMenu()
         fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
         tabSwitcherButton.delegate = self
 
-        // Set width equal to height for all buttons
+        // Set width equal to height for all icon buttons
         [addTabButton, fireButton, tabSwitcherButton].forEach { button in
             button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
             button.widthAnchor.constraint(equalToConstant: Constants.buttonSize).isActive = true
@@ -153,6 +178,62 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         super.viewWillAppear(animated)
         tabSwitcherButton.layoutSubviews()
         reloadData()
+        updateAIChatButtonVisibility()
+    }
+
+    private func registerForAIChatSettingsChanges() {
+        NotificationCenter.default.publisher(for: .aiChatSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateAIChatButtonVisibility()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func registerForFeatureFlagChanges() {
+        // The chrome shortcut flag is .internalOnly, so flipping internal-user state at runtime
+        // (debug menu) changes visibility — react to it without requiring an app restart.
+        featureFlagger?.internalUserDecider.isInternalUserPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateAIChatButtonVisibility()
+            }
+            .store(in: &cancellables)
+
+        guard let overridesHandler = featureFlagger?.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .aiChatChromeShortcutIPad }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateAIChatButtonVisibility()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateAIChatButtonVisibility() {
+        let isVisible: Bool
+        if let featureFlagger, let aiChatSettings {
+            isVisible = DuckAIChromeShortcutVisibility.isChromeButtonVisible(
+                featureFlagger: featureFlagger,
+                isAIChatNavigationBarUserSettingsEnabled: aiChatSettings.isAIChatNavigationBarUserSettingsEnabled
+            )
+        } else {
+            isVisible = false
+        }
+        aiChatChip.isHidden = !isVisible
+    }
+
+    /// Pushes per-tab state into the chip. Called by `MainViewController` when the
+    /// current tab changes, its URL changes (Duck.ai vs not), or its contextual sheet
+    /// is presented/dismissed.
+    func updateAIChatChipState(isCurrentTabAIChat: Bool, isCurrentTabHome: Bool, isContextualSheetPresented: Bool) {
+        aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
+        // The icon half toggles the page-context sheet; hide it where there's no page to attach
+        // — Duck.ai tabs and the New Tab Page.
+        aiChatChip.setIconVisible(!isCurrentTabAIChat && !isCurrentTabHome)
     }
 
     @IBAction func onFireButtonPressed() {
@@ -188,24 +269,26 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         requestNewTab(type: .currentMode)
     }
 
+    @objc private func onAIChatPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .openAIChatFromNavigationBarShortcut)
+        delegate?.tabsBarDidRequestAIChat(self)
+    }
+
+    @objc private func onAIChatContextualSheetIconPressed() {
+        if aiChatChip.sheetState == .closed {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarContextualSheetOpened)
+        }
+        delegate?.tabsBarDidRequestToggleAIChatContextualSheet(self)
+    }
+
     func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
-        
+
         tabSwitcherButton.isAccessibilityElement = true
         tabSwitcherButton.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
         tabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabsCount)
 
-        let availableWidth = collectionView.frame.size.width
-        let maxVisibleItems = min(maxItems, tabsCount)
-        
-        var itemWidth = availableWidth / CGFloat(maxVisibleItems)
-        itemWidth = max(itemWidth, Constants.minItemWidth)
-        itemWidth = min(itemWidth, availableWidth / 2)
-
-        if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
-            flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
-        }
-        
+        recomputeItemSize()
         reloadData()
 
         if scrollToSelected {
@@ -218,6 +301,20 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     }
 
+    private func recomputeItemSize() {
+        let availableWidth = collectionView.frame.size.width
+        let maxVisibleItems = min(maxItems, tabsCount)
+        guard maxVisibleItems > 0 else { return }
+
+        var itemWidth = availableWidth / CGFloat(maxVisibleItems)
+        itemWidth = max(itemWidth, Constants.minItemWidth)
+        itemWidth = min(itemWidth, availableWidth / 2)
+
+        if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
+            flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
+        }
+    }
+
     private func reloadData() {
         collectionView.reloadData()
         tabSwitcherButton.tabCount = tabsCount
@@ -226,12 +323,20 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     func backgroundTabAdded() {
+        recomputeItemSize()
         reloadData()
         tabSwitcherButton.animateUpdate {
             self.tabSwitcherButton.tabCount = self.tabsCount
         }
     }
-    
+
+    func reloadCell(for tab: Tab) {
+        guard let index = tabsModel?.indexOf(tab: tab) else { return }
+        let indexPath = IndexPath(item: index, section: 0)
+        guard collectionView.indexPathsForVisibleItems.contains(indexPath) else { return }
+        collectionView.reloadItems(at: [indexPath])
+    }
+
     private func configureGestures() {
         longPressTabGesture.addTarget(self, action: #selector(handleLongPressTabGesture))
         longPressTabGesture.minimumPressDuration = 0.1
@@ -346,6 +451,34 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         addTabButton.showsMenuAsPrimaryAction = false
     }
 
+    private func configureAIChatChipMenu() {
+        let menu = makeAIChatChipMenu()
+        aiChatChip.textButton.menu = menu
+        aiChatChip.textButton.showsMenuAsPrimaryAction = false
+        aiChatChip.iconButton.menu = menu
+        aiChatChip.iconButton.showsMenuAsPrimaryAction = false
+        aiChatChip.addInteraction(UIContextMenuInteraction(delegate: self))
+    }
+
+    private func makeAIChatChipMenu() -> UIMenu {
+        UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpened)
+                completion([
+                    UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
+                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
+                        self?.aiChatSettings?.enableAIChatNavigationBarUserSettings(enable: false)
+                    },
+                    UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
+                        guard let self else { return }
+                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpenSettingsTapped)
+                        self.delegate?.tabsBarDidRequestOpenAISettings(self)
+                    }
+                ])
+            }
+        ])
+    }
+
     private func createButton(image: UIImage) -> UIButton {
         let button = BrowserChromeButton()
         button.setImage(image)
@@ -356,6 +489,17 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         super.viewDidLayoutSubviews()
         NotificationCenter.default.post(name: TabsBarViewController.viewDidLayoutNotification, object: self)
     }
+}
+
+extension TabsBarViewController: UIContextMenuInteractionDelegate {
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            self?.makeAIChatChipMenu()
+        }
+    }
+
 }
 
 extension TabsBarViewController: TabSwitcherButtonDelegate {
@@ -505,6 +649,36 @@ extension MainViewController: TabsBarDelegate {
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
+    }
+
+    func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {
+        // Chrome button always opens Duck.ai in a new tab unless current tab is blank — matches macOS.
+        if let currentTab, currentTab.tabModel.link != nil {
+            currentTab.openNewChatInNewTab()
+        } else {
+            openAIChat()
+        }
+    }
+
+    func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController) {
+        // Materialize the focused tab's view controller if it hasn't been instantiated yet
+        // (multi-tab restoration / cache eviction can leave currentTab nil even with a focused tab).
+        guard let currentTab = tabManager.current(createIfNeeded: true) else { return }
+        // Subscribe to the coordinator now that the VC exists — bind may have skipped earlier
+        // when currentTab was still nil (createIfNeeded: false at that time).
+        bindAIChatChromeChipToCurrentTab()
+        let coordinator = currentTab.aiChatContextualSheetCoordinator
+        if coordinator.isSheetPresented {
+            coordinator.dismissSheet()
+        } else {
+            // Route through TabViewController so the cold-restore `contextualChatURL`
+            // is honored — presenting the coordinator directly would skip it and open a blank chat.
+            currentTab.presentContextualAIChatSheet(from: self)
+        }
+    }
+
+    func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {
+        segueToSettingsAIChat()
     }
 
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {

@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import CommonObjCExtensions
 import Foundation
 import os.log
@@ -145,7 +146,7 @@ extension TestRunHelper: XCTestObservation {
                 let imp = method_getImplementation(method)
                 typealias SetWebProcessCountLimitType = @convention(c) (AnyClass, ObjectiveC.Selector, UInt32) -> Void
                 let setWebProcessCountLimit = unsafeBitCast(imp, to: SetWebProcessCountLimitType.self)
-                setWebProcessCountLimit(WKProcessPool.self, selector, 5)
+                setWebProcessCountLimit(WKProcessPool.self, selector, 10)
             }
         }
         processPool.perform(NSSelectorFromString("setWebViewsUsingProcessPool:"), with: Set([NSValue(point: .zero)])) // avoid deallocation checks on this process pool
@@ -194,9 +195,7 @@ extension TestRunHelper: XCTestObservation {
             FileManager.default.cleanupTemporaryDirectory()
         }
         NSApp.swizzled_currentEvent = nil
-        if #available(macOS 12.0, *) {
-            WKWebView.customHandlerSchemes = []
-        }
+        WKWebView.customHandlerSchemes = []
 
         // Check for non-nil variables that should be cleaned up
         if ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true {
@@ -246,6 +245,7 @@ extension TestRunHelper: XCTestObservation {
 
             withExtendedLifetime(waiter) {}
         }
+
         loadedViews = []
     }
 

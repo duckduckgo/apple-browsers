@@ -19,6 +19,7 @@
 
 import XCTest
 import Common
+import FoundationExtensions
 import PixelKit
 import Subscription
 import PixelKitTestingUtilities

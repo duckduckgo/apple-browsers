@@ -337,13 +337,14 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssert(tab === tabCollectionViewModel.tabViewModel(at: 2)?.tab)
     }
 
-    // Regression tests for APPLE-MACOS-BD7: setting `selectionIndex` from inside
-    // `insert`/`append` publishes `selectedTabViewModel`, which can synchronously
-    // re-enter and call `reloadItems` on the collection view. The delegate must
-    // be notified before that publication so the collection view's item count
-    // stays in sync with the data source.
+    // Selection is published BEFORE the delegate notification on insert/append
+    // paths, so cell sizing in the tab bar (which reads `selectionIndex`) sees
+    // the correct value when `sizeForItemAt` runs from `insertItems`. The
+    // materialize-on-select crash this used to guard against is now prevented
+    // structurally by pre-materializing at the API boundary, and the
+    // lazy-loader re-entry is prevented by deferring its sink.
     @MainActor
-    func testWhenInsertWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+    func testWhenInsertWithSelected_ThenSelectionPublishesBeforeDelegate() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let delegate = TabCollectionViewModelDelegateMock()
         tabCollectionViewModel.delegate = delegate
@@ -358,12 +359,12 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.insert(Tab(), at: .unpinned(0), selected: true)
 
-        XCTAssertEqual(didInsertCalledWhenSelectionPublished, true)
+        XCTAssertEqual(didInsertCalledWhenSelectionPublished, false)
         cancellable.cancel()
     }
 
     @MainActor
-    func testWhenAppendWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+    func testWhenAppendWithSelected_ThenSelectionPublishesBeforeDelegate() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let delegate = TabCollectionViewModelDelegateMock()
         tabCollectionViewModel.delegate = delegate
@@ -378,12 +379,12 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.append(tab: Tab(), selected: true)
 
-        XCTAssertEqual(didAppendCalledWhenSelectionPublished, true)
+        XCTAssertEqual(didAppendCalledWhenSelectionPublished, false)
         cancellable.cancel()
     }
 
     @MainActor
-    func testWhenAppendTabsWithSelectLast_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+    func testWhenAppendTabsWithSelectLast_ThenSelectionPublishesBeforeDelegate() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let delegate = TabCollectionViewModelDelegateMock()
         tabCollectionViewModel.delegate = delegate
@@ -398,7 +399,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.append(tabs: [.loaded(Tab()), .loaded(Tab())], andSelect: true)
 
-        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, true)
+        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, false)
         cancellable.cancel()
     }
 
@@ -1422,6 +1423,51 @@ final class TabCollectionViewModelTests: XCTestCase {
         if case .loaded = vm.tabs[1] {} else { XCTFail("Init should materialize the selected unloaded tab at index 1") }
         XCTAssertNotNil(vm.tabViewModel(at: 1))
         XCTAssertEqual(vm.selectionIndex, .unpinned(1))
+    }
+
+    // MARK: - addressBarSharedTextState survives cross-collection moves
+
+    @MainActor
+    func testWhenTabIsMovedToAnotherCollection_addressBarSharedTextStateSurvives() {
+        let source = TabCollectionViewModel.aTabCollectionViewModel()
+        let dest = TabCollectionViewModel.aTabCollectionViewModel()
+        let tab = Tab(content: .newtab)
+        guard let sourceIndex = source.append(tab: tab, selected: true) else {
+            return XCTFail("Failed to append tab to source")
+        }
+
+        tab.addressBarSharedTextState.updateText("hello duck.ai")
+        tab.addressBarSharedTextState.setDuckAIMode(true)
+        tab.addressBarSharedTextState.setAIChatToolMode(.imageGeneration)
+
+        source.moveTab(at: sourceIndex, to: dest, at: 0)
+
+        let movedVM = dest.tabViewModel(at: 0)
+        XCTAssertTrue(movedVM?.tab === tab, "moveTab must reuse the same Tab instance in the destination")
+        XCTAssertEqual(movedVM?.addressBarSharedTextState.text, "hello duck.ai")
+        XCTAssertEqual(movedVM?.addressBarSharedTextState.isInDuckAIMode, true)
+        XCTAssertEqual(movedVM?.addressBarSharedTextState.aiChatToolMode, .imageGeneration)
+    }
+
+    @MainActor
+    func testWhenTabCollectionViewModelIsInitializedWithStatefulTab_tabViewModelExposesSameState() {
+        // Mirrors the WindowsManager.openNewWindow(with: tab) path: a fresh TabCollectionViewModel
+        // is built around a TabCollection that already contains a Tab carrying live omnibar state.
+        let tab = Tab(content: .newtab)
+        tab.addressBarSharedTextState.updateText("draft prompt")
+        tab.addressBarSharedTextState.setDuckAIMode(true)
+        tab.addressBarSharedTextState.setAIChatToolMode(.webSearch)
+
+        let vm = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [tab]),
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
+        )
+
+        let tabVM = vm.tabViewModel(at: 0)
+        XCTAssertTrue(tabVM?.tab === tab)
+        XCTAssertEqual(tabVM?.addressBarSharedTextState.text, "draft prompt")
+        XCTAssertEqual(tabVM?.addressBarSharedTextState.isInDuckAIMode, true)
+        XCTAssertEqual(tabVM?.addressBarSharedTextState.aiChatToolMode, .webSearch)
     }
 }
 

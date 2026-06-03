@@ -23,8 +23,10 @@ import BrowserServicesKit
 import Bookmarks
 import DDGSync
 import Persistence
+import PersistenceTestingUtils
 @testable import Core
 import Common
+import FoundationExtensions
 @testable import BrowserServicesKitTestsUtils
 
 final class AutofillSettingsViewModelTests: XCTestCase {
@@ -54,6 +56,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             bookmarksDatabase: db,
             secureVaultFactory: AutofillSecureVaultFactory,
             secureVaultErrorReporter: SecureVaultReporter(),
+            keyValueStore: MockThrowingKeyValueStore(),
             settingHandlers: [],
             favoritesDisplayModeStorage: MockFavoritesDisplayModeStoring(),
             syncErrorHandler: SyncErrorHandler(),

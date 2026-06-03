@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import Carbon.OpenScripting
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import os.log
@@ -38,10 +40,12 @@ protocol QuitSurveyDeciding {
 ///
 /// The quit survey is shown when ALL of the following conditions are met:
 /// 1. The feature flag is enabled
-/// 2. No other quit dialogs will be shown (auto-clear warning or active downloads)
-/// 3. User is within 0-3 days of first launch (new user)
-/// 4. This is the user's first quit
-/// 5. User is not reinstalling (reinstalling users are not considered new users)
+/// 2. The app is not relaunching to install an update
+/// 3. The system is not logging out, restarting, or shutting down
+/// 4. No other quit dialogs will be shown (auto-clear warning or active downloads)
+/// 5. User is within 0-3 days of first launch (new user)
+/// 6. This is the user's first quit
+/// 7. User is not reinstalling (reinstalling users are not considered new users)
 @MainActor
 final class QuitSurveyDecider: QuitSurveyDeciding {
 
@@ -58,6 +62,8 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
     private let installDate: Date
     private var persistor: QuitSurveyPersistor
     private let reinstallUserDetection: ReinstallingUserDetecting
+    private let isAppRelaunchingForUpdate: @MainActor () -> Bool
+    private let isSystemQuitting: @MainActor () -> Bool
     private let dateProvider: () -> Date
 
     // MARK: - Initialization
@@ -69,6 +75,8 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
         installDate: Date,
         persistor: QuitSurveyPersistor,
         reinstallUserDetection: ReinstallingUserDetecting,
+        isAppRelaunchingForUpdate: @escaping @MainActor () -> Bool = { false },
+        isSystemQuitting: @escaping @MainActor () -> Bool = { false },
         dateProvider: @escaping () -> Date = { Date() }
     ) {
         self.featureFlagger = featureFlagger
@@ -77,6 +85,8 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
         self.installDate = installDate
         self.persistor = persistor
         self.reinstallUserDetection = reinstallUserDetection
+        self.isAppRelaunchingForUpdate = isAppRelaunchingForUpdate
+        self.isSystemQuitting = isSystemQuitting
         self.dateProvider = dateProvider
     }
 
@@ -89,24 +99,30 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
         // Condition 1: Feature flag is enabled
         guard featureFlagger.isFeatureOn(.firstTimeQuitSurvey) else { return false }
 
+        // Conditions 2 & 3: Skip when termination wasn't initiated by the user explicitly
+        // quitting the app — a Sparkle update relaunch or a system logout/restart/shutdown.
+        if featureFlagger.isFeatureOn(.firstTimeQuitSurveySkipNonUserQuit) {
+            guard !isAppRelaunchingForUpdate(), !isSystemQuitting() else { return false }
+        }
+
         // Only for debugging purposes when the debug flag is turned on in the Debug menu.
         // Only works for internal users.
         if persistor.alwaysShowQuitSurvey {
             return true
         }
 
-        // Condition 2: No other quit dialogs will be shown
+        // Condition 4: No other quit dialogs will be shown
         let willShowAutoClearDialog = dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isWarnBeforeClearingEnabled
         let willShowDownloadsDialog = downloadManager.downloads.contains { $0.state.isDownloading }
         let noOtherDialogsWillShow = !willShowAutoClearDialog && !willShowDownloadsDialog
 
-        // Condition 3: User is within 0-3 days of install
+        // Condition 5: User is within 0-3 days of install
         let isNewUser = isWithinNewUserThreshold
 
-        // Condition 4: First quit
+        // Condition 6: First quit
         let isFirstQuit = !persistor.hasQuitAppBefore
 
-        // Condition 5: User is not reinstalling (reinstalling users are not considered new users)
+        // Condition 7: User is not reinstalling (reinstalling users are not considered new users)
         let isNotReinstallingUser = !reinstallUserDetection.isReinstallingUser
 
         return noOtherDialogsWillShow
@@ -136,6 +152,15 @@ struct QuitSurveyAppTerminationDecider {
     let installDate: Date?
     let persistor: QuitSurveyPersistor
     let reinstallUserDetection: ReinstallingUserDetecting
+    /// `true` when Sparkle is relaunching the app to install an update.
+    let isAppRelaunchingForUpdate: @MainActor () -> Bool
+    /// `true` when the termination is part of a system logout, restart, or shutdown
+    /// (e.g., the user is restarting macOS for an OS update).
+    let isSystemQuitting: @MainActor () -> Bool
+    /// Resets the persisted "relaunching for update" flag — invoked when the
+    /// termination chain is cancelled, so a stale flag doesn't suppress the survey
+    /// on a later legitimate quit in the same session.
+    let resetRelaunchFlagOnCancel: @MainActor () -> Void
     let showQuitSurvey: @MainActor () async -> Void
 }
 
@@ -149,7 +174,9 @@ extension QuitSurveyAppTerminationDecider: ApplicationTerminationDecider {
             downloadManager: downloadManager,
             installDate: installDate ?? Date.distantPast,
             persistor: persistor,
-            reinstallUserDetection: reinstallUserDetection
+            reinstallUserDetection: reinstallUserDetection,
+            isAppRelaunchingForUpdate: isAppRelaunchingForUpdate,
+            isSystemQuitting: isSystemQuitting
         )
 
         guard decider.shouldShowQuitSurvey else {
@@ -164,6 +191,17 @@ extension QuitSurveyAppTerminationDecider: ApplicationTerminationDecider {
             // Survey completed - user chose to quit
             return .next
         })
+    }
+
+    func deciderSequenceCompleted(shouldProceed: Bool) {
+        // Reset the persisted relaunch flag when termination is cancelled.
+        // Why: this decider is at index 0 in the chain, so it's always notified —
+        // even when a later decider (e.g., active downloads) cancels termination
+        // before AutoClearHandler (which has its own reset) is reached. Without
+        // this, the persisted flag would survive the cancel and silently suppress
+        // the survey on the next legitimate quit in the same session.
+        guard !shouldProceed else { return }
+        resetRelaunchFlagOnCancel()
     }
 }
 
@@ -288,4 +326,33 @@ final class QuitSurveyUserDefaultsPersistor: QuitSurveyPersistor {
         }
     }
 
+}
+
+// MARK: - System Quit Detection
+
+extension NSAppleEventManager {
+    /// `true` when the current Apple Event indicates the app is terminating because
+    /// the system is logging out, restarting, or shutting down — for example, when
+    /// the user is restarting macOS to install an OS update.
+    ///
+    /// Only meaningful when called from inside `applicationShouldTerminate(_:)`
+    /// (i.e. while AppKit is dispatching the `kAEQuitApplication` Apple Event).
+    /// Outside that context `currentAppleEvent` is `nil` and this returns `false`.
+    var isQuittingForSystemEvent: Bool {
+        guard let descriptor = currentAppleEvent?.attributeDescriptor(forKeyword: AEKeyword(kAEQuitReason)) else {
+            return false
+        }
+        switch descriptor.enumCodeValue {
+        case kAEQuitAll,
+             kAELogOut,
+             kAEReallyLogOut,
+             kAEShowRestartDialog,
+             kAERestart,
+             kAEShowShutdownDialog,
+             kAEShutDown:
+            return true
+        default:
+            return false
+        }
+    }
 }

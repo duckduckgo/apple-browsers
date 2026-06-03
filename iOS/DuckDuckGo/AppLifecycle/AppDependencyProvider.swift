@@ -24,6 +24,7 @@ import DDGSync
 import Bookmarks
 import Subscription
 import Common
+import FoundationExtensions
 import VPN
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
@@ -275,7 +276,7 @@ final class AppDependencyProvider: DependencyProvider {
         self.freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: wideEvent,
             pixelHandler: FreeTrialPixelHandler(),
-            subscriptionFetcher: { try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) },
+            subscriptionFetcher: { try? await subscriptionManager.getSubscription() },
             isFeatureEnabled: { featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         self.freeTrialConversionService.startObservingSubscriptionChanges()

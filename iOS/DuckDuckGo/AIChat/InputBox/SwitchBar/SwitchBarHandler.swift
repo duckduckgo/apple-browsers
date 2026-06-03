@@ -56,17 +56,22 @@ protocol SwitchBarHandling: AnyObject {
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
+    var usesExpandedAIChatTextEntryLayout: Bool { get }
     var shouldDisableAutocorrectOnEmpty: Bool { get }
+
+    /// Suppresses the in-pill voice button — used when an external flank already provides one.
+    var hidesVoiceButton: Bool { get set }
 
     var hasSubmittedPrompt: Bool { get set }
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { get }
+    var submitsAIChatOnKeyboardReturn: Bool { get }
+    var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { get }
-    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { get }
@@ -83,7 +88,6 @@ protocol SwitchBarHandling: AnyObject {
     func microphoneButtonTapped()
     func markUserInteraction()
     func clearButtonTapped()
-    func searchGoToButtonTapped()
     func stopGeneratingButtonTapped()
     func updateBarPosition(isTop: Bool)
 }
@@ -91,6 +95,9 @@ protocol SwitchBarHandling: AnyObject {
 extension SwitchBarHandling {
     func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
+    var usesExpandedAIChatTextEntryLayout: Bool { false }
+    var submitsAIChatOnKeyboardReturn: Bool { true }
+    var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 }
 
 // MARK: - SwitchBarHandler Implementation
@@ -102,7 +109,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
-    private let featureFlagger: FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     // MARK: - Published Properties
@@ -114,6 +121,8 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var hasSubmittedPrompt: Bool = false
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    let submitsAIChatOnKeyboardReturn = true
+    var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 
     // MARK: - Mode Usage Detection
     private static var hasUsedSearchInSession = false
@@ -131,14 +140,18 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     var isUsingFadeOutAnimation: Bool {
-        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else {
+        guard unifiedToggleInputFeature.isAvailable else {
             return devicePlatform.isIphone
         }
         return false
     }
 
+    var usesExpandedAIChatTextEntryLayout: Bool {
+        devicePlatform.isIphone && !unifiedToggleInputFeature.isAvailable
+    }
+
     var shouldDisableAutocorrectOnEmpty: Bool {
-        featureFlagger.isFeatureOn(.unifiedToggleInput) || devicePlatform.isIphone
+        devicePlatform.isIphone
     }
 
     var isVoiceSearchEnabled: Bool {
@@ -148,6 +161,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     var isAIVoiceChatEnabled: Bool {
         voiceShortcutFeature.isAvailable
     }
+
+    var hidesVoiceButton: Bool = false
 
     var modeParameters: [String: String] {
         ["mode": currentToggleState.rawValue]
@@ -181,10 +196,6 @@ final class SwitchBarHandler: SwitchBarHandling {
         clearButtonTappedSubject.eraseToAnyPublisher()
     }
 
-    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> {
-        searchGoToButtonTappedSubject.eraseToAnyPublisher()
-    }
-
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> {
         $buttonState.eraseToAnyPublisher()
     }
@@ -192,7 +203,6 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
-    private let searchGoToButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
     private let devicePlatform: DevicePlatformProviding.Type
 
@@ -202,7 +212,7 @@ final class SwitchBarHandler: SwitchBarHandling {
          initialToggleState: TextEntryMode? = nil,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
          isFireTab: Bool) {
@@ -211,7 +221,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.toggleModeStorage = toggleModeStorage
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
-        self.featureFlagger = featureFlagger
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.devicePlatform = devicePlatform
         self.voiceShortcutFeature = voiceShortcutFeature
         self.isFireTab = isFireTab
@@ -285,10 +295,6 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     func clearButtonTapped() {
         clearButtonTappedSubject.send(())
-    }
-
-    func searchGoToButtonTapped() {
-        searchGoToButtonTappedSubject.send(())
     }
 
     private func updateButtonState(currentText: String) {

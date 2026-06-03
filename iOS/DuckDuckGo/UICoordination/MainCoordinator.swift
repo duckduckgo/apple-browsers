@@ -33,6 +33,7 @@ import DataBrokerProtection_iOS
 import PrivacyStats
 import Networking
 import WebExtensions
+import Onboarding
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -87,6 +88,9 @@ final class MainCoordinator {
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
+    private let onboardingManager: OnboardingFlowManaging
+
+    private var hasPresentedOnboarding = false
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -113,13 +117,17 @@ final class MainCoordinator {
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
          winBackOfferService: WinBackOfferService,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          whatsNewRepository: WhatsNewMessageRepository,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
-         wideEvent: WideEventManaging
+         wideEvent: WideEventManaging,
+         onboardingManager: OnboardingManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -128,9 +136,11 @@ final class MainCoordinator {
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         self.wideEvent = wideEvent
+        self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
         self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
         FireModeCapability.resolve(using: featureFlagger)
+        UnifiedToggleInputFeature.resolve(using: featureFlagger)
         let fireModeCapability = FireModeCapability.create()
         let fireModePromotionsCoordinator = FireModePromotionsCoordinator(fireModeCapability: fireModeCapability)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
@@ -152,10 +162,15 @@ final class MainCoordinator {
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
+        let onboardingSearchExperienceProvider = OnboardingSearchExperience()
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: aiChatSettings,
-            onboardingSearchExperienceProvider: OnboardingSearchExperience()
+            onboardingSearchExperienceProvider: onboardingSearchExperienceProvider
+        )
+        let onboardingSearchExperienceSettingsResolver = OnboardingSearchExperienceSettingsResolver(
+            onboardingProvider: onboardingSearchExperienceProvider,
+            daxDialogsStatusProvider: daxDialogs
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
@@ -195,7 +210,8 @@ final class MainCoordinator {
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                fireModePromotionEligibility: fireModePromotionsCoordinator)
+                                fireModePromotionEligibility: fireModePromotionsCoordinator,
+                                adBlockingAvailability: contentBlockingService.adBlockingAvailability)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -225,6 +241,10 @@ final class MainCoordinator {
             privacyConfigurationManager: privacyConfigurationManager,
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
+        let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
+            keyValueStore: keyValueStore,
+            idleReturnEligibilityManager: idleReturnEligibilityManager
+        )
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -246,6 +266,7 @@ final class MainCoordinator {
                                         voiceSearchHelper: voiceSearchHelper,
                                         featureFlagger: featureFlagger,
                                         idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                        afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
@@ -261,7 +282,11 @@ final class MainCoordinator {
                                         customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                         daxDialogsManager: daxDialogsManager,
+                                        onboardingSearchExperienceSettingsResolver: onboardingSearchExperienceSettingsResolver,
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                        freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                        freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
@@ -275,7 +300,8 @@ final class MainCoordinator {
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
-                                        fireModePromotionEligibility: fireModePromotionsCoordinator)
+                                        fireModePromotionEligibility: fireModePromotionsCoordinator,
+                                        onboardingManager: onboardingManager)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -328,10 +354,16 @@ final class MainCoordinator {
             .removeDuplicates()
             .eraseToAnyPublisher()
 
+        let adBlockingDefaultsPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
         youTubeAdBlockingCancellable = NotificationCenter.default
             .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
             .sink { [weak self] _ in
-                guard #available(iOS 18.4, *) else { return }
                 Task { @MainActor in
                     await self?.syncEmbeddedExtensions()
                 }
@@ -342,6 +374,7 @@ final class MainCoordinator {
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
             onFeatureFlagEnabled: { [weak self] in
                 self?.initializeWebExtensions()
             },
@@ -352,6 +385,9 @@ final class MainCoordinator {
                 await self?.syncEmbeddedExtensions()
             },
             onAdBlockingExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            },
+            onAdBlockingDefaultsFlagChanged: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             }
         )
@@ -527,8 +563,7 @@ final class MainCoordinator {
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager,
-                        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) })
+                        dataStoreIDManager: dataStoreIDManager)
     }
 
     // MARK: - Public API
@@ -585,9 +620,14 @@ final class MainCoordinator {
 
     private func fireDailyAdBlockingPixel() {
         let isEnabled = controller.adBlockingAvailability.isEnabled
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        let analyticsEnabled = isEnabled && ((try? storage.value(for: \.youTubeAnalyticsEnabled)) ?? false)
         DailyPixel.fire(
             pixel: .webExtensionDailyAdBlockingState,
-            withAdditionalParameters: ["is_enabled": isEnabled ? "true" : "false"]
+            withAdditionalParameters: [
+                "is_enabled": isEnabled ? "true" : "false",
+                "analytics_enabled": analyticsEnabled ? "true" : "false"
+            ]
         )
     }
 
@@ -619,7 +659,9 @@ extension MainCoordinator: URLHandling {
     private func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
         controller.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
 
-        if url != AppDeepLinkSchemes.openVPN.url
+        fireMediumWidgetPixelIfNeeded(url: url)
+
+        if url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
@@ -650,6 +692,10 @@ extension MainCoordinator: URLHandling {
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
         case .openAIVoiceChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller, voiceMode: true)
+        case .openBookmarks:
+            controller.segueToBookmarks()
+        case .customProductPage:
+            AppStoreCustomProductPageDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
             if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
                 controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
@@ -674,6 +720,20 @@ extension MainCoordinator: URLHandling {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.controller.launchAutofillLogins(openSearch: true, source: source)
         }
+    }
+
+    private func fireMediumWidgetPixelIfNeeded(url: URL) {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems,
+              queryItems.first(where: { $0.name == WidgetSourceType.sourceKey })?.value
+                  == WidgetSourceType.quickActionsMedium.rawValue,
+              let shortcut = queryItems.first(where: { $0.name == WidgetSourceType.shortcutKey })?.value
+        else { return }
+
+        DailyPixel.fireDailyAndCount(
+            pixel: .widgetMediumLaunch,
+            withAdditionalParameters: [PixelParameters.shortcut: shortcut]
+        )
     }
 
     func handleAIChatAppIconShortuct() {
@@ -760,6 +820,17 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             return
         }
 
+        // Already on the NTP — no rebuild needed. This preserves any existing
+        // escape hatch state, avoids bouncing the omnibar/keyboard on idle return,
+        // and avoids surfacing a stale hatch when the user has already consumed
+        // the after-idle moment and returned to the NTP.
+        //
+        // We require a non-nil current tab here: if there is no current tab,
+        // we still want to fall through to `newTab(...)` to create one.
+        if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
+            return
+        }
+
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
@@ -792,4 +863,26 @@ extension MainCoordinator: SystemSettingsPiPTutorialPresenting {
     func detachPlayerView(_ view: UIView) {
         view.removeFromSuperview()
     }
+
+}
+
+// MARK: MainCoordinator + Onboarding
+
+extension MainCoordinator: OnboardingPresenting {
+
+    func startOnboardingFlowIfNotSeenBefore(url: URL?) {
+        // 1. Configure Onboarding Flow
+        onboardingManager.configureOnboardingFlow(from: url)
+
+        // The flow is now known. Duck.ai tailored-flow users need UTI set up before the
+        // Duck.ai interlude runs inside their onboarding
+        controller.setUpUnifiedToggleInputIfNeeded()
+
+        // 2. Presenting Onboarding Flow if needed
+        guard !hasPresentedOnboarding, controller.isStartupOnboardingPending else { return }
+        hasPresentedOnboarding = true
+        controller.startupOnboardingCover.bringToFront()
+        controller.startOnboardingFlowIfNotSeenBefore()
+    }
+
 }

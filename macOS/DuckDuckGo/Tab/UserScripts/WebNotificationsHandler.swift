@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import OSLog
@@ -46,7 +47,9 @@ protocol WebNotificationService {
 }
 
 extension UNUserNotificationCenter: WebNotificationService {
-    // UNUserNotificationCenter already provides the required methods
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await notificationSettings().authorizationStatus
+    }
 }
 
 /// Abstraction for permission model operations needed by WebNotificationsHandler.

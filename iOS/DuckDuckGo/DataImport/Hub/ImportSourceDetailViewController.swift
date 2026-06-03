@@ -22,6 +22,7 @@ import SwiftUI
 import SafariServices
 import Core
 import Common
+import FoundationExtensions
 import BrowserKit
 import Persistence
 import os.log

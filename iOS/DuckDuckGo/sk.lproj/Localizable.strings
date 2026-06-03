@@ -79,6 +79,12 @@
 /* Copy action */
 "action.title.copy" = "Kopírovať";
 
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopírovať čistý odkaz";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopírovať odkaz";
+
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "Adresa URL bola skopírovaná";
 
@@ -117,6 +123,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Otvoriť na karte Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Nová karta";
 
@@ -177,6 +184,12 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Description of the Ad Blocking feature in settings */
+"ad.blocking.description" = "Blokuje invazívne sledovače skôr, než sa načítajú, čím efektívne eliminuje reklamy, ktoré sa spoliehajú na sledovanie.";
+
+/* Section header for YouTube-specific ad blocking settings */
+"ad.blocking.youtube.section.header" = "Blokovanie reklám na YouTube";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Spodná časť";
 
@@ -207,11 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funkcie AI";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Vybrať fotografiu";
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Do jednej konverzácie môžeš pripojiť iba %d súborov.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Priložené súbory nemôžeme prečítať, pretože aspoň jeden z nich je zašifrovaný.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Pripojené súbory presahujú celkovú maximálnu veľkosť %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Tento súbor je príliš veľký. Maximálna veľkosť súboru je %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Jeden z priložených súborov má viac strán ako podporujeme. Nahraj súbory s maximálne %d stranami.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Jeden z priložených súborov sa nám nepodarilo prečítať. Skontroluj, či nie je poškodený, a skús to znova.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Do jednej konverzácie môžeš pripojiť iba %d obrázkov.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Naraz môžeš priložiť iba %d obrázkov.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Pridať súbor";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Pridať obrázok";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Urobiť fotografiu";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Táto správa je príliš dlhá na odoslanie s prílohami.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Prílohy sú dočasne nedostupné. Skús to znova neskôr.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Tento typ súboru nie je podporovaný.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Tento typ súboru nie je podporovaný. Prilož súbor %1$@ alebo %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Tento typ súboru nie je podporovaný. Prilož %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Pre analytické úlohy";
@@ -231,11 +286,38 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Odôvodnenie";
 
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Nájdi QR kód v aplikácii DuckDuckGo na svojom druhom zariadení tak, že prejdeš do časti **Nastavenia** › **Sync & Backup** › **Synchronizácia s iným zariadením**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Teraz nie";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Skenovanie QR kódu";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Poďme synchronizovať tvoje chaty na všetkých tvojich zariadeniach!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Synchronizácia s iným zariadením";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Zrušiť výzvu na synchronizáciu";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Pristupuj k svojim chatom zo všetkých zariadení pomocou funkcie Sync & Backup.";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prispôsobiť odpovede";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Zmeň text na obrázky";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Vytvoriť obrázok";
+
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Nájsť aktuálne informácie";
+"aichat.toolbar.tools.websearch.subtitle" = "Zdrojové odpovede z webu";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Webové vyhľadávanie";
@@ -1515,9 +1597,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Ladenie (debug)";
 
-/* No comment provided by engineer. */
-"Delete" = "Vymazať";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "zariadenie";
 
@@ -1629,11 +1708,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcie DuckDuckGo AI sú súkromné a voliteľné. Tvoje údaje sa nepoužívajú na trénovanie AI.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Pripoj obsah stránky";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Opýtaj sa na stránku";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Pripoj obsah stránky";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Zhrň túto stránku";
@@ -1698,11 +1777,8 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Hovor s Duck.ai pomocou Siri!";
 
-/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Všetky chaty sú %@ súkromné";
-
-/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "súkromné";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pre iOS";
@@ -1739,6 +1815,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikdy";
+
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Otvoriť v aplikácii YouTube";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -1945,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Zadaj kladný počet dní. Dátum inštalácie bude nastavený na dátum spred toľkoto dní.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -1985,6 +2067,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Naposledy použitá karta Fire";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Zatvoriť kartu";
+
+/* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.deleteTab" = "Odstrániť kartu";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Späť na kartu";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Ďalšie možnosti";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Vráť sa na %@";
 
@@ -1993,6 +2088,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Vráť sa na %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Súkromné karty";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2335,6 +2433,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Karta Fire";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Prúd vzduchu";
 
@@ -2383,6 +2482,18 @@
 /* Home tab title */
 "homeTab.title" = "Domov";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Viaceré udalosti nie sú podporované. Skús radšej otvoriť stiahnutý súbor.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Tento súbor nie je možné spracovať. Skús radšej otvoriť stiahnutý súbor.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Nepodporované časové pásmo. Skús radšej otvoriť stiahnutý súbor.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Udalosť bola pridaná do Apple Kalendára";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 
@@ -2402,7 +2513,7 @@
 "input.field.placeholder.duckai" = "Spýtaj sa na čokoľvek súkromne";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Polož doplňujúcu otázku...";
+"input.field.placeholder.duckai.followup" = "Odpovedať...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Nainštaluj rozšírenie";
@@ -2848,6 +2959,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Teraz nie";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Funkcie AI sú súkromné a voliteľné.\nMôžeš vykonať zmeny v Nastaveniach > Funkcie AI.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Chceš mať jednoduchý prístup k súkromnému AI chatu v adresnom riadku?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Vyhľadávanie & Duck.ai";
 
@@ -2895,6 +3012,12 @@
 
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Presunúť panel s adresou nadol";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Presunúť panel s adresou nahor";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Spravované súbory cookie";
@@ -3014,7 +3137,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Si pripravený/-á na rýchlejší prehliadač, ktorý ťa chráni a umožňuje ti rozhodnúť sa, kedy a ako používať umelú inteligenciu?";
+"onboarding.rebranding.intro.message" = "Si pripravený/-á na rýchlejší prehliadač, ktorý ti dáva kontrolu?\n\nUmelá inteligencia je vždy voliteľná a ochrana súkromia je vždy zapnutá.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Dobrý deň.";
@@ -3301,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Otvoriť v inej aplikácii?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Prejsť späť";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Skúsili sme to načítať súkromne, ale nezobrazuje sa to.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Chcel/-a by si túto stránku otvoriť v Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Otvoriť v Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Žiaľ, stránku sa nepodarilo načítať.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Táto stránka sa načíta iba v prehliadači Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Otvoriť v Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Táto webová stránka má neplatný certifikát zabezpečenia a jej návšteva nemusí byť bezpečná.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Zostať na DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Niektoré funkcie webových stránok nemusia byť v tomto prehliadači kompatibilné.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Táto stránka sa chce otvoriť v Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo nemôže načítať túto stránku.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedávne záznamy o spracovaní";
@@ -3354,6 +3471,10 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Vymazať karty Fire a ich údaje?";
+
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "Chceš odstrániť kartu a údaje stránok?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Odstrániť karty a údaje stránok?";
 
@@ -3362,6 +3483,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Odstrániť všetko";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "Odstrániť kartu";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Zmazať tento čet";
@@ -3454,7 +3578,10 @@
 "settings.address.trackers.animation" = "Zobraziť v adresnom riadku";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Vyber, čo sa zobrazí po návrate po %@ nečinnosti.";
+"settings.afterInactivity.footer.format" = "Vyber si, čo sa zobrazí po návrate do DuckDuckGo po %@ nečinnosti.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Vyber si, čo uvidíš po návrate na DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 hod.";
@@ -3468,20 +3595,26 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d min.";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Žiadne";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sek.";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sek.";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Po nečinnosti";
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Časovač nečinnosti";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nová karta";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Po nečinnosti";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Skús novú možnosť prepínania medzi vyhľadávaním a Duck.ai v adresnom riadku.";
@@ -4200,6 +4333,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnovuje sa predplatné...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Teraz nie";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo má tiež **voliteľné platené predplatné** s bezpečnou **VPN** a **pokročilou, súkromnou umelou inteligenciou**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odstrániť z tohto zariadenia";
 
@@ -4430,6 +4569,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Zatvoriť karta";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Zatvorte kartu domovskej stránky";
 
@@ -4441,6 +4581,7 @@
 
 /* New tab title */
 "tab.new.title" = "Nová karta";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Otvorte kartu Domovská stránka";
 
@@ -4449,6 +4590,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Otvoriť kartu Fire";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otvoriť „%1$@“ na adrese %2$@";
 
@@ -4863,14 +5005,59 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Získajte DuckDuckGo pre Windows!";
 
-/* Explanation text for YouTube Ad Blocking feature */
-"youtube.ad.blocking.explanation" = "DuckDuckGo odstraňuje reklamy na videá v službe YouTube, takže môžeš sledovať videá bez prerušenia.";
+/* Body text of the bottom sheet asking the user to send an anonymous breakage report */
+"youtube.ad.blocking.breakage-report.message" = "Odošlite anonymné hlásenie o poruche na DuckDuckGo. Pomôžte zlepšiť blokovanie reklám pre všetkých!";
 
-/* Settings screen title for YouTube Ad Blocking */
-"youtube.ad.blocking.title" = "Blokovanie reklám na YouTube";
+/* Primary action sending an anonymous YouTube ad-blocking breakage report */
+"youtube.ad.blocking.breakage-report.send" = "Odoslať správu o nefunkčných aplikáciách";
+
+/* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
+"youtube.ad.blocking.breakage-report.title" = "Nefunguje blokovanie reklám na YouTube?";
+
+/* Settings cell subtitle indicating YouTube ad blocking will re-enable on next app launch */
+"youtube.ad.blocking.disabled-until-relaunch" = "Zakázané až do opätovného spustenia";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo blokuje videoreklamy na YouTube, takže môžeš sledovať videá bez prerušenia.";
+
+/* Browsing menu row that turns YouTube ad blocking back on after the user has disabled it */
+"youtube.ad.blocking.menu.enable" = "Zapnúť blokovanie reklám na YouTube";
+
+/* Browsing menu row that opens the YouTube ad-block mode picker */
+"youtube.ad.blocking.menu.toggle" = "Zakázať blokovanie reklám na YouTube";
+
+/* Picker option keeping YouTube ad blocking always off */
+"youtube.ad.blocking.mode.always-off" = "Vždy vypnuté";
+
+/* Picker option keeping YouTube ad blocking always on */
+"youtube.ad.blocking.mode.always-on" = "Vždy zapnuté";
+
+/* Picker option disabling YouTube ad blocking until the next app launch */
+"youtube.ad.blocking.mode.disable-until-relaunch" = "Zakázať do opätovného spustenia";
+
+/* Title of the YouTube ad-block mode picker bottom sheet */
+"youtube.ad.blocking.picker.title" = "Blokovanie reklám na YouTube";
+
+/* Settings screen title for Ad Blocking */
+"youtube.ad.blocking.title" = "Blokovanie reklám";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blokuje reklamy na YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Keď je zapnutá, DuckDuckGo anonymne zistí rušenie blokovania reklám alebo chyby na YouTube, aby zlepšil používateľský zážitok pre všetkých. DuckDuckGo nikdy nevidí, ktoré videá si pozeráš, ani žiadne osobné údaje.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Zisti viac";
+
+/* Acknowledgement button on the YouTube ad-blocking unavailable bottom sheet */
+"youtube.ad.blocking.unavailable.got-it" = "Rozumiem";
+
+/* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.message" = "Blokovanie reklám bolo ovplyvnené nedávnymi zmenami na YouTube. Na odstránení týchto problémov pracujeme. Ďakujeme za pochopenie.";
+
+/* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.title" = "Blokovanie reklám na YouTube nie je k dispozícii";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Záložky";
@@ -4887,3 +5074,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Čety";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "História četov";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Nastavenia četu";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Nové";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Nová karta Fire";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Nové vyhľadávanie";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Nová karta";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Nový hlasový čet";

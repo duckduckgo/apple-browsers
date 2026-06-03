@@ -19,6 +19,7 @@
 
 import Core
 import Common
+import FoundationExtensions
 import DDGSync
 import Bookmarks
 import AIChat
@@ -64,6 +65,7 @@ struct FireRequest {
     
     enum Source: String {
         case browsing
+        case escapeHatch
         case tabSwitcher
         case settings
         case quickFire
@@ -88,6 +90,9 @@ protocol FireExecuting {
     @MainActor func burn(request: FireRequest,
                          applicationState: DataStoreWarmup.ApplicationState) async
     var delegate: FireExecutorDelegate? { get set }
+
+    /// True for the duration of a `burn(...)` call. Read it to avoid re-entering the executor from a delegate callback.
+    var burnInProgress: Bool { get }
 }
 
 class FireExecutor: FireExecuting {
@@ -112,7 +117,7 @@ class FireExecutor: FireExecuting {
     private let fireModeStorageController: FireModeNativeStorageController?
 
     weak var delegate: FireExecutorDelegate?
-    private var burnInProgress = false
+    private(set) var burnInProgress = false
     private var dataStoreWarmupWorker: DataStoreWarmupWorker = .init()
     private let historyCleanerProvider: HistoryCleanerProvider
     private var preparedOptions: FireRequest.Options = []
@@ -210,6 +215,17 @@ class FireExecutor: FireExecuting {
     @MainActor
     func burn(request: FireRequest,
               applicationState: DataStoreWarmup.ApplicationState) async {
+        // Drops reentrant calls. Callers should gate on `burnInProgress`
+        if burnInProgress {
+            assertionFailure("Shouldn't get called multiple times")
+            return
+        }
+
+        burnInProgress = true
+        defer {
+            burnInProgress = false
+        }
+
         assert(delegate != nil, "Delegate should not be nil. This leads to unexpected behavior.")
 
         // Fire retrigger pixel at the start of burn to track rapid manual fire operations
@@ -297,7 +313,7 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnTabsWithDelegateCallbacks(request: FireRequest, domains: [String]?) {
         delegate?.willStartBurningTabs(fireRequest: request)
-        burnTabs(scope: request.scope, domains: domains)
+        burnTabs(request: request, domains: domains)
         delegate?.didFinishBurningTabs(fireRequest: request)
     }
     
@@ -338,8 +354,8 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnTabs(scope: FireRequest.Scope, domains: [String]?) {
-        switch scope {
+    private func burnTabs(request: FireRequest, domains: [String]?) {
+        switch request.scope {
         case .all:
             tabManager.prepareCurrentTabForDataClearing(browsingMode: nil)
             dataClearingWideEventService?.start(.clearTabs)
@@ -371,9 +387,10 @@ class FireExecutor: FireExecuting {
             // Pass false to clearTabHistory to preserve tab history while burning
             // As tab history is needed by other processes running in parallel
             // didFinishBurning(fireRequest:) manually clears data after burn is complete
-            if dataClearingCapability.isFireButtonRefinementsEnabled && viewModel.tab.isAITab {
+            switch singleTabClosingBehavior(for: request, viewModel: viewModel) {
+            case .openNewChat:
                 tabManager.closeTabAndOpenNewChat(viewModel.tab, clearTabHistory: false)
-            } else {
+            case .navigateToHomepage:
                 tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
             }
 
@@ -382,19 +399,23 @@ class FireExecutor: FireExecuting {
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
         }
     }
-    
+
+    @MainActor
+    private func singleTabClosingBehavior(for request: FireRequest, viewModel: TabViewModel) -> SingleTabClosingBehavior {
+        if request.source == .escapeHatch {
+            return .navigateToHomepage
+        }
+
+        let mustOpenNewChat = dataClearingCapability.isFireButtonRefinementsEnabled && viewModel.tab.isAITab
+        return mustOpenNewChat ? .openNewChat : .navigateToHomepage
+    }
+
     // MARK: - Clear Data Helpers
     
     @MainActor
     private func burnData(scope: FireRequest.Scope,
                           applicationState: DataStoreWarmup.ApplicationState,
                           domains: [String]?) async {
-        guard !burnInProgress else {
-            assertionFailure("Shouldn't get called multiple times")
-            return
-        }
-        burnInProgress = true
-
         await dataStoreWarmupWorker.setApplicationState(applicationState)
         await dataStoreWarmupWorker.execute(scope: scope, domains: domains, fireModeCapability: fireModeCapability)
         
@@ -409,8 +430,6 @@ class FireExecutor: FireExecuting {
         }
         let params = dataClearingPixelParams(for: scope, domains: domains)
         pixel?.fire(withAdditionalParameters: params)
-
-        self.burnInProgress = false
     }
     
     private func dataClearingTimedPixel(for scope: FireRequest.Scope) -> TimedPixel? {
@@ -563,4 +582,9 @@ class FireExecutor: FireExecuting {
         }
     }
 
+}
+
+private enum SingleTabClosingBehavior {
+    case openNewChat
+    case navigateToHomepage
 }

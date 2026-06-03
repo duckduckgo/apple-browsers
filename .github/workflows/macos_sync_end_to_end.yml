@@ -165,6 +165,7 @@ jobs:
           -skipPackagePluginValidation \
           -skipMacroValidation \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
         | tee xcodebuild.log \
         | xcbeautify
 
@@ -271,14 +272,14 @@ jobs:
         pixel-name: m_ci_apple_status_mac_e2e_sync_${{ matrix.os-version }}_${{ steps.run-ui-tests.outcome }}
 
     - name: Prepare test report
-      if: always()
+      if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
         xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log
 
     - name: Publish tests report
       uses: mikepenz/action-junit-report@v4
-      if: always() # always run even if the previous step fails
+      if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
         check_name: "Test Report ${{ matrix.runner }}"
         report_paths: macOS/ui-tests.xml

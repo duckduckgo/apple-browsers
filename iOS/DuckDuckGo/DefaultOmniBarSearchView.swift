@@ -98,6 +98,13 @@ final class DefaultOmniBarSearchView: UIView {
 
         textField.alpha = 1
     }
+
+    /// Sets `alpha` on the search-area containers whose alpha cascades to every icon-bearing child.
+    func setIconContainersAlpha(_ alpha: CGFloat) {
+        leftIconContainerPlaceholder.alpha = alpha
+        privacyInfoContainer.alpha = alpha
+        trailingItemsContainer.alpha = alpha
+    }
     
     func updateFireModeAppearance(fireMode: Bool) {
         textField.tintColor = fireMode
@@ -209,14 +216,9 @@ final class DefaultOmniBarSearchView: UIView {
         DefaultOmniBarView.setUpCommonProperties(for: aiChatButton)
 
         isModeToggleHidden = true
-        // The unified input lays out its trailing buttons with no extra gap after the
-        // separator and uses `decorationPrimary` for the divider line, so we drop the
-        // omnibar's 8pt gap and switch the divider color to match — keeping the mic
-        // position and separator appearance aligned across the focus transition.
+
         if UnifiedToggleInputFeature().isAvailable {
             separatorView.lineColor = UIColor(designSystemColor: .decorationPrimary)
-        } else {
-            trailingItemsContainer.setCustomSpacing(8, after: separatorView)
         }
 
         reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)

@@ -25,6 +25,7 @@ import Lottie
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-31845
     struct LandingView: View {
 
         @Environment(\.colorScheme) private var colorScheme
@@ -33,6 +34,8 @@ extension OnboardingRebranding.OnboardingView {
             static let backgroundLottieFileName = "OnboardingLandingIllustrationAnimation"
             static let backgroundLottieDarkFileName = "OnboardingLandingIllustrationAnimation_dark"
             static let logoLottieFileName = "OnboardingLandingLogoAnimation"
+            static let duckAIAnimationFileName = "OnboardingLandingDuckAiAnimation"
+            static let duckAIAnimationDarkFileName = "OnboardingLandingDuckAiAnimation_dark"
         }
 
         // MARK: - Metrics
@@ -47,6 +50,14 @@ extension OnboardingRebranding.OnboardingView {
             static let illustrationWidth: CGFloat = 1200
             static let illustrationHeight: CGFloat = 487 // Maintains 4000:1622 aspect ratio
             static let illustrationScalePad: CGFloat = 1.4
+
+            // DuckAI animation (Lottie canvas 800×400, 2:1)
+            static let duckAIAnimationWidth: CGFloat = 280
+            static let duckAIAnimationHeight: CGFloat = 140
+            static let titleToDuckAISpacing: CGFloat = 0
+            // Lottie has ~32% transparent space above the visible glyph; pull it up under the title.
+            static let duckAITopOffset: CGFloat = 22
+            static let duckAIXOffset: CGFloat = 10
 
             // Small-screen adjustments (e.g. iPhone SE — screen height ≤ 667 pt)
             static let smallScreenHeightThreshold: CGFloat = 700
@@ -117,21 +128,32 @@ extension OnboardingRebranding.OnboardingView {
             // Exit animations (fade out logo and text)
             static let exitFadeDuration: TimeInterval = 0.3
 
+            /// How long the landing screen stays visible under Reduce Motion before advancing.
+            static let reduceMotionHoldDuration: TimeInterval = 3.0
+
             // Lottie playback parameters
             static let logoLottieFPS: Double = 30
             static let logoLottieTotalFrames: Double = 60
             static let illustrationLottieFPS: Double = 30
             static let illustrationLottieStartFrame: Double = 22
             static let illustrationLottieTotalFrames: Double = 89
+            // DuckAI Lottie (ip=25, op=56 @ 30fps)
+            static let duckAILottieFPS: Double = 30
+            static let duckAILottieStartFrame: Double = 25
+            static let duckAILottieEndFrame: Double = 56
+
+            /// Start the DuckAI Lottie at ~90% through the title's slide-in.
+            static let duckAIAnimationDelay: TimeInterval = textOffsetDelay + 0.9 * textOffsetDuration
 
             // MARK: Computed durations
 
             static let logoLottieDuration: TimeInterval = logoLottieTotalFrames / logoLottieFPS
             static let illustrationLottiePlaybackDuration: TimeInterval = (illustrationLottieTotalFrames - illustrationLottieStartFrame) / illustrationLottieFPS
+            static let duckAILottiePlaybackDuration: TimeInterval = (duckAILottieEndFrame - duckAILottieStartFrame) / duckAILottieFPS
 
             /// Time from `.onAppear` until every entrance animation (SwiftUI + Lottie) has finished.
-            static var entranceDuration: TimeInterval {
-                max(
+            static func entranceDuration(includingDuckAI showsDuckAI: Bool) -> TimeInterval {
+                let defaultAnimationsEntranceMaxDuration = max(
                     groupScaleDelay + groupScaleDuration,
                     groupOffsetDelay + groupOffsetDuration,
                     logoScaleDelay + logoScaleDuration,
@@ -140,11 +162,14 @@ extension OnboardingRebranding.OnboardingView {
                     logoLottieDuration,
                     illustrationLottiePlaybackDuration
                 )
+                let duckAIAnimationEntranceDuration = showsDuckAI ? duckAIAnimationDelay + duckAILottiePlaybackDuration : 0
+
+                return max(defaultAnimationsEntranceMaxDuration, duckAIAnimationEntranceDuration)
             }
 
             /// Time from `.onAppear` until all animations (entrance + exit) have finished.
-            static var totalDuration: TimeInterval {
-                entranceDuration + exitFadeDuration
+            static func totalDuration(includingDuckAI showsDuckAI: Bool) -> TimeInterval {
+                entranceDuration(includingDuckAI: showsDuckAI) + exitFadeDuration
             }
 
             // MARK: SwiftUI Animations
@@ -159,7 +184,9 @@ extension OnboardingRebranding.OnboardingView {
 
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+        let content: OnboardingLandingContent
         let animationNamespace: Namespace.ID
         var onAnimationComplete: () -> Void
 
@@ -168,6 +195,7 @@ extension OnboardingRebranding.OnboardingView {
         @State private var logo = LandingAnimationStates.logoStart
         @State private var text = LandingAnimationStates.textStart
         @State private var textOffset = LandingAnimationStates.textOffsetStart
+        @State private var duckAIPlay = false
 
         var body: some View {
             GeometryReader { proxy in
@@ -180,6 +208,9 @@ extension OnboardingRebranding.OnboardingView {
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
             }
+            // Restart the entire landing screen (state + animations + theme-dependent Lotties)
+            // when the appearance switches mid-flight, rather than some animations restarting and some not.
+            .id(colorScheme)
             .onAppear {
                 animateEntrance()
             }
@@ -189,6 +220,16 @@ extension OnboardingRebranding.OnboardingView {
             horizontalSizeClass == .regular ? Metrics.illustrationScalePad : 1.0
         }
 
+        private var duckAIPlaybackMode: LottiePlaybackMode {
+            if reduceMotion {
+                return .paused(at: .progress(1.0))
+            }
+            guard duckAIPlay else {
+                return .paused(at: .progress(0))
+            }
+            return .playing(.fromProgress(0, toProgress: 1.0, loopMode: .playOnce))
+        }
+
         // MARK: - Logo + text
 
         private func logoAndTextView(screenHeight: CGFloat) -> some View {
@@ -196,25 +237,44 @@ extension OnboardingRebranding.OnboardingView {
             let textScale = isSmallScreen ? Metrics.textScaleSmallScreen : 1.0
 
             return VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
-                // Logo Lottie (internal animation plays the Dax entrance; no opacity fade)
+                // Logo: Lottie plays Dax's entrance; Reduce Motion freezes on the last frame.
                 Lottie.LottieView {
                     try await DotLottieFile.asset(named: Assets.logoLottieFileName)
                 }
-                    .playing(loopMode: .playOnce)
+                    .playbackMode(reduceMotion
+                                  ? .paused(at: .progress(1.0))
+                                  : .playing(.fromProgress(0, toProgress: 1.0, loopMode: .playOnce)))
                     .resizable()
                     .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
                     .frame(width: Metrics.logoSize, height: Metrics.logoSize)
                     .scaleEffect(logo.scale)
                     .opacity(logo.opacity)
 
-                // Text
-                Text(UserText.onboardingWelcomeHeader)
-                    .font(onboardingTheme.typography.largeTitle)
-                    .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .scaleEffect(textScale)
-                    .offset(textOffset)
-                    .opacity(text.opacity)
+                // Text (+ optional DuckAI animation underneath, sharing the text's offset/opacity)
+                VStack(alignment: .center, spacing: Metrics.titleToDuckAISpacing) {
+                    Text(content.title)
+                        .font(onboardingTheme.typography.largeTitle)
+                        .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
+                        .multilineTextAlignment(.center)
+
+                    if content.shouldShowDuckAIAnimation {
+                        let fileName = colorScheme == .dark ? Assets.duckAIAnimationDarkFileName : Assets.duckAIAnimationFileName
+
+                        Lottie.LottieView{
+                            try await DotLottieFile.asset(named: fileName)
+                        }
+                        .playbackMode(duckAIPlaybackMode)
+                        .resizable()
+                        .frame(width: Metrics.duckAIAnimationWidth, height: Metrics.duckAIAnimationHeight)
+                        .scaledToFit()
+                        .padding(.top, -Metrics.duckAITopOffset)
+                        .offset(x: -Metrics.duckAIXOffset)
+                        .id(fileName)
+                    }
+                }
+                .scaleEffect(textScale)
+                .offset(textOffset)
+                .opacity(text.opacity)
             }
             .padding(.horizontal, Metrics.horizontalPadding)
             .scaleEffect(groupScale)
@@ -228,14 +288,19 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         private var backgroundView: some View {
-            Lottie.LottieView {
-                try await DotLottieFile.asset(named: backgroundLottieAssetName)
-            }
-                .playbackMode(.playing(.fromProgress(
+            // Reduce Motion: freeze the illustration at its last frame.
+            let playback: LottiePlaybackMode = reduceMotion
+                ? .paused(at: .progress(1.0))
+                : .playing(.fromProgress(
                     LandingAnimationTiming.illustrationLottieStartFrame / LandingAnimationTiming.illustrationLottieTotalFrames,
                     toProgress: 1.0,
                     loopMode: .playOnce
-                )))
+                ))
+
+            return Lottie.LottieView {
+                try await DotLottieFile.asset(named: backgroundLottieAssetName)
+            }
+                .playbackMode(playback)
                 .resizable()
                 .id(backgroundLottieAssetName)
                 .clipped()
@@ -249,6 +314,23 @@ extension OnboardingRebranding.OnboardingView {
         // MARK: - Animation Sequencing
 
         private func animateEntrance() {
+            // Reduce Motion: snap to the end-state, hold for `reduceMotionHoldDuration`, then
+            // advance. No exit fade.
+            guard !reduceMotion else {
+                groupScale = 1.0
+                groupOffsetY = 0
+                logo = LandingAnimationStates.logoEnd
+                textOffset = .zero
+                text = LandingAnimationStates.textEnd
+                if content.shouldShowDuckAIAnimation {
+                    duckAIPlay = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.reduceMotionHoldDuration) {
+                    onAnimationComplete()
+                }
+                return
+            }
+
             // Group (CTRL_Logo): scale + offset
             withAnimation(LandingAnimationTiming.groupScaleAnimation) {
                 groupScale = 1.0
@@ -272,13 +354,22 @@ extension OnboardingRebranding.OnboardingView {
 
             // Background: no SwiftUI animation — Lottie plays from frame 22 internally
 
+            // DuckAI Lottie: start playback partway through the title's slide-in
+            if content.shouldShowDuckAIAnimation {
+                DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.duckAIAnimationDelay) {
+                    duckAIPlay = true
+                }
+            }
+
+            let showsDuckAI = content.shouldShowDuckAIAnimation
+
             // After entrance animations complete, fade out logo and text
-            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.entranceDuration) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.entranceDuration(includingDuckAI: showsDuckAI)) {
                 animateExit()
             }
 
             // Notify parent when all animations (entrance + exit) have finished
-            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.totalDuration) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.totalDuration(includingDuckAI: showsDuckAI)) {
                 onAnimationComplete()
             }
         }

@@ -39,9 +39,9 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
         do {
-            let remoteModels = try await modelsService.fetchModels()
+            let response = try await modelsService.fetchModels()
             let userTier = await resolveUserTier()
-            let models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+            let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
             let hasActiveSubscription = userTier != .free
 
             let sections = AIChatModelSectionBuilder.buildSections(
@@ -77,8 +77,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
     private func resolveUserTier() async -> AIChatUserTier {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            guard subscription.isActive else { return .free }
+            guard let subscription = try await subscriptionManager.getSubscription(),
+                  subscription.isActive else { return .free }
             switch subscription.tier {
             case .plus: return .plus
             case .pro: return .pro

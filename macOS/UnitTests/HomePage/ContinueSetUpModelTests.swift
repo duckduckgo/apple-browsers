@@ -19,10 +19,12 @@
 import XCTest
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import NewTabPage
 import PixelKit
 import PrivacyConfigTestsUtils
 import SubscriptionTestingUtilities
+import WebExtensions
 
 @testable import Subscription
 @testable import DuckDuckGo_Privacy_Browser
@@ -43,7 +45,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
     var cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler!
     private var nonAppStoreFeatureTypes: [HomePage.Models.FeatureType] {
-        [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+        [.emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
     }
 
     @MainActor override func setUp() {
@@ -69,7 +71,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
     }
 
@@ -119,7 +122,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
@@ -127,7 +131,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
     @MainActor func testWhenInitializedForTheFirstTimeTheMatrixHasAllElementsInTheRightOrder() {
         homePageContinueSetUpModelPersisting.isFirstSession = true
-        var expectedMatrix = [[HomePage.Models.FeatureType.duckplayer, .emailProtection]]
+        var expectedMatrix = [[HomePage.Models.FeatureType.emailProtection, .defaultBrowser]]
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
             dockCustomizer: dockCustomizer,
@@ -137,7 +141,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, expectedMatrix)
@@ -219,74 +224,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= vm.itemsPerRow)
     }
 
-    @MainActor func testWhenUserHasDuckPlayerEnabledAndOverlayButtonNotPressedThenCorrectElementsAreVisible() {
-        let expectedMatrix = expectedFeatureMatrixWithout(types: [.duckplayer])
-
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
-        duckPlayerPreferences.duckPlayerModeBool = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
-
-        vm.shouldShowAllFeatures = true
-
-        XCTAssertTrue(doTheyContainTheSameElements(matrix1: vm.visibleFeaturesMatrix, matrix2: expectedMatrix))
-
-        vm.shouldShowAllFeatures = false
-
-        XCTAssertEqual(vm.visibleFeaturesMatrix.count, 1)
-        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= vm.itemsPerRow)
-    }
-
-    @MainActor func testWhenUserHasDuckPlayerDisabledAndOverlayButtonNotPressedThenCorrectElementsAreVisible() {
-        let expectedMatrix = expectedFeatureMatrixWithout(types: [.duckplayer])
-
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
-        duckPlayerPreferences.duckPlayerModeBool = false
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
-
-        vm.shouldShowAllFeatures = true
-
-        XCTAssertTrue(doTheyContainTheSameElements(matrix1: vm.visibleFeaturesMatrix, matrix2: expectedMatrix))
-
-        vm.shouldShowAllFeatures = false
-
-        XCTAssertEqual(vm.visibleFeaturesMatrix.count, 1)
-        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= vm.itemsPerRow)
-    }
-
-    @MainActor func testWhenUserHasDuckPlayerOnAlwaysAskAndOverlayButtonNotPressedThenCorrectElementsAreVisible() {
-        let expectedMatrix = expectedFeatureMatrixWithout(types: [])
-
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
-        duckPlayerPreferences.duckPlayerModeBool = nil
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
-
-        vm.shouldShowAllFeatures = true
-
-        XCTAssertTrue(doTheyContainTheSameElements(matrix1: vm.visibleFeaturesMatrix, matrix2: expectedMatrix))
-
-        vm.shouldShowAllFeatures = false
-
-        XCTAssertEqual(vm.visibleFeaturesMatrix.count, 1)
-        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= vm.itemsPerRow)
-    }
-
-    @MainActor func testWhenUserHasDuckPlayerOnAlwaysAskAndOverlayButtonIsPressedThenCorrectElementsAreVisible() {
-        let expectedMatrix = expectedFeatureMatrixWithout(types: [.duckplayer])
-
-        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
-        duckPlayerPreferences.duckPlayerModeBool = nil
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
-
-        vm.shouldShowAllFeatures = true
-
-        XCTAssertTrue(doTheyContainTheSameElements(matrix1: vm.visibleFeaturesMatrix, matrix2: expectedMatrix))
-
-        vm.shouldShowAllFeatures = false
-
-        XCTAssertEqual(vm.visibleFeaturesMatrix.count, 1)
-        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= HomePage.Models.ContinueSetUpModel.Const.featuresPerRow)
-    }
-
     @MainActor func testThatWhenAllFeatureInactiveThenVisibleMatrixIsEmpty() {
         capturingDefaultBrowserProvider.isDefault = true
         emailStorage.isEmailProtectionEnabled = true
@@ -304,7 +241,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, [[]])
@@ -321,7 +259,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])
@@ -332,9 +271,6 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         vm.removeItem(for: .importBookmarksAndPasswords)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.importBookmarksAndPasswords))
-
-        vm.removeItem(for: .duckplayer)
-        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.duckplayer))
 
         vm.removeItem(for: .emailProtection)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.emailProtection))
@@ -437,12 +373,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(vm.visibleFeaturesMatrix.flatMap { $0 }.count, numberOfFeatures - 1)
     }
 
-    @MainActor func testWhenAskedToPerformActionForDuckPlayerThenItHandlesCardAction() {
-        vm.performAction(for: .duckplayer)
-
-        XCTAssertEqual(cardActionsHandler.cardActionsPerformed, [.duckplayer])
-    }
-
     @MainActor func testWhenAskedToPerformActionForEmailProtectionThenItHandlesCardAction() {
         vm.performAction(for: .emailProtection)
 
@@ -469,12 +399,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .addAppToDockMac)
     }
 
-    @MainActor func testWhenDismissingDuckplayerCardThenItFiresPixel() {
-        vm.removeItem(for: .duckplayer)
-
-        XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .duckplayer)
-    }
-
     @MainActor func testWhenDismissingEmailProtectionCardThenItFiresPixel() {
         vm.removeItem(for: .emailProtection)
 
@@ -493,6 +417,49 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertTrue(pixelHandler.fireSubscriptionCardDismissedPixelCalled)
         XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .subscription)
     }
+
+    // MARK: - YouTube Ad Blocking visibility
+
+    @MainActor func testWhenYTAdBlockingFeatureUnavailableThenYTAdBlockingCardIsNotVisible() {
+        let mock = MockAdBlockingAvailability(isFeatureSupported: false, isEnabledByUser: true)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
+
+        vm.shouldShowAllFeatures = true
+
+        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.youtubeAdBlocking))
+    }
+
+    @MainActor func testWhenYTAdBlockingUserNotOptedInThenYTAdBlockingCardIsNotVisible() {
+        let mock = MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: false)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
+
+        vm.shouldShowAllFeatures = true
+
+        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.youtubeAdBlocking))
+    }
+
+    @MainActor func testWhenYTAdBlockingFullyEnabledThenYTAdBlockingCardIsVisible() {
+        let mock = MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
+
+        vm.shouldShowAllFeatures = true
+
+        XCTAssertTrue(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.youtubeAdBlocking))
+    }
+
+    // MARK: - YouTube Ad Blocking action handling & dismissal
+
+    @MainActor func testWhenAskedToPerformActionForYTAdBlockingThenItHandlesCardAction() {
+        vm.performAction(for: .youtubeAdBlocking)
+
+        XCTAssertEqual(cardActionsHandler.cardActionsPerformed, [.youtubeAdBlocking])
+    }
+
+    @MainActor func testWhenDismissingYTAdBlockingCardThenItFiresPixel() {
+        vm.removeItem(for: .youtubeAdBlocking)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .youtubeAdBlocking)
+    }
 }
 
 extension HomePage.Models.ContinueSetUpModel {
@@ -505,7 +472,8 @@ extension HomePage.Models.ContinueSetUpModel {
         dockCustomizer: DockCustomization = DockCustomizerMock(),
         subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging = MockHomePageSubscriptionCardVisibilityManaging(),
         pixelHandler: NewTabPageNextStepsCardsPixelHandling = MockNewTabPageNextStepsCardsPixelHandler(),
-        cardActionsHandler: NewTabPageNextStepsCardsActionHandling = MockNewTabPageNextStepsCardsActionHandler()
+        cardActionsHandler: NewTabPageNextStepsCardsActionHandling = MockNewTabPageNextStepsCardsActionHandler(),
+        adBlockingAvailability: AdBlockingAvailabilityProviding = MockAdBlockingAvailability()
     ) -> HomePage.Models.ContinueSetUpModel {
         HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,
@@ -516,7 +484,8 @@ extension HomePage.Models.ContinueSetUpModel {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: persistor,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: adBlockingAvailability
         )
     }
 }

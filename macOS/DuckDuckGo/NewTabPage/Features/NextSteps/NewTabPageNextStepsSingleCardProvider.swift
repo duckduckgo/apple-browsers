@@ -24,6 +24,7 @@ import DDGSync
 import Foundation
 import NewTabPage
 import PrivacyConfig
+import WebExtensions
 
 extension NewTabPageDataModel {
     /// Levels assigned to Next Steps cards to control their display order.
@@ -52,6 +53,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let isAppStoreBuild: Bool
 
     private let scheduler: AnySchedulerOf<DispatchQueue>
@@ -95,7 +97,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     /// Cards sorted in default order, for standard ordering.
     private let defaultStandardCards: [NewTabPageDataModel.CardID] = [
-        .duckplayer,
+        .youtubeAdBlocking,
         .emailProtection,
         .defaultApp,
         .addAppToDockMac,
@@ -114,7 +116,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         LeveledCard(cardID: .emailProtection, level: .level1),
         LeveledCard(cardID: .defaultApp, level: .level2),
         LeveledCard(cardID: .addAppToDockMac, level: .level2),
-        LeveledCard(cardID: .duckplayer, level: .level2),
+        LeveledCard(cardID: .youtubeAdBlocking, level: .level2),
         LeveledCard(cardID: .bringStuff, level: .level2),
         LeveledCard(cardID: .subscription, level: .level2)
     ]
@@ -176,6 +178,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
          syncService: DDGSyncing?,
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
          applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
          scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.cardActionHandler = cardActionHandler
@@ -192,6 +195,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.duckPlayerPreferences = duckPlayerPreferences
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
+        self.adBlockingAvailability = adBlockingAvailability
         self.isAppStoreBuild = applicationBuildType.isAppStoreBuild
         self.scheduler = scheduler
         self.shouldUseAdvancedCardOrdering = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering)
@@ -316,7 +320,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .addAppToDockMac:
             return !isAppStoreBuild && !dockCustomizer.isAddedToDock
         case .duckplayer:
-            return duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
+            return false
         case .emailProtection:
             return !emailManager.isSignedIn
         case .subscription:
@@ -325,6 +329,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
             return !appearancePreferences.didChangeAnyNewTabPageCustomizationSetting
         case .sync:
             return syncService?.featureFlags.contains(.all) == true && syncService?.authState == .inactive
+        case .youtubeAdBlocking:
+            return adBlockingAvailability.isEnabled
         }
     }
 
@@ -343,6 +349,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
             dismissedLegacySetting = !legacyPersistor.shouldShowImportSetting
         case .subscription:
             dismissedLegacySetting = !legacySubscriptionCardPersistor.shouldShowSubscriptionSetting
+        case .youtubeAdBlocking:
+            dismissedLegacySetting = !legacyPersistor.shouldShowYouTubeAdBlockingSetting
         default:
             dismissedLegacySetting = false // No legacy setting for other (new) cards
         }

@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 struct LocaleMatchingAttribute: SingleValueMatching {
     var value: [String]? = []
@@ -194,6 +195,11 @@ struct IsInstalledMacAppStoreMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct OSUpgradeCapabilityMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
 struct PinnedTabsMatchingAttribute: NumericRangeMatching {
     var min: Int = MatchingAttributeDefaults.intDefaultValue
     var max: Int = MatchingAttributeDefaults.intDefaultMaxValue
@@ -218,6 +224,21 @@ struct DuckPlayerEnabledMatchingAttribute: SingleValueMatching {
 
 struct FreemiumPIRCurrentUserMatchingAttribute: SingleValueMatching {
     var value: Bool?
+    var fallback: Bool?
+}
+
+struct FreemiumPIREligibleMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct FreemiumPIRDidActivateMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct FreemiumPIRFirstScanResultMatchingAttribute: SingleValueMatching {
+    var value: String?
     var fallback: Bool?
 }
 

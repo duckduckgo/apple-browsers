@@ -18,9 +18,11 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import ContentScopeScripts
 import Foundation
 import PrivacyConfig
+import TrackerRadarKit
 import UserScript
 import WebKit
 
@@ -44,8 +46,11 @@ public struct ContentScopeExperimentData: Encodable, Equatable {
     }
 }
 
-public enum ContentScopeScriptContext {
-    case contentScope
+public enum ContentScopeScriptContext: Equatable {
+    /// Page-world content scope. Optionally carries surrogate-filtered tracker data
+    /// (a TDS subset containing only trackers with surrogate rules) which is serialised
+    /// as `trackerData` in the user-preferences payload for C-S-S surrogate injection.
+    case contentScope(surrogateTrackerData: TrackerData? = nil)
     case contentScopeIsolated
     case aiChatDataClearing
     case aiChatHistory
@@ -251,7 +256,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
 
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
-                scriptContext: ContentScopeScriptContext = .contentScope,
+                scriptContext: ContentScopeScriptContext = .contentScope(),
                 allowedNonisolatedFeatures: [String] = [],
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) throws {
@@ -281,7 +286,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
               let userUnprotectedDomains = try? JSONEncoder().encode(privacyConfigurationManager.privacyConfig.userUnprotectedDomains),
               let userUnprotectedDomainsString = String(data: userUnprotectedDomains, encoding: .utf8),
-              let jsonPropertiesString = try? encodeProperties(properties, messagingContextName: scriptContext.messagingContextName),
+              let jsonPropertiesString = try? encodeProperties(properties, scriptContext: scriptContext),
               let jsonConfig = try? JSONEncoder().encode(config),
               let jsonConfigString = String(data: jsonConfig, encoding: .utf8)
         else {
@@ -296,10 +301,19 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         ])
     }
 
-    private static func encodeProperties(_ properties: ContentScopeProperties, messagingContextName: String) throws -> String {
+    private static func encodeProperties(_ properties: ContentScopeProperties, scriptContext: ContentScopeScriptContext) throws -> String {
         let jsonProperties = try JSONEncoder().encode(properties)
         var dict = try JSONSerialization.jsonObject(with: jsonProperties, options: []) as? [String: Any] ?? [:]
-        dict["messagingContextName"] = messagingContextName
+        dict["messagingContextName"] = scriptContext.messagingContextName
+
+        if case .contentScope(let surrogateTrackerData?) = scriptContext,
+           let encodedTrackerData = try? JSONEncoder().encode(surrogateTrackerData),
+           let trackerDataDict = try? JSONSerialization.jsonObject(with: encodedTrackerData, options: []) as? [String: Any] {
+            // Failure here is non-fatal: surrogate tracker data is optional metadata. If
+            // encoding fails we omit the key rather than aborting the whole content-scope
+            // script, which would disable all on-page protections.
+            dict["trackerData"] = trackerDataDict
+        }
 
         let encoded = try JSONSerialization.data(withJSONObject: dict, options: [])
         guard let result = String(data: encoded, encoding: .utf8) else {

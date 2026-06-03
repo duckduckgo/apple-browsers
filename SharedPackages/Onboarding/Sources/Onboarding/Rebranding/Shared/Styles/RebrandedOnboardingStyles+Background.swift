@@ -18,6 +18,7 @@
 
 import SwiftUI
 import Combine
+import CombineExtensions
 #if os(iOS)
 import MetricBuilder
 import UIKit
@@ -72,7 +73,23 @@ public enum ContextualOnboardingBackgroundType {
 private enum ContextualBackgroundStyleMetrics {
     static let referenceBackgroundImageHeight: CGFloat = 290
     static let referenceBackgroundImageOffset: CGFloat = 90
-    static let backgroundImageKeyboardAnimation = Animation.easeOut(duration: 0.16)
+}
+
+/// Inner-shadow approximation of Figma's "Inline Dax Dialog" effect token — originally two
+/// stacked INNER_SHADOW passes (Shadow/Purple `#3E228C @ 6 %` offset (0,-4) blur 8, and
+/// Shadow/Blue `#1E42A4 @ 9 %` offset (0,-1) blur 0) — collapsed into a single vertical
+/// gradient band painted along the panel's inside-bottom edge. The effect mimics the web
+/// view beneath the panel casting a shadow upward onto the contextual onboarding.
+///
+/// A `LinearGradient` band is used in place of `ShadowStyle.inner(...)` (iOS 16+) so the
+/// implementation works on the Onboarding package's iOS 15 deployment target.
+private enum ContextualBackgroundShadowMetrics {
+    /// Opacity-weighted blend of `Shadow/Purple` (#3E228C @ 6 %) and `Shadow/Blue` (#1E42A4
+    /// @ 9 %). Resulting tint ≈ #2B359A; combined alpha ≈ 0.15.
+    static let color = Color(red: 43.0 / 255.0, green: 53.0 / 255.0, blue: 154.0 / 255.0).opacity(0.15)
+    /// Vertical extent of the inner-shadow band. Inherits Shadow/Purple's blur radius —
+    /// Shadow/Blue's pass had zero blur (a 1 px hairline) so it doesn't widen the band.
+    static let height: CGFloat = 8
 }
 
 extension OnboardingRebranding.OnboardingStyles {
@@ -108,18 +125,16 @@ extension OnboardingRebranding.OnboardingStyles {
         #endif
 
         func body(content: Content) -> some View {
-                ZStack {
-                    theme.colorPalette.background
-                        .ignoresSafeArea()
-
-                    ZStack(alignment: backgroundType.alignment) {
-                        Color.clear
-                            .ignoresSafeArea()
-
+            ZStack {
+                theme.colorPalette.background
+                    .ignoresSafeArea()
+                    .overlay(
+                        ZStack(alignment: backgroundType.alignment) {
+                            Color.clear
                             backgroundType.image
                                 .resizable()
                                 .scaledToFit()
-                                .frame(maxHeight: maxHeightMetrics)
+                                .frame(maxHeight: maxHeightMetrics, alignment: .bottom)
                                 .background(
                                     GeometryReader { proxy in
                                         Color.clear
@@ -128,34 +143,27 @@ extension OnboardingRebranding.OnboardingStyles {
                                     }
                                 )
                                 .offset(y: calculateImageOffset())
-                        #if os(iOS)
-                                .animation(ContextualBackgroundStyleMetrics.backgroundImageKeyboardAnimation, value: keyboardResponder.keyboardFrame)
-                        #endif
-
-                    }
-                    .frame(maxWidth: .infinity, alignment: backgroundType.alignment)
+                                #if os(iOS)
+                                .animation(.easeInOut(duration: 0.3), value: keyboardResponder.keyboardFrame)
+                                #endif
+                        }
+                    )
                     .clipped()
-                    .ignoresSafeArea(edges: ignoresSafeAreaEdges)
                     .onPreferenceChange(BackgroundIllustrationHeightPreferenceKey.self) { height in
                         imageHeight = height
                     }
                     .onPreferenceChange(BackgroundIllustrationBottomPreferenceKey.self) { bottomY in
                         #if os(iOS)
-                        // Only capture the image's natural bottom position when keyboard is hidden.
-                        // This breaks the circular dependency that caused infinite render loops:
-                        // - When keyboard is hidden: capture the stable reference position
-                        // - When keyboard is visible: ignore updates (image position changes due to offset, not layout)
-                        // Without this guard, moving the image would update this value, which would
-                        // recalculate the offset, which would move the image again, creating a loop.
                         if imageBottomY == 0 || keyboardResponder.keyboardFrame.height == 0 {
                             imageBottomY = bottomY
                         }
                         #endif
                     }
 
-                    content
-                }
-                .ignoresSafeArea(.keyboard)
+                content
+            }
+            .ignoresSafeArea(.keyboard)
+            .ignoresSafeArea(.container, edges: ignoredContainerEdges)
         }
 
         // Calculates the vertical offset needed to adjust the background image when the keyboard appears.
@@ -199,15 +207,19 @@ extension OnboardingRebranding.OnboardingStyles {
         }
 
         #if os(iOS)
-        private static let maxHeightContextualAssets = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200) // Contextual assets have smaller height than new tab page ones.
+        private static let maxHeightContextualAssets = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200)
         private static let maxHeightNewTabPageAssets = MetricBuilder<CGFloat?>(default: nil).iPad(290).iPhone(landscape: 290)
-        // iPhone excludes .bottom to prevent background from being covered by the address bar when it is positioned at the bottom
-        private static let ignoreSafeAreaEdgesBuilder = MetricBuilder<Edge.Set>(default: [.horizontal]).iPad([.bottom, .horizontal])
         #endif
+
+        /// Pushes the modifier's frame past the home-indicator inset on iPhone landscape so
+        /// the screen background fills the entire device width and height; portrait and iPad
+        /// keep respecting the bottom safe area.
+        private var ignoredContainerEdges: Edge.Set {
+            vSizeClass == .compact ? [.horizontal, .bottom] : .horizontal
+        }
 
         var maxHeightMetrics: CGFloat? {
             #if os(iOS)
-            // iOS uses responsive metrics based on device type
             switch backgroundType {
             case .tryASearchCompleted, .trackers, .fireDialog, .endOfJourney:
                 return Self.maxHeightContextualAssets.build(v: vSizeClass, h: hSizeClass)
@@ -215,57 +227,47 @@ extension OnboardingRebranding.OnboardingStyles {
                 return Self.maxHeightNewTabPageAssets.build(v: vSizeClass, h: hSizeClass)
             }
             #else
-            // macOS: Fixed value. Customise when implementing macOS contextual onboarding.
             return nil
-            #endif
-        }
-
-        var ignoresSafeAreaEdges: Edge.Set {
-            #if os(iOS)
-            // iOS uses responsive metrics based on device type
-            return Self.ignoreSafeAreaEdgesBuilder.build(v: vSizeClass, h: hSizeClass)
-            #else
-            // macOS: Customise when implementing macOS contextual onboarding.
-            return .all
             #endif
         }
     }
 
     struct AnimatedContextualBackgroundStyle: ViewModifier {
-        @State private var didAppear: Bool = false
-        @State var imageHeight: CGFloat = 0.0
-
         let backgroundType: ContextualOnboardingBackgroundType
-        let animation: Animation
-        let delay: TimeInterval
-        let keyboardBehavior: KeyboardBehavior
 
         func body(content: Content) -> some View {
             content
-                .modifier(
-                    backgroundStyle
-                )
-                .onPreferenceChange(BackgroundIllustrationHeightPreferenceKey.self) { imageHeight in
-                    guard imageHeight > 0 else { return }
-                    self.imageHeight = imageHeight
-                    guard !didAppear else { return }
-                    withAnimation(animation.delay(delay)) {
-                        didAppear = true
-                    }
+                .modifier(backgroundStyle)
+                #if os(iOS)
+                // Inner-shadow band painted along the panel's inside-bottom edge. Reads as the
+                // web view (sitting beneath the panel in the tab's stack view) casting a shadow
+                // upward onto the contextual onboarding. Merges Figma's "Inline Dax Dialog"
+                // effect — two stacked INNER_SHADOW passes (Shadow/Purple offset (0,-4) blur 8,
+                // and Shadow/Blue offset (0,-1) blur 0) — into a single vertical gradient,
+                // since `ShadowStyle.inner(...)` is iOS 16+ and the package targets iOS 15.
+                .overlay(alignment: .bottom) {
+                    LinearGradient(
+                        colors: [.clear, ContextualBackgroundShadowMetrics.color],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: ContextualBackgroundShadowMetrics.height)
+                    .allowsHitTesting(false)
                 }
+                #endif
         }
 
         private var backgroundStyle: ContextualBackgroundStyle {
             #if os(iOS)
             ContextualBackgroundStyle(
                 backgroundType: backgroundType,
-                imageOffsetY: didAppear ? 0 : imageHeight + 16,
-                keyboardBehavior: keyboardBehavior
+                imageOffsetY: 0,
+                keyboardBehavior: .ignoreKeyboard
             )
             #elseif os(macOS)
             ContextualBackgroundStyle(
                 backgroundType: backgroundType,
-                imageOffsetY: didAppear ? 0 : imageHeight + 16
+                imageOffsetY: 0
             )
             #endif
         }
@@ -290,27 +292,6 @@ private struct BackgroundIllustrationBottomPreferenceKey: PreferenceKey {
 }
 
 // MARK: - Contextual Onboarding + View Extension
-
-/// Animation configuration used when presenting contextual onboarding background illustrations.
-public struct BackgroundAnimationContext {
-    /// Animation curve and duration used for the background entrance.
-    let animation: Animation
-    /// Delay, in seconds, applied before starting the background entrance animation.
-    let delay: TimeInterval
-
-    /// Creates a background animation context.
-    ///
-    /// - Parameters:
-    ///   - animation: Animation used for the entrance transition.
-    ///   - delay: Delay, in seconds, before the animation starts.
-    public init(animation: Animation, delay: TimeInterval) {
-        self.animation = animation
-        self.delay = delay
-    }
-
-    /// Default animation context used by contextual onboarding backgrounds.
-    public static let `default` = BackgroundAnimationContext(animation: .easeInOut(duration: 0.3), delay: 0.1)
-}
 
 /// Defines how the contextual onboarding background should respond to keyboard appearance.
 public enum KeyboardBehavior: Equatable {
@@ -365,19 +346,13 @@ public extension View {
     ///
     /// No keyboard adjustment is performed as these dialogs don't typically involve keyboard interaction.
     ///
-    /// - Parameters:
-    ///   - backgroundType: The type of background illustration to display.
-    ///   - animationContext: Animation configuration. Defaults to `.default`.
+    /// - Parameter backgroundType: The type of background illustration to display.
     func applyAnimatedContextualOnboardingBackground(
-        backgroundType: ContextualOnboardingBackgroundType,
-        animationContext: BackgroundAnimationContext = .default
+        backgroundType: ContextualOnboardingBackgroundType
     ) -> some View {
         self.modifier(
             OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(
-                backgroundType: backgroundType,
-                animation: animationContext.animation,
-                delay: animationContext.delay,
-                keyboardBehavior: .ignoreKeyboard
+                backgroundType: backgroundType
             )
         )
     }

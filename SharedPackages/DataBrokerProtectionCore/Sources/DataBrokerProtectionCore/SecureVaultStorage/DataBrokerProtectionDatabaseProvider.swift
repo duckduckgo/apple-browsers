@@ -116,6 +116,7 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
 
     func save(_ scanEvent: ScanHistoryEventDB) throws
     func save(_ optOutEvent: OptOutHistoryEventDB) throws
+    func hasScanHistoryEvents() throws -> Bool
     func fetchScanEvents(brokerId: Int64, profileQueryId: Int64) throws -> [ScanHistoryEventDB]
     func fetchOptOutEvents(brokerId: Int64, profileQueryId: Int64) throws -> [OptOutHistoryEventDB]
     func fetchOptOutEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [OptOutHistoryEventDB]
@@ -132,7 +133,7 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> OptOutAttemptDB?
     func save(_ optOutAttemptDB: OptOutAttemptDB) throws
 
-    func fetchFirstEligibleJobDate() throws -> Date?
+    func fetchFirstEligibleJobDate(excludingScanBrokerIDs brokerIDs: [Int64], includesOptOuts: Bool) throws -> Date?
 
     func save(_ event: BackgroundTaskEventDB) throws
     func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEventDB]
@@ -735,6 +736,12 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
         }
     }
 
+    public func hasScanHistoryEvents() throws -> Bool {
+        try db.read { db in
+            return try ScanHistoryEventDB.fetchCount(db) > 0
+        }
+    }
+
     public func fetchScanEvents(brokerId: Int64, profileQueryId: Int64) throws -> [ScanHistoryEventDB] {
         try db.read { db in
             return try ScanHistoryEventDB
@@ -839,8 +846,18 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     /// Same as the logic being used in sortedEligibleJobs(brokerProfileQueriesData:jobType:priorityDate:)
     ///
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210758578775514?focus=true
-    public func fetchFirstEligibleJobDate() throws -> Date? {
+    public func fetchFirstEligibleJobDate(excludingScanBrokerIDs brokerIDs: [Int64], includesOptOuts: Bool) throws -> Date? {
         let alias = "firstDate"
+
+        /// For freemium users we need to exclude opt-outs and scans from brokers with token-gated actions
+        let excludedScanBrokerClause: String
+        if brokerIDs.isEmpty {
+            excludedScanBrokerClause = ""
+        } else {
+            let brokerIDList = brokerIDs.map { String($0) }.joined(separator: ", ")
+            excludedScanBrokerClause = "AND scan.\(ScanDB.Columns.brokerId.rawValue) NOT IN (\(brokerIDList))"
+        }
+        let excludedOptOutClause = includesOptOuts ? "" : "AND 0 = 1"
 
         return try db.read { db in
             let sql = """
@@ -865,6 +882,7 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                     FROM \(ScanDB.databaseTableName) scan
                     INNER JOIN \(ProfileQueryDB.databaseTableName) profile_query ON scan.\(ScanDB.Columns.profileQueryId.rawValue) = profile_query.\(ProfileQueryDB.Columns.id.rawValue)
                     WHERE scan.\(ScanDB.Columns.preferredRunDate.rawValue) IS NOT NULL
+                    \(excludedScanBrokerClause)
                 ),
                 first_optout AS (
                     -- First eligible opt-out job
@@ -885,6 +903,7 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                             AND user_removed_profiles.\(OptOutHistoryEventDB.Columns.profileQueryId.rawValue) = optout.\(OptOutDB.Columns.profileQueryId.rawValue)
                         )
                         AND optout.\(OptOutDB.Columns.preferredRunDate.rawValue) IS NOT NULL
+                        \(excludedOptOutClause)
                 )
                 -- Return the earlier of the two dates
                 SELECT MIN(\(alias)) as \(alias)

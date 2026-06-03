@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Crashes
 import CrashReportingShared
 import Foundation
@@ -27,7 +28,7 @@ extension CrashReportingFactory: SparkleCrashReportingFactory {
     public static func instantiate(internalUserDecider: InternalUserDecider,
                                    keyValueStore: any ThrowingKeyValueStoring,
                                    crashReportSender: CrashReportSending,
-                                   crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
+                                   crashSenderPixelEvents: EventMapping<CrashReportSenderEvent>?,
                                    fireCrashPixel: @escaping (_ bundleID: String?, _ appVersion: String?, _ failedToReadCrashVersion: Bool) -> Void,
                                    fireFailedToReadContentsPixel: @escaping () -> Void,
                                    promptForConsent: @escaping (CrashReportPresenting) async -> Bool) -> any CrashReporting {
@@ -55,7 +56,7 @@ public final class CrashReporter: CrashReporting {
     public init(internalUserDecider: InternalUserDecider,
                 keyValueStore: any ThrowingKeyValueStoring,
                 crashReportSender: CrashReportSending,
-                crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
+                crashSenderPixelEvents: EventMapping<CrashReportSenderEvent>?,
                 fireCrashPixel: @escaping (_ bundleID: String?, _ appVersion: String?, _ failedToReadCrashVersion: Bool) -> Void,
                 fireFailedToReadContentsPixel: @escaping () -> Void,
                 promptForConsent: @escaping (CrashReportPresenting) async -> Bool) {

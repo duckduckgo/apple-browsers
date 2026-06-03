@@ -20,6 +20,7 @@ import AppKit
 import AppKitExtensions
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import Persistence
@@ -261,7 +262,7 @@ extension URL {
     }
 
     static func duckAIAtb(atbWithVariant: String, setAtb: String?) -> URL {
-        var params: [String: String?] = [
+        let params: [String: String?] = [
             DuckDuckGoParameters.ATB.activityType: DuckDuckGoParameters.ATB.duckAIValue,
             DuckDuckGoParameters.ATB.atb: atbWithVariant,
             DuckDuckGoParameters.ATB.setAtb: setAtb

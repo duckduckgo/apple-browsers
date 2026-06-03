@@ -40,6 +40,20 @@ enum LaunchAction {
         }
     }
 
+    var url: URL? {
+        switch self {
+        case .openURL(let url):
+            return url
+        case .handleShortcutItem, .handleUserActivity, .standardLaunch:
+            return nil
+        }
+    }
+
+}
+
+@MainActor
+protocol OnboardingPresenting: AnyObject {
+    func startOnboardingFlowIfNotSeenBefore(url: URL?)
 }
 
 @MainActor

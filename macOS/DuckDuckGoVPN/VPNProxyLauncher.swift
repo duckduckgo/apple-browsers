@@ -17,9 +17,10 @@
 //
 
 import Combine
+import ConcurrencyExtensions
 import Foundation
-import NetworkProtectionProxy
 import NetworkExtension
+import NetworkProtectionProxy
 
 /// Starts and stops the VPN proxy component.
 ///

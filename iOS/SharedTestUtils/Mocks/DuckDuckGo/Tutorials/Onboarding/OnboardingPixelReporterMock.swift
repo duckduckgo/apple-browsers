@@ -23,7 +23,7 @@ import Onboarding
 @testable import DuckDuckGo
 
 final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting {
-    
+
     private(set) var didCallMeasureOnboardingIntroImpression = false
     private(set) var didCallMeasureSkipOnboardingCTAAction = false
     private(set) var didCallMeasureConfirmSkipOnboardingCTAAction = false
@@ -33,10 +33,14 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureAutoRestoreOnboardingSkipTapped = false
     private(set) var didCallMeasureBrowserComparisonImpression = false
     private(set) var didCallMeasureChooseBrowserCTAAction = false
+    private(set) var didCallMeasureAiComparisonImpression = false
+    private(set) var didCallMeasureAiComparisonCTAAction = false
     private(set) var didCallMeasureChooseAppIconImpression = false
-    private(set) var didCallMeasureChooseCustomAppIconColor = false
+    private(set) var didCallMeasureChooseAppIconColor = false
+    private(set) var didCaptureAppIconColorSelection: AppIcon?
     private(set) var didCallMeasureAddressBarPositionSelectionImpression = false
-    private(set) var didCallMeasureChooseBottomAddressBarPosition = false
+    private(set) var didCallMeasureChooseAddressBarPosition = false
+    private(set) var didCaptureAddressBarPositionSelection: AddressBarPosition?
     private(set) var didCallMeasureSearchOptionTapped = false
     private(set) var didCallMeasureSiteOptionTapped = false
     private(set) var didCallMeasureCustomSearch = false
@@ -49,6 +53,8 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var secondSiteVisitCounter = 0
     private(set) var didCallMeasureScreenImpressionCalled = false
     private(set) var capturedScreenImpression: Pixel.Event?
+    private(set) var didCallMeasureSharedOnboardingScreenImpression = false
+    private(set) var capturedSharedOnboardingScreenImpression: OnboardingSharedPixelEvent?
     private(set) var didCallMeasurePrivacyDashboardOpenedForFirstTime = false
     private(set) var didCallMeasureEndOfJourneyDialogDismiss = false
 
@@ -65,9 +71,15 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureDuckAIQueryExperimentChooseAIChat = false
     private(set) var didCallMeasureDuckAIQueryExperimentQuerySubmission = false
     private(set) var didCaptureDuckAIQueryExperimentPromptSourceValue: String?
-    private(set) var didCaptureDuckAIQueryExperimentSelection: DuckAIQueryExperimentMode?
+    private(set) var didCaptureDuckAIQueryExperimentSelection: DuckAIQueryMode?
+    private(set) var didCallMeasureDuckAIQuerySelectionImpression = false
+    private(set) var didCallMeasureDuckAIQuerySubmission = false
+    private(set) var capturedDuckAIQuerySubmissionPromptSourceValue: String?
+    private(set) var capturedDuckAIQuerySubmissionSelection: DuckAIQueryMode?
     private(set) var didCallMeasureDuckAIExperimentFireButtonCTAAction = false
+    private(set) var didCallMeasureDuckAIExperimentFireDialogImpression = false
     private(set) var didCallMeasureDuckAIExperimentFinalDialogImpression = false
+    private(set) var didCallMeasureDuckAIExperimentFinalDialogCTAAction = false
 
     private(set) var didCallMeasureTrySearchDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureSearchResultDialogDismissButtonTapped = false
@@ -78,13 +90,36 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureEndOfJourneyDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureEndOfJourneyDialogDismissButtonTapped = false
     private(set) var didCallMeasureSubscriptionPromoDialogNewTabDismissButtonTapped = false
+    private(set) var didCallMeasureStartOnboardingCTAAction = false
+    private(set) var didCallMeasureSkipOnboardingScreenImpression = false
+    private(set) var didCallMeasureSetDefaultBrowserSkipped = false
+    private(set) var didCallMeasureTrySearchDialogSuggestedSearchTapped = false
+    private(set) var didCallMeasureTryVisitSiteDialogSuggestedSiteTapped = false
+    private(set) var didCallMeasureSearchResultsDialogGotItAction = false
+    private(set) var didCallMeasureTrackersDialogGotItAction = false
+    private(set) var didCallMeasureSubscriptionPromoDialogShown = false
+    private(set) var didCallMeasureSubscriptionPromoEngageCTAAction = false
+    private(set) var didCallMeasureFireButtonOnboardingDeleteConfirmed = false
+    private(set) var didCallMeasureFireButtonOnboardingDismissButtonTapped = false
 
     func measureOnboardingIntroImpression() {
         didCallMeasureOnboardingIntroImpression = true
     }
 
+    func measureStartOnboardingCTAAction() {
+        didCallMeasureStartOnboardingCTAAction = true
+    }
+
     func measureSkipOnboardingCTAAction() {
         didCallMeasureSkipOnboardingCTAAction = true
+    }
+
+    func measureSkipOnboardingScreenImpression() {
+        didCallMeasureSkipOnboardingScreenImpression = true
+    }
+
+    func measureSetDefaultBrowserSkipped() {
+        didCallMeasureSetDefaultBrowserSkipped = true
     }
 
     func measureConfirmSkipOnboardingCTAAction() {
@@ -115,20 +150,30 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureChooseBrowserCTAAction = true
     }
 
+    func measureAiComparisonImpression() {
+        didCallMeasureAiComparisonImpression = true
+    }
+
+    func measureAiComparisonCTAAction() {
+        didCallMeasureAiComparisonCTAAction = true
+    }
+
     func measureChooseAppIconImpression() {
         didCallMeasureChooseAppIconImpression = true
     }
 
-    func measureChooseCustomAppIconColor() {
-        didCallMeasureChooseCustomAppIconColor = true
+    func measureChooseAppIconColor(_ color: AppIcon) {
+        didCallMeasureChooseAppIconColor = true
+        didCaptureAppIconColorSelection = color
     }
 
     func measureAddressBarPositionSelectionImpression() {
         didCallMeasureAddressBarPositionSelectionImpression = true
     }
 
-    func measureChooseBottomAddressBarPosition() {
-        didCallMeasureChooseBottomAddressBarPosition = true
+    func measureChooseAddressBarPosition(_ position: AddressBarPosition) {
+        didCallMeasureChooseAddressBarPosition = true
+        didCaptureAddressBarPositionSelection = position
     }
 
     func measureEndOfJourneyDialogCTAAction() {
@@ -158,6 +203,35 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     func measureScreenImpression(event: Pixel.Event) {
         didCallMeasureScreenImpressionCalled = true
         capturedScreenImpression = event
+    }
+
+    func measureScreenImpression(_ event: OnboardingSharedPixelEvent) {
+        didCallMeasureSharedOnboardingScreenImpression = true
+        capturedSharedOnboardingScreenImpression = event
+    }
+
+    func measureSearchResultsDialogGotItAction() {
+        didCallMeasureSearchResultsDialogGotItAction = true
+    }
+
+    func measureTrackersDialogGotItAction() {
+        didCallMeasureTrackersDialogGotItAction = true
+    }
+
+    func measureSubscriptionPromoDialogShown() {
+        didCallMeasureSubscriptionPromoDialogShown = true
+    }
+
+    func measureSubscriptionPromoEngageCTAAction() {
+        didCallMeasureSubscriptionPromoEngageCTAAction = true
+    }
+
+    func measureFireButtonOnboardingDeleteConfirmed() {
+        didCallMeasureFireButtonOnboardingDeleteConfirmed = true
+    }
+
+    func measureFireButtonOnboardingDismissButtonTapped() {
+        didCallMeasureFireButtonOnboardingDismissButtonTapped = true
     }
 
     func measurePrivacyDashboardOpenedForFirstTime() {
@@ -204,10 +278,24 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureDuckAIQueryExperimentChooseAIChat = true
     }
 
-    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
         didCallMeasureDuckAIQueryExperimentQuerySubmission = true
         didCaptureDuckAIQueryExperimentPromptSourceValue = promptSource.rawValue
         didCaptureDuckAIQueryExperimentSelection = selection
+    }
+
+    func measureDuckAIQuerySelectionImpression() {
+        didCallMeasureDuckAIQuerySelectionImpression = true
+    }
+
+    func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
+        didCallMeasureDuckAIQuerySubmission = true
+        capturedDuckAIQuerySubmissionPromptSourceValue = promptSource.rawValue
+        capturedDuckAIQuerySubmissionSelection = selection
+    }
+
+    func measureTrySearchDialogSuggestedSearchTapped() {
+        didCallMeasureTrySearchDialogSuggestedSearchTapped = true
     }
 
     func measureTrySearchDialogNewTabDismissButtonTapped() {
@@ -216,6 +304,10 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureSearchResultDialogDismissButtonTapped() {
         didCallMeasureSearchResultDialogDismissButtonTapped = true
+    }
+
+    func measureTryVisitSiteDialogSuggestedSiteTapped() {
+        didCallMeasureTryVisitSiteDialogSuggestedSiteTapped = true
     }
 
     func measureTryVisitSiteDialogNewTabDismissButtonTapped() {
@@ -238,8 +330,16 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureDuckAIExperimentFireButtonCTAAction = true
     }
 
+    func measureDuckAIExperimentFireDialogImpression() {
+        didCallMeasureDuckAIExperimentFireDialogImpression = true
+    }
+
     func measureDuckAIExperimentFinalDialogImpression() {
         didCallMeasureDuckAIExperimentFinalDialogImpression = true
+    }
+
+    func measureDuckAIExperimentFinalDialogCTAAction() {
+        didCallMeasureDuckAIExperimentFinalDialogCTAAction = true
     }
 
     func measureEndOfJourneyDialogNewTabDismissButtonTapped() {

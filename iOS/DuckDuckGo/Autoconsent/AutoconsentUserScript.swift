@@ -19,6 +19,7 @@
 
 import WebKit
 import Common
+import FoundationExtensions
 import Core
 import PrivacyConfig
 import UserScript
@@ -58,15 +59,21 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
 
     var topUrl: URL?
     var preferences: AutoconsentPreferences
-    
+
     /// This gets set when the script is injected via didInstallContentRuleLists calls.
     var management: AutoconsentManaging?
+
+    // Reload loop detection state (per-tab)
+    private var lastHandledCMPName: String?
+    private var reloadLoopDetected: Bool = false
+    private var consentHeuristicEnabled: Bool?
 
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
     private let ignoreNonHTTPURLs: Bool
     private let webExtensionAvailability: WebExtensionAvailabilityProviding?
+    private let featureFlagger: FeatureFlagger?
     weak var delegate: AutoconsentUserScriptDelegate?
 
     // Publisher for cookie popup managed events
@@ -78,7 +85,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     init(config: PrivacyConfiguration,
          preferences: AutoconsentPreferences = AppUserDefaults(),
          ignoreNonHTTPURLs: Bool = true,
-         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil) {
+         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
+         featureFlagger: FeatureFlagger? = nil) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
             source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
@@ -92,13 +100,20 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.preferences = preferences
         self.ignoreNonHTTPURLs = ignoreNonHTTPURLs
         self.webExtensionAvailability = webExtensionAvailability
+        self.featureFlagger = featureFlagger
         super.init()
     }
 
     @MainActor
-    func refreshDashboardState(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?, consentReloadLoop: Bool?, consentRule: String?) {
+    func refreshDashboardState(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?, consentReloadLoop: Bool?, consentRule: String?, consentHeuristicEnabled: Bool?) {
         let consentStatus = CookieConsentInfo(
-            consentManaged: consentManaged, cosmetic: cosmetic, optoutFailed: optoutFailed, selftestFailed: selftestFailed, consentReloadLoop: consentReloadLoop, consentRule: consentRule, consentHeuristicEnabled: nil
+            consentManaged: consentManaged,
+            cosmetic: cosmetic,
+            optoutFailed: optoutFailed,
+            selftestFailed: selftestFailed,
+            consentReloadLoop: consentReloadLoop,
+            consentRule: consentRule,
+            consentHeuristicEnabled: consentHeuristicEnabled
         )
         Logger.autoconsent.debug("Refreshing dashboard state: \(String(describing: consentStatus))")
         self.delegate?.autoconsentUserScript(consentStatus: consentStatus)
@@ -274,6 +289,11 @@ extension AutoconsentUserScript {
             return
         }
 
+        self.consentHeuristicEnabled = isHeuristicActionEnabled()
+
+        // do the navigation check before checking if the domain is allowlisted
+        checkMainFrameNavigation(message: message, url: url)
+
         let topURLDomain = message.webView?.url?.host
         guard config.isFeature(.autoconsent, enabledForDomain: topURLDomain) else {
             Logger.autoconsent.info("disabled for site: \(String(describing: url.absoluteString))")
@@ -285,7 +305,6 @@ extension AutoconsentUserScript {
         }
 
         if message.frameInfo.isMainFrame {
-            topUrl = url
             // reset dashboard state
             refreshDashboardState(
                 // keep "cookies managed" if we did it for this site since app launch
@@ -293,13 +312,22 @@ extension AutoconsentUserScript {
                 cosmetic: nil,
                 optoutFailed: nil,
                 selftestFailed: nil,
-                consentReloadLoop: nil,
-                consentRule: nil
+                consentReloadLoop: reloadLoopDetected,
+                consentRule: lastHandledCMPName, // this will be non-null in case of a reload loop
+                consentHeuristicEnabled: consentHeuristicEnabled
             )
             firePixel(pixel: .acInit)
         }
         let remoteConfig = self.config.settings(for: .autoconsent)
         let disabledCMPs = remoteConfig["disabledCMPs"] as? [String] ?? []
+
+        var autoAction: String?
+        if reloadLoopDetected {
+            // prevent further reloads
+            Logger.autoconsent.debug("Reload loop prevention: disabling autoAction for \(messageData.url)")
+        } else {
+            autoAction = "optOut"
+        }
 
         replyHandler([
             "type": "initResp",
@@ -308,13 +336,14 @@ extension AutoconsentUserScript {
             ],
             "config": [
                 "enabled": true,
-                "autoAction": "optOut",
+                "autoAction": autoAction,
                 "disabledCmps": disabledCMPs,
                 "enablePrehide": true,
                 "enableCosmeticRules": true,
                 "detectRetries": 20,
                 "isMainWorld": false,
-                "enableHeuristicDetection": true
+                "enableHeuristicDetection": true,
+                "enableHeuristicAction": consentHeuristicEnabled ?? false
             ] as [String: Any?]
         ] as [String: Any?], nil)
     }
@@ -359,8 +388,17 @@ extension AutoconsentUserScript {
 
     @MainActor
     func handlePopupFound(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
-        Logger.autoconsent.debug("Autoconsent popup found")
+        guard let messageData: PopupFoundMessage = decodeMessageBody(from: message.body) else {
+            assertionFailure("Received a malformed message from autoconsent")
+            replyHandler(nil, "cannot decode message")
+            return
+        }
+        Logger.autoconsent.debug("Cookie popup found: \(String(describing: messageData))")
         firePixel(pixel: .popupFound)
+
+        // Check for reload loop
+        detectReloadLoop(cmpName: messageData.cmp)
+
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
     }
 
@@ -373,7 +411,15 @@ extension AutoconsentUserScript {
         Logger.autoconsent.debug("opt-out result: \(String(describing: messageData))")
 
         if !messageData.result {
-            refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: true, selftestFailed: nil, consentReloadLoop: nil, consentRule: messageData.cmp)
+            refreshDashboardState(
+                consentManaged: true,
+                cosmetic: nil,
+                optoutFailed: true,
+                selftestFailed: nil,
+                consentReloadLoop: reloadLoopDetected,
+                consentRule: messageData.cmp,
+                consentHeuristicEnabled: consentHeuristicEnabled
+            )
             firePixel(pixel: .errorOptoutFailed)
         } else if messageData.scheduleSelfTest {
             // save a reference to the webview and frame for self-test
@@ -396,8 +442,26 @@ extension AutoconsentUserScript {
         }
         Logger.autoconsent.debug("opt-out successful: \(String(describing: messageData))")
 
-        refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil, consentReloadLoop: nil, consentRule: messageData.cmp)
-        firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
+        // Remember the last handled CMP for reload loop detection
+        rememberLastHandledCMP(
+            cmpName: messageData.cmp,
+            isCosmetic: messageData.isCosmetic
+        )
+
+        refreshDashboardState(
+            consentManaged: true,
+            cosmetic: messageData.isCosmetic,
+            optoutFailed: false,
+            selftestFailed: nil,
+            consentReloadLoop: reloadLoopDetected,
+            consentRule: messageData.cmp,
+            consentHeuristicEnabled: consentHeuristicEnabled
+        )
+        if messageData.cmp == "HEURISTIC" {
+            firePixel(pixel: .doneHeuristic)
+        } else {
+            firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
+        }
 
         // Emit event through publisher
         popupManagedSubject.send(messageData)
@@ -448,7 +512,15 @@ extension AutoconsentUserScript {
         }
         // store self-test result
         Logger.autoconsent.debug("self-test result: \(String(describing: messageData))")
-        refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: false, selftestFailed: messageData.result, consentReloadLoop: nil, consentRule: messageData.cmp)
+        refreshDashboardState(
+            consentManaged: true,
+            cosmetic: nil,
+            optoutFailed: false,
+            selftestFailed: messageData.result,
+            consentReloadLoop: reloadLoopDetected,
+            consentRule: messageData.cmp,
+            consentHeuristicEnabled: consentHeuristicEnabled
+        )
         firePixel(pixel: messageData.result ? .selfTestOk : .selfTestFail)
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
     }
@@ -493,6 +565,9 @@ extension AutoconsentUserScript {
 
     func firePixel(pixel: AutoconsentPixel) {
         var additionalParams: [String: String] = [:]
+        if let enabled = consentHeuristicEnabled {
+            additionalParams["consentHeuristicEnabled"] = enabled ? "1" : "0"
+        }
 
         // Add fromExtension=0 when web extensions are available but autoconsent extension is not
         if webExtensionAvailability?.isAvailable == true &&
@@ -502,6 +577,83 @@ extension AutoconsentUserScript {
         }
 
         management?.firePixel(pixel: pixel, additionalParameters: additionalParams)
+    }
+
+    @MainActor
+    private func isHeuristicActionEnabled() -> Bool? {
+        guard let featureFlagger else {
+            Logger.autoconsent.debug("heuristic action: no feature flagger configured")
+            return nil
+        }
+        let isEnabled = featureFlagger.isFeatureOn(.heuristicAction)
+        Logger.autoconsent.debug("heuristic action enabled: \(isEnabled)")
+        return isEnabled
+    }
+
+    @MainActor
+    private func checkMainFrameNavigation(message: WKScriptMessage, url: URL) {
+        guard message.frameInfo.isMainFrame else { return }
+
+        Logger.autoconsent.debug("Main frame navigated from \(String(describing: self.topUrl)) to \(String(describing: url))")
+        let urlChanged = !urlsMatchIgnoringQuery(url, topUrl)
+        if urlChanged {
+            Logger.autoconsent.debug("Main frame navigated to a different page \(url), clearing reload loop state")
+            clearReloadLoopState()
+        }
+        topUrl = url
+    }
+
+    /// Detects a reload loop
+    /// - Parameters:
+    ///   - cmpName: The name of the CMP that was detected
+    private func detectReloadLoop(cmpName: String) {
+        // Reload loop is when we catch the same CMP from the same top URL without a navigation in between.
+        // At this point we know that the top URL hasn't changed (that's tracked in handleInit), so we can just check the CMP name.
+        if !reloadLoopDetected && cmpName == lastHandledCMPName {
+            Logger.autoconsent.debug("Reload loop detected: CMP \(cmpName) on \(String(describing: self.topUrl))")
+            reloadLoopDetected = true
+            firePixel(pixel: .errorReloadLoop)
+        }
+    }
+
+    /// Stores the URL and CMP name after a popup was successfully handled
+    /// - Parameters:
+    ///   - cmpName: The name of the CMP that was handled
+    ///   - isCosmetic: Whether this was a cosmetic rule (cosmetic rules don't trigger reload loops)
+    private func rememberLastHandledCMP(cmpName: String, isCosmetic: Bool) {
+        if isCosmetic {
+            // Cosmetic rules can trigger on every page load and never cause reload loops
+            Logger.autoconsent.debug("Cosmetic rule handled, not storing for reload loop detection")
+            clearReloadLoopState()
+            return
+        }
+
+        if lastHandledCMPName != cmpName {
+            Logger.autoconsent.debug("Last handled CMP is changed from \(String(describing: self.lastHandledCMPName)) to \(cmpName), clearing reload loop state")
+            clearReloadLoopState()
+        }
+        Logger.autoconsent.debug("Recording popup handled: CMP \(cmpName) on \(String(describing: self.topUrl))")
+        lastHandledCMPName = cmpName
+    }
+
+    /// Clears the reload loop detection state
+    private func clearReloadLoopState() {
+        lastHandledCMPName = nil
+        reloadLoopDetected = false
+    }
+
+    /// Compares two URL strings ignoring query parameters and fragments
+    /// - Parameters:
+    ///   - url1: First URL string
+    ///   - url2: Second URL string
+    /// - Returns: True if protocol, host, and path match, false otherwise
+    private func urlsMatchIgnoringQuery(_ url1: URL?, _ url2: URL?) -> Bool {
+        guard let url1 = url1, let url2 = url2 else {
+            return false
+        }
+        return url1.scheme == url2.scheme &&
+               url1.host == url2.host &&
+               url1.path == url2.path
     }
 }
 

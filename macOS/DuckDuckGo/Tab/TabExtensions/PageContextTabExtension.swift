@@ -118,8 +118,11 @@ final class PageContextTabExtension {
                 self.content = tabContent
                 // Reset user-removed suppression when navigating to a new URL so
                 // auto-collect resumes on the next page, regardless of feature flag state.
+                // Also drop the previous page's cached context so a stale snapshot
+                // can't be re-pushed to the sidebar before the new page is collected.
                 if case .url = tabContent {
                     self.userRemovedContext = false
+                    self.cachedPageContext = nil
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
@@ -220,7 +223,16 @@ final class PageContextTabExtension {
         session.pageContextRemovedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.userRemovedContext = true
+                guard let self else { return }
+                // The FE fires this for both user X-click and the auto-clear after submit.
+                // After submit the context was already consumed; pushing nil back would
+                // make the FE re-show "Add page content" on the same URL.
+                guard !self.hasContextBeenConsumedByChat else { return }
+                self.userRemovedContext = true
+                self.cachedPageContext = nil
+                // Clear the stored pageContext too, so a later FE `getAIChatPageContext`
+                // returns nil and triggers a fresh collect instead of the stale snapshot.
+                self.aiChatSessionStore.sessions[self.tabID]?.chatViewController?.setPageContext(nil)
             }
             .store(in: &sidebarCancellables)
     }

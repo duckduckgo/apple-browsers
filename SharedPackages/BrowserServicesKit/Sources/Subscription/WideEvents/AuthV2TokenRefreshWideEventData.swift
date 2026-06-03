@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Networking
 import PixelKit
 
@@ -31,7 +32,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         featureName: "authv2-token-refresh",
         mobileMetaType: "ios-authv2-token-refresh",
         desktopMetaType: "macos-authv2-token-refresh",
-        version: "1.0.1"
+        version: "1.1.0"
     )
 
     public var globalData: WideEventGlobalData

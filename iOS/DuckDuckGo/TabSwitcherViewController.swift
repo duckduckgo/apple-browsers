@@ -19,6 +19,7 @@
 
 import UIKit
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import WebKit
@@ -268,8 +269,8 @@ class TabSwitcherViewController: UIViewController {
 
     func showFireTabsTipIfNeeded() {
         guard #available(iOS 17.0, *) else { return }
-        guard fireModeCapability.isFireModeEnabled else { return }
-        guard selectedBrowsingMode != .fire else { return }
+        guard !LaunchOptionsHandler().isAutomationSession else { return }
+        guard fireModeCapability.isFireModeEnabled, selectedBrowsingMode != .fire else { return }
         guard let sourceView = segmentedPickerHostingController?.view else { return }
 
         fireTabsTipTask?.cancel()
@@ -290,8 +291,8 @@ class TabSwitcherViewController: UIViewController {
         }
 
         fireTabsTipTask = Task { @MainActor [weak self] in
-            guard let self else { return }
             for await shouldDisplay in tip.shouldDisplayUpdates {
+                guard let self else { return }
                 if shouldDisplay {
                     self.fireModePromotionsCoordinator?.markTabSwitcherTipShown()
                     let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)

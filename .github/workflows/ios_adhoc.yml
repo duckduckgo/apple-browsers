@@ -191,6 +191,21 @@ jobs:
           aws s3 cp $IPA_LOCAL_PATH $ipa_s3_path --acl public-read
           echo "ipa-s3-path=${ipa_s3_path}" >> $GITHUB_OUTPUT
 
+      - name: Generate and upload OTA install manifest and page
+        id: generate-ota
+        continue-on-error: true
+        uses: ./.github/actions/generate-ios-adhoc-ota-install
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+          aws-default-region: ${{ vars.AWS_DEFAULT_REGION }}
+          build-type: ${{ github.event.inputs.build-type }}
+          ipa-url: ${{ steps.upload-ipa-to-s3.outputs.ipa-url }}
+          ipa-s3-path: ${{ steps.upload-ipa-to-s3.outputs.ipa-s3-path }}
+          app-version: ${{ env.app_version }}
+          build-number: ${{ env.build_number }}
+          output-name: ${{ env.output_name }}
+
       - name: Report success
         env:
           ASANA_TASK_URL: ${{ github.event.inputs.asana-task-url }}
@@ -198,16 +213,38 @@ jobs:
           IPA_S3_PATH: ${{ steps.upload-ipa-to-s3.outputs.ipa-s3-path }}
           DSYM_URL: ${{ steps.upload-dsyms-to-s3.outputs.dsym-url }}
           DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
+          INSTALL_URL: ${{ steps.generate-ota.outputs.install-url }}
+          QR_URL: ${{ steps.generate-ota.outputs.qr-url }}
+          TITLE: ${{ steps.generate-ota.outputs.title }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
+          set -euo pipefail
+
           echo "## Build Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
+          if [[ -n "${INSTALL_URL:-}" ]]; then
+            echo "🔗 [Install on iPhone](${INSTALL_URL})" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "> [!WARNING]" >> $GITHUB_STEP_SUMMARY
+            echo "> OTA install page generation failed or did not produce a URL. Use the IPA link below." >> $GITHUB_STEP_SUMMARY
+          fi
           echo "🔗 [${IPA_S3_PATH}](${IPA_URL})" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [${DSYM_S3_PATH}](${DSYM_URL})" >> $GITHUB_STEP_SUMMARY
 
-          if [[ -n "$ASANA_TASK_URL" ]]; then
-            bundle exec fastlane run asana_add_comment \
-              task_url:"$ASANA_TASK_URL" \
-              comment:"New build is available at ${IPA_URL}."
+          # QR comes last: a trailing raw-HTML <img> block can't absorb any
+          # markdown after it, so the links above always render correctly.
+          if [[ -n "${INSTALL_URL:-}" && -n "${QR_URL:-}" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📸 Scan with your iPhone to open the install page in Safari:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<img src=\"${QR_URL}\" alt=\"Scan to install on iPhone\" width=\"240\">" >> $GITHUB_STEP_SUMMARY
           fi
+
+          if [[ -z "$ASANA_TASK_URL" ]]; then
+            exit 0
+          fi
+
+          bundle exec fastlane run asana_add_comment \
+            task_url:"$ASANA_TASK_URL" \
+            template_name:"ios-adhoc-build-available"

@@ -17,11 +17,17 @@
 //
 
 import AppKit
+import Common
+import FoundationExtensions
 
 final class RoundedSelectionRowView: NSTableRowView {
 
     private var palette: ThemeColors {
         NSApp.delegateTyped.themeManager.theme.palette
+    }
+
+    private var selectionCornerRadius: CGFloat {
+        AppVersion.isLiquidGlassSupported ? 7 : 6
     }
 
     var highlight = false {
@@ -57,7 +63,7 @@ final class RoundedSelectionRowView: NSTableRowView {
         selectionRect.size.width -= (insets.left + insets.right)
         selectionRect.size.height -= (insets.top + insets.bottom)
 
-        let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
+        let path = NSBezierPath(roundedRect: selectionRect, xRadius: selectionCornerRadius, yRadius: selectionCornerRadius)
         NSColor.rowDragDrop.setFill()
         path.fill()
     }
@@ -72,7 +78,7 @@ final class RoundedSelectionRowView: NSTableRowView {
 
         selectionBackgroundColor.setFill()
 
-        let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
+        let path = NSBezierPath(roundedRect: selectionRect, xRadius: selectionCornerRadius, yRadius: selectionCornerRadius)
         path.fill()
     }
 
@@ -88,7 +94,7 @@ final class RoundedSelectionRowView: NSTableRowView {
 
         highlightBackgroundColor.setFill()
 
-        let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
+        let path = NSBezierPath(roundedRect: selectionRect, xRadius: selectionCornerRadius, yRadius: selectionCornerRadius)
         path.fill()
     }
 

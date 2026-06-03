@@ -8,6 +8,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             "errorCode",
             "errorDomain",
             "underlyingErrorCode",
@@ -28,8 +29,7 @@
                     "findinpage",
                     "fullscreenvideo",
                     "internal-feedback-autofiller",
-                    "login-form-detection",
-                    "surrogates"
+                    "login-form-detection"
                 ]
             },
             {

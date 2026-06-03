@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 
 final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
@@ -138,6 +139,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
             .store(in: &cancellables)
 
         willReloadNextTab
+            .receive(on: RunLoop.main)
             .sink { [weak self] in
                 self?.findAndReloadNextTab()
             }

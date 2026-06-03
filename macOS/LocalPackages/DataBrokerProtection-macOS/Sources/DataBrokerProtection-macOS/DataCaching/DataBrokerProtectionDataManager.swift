@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 import DataBrokerProtectionCore
 
@@ -144,13 +145,13 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
             return communicator.brokerProfileQueryData
         }
 
-        let queryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        let queryData = try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
         communicator.brokerProfileQueryData = queryData
         return queryData
     }
 
     public func prepareBrokerProfileQueryDataCache() throws {
-        communicator.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        communicator.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
     }
 
     public func hasMatches() throws -> Bool {
@@ -168,7 +169,7 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
     ///   - `brokerCount`: The number of brokers that have at least one match.
     /// - Throws: An error if fetching broker profile query data from the database fails.
     public func matchesFoundAndBrokersCount() throws -> (matchCount: Int, brokerCount: Int) {
-        let queryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        let queryData = try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
         return matchesAndBrokersCount(forQueryData: queryData)
     }
 }
@@ -361,14 +362,18 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
 
     public func getInitialScanState() async -> DBPUIInitialScanState {
         await scanDelegate?.updateCacheWithCurrentScans()
+        let isAuthenticatedUser = (await delegate?.isAuthenticatedUser()) ?? true
+        let eligibleQueryData = brokerProfileQueryData.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
-        return DBPUIInitialScanState(from: brokerProfileQueryData)
+        return DBPUIInitialScanState(from: eligibleQueryData)
     }
 
     public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         await scanDelegate?.updateCacheWithCurrentScans()
+        let isAuthenticatedUser = (await delegate?.isAuthenticatedUser()) ?? true
+        let eligibleQueryData = brokerProfileQueryData.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
-        return DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+        return DBPUIScanAndOptOutMaintenanceState(from: eligibleQueryData)
     }
 
     public func getDataBrokers() async -> [DBPUIDataBroker] {

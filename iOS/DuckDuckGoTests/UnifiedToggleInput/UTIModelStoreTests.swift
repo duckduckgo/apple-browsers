@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import SubscriptionTestingUtilities
 import XCTest
 @testable import DuckDuckGo
 
@@ -27,20 +28,26 @@ final class UTIModelStoreTests: XCTestCase {
 
     private var sut: UTIModelStore!
     private var preferences: StubPreferences!
+    private var modelsService: StubModelsService!
+    private var subscriptionManager: SubscriptionManagerMock!
 
     override func setUp() {
         super.setUp()
         preferences = StubPreferences()
+        modelsService = StubModelsService()
+        subscriptionManager = SubscriptionManagerMock()
         sut = UTIModelStore(
-            modelsService: StubModelsService(),
+            modelsService: modelsService,
             preferences: preferences,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+            subscriptionManager: subscriptionManager
         )
     }
 
     override func tearDown() {
         sut = nil
         preferences = nil
+        modelsService = nil
+        subscriptionManager = nil
         super.tearDown()
     }
 
@@ -95,6 +102,170 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertNil(sut.persistedModelId)
     }
 
+    // MARK: - persistedModelId: live current-tab model
+
+    func test_persistedModelId_whenLiveModelSet_prefersLiveModel() {
+        preferences.selectedModelId = "gpt-5"
+        sut.models = [
+            makeModel(id: "gpt-5", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        XCTAssertEqual(sut.persistedModelId, "mistral")
+    }
+
+    func test_persistedModelId_whenLiveModelInaccessible_fallsBackToPreferredNewChatModel() {
+        preferences.selectedModelId = "haiku"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "premium", access: false),
+            makeModel(id: "free", access: true)
+        ]
+
+        sut.updateSelectedModel("premium", isNewChatContext: false)
+
+        XCTAssertEqual(sut.persistedModelId, "haiku")
+    }
+
+    func test_persistedModelId_whenNoLiveAndPreferredAccessible_returnsPreferred() {
+        preferences.selectedModelId = "haiku"
+        sut.models = [
+            makeModel(id: "gpt-5", access: true),
+            makeModel(id: "haiku", access: true)
+        ]
+
+        XCTAssertEqual(sut.persistedModelId, "haiku")
+    }
+
+    func test_persistedModelId_whenNoLiveAndPreferredInaccessible_returnsFirstAccessible() {
+        preferences.selectedModelId = "premium"
+        sut.models = [
+            makeModel(id: "premium", access: false),
+            makeModel(id: "free", access: true)
+        ]
+
+        XCTAssertEqual(sut.persistedModelId, "free")
+    }
+
+    // MARK: - updateSelectedModel: isNewChatContext
+
+    func test_updateSelectedModel_onNewChat_writesPreferredModelToPreferences() {
+        sut.models = [
+            AIChatModel(id: "haiku", name: "Haiku 4.5", shortName: "H4.5", provider: .anthropic, supportsImageUpload: false, entityHasAccess: true)
+        ]
+
+        sut.updateSelectedModel("haiku", isNewChatContext: true)
+
+        XCTAssertEqual(preferences.selectedModelId, "haiku")
+        XCTAssertEqual(preferences.selectedModelShortName, "H4.5")
+    }
+
+    func test_updateSelectedModel_onOngoingChat_doesNotWritePreferredModelToPreferences() {
+        preferences.selectedModelId = "haiku"
+        preferences.selectedModelShortName = "H4.5"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        XCTAssertEqual(preferences.selectedModelId, "haiku", "ongoing-chat picks must not retarget the new-chat default")
+        XCTAssertEqual(preferences.selectedModelShortName, "H4.5")
+    }
+
+    func test_updateSelectedModel_onOngoingChat_stillUpdatesLiveModel() {
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("haiku", isNewChatContext: true)
+
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        XCTAssertEqual(sut.persistedModelId, "mistral")
+        XCTAssertEqual(sut.currentModelId, "mistral")
+    }
+
+    // MARK: - applyPersistedSelection
+
+    func test_applyPersistedSelection_doesNotTouchPreferredModelPreference() {
+        preferences.selectedModelId = "haiku"
+        preferences.selectedModelShortName = "H4.5"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+
+        sut.applyPersistedSelection(modelID: "mistral", reasoningMode: nil)
+
+        XCTAssertEqual(preferences.selectedModelId, "haiku")
+        XCTAssertEqual(preferences.selectedModelShortName, "H4.5")
+        XCTAssertEqual(sut.currentModelId, "mistral")
+    }
+
+    func test_applyPersistedSelection_nil_clearsLiveButPreservesPreferredModel() {
+        preferences.selectedModelId = "haiku"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "gpt-5", access: true)
+        ]
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        sut.applyPersistedSelection(modelID: nil, reasoningMode: nil)
+
+        XCTAssertNil(sut.currentModelId)
+        XCTAssertEqual(sut.persistedModelId, "haiku", "fresh tab activation should return to the preferred new-chat default")
+    }
+
+    // MARK: - clearStaleModelSelectionIfNeeded
+
+    func test_clearStale_clearsLiveModel_whenInaccessible() {
+        preferences.selectedModelId = "haiku"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "premium", access: false)
+        ]
+        sut.updateSelectedModel("premium", isNewChatContext: false)
+
+        sut.clearStaleModelSelectionIfNeeded()
+
+        XCTAssertNil(sut.currentModelId)
+    }
+
+    func test_clearStale_preservesLiveModel_whenAccessible() {
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        sut.clearStaleModelSelectionIfNeeded()
+
+        XCTAssertEqual(sut.currentModelId, "mistral")
+    }
+
+    // MARK: - displayShortName
+
+    func test_displayShortName_returnsLiveModelShortName_whenLiveModelInModels() {
+        sut.models = [
+            AIChatModel(id: "haiku", name: "Haiku 4.5", shortName: "H4.5", provider: .anthropic, supportsImageUpload: false, entityHasAccess: true)
+        ]
+
+        sut.applyPersistedSelection(modelID: "haiku", reasoningMode: nil)
+
+        XCTAssertEqual(sut.displayShortName, "H4.5")
+    }
+
+    func test_displayShortName_fallsBackToPreferencesCache_beforeModelsLoad() {
+        preferences.selectedModelShortName = "Cached"
+        sut.models = []
+
+        XCTAssertEqual(sut.displayShortName, "Cached")
+    }
+
     // MARK: - selectedModelSupportsImageUpload
 
     func test_selectedModelSupportsImageUpload_whenNoModels_returnsFalse() {
@@ -111,6 +282,19 @@ final class UTIModelStoreTests: XCTestCase {
         preferences.selectedModelId = "gpt-5"
         sut.models = [makeModel(id: "gpt-5", access: true, supportsImageUpload: false)]
         XCTAssertFalse(sut.selectedModelSupportsImageUpload)
+    }
+
+    func test_selectedModelSupportsFileUpload_whenSelectedModelSupportsIt_returnsTrue() {
+        preferences.selectedModelId = "gpt-4o"
+        sut.models = [makeModel(id: "gpt-4o", access: true, supportedFileTypes: ["application/pdf"])]
+
+        XCTAssertTrue(sut.selectedModelSupportsFileUpload)
+        XCTAssertEqual(sut.selectedModelSupportedFileTypes, ["application/pdf"])
+    }
+
+    func test_selectedModelSupportsFileUpload_whenNoModelSelected_returnsFalse() {
+        XCTAssertFalse(sut.selectedModelSupportsFileUpload)
+        XCTAssertEqual(sut.selectedModelSupportedFileTypes, [])
     }
 
     // MARK: - selectedModelSupports(tool:)
@@ -188,7 +372,7 @@ final class UTIModelStoreTests: XCTestCase {
             AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)
         ]
 
-        sut.updateSelectedModel("gpt-5")
+        sut.updateSelectedModel("gpt-5", isNewChatContext: true)
 
         XCTAssertEqual(preferences.selectedModelId, "gpt-5")
         XCTAssertEqual(preferences.selectedModelShortName, "G5")
@@ -200,7 +384,7 @@ final class UTIModelStoreTests: XCTestCase {
             makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low])
         ]
 
-        sut.updateSelectedModel("gpt-5")
+        sut.updateSelectedModel("gpt-5", isNewChatContext: true)
 
         XCTAssertNil(preferences.selectedReasoningMode)
     }
@@ -211,7 +395,7 @@ final class UTIModelStoreTests: XCTestCase {
             makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low, .medium])
         ]
 
-        sut.updateSelectedModel("gpt-5")
+        sut.updateSelectedModel("gpt-5", isNewChatContext: true)
 
         XCTAssertEqual(preferences.selectedReasoningMode, .extendedReasoning)
     }
@@ -228,12 +412,35 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(preferences.selectedReasoningMode, .fast)
     }
 
+    func test_fetchModels_whenModelFetchFails_clearsAttachmentLimitsAndNotifies() async {
+        let didUpdate = expectation(description: "models updated")
+        modelsService.result = .failure(StubModelsService.StubError.fetchFailed)
+        sut.attachmentLimits = makeLimits()
+        sut.onModelsUpdated = {
+            didUpdate.fulfill()
+        }
+
+        sut.fetchModels()
+
+        await fulfillment(of: [didUpdate], timeout: 1)
+        XCTAssertNil(sut.attachmentLimits)
+        XCTAssertEqual(sut.subscriptionState.userTier, .free)
+    }
+
     // MARK: - Helpers
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
+    }
 
     private func makeModel(
         id: String,
         access: Bool,
         supportsImageUpload: Bool = false,
+        supportedFileTypes: [String] = [],
         supportedTools: [AIChatRAGTool] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = []
     ) -> AIChatModel {
@@ -242,6 +449,7 @@ final class UTIModelStoreTests: XCTestCase {
             name: id,
             provider: .unknown,
             supportsImageUpload: supportsImageUpload,
+            supportedFileTypes: supportedFileTypes,
             supportedTools: supportedTools,
             entityHasAccess: access,
             supportedReasoningEffort: supportedReasoningEffort
@@ -254,10 +462,17 @@ private final class StubPreferences: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
     var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 private final class StubModelsService: AIChatModelsProviding {
-    func fetchModels() async throws -> [AIChatRemoteModel] { [] }
+    enum StubError: Error {
+        case fetchFailed
+    }
+
+    var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
+
+    func fetchModels() async throws -> AIChatModelsResponse { try result.get() }
 }

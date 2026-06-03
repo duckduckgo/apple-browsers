@@ -18,9 +18,11 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import History
+import Lottie
 import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
@@ -52,6 +54,9 @@ struct FireDialogView: ModalView {
     fileprivate enum Constants {
         static let viewSize = CGSize(width: 440, height: 592)
         static let footerReservedHeight: CGFloat = 52
+        static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
+        static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
+        static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding }
     }
 
     @State private var viewHeight: CGFloat = Constants.viewSize.height
@@ -155,7 +160,7 @@ struct FireDialogView: ModalView {
                         individualSitesLink
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Constants.horizontalPadding)
 
                 // Sites Overlay
                 if isShowingSitesOverlay {
@@ -182,7 +187,6 @@ struct FireDialogView: ModalView {
 
             footerView
                 .zIndex(11)
-                .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
                 .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
         }
         .readSize { size in
@@ -197,7 +201,8 @@ struct FireDialogView: ModalView {
 
     private var headerView: some View {
         VStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Color.Size72.fire)
+            FirePictogramAnimation()
+                .frame(width: 72, height: 72)
                 .padding(.top, 8)
 
             Text(viewModel.mode.dialogTitle)
@@ -485,7 +490,7 @@ struct FireDialogView: ModalView {
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
-            .frame(width: Constants.viewSize.width - 32, alignment: .leading)
+            .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }
     }
 
@@ -535,7 +540,7 @@ struct FireDialogView: ModalView {
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
-            .frame(width: Constants.viewSize.width - 32, alignment: .leading)
+            .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }
     }
 
@@ -574,8 +579,15 @@ struct FireDialogView: ModalView {
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
                     .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                        Group {
+                            if AppVersion.isLiquidGlassSupported {
+                                Capsule(style: .continuous)
+                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                            } else {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                            }
+                        }
                     )
             }
             .buttonStyle(.plain)
@@ -607,7 +619,8 @@ struct FireDialogView: ModalView {
                     topPadding: 0,
                     bottomPadding: 0,
                     backgroundColor: Color(designSystemColor: .destructivePrimary),
-                    backgroundPressedColor: Color(designSystemColor: .destructiveSecondary)
+                    backgroundPressedColor: Color(designSystemColor: .destructiveSecondary),
+                    pillShape: true
                 )
             )
             .disabled(!isDeleteEnabled)
@@ -615,9 +628,9 @@ struct FireDialogView: ModalView {
             .keyboardShortcut(.defaultAction)
             .accessibilityIdentifier("FireDialogView.burnButton")
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, Constants.horizontalPadding)
         .padding(.top, 8)
-        .padding(.bottom, 6)
+        .padding(.bottom, Constants.bottomPadding)
     }
 }
 
@@ -701,6 +714,40 @@ private struct RowWithPressEffect<Content: View>: View {
             Rectangle()
                 .fill(background)
         }
+    }
+}
+
+// MARK: - Fire Pictogram Lottie
+
+/// Loads the fire pictogram Lottie animation.
+private struct FirePictogramAnimation: NSViewRepresentable {
+
+    private static let assetName = "fire-pictogram"
+
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+        container.wantsLayer = true
+        container.layer?.masksToBounds = true
+        attachAnimation(to: container)
+        return container
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private func attachAnimation(to container: NSView) {
+        guard let animation = LottieAnimation.asset(Self.assetName, bundle: .main) else {
+            return
+        }
+        let view = LottieAnimationView(animation: animation)
+        view.contentMode = .scaleAspectFit
+        view.loopMode = .playOnce
+        view.animationSpeed = 1.0
+        view.wantsLayer = true
+        view.layer?.masksToBounds = true
+        view.autoresizingMask = [.width, .height]
+        view.frame = container.bounds
+        container.addSubview(view)
+        view.play()
     }
 }
 

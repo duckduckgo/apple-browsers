@@ -20,6 +20,7 @@
 import Foundation
 import Bookmarks
 import Core
+import Onboarding
 import WidgetKit
 
 public class AppUserDefaults: AppSettings {
@@ -108,6 +109,8 @@ public class AppUserDefaults: AppSettings {
         static let autofillDebugScriptEnabledKey = "com.duckduckgo.ios.debug.autofillDebugScriptEnabled"
         static let contentScopeDebugStateEnabledKey = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
         static let onboardingIsNewUserKey = "com.duckduckgo.ios.debug.onboardingIsNewUser"
+        static let onboardingForceRestorePromptEligibleKey = "com.duckduckgo.ios.debug.onboardingForceRestorePromptEligible"
+        static let onboardingFlowTypeKey = "com.duckduckgo.ios.debug.onboardingFlowType"
         static let shakeToOpenDebugMenuEnabledKey = "com.duckduckgo.ios.debug.shakeToOpenDebugMenuEnabled"
     }
 
@@ -515,7 +518,7 @@ public class AppUserDefaults: AppSettings {
                let mode = DuckPlayerMode(stringValue: value) {
                 return mode
             }
-            return .alwaysAsk
+            return AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger) ? .disabled : .alwaysAsk
         }
         set {
             userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerMode)
@@ -580,7 +583,7 @@ public class AppUserDefaults: AppSettings {
                let mode = NativeDuckPlayerYoutubeMode(stringValue: value) {
                 return mode
             }
-            return .ask
+            return AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger) ? .never : .ask
         }
         set {
             userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerNativeYoutubeMode)
@@ -608,6 +611,25 @@ public class AppUserDefaults: AppSettings {
         }
         set {
             userDefaults?.set(newValue.rawValue, forKey: DebugKeys.onboardingIsNewUserKey)
+        }
+    }
+
+    var onboardingForceRestorePromptEligible: Bool {
+        get {
+            userDefaults?.bool(forKey: DebugKeys.onboardingForceRestorePromptEligibleKey) ?? false
+        }
+        set {
+            userDefaults?.set(newValue, forKey: DebugKeys.onboardingForceRestorePromptEligibleKey)
+        }
+    }
+
+    var onboardingFlowType: OnboardingFlowType? {
+        get {
+            guard let rawValue = userDefaults?.string(forKey: DebugKeys.onboardingFlowTypeKey) else { return nil }
+            return OnboardingFlowType(rawValue: rawValue)
+        }
+        set {
+            userDefaults?.set(newValue?.rawValue, forKey: DebugKeys.onboardingFlowTypeKey)
         }
     }
 

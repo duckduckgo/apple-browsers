@@ -5,6 +5,7 @@ import Foundation
 import NetworkExtension
 import os.log
 import Common
+import FoundationExtensions
 
 // MARK: - WireGuard Go Interface
 
@@ -131,6 +132,11 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
     public typealias LogHandler = (WireGuardLogLevel, String) -> Void
     typealias PacketTunnelSettingsGeneratorProvider = (TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating
 
+    /// Delay between successive attempts to bring the backend back up after a failed
+    /// resume from temporary shutdown. Long enough to let transient network conditions
+    /// settle without spamming `setNetworkSettings`/`turnOn` on every retry.
+    private let temporaryShutdownRecoveryDelay: TimeInterval
+
     /// WireGuard configuration fields
     ///
     private enum ConfigurationFields: String {
@@ -177,6 +183,11 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
 
     /// Keeps track of whether a recovery attempt from temporary shutdown has already failed.
     private var temporaryShutdownRecoveryFailed = false
+
+    /// Monotonically incremented to invalidate in-flight or scheduled recovery work
+    /// when the recovery is started or cancelled. Recovery work captures its epoch
+    /// and bails out if the current epoch has moved on.
+    private var temporaryShutdownRecoveryEpoch: UInt64 = 0
 
     private let wireGuardInterface: WireGuardGoInterface
 
@@ -225,7 +236,8 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
         PacketTunnelSettingsGenerator(tunnelConfiguration: configuration, resolvedEndpoints: resolvedEndpoints)
     },
          dnsResolver: DNSResolving = DefaultDNSResolver(),
-         tunnelFileDescriptorProvider: TunnelFileDescriptorProviding = UtunFileDescriptorProvider()) {
+         tunnelFileDescriptorProvider: TunnelFileDescriptorProviding = UtunFileDescriptorProvider(),
+         temporaryShutdownRecoveryDelay: TimeInterval = 5) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
 
         self.packetTunnelProvider = packetTunnelProvider
@@ -236,6 +248,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
         self.packetTunnelSettingsGeneratorProvider = packetTunnelSettingsGeneratorProvider
         self.dnsResolver = dnsResolver
         self.tunnelFileDescriptorProvider = tunnelFileDescriptorProvider
+        self.temporaryShutdownRecoveryDelay = temporaryShutdownRecoveryDelay
 
         setupLogHandler()
     }
@@ -355,17 +368,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
 
             do {
                 let settingsGenerator = try self.makeSettingsGenerator(with: tunnelConfiguration)
-                try self.setNetworkSettings(settingsGenerator.generateNetworkSettings())
-
-                let (wgConfig, resolutionResults) = settingsGenerator.uapiConfiguration()
-                self.logEndpointResolutionResults(resolutionResults)
-
-                Logger.networkProtection.debug("UAPI configuration is \(String(reflecting: wgConfig), privacy: .public)")
-
-                self.state = .started(
-                    try self.startWireGuardBackend(wgConfig: wgConfig),
-                    settingsGenerator
-                )
+                try self.bringUpBackend(with: settingsGenerator)
                 self.networkMonitor = networkMonitor
                 completionHandler(nil)
             } catch let error as WireGuardAdapterError {
@@ -397,6 +400,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
             self.networkMonitor?.cancel()
             self.networkMonitor = nil
 
+            self.cancelTemporaryShutdownRecovery()
             self.state = .stopped
 
             completionHandler(nil)
@@ -420,6 +424,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
             self.networkMonitor?.cancel()
             self.networkMonitor = nil
 
+            self.cancelTemporaryShutdownRecovery()
             self.state = .snoozing
 
             try? self.setNetworkSettings(nil)
@@ -475,6 +480,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
 
                 case .temporaryShutdown:
                     self.state = .temporaryShutdown(settingsGenerator)
+                    self.startTemporaryShutdownRecovery()
 
                 case .snoozing:
                     assertionFailure("Attempted to update WireGuard adapter while snoozing")
@@ -634,6 +640,74 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
         }
     }
 
+    /// Applies network settings, generates the UAPI config, and starts the WireGuard backend,
+    /// transitioning state to `.started`. Shared by the initial `start` flow and the
+    /// resume-from-temporary-shutdown flow.
+    private func bringUpBackend(with settingsGenerator: PacketTunnelSettingsGenerating) throws {
+        try setNetworkSettings(settingsGenerator.generateNetworkSettings())
+
+        let (wgConfig, resolutionResults) = settingsGenerator.uapiConfiguration()
+        logEndpointResolutionResults(resolutionResults)
+
+        Logger.networkProtection.debug("UAPI configuration is \(String(reflecting: wgConfig), privacy: .public)")
+
+        state = .started(
+            try startWireGuardBackend(wgConfig: wgConfig),
+            settingsGenerator
+        )
+    }
+
+    /// Starts (or restarts) the recovery loop for the current `.temporaryShutdown` state.
+    /// Bumps the epoch so any in-flight or scheduled recovery work bails on its next tick,
+    /// then schedules an immediate attempt against the latest settings generator.
+    private func startTemporaryShutdownRecovery() {
+        dispatchPrecondition(condition: .onQueue(workQueue))
+
+        temporaryShutdownRecoveryEpoch &+= 1
+        let myEpoch = temporaryShutdownRecoveryEpoch
+
+        workQueue.async { [weak self] in
+            self?.attemptResume(epoch: myEpoch)
+        }
+    }
+
+    /// Invalidates any in-flight or scheduled recovery work. Bumping the epoch is enough -
+    /// queued closures will see a stale epoch and bail without doing any work.
+    private func cancelTemporaryShutdownRecovery() {
+        dispatchPrecondition(condition: .onQueue(workQueue))
+
+        temporaryShutdownRecoveryEpoch &+= 1
+    }
+
+    private func attemptResume(epoch: UInt64) {
+        dispatchPrecondition(condition: .onQueue(workQueue))
+
+        guard epoch == temporaryShutdownRecoveryEpoch else { return }
+        guard case .temporaryShutdown(let settingsGenerator) = state else { return }
+
+        do {
+            try bringUpBackend(with: settingsGenerator)
+
+            if temporaryShutdownRecoveryFailed {
+                eventHandler.handle(.endTemporaryShutdownStateRecoverySuccess)
+            }
+            temporaryShutdownRecoveryFailed = false
+        } catch {
+            logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
+
+            if temporaryShutdownRecoveryFailed {
+                eventHandler.handle(.endTemporaryShutdownStateRecoveryFailure(error))
+            } else {
+                eventHandler.handle(.endTemporaryShutdownStateAttemptFailure(error))
+                temporaryShutdownRecoveryFailed = true
+            }
+
+            workQueue.asyncAfter(deadline: .now() + temporaryShutdownRecoveryDelay) { [weak self] in
+                self?.attemptResume(epoch: epoch)
+            }
+        }
+    }
+
     /// Helper method used by network path monitor.
     /// - Parameter status: new network status
     private func didReceivePathUpdate(status: Network.NWPath.Status) {
@@ -659,38 +733,16 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
                 self.state = .temporaryShutdown(settingsGenerator)
                 self.temporaryShutdownRecoveryFailed = false
                 self.wireGuardInterface.turnOff(handle: handle)
+                self.startTemporaryShutdownRecovery()
             }
 
-        case .temporaryShutdown(let settingsGenerator):
-            guard status.isSatisfiable else { return }
-
-            self.logHandler(.verbose, "Connectivity online, resuming backend.")
-
-            do {
-                try self.setNetworkSettings(settingsGenerator.generateNetworkSettings())
-
-                let (wgConfig, resolutionResults) = settingsGenerator.uapiConfiguration()
-                self.logEndpointResolutionResults(resolutionResults)
-
-                self.state = .started(
-                    try self.startWireGuardBackend(wgConfig: wgConfig),
-                    settingsGenerator
-                )
-
-                if self.temporaryShutdownRecoveryFailed {
-                    self.eventHandler.handle(.endTemporaryShutdownStateRecoverySuccess)
-                }
-
-                self.temporaryShutdownRecoveryFailed = false
-            } catch {
-                self.logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
-
-                if self.temporaryShutdownRecoveryFailed {
-                    self.eventHandler.handle(.endTemporaryShutdownStateRecoveryFailure(error))
-                } else {
-                    self.eventHandler.handle(.endTemporaryShutdownStateAttemptFailure(error))
-                    self.temporaryShutdownRecoveryFailed = true
-                }
+        case .temporaryShutdown:
+            if status.isSatisfiable {
+                self.logHandler(.verbose, "Connectivity online, restarting recovery.")
+                self.startTemporaryShutdownRecovery()
+            } else {
+                self.logHandler(.verbose, "Connectivity offline, pausing recovery.")
+                self.cancelTemporaryShutdownRecovery()
             }
 
         case .stopped, .snoozing:

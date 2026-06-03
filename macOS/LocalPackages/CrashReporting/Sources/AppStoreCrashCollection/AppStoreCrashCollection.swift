@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Crashes
 import CrashReportingShared
 import FeatureFlags
@@ -25,11 +26,10 @@ import Foundation
 import PrivacyConfig
 
 extension CrashReportingFactory: AppStoreCrashReportingFactory {
-    @available(macOS 12.0, *)
     public static func instantiate(internalUserDecider: InternalUserDecider,
                                    featureFlagger: FeatureFlagger,
                                    crashReportSender: CrashReportSending,
-                                   crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
+                                   crashSenderPixelEvents: EventMapping<CrashReportSenderEvent>?,
                                    fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,
                                    promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) -> any CrashReporting {
         return AppStoreCrashCollection(internalUserDecider: internalUserDecider,
@@ -40,7 +40,6 @@ extension CrashReportingFactory: AppStoreCrashReportingFactory {
     }
 }
 
-@available(macOS 12.0, *)
 public final class AppStoreCrashCollection: CrashReporting {
 
     private let crashReportSender: CrashReportSending

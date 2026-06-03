@@ -33,10 +33,12 @@ struct NewTabPageView: View {
     let isFocussedState: Bool
     let narrowLayoutInLandscape: Bool
     let dismissKeyboardOnScroll: Bool
+    let layoutConfiguration: NewTabPageLayoutConfiguration
 
     init(isFocussedState: Bool = false,
          narrowLayoutInLandscape: Bool = false,
          dismissKeyboardOnScroll: Bool = true,
+         layoutConfiguration: NewTabPageLayoutConfiguration = .standard,
          viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
          favoritesViewModel: FavoritesViewModel) {
@@ -46,6 +48,7 @@ struct NewTabPageView: View {
         self.favoritesViewModel = favoritesViewModel
         self.narrowLayoutInLandscape = narrowLayoutInLandscape
         self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
+        self.layoutConfiguration = layoutConfiguration
 
         self.messagesModel.load()
     }
@@ -78,6 +81,16 @@ struct NewTabPageView: View {
             emptyStateView
         }
     }
+}
+
+struct NewTabPageLayoutConfiguration {
+    let expandsEscapeHatchToAvailableWidth: Bool
+    let escapeHatchHorizontalPadding: CGFloat
+
+    static let standard = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: false,
+                                                        escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding)
+    static let unifiedToggleInput = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: true,
+                                                                  escapeHatchHorizontalPadding: 0)
 }
 
 private extension NewTabPageView {
@@ -122,9 +135,7 @@ private extension NewTabPageView {
     @ViewBuilder
     private var emptyStateView: some View {
         if viewModel.fireTab {
-            FireModeEmptyStateView(type: .tab,
-                                   escapeHatch: viewModel.escapeHatch,
-                                   onEscapeHatchTap: viewModel.onEscapeHatchTap)
+            FireModeEmptyStateView(type: .tab)
         } else {
             logoEmptyView
         }
@@ -134,9 +145,14 @@ private extension NewTabPageView {
     private var logoEmptyView: some View {
         GeometryReader { proxy in
             ZStack {
-                if shouldShowLogoInEmptyState {
-                    NewTabPageDaxLogoView()
-                }
+                // Anchors the Lottie's geometric center to screen.midY - 55, so the visible duck
+                // lands at screen.midY - 72 — the splash storyboard's resting position. The
+                // dynamic offset compensates for the NTP body's centerY shifting based on top vs
+                // bottom omnibar chrome.
+                NewTabPageDaxLogoView()
+                    .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
+                    .opacity(shouldShowLogoInEmptyState ? 1 : 0)
+                    .allowsHitTesting(false)
 
                 ScrollView {
                     VStack(spacing: Metrics.sectionSpacing) {
@@ -161,21 +177,32 @@ private extension NewTabPageView {
     }
 
     private var shouldShowLogoInEmptyState: Bool {
+        guard !viewModel.isLogoHidden else { return false }
         guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true
     }
 
+    /// The unified toggle input design lets the hatch fill the same content span as favorites.
+    /// Legacy NTP keeps its existing max widths so the flag-off UI remains unchanged.
+    private var escapeHatchMaxWidth: CGFloat {
+        if layoutConfiguration.expandsEscapeHatchToAvailableWidth {
+            return .infinity
+        }
+        if UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular {
+            return Metrics.escapeHatchMaximumWidthPad
+        }
+        return Metrics.messageMaximumWidth
+    }
+
     @ViewBuilder
     private var escapeHatchSectionView: some View {
         if let escapeHatch = viewModel.escapeHatch {
-            ReturnToTabCard(model: escapeHatch) {
-                viewModel.onEscapeHatchTap?()
-            }
-            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
-            .padding(.top, Metrics.nonGridSectionTopPadding)
-            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+            EscapeHatchView(model: escapeHatch)
+                .frame(maxWidth: escapeHatchMaxWidth)
+                .padding(.top, Metrics.nonGridSectionTopPadding)
+                .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
         }
     }
 
@@ -244,6 +271,9 @@ private struct Metrics {
 
     static let messageMaximumWidth: CGFloat = 380
     static let messageMaximumWidthPad: CGFloat = 455
+    /// Matches the favorites grid's content width on iPad regular size class (5 cols × 96pt
+    /// max item width + 4 × 32pt spacing) so the escape hatch row aligns visually with the grid.
+    static let escapeHatchMaximumWidthPad: CGFloat = 608
 
     static let verySmallScreenWidth: CGFloat = 320
 }
@@ -324,7 +354,7 @@ private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration 
         self.homeMessages = homeMessages
     }
 
-    func refresh() {
+    func refresh(openedAfterIdle: Bool) {
 
     }
 

@@ -21,6 +21,7 @@ import AIChat
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import os.log
 import PrivacyConfig
@@ -47,11 +48,16 @@ final class AIChatContextualWebViewController: UIViewController {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isFireTab: Bool
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
     private let debugSettings: AIChatDebugSettingsHandling
     private let userAgentManager: UserAgentManaging
+    private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
+    private var utiHost: AIChatContextualUTIHost?
+    private var webViewBottomConstraint: NSLayoutConstraint?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -124,28 +130,36 @@ final class AIChatContextualWebViewController: UIViewController {
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          isFireTab: Bool = false,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          downloadHandler: DownloadHandling,
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared) {
+         userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
+         utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.isFireTab = isFireTab
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
         self.debugSettings = debugSettings
         self.userAgentManager = userAgentManager
+        self.utiHostInstaller = utiHostInstaller
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
+            unifiedToggleInputFeature: unifiedToggleInputFeature,
+            debugSettings: debugSettings,
             getPageContext: getPageContext
         )
 
@@ -162,6 +176,9 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
+        if shouldInstallUTIHost, let utiHostInstaller {
+            utiHost = utiHostInstaller(self)
+        }
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
@@ -183,11 +200,17 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         Logger.aiChat.debug("[ContextualWebVC] submitPrompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
+        if pageContext != nil {
+            utiHost?.markPromptSubmitted()
+        }
         if isPageReady && isContentHandlerReady {
             Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
+            let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
             aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+            utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
         } else {
             Logger.aiChat.debug("[ContextualWebVC] Queuing prompt as pending")
+            utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
             pendingPrompt = prompt
             pendingPageContext = pageContext
         }
@@ -222,8 +245,17 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.reload()
     }
 
+    /// Re-anchors the web view's bottom edge so it doesn't render under any subview installed below it (e.g. native UTI).
+    func anchorWebViewBottom(to anchor: NSLayoutYAxisAnchor) {
+        webViewBottomConstraint?.isActive = false
+        let newConstraint = webView.bottomAnchor.constraint(equalTo: anchor)
+        newConstraint.isActive = true
+        webViewBottomConstraint = newConstraint
+    }
+
     func loadChatURL(_ url: URL) {
-        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(url.absoluteString)")
+        let urlToLoad = chatURLForLoading(url)
+        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(urlToLoad.absoluteString)")
         isPageReady = false
         isFrontendReady = false
         pendingPrompt = nil
@@ -231,7 +263,19 @@ final class AIChatContextualWebViewController: UIViewController {
         hasPendingChipContext = false
         pendingChipContext = nil
         loadingView.startAnimating()
-        webView.load(URLRequest(url: url))
+        webView.load(URLRequest(url: urlToLoad))
+    }
+
+    func loadDefaultChatURL() {
+        loadChatURL(defaultChatURL)
+    }
+
+    func chatURLForLoading(_ url: URL) -> URL {
+        AIChatURLParameters.updatingNativeInputURL(
+            from: url,
+            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable,
+            isSupportedURL: url.isDuckAIURL || debugSettings.matchesCustomURL(url)
+        )
     }
 
     // MARK: - Private Methods
@@ -242,11 +286,14 @@ final class AIChatContextualWebViewController: UIViewController {
         view.addSubview(webView)
         view.addSubview(loadingView)
 
+        let webViewBottom = webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        webViewBottomConstraint = webViewBottom
+
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            webViewBottom,
 
             loadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
@@ -265,11 +312,15 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private func loadAIChat() {
-        loadingView.startAnimating()
-        let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
-        Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
-        let request = URLRequest(url: contextualURL)
-        webView.load(request)
+        loadChatURL(defaultChatURL)
+    }
+
+    private var shouldInstallUTIHost: Bool {
+        unifiedToggleInputFeature.isAvailable && utiHostInstaller != nil
+    }
+
+    private var defaultChatURL: URL {
+        aiChatSettings.aiChatURL.addingOrReplacing(URLQueryItem(name: "placement", value: "sidebar"))
     }
 
     private func setupDownloadHandler() {
@@ -311,7 +362,9 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func submitPromptNow(_ prompt: String, pageContext: AIChatPageContextData?) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending prompt now")
+        let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
         aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
+        utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: didSendBridgeMessage)
     }
 
     // MARK: - URL Observation
@@ -349,8 +402,17 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         }
 
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.isFireTab ?? false }
+        userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
+            guard let self else { return .notFireMode }
+            return .resolve(isFireMode: self.isFireTab,
+                            handler: self.duckAiFireModeStorageHandler)
+        }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
+        utiHost?.bindToUserScript(userScripts.aiChatUserScript)
+        if let chatUpdatesPublisher = userScripts.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
+            utiHost?.observeChatUpdates(chatUpdatesPublisher)
+        }
 
         isContentHandlerReady = true
         submitPendingIfReady()
@@ -395,10 +457,35 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        loadingView.stopAnimating()
+        handleNavigationFailure(error)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        handleNavigationFailure(error)
+    }
+
+    private func handleNavigationFailure(_ error: Error) {
         loadingView.stopAnimating()
+        let nsError = error as NSError
+        guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
+
+        utiHost?.pageLoadFailed(error: error)
+    }
+}
+
+// MARK: - Duck.ai Wide Event
+
+extension AIChatContextualWebViewController {
+
+    func notifySheetDismissed() {
+        utiHost?.sheetDismissed()
+    }
+
+    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
+        utiHost?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
+    }
+
+    func notifyFrontendPromptSubmissionAcknowledged() {
+        utiHost?.frontendSubmissionAcknowledged()
     }
 }

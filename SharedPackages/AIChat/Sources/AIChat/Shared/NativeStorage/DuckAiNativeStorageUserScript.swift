@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import Combine
 import Common
+import FoundationExtensions
 import DuckAiDataStore
 import Foundation
 import os.log
@@ -37,6 +39,14 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     private let pixelFiring: DuckAiNativeStoragePixelFiring
     private let storageQueue = DispatchQueue(label: "com.duckduckgo.native-storage", qos: .userInitiated)
     private var didLogUnavailableFireModeHandler = false
+    private let chatUpdatesSubject = PassthroughSubject<String, Never>()
+
+    /// Emits the `chatId` of every chat written through `putChat` / `putChats` after the
+    /// write succeeds. Consumers can use this to react to FE-driven state changes
+    /// (e.g. the active model on the current chat changing).
+    public var chatUpdatesPublisher: AnyPublisher<String, Never> {
+        chatUpdatesSubject.eraseToAnyPublisher()
+    }
 
     /// Returns the fire-mode storage state for the surrounding webview.
     /// `.notFireMode` uses the normal on-disk store, `.available` uses the isolated
@@ -260,6 +270,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
                 try self.handler.putChat(chatId: chatId, data: jsonData)
             }
             Logger.aiChat.debug("DuckAiNativeStorage: putChat '\(chatId)' succeeded (\(jsonData.count) bytes)")
+            chatUpdatesSubject.send(chatId)
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putChat failed for \(chatId): \(error.localizedDescription)")
             pixelFiring.fire(.chatPutError(error))
@@ -287,6 +298,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
                 try self.handler.putChats(records)
             }
             Logger.aiChat.debug("DuckAiNativeStorage: putChats succeeded (\(records.count) chats)")
+            for record in records {
+                chatUpdatesSubject.send(record.chatId)
+            }
             return SuccessResponse(success: true)
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putChats failed: \(error.localizedDescription)")

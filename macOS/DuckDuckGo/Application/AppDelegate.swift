@@ -771,7 +771,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     subscriptionEndpointService: subscriptionEndpointService,
                                                                     subscriptionEnvironment: subscriptionEnvironment,
                                                                     pixelHandler: pixelHandler,
-                                                                    isInternalUserEnabled: isInternalUserEnabled)
+                                                                    isInternalUserEnabled: isInternalUserEnabled,
+                                                                    wideEvent: wideEvent,
+                                                                    isAuthV2WideEventEnabled: {
+#if DEBUG
+            return true // Allow the refresh event when using staging in debug mode, for easier testing
+#else
+            return subscriptionEnvironment.serviceEnvironment == .production
+#endif
+        })
 
         // Expired refresh token recovery
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,

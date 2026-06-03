@@ -261,6 +261,14 @@ final class AppDependencyProvider: DependencyProvider {
                                                                pixelHandler: pixelHandler,
                                                                isInternalUserEnabled: {
             ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
+        },
+                                                               wideEvent: wideEvent,
+                                                               isAuthV2WideEventEnabled: {
+#if DEBUG
+            return true // Allow the refresh event when using staging in debug mode, for easier testing
+#else
+            return authEnvironment == .production
+#endif
         })
         self.tokenHandlerProvider = subscriptionManager
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,

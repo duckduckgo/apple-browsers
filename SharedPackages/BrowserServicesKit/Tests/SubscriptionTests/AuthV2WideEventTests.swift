@@ -17,7 +17,9 @@
 //
 
 import XCTest
+import Networking
 import PixelKit
+import PixelKitTestingUtilities
 @testable import Subscription
 
 final class AuthV2WideEventTests: XCTestCase {
@@ -239,5 +241,38 @@ final class AuthV2WideEventTests: XCTestCase {
             return XCTFail("Expected pending refresh to reconcile to UNKNOWN, got \(decision)")
         }
         XCTAssertEqual(reason, "partial_data")
+    }
+
+    // MARK: - Event mapping: deferral on invalid_token_request
+
+    func testRefreshEventMapping_invalidTokenRequest_defersCompletionAndMarksStep() {
+        let mock = WideEventMock()
+        let mapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: mock, isFeatureEnabled: { true })
+        let refreshID = "refresh-1"
+
+        mapping.fire(.tokenRefreshStarted(refreshID: refreshID))
+        mapping.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
+        mapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.invalidTokenRequest(.reused)))
+
+        // Recovery layer owns the terminal point - the mapping must NOT complete the flow.
+        XCTAssertTrue(mock.completions.isEmpty)
+        // The pending flow must be marked AND have a recovery start time so the recovery layer can locate the newest one.
+        let pending = mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self)
+        XCTAssertEqual(pending.first?.failingStep, .recoverDeadToken)
+        XCTAssertNotNil(pending.first?.recoveryDuration?.start)
+    }
+
+    func testRefreshEventMapping_otherError_completesFailure() {
+        let mock = WideEventMock()
+        let mapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: mock, isFeatureEnabled: { true })
+        let refreshID = "refresh-2"
+
+        mapping.fire(.tokenRefreshStarted(refreshID: refreshID))
+        mapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.unknownAccount))
+
+        XCTAssertEqual(mock.completions.count, 1)
+        guard case .failure = mock.completions.first?.1 else {
+            return XCTFail("Expected FAILURE completion for a non-recoverable error")
+        }
     }
 }

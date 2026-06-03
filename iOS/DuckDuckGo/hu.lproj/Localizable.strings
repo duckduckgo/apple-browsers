@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Adj meg egy nem negatív napszámot. A telepítés dátuma ennyi nappal korábbira lesz állítva.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Megnyitás másik alkalmazásban?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Visszalépés";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Megpróbáltuk privát módon betölteni, de nem jeleníthető meg.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Szeretnéd megnyitni ezt az oldalt a Safariban?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Megnyitás Safariban";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Sajnos nem sikerült betölteni az oldalt.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Ez az oldal csak Safariban tölthető be";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Megnyitás Safariban";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "A webhely biztonsági tanúsítványa érvénytelen, ezért előfordulhat, hogy a meglátogatása nem biztonságos.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Maradok a DuckDuckGónál";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Előfordulhat, hogy a webhely egyes funkciói nem kompatibilisek ezzel a böngészővel.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Az oldal a Safariban próbál megnyílni.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "A DuckDuckGo nem tudja betölteni ezt az oldalt.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Legutóbbi feldolgozási naplók";

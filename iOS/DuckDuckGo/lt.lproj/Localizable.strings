@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Įveskite neneigiamą dienų skaičių. Bus nustatyta, kad įdiegta prieš nurodytą dienų skaičių.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Atidaryti kitoje programoje?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Grįžti atgal";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Bandėme įkelti privačiai, bet nerodo.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Ar nori atverti šį puslapį „Safari“?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Atverti naršyklėje „Safari“";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Deja, puslapio nepavyko įkelti.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Šis puslapis įkeliamas tik naršyklėje „Safari“";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Atverti „Safari“ naršyklėje";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Ši svetainė turi negaliojantį saugumo sertifikatą ir joje lankytis gali būti nesaugu.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Likti DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Kai kurios interneto svetainės funkcijos šioje naršyklėje gali būti nesuderinamos.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Ši svetainė nori atsidaryti naršyklėje „Safari“.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "„DuckDuckGo“ negali įkelti šio puslapio.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Naujausi apdorojimo žurnalai";

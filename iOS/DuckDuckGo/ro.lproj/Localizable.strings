@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Completează un număr nenegativ de zile. Data instalării va fi setată cu acel număr de zile în urmă.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3421,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Deschizi în altă aplicație?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Înapoi";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Am încercat să o încărcăm în mod privat, dar nu se afișează.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Vrei să deschizi această pagină în Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Deschide în Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Din păcate, pagina nu s-a putut încărca.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Această pagină se încarcă doar în Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Deschide în Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Acest site are un certificat de securitate incorect și vizitarea sa este posibil să nu prezinte siguranță.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Rămâi pe DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Este posibil ca unele funcții ale site-ului să nu fie compatibile cu acest browser.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Acest site vrea să se deschidă în Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo nu poate încărca această pagină.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Jurnale de procesare recente";

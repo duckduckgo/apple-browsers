@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import XCTest
 @testable import VPN
@@ -25,20 +26,48 @@ final class VPNSettingsEnforceRoutesTests: XCTestCase {
     private var suiteName: String!
     private var defaults: UserDefaults!
     private var settings: VPNSettings!
+    private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         suiteName = "test-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)!
         settings = VPNSettings(defaults: defaults)
+        cancellables = []
     }
 
     override func tearDown() {
+        cancellables = nil
         defaults.removePersistentDomain(forName: suiteName)
         settings = nil
         defaults = nil
         suiteName = nil
         super.tearDown()
+    }
+
+    func testDefaultsToStrictWhenUserHasNotChosen() {
+        XCTAssertTrue(settings.enforceRoutes, "Strict routing must default to true when the user hasn't chosen a value")
+    }
+
+    func testPublisherEmitsWhenValueChanges() {
+        settings.enforceRoutes = true
+
+        let expectation = expectation(description: "publisher emits the updated value")
+        var received: Bool?
+
+        settings.enforceRoutesPublisher
+            .removeDuplicates() // KVO fires twice per change for this key; collapse to one.
+            .dropFirst() // Ignore the value emitted on subscription.
+            .sink { value in
+                received = value
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        settings.enforceRoutes = false
+
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(received, false)
     }
 
     func testResetsRelaxedValueWhenStrictRoutingUnavailable() {

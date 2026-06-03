@@ -369,7 +369,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
     public func dashboardDidOpen() {
         guard !isInitialContinuedProcessingRunActive else { return }
 
-        if currentRunIsFreeScan == true && canRunFreemiumScans {
+        switch (currentRunIsFreeScan, canRunFreemiumScans) {
+        case (true, true):
             // unauthenticated freemium scan-only
             Logger.dataBrokerProtection.log("Starting scan-only operations whilst dashboard open (freemium)")
             queueManager.startScheduledScanOperationsIfPermitted(showWebView: false,
@@ -378,7 +379,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
                                                                  errorHandler: nil) {
                 Logger.dataBrokerProtection.log("Scan operations completed whilst dashboard open")
             }
-        } else if currentRunIsFreeScan == false {
+        case (false, _):
             // authenticated all operations
             Logger.dataBrokerProtection.log("Starting all operations whilst dashboard open")
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false,
@@ -387,7 +388,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
                                                                errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed whilst dashboard open")
             }
-        } else {
+        default:
             // unauthenticated without freemium, or auth state unknown: skip
             Logger.dataBrokerProtection.log("Skipping dashboard-open operations")
         }

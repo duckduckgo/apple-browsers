@@ -129,20 +129,34 @@ The tracked `Package.resolved` files are the source of truth for resolved depend
 
 The workspace-level `DuckDuckGo.xcworkspace/xcshareddata/swiftpm/Package.resolved` is **not** tracked - it is gitignored because Xcode regenerates it on open and nothing in CI consumes it. Do not reference it or expect it to appear in a PR.
 
+### Version pinning
+
+Dependencies must be pinned to an exact version using `exact:`. This keeps resolution deterministic and is the established convention across the repo's `Package.swift` files.
+
+Flag any `.package(url: ...)` dependency that a PR adds or modifies if it uses a version *range* instead of an exact version:
+
+- `from: "x.y.z"`
+- `.upToNextMajor(from:)` / `.upToNextMinor(from:)`
+- a range operator such as `"x.y.z"..."a.b.c"` or `"x.y.z"..<"a.b.c"`
+
+Recommend rewriting it as `exact: "x.y.z"`. For example, `.package(url: "...", from: "1.2.0")` should become `.package(url: "...", exact: "1.2.0")`.
+
+Also flag a `branch:` dependency added or modified in a PR: a branch is a floating reference and is not reproducible. A `revision:` (exact commit SHA) is an acceptable precise pin, but prefer an `exact:` version once the dependency has a tagged release.
+
 ### Detecting a missing lockfile update
 
-Flag a PR if it changes a dependency's version requirement without updating the app projects' lockfiles. Specifically, flag when both of these are true:
+Flag a PR if it changes a dependency's version requirement without updating the downstream lockfiles that consume it. Specifically, flag when both of these are true:
 
 - A `.package(url: ...)` dependency in any `Package.swift` has its version requirement changed - `exact:`, `from:`, `.upToNextMajor`/`.upToNextMinor`, a `branch:`, or a `revision:`.
-- Neither `iOS/.../Package.resolved` nor `macOS/.../Package.resolved` is modified in the same PR.
+- A tracked `Package.resolved` that resolves the changed dependency is **not** updated in the same PR. This includes the app projects' lockfiles (`iOS/.../Package.resolved` and `macOS/.../Package.resolved`) and the `Package.resolved` of any Swift package that depends on the changed dependency, directly or transitively.
 
-When this happens the app lockfiles are probably stale. Advise the author to check out the branch and run:
+A version bump propagates to every tracked lockfile that resolves the affected dependency. Packages reference each other by local path (many resolve `BrowserServicesKit` this way), so a bump in one package ripples into the lockfiles of its consumers. Any lockfile that resolves the dependency but was not updated is probably stale. Advise the author to check out the branch and run:
 
 ```
 ./scripts/resolve-project-dependencies.sh
 ```
 
-then commit any changed `Package.resolved` files. This commonly appears on Dependabot PRs - e.g. a `content-scope-scripts` bump in `SharedPackages/BrowserServicesKit` that updates only the BrowserServicesKit `Package.resolved`.
+then commit any changed `Package.resolved` files. This commonly appears on Dependabot PRs - e.g. a `content-scope-scripts` bump in `SharedPackages/BrowserServicesKit` updates only the BrowserServicesKit `Package.resolved`, leaving the lockfiles that consume it behind.
 
 ### What NOT to flag (dependencies)
 

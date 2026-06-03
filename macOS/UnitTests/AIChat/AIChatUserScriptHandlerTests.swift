@@ -900,7 +900,9 @@ struct AIChatUserScriptHandlerTests {
     func testWhenAIChatSyncEnabledAndNotFireWindowThenSupportsAIChatSyncIsTrue() {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
-                                           promptHandler: AIChatPromptHandler.shared)
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
 
         let config = handler.getNativeConfigValues(isFireWindow: false)
 
@@ -912,7 +914,9 @@ struct AIChatUserScriptHandlerTests {
     func testWhenAIChatSyncEnabledAndFireWindowThenSupportsAIChatSyncIsFalse() {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
-                                           promptHandler: AIChatPromptHandler.shared)
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
 
         let config = handler.getNativeConfigValues(isFireWindow: true)
 
@@ -924,7 +928,9 @@ struct AIChatUserScriptHandlerTests {
     func testWhenAIChatSyncDisabledThenSupportsAIChatSyncIsFalse() {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
-                                           promptHandler: AIChatPromptHandler.shared)
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsAIChatSync == false)
         #expect(handler.getNativeConfigValues(isFireWindow: true).supportsAIChatSync == false)
@@ -936,7 +942,9 @@ struct AIChatUserScriptHandlerTests {
         let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
                                            promptHandler: AIChatPromptHandler.shared,
-                                           isNativeStorageBridgeAvailable: true)
+                                           isNativeStorageBridgeAvailable: true,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeStorage == true)
     }
@@ -947,7 +955,9 @@ struct AIChatUserScriptHandlerTests {
         let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
                                            promptHandler: AIChatPromptHandler.shared,
-                                           isNativeStorageBridgeAvailable: true)
+                                           isNativeStorageBridgeAvailable: true,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
 
         #expect(handler.getNativeConfigValues(isFireWindow: true).supportsNativeStorage == true)
     }
@@ -957,7 +967,9 @@ struct AIChatUserScriptHandlerTests {
     func testWhenAIChatNativeStorageEnabledAndBridgeUnavailableThenSupportsNativeStorageIsFalse() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
-                                           promptHandler: AIChatPromptHandler.shared)
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeStorage == false)
     }
@@ -968,7 +980,9 @@ struct AIChatUserScriptHandlerTests {
         let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: false)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
                                            promptHandler: AIChatPromptHandler.shared,
-                                           isNativeStorageBridgeAvailable: true)
+                                           isNativeStorageBridgeAvailable: true,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeStorage == false)
     }
@@ -978,7 +992,9 @@ struct AIChatUserScriptHandlerTests {
     func testWhenAIChatNativeVoicePermissionFlowEnabledThenSupportsNativeVoicePermissionHandlerIsTrue() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
-                                           promptHandler: AIChatPromptHandler.shared)
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoicePermissionHandler == true)
     }
@@ -988,7 +1004,9 @@ struct AIChatUserScriptHandlerTests {
     func testWhenAIChatNativeVoicePermissionFlowDisabledThenSupportsNativeVoicePermissionHandlerIsFalse() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeVoicePermissionFlowEnabled: false)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
-                                           promptHandler: AIChatPromptHandler.shared)
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoicePermissionHandler == false)
     }

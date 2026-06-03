@@ -184,6 +184,8 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    private lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(featureFlagger: featureFlagger)
+    private let floatingUIChromeStyler = FloatingUIChromeStyler()
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
@@ -4235,7 +4237,7 @@ extension MainViewController: OmniBarDelegate {
                 //  which doesn't appear to work properly on iOS 26.4,
                 if #available(iOS 18.0, *) {
 
-                    self?.viewCoordinator.navigationBarContainer.backgroundColor = .clear
+                    // self?.viewCoordinator.navigationBarContainer.backgroundColor = .clear
                     self?.omniBar.prepareForMoveTransition()
                     UIView.animate(.smooth) {
                         self?.toggleAddressBarLocation()
@@ -6203,10 +6205,15 @@ extension MainViewController {
 
         viewCoordinator.toolbar.barTintColor = theme.barBackgroundColor
         viewCoordinator.toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
+        applyFloatingUIChromeIfNeeded()
 
         viewCoordinator.toolbarTabSwitcherButton.tintColor = UIColor(singleUseColor: .toolbarButton)
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
+    }
+
+    private func applyFloatingUIChromeIfNeeded() {
+        floatingUIChromeStyler.applyIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
     }
 
 }

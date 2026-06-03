@@ -271,11 +271,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         for context in contexts {
             let identifier = context.uniqueIdentifier
-            // Capture the parsed extension so reloadInstalledExtensions() can re-create the
-            // context without re-reading and re-parsing it from disk.
-            unloadedExtensionsCache[identifier] = context.webExtension
             do {
                 try controller.unload(context)
+                // Capture the parsed extension only after a confirmed unload, so the cache never
+                // holds an extension still loaded in the controller. reloadInstalledExtensions()
+                // uses it to re-create the context without re-reading and re-parsing from disk.
+                unloadedExtensionsCache[identifier] = context.webExtension
                 unregisterHandlers(for: identifier)
                 successCount += 1
             } catch {

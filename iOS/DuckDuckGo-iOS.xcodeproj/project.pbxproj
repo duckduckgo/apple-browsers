@@ -1744,6 +1744,7 @@
 		B50DAF4F2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */; };
 		B54C59B72FA91DF30072ECCE /* DuckAIToggleDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B54C59B62FA91DF30072ECCE /* DuckAIToggleDebugView.swift */; };
 		B56523332FCF40B900B71522 /* HistoryCleaner+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56523322FCF40B900B71522 /* HistoryCleaner+Helpers.swift */; };
+		B56C4E0B2FD0E40B006569D4 /* AIChatHistoryManager+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56C4E0A2FD0E40B006569D4 /* AIChatHistoryManager+Helpers.swift */; };
 		B572460F2FB7A00E004EB481 /* ExclusiveTouchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B572460E2FB7A00E004EB481 /* ExclusiveTouchView.swift */; };
 		B57246112FB7A33F004EB481 /* SwipeActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57246102FB7A33F004EB481 /* SwipeActionView.swift */; };
 		B57246132FB7AF3B004EB481 /* LeftCapsuleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57246122FB7AF3B004EB481 /* LeftCapsuleShape.swift */; };
@@ -4401,6 +4402,7 @@
 		B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscapeHatchModelTests.swift; sourceTree = "<group>"; };
 		B54C59B62FA91DF30072ECCE /* DuckAIToggleDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIToggleDebugView.swift; sourceTree = "<group>"; };
 		B56523322FCF40B900B71522 /* HistoryCleaner+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HistoryCleaner+Helpers.swift"; sourceTree = "<group>"; };
+		B56C4E0A2FD0E40B006569D4 /* AIChatHistoryManager+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatHistoryManager+Helpers.swift"; sourceTree = "<group>"; };
 		B572460E2FB7A00E004EB481 /* ExclusiveTouchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExclusiveTouchView.swift; sourceTree = "<group>"; };
 		B57246102FB7A33F004EB481 /* SwipeActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeActionView.swift; sourceTree = "<group>"; };
 		B57246122FB7AF3B004EB481 /* LeftCapsuleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftCapsuleShape.swift; sourceTree = "<group>"; };
@@ -6098,6 +6100,7 @@
 			children = (
 				319F68742F27F96200EEBC3D /* AIChatHistoryListViewController.swift */,
 				319F68752F27F96200EEBC3D /* AIChatHistoryManager.swift */,
+				B56C4E0A2FD0E40B006569D4 /* AIChatHistoryManager+Helpers.swift */,
 				319F68762F27F96200EEBC3D /* AIChatSuggestionsReader.swift */,
 				EEA52D94898B2BADA9904EE1 /* RecentChatDeletionAlert.swift */,
 			);
@@ -13426,6 +13429,7 @@
 				859DB8162CE6263C001F7210 /* TextZoomEditorView.swift in Sources */,
 				CB7E0A232D5E1E55002A7C0C /* LaunchActionHandler.swift in Sources */,
 				97770B702EC1ED2600CACA68 /* OnboardingSearchExperiencePicker.swift in Sources */,
+				B56C4E0B2FD0E40B006569D4 /* AIChatHistoryManager+Helpers.swift in Sources */,
 				97770B712EC1ED2600CACA68 /* OnboardingSearchExperiencePickerViewModel.swift in Sources */,
 				97770B722EC1ED2600CACA68 /* OnboardingSearchExperienceProvider.swift in Sources */,
 				97770B732EC1ED2600CACA68 /* OnboardingSearchExperienceSelectionHandler.swift in Sources */,

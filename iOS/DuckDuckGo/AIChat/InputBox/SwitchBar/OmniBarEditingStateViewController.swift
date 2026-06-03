@@ -422,31 +422,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     /// Fire tabs use a no-op reader that always returns empty results,
     /// preventing chat history from being fetched or displayed.
     private func makeAIChatHistoryManager() -> AIChatHistoryManager {
-        let suggestionsReader: AIChatSuggestionsReading
-        if switchBarHandler.isFireTab {
-            suggestionsReader = NilSuggestionsReader()
-        } else {
-            let reader = SuggestionsReader(
-                featureFlagger: featureFlagger,
-                privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: duckAiNativeStorageHandler,
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            )
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        }
+        let (chatManager, _) = AIChatHistoryManager.makeHistoryManager(isFireTab: switchBarHandler.isFireTab,
+                                                                       isIPadExperience: false,
+                                                                       featureFlagger: featureFlagger,
+                                                                       privacyConfigurationManager: privacyConfigurationManager,
+                                                                       chatSyncCleaner: aiChatSyncCleaner,
+                                                                       chatSettings: aiChatSettings,
+                                                                       nativeStorageHandler: duckAiNativeStorageHandler)
 
-        let historyCleaner = HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger,
-                                            privacyConfig: privacyConfigurationManager,
-                                            nativeStorageHandler: duckAiNativeStorageHandler)
-
-        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
-
-        return AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                    aiChatSettings: aiChatSettings,
-                                    viewModel: viewModel,
-                                    historyCleaner: historyCleaner,
-                                    aiChatSyncCleaner: aiChatSyncCleaner)
+        return chatManager
     }
 
     private func installDaxLogoView() {

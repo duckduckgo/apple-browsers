@@ -479,34 +479,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
               let dependencies = suggestionTrayDependencies else { return }
 
         // Build the chat-side fetcher (existing infrastructure, fire-tab uses no-op reader).
-        let chatViewModel: AIChatSuggestionsViewModel
-        let chatManager: AIChatHistoryManager
-        let chatSuggestionsReader: AIChatSuggestionsReading
-        if switchBarHandler.isFireTab {
-            chatSuggestionsReader = NilSuggestionsReader()
-        } else {
-            let reader = SuggestionsReader(
-                featureFlagger: featureFlagger,
-                privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: duckAiNativeStorageHandler,
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            )
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            chatSuggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        }
-
-        let historyCleaner = HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger,
-                                            privacyConfig: privacyConfigurationManager,
-                                            nativeStorageHandler: duckAiNativeStorageHandler)
-
-        chatViewModel = AIChatSuggestionsViewModel(maxSuggestions: chatSuggestionsReader.maxHistoryCount)
-        chatManager = AIChatHistoryManager(
-            suggestionsReader: chatSuggestionsReader,
-            aiChatSettings: aiChatSettings,
-            viewModel: chatViewModel,
-            historyCleaner: historyCleaner,
-            aiChatSyncCleaner: aiChatSyncCleaner
-        )
+        let (chatManager, chatViewModel) = AIChatHistoryManager.makeHistoryManager(isFireTab: switchBarHandler.isFireTab,
+                                                                                   isIPadExperience: false,
+                                                                                   featureFlagger: featureFlagger,
+                                                                                   privacyConfigurationManager: privacyConfigurationManager,
+                                                                                   chatSyncCleaner: aiChatSyncCleaner,
+                                                                                   chatSettings: aiChatSettings,
+                                                                                   nativeStorageHandler: duckAiNativeStorageHandler)
 
         // Build the URL-side fetcher reusing the Search-side suggestion stream + ranking.
         let dataSource = AutocompleteSuggestionsDataSource(

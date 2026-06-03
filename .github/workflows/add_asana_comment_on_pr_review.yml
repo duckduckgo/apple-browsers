@@ -6,9 +6,9 @@ on:
 
 jobs:
 
-    add-changes-requested-comment:
-        if: ${{ github.event.review.state == 'changes_requested' }}
-        name: "Add 'Changes Requested' comment on PR subtask"
+    add-pr-review-comment:
+        if: ${{ contains(fromJSON('["approved","changes_requested","commented"]'), github.event.review.state) }}
+        name: "Add Asana comment on PR review"
         runs-on: ubuntu-latest
 
         steps:
@@ -39,10 +39,25 @@ jobs:
             echo "::error::No PR review subtask found for @${{ github.event.review.user.login }}. They may not be in the GitHub→Asana mapping. Add them in duckduckgo/native-github-asana-sync and re-run."
             exit 1
 
-        - name: Post changes-requested comment
-          uses: duckduckgo/apple-toolbox/actions/asana-add-changes-requested-comment@alessandro/apple-proposal-comment-on-changes-requested
+        - name: Build comment text
+          id: comment
+          env:
+            STATE: ${{ github.event.review.state }}
+            REVIEWER: ${{ github.event.review.user.login }}
+            REVIEW_URL: ${{ github.event.review.html_url }}
+          run: |
+            case "$STATE" in
+              approved)          prefix="✅ Approved" ;;
+              changes_requested) prefix="🔄 Changes requested" ;;
+              commented)         prefix="💬 Comment" ;;
+            esac
+            echo "text=${prefix} by @${REVIEWER} — see review: ${REVIEW_URL}" >> "$GITHUB_OUTPUT"
+
+        - name: Post review comment
+          uses: duckduckgo/native-github-asana-sync@v1.9
           with:
-            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
-            task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
-            github-reviewer-user: ${{ github.event.review.user.login }}
-            github-review-url: ${{ github.event.review.html_url }}
+            action: 'post-comment-asana-task'
+            asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
+            asana-task-comment: ${{ steps.comment.outputs.text }}
+            asana-task-comment-pinned: false

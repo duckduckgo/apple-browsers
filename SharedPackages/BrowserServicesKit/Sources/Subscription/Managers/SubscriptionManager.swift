@@ -605,10 +605,13 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
+                    completeDeadTokenRecoveryFlow(status: .success(reason: AuthV2TokenRefreshWideEventData.StatusReason.recoveredDeadToken.rawValue),
+                                                  error: nil)
                     return recoveredTokenContainer
                 } catch {
                     await signOut(notifyUI: false, userInitiated: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
+                    completeDeadTokenRecoveryFlow(status: .failure, error: error)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 
@@ -635,6 +638,30 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             throw SubscriptionManagerError.noTokenAvailable
         }
         return currentTokenContainer
+    }
+
+    /// Completes the refresh wide event flow that the OAuthClient event mapping deferred on a dead token.
+    /// Selects the newest flow marked `.recoverDeadToken` (by recovery start time): wide-event storage is
+    /// per-process and OAuthClient dedups concurrent refreshes, so the newest such flow is always the one
+    /// this recovery belongs to. Any older orphan (e.g. from the recovery-less API refresher path) is left
+    /// for the launch backstop to reconcile to UNKNOWN.
+    private func completeDeadTokenRecoveryFlow(status: WideEventStatus, error: Error?) {
+        guard isAuthV2WideEventEnabled(), let wideEvent else { return }
+        guard let data = wideEvent.getAllFlowData(AuthV2TokenRefreshWideEventData.self)
+            .filter({ $0.failingStep == .recoverDeadToken })
+            .max(by: { ($0.recoveryDuration?.start ?? .distantPast) < ($1.recoveryDuration?.start ?? .distantPast) })
+        else { return }
+
+        data.recoveryDuration?.complete()
+        if let error {
+            data.errorData = WideEventErrorData(error: error)
+        } else {
+            // Recovered: clear the originating dead-token error and the failing step so the SUCCESS
+            // event is not shipped with contradictory error data.
+            data.errorData = nil
+            data.failingStep = nil
+        }
+        wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
     }
 
     public func adopt(accessToken: String, refreshToken: String) async throws {

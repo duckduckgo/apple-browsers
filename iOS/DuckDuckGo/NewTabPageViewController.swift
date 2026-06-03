@@ -147,16 +147,13 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        // In UTI mode the visit-site dialog's hostingController is parented to MainViewController
-        // (not to self) so it lives in unifiedInputContentContainer.  When navigation replaces
-        // this NTP with a web view or a fresh NTP, the container can reappear later and show the
-        // stale dialog.  Clean it up here before this NTP leaves the screen.
+        // Must run before the parent-check below, which would zero isShowingDuckAICompletionDialog
+        // and prevent the seen flag from being set (e.g. on a tab switch without editing ending).
+        dismissDuckAICompletionDialogIfNeededOnEditingEnd()
+        // Clean up any stale hosting controller parented to mainVC before this NTP leaves.
         if let hc = hostingController, hc.parent !== self {
             dismissHostingController(didFinishNTPOnboarding: false)
         }
-        // Dismiss the UTI completion dialog when the NTP leaves the screen (tab switch,
-        // navigation). The dialog is marked as seen so the subscription promo surfaces cleanly.
-        dismissDuckAICompletionDialogIfNeededOnEditingEnd()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -708,6 +705,7 @@ extension NewTabPageViewController {
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
+        hostingController = nil
         if updateUnifiedInputContentOverlaySuppression {
             chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }

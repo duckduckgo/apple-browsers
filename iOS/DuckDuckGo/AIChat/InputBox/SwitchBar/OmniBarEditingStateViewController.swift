@@ -410,6 +410,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                     self.view.layoutIfNeeded()
                 }
             }
+        manager.onFetchCompleted = { [weak self] _, _ in
+            guard let self else { return }
+            self.scheduleAnimation {
+                self.updateDaxVisibility()
+                self.view.layoutIfNeeded()
+            }
+        }
         aiChatHistoryManager = manager
 
         manager.setEscapeHatch(escapeHatchModel)

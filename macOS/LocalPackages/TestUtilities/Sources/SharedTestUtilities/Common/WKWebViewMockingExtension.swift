@@ -23,7 +23,6 @@ import ObjectiveC
 import SharedObjCTestsUtils
 import WebKit
 
-@available(macOS 12.0, *)
 public extension WKWebView {
 
     private static let simulatedRequestHandlersKey = UnsafeRawPointer(bitPattern: "simulatedRequestsKey".hashValue)!
@@ -74,7 +73,6 @@ public extension WKWebView {
 
 }
 
-@available(macOS 12.0, *)
 public class TestSchemeHandler: NSObject, WKURLSchemeHandler {
 
     public var middleware: [(URLRequest) -> WKURLSchemeTaskHandler?]

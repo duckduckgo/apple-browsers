@@ -369,12 +369,8 @@ extension Preferences {
                 let settingsText = UserText.aboutUpdateInfoAppStoreSettings
                 let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText, menuText, settingsText)
                 HStack(spacing: 0) {
-                    if #available(macOS 12.0, *) {
-                        Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
-                            .fixedSize(horizontal: false, vertical: true)
-                    } else {
-                        NSAttributedTextView(attributedString: appStoreLegacyAttributedText(fullText: fullText, linkText: linkText))
-                    }
+                    Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
+                        .fixedSize(horizontal: false, vertical: true)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -388,7 +384,6 @@ extension Preferences {
             UserText.aboutUpdateInfoAppStoreSettings
         ]
 
-        @available(macOS 12, *)
         private func appStoreAttributedText(fullText: String, linkText: String) -> AttributedString {
             var attributed = AttributedString(fullText)
             if let range = attributed.range(of: linkText) {
@@ -400,37 +395,6 @@ extension Preferences {
                 }
             }
             return attributed
-        }
-
-        private func appStoreLegacyAttributedText(fullText: String, linkText: String) -> NSAttributedString {
-            let attributedString = NSMutableAttributedString(string: fullText)
-
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = 0
-            paragraphStyle.paragraphSpacing = 0
-
-            let defaultAttributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
-                .foregroundColor: NSColor(Color(.greyText)),
-                .paragraphStyle: paragraphStyle
-            ]
-            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
-
-            if let range = fullText.range(of: linkText) {
-                let nsRange = NSRange(range, in: fullText)
-                attributedString.addAttribute(.link, value: URL.appStore, range: nsRange)
-                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
-                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
-            }
-
-            let boldFont = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
-            for word in Self.boldWords {
-                if let range = fullText.range(of: word) {
-                    attributedString.addAttribute(.font, value: boldFont, range: NSRange(range, in: fullText))
-                }
-            }
-
-            return attributedString
         }
     }
 
@@ -488,11 +452,7 @@ extension Preferences {
             let titleView = Text(titleText)
 
             let contentView: some View = HStack(alignment: .center, spacing: 0) {
-                if #available(macOS 12.0, *) {
-                    Text(bodyTextAttributed)
-                } else {
-                    NSAttributedTextView(attributedString: legacyBodyTextAttributed)
-                }
+                Text(bodyTextAttributed)
 
                 // Added to prevent bouncy animation when resizing the parent view
                 // caused by the text width being a bit jumpy.
@@ -513,38 +473,12 @@ extension Preferences {
             .frame(minWidth: 320, maxWidth: 510)
         }
 
-        @available(macOS 12, *)
         private var bodyTextAttributed: AttributedString {
             var instructions = AttributedString(bodyText)
             if canUpgradeOS, let range = instructions.range(of: Self.linkTarget) {
                 instructions[range].link = Self.softwareUpdateURL
             }
             return instructions
-        }
-
-        private var legacyBodyTextAttributed: NSAttributedString {
-            let fullText = bodyText
-            let attributedString = NSMutableAttributedString(string: fullText)
-
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = 0
-            paragraphStyle.paragraphSpacing = 0
-
-            let defaultAttributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
-                .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: paragraphStyle
-            ]
-            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
-
-            if canUpgradeOS, let range = fullText.range(of: Self.linkTarget) {
-                let nsRange = NSRange(range, in: fullText)
-                attributedString.addAttribute(.link, value: Self.softwareUpdateURL, range: nsRange)
-                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
-                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
-            }
-
-            return attributedString
         }
     }
 }

@@ -200,6 +200,12 @@ extension SupportedOSChecker: SupportedOSChecking {
 
     var unsupportedMinVersion: String? {
 
+        // Remote kill switch: when disabled via privacy config, suppress all native OS-support
+        // messaging regardless of OS version or the debug force flag below.
+        guard featureFlagger.isFeatureOn(.osSupportWarning) else {
+            return nil
+        }
+
         // It's best to check feature flags first on their own, since they act as a master
         // override for any other check
         guard !featureFlagger.isFeatureOn(.osSupportForceUnsupportedMessage) else {

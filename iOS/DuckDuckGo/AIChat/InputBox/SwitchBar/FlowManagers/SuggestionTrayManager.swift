@@ -136,8 +136,16 @@ final class SuggestionTrayManager: NSObject {
         suggestionTrayViewController?.additionalTopInset = inset
     }
 
-    /// Installs the suggestion tray in the provided container view
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatchModel: EscapeHatchModel? = nil) {
+    /// Installs the suggestion tray in the provided container view.
+    ///
+    /// - Parameter deferAutocompleteReveal: When `true`, the autocomplete surface stays hidden until
+    ///   its first results arrive, so the underlying content (favorites NTP / Dax) isn't briefly
+    ///   covered by an empty surface flashing in. Only the unified toggle input surface opts in;
+    ///   other hosts (legacy omnibar editing, iPad chat history, swipe container) keep the default (false).
+    func installInContainerView(_ containerView: UIView,
+                                parentViewController: UIViewController,
+                                escapeHatchModel: EscapeHatchModel? = nil,
+                                deferAutocompleteReveal: Bool = false) {
         guard suggestionTrayViewController == nil else { return }
         
 
@@ -155,6 +163,7 @@ final class SuggestionTrayManager: NSObject {
             hideBorder: true)
 
         controller.coversFullScreen = true
+        controller.deferAutocompleteReveal = deferAutocompleteReveal
 
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)

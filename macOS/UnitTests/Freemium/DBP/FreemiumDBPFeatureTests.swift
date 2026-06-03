@@ -454,7 +454,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
-    @available(macOS 12.0, *)
     func testWhenStorefrontIsUSA_andCanPurchase_andNotSubscribed_thenIsAvailable() throws {
         // Given
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
@@ -476,7 +475,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    @available(macOS 12.0, *)
     func testWhenStorefrontIsNotUSA_andCanPurchase_andNotSubscribed_thenIsNotAvailable() throws {
         // Given
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
@@ -498,7 +496,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    @available(macOS 12.0, *)
     func testWhenPlatformIsStripe_thenStorefrontIsIgnoredAndIsAvailable() throws {
         // Given
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
@@ -596,7 +593,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         XCTAssertTrue(result, "Should use real privacy config value when no override is set")
     }
 
-    @available(macOS 12.0, *)
     func testWhenStorefrontOverrideIsSetToTrue_thenIsAvailableIsTrue() {
         // Given
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
@@ -622,7 +618,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         XCTAssertTrue(result, "Override should make feature available even when storefront is non-USA")
     }
 
-    @available(macOS 12.0, *)
     func testWhenStorefrontOverrideIsSetToFalse_thenIsAvailableIsFalse() {
         // Given
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in true }
@@ -648,7 +643,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         XCTAssertFalse(result, "Override should make feature unavailable even when storefront is USA")
     }
 
-    @available(macOS 12.0, *)
     func testWhenFeatureFlagOverrideIsTrueAndStorefrontIsNonUSA_thenIsAvailableIsFalse() {
         // Given: Real storefront is non-USA and there's no storefront override
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }
@@ -672,7 +666,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         XCTAssertFalse(result, "Feature flag override should not affect storefront eligibility")
     }
 
-    @available(macOS 12.0, *)
     func testWhenStorefrontOverrideIsTrueAndFeatureFlagIsFalse_thenIsAvailableIsFalse() {
         // Given: Real feature flag is false and there's no flag override
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureEnabledCheck = { _, _ in false }

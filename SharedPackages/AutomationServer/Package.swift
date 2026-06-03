@@ -7,7 +7,7 @@ let package = Package(
     name: "AutomationServer",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "AutomationServer", targets: ["AutomationServer"])

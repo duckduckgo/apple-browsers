@@ -121,13 +121,13 @@ extension SimplifiedSyncSettingsView {
         Section {
             VStack(spacing: 20) {
                 ZStack {
-                    Image(rebrandable: "Sync-New-128")
+                    Image(rebrandable: AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-128" : "Sync-New-128")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
                         .opacity(model.isSyncEnabled ? 0 : 1)
 
-                    Image(rebrandable: "Sync-Pair-96")
+                    Image(rebrandable: AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-Pair-128" : "Sync-Pair-96")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)

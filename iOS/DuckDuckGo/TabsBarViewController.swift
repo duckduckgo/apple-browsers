@@ -218,7 +218,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         if let featureFlagger, let aiChatSettings {
             isVisible = DuckAIChromeShortcutVisibility.isChromeButtonVisible(
                 featureFlagger: featureFlagger,
-                isAIChatNavigationBarUserSettingsEnabled: aiChatSettings.isAIChatNavigationBarUserSettingsEnabled
+                isAIChatTabBarUserSettingsEnabled: aiChatSettings.isAIChatTabBarUserSettingsEnabled
             )
         } else {
             isVisible = false
@@ -463,7 +463,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 completion([
                     UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
                         DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
-                        self?.aiChatSettings?.enableAIChatNavigationBarUserSettings(enable: false)
+                        self?.aiChatSettings?.enableAIChatTabBarUserSettings(enable: false)
                     },
                     UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
                         guard let self else { return }

@@ -576,7 +576,7 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Surfaces the "Strict routing" VPN toggle so users can disable
     /// NETunnelProviderProtocol.enforceRoutes if they're having trouble
     /// reaching local devices or other networks.
-    case strictRouting
+    case strictRoutingToggle
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {

@@ -116,6 +116,13 @@ extension TabViewController: AITabController {
         delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
     }
 
+    /// Opens the Duck.ai chats sidebar in a new tab. Mirrors the contextual sheet's "View all chats"
+    /// (`sidebarOpenURL`), so it works from any tab — unlike the in-page sidebar toggle.
+    func openChatListInNewTab() {
+        let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
+        delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
+    }
+
     /// Reloads the full mode AI Chat tab if this is an AI tab.
     func reloadFullModeAIChatIfNeeded() {
         if isAITab {

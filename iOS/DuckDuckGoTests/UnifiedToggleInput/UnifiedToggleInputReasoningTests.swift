@@ -143,7 +143,13 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
     }
 
     func testHandleReasoningModeSelectionWhenFreeUserSelectsGPT52ExtendedReasoningRoutesPurchaseWithoutChangingSelection() {
-        sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "gpt-5.2",
+                supportedReasoningEffort: [.none, .low, .medium],
+                reasoningEffortAccess: gpt52MediumGatedForPlus()
+            )
+        ]
         sut.updateSelectedModel("gpt-5.2")
         sut.updateSelectedReasoningMode(.reasoning)
         let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
@@ -163,7 +169,13 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
 
     func testHandleReasoningModeSelectionWhenPlusUserSelectsGPT52ExtendedReasoningRoutesUpgradeWithoutChangingSelection() {
         sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
-        sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "gpt-5.2",
+                supportedReasoningEffort: [.none, .low, .medium],
+                reasoningEffortAccess: gpt52MediumGatedForPlus()
+            )
+        ]
         sut.updateSelectedModel("gpt-5.2")
         sut.updateSelectedReasoningMode(.reasoning)
         let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
@@ -183,7 +195,13 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
 
     func testHandleReasoningModeSelectionWhenGatedReasoningBecomesAccessibleAfterSubscriptionRefresh_selectsPendingReasoningMode() {
         sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
-        sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "gpt-5.2",
+                supportedReasoningEffort: [.none, .low, .medium],
+                reasoningEffortAccess: gpt52MediumGatedForPlus()
+            )
+        ]
         sut.updateSelectedModel("gpt-5.2")
         sut.updateSelectedReasoningMode(.reasoning)
         let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
@@ -199,6 +217,15 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedReasoningMode, .reasoning)
 
         sut.modelStore.subscriptionState = SubscriptionState(userTier: .pro, hasActiveSubscription: true)
+        // After subscription change, /models is re-fetched and the per-effort gating
+        // metadata reflects the new tier — replace the model in the store accordingly.
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "gpt-5.2",
+                supportedReasoningEffort: [.none, .low, .medium],
+                reasoningEffortAccess: gpt52MediumAccessibleForPro()
+            )
+        ]
         sut.modelStore.onModelsUpdated?()
 
         XCTAssertEqual(mockPreferences.selectedReasoningMode, .extendedReasoning)
@@ -311,6 +338,145 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         XCTAssertEqual(mockDelegate.submittedReasoningEffort, AIChatReasoningEffort.none)
     }
 
+    // MARK: - reasoningEffortAccess
+
+    /// `gpt-5.2` returns `supportedReasoningEffort: [none, low, medium]` but `reasoningEffortAccess`
+    /// gates every effort behind a tier the current (Free) user doesn't have. With nothing
+    /// accessible, the picker must be hidden — even though the model technically supports
+    /// three modes (no `count > 1` fallback).
+    func testWhenAllReasoningEffortsAreGated_ThenReasoningPickerIsHidden() {
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "gpt-5.2",
+                supportedReasoningEffort: [.none, .low, .medium],
+                reasoningEffortAccess: [
+                    AIChatReasoningEffortAccess(effort: .none, accessTier: ["pro", "internal"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .low, accessTier: ["pro", "internal"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro", "internal"], entityHasAccess: false)
+                ]
+            )
+        ]
+
+        sut.updateSelectedModel("gpt-5.2")
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden)
+        XCTAssertNil(sut.viewController.reasoningPickerMenu)
+    }
+
+    /// In the "model accessible, every effort gated" case the BE must NOT receive a
+    /// `reasoning_effort` value. Otherwise the BE would attempt to run a reasoning mode
+    /// the user can't actually use.
+    func testWhenAllReasoningEffortsAreGated_ThenReasoningEffortIsOmittedFromPayload() {
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "gpt-5.2",
+                supportedReasoningEffort: [.none, .low, .medium],
+                reasoningEffortAccess: [
+                    AIChatReasoningEffortAccess(effort: .none, accessTier: ["pro", "internal"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .low, accessTier: ["pro", "internal"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro", "internal"], entityHasAccess: false)
+                ]
+            )
+        ]
+        sut.updateSelectedModel("gpt-5.2")
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
+
+        XCTAssertNil(mockDelegate.submittedReasoningEffort)
+        XCTAssertNil(sut.persistedReasoningEffort)
+    }
+
+    /// Previously persisted mode was `.extendedReasoning`, but on the new model `.medium`
+    /// (the effort backing Extended Reasoning) is gated for the Plus user. Fallback must
+    /// pick the first accessible effort (`.fast` → `.none`), not blindly keep the gated
+    /// preference or default to `.fast` only when the mode is *unsupported*.
+    func testWhenPersistedReasoningModeIsGated_ThenFallbackUsesFirstAccessibleMode() {
+        mockPreferences.selectedReasoningMode = .extendedReasoning
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "gpt-5.2",
+                supportedReasoningEffort: [.none, .low, .medium],
+                reasoningEffortAccess: gpt52MediumGatedForPlus()
+            )
+        ]
+
+        sut.updateSelectedModel("gpt-5.2")
+
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden, "Picker should still be visible — 2 of 3 modes accessible")
+        XCTAssertEqual(sut.viewController.selectedReasoningMode, .fast, "Fallback should land on the first accessible mode")
+        XCTAssertEqual(sut.persistedReasoningEffort, AIChatReasoningEffort.none, "Effort for .fast on this model is .none")
+    }
+
+    /// Hide-picker convergence.
+    /// The two ways the picker can be hidden — model has no reasoning support at all
+    /// (`supportedReasoningEffort: []`), and model has reasoning but every effort is
+    /// gated for the user — must produce the same end state: button hidden, menu nil.
+    func testHidePickerConvergence_NoReasoningSupportVsAllEffortsGated_ProduceSamePickerState() {
+        sut.modelStore.models = [makeReasoningModel(id: "no-reasoning", supportedReasoningEffort: [])]
+        sut.updateSelectedModel("no-reasoning")
+        let noSupportButtonHidden = sut.viewController.isReasoningButtonHidden
+        let noSupportMenuIsNil = sut.viewController.reasoningPickerMenu == nil
+
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "all-gated",
+                supportedReasoningEffort: [.none, .low, .medium],
+                reasoningEffortAccess: [
+                    AIChatReasoningEffortAccess(effort: .none, accessTier: ["pro"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .low, accessTier: ["pro"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro"], entityHasAccess: false)
+                ]
+            )
+        ]
+        sut.updateSelectedModel("all-gated")
+        let allGatedButtonHidden = sut.viewController.isReasoningButtonHidden
+        let allGatedMenuIsNil = sut.viewController.reasoningPickerMenu == nil
+
+        XCTAssertTrue(noSupportButtonHidden)
+        XCTAssertTrue(noSupportMenuIsNil)
+        XCTAssertEqual(noSupportButtonHidden, allGatedButtonHidden)
+        XCTAssertEqual(noSupportMenuIsNil, allGatedMenuIsNil)
+    }
+
+    /// Backwards compatibility — payloads that omit `reasoningEffortAccess` (today's BE,
+    /// and any model the BE chooses not to gate per-effort) must still go through the
+    /// "all efforts inherit model access" path. No regression for current users.
+    func testWhenReasoningEffortAccessIsAbsent_ThenAllSupportedEffortsAreTreatedAsAccessible() {
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium], reasoningEffortAccess: nil)
+        ]
+
+        sut.updateSelectedModel("gpt-5.2")
+        sut.handleReasoningModeSelection(.extendedReasoning)
+
+        XCTAssertEqual(mockPreferences.selectedReasoningMode, .extendedReasoning, "Without per-effort metadata, mode is freely selectable")
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
+    }
+
+    func testHandleReasoningModeSelectionWhenSingleModeHasMixedGating_SelectsModeWithoutUpsell() {
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
+        sut.modelStore.models = [
+            makeReasoningModel(
+                id: "future-model",
+                supportedReasoningEffort: [.high, .medium],
+                reasoningEffortAccess: [
+                    AIChatReasoningEffortAccess(effort: .high, accessTier: ["pro", "internal"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .medium, accessTier: ["plus", "pro", "internal"], entityHasAccess: true)
+                ]
+            )
+        ]
+        sut.updateSelectedModel("future-model")
+
+        sut.handleReasoningModeSelection(.extendedReasoning)
+
+        XCTAssertEqual(mockPreferences.selectedReasoningMode, .extendedReasoning,
+                       "Mode is reachable via accessible .medium — must be selected, not gated")
+        XCTAssertEqual(sut.persistedReasoningEffort, AIChatReasoningEffort.medium,
+                       "Payload must carry the accessible .medium effort, not the gated .high")
+    }
+
     func testBindToExistingChatWhenReasoningModelKeepsReasoningButtonAvailable() {
         sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
         mockPreferences.selectedModelId = "gpt-5.2"
@@ -329,7 +495,8 @@ private extension UnifiedToggleInputReasoningTests {
     func makeReasoningModel(
         id: String,
         provider: AIChatModel.ModelProvider = .openAI,
-        supportedReasoningEffort: [AIChatReasoningEffort]
+        supportedReasoningEffort: [AIChatReasoningEffort],
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
     ) -> AIChatModel {
         AIChatModel(
             id: id,
@@ -338,8 +505,30 @@ private extension UnifiedToggleInputReasoningTests {
             provider: provider,
             supportsImageUpload: false,
             entityHasAccess: true,
-            supportedReasoningEffort: supportedReasoningEffort
+            supportedReasoningEffort: supportedReasoningEffort,
+            reasoningEffortAccess: reasoningEffortAccess
         )
+    }
+
+    /// `reasoningEffortAccess` shape that mirrors the production "GPT-5.2 + Plus" scenario:
+    /// `none` and `low` are accessible to Plus/Pro/internal; `medium` is Pro/internal only.
+    /// Used by tests that need to exercise per-effort gating via the API path (not hardcode).
+    func gpt52MediumGatedForPlus() -> [AIChatReasoningEffortAccess] {
+        [
+            AIChatReasoningEffortAccess(effort: .none, accessTier: ["plus", "pro", "internal"], entityHasAccess: true),
+            AIChatReasoningEffortAccess(effort: .low, accessTier: ["plus", "pro", "internal"], entityHasAccess: true),
+            AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro", "internal"], entityHasAccess: false)
+        ]
+    }
+
+    /// As above, but `medium.entityHasAccess` is `true` — used after a subscription upgrade
+    /// where the BE would re-issue per-effort metadata reflecting the new tier.
+    func gpt52MediumAccessibleForPro() -> [AIChatReasoningEffortAccess] {
+        [
+            AIChatReasoningEffortAccess(effort: .none, accessTier: ["plus", "pro", "internal"], entityHasAccess: true),
+            AIChatReasoningEffortAccess(effort: .low, accessTier: ["plus", "pro", "internal"], entityHasAccess: true),
+            AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro", "internal"], entityHasAccess: true)
+        ]
     }
 }
 

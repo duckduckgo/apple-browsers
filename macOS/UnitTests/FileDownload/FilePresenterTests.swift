@@ -26,7 +26,6 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
 final class FilePresenterTests: XCTestCase {
 
     let isCI = !(ProcessInfo().environment["CI"]?.isEmpty ?? true)

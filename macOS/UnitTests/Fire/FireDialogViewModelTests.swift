@@ -29,7 +29,6 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
 final class FireDialogViewModelTests: XCTestCase {
 
     private var historyCoordinator: HistoryCoordinatingMock!

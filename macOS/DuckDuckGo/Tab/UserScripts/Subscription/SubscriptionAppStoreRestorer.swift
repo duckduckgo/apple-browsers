@@ -23,13 +23,11 @@ import enum StoreKit.StoreKitError
 import PixelKit
 import PrivacyConfig
 
-@available(macOS 12.0, *)
 protocol SubscriptionAppStoreRestorer {
     var uiHandler: SubscriptionUIHandling { get }
     func restoreAppStoreSubscription() async
 }
 
-@available(macOS 12.0, *)
 struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     private let subscriptionManager: SubscriptionManager
     private let subscriptionErrorReporter: SubscriptionEventReporter

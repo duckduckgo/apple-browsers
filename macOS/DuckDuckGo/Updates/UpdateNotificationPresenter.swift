@@ -31,14 +31,26 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
     private let pixelFiring: PixelFiring?
     private let shouldSuppressPostUpdateNotification: () -> Bool
     private let showNotificationPopover: @MainActor (PopoverMessageViewController) -> Bool
+    private let notificationCenter: NotificationCenter
+    private var observers: [NSObjectProtocol] = []
     private var currentPopover: PopoverMessageViewController?
+
+    deinit {
+        for observer in observers {
+            notificationCenter.removeObserver(observer)
+        }
+    }
 
     init(pixelFiring: PixelFiring?,
          shouldSuppressPostUpdateNotification: @escaping () -> Bool = { false },
+         notificationCenter: NotificationCenter = .default,
          showNotificationPopover: @escaping @MainActor (PopoverMessageViewController) -> Bool) {
         self.pixelFiring = pixelFiring
         self.shouldSuppressPostUpdateNotification = shouldSuppressPostUpdateNotification
+        self.notificationCenter = notificationCenter
         self.showNotificationPopover = showNotificationPopover
+
+        startListeningToNotifications(notificationCenter: notificationCenter)
     }
 
     func showUpdateNotification(for updateType: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {
@@ -106,6 +118,8 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
                 self?.currentPopover = nil
             })
 
+            viewController.identifier = .updateNotificationPopover
+
             if self.showNotificationPopover(viewController) {
                 self.currentPopover = viewController
             }
@@ -137,4 +151,22 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
             Application.appDelegate.updateController?.openUpdatesPage()
         }
     }
+}
+
+private extension UpdateNotificationPresenter {
+
+    /// Set-up Notifications Listeners
+    func startListeningToNotifications(notificationCenter: NotificationCenter) {
+        observers = [
+            notificationCenter.addObserver(forName: .suggestionWindowDidShow, object: nil, queue: .main) { [weak self] _ in
+                self?.dismissIfPresented()
+            }
+        ]
+    }
+}
+
+extension NSUserInterfaceItemIdentifier {
+    /// Tags the update-notification toast's content view controller so the address bar's
+    /// `childWindows` observer can allow-list its window instead of treating it as a competing panel.
+    static let updateNotificationPopover = NSUserInterfaceItemIdentifier("updateNotificationPopover")
 }

@@ -444,7 +444,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             autocompleteHorizontalInset: Metrics.suggestionsHorizontalInset)
         manager.delegate = self
         let trayEscapeHatchModel = switchBarHandler.isFireTab ? nil : escapeHatchModel
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatchModel: trayEscapeHatchModel)
+        manager.installInContainerView(searchContainer,
+                                       parentViewController: containerViewController,
+                                       escapeHatchModel: trayEscapeHatchModel,
+                                       deferAutocompleteReveal: true)
         suggestionTrayManager = manager
     }
 

@@ -491,6 +491,7 @@ public extension DesignSystemImages {
             public static var documentNew: DesignSystemImage { .init(resource: .documentNew24) }
             public static var documentReplace: DesignSystemImage { .init(resource: .documentReplace24) }
             public static var downloads: DesignSystemImage { .init(resource: .downloads24) }
+            public static var duckAi: DesignSystemImage { .init(resource: .duckAi24) }
             public static var duckDuckGoDaxColor: DesignSystemImage { .init(resource: .duckDuckGoDaxColor24) }
             public static var duckDuckGoDaxGreyscale: DesignSystemImage { .init(resource: .duckDuckGoDaxGreyscale24) }
             public static var edit: DesignSystemImage { .init(resource: .edit24) }

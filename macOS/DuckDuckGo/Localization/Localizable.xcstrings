@@ -5481,6 +5481,126 @@
         }
       }
     },
+    "aichat.view.hide-sidebar" : {
+      "comment" : "View menu item to close the Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Seitenleiste ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Duck.ai Sidebar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar la barra lateral de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer la barre latérale Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi la barra laterale di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-zijbalk verbergen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj pasek boczny Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar barra lateral do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть боковую панель Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.view.show-sidebar" : {
+      "comment" : "View menu item to open the Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Seitenleiste anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai Sidebar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar barra lateral de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher la barre latérale Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra la barra laterale di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-zijbalk weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż pasek boczny Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar barra lateral do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать боковую панель Duck.ai"
+          }
+        }
+      }
+    },
     "aichat.voice-chat-button.tooltip" : {
       "comment" : "Tooltip for the voice chat button shown in the AI chat omnibar when the input is empty",
       "extractionState" : "extracted_with_value",
@@ -15311,7 +15431,7 @@
     },
     "bookmarks.bar.prompt.message.fallback" : {
       "comment" : " message show for bookmarks bar prompt",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -43611,7 +43731,7 @@
     },
     "history.delete.dialog.message" : {
       "comment" : "Message in a dialog asking the user to confirm deleting history. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (%@) will be deleted.'",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -43971,7 +44091,7 @@
     },
     "history.item.delete.dialog.message" : {
       "comment" : "Message in a dialog asking the user to confirm deleting a single history item.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -45517,7 +45637,7 @@
     },
     "home.page.promotion.freemium.dbp.description" : {
       "comment" : "Description for the Freemium DBP Home Page Promotion",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -50485,7 +50605,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Abre y desbloquea **%2$s**\n%3$d Selecciona la caja fuerte que quieres exportar (solo puedes exportar una caja fuerte a la vez)\n%4$d Selecciona **Archivo → Exportar → Todos los elementos** en la barra de menú\n%5$d Introduce tu contraseña principal o de cuenta de 1Password\n%6$d Selecciona el formato de archivo: **Llavero de iCloud (.csv) **\n%7$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%8$d %9$@"
+            "value" : "%1$d Abre y desbloquea **%2$s**\n%3$d Selecciona la caja fuerte que quieres exportar (solo puedes exportar una caja fuerte a la vez)\n%4$d Selecciona **Archivo → Exportar → Todos los elementos** en la barra de menú\n%5$d Introduce tu contraseña principal o de cuenta de 1Password\n%6$d Selecciona el formato de archivo: **Llavero de iCloud (.csv)**\n%7$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%8$d %9$@"
           }
         },
         "fr" : {
@@ -52531,7 +52651,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Ouvrez **%2$s**\n%3$d Passez par la barre de menu pour sélectionner **Signets → Signets **\n%4$d Cliquez sur **Ouvrir la vue complète des signets…** en bas à gauche\n%5$d Cliquez sur **Importer/Exporter…** en bas à gauche et sélectionnez **Exporter les signets**\n%6$d Enregistrez le fichier à un endroit où le trouver facilement (par exemple, sur le bureau)\n%7$d %8$@"
+            "value" : "%1$d Ouvrez **%2$s**\n%3$d Passez par la barre de menu pour sélectionner **Signets → Signets**\n%4$d Cliquez sur **Ouvrir la vue complète des signets…** en bas à gauche\n%5$d Cliquez sur **Importer/Exporter…** en bas à gauche et sélectionnez **Exporter les signets**\n%6$d Enregistrez le fichier à un endroit où le trouver facilement (par exemple, sur le bureau)\n%7$d %8$@"
           }
         },
         "it" : {
@@ -85090,7 +85210,7 @@
     },
     "preferences.add-to-dock.instructions-caption" : {
       "comment" : "Instructions for adding the app to the Dock.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -98861,7 +98981,7 @@
     },
     "session.restore.prompt.explanation" : {
       "comment" : "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

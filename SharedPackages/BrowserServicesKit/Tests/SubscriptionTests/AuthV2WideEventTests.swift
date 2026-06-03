@@ -208,4 +208,36 @@ final class AuthV2WideEventTests: XCTestCase {
         // Then - should be bucketed to 1000 (max(0, negative) = 0, which falls in 0-1000 range)
         XCTAssertEqual(parameters["feature.data.ext.refresh_token_latency_ms_bucketed"], "1000")
     }
+
+    // MARK: - Dead-token recovery schema
+
+    func testPixelParameters_recoverDeadTokenStep() {
+        let eventData = AuthV2TokenRefreshWideEventData(failingStep: .recoverDeadToken)
+
+        let parameters = eventData.pixelParameters()
+
+        XCTAssertEqual(parameters["feature.data.ext.failing_step"], "recover_dead_token")
+    }
+
+    func testPixelParameters_recoveryLatency_bucketing() {
+        let baseDate = Date()
+        let eventData = AuthV2TokenRefreshWideEventData()
+        eventData.recoveryDuration = WideEvent.MeasuredInterval(start: baseDate,
+                                                                end: baseDate.addingTimeInterval(3)) // 3000ms
+
+        let parameters = eventData.pixelParameters()
+
+        XCTAssertEqual(parameters["feature.data.ext.recovery_latency_ms_bucketed"], "5000")
+    }
+
+    func testCompletionDecision_appLaunch_reconcilesToUnknown() async {
+        let eventData = AuthV2TokenRefreshWideEventData()
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        guard case .complete(.unknown(let reason)) = decision else {
+            return XCTFail("Expected pending refresh to reconcile to UNKNOWN, got \(decision)")
+        }
+        XCTAssertEqual(reason, "partial_data")
+    }
 }

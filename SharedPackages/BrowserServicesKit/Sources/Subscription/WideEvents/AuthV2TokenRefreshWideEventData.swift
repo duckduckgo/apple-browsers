@@ -32,7 +32,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         featureName: "authv2-token-refresh",
         mobileMetaType: "ios-authv2-token-refresh",
         desktopMetaType: "macos-authv2-token-refresh",
-        version: "1.1.0"
+        version: "1.2.0"
     )
 
     public var globalData: WideEventGlobalData
@@ -41,6 +41,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
 
     public var refreshTokenDuration: WideEvent.MeasuredInterval?
     public var fetchJWKSDuration: WideEvent.MeasuredInterval?
+    public var recoveryDuration: WideEvent.MeasuredInterval?
 
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
@@ -67,10 +68,12 @@ extension AuthV2TokenRefreshWideEventData {
         case verifyingAccessToken = "verify_access_token"
         case verifyingRefreshToken = "verify_refresh_token"
         case tokenWrite = "token_write"
+        case recoverDeadToken = "recover_dead_token"
     }
 
     public enum StatusReason: String {
         case partialData = "partial_data"
+        case recoveredDeadToken = "recovered_dead_token"
     }
 
     public func jsonParameters() -> [String: Encodable] {
@@ -80,7 +83,15 @@ extension AuthV2TokenRefreshWideEventData {
             (WideEventParameter.AuthV2RefreshFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.intValue(bucket)),
+            (WideEventParameter.AuthV2RefreshFeature.recoveryLatency, recoveryDuration?.intValue(bucket)),
         ])
+    }
+
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        // A refresh flow still pending at app launch never reached a terminal point - for example a
+        // dead-token refresh on the recovery-less API refresher path, or a process kill mid-refresh.
+        // Reconcile it as UNKNOWN rather than leaving it pending forever.
+        .complete(.unknown(reason: StatusReason.partialData.rawValue))
     }
 
     private static func bucket(_ ms: Int) -> Int {
@@ -164,6 +175,7 @@ extension WideEventParameter {
         static let failingStep = "feature.data.ext.failing_step"
         static let refreshTokenLatency = "feature.data.ext.refresh_token_latency_ms_bucketed"
         static let fetchJWKSLatency = "feature.data.ext.fetch_jwks_latency_ms_bucketed"
+        static let recoveryLatency = "feature.data.ext.recovery_latency_ms_bucketed"
     }
 
 }

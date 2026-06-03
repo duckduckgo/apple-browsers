@@ -605,8 +605,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
-                    completeDeadTokenRecoveryFlow(status: .success(reason: AuthV2TokenRefreshWideEventData.StatusReason.recoveredDeadToken.rawValue),
-                                                  error: nil)
+                    completeDeadTokenRecoveryFlow(status: .success(reason: nil), error: nil)
                     return recoveredTokenContainer
                 } catch {
                     await signOut(notifyUI: false, userInitiated: false)
@@ -653,6 +652,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         else { return }
 
         data.recoveryDuration?.complete()
+        // A recovery was performed for this journey, regardless of outcome. Lets us count, for example,
+        // how many SUCCESS events required a dead-token recovery.
+        data.performedTokenRecovery = true
         if let error {
             data.errorData = WideEventErrorData(error: error)
         } else {

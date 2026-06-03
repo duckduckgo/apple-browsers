@@ -184,10 +184,12 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(mockWideEvent.completions.count, 1)
         let (data, status) = try XCTUnwrap(mockWideEvent.completions.first)
         XCTAssertEqual(data.globalData.id, "refresh-1")
-        XCTAssertEqual(status, .success(reason: "recovered_dead_token"))
+        // Recovery SUCCESS is a plain SUCCESS with no status reason; the recovery is recorded via the flag.
+        XCTAssertEqual(status, .success(reason: nil))
+        let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
+        XCTAssertTrue(refreshData.performedTokenRecovery)
         // A recovered SUCCESS must not carry the stale invalid_token_request error, or the sender will
         // emit a self-contradictory "successful failure" (WideEventSending merges errorData regardless of status).
-        let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
         XCTAssertNil(refreshData.errorData)
         XCTAssertNil(refreshData.failingStep)
         XCTAssertNotNil(refreshData.recoveryDuration?.end)
@@ -214,6 +216,8 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(status, .failure)
         let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
         XCTAssertNotNil(refreshData.errorData)
+        // The recovery was attempted (and failed) - the flag reflects that a recovery was performed.
+        XCTAssertTrue(refreshData.performedTokenRecovery)
     }
 
     func testGetTokenContainer_InvalidTokenRequest_SelectsNewestPendingFlow() async throws {

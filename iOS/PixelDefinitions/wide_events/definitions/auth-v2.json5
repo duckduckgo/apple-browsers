@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-authv2-token-refresh",
-            "version": "1.0"
+            "version": "2.0"
         },
         "feature": {
             "name": "authv2-token-refresh",
@@ -31,7 +31,8 @@
                             "fetch_jwks",
                             "verify_access_token",
                             "verify_refresh_token",
-                            "token_write"
+                            "token_write",
+                            "recover_dead_token"
                         ]
                     },
                     "refresh_token_latency_ms_bucketed": {
@@ -43,6 +44,15 @@
                         "type": "integer",
                         "description": "The latency value of the JWKS call.",
                         "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "recovery_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency from dead-token detection to recovery outcome (ms).",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "performed_token_recovery": {
+                        "type": "boolean",
+                        "description": "Whether a dead-token recovery was performed during this journey."
                     },
                     "error": "errorParameters"
                 }

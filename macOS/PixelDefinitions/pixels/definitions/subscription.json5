@@ -576,7 +576,7 @@
                 "key": "feature.data.ext.failing_step",
                 "type": "string",
                 "description": "The step at which the flow failed, when applicable",
-                "enum": ["token_read", "refresh_access_token", "fetch_jwks", "verify_access_token", "verify_refresh_token", "token_write"]
+                "enum": ["token_read", "refresh_access_token", "fetch_jwks", "verify_access_token", "verify_refresh_token", "token_write", "recover_dead_token"]
             },
             {
                 "key": "feature.data.ext.refresh_token_latency_ms_bucketed",
@@ -589,6 +589,17 @@
                 "type": "integer",
                 "description": "Bucketed latency for fetch JWKS step (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.recovery_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency from dead-token detection to recovery outcome (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.performed_token_recovery",
+                "type": "boolean",
+                "description": "Whether a dead-token recovery was performed during this journey"
             }
         ]
     },

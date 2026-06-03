@@ -232,6 +232,15 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.recovery_latency_ms_bucketed"], "5000")
     }
 
+    func testPixelParameters_performedTokenRecovery_emittedOnlyWhenTrue() {
+        let notRecovered = AuthV2TokenRefreshWideEventData()
+        XCTAssertNil(notRecovered.pixelParameters()["feature.data.ext.performed_token_recovery"])
+
+        let recovered = AuthV2TokenRefreshWideEventData()
+        recovered.performedTokenRecovery = true
+        XCTAssertEqual(recovered.pixelParameters()["feature.data.ext.performed_token_recovery"], "true")
+    }
+
     func testCompletionDecision_appLaunch_reconcilesToUnknown() async {
         let eventData = AuthV2TokenRefreshWideEventData()
 

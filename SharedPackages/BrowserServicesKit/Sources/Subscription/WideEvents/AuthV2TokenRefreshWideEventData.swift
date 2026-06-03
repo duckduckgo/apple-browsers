@@ -42,6 +42,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     public var refreshTokenDuration: WideEvent.MeasuredInterval?
     public var fetchJWKSDuration: WideEvent.MeasuredInterval?
     public var recoveryDuration: WideEvent.MeasuredInterval?
+    public var performedTokenRecovery: Bool = false
 
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
@@ -73,18 +74,22 @@ extension AuthV2TokenRefreshWideEventData {
 
     public enum StatusReason: String {
         case partialData = "partial_data"
-        case recoveredDeadToken = "recovered_dead_token"
     }
 
     public func jsonParameters() -> [String: Encodable] {
         let bucket: DurationBucket = .bucketed(Self.bucket)
 
-        return Dictionary(compacting: [
+        var parameters: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.AuthV2RefreshFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.recoveryLatency, recoveryDuration?.intValue(bucket)),
         ])
+        // Emit only when a recovery happened (this event's params are sparse - absent means no recovery).
+        if performedTokenRecovery {
+            parameters[WideEventParameter.AuthV2RefreshFeature.performedTokenRecovery] = performedTokenRecovery
+        }
+        return parameters
     }
 
     public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
@@ -186,6 +191,7 @@ extension WideEventParameter {
         static let refreshTokenLatency = "feature.data.ext.refresh_token_latency_ms_bucketed"
         static let fetchJWKSLatency = "feature.data.ext.fetch_jwks_latency_ms_bucketed"
         static let recoveryLatency = "feature.data.ext.recovery_latency_ms_bucketed"
+        static let performedTokenRecovery = "feature.data.ext.performed_token_recovery"
     }
 
 }

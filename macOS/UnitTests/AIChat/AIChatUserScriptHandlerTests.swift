@@ -1094,6 +1094,7 @@ struct AIChatMessageHandlerInstallInfoTests {
         )
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("installType is propagated to the native config", .timeLimit(.minutes(1)))
     func testInstallTypeIsPropagated() {
         for type in [AIChatInstallType.new, .returning, .unknown] {
@@ -1102,6 +1103,7 @@ struct AIChatMessageHandlerInstallInfoTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("installAge is bucketed from the install date", .timeLimit(.minutes(1)))
     func testInstallAgeIsBucketed() {
         let twentyFourDaysAgo = Calendar.current.date(byAdding: .day, value: -24, to: Date())
@@ -1109,6 +1111,7 @@ struct AIChatMessageHandlerInstallInfoTests {
         #expect(config.installAge == 4) // 22–28 -> bucket 4
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("nil install date buckets to same-day (0)", .timeLimit(.minutes(1)))
     func testNilInstallDateBucketsToZero() {
         let config = makeHandler(installDate: nil, installType: .new).getNativeConfigValues(isFireWindow: false)

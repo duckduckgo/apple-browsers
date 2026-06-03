@@ -108,10 +108,6 @@ Only check expiry dates on definitions that are added or modified in the PR, not
 
 Wide events in `iOS/PixelDefinitions/wide_events/definitions/*.json5` use a different schema from regular pixels. They have `meta`, `feature`, and `feature.data` sections instead of `suffixes` and `parameters`. Validating wide event schema correctness is out of scope for automated review — leave wide event definitions to human reviewers. Only flag if a wide event is added in Swift but has no definition file at all.
 
-### Validating changes to package.resolved files
-
-If there are changes in `iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` or `macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` then only flag these if there are actual differences in the versions compared to the content of `DuckDuckGo.xcworkspace/xcshareddata/swiftpm/Package.resolved` which is our source of truth.
-
 ### What NOT to Flag
 
 - Changes to `TEMPLATE.json5` files (these are scaffolds with intentionally placeholder values).
@@ -119,4 +115,38 @@ If there are changes in `iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshar
 - Minor ordering differences in the `parameters` array.
 - Existing definitions in files touched by the PR that were not themselves modified.
 - Schema validation issues that CI tooling (`npm run validate-pixel-defs`) already covers.
+
+## Dependency Changes
+
+When a PR changes a Swift package dependency's pinned version, the app projects' committed `Package.resolved` lockfiles must be re-resolved so they reflect the new version. Dependabot only updates `SharedPackages/BrowserServicesKit/Package.swift` and that directory's `Package.resolved` - it does not touch the app projects' lockfiles, which is the most common source of drift.
+
+### Source of truth
+
+The tracked `Package.resolved` files are the source of truth for resolved dependency versions:
+
+- App projects: `iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` and `macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
+- Swift packages: `SharedPackages/*/Package.resolved` and the various `*/LocalPackages/*/Package.resolved` files
+
+The workspace-level `DuckDuckGo.xcworkspace/xcshareddata/swiftpm/Package.resolved` is **not** tracked - it is gitignored because Xcode regenerates it on open and nothing in CI consumes it. Do not reference it or expect it to appear in a PR.
+
+### Detecting a missing lockfile update
+
+Flag a PR if it changes a dependency's version requirement without updating the app projects' lockfiles. Specifically, flag when both of these are true:
+
+- A `.package(url: ...)` dependency in any `Package.swift` has its version requirement changed - `exact:`, `from:`, `.upToNextMajor`/`.upToNextMinor`, a `branch:`, or a `revision:`.
+- Neither `iOS/.../Package.resolved` nor `macOS/.../Package.resolved` is modified in the same PR.
+
+When this happens the app lockfiles are probably stale. Advise the author to check out the branch and run:
+
+```
+./scripts/resolve-project-dependencies.sh
+```
+
+then commit any changed `Package.resolved` files. This commonly appears on Dependabot PRs - e.g. a `content-scope-scripts` bump in `SharedPackages/BrowserServicesKit` that updates only the BrowserServicesKit `Package.resolved`.
+
+### What NOT to flag (dependencies)
+
+- A `Package.swift` change that does not alter any dependency version (adding a target or product, source-only changes) - these need not produce a `Package.resolved` change.
+- Lockfile changes that differ **only** in the `originHash` field with no version or revision differences - `originHash` churns across Xcode versions and is not meaningful on its own.
+- A version change to a dependency that is not part of the app build graph (e.g. a test-only or tooling dependency in a package the apps do not link). If you cannot tell whether the dependency reaches the apps, frame the note as a question rather than a required change.
 

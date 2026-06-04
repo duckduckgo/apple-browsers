@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import Combine
 import SwiftUI
+import AIChat
 import DuckUI
 import DesignResourcesKitIcons
 
@@ -37,7 +39,7 @@ struct AIChatHistoryEmptyStateView: View {
                     .multilineTextAlignment(.center)
             }
 
-            Button(action: viewModel.openDuckAiTapped) {
+            Button(action: viewModel.newChatTapped) {
                 Text(UserText.aiChatHistoryEmptyStateOpenDuckAi)
             }
             .buttonStyle(PrimaryButtonStyle(fullWidth: false))
@@ -48,6 +50,14 @@ struct AIChatHistoryEmptyStateView: View {
     }
 }
 
-#Preview {
-    AIChatHistoryEmptyStateView(viewModel: AIChatHistoryViewModel())
+#if DEBUG
+private struct PreviewChatHistoryReader: ChatHistoryReading {
+    func chatsPublisher() -> AnyPublisher<[DuckAiChat], Error> {
+        Just([]).setFailureType(to: Error.self).eraseToAnyPublisher()
+    }
 }
+
+#Preview {
+    AIChatHistoryEmptyStateView(viewModel: AIChatHistoryViewModel(reader: PreviewChatHistoryReader()))
+}
+#endif

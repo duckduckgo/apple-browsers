@@ -30,6 +30,12 @@ playground.xcworkspace
 # hence it is not needed unless you have added a package configuration file to your project
 # .swiftpm
 
+# Workspace-level SwiftPM lockfile is a derived aggregate Xcode regenerates on open.
+# Nothing in CI consumes it (cache keys hash the per-project and per-package lockfiles),
+# and dependencies are pinned with `exact:`, so re-resolution is deterministic.
+# Tracking it only produced churn. The per-project Package.resolved files stay committed.
+DuckDuckGo.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
 # fastlane
 #
 # It is recommended to not store the screenshots in the git repo.

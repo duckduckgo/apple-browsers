@@ -720,6 +720,7 @@ extension NewTabPageViewController {
         }
         if didFinishNTPOnboarding {
             self.newTabPageViewModel.finishOnboarding()
+            self.setLogoHidden(false)
         }
     }
 

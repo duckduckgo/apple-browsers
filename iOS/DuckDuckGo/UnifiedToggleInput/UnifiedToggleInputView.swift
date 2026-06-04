@@ -540,6 +540,8 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isUserInteractionEnabled = !dimmed
         // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
         handler.isOnboardingLocked = dimmed
+        let shadowOpacity: Float = dimmed ? 0.04 : 0.16
+        Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
     }
 
     // MARK: - Fire Mode
@@ -1159,7 +1161,7 @@ private extension UnifiedToggleInputView {
     /// Mirrors `AIChatTabChatHeaderView`'s glass-pill style swap: regular glass in light mode
     /// (visible material on white chrome), clear glass in dark mode (lighter, refractive).
     @available(iOS 26, *)
-    fileprivate static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
+    static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
         traitCollection.userInterfaceStyle == .dark ? .clearGlass() : .glass()
     }
 
@@ -1178,9 +1180,9 @@ private extension UnifiedToggleInputView {
         button.clipsToBounds = false
     }
 
-    private static func applyAITabAccessoryShadow(to button: UIButton) {
+    private static func applyAITabAccessoryShadow(to button: UIButton, opacity: Float = 0.16) {
         button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOpacity = 0.16
+        button.layer.shadowOpacity = opacity
         button.layer.shadowOffset = CGSize(width: 0, height: 8)
         button.layer.shadowRadius = 16
     }

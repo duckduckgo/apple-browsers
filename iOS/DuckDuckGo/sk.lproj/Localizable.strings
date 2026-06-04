@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Zadaj kladný počet dní. Dátum inštalácie bude nastavený na dátum spred toľkoto dní.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3034,6 +3037,51 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Vyberte si prehliadač";
 
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Budem ti vždy na dosah na tvoje denné rozhovory s umelou inteligenciou a prehliadanie.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Všetky chaty sú anonymizované";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Na prístup ku všetkým AI funkciám nie je potrebný žiadny účet";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Nikdy nepoužíva tvoje chaty na trénovanie AI";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Prístup k ChatGPT, Claude a ďalším, všetko na jednom mieste";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Vyskúšaj Duck.ai!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Obľúbené AI";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "AI ochrany boli aktivované!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Chceš nastaviť DuckDuckGo ako svoj predvolený prehliadač?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Začni súkromný chat s umelou inteligenciou s Duck.ai alebo prepni na vyhľadávanie pre chránené prehliadanie.\n\nDuck.ai môžeš použiť kdekoľvek, kde vidíš ikonu chatu [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Ponúkame tiež platené predplatné s pokročilými modelmi umelej inteligencie s vyššími limitmi chatu od GPT, Claude a Llama, bezpečnou VPN a ďalšími funkciami.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Vyskúšaj teraz súkromný AI chat!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Si pripravený/-á súkromne chatovať s ChatGPT, Claudom a ďalšími umelými inteligenciami zadarmo v prehliadači, ktorý ťa aktívne chráni?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Spustiť AI chat";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Nezabudni: Duck.ai môžeš používať odkiaľkoľvek, kde vidíš ikonu chatu [[chat_icon]]";
+
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo má tiež %1$@, ktoré je k dispozícii s %2$@ a %3$@.";
 
@@ -3421,26 +3469,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Otvoriť v inej aplikácii?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Prejsť späť";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Skúsili sme to načítať súkromne, ale nezobrazuje sa to.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Chcel/-a by si túto stránku otvoriť v Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Otvoriť v Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Žiaľ, stránku sa nepodarilo načítať.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Táto stránka sa načíta iba v prehliadači Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Otvoriť v Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Táto webová stránka má neplatný certifikát zabezpečenia a jej návšteva nemusí byť bezpečná.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Zostať na DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Niektoré funkcie webových stránok nemusia byť v tomto prehliadači kompatibilné.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Táto stránka sa chce otvoriť v Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo nemôže načítať túto stránku.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedávne záznamy o spracovaní";

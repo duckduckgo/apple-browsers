@@ -271,6 +271,7 @@ extension Pixel {
         case onboardingDuckAIExperimentFinalDialogShownUnique
         case onboardingChatPathTryVisitSiteUnique
         case onboardingChatPathTrackersBlockedUnique
+        case onboardingSyncAutoRestoreUserFromDuckAiFlow
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -1540,7 +1541,8 @@ extension Pixel {
         case webViewErrorPageShown
 
         // MARK: External Scheme Navigation
-        case webViewExternalSchemeNavigationXSafariHTTPSLoopDetected
+        case webViewExternalSchemeNavigationSafariRedirectLoadURLRequested
+        case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown
 
         // MARK: Browsing
         case stopPageLoad
@@ -2209,6 +2211,7 @@ extension Pixel.Event {
         case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
         case .onboardingChatPathTryVisitSiteUnique: return "m_onboarding_chat-path_try-visit-site_unique"
         case .onboardingChatPathTrackersBlockedUnique: return "m_onboarding_chat-path_trackers-blocked_unique"
+        case .onboardingSyncAutoRestoreUserFromDuckAiFlow: return "m_onboarding_duck-ai_sync-auto-restore-user"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -3356,7 +3359,8 @@ extension Pixel.Event {
         case .webViewErrorPageShown: return "m_errorpageshown"
 
         // MARK: - External Scheme Navigation
-        case .webViewExternalSchemeNavigationXSafariHTTPSLoopDetected: return "m_webview_external-scheme-navigation_x-safari-https_loop-detected"
+        case .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested: return "m_webview_external-scheme-navigation_safari-redirect_load-url-requested"
+        case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown"
 
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"

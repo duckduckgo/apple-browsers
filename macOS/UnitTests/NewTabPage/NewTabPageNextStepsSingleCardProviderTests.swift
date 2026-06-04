@@ -300,6 +300,33 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertFalse(cardsEvents.isEmpty)
     }
 
+    @MainActor
+    func testWhenNewTabPageWebViewAppearsThenTimesShownIsIncrementedForFirstCard() {
+        // GIVEN
+        let firstCard = NewTabPageNextStepsSingleCardProvider.defaultStandardCards[0]
+        let secondCard = NewTabPageNextStepsSingleCardProvider.defaultStandardCards[1]
+        persistor.setTimesShown(0, for: firstCard)
+        persistor.setTimesShown(0, for: secondCard)
+        let testProvider = createProvider()
+
+        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                expectation.fulfill()
+            }
+
+        // WHEN - Trigger card list refresh
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
+
+        // THEN
+        XCTAssertEqual(persistor.timesShown(for: firstCard), 1)
+        // Second card should not be incremented
+        XCTAssertEqual(persistor.timesShown(for: secondCard), 0)
+    }
+
     func testWhenNewTabPageWebViewAppearsThenCardListRefreshes() {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         let testProvider = createProvider()
@@ -598,19 +625,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.addAppToDockMac])
         XCTAssertEqual(pixelHandler.fireAddToDockPresentedPixelIfNeededCalledWith, [.addAppToDockMac])
-    }
-
-    @MainActor
-    func testWhenWillDisplayCardsIsCalledThenTimesShownIsIncrementedForFirstCard() {
-        let testProvider = createProvider()
-        let cards: [NewTabPageDataModel.CardID] = [.defaultApp, .emailProtection]
-        let initialTimesShown = persistor.timesShown(for: .defaultApp)
-
-        testProvider.willDisplayCards(cards)
-
-        XCTAssertEqual(persistor.timesShown(for: .defaultApp), initialTimesShown + 1)
-        // Email protection should not be incremented (only first card)
-        XCTAssertEqual(persistor.timesShown(for: .emailProtection), 0)
     }
 
     // MARK: - Edge Cases

@@ -238,7 +238,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         if let card = cards.first {
             pixelHandler.fireNextStepsCardShownPixels([card])
             pixelHandler.fireAddToDockPresentedPixelIfNeeded([card])
-            persistor.incrementTimesShown(for: card)
         }
     }
 }
@@ -395,6 +394,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
+                if let card = cards.first {
+                    persistor.incrementTimesShown(for: card)
+                }
+
                 let buildType = StandardApplicationBuildType()
                 if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
                     // Reset standard card list and mark first session as complete for debug menu reset action, if needed

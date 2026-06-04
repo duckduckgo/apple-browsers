@@ -38,6 +38,7 @@ public extension DesignSystemImages {
             public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight12) }
             public static var assist: DesignSystemImage { .init(resource: .assist12) }
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt12) }
+            public static var attach: DesignSystemImage { .init(resource: .attach12) }
             public static var audio: DesignSystemImage { .init(resource: .audio12) }
             public static var audioMute: DesignSystemImage { .init(resource: .audioMute12) }
             public static var battery: DesignSystemImage { .init(resource: .battery12) }

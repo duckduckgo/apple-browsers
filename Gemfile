@@ -2,5 +2,3 @@ source 'https://rubygems.org'
 
 gem 'fastlane', '2.225.0'
 gem "httparty"
-
-eval_gemfile 'fastlane/Pluginfile' if File.exist?(File.join(__dir__, 'fastlane', 'Pluginfile'))

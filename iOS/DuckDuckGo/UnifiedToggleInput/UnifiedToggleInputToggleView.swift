@@ -222,6 +222,7 @@ final class UnifiedToggleInputToggleView: UIView {
         guard mode != selectedMode else { return }
         selectedMode = mode
         updateIndicator(animated: true)
+        selectionFeedback.selectionChanged()
         updateButtonAppearance()
         onModeChanged?(mode)
     }

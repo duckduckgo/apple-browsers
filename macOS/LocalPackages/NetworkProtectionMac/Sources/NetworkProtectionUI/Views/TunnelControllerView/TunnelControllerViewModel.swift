@@ -505,7 +505,6 @@ public final class TunnelControllerViewModel: ObservableObject {
                                  preferredLocation: vpnSettings.selectedLocation)
     }
 
-    @available(macOS 12, *)
     func formattedLocation(colorScheme: ColorScheme) -> AttributedString {
         let opacity = colorScheme == .light ? Double(0.6) : Double(0.5)
         return locationFormatter.string(from: internalServerLocation,

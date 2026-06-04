@@ -35,6 +35,7 @@ final class SupportedOSCheckerTests: XCTestCase {
     func testWhenCurrentVersionIsHigherThanMinSupportedThenNoWarning() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.osSupportWarning]
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
@@ -47,6 +48,7 @@ final class SupportedOSCheckerTests: XCTestCase {
     func testWhenCurrentVersionIsLowerThanMinSupportedThenShowsUnsupportedWarning() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.osSupportWarning]
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.catalinaVersion,
@@ -59,6 +61,7 @@ final class SupportedOSCheckerTests: XCTestCase {
     func testWhenCurrentVersionIsEqualToMinSupportedThenNoWarning() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.osSupportWarning]
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.bigSurVersion,
@@ -73,7 +76,7 @@ final class SupportedOSCheckerTests: XCTestCase {
     func testWhenForceUnsupportedMessageFeatureFlagIsOnThenShowsUnsupportedWarning() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.osSupportForceUnsupportedMessage]
+        mockFeatureFlagger.enabledFeatureFlags = [.osSupportWarning, .osSupportForceUnsupportedMessage]
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.bigSurVersion,
@@ -81,6 +84,33 @@ final class SupportedOSCheckerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(checker.unsupportedMinVersion, "12.3")
+    }
+
+    func testWhenOSSupportWarningKillSwitchIsOffThenNoWarningOnUnsupportedOS() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        // Kill switch off (no flags enabled)
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.catalinaVersion,
+            minSupportedOSVersionOverride: Self.montereyVersion)
+
+        // Then
+        XCTAssertNil(checker.unsupportedMinVersion)
+        XCTAssertFalse(checker.showsSupportWarning)
+    }
+
+    func testWhenKillSwitchIsOffThenForceUnsupportedMessageFlagIsIgnored() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.osSupportForceUnsupportedMessage]
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.bigSurVersion,
+            minSupportedOSVersionOverride: Self.montereyVersion)
+
+        // Then
+        XCTAssertNil(checker.unsupportedMinVersion)
     }
 
     // MARK: - Hardware OS Support Tests

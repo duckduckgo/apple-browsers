@@ -69,11 +69,8 @@ public class DataBrokerProtectionNotificationPixelHandler: EventMapping<DataBrok
     public init(pixelKit: PixelKit) {
         self.pixelKit = pixelKit
 
-        super.init { _, _, _, _ in
-        }
-
-        self.eventMapper = { event, _, _, _ in
-            self.pixelKit.fire(event)
+        super.init { event, _, _, _ in
+            pixelKit.fire(event)
         }
     }
 

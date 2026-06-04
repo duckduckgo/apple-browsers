@@ -1,0 +1,84 @@
+name: Shared - Add Asana Comment on PR Review
+
+on:
+    pull_request_review:
+        types: [submitted]
+
+jobs:
+
+    add-pr-review-comment:
+        # Skip this job when:
+        #   - The review submitter is the PR author themselves (self-review,
+        #     or AI/automation tools posting via the author's GitHub token).
+        #   - The review submitter is a Bot account (e.g. cursor[bot],
+        #     dependabot[bot]) posting under its own [bot] identity. No
+        #     Asana subtask exists for bots.
+        #   - The review state is 'commented' with an empty body. GitHub
+        #     wraps every "Add single comment" inline reply in a review with
+        #     state=commented and an empty body; filtering by body excludes
+        #     those noisy inline-reply events while keeping deliberate
+        #     "Submit review → Comment" submissions that include a summary.
+        if: |
+            contains(fromJSON('["approved","changes_requested","commented"]'), github.event.review.state)
+            && github.event.review.user.login != github.event.pull_request.user.login
+            && github.event.review.user.type != 'Bot'
+            && (github.event.review.state != 'commented' || github.event.review.body != '')
+        name: "Add Asana comment on PR review"
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: Get Task ID
+          id: get-task-id
+          env:
+            BODY: ${{ github.event.pull_request.body }}
+          run: |
+            task_id=$(grep -i "task/issue url.*https://app.asana.com/" <<< "$BODY" \
+              | perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
+                s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
+                s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)(?:\?focus=true)?|\1|'
+            )
+            echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
+
+        - name: Fail if no Asana task URL in PR body
+          if: ${{ steps.get-task-id.outputs.task_id == '' }}
+          run: |
+            echo "::error::No Asana task URL found in the PR body. Add a 'Task/Issue URL: https://app.asana.com/...' line to enable PR review subtask comments."
+            exit 1
+
+        - name: Find PR review subtask for the reviewer
+          id: find-subtask
+          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@main
+          with:
+            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ steps.get-task-id.outputs.task_id }}
+            github-reviewer-user: ${{ github.event.review.user.login }}
+            github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+        - name: Fail if reviewer's Asana mapping is missing
+          if: ${{ steps.find-subtask.outputs.subtask-ids == '[]' }}
+          run: |
+            echo "::error::No PR review subtask found for @${{ github.event.review.user.login }}. They may not be in the GitHub→Asana mapping. Add them in duckduckgo/native-github-asana-sync and re-run."
+            exit 1
+
+        - name: Build comment text
+          id: comment
+          env:
+            STATE: ${{ github.event.review.state }}
+            REVIEWER: ${{ github.event.review.user.login }}
+            REVIEW_URL: ${{ github.event.review.html_url }}
+          run: |
+            case "$STATE" in
+              approved)          prefix="✅ Approved" ;;
+              changes_requested) prefix="🔄 Changes requested" ;;
+              commented)         prefix="💬 Comment" ;;
+            esac
+            echo "text=${prefix} by @${REVIEWER} — see review: ${REVIEW_URL}" >> "$GITHUB_OUTPUT"
+
+        - name: Post review comment
+          uses: duckduckgo/native-github-asana-sync@v1.9
+          with:
+            action: 'post-comment-asana-task'
+            asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
+            asana-task-comment: ${{ steps.comment.outputs.text }}
+            asana-task-comment-pinned: false

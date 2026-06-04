@@ -157,6 +157,10 @@ final class AIChatHistoryManager {
             .store(in: &cancellables)
     }
 
+    func refreshSuggestions(query: String) {
+        fetchSuggestionsIfNeeded(query: query)
+    }
+
     /// Fetches suggestions from the API with cancellation support
     /// - Parameter query: The search query to filter results
     private func fetchSuggestionsIfNeeded(query: String) {

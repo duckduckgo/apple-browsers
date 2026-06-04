@@ -994,10 +994,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private struct Metrics {
         static let itemSize: CGFloat = 44
         static let height: CGFloat = 60
+        static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
 
-        static let cornerRadius: CGFloat = 16
-
-        static let activeBorderRadius: CGFloat = 18
+        /// Sits 2pt outside `cornerRadius` so the active outline stays concentric with the field.
+        static var activeBorderRadius: CGFloat { AppRebrand.isAppRebranded() ? 24 : 18 }
         static let activeBorderWidth: CGFloat = 2
 
         static let textAreaHorizontalPadding: CGFloat = 16
@@ -1132,7 +1132,7 @@ extension DefaultOmniBarView {
         setLayoutMode(mode, animated: false)
         tabSwitcherContainerView.subviews.forEach { $0.removeFromSuperview() }
         if mode != .compact {
-            let button = TabSwitcherStaticButton()
+            let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
             button.translatesAutoresizingMaskIntoConstraints = false
             tabSwitcherContainerView.addSubview(button)
             NSLayoutConstraint.activate([
@@ -1445,3 +1445,59 @@ extension DefaultOmniBarView {
         }
     }
 }
+
+#if DEBUG
+final class RebrandPreviewOverride: ObservableObject {
+    private let isRebranded: Bool
+    private let previousAppRebrand: () -> Bool
+    private let previousDesignSystemRebrand: () -> Bool
+
+    init(isRebranded: Bool) {
+        self.isRebranded = isRebranded
+        previousAppRebrand = AppRebrand.isAppRebranded
+        previousDesignSystemRebrand = DesignSystemRebrand.isAppRebranded
+        apply()
+    }
+
+    func apply() {
+        AppRebrand.isAppRebranded = { [isRebranded] in isRebranded }
+        DesignSystemRebrand.isAppRebranded = { [isRebranded] in isRebranded }
+    }
+
+    deinit {
+        AppRebrand.isAppRebranded = previousAppRebrand
+        DesignSystemRebrand.isAppRebranded = previousDesignSystemRebrand
+    }
+}
+
+/// Bridges the UIKit ``DefaultOmniBarView`` into SwiftUI so it can be shown in a `#Preview`.
+private struct DefaultOmniBarViewRepresentable: UIViewRepresentable {
+    let omniBarView: DefaultOmniBarView
+
+    func makeUIView(context: Context) -> DefaultOmniBarView { omniBarView }
+    func updateUIView(_ uiView: DefaultOmniBarView, context: Context) {}
+}
+
+private struct DefaultOmniBarViewGallery: View {
+    @StateObject private var rebrandOverride: RebrandPreviewOverride
+
+    init(isRebranded: Bool) {
+        _rebrandOverride = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
+    }
+
+    var body: some View {
+        rebrandOverride.apply()
+        return DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView())
+            .frame(width: 360, height: 60)
+            .padding()
+    }
+}
+
+#Preview("Address bar / Legacy") {
+    DefaultOmniBarViewGallery(isRebranded: false)
+}
+
+#Preview("Address bar / Rebranded") {
+    DefaultOmniBarViewGallery(isRebranded: true)
+}
+#endif

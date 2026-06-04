@@ -155,6 +155,10 @@ private final class StubUserAgentManager: UserAgentManaging {
         return stubbedUserAgent
     }
 
+    func safariOnlyUserAgent(isDesktop: Bool) -> String {
+        stubbedUserAgent
+    }
+
     func update(request: inout URLRequest, isDesktop: Bool) {}
     func update(webView: WKWebView, isDesktop: Bool, url: URL?) {}
 }

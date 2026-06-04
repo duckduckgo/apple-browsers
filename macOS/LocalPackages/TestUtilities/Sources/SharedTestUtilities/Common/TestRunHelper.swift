@@ -195,9 +195,7 @@ extension TestRunHelper: XCTestObservation {
             FileManager.default.cleanupTemporaryDirectory()
         }
         NSApp.swizzled_currentEvent = nil
-        if #available(macOS 12.0, *) {
-            WKWebView.customHandlerSchemes = []
-        }
+        WKWebView.customHandlerSchemes = []
 
         // Check for non-nil variables that should be cleaned up
         if ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true {

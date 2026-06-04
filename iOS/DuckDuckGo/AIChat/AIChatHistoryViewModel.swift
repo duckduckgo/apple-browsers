@@ -61,10 +61,12 @@ final class AIChatHistoryViewModel: ObservableObject {
             .catch { Just(.failure($0)) }
             .eraseToAnyPublisher()
 
-        // `throttle(latest: true)` emits the first value immediately (no initial wait on subscribe)
-        // and then forwards the latest value at most once per interval while the user types.
+        // Debounce so the in-memory filter runs once the user pauses typing rather than on
+        // every keystroke. `CombineLatest` downstream is gated on the chats publisher emitting
+        // anyway, so debounce's wait on the initial `""` doesn't add user-visible latency on
+        // first load.
         let queryStream = $query
-            .throttle(for: .milliseconds(150), scheduler: DispatchQueue.main, latest: true)
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
 
         Publishers.CombineLatest(chats, queryStream)
             .receive(on: DispatchQueue.main)

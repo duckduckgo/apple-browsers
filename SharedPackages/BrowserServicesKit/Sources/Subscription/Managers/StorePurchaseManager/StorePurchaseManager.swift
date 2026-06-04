@@ -177,9 +177,9 @@ public protocol StorePurchaseManager {
     @MainActor func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<StorePurchaseManager.TransactionJWS, StorePurchaseManagerError>
 }
 
-@available(macOS 12.0, iOS 15.0, *) typealias Transaction = StoreKit.Transaction
+@available(iOS 15.0, *) typealias Transaction = StoreKit.Transaction
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseManager {
 
     private let storeSubscriptionConfiguration: any StoreSubscriptionConfiguration
@@ -620,7 +620,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     }
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 private extension SubscriptionOption {
 
     init(from product: any SubscriptionProduct, withRecurrence recurrence: String) async {

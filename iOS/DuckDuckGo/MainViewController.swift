@@ -1421,7 +1421,7 @@ class MainViewController: UIViewController {
     private func initTabButton() {
         assert(tabSwitcherButton == nil)
 
-        tabSwitcherButton = TabSwitcherStaticButton()
+        tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
 
         tabSwitcherButton?.delegate = self
         viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
@@ -1432,7 +1432,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
 
         // Omnibar tab switcher button (for iPhone landscape combined bar)
-        let omniBarTabSwitcher = TabSwitcherStaticButton()
+        let omniBarTabSwitcher = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
         omniBarTabSwitcher.delegate = self
         omniBarTabSwitcher.translatesAutoresizingMaskIntoConstraints = false
         let container = viewCoordinator.omniBar.barView.tabSwitcherContainerView
@@ -3670,7 +3670,12 @@ extension MainViewController: BrowserChromeDelegate {
         }
 
         updateNavBarConstant(hidden ? 0 : 1.0)
-        viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
+        // When the omnibar is locked (e.g. dimmed to 0.5 alpha during Duck.ai fire onboarding),
+        // skip the chrome-hide alpha reset so we don't overwrite the dim.
+        let isOmniBarLocked = !viewCoordinator.omniBar.barView.isUserInteractionEnabled
+        if !isOmniBarLocked {
+            viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
+        }
         viewCoordinator.tabBarContainer.alpha = hidden ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
     }
@@ -3821,6 +3826,9 @@ extension MainViewController: BrowserChromeDelegate {
             loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
 
         case .askAIChat(let value):
+            // We intentionally don't forward the resolved model config: the suggestion is offered
+            // from Search mode where the model chip is hidden and the user hasn't chosen a model.
+            _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
             openAIChat(value, autoSend: true)
 
         case .unknown(value: let value), .internalPage(title: let value, url: _, _):
@@ -4318,6 +4326,20 @@ extension MainViewController: OmniBarDelegate {
         ])
         guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
+        performCancel()
+        newTab()
+    }
+
+    private func newFireTabLongPressMenuAction() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
+        tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
+        performCancel()
+        newTab()
+    }
+
+    private func newNormalTabLongPressMenuAction() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
+        tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         performCancel()
         newTab()
     }
@@ -5176,11 +5198,6 @@ extension MainViewController: TabDelegate {
         newTab()
     }
 
-    func tabDidRequestNewSearch(_ tab: TabViewController) {
-        // Same as the Duck.ai header Plus-menu "New Search".
-        aiChatTabChatHeaderDidTapNewSearch()
-    }
-
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {
         // Same as the Duck.ai header Plus-menu "New Voice Chat".
         aiChatTabChatHeaderDidTapNewVoiceChat()
@@ -5711,6 +5728,14 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
     func launchNewTabWithCurrentMode(_ button: TabSwitcherButton) {
         newTabShortcutAction()
+    }
+    
+    func launchNewNormalTab(_ button: any TabSwitcherButton) {
+        newNormalTabLongPressMenuAction()
+    }
+
+    func launchNewFireTab(_ button: TabSwitcherButton) {
+        newFireTabLongPressMenuAction()
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {

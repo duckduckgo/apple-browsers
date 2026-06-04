@@ -26,7 +26,7 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_serp_settings_open_duck_ai_button_click": {
         "description": "Fired when the user taps the Open AI Features Setting button from the SERP",

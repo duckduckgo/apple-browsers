@@ -148,8 +148,13 @@ public struct AIChatPageContextData: Codable, Equatable {
     /// marks the current sidebar page. The omnibar strips this for the entry that matches
     /// the active tab so the discriminator's semantics hold end-to-end.
     public let tabId: String?
+    /// Marks the kind of content carried by this context. `"selection"` tells the duck.ai web
+    /// app the content is a user text selection (rendered with a dedicated chip/icon) rather
+    /// than the full page. Absent (`nil`) for the default full-page case. Omitted from the wire
+    /// when nil by the synthesized encoder, matching the cross-platform FE contract.
+    public let contentType: String?
 
-    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil) {
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil, contentType: String? = nil) {
         self.title = title
         self.favicon = favicon
         self.url = url
@@ -158,6 +163,7 @@ public struct AIChatPageContextData: Codable, Equatable {
         self.fullContentLength = fullContentLength
         self.attachable = attachable
         self.tabId = tabId
+        self.contentType = contentType
     }
 
     /// Returns a copy of this page context with the `tabId` field set to the given value.
@@ -172,7 +178,8 @@ public struct AIChatPageContextData: Codable, Equatable {
             truncated: truncated,
             fullContentLength: fullContentLength,
             attachable: attachable,
-            tabId: tabId
+            tabId: tabId,
+            contentType: contentType
         )
     }
 

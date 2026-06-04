@@ -500,7 +500,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 content: ctx.content,
                 truncated: ctx.truncated,
                 fullContentLength: ctx.fullContentLength,
-                attachable: ctx.attachable
+                attachable: ctx.attachable,
+                contentType: ctx.contentType
             )
         }
     }

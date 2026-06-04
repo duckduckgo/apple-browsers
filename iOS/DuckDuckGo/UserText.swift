@@ -132,6 +132,11 @@ public struct UserText {
     public static let actionChats = NotLocalizedString("action.title.chats", value: "Chats", comment: "Open the native Duck.ai chat history sheet from the browser menu. Not translated; final copy will land in a follow-up PR.")
     public static let aiChatHistoryEmptyStateTitle = NotLocalizedString("aiChat.history.emptyState.title", value: "No recent chats", comment: "Title shown when the user has no Duck.ai chat history yet. Not translated; final copy will land in a follow-up PR.")
     public static let aiChatHistoryEmptyStateOpenDuckAi = NotLocalizedString("aiChat.history.emptyState.openDuckAi", value: "Open Duck.ai", comment: "Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistorySearchBarPlaceholder = NotLocalizedString("aiChat.history.searchBar.placeholder", value: "Search", comment: "Placeholder for the search bar at the top of the Duck.ai chat history list. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryPinnedSectionTitle = NotLocalizedString("aiChat.history.section.pinned", value: "PINNED", comment: "Section header above the user's pinned chats in the Duck.ai chat history list. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryRecentSectionTitle = NotLocalizedString("aiChat.history.section.recent", value: "RECENT", comment: "Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryLoadErrorTitle = NotLocalizedString("aiChat.history.loadError.title", value: "Couldn't load chats", comment: "Title of the alert shown when Duck.ai chat history fails to load. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryLoadErrorMessage = NotLocalizedString("aiChat.history.loadError.message", value: "Something went wrong loading your Duck.ai chats. Please try again later.", comment: "Message of the alert shown when Duck.ai chat history fails to load. Not translated; final copy will land in a follow-up PR.")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
@@ -207,13 +212,12 @@ public struct UserText {
     public static let customUrlSchemeOpen = NSLocalizedString("prompt.custom.url.scheme.open", value: "Open", comment: "Confirm action")
     public static let customUrlSchemeDontOpen = NSLocalizedString("prompt.custom.url.scheme.dontopen", value: "Cancel", comment: "Deny action")
 
-    public static let xSafariHTTPSTryOpenTitle = NSLocalizedString("prompt.x-safari-https.try-open.title", value: "This site wants to open in Safari.", comment: "Alert title when a site tries to redirect to Safari via x-safari-https scheme")
-    public static let xSafariHTTPSTryOpenMessage = NSLocalizedString("prompt.x-safari-https.try-open.message", value: "Some website features may not be compatible in this browser.", comment: "Alert message when a site tries to redirect to Safari via x-safari-https scheme")
-    public static let xSafariHTTPSStayInDDG = NSLocalizedString("prompt.x-safari-https.stay", value: "Stay in DuckDuckGo", comment: "Button to stay in DuckDuckGo instead of opening Safari")
-    public static let xSafariHTTPSOpenInSafari = NSLocalizedString("prompt.x-safari-https.open-in-safari", value: "Open in Safari", comment: "Button to open the page in Safari")
-    public static let xSafariHTTPSLoopTitle = NSLocalizedString("prompt.x-safari-https.loop.title", value: "Unfortunately, the page couldn't load.", comment: "Alert title when a redirect loop is detected after staying in DuckDuckGo")
-    public static let xSafariHTTPSLoopMessage = NSLocalizedString("prompt.x-safari-https.loop.message", value: "Would you like to open this page in Safari?", comment: "Alert message when a redirect loop is detected")
-    public static let xSafariHTTPSGoBack = NSLocalizedString("prompt.x-safari-https.go-back", value: "Go Back", comment: "Button to go back to the previous page after redirect loop")
+    public static let webPageLoadErrorTitle = NSLocalizedString("prompt.web-page-load-error.title", value: "DuckDuckGo can’t load this page.", comment: "Default native error page title")
+    public static let webPageLoadErrorMessage = NSLocalizedString("prompt.web-page-load-error.message", value: "This website has an invalid security certificate and might not be safe to visit.", comment: "Default native error page message")
+
+    public static let generalPageProblemTitle = NSLocalizedString("prompt.general-page-problem.title", value: "This page only loads in Safari", comment: "Special error page title for pages that can only be opened in Safari")
+    public static let generalPageProblemMessage = NSLocalizedString("prompt.general-page-problem.message", value: "We tried to load it privately, but it won't display.", comment: "Special error page message for pages that can only be opened in Safari")
+    public static let generalPageProblemOpenInBrowserButton = NSLocalizedString("prompt.general-page-problem.open-in-browser", value: "Open in Safari", comment: "Special error page primary button for opening the page in Safari")
 
     public static let failedToOpenExternally = NSLocalizedString("open.externally.failed", value: "The app required to open that link can’t be found", comment: "’Link’ is link on a website")
 
@@ -2521,63 +2525,104 @@ public struct UserText {
 
         enum DuckAICPP {
             public enum Intro {
-                public static let message = NotLocalizedString("onboarding.duckai.intro.message", value: "Ready to chat privately with ChatGPT, Claude, and other AIs for free, in a browser that actively protects you?", comment: "The message of the onboarding intro dialog popup")
+                public static let message = NSLocalizedString(
+                    "onboarding.duckai.intro.message",
+                    value: "Ready to chat privately with ChatGPT, Claude, and other AIs for free, in a browser that actively protects you?",
+                    comment: "The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated."
+                )
             }
 
             public enum Skip {
-                public static let message = NotLocalizedString("onboarding.duckai.skip.message", value: "Remember: you can use Duck.ai from anywhere you see the chat icon [[chat_icon]]", comment: "The message of the onboarding skip dialog popup")
+                public static let message = NSLocalizedString(
+                    "onboarding.duckai.skip.message",
+                    value: "Remember: you can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
+                    comment: "The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated."
+                )
 
-                public static let confirmSkipOnboardingCTA = NotLocalizedString("onboarding.duckai.skip.cta.confirm", value: "Start AI Chat", comment: "The title of the button to skip the onboarding and start browsing.")
+                public static let confirmSkipOnboardingCTA = NSLocalizedString(
+                    "onboarding.duckai.skip.cta.confirm",
+                    value: "Start AI Chat",
+                    comment: "Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat"
+                )
             }
 
             public enum AIComparison {
-                public static let title = NotLocalizedString("onboarding.duckai.aiComparison.title", value: "AI protections activated!", comment: "The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers")
-                public static let subHeader = NotLocalizedString("onboarding.duckai.aiComparison.subheader", value: "Popular AIs", comment: "The header to explain how Duck.ai compares to other AIs")
-                public static let cta = NotLocalizedString("onboarding.duckai.aiComparison.cta", value: "Give Duck.ai a try!", comment: "Button to continue the onboarding flow")
+                public static let title = NSLocalizedString(
+                    "onboarding.duckai.aiComparison.title",
+                    value: "AI protections activated!",
+                    comment: "The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers"
+                )
+                public static let subHeader = NSLocalizedString(
+                    "onboarding.duckai.aiComparison.subheader",
+                    value: "Popular AIs",
+                    comment: "Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow."
+                )
+                public static let cta = NSLocalizedString(
+                    "onboarding.duckai.aiComparison.cta",
+                    value: "Give Duck.ai a try!",
+                    comment: "Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated."
+                )
 
                 public enum Features {
-                    public static let anonymousChats = NotLocalizedString("onboarding.duckai.ai.features.anonymousChats.title", value: "All chats are anonymized", comment: "Message to highlight AI capability of anonymous chats")
-                    public static let noAccountsNeeded = NotLocalizedString("onboarding.duckai.ai.features.noAccountsNeeded.title", value: "No account needed to access all AI features", comment: "Message to highlight AI capability of no accounts needed to chat")
-                    public static let noTrainingData = NotLocalizedString("onboarding.duckai.ai.features.noTrainingData.title", value: "Never uses your chats to train AI", comment: "Message to highlight how users AI chat are not used to train AI models")
-                    public static let onePlaceAccess = NotLocalizedString("onboarding.duckai.ai.features.onePlaceAccess.title", value: "Access ChatGPT, Claude, and more, all in one place", comment: "Message to highlight AI capability of AI models all in one place")
+                    public static let anonymousChats = NSLocalizedString(
+                        "onboarding.duckai.ai.features.anonymousChats.title",
+                        value: "All chats are anonymized",
+                        comment: "One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized"
+                    )
+                    public static let noAccountsNeeded = NSLocalizedString(
+                        "onboarding.duckai.ai.features.noAccountsNeeded.title",
+                        value: "No account needed to access all AI features",
+                        comment: "One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features"
+                    )
+                    public static let noTrainingData = NSLocalizedString(
+                        "onboarding.duckai.ai.features.noTrainingData.title",
+                        value: "Never uses your chats to train AI",
+                        comment: "One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models"
+                    )
+                    public static let onePlaceAccess = NSLocalizedString(
+                        "onboarding.duckai.ai.features.onePlaceAccess.title",
+                        value: "Access ChatGPT, Claude, and more, all in one place",
+                        comment: "One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated."
+                    )
                 }
             }
 
             public enum DuckAIQuery {
-                public static let title = NotLocalizedString(
+                public static let title = NSLocalizedString(
                     "onboarding.duckai.duckAIQuery.title",
                     value: "Now, try a private AI chat!",
-                    comment: "Title for the onboarding Duck.ai query screen."
+                    comment: "Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat."
                 )
             }
 
             public enum AddToDock {
                 public enum Promo {
-                    static let message = NotLocalizedString(
+                    static let message = NSLocalizedString(
                         "onboarding.duckai.addToDock.promo.message",
                         value: "I'll nest in easy reach for all your daily AI chats and browsing.",
-                        comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock."
+                        comment: "Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow."
                     )
                 }
             }
 
             public enum BrowserComparison {
-                public static let title = NotLocalizedString(
+                public static let title = NSLocalizedString(
                     "onboarding.duckai.browser.title",
                     value: "Want to make DuckDuckGo your default browser?",
-                    comment: "The title of the dialog to show the privacy features that DuckDuckGo offers"
+                    comment: "Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser."
                 )
             }
 
             public enum Contextual {
-                static let onboardingEndOfJourneyMessage = NotLocalizedString(
+                static let onboardingEndOfJourneyMessage = NSLocalizedString(
                     "onboarding.duckai.contextual.end-of-journey.message",
                     value: "Start a private AI chat with Duck.ai or toggle to Search for protected browsing.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
-                    comment: "Message of the last screen of the onboarding to the browser app for the Duck.ai flow.")
-                static let subscriptionMessage = NotLocalizedString(
+                    comment: "Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated."
+                )
+                static let subscriptionMessage = NSLocalizedString(
                     "onboarding.duckai.contextual.subscription.message",
                     value: "We also offer a paid subscription featuring advanced AI models with higher chat limits from GPT, Claude, and Llama, a secure VPN, and more.",
-                    comment: "Body text of the subscription promo for Duck.ai flow."
+                    comment: "Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated."
                 )
             }
         }

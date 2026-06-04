@@ -208,7 +208,11 @@ def check_xcstrings_data(new_data: Dict, path: str, old_data: Dict = None) -> Li
             for sub_path, loc_value in new_leaves.items():
                 if old_data is not None and not source_changed and old_leaves.get(sub_path) == loc_value:
                     continue
-                source_value = source_leaves.get(sub_path, source_leaves.get(""))
+                # Only compare leaves the source has at the same subpath. No
+                # top-level fallback: a locale plural category the source lacks
+                # (e.g. Russian "many" vs English "one/other") would otherwise be
+                # compared against the source's top-level unit and falsely flagged.
+                source_value = source_leaves.get(sub_path)
                 if source_value is None:
                     continue
                 issues = marker_issues(source_value, loc_value)

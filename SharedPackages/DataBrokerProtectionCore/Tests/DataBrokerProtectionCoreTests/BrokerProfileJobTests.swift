@@ -112,6 +112,83 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertTrue(database.optOutEvents.isEmpty)
     }
 
+    func testWhenUnauthenticatedUserHasSubscriptionRequiredBroker_thenJobCompletesWithNoOutput() async {
+        let delegate = MockBrokerProfileJobStatusReportingDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.isAuthenticatedUserProvider = { false }
+
+        let brokerId: Int64 = 1
+        database.brokerProfileQueryDataToReturn = [
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: 1,
+                dataBroker: makeSubscriptionRequiredBroker(id: brokerId),
+                scanJobData: .mock(withBrokerId: brokerId)
+            )
+        ]
+
+        let job = BrokerProfileJob(dataBrokerID: brokerId,
+                                   jobType: .scheduledScan,
+                                   showWebView: false,
+                                   statusReportingDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        let expectation = XCTestExpectation(description: "Job should finish")
+        job.completionBlock = {
+            expectation.fulfill()
+        }
+
+        job.start()
+        await fulfillment(of: [expectation], timeout: 15)
+
+        XCTAssertTrue(job.isFinished)
+        XCTAssertFalse(mockDependencies.mockScanRunner.wasScanCalled)
+        XCTAssertFalse(mockDependencies.mockOptOutRunner.wasOptOutCalled)
+        XCTAssertTrue(database.scanEvents.isEmpty)
+        XCTAssertTrue(database.optOutEvents.isEmpty)
+    }
+
+    func testWhenAuthenticatedUserHasSubscriptionRequiredBroker_thenScanEventsAreCreated() async {
+        let delegate = MockBrokerProfileJobStatusReportingDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.isAuthenticatedUserProvider = { true }
+
+        let brokerId: Int64 = 1
+        database.brokerProfileQueryDataToReturn = [
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: 1,
+                dataBroker: makeSubscriptionRequiredBroker(id: brokerId),
+                scanJobData: .mock(withBrokerId: brokerId)
+            )
+        ]
+
+        let job = BrokerProfileJob(dataBrokerID: brokerId,
+                                   jobType: .scheduledScan,
+                                   showWebView: false,
+                                   statusReportingDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        let expectation = XCTestExpectation(description: "Job should finish")
+        job.completionBlock = {
+            expectation.fulfill()
+        }
+
+        job.start()
+        await fulfillment(of: [expectation], timeout: 15)
+
+        XCTAssertTrue(job.isFinished)
+        XCTAssertTrue(mockDependencies.mockScanRunner.wasScanCalled)
+        XCTAssertFalse(mockDependencies.mockOptOutRunner.wasOptOutCalled)
+        XCTAssertTrue(database.scanEvents.contains(where: { $0.type == .scanStarted }))
+        XCTAssertTrue(database.scanEvents.contains(where: { $0.type == .noMatchFound }))
+        XCTAssertTrue(database.optOutEvents.isEmpty)
+    }
+
     func testWhenOptOutDataIsPresent_ThenOptOutEventsAreCreated() async {
         let delegate = MockBrokerProfileJobStatusReportingDelegate()
         let database = MockDatabase()
@@ -500,19 +577,39 @@ private extension BrokerProfileJobTests {
     func makeBrokerProfileQueryData(
         brokerId: Int64,
         profileQueryId: Int64,
+        dataBroker: DataBroker? = nil,
         scanJobData: ScanJobData,
         optOutJobData: [OptOutJobData] = []
     ) -> BrokerProfileQueryData {
         BrokerProfileQueryData(
-            dataBroker: .mock(withId: brokerId),
+            dataBroker: dataBroker ?? .mock(withId: brokerId),
             profileQuery: makeProfileQuery(id: profileQueryId),
             scanJobData: scanJobData,
             optOutJobData: optOutJobData
         )
     }
 
+    func makeSubscriptionRequiredBroker(id: Int64) -> DataBroker {
+        DataBroker.mockWithDefaults(
+            id: id,
+            steps: [
+                Step(type: .scan, actions: [MockAction(actionType: .generateEmail)])
+            ]
+        )
+    }
+
     func makeProfileQuery(id: Int64) -> ProfileQuery {
         ProfileQuery(id: id, firstName: "A", lastName: "B", city: "C", state: "D", birthYear: 1980)
+    }
+}
+
+private struct MockAction: Action {
+    let id = "mock"
+    let actionType: ActionType
+    let json: Data? = nil
+
+    func with(json: Data?) -> MockAction {
+        MockAction(actionType: actionType)
     }
 }
 

@@ -630,6 +630,8 @@ struct UserText {
     static let aiChatChromeShowDuckAIButton = NSLocalizedString("aichat.chrome.show-duckai-button", value: "Show Duck.ai Shortcut", comment: "Context menu item to show the Duck.ai title button in the tab bar")
     static let aiChatChromeHideSidebarButton = NSLocalizedString("aichat.chrome.hide-sidebar-button", value: "Hide Sidebar Button", comment: "Context menu item to hide the Duck.ai sidebar toggle button in the tab bar")
     static let aiChatChromeShowSidebarButton = NSLocalizedString("aichat.chrome.show-sidebar-button", value: "Show Sidebar Button", comment: "Context menu item to show the Duck.ai sidebar toggle button in the tab bar")
+    static let aiChatShowSidebar = NSLocalizedString("aichat.view.show-sidebar", value: "Show Duck.ai Sidebar", comment: "View menu item to open the Duck.ai sidebar")
+    static let aiChatHideSidebar = NSLocalizedString("aichat.view.hide-sidebar", value: "Hide Duck.ai Sidebar", comment: "View menu item to close the Duck.ai sidebar")
     static let aiChatChromeOpenAISettings = NSLocalizedString("aichat.chrome.open-ai-settings", value: "Open AI Settings", comment: "Context menu item to open AI Features settings pane")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
     static let aiChatAddressBarHideToggle = NSLocalizedString("aichat.address-bar.hide-toggle", value: "Hide Duck.ai Toggle", comment: "Button to hide duck.ai toggle in address bar")

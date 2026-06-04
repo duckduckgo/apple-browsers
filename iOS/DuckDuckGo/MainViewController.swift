@@ -3670,7 +3670,12 @@ extension MainViewController: BrowserChromeDelegate {
         }
 
         updateNavBarConstant(hidden ? 0 : 1.0)
-        viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
+        // When the omnibar is locked (e.g. dimmed to 0.5 alpha during Duck.ai fire onboarding),
+        // skip the chrome-hide alpha reset so we don't overwrite the dim.
+        let isOmniBarLocked = !viewCoordinator.omniBar.barView.isUserInteractionEnabled
+        if !isOmniBarLocked {
+            viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
+        }
         viewCoordinator.tabBarContainer.alpha = hidden ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
     }
@@ -3821,6 +3826,9 @@ extension MainViewController: BrowserChromeDelegate {
             loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
 
         case .askAIChat(let value):
+            // We intentionally don't forward the resolved model config: the suggestion is offered
+            // from Search mode where the model chip is hidden and the user hasn't chosen a model.
+            _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
             openAIChat(value, autoSend: true)
 
         case .unknown(value: let value), .internalPage(title: let value, url: _, _):
@@ -5307,7 +5315,13 @@ extension MainViewController: TabDelegate {
     }
 
     func openAIChatHistory() {
-        let viewModel = AIChatHistoryViewModel()
+        // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
+        // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
+        // configure at launch the cast yields `nil`, and the reader surfaces a
+        // `.storageUnavailable` failure so the screen shows an error rather than a
+        // misleading empty list.
+        let reader = ChatHistoryReader(observer: duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)
+        let viewModel = AIChatHistoryViewModel(reader: reader)
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel)
         let navigationController = UINavigationController(rootViewController: content)
@@ -5502,9 +5516,16 @@ extension MainViewController: TabDelegate {
 
 extension MainViewController: AIChatHistoryViewModelDelegate {
 
-    func viewModelDidRequestOpenDuckAi() {
+    func viewModelDidRequestOpenNewChat() {
         dismiss(animated: true) { [weak self] in
             self?.openAIChat()
+        }
+    }
+
+    func viewModelDidRequestOpenChat(chatId: String) {
+        let url = aiChatSettings.aiChatURL.withChatID(chatId)
+        dismiss(animated: true) { [weak self] in
+            self?.onChatHistorySelected(url: url)
         }
     }
 }

@@ -1,4 +1,21 @@
 {
+    "m_mac_dbp_web_ui_loading_success": {
+        "description": "Fires when the DBP (Personal Information Removal) Web UI loads successfully. The `subscribed` param distinguishes subscriber traffic (Settings → PIR) from non-subscriber freemium traffic.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "environment",
+                "type": "string",
+                "description": "Whether the WebUI is loading from staging or production",
+                "enum": ["staging", "production"]
+            },
+            "subscribed"
+        ]
+    },
     "m_mac_dbp_secure_vault_database_recreated": {
         "description": "Fired when the DBP secure vault database has been recreated in response to SQLITE_NOTADB or SQLITE_CORRUPT errors",
         "owners": ["quanganhdo"],
@@ -1061,6 +1078,125 @@
         "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "dbp-free_newtab_scan_impression_u": {
+        "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, in the pre-scan state (no scan results available yet).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_scan_impression_c": {
+        "description": "Fires every time the user sees the Freemium DBP promo banner on the New Tab Page in the pre-scan state — emitted when the NTP becomes the active tab and the banner is renderable. Counted variant of dbp-free_newtab_scan_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_impression_u": {
+        "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, while showing scan results (one or more matches found).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_impression_c": {
+        "description": "Fires every time the user sees the Freemium DBP promo banner on the New Tab Page while it is showing scan results (one or more matches found) — emitted when the NTP becomes the active tab and the banner is renderable. Counted variant of dbp-free_newtab_results_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_impression_u": {
+        "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, while showing the no-results state (scan completed with zero matches).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_impression_c": {
+        "description": "Fires every time the user sees the Freemium DBP promo banner on the New Tab Page while it is showing the no-results state (scan completed with zero matches) — emitted when the NTP becomes the active tab and the banner is renderable. Counted variant of dbp-free_newtab_no-results_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_scan_click_u": {
+        "description": "Fires once per user when they click the scan CTA on the Freemium DBP promo banner on the New Tab Page, in the pre-scan state (no scan results available yet).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_scan_click_c": {
+        "description": "Fires every time the user clicks the scan CTA on the Freemium DBP promo banner on the New Tab Page, in the pre-scan state (no scan results available yet). Counted variant of dbp-free_newtab_scan_click_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_click_u": {
+        "description": "Fires once per user when they click the proceed CTA on the Freemium DBP promo banner on the New Tab Page, while the banner is showing scan results (one or more matches found).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_click_c": {
+        "description": "Fires every time the user clicks the proceed CTA on the Freemium DBP promo banner on the New Tab Page, while the banner is showing scan results (one or more matches found). Counted variant of dbp-free_newtab_results_click_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_click_u": {
+        "description": "Fires once per user when they click the proceed CTA on the Freemium DBP promo banner on the New Tab Page, while the banner is showing the no-results state (scan completed with zero matches).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_click_c": {
+        "description": "Fires every time the user clicks the proceed CTA on the Freemium DBP promo banner on the New Tab Page, while the banner is showing the no-results state (scan completed with zero matches). Counted variant of dbp-free_newtab_no-results_click_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_scan_u": {
+        "description": "Fires once per user when they click the Personal Information Removal entry in the More Options menu, before any scan has been completed (pre-scan state).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_scan_c": {
+        "description": "Fires every time the user clicks the Personal Information Removal entry in the More Options menu, before any scan has been completed (pre-scan state). Counted variant of dbp-free_overflow_scan_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_results_u": {
+        "description": "Fires once per user when they click the Personal Information Removal entry in the More Options menu, after the first profile has been saved (post-scan state).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_results_c": {
+        "description": "Fires every time the user clicks the Personal Information Removal entry in the More Options menu, after the first profile has been saved (post-scan state). Counted variant of dbp-free_overflow_results_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "browser_menu_data_broker_protection": {
+        "description": "Fires when the user clicks the Personal Information Removal entry in the More Options menu.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
     },
     "m_mac_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",

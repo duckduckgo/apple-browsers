@@ -1020,13 +1020,13 @@ class MainViewController: UIViewController {
         )
     }
 
-    func presentNetworkProtectionStatusSettingsModal() {
+    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
         Task {
             if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
                canShowVPNInUI {
                 segueToVPN()
             } else {
-                segueToDuckDuckGoSubscription()
+                segueToDuckDuckGoSubscription(origin: origin.rawValue)
             }
         }
     }
@@ -3196,11 +3196,14 @@ class MainViewController: UIViewController {
 
     private func presentExpiredEntitlementAlert() {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert { [weak self] in
-            self?.segueToDuckDuckGoSubscription()
+            Pixel.fire(pixel: .vpnAccessRevokedAlertSubscribeButtonClicked)
+            self?.segueToDuckDuckGoSubscription(origin: SubscriptionFunnelOrigin.vpnAccessRevokedAlert.rawValue)
         }
         dismiss(animated: true) {
-            self.present(alertController, animated: true, completion: nil)
-            self.tunnelDefaults.showEntitlementAlert = false
+            Pixel.fire(pixel: .vpnAccessRevokedAlertShown)
+            self.present(alertController, animated: true) {
+                self.tunnelDefaults.showEntitlementAlert = false
+            }
         }
     }
 
@@ -3670,7 +3673,12 @@ extension MainViewController: BrowserChromeDelegate {
         }
 
         updateNavBarConstant(hidden ? 0 : 1.0)
-        viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
+        // When the omnibar is locked (e.g. dimmed to 0.5 alpha during Duck.ai fire onboarding),
+        // skip the chrome-hide alpha reset so we don't overwrite the dim.
+        let isOmniBarLocked = !viewCoordinator.omniBar.barView.isUserInteractionEnabled
+        if !isOmniBarLocked {
+            viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
+        }
         viewCoordinator.tabBarContainer.alpha = hidden ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
     }
@@ -5310,7 +5318,13 @@ extension MainViewController: TabDelegate {
     }
 
     func openAIChatHistory() {
-        let viewModel = AIChatHistoryViewModel()
+        // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
+        // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
+        // configure at launch the cast yields `nil`, and the reader surfaces a
+        // `.storageUnavailable` failure so the screen shows an error rather than a
+        // misleading empty list.
+        let reader = ChatHistoryReader(observer: duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)
+        let viewModel = AIChatHistoryViewModel(reader: reader)
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel)
         let navigationController = UINavigationController(rootViewController: content)
@@ -5505,9 +5519,16 @@ extension MainViewController: TabDelegate {
 
 extension MainViewController: AIChatHistoryViewModelDelegate {
 
-    func viewModelDidRequestOpenDuckAi() {
+    func viewModelDidRequestOpenNewChat() {
         dismiss(animated: true) { [weak self] in
             self?.openAIChat()
+        }
+    }
+
+    func viewModelDidRequestOpenChat(chatId: String) {
+        let url = aiChatSettings.aiChatURL.withChatID(chatId)
+        dismiss(animated: true) { [weak self] in
+            self?.onChatHistorySelected(url: url)
         }
     }
 }
@@ -6739,7 +6760,7 @@ extension MainViewController {
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
 
         case .vpn:
-            self.presentNetworkProtectionStatusSettingsModal()
+            self.presentNetworkProtectionStatusSettingsModal(origin: .toolbarVPN)
 
         case .share:
             self.shareCurrentURLFromToolbar()
@@ -6802,7 +6823,7 @@ extension MainViewController {
             onFirePressed()
 
         case .vpn:
-            presentNetworkProtectionStatusSettingsModal()
+            presentNetworkProtectionStatusSettingsModal(origin: .addressBarVPN)
 
         case .zoom:
             showTextZoomEditorIfPossible()

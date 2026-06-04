@@ -259,12 +259,17 @@ extension MainViewController {
         launchSettings()
     }
 
-    func segueToDuckDuckGoSubscription() {
+    func segueToDuckDuckGoSubscription(origin: String?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
+        let components: URLComponents? = origin.map {
+            var components = URLComponents()
+            components.queryItems = [URLQueryItem(name: AttributionParameter.origin, value: $0)]
+            return components
+        }
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
-        }, deepLinkTarget: .subscriptionFlow())
+            $0.triggerDeepLinkNavigation(to: .subscriptionFlow(redirectURLComponents: components))
+        }, deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
     }
 
     func segueToSubscriptionRestoreFlow() {

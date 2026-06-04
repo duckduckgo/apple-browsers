@@ -903,6 +903,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PixelKit",
                 "PixelKitTestingUtilities",
+                "PersistenceTestingUtils",
             ]
         ),
         .testTarget(

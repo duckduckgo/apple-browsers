@@ -18,13 +18,10 @@
 
 import XCTest
 import Common
+import PersistenceTestingUtils
 @testable import PixelKit
 
 final class OSDistributionPixelTests: XCTestCase {
-
-    private func userDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "testing_\(UUID().uuidString)")!
-    }
 
     // MARK: - Name composition (must match the os_distribution pixel definitions)
 
@@ -55,7 +52,7 @@ final class OSDistributionPixelTests: XCTestCase {
                                 appVersion: "1.2.3",
                                 source: "test-source",
                                 defaultHeaders: [:],
-                                defaults: userDefaults()) { name, _, parameters, _, _, onComplete in
+                                defaults: InMemoryThrowingKeyValueStore()) { name, _, parameters, _, _, onComplete in
             firedName = name
             firedParameters = parameters
             onComplete(true, nil)
@@ -76,7 +73,7 @@ final class OSDistributionPixelTests: XCTestCase {
     /// A second fire within the same calendar month is suppressed (monthly frequency gating).
     func testSecondFireInSameMonthIsSuppressed() {
         var fireCount = 0
-        let defaults = userDefaults()
+        let defaults = InMemoryThrowingKeyValueStore()
 
         let makePixelKit: () -> PixelKit = {
             PixelKit(dryRun: false,
@@ -104,7 +101,7 @@ final class OSDistributionPixelTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: "1.2.3",
                                 defaultHeaders: [:],
-                                defaults: userDefaults()) { name, _, _, _, _, onComplete in
+                                defaults: InMemoryThrowingKeyValueStore()) { name, _, _, _, _, onComplete in
             firedName = name
             onComplete(true, nil)
         }

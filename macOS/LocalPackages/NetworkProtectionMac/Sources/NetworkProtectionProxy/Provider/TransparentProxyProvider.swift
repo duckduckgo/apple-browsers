@@ -324,32 +324,28 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
 
         let now = Date()
         let proxyAge = now.timeIntervalSince(proxyStartedAt)
-        guard proxyAge >= Self.orphanProxyAgeThreshold else { return }
-
         let lastHeartbeat = heartbeatStore.lastHeartbeat
-        let heartbeatIsFresh: Bool
-        if let lastHeartbeat {
-            heartbeatIsFresh = now.timeIntervalSince(lastHeartbeat) < Self.orphanHeartbeatAgeThreshold
-        } else {
-            heartbeatIsFresh = false
-        }
 
-        if heartbeatIsFresh {
-            if isFullBypassEnabled {
-                logger.log("🟢 Tunnel heartbeat detected — disabling proxy full-bypass mode")
-                isFullBypassEnabled = false
-            }
-            orphanFiredForCurrentEpisode = false
-            return
-        }
+        guard let decision = OrphanProxyTester.decision(
+            proxyAge: proxyAge,
+            heartbeatAge: lastHeartbeat.map { now.timeIntervalSince($0) },
+            bypassEnabled: settings.isOrphanProxyBypassEnabled,
+            isFullBypassEnabled: isFullBypassEnabled,
+            orphanFiredForCurrentEpisode: orphanFiredForCurrentEpisode,
+            proxyAgeThreshold: Self.orphanProxyAgeThreshold,
+            heartbeatAgeThreshold: Self.orphanHeartbeatAgeThreshold
+        ) else { return }
 
-        if settings.isOrphanProxyBypassEnabled, !isFullBypassEnabled {
+        if isFullBypassEnabled, !decision.isFullBypassEnabled {
+            logger.log("🟢 Tunnel heartbeat detected — disabling proxy full-bypass mode")
+        } else if !isFullBypassEnabled, decision.isFullBypassEnabled {
             logger.log("🟠 Tunnel heartbeat stale — enabling proxy full-bypass mode")
-            isFullBypassEnabled = true
         }
 
-        guard !orphanFiredForCurrentEpisode else { return }
-        orphanFiredForCurrentEpisode = true
+        isFullBypassEnabled = decision.isFullBypassEnabled
+        orphanFiredForCurrentEpisode = decision.orphanFiredForCurrentEpisode
+
+        guard decision.shouldFirePixel else { return }
 
         let heartbeatBucket = HeartbeatAgeBucket.bucket(for: lastHeartbeat, now: now)
         let proxyBucket = ProxyAgeBucket.bucket(for: proxyAge)

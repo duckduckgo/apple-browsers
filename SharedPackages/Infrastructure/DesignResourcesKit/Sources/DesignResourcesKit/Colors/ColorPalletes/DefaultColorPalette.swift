@@ -320,10 +320,8 @@ private extension DefaultColorPalette {
         case .accentPrimaryPressed:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)
         case .accentPrimaryText:
-            // Figma --ds-accent-alt-primary-content-color (#240F04 = Pollen100) in dark; white in light.
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .accentGlowPrimary:
-            // Figma --ds-accent-glow-primary: light #1074CC (Pondwater60) @ 20%, dark #75B6EB (Pondwater40) @ 20%.
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
         case .accentAltPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
@@ -334,32 +332,24 @@ private extension DefaultColorPalette {
         case .surfaceTertiary:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x011D34))
         case .buttonsPrimaryDefault:
-            // Figma --ds-accent-alt-primary: light #F05F2B (Mandarin50), dark #FFC95C (Pollen40).
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen40)
         case .buttonsPrimaryPressed:
-            // Figma --ds-accent-alt-tertiary: light #9E2B08 (Mandarin70), dark #F5A031 (Pollen60).
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen60)
         case .buttonsPrimaryText:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .buttonsSecondaryDefault:
-            // Figma --ds-control-primary-background-color: light #000000 @ 6%, dark #FFFFFF @ 4%.
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.04))
         case .buttonsSecondaryPressed:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.12), darkColor: RebrandingColor.GrayScale.white.opacity(0.24))
         case .buttonsSecondaryText:
-            // Figma --ds-text-primary (#FFFFFF) in dark; Eggshell90 in light.
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
         case .destructivePrimary:
-            // Figma --ds-destructive-primary. Neither value is a named shade in the Red palette: light #D83544, dark #E44D55.
             return DynamicColor(lightColor: Color(0xD83544), darkColor: Color(0xE44D55))
         case .destructivePrimaryPressed:
-            // Figma --ds-destructive-tertiary (#A02231 = Red70).
             return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
         case .destructivePrimaryText:
-            // Figma --ds-accent-alt-primary-content-color (#240F04 = Pollen100) in dark; white in light.
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .destructiveGlowPrimary:
-            // Figma --ds-destructive-glow-primary (rgba(229,36,75,0.2) = #E5244B @ 20%).
             return DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xE5244B).opacity(0.2))
         case .controlsFillPrimary:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))

@@ -21,11 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 
 /// A runtime catalog of the DuckUI component galleries, surfaced in the app's internal
-/// debug menu. Each row pushes a gallery; the appearance control on each gallery lets you
-/// view it in light or dark without changing the device setting.
-///
-/// Designed to be pushed onto an existing navigation stack (as the debug menu does), so it
-/// relies on the surrounding stack rather than introducing its own.
+/// debug menu.
 public struct DuckUIDebugMenuView: View {
 
     public init() {}
@@ -58,9 +54,6 @@ public struct DuckUIDebugMenuView: View {
         .navigationTitle("DuckUI")
     }
 
-    /// A list row that lazily pushes `content` wrapped in an appearance picker.
-    /// `content` is built lazily so the gallery (and its rebrand override) is only
-    /// created on navigation, not when the list renders.
     private func row<Content: View>(
         _ label: String,
         title: String,
@@ -107,9 +100,6 @@ private struct DuckUIPreviewContainer<Content: View>: View {
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        // `.environment(\.colorScheme,)` drives the trait used to resolve the design-system
-        // dynamic colors in the subtree; `.preferredColorScheme` only nudges the window chrome
-        // and does not reliably reach these colors inside a UIKit-hosted navigation push.
         .environment(\.colorScheme, appearance.colorScheme)
         .preferredColorScheme(appearance.colorScheme)
         .navigationTitle(title)

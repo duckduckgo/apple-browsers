@@ -92,8 +92,7 @@ private func rebrandedButtonFont(compact: Bool) -> Font {
 // MARK: - Body builders
 
 /// `forcePressed` lets debug/preview surfaces render the pressed appearance without a
-/// live press gesture (SwiftUI doesn't expose a way to synthesize
-/// `ButtonStyleConfiguration` with `isPressed = true`). Production callers leave it `false`.
+/// live press gesture. Default to false in production.
 @ViewBuilder
 private func makeLegacyPrimaryBody(
     configuration: ButtonStyleConfiguration,
@@ -692,7 +691,6 @@ public struct GhostButtonStyle: ButtonStyle {
         let isPressed = configuration.isPressed || pressed
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
-            // Figma --ds-accent-primary (#75B6EB in dark) for all states; press is signalled by the glow background only.
             .foregroundColor(Color(singleUseColor: .rebranding(.accentPrimary)))
             .padding()
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
@@ -783,8 +781,6 @@ private enum Consts {
     static let rebrandedHeightLarge: CGFloat = 50
     static let rebrandedHeightSmall: CGFloat = 40
     static let pressedOpacity: CGFloat = 0.7
-    /// Outer opacity applied to the whole rebranded button when `disabled`, matching the
-    /// Figma spec where active-state tokens are kept and the composite is dimmed instead.
     static let disabledOpacity: CGFloat = 0.36
 }
 
@@ -793,9 +789,7 @@ private enum Consts {
 /// Scoped override of `AppRebrand.isAppRebranded` for the host view's lifetime.
 ///
 /// Captures the previous closure at init and restores it on deinit, so it doesn't
-/// permanently mutate global state. Held by `@StateObject` so its lifetime matches
-/// the view's, and its mutation runs once (in `init`, before `body`) rather than on
-/// every body re-evaluation.
+/// permanently mutate global state.
 ///
 /// Internal so the galleries (Xcode previews and the runtime debug menu) can reuse it
 /// within the module, e.g. `IOSButtonsDebugView.swift`.

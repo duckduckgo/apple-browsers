@@ -19,10 +19,10 @@
 
 import UIKit
 
-/// Section header for the Duck.ai chat-history table. Must be a `UITableViewHeaderFooterView`
-/// (not a plain `UIView`) so UIKit's `.insetGrouped` section-background geometry tracks the
-/// header view's lifecycle correctly — using a raw `UIView` here visibly glitches the rounded
-/// corner of the last row in the section during trailing-swipe gestures.
+/// Section header for the Duck.ai chat-history table. Must subclass
+/// `UITableViewHeaderFooterView` (not be a raw `UIView`) — UIKit relies on the
+/// header-view lifecycle to compute `.insetGrouped` section-background geometry, and a
+/// raw `UIView` makes the last row's bottom corner flicker during trailing swipes.
 final class AIChatHistorySectionHeaderView: UITableViewHeaderFooterView {
 
     static let reuseIdentifier = "AIChatHistorySectionHeaderView"

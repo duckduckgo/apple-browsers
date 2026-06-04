@@ -40,13 +40,11 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// "no chats yet" empty state.
     @Published private(set) var loadFailed: Bool = false
 
-    /// Live search query as the user types. Updated synchronously by `updateQuery`.
     @Published private(set) var query: String = ""
 
-    /// The query that produced the current `pinned`/`recent` snapshot. Lags `query` by the
-    /// debounce interval. UI state that depends on "is the user searching?" (e.g. the
-    /// illustrated empty-state decision) must read this rather than `query` to stay
-    /// consistent with what's actually on screen.
+    /// The query that produced the current `pinned`/`recent`. Lags `query` by the debounce
+    /// interval — read this (not `query`) for UI decisions that must stay consistent with
+    /// the rows on screen, e.g. the illustrated empty-state check.
     @Published private(set) var effectiveQuery: String = ""
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
@@ -59,18 +57,16 @@ final class AIChatHistoryViewModel: ObservableObject {
     init(reader: ChatHistoryReading) {
         self.reader = reader
 
-        // Materialize the chats publisher so failures become a sentinel value rather than
-        // terminating the stream — keeps the combined publisher alive while we surface the
-        // error via `loadFailed`.
+        // Failures become a sentinel `.failure` so the combined publisher stays alive and
+        // we can surface the error via `loadFailed` instead of terminating.
         let chats: AnyPublisher<Result<[DuckAiChat], Error>, Never> = reader.chatsPublisher()
             .map(Result.success)
             .catch { Just(.failure($0)) }
             .eraseToAnyPublisher()
 
-        // Debounce typed values so the in-memory filter runs once the user pauses, not on
-        // every keystroke. `dropFirst().debounce(...).prepend("")` seeds `CombineLatest`
-        // with the initial empty query synchronously — without it, the sheet would hide for
-        // ~150ms whenever the chats publisher emits synchronously (warm cache re-opens).
+        // `dropFirst().debounce(...).prepend("")` seeds the initial empty query into
+        // `CombineLatest` synchronously while still debouncing user typing — without the
+        // prepend, the sheet hides for ~150ms when chats emit synchronously on warm re-open.
         let queryStream = $query
             .dropFirst()
             .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
@@ -130,10 +126,9 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     // MARK: - Row identity
 
-    /// Resolve the stable chat id at the given index path. Call this at the moment a row
-    /// gesture starts (swipe configuration, tap handler) and pass the returned id into the
-    /// intent — never re-resolve later, since the pinned/recent arrays can shift between
-    /// the gesture starting and the user committing.
+    /// Resolve the stable chat id at gesture-start, then pass it to the intent. Don't
+    /// re-resolve from the index path later — `pinned`/`recent` can shift between gesture
+    /// start and commit, so the index path may point at a different chat.
     func chatId(forRowAt indexPath: IndexPath) -> String? {
         chat(at: indexPath)?.chatId
     }
@@ -189,10 +184,10 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// Dismiss the sheet and open Duck.ai on a fresh chat.
     func viewModelDidRequestOpenNewChat()
 
-    /// Dismiss the sheet and open the chat identified by `chatId` in Duck.ai.
+    /// Dismiss the sheet and open `chatId` in Duck.ai.
     func viewModelDidRequestOpenChat(chatId: String)
 
-    /// Delete the chat identified by `chatId` — confirmation has already been collected by the view.
-    /// The sheet stays open; the observation publisher will update the list once the deletion lands.
+    /// Delete `chatId`. The sheet stays open; the observation publisher refreshes the list
+    /// once the deletion lands.
     func viewModelDidRequestDeleteChat(chatId: String)
 }

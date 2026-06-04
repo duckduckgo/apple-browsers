@@ -37,9 +37,8 @@ final class AIChatHistoryViewController: UIViewController {
                        forHeaderFooterViewReuseIdentifier: AIChatHistorySectionHeaderView.reuseIdentifier)
         table.translatesAutoresizingMaskIntoConstraints = false
         table.sectionHeaderTopPadding = 0
-        // Match Bookmarks' storyboard config (`clipsSubviews="YES"`, `sectionFooterHeight="18"`).
-        // Without these the rounded bottom corner of the last row in a section visibly
-        // glitches as a trailing swipe action panel slides back in.
+        // Both are needed to keep the `.insetGrouped` rounded bottom corner of the last
+        // row stable across trailing swipe-action animations — match Bookmarks' storyboard.
         table.clipsToBounds = true
         table.sectionFooterHeight = 18
         return table
@@ -152,8 +151,7 @@ final class AIChatHistoryViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        // On a load failure the list is cleared (so the empty screen shows); we surface the
-        // failure as a simple alert on top of it. `removeDuplicates` keeps it to one alert.
+        // `removeDuplicates` keeps the alert to a single presentation per failure transition.
         viewModel.$loadFailed
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -180,12 +178,8 @@ final class AIChatHistoryViewController: UIViewController {
             navigationController?.setToolbarHidden(true, animated: false)
             return
         }
-        // Show the illustrated empty state only when the user has no chats AND isn't
-        // searching. A no-matches search keeps the table view (and its search-bar
-        // header) visible so the user can clear the query. We read `effectiveQuery`
-        // — the query that actually produced the current `pinned`/`recent` snapshot —
-        // rather than the live `query` so the decision stays consistent with the rows
-        // on screen during the debounce window.
+        // Hero empty state only when there are no chats AND no search active. A no-matches
+        // search keeps the table (and its search-bar header) visible so the user can clear.
         if viewModel.isEmpty && viewModel.effectiveQuery.isEmpty {
             showEmptyState()
         } else {
@@ -272,9 +266,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        // Resolve the chat id now, while the index path is fresh. Capturing it in the action
-        // closures means the gesture stays bound to the chat the user aimed at even if the
-        // pinned/recent arrays shift before they tap (sync arrival, another delete, etc.).
+        // Resolve chatId now (see `chatId(forRowAt:)` doc) and capture it in the closures.
         guard let chatId = viewModel.chatId(forRowAt: indexPath) else { return nil }
 
         let delete = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completion in

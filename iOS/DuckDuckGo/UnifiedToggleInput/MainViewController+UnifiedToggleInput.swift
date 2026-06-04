@@ -327,18 +327,23 @@ extension MainViewController {
               coordinator.isInputEditing else {
             return
         }
-        // Landscape leaves little room above the keyboard, so cap the expandable field to the
-        // available budget (the field then scrolls internally) and clamp the container to match.
-        let availableHeight = landscapeEditingHeightCap
-        coordinator.viewController.setAvailableExpandedHeight(availableHeight)
+        updateLandscapeEditingCap()
         var height = coordinator.editingHeight()
-        if let availableHeight {
-            height = min(height, availableHeight)
+        if let cap = landscapeEditingHeightCap {
+            height = min(height, cap)
         }
         guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else { return }
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         coordinator.pushContentInsets()
+    }
+
+    /// Caps the expandable editing field to the space above the keyboard in landscape (the field
+    /// scrolls internally), and lifts the cap in portrait. The single source of truth for the cap;
+    /// call it from any path that changes the keyboard, orientation, or content.
+    func updateLandscapeEditingCap() {
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isInputEditing else { return }
+        coordinator.viewController.setAvailableExpandedHeight(landscapeEditingHeightCap)
     }
 
     /// Height budget above the keyboard the expanded UTI must fit within, or nil when unconstrained.
@@ -468,9 +473,8 @@ private extension MainViewController {
             .sink { [weak self] in
                 guard let self, let coordinator = unifiedToggleInputCoordinator else { return }
                 if coordinator.isInputEditing {
-                    // Attachments grow the card, so re-cap the field to the keyboard budget before
-                    // sizing or it overflows under the keyboard in landscape.
-                    coordinator.viewController.setAvailableExpandedHeight(landscapeEditingHeightCap)
+                    // Attachments grow the card, so re-cap before sizing or it overflows in landscape.
+                    updateLandscapeEditingCap()
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
                 }
                 updateFloatingReturnKeyVisibility()

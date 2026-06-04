@@ -1367,12 +1367,9 @@ class MainViewController: UIViewController {
             && coordinator?.cardPosition == .bottom
             && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
 
-        // Refresh the landscape height cap when the keyboard reframes (e.g. switching to the
-        // numbers/emoji keyboard) so the expanded input stays above it. Skipped during rotation,
-        // where the eased post-rotation recompute owns the cap.
-        if !isUTIRotating, isPhoneLandscape, keyboardVisible, coordinator?.isInputEditing == true {
-            let available = max(0, keyboardFrameInView.minY - view.safeAreaInsets.top - Constants.utiLandscapeKeyboardGap)
-            coordinator?.viewController.setAvailableExpandedHeight(available)
+        // Keep the field's cap current as the keyboard reframes; the eased recompute owns it during rotation.
+        if !isUTIRotating {
+            updateLandscapeEditingCap()
         }
 
         let baseInputHeight: CGFloat

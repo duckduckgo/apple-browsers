@@ -7,19 +7,21 @@ on:
 jobs:
 
     add-pr-review-comment:
-        # Skip when the review submitter is the PR author themselves.
-        # Catches: self-reviews (author clicks Submit review on own PR) and
-        # AI/automation tools (e.g. Cursor Bugbot) posting reviews via the
-        # author's GitHub token. No subtask exists in either case.
-        #
-        # For 'commented' state also require a non-empty review.body: GitHub
-        # wraps every "Add single comment" inline reply in a review with
-        # state=commented and an empty body. Filtering by body excludes those
-        # noisy inline-reply events while keeping deliberate "Submit review →
-        # Comment" submissions that include a summary.
+        # Skip this job when:
+        #   - The review submitter is the PR author themselves (self-review,
+        #     or AI/automation tools posting via the author's GitHub token).
+        #   - The review submitter is a Bot account (e.g. cursor[bot],
+        #     dependabot[bot]) posting under its own [bot] identity. No
+        #     Asana subtask exists for bots.
+        #   - The review state is 'commented' with an empty body. GitHub
+        #     wraps every "Add single comment" inline reply in a review with
+        #     state=commented and an empty body; filtering by body excludes
+        #     those noisy inline-reply events while keeping deliberate
+        #     "Submit review → Comment" submissions that include a summary.
         if: |
             contains(fromJSON('["approved","changes_requested","commented"]'), github.event.review.state)
             && github.event.review.user.login != github.event.pull_request.user.login
+            && github.event.review.user.type != 'Bot'
             && (github.event.review.state != 'commented' || github.event.review.body != '')
         name: "Add Asana comment on PR review"
         runs-on: ubuntu-latest

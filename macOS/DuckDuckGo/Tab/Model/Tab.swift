@@ -1103,15 +1103,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         // should load on Web View instantiation?
         case .loadInBackgroundIfNeeded(shouldLoadInBackground: let shouldLoadInBackground):
 #if DEBUG
-            // Avoid hidden WebKit work in tests that do not explicitly request it.
+            // Prevent background auto-loading when running unit tests, as this can stress out the CI runner.
             guard AppVersion.runType.requiresEnvironment else { return false }
-            let requiresExplicitInternalPageLoad = AppVersion.runType == .integrationTests
 #endif
             switch content {
             case .newtab, .bookmarks, .settings:
-#if DEBUG
-                guard !requiresExplicitInternalPageLoad || shouldLoadInBackground else { return false }
-#endif
                 return webView.url == nil // navigate to empty pages loaded for duck:// urls
             default:
                 return shouldLoadInBackground

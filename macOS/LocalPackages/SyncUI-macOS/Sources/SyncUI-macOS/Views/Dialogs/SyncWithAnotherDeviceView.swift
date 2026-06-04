@@ -29,6 +29,13 @@ struct SyncWithAnotherDeviceView: View {
     @State private var selectedSegment = 0
     @State private var showQRCode = true
 
+    private var step3Markdown: String {
+        if selectedSegment == 1 {
+            return UserText.syncWithAnotherDeviceStep3EnterCode
+        }
+        return showQRCode ? UserText.syncWithAnotherDeviceStep3ScanQRCode : UserText.syncWithAnotherDeviceStep3TextCode
+    }
+
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(spacing: 20.0) {
@@ -39,7 +46,7 @@ struct SyncWithAnotherDeviceView: View {
             VStack(alignment: .leading, spacing: 10) {
                 instructionStepView(number: 1, markdown: UserText.syncWithAnotherDeviceStep1, showAppIcon: true)
                 instructionStepView(number: 2, markdown: UserText.syncWithAnotherDeviceStep2)
-                instructionStepView(number: 3, markdown: UserText.syncWithAnotherDeviceStep3)
+                instructionStepView(number: 3, markdown: step3Markdown)
                 instructionStepView(number: 4, markdown: UserText.syncWithAnotherDeviceStep4)
             }
             .frame(minWidth: Metrics.contentMinWidth, alignment: .leading)

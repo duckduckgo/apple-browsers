@@ -143,6 +143,12 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         self.configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         super.init()
 
+        configurationManager.onPrivacyConfigurationUpdated = { [weak self] in
+            Task { @MainActor in
+                self?.applyOrphanProxyFeatureFlags()
+            }
+        }
+
         let tokenFound = subscriptionManager.isUserAuthenticated
         if tokenFound {
             Logger.networkProtection.debug("🟢 VPN Agent found")

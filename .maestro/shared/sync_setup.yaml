@@ -18,5 +18,4 @@ appId: com.duckduckgo.mobile.ios
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         isInternalUser: ${INTERNAL_USER_MODE}
-        ff.browsingMenuSheetEnabledByDefault: "true"
         experiment.simplifiedSyncSetupExperiment: "control"

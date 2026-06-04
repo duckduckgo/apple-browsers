@@ -525,32 +525,24 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         try? realFileManager.removeItem(at: tempDir)
     }
 
-    func testEndpointRequestSetsAuthorizationHeaderOnlyWhenTokenIsPresent() throws {
+    func testEndpointRequestDoesNotSetAuthorizationHeader() throws {
         let endpointURL = URL(string: "https://example.com")!
 
-        let authenticatedRequest = try RemoteBrokerJSONService.Endpoint.request(for: .mainConfig,
-                                                                                endpointURL: endpointURL,
-                                                                                accessToken: "abc123")
-        XCTAssertEqual(authenticatedRequest.value(forHTTPHeaderField: "Authorization"), "Bearer abc123")
+        let mainConfigRequest = try RemoteBrokerJSONService.Endpoint.request(for: .mainConfig, endpointURL: endpointURL)
+        XCTAssertNil(mainConfigRequest.value(forHTTPHeaderField: "Authorization"))
 
-        let unauthenticatedRequest = try RemoteBrokerJSONService.Endpoint.request(for: .mainConfig,
-                                                                                  endpointURL: endpointURL,
-                                                                                  accessToken: nil)
-        XCTAssertNil(unauthenticatedRequest.value(forHTTPHeaderField: "Authorization"))
+        let allBrokersRequest = try RemoteBrokerJSONService.Endpoint.request(for: .allBrokers, endpointURL: endpointURL)
+        XCTAssertNil(allBrokersRequest.value(forHTTPHeaderField: "Authorization"))
     }
 
-    func testCheckForUpdatesPerformsRemoteCheckWhenAccessTokenIsAbsent() async {
-        /// Freemium / signed-out: no access token, but the remote check should still run.
+    func testCheckForUpdatesPerformsRemoteCheckForUnauthenticatedUser() async {
         authenticationManager.isUserAuthenticatedValue = false
-        authenticationManager.accessTokenValue = nil
 
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.notModified, nil) }
 
         XCTAssertEqual(settings.lastBrokerJSONUpdateCheckTimestamp, 0)
         do {
             try await remoteBrokerJSONService.checkForUpdates()
-            /// Reaching and processing the 304 response updates the timestamp, proving the remote
-            /// check ran without an access token (previously it bailed at the token gate).
             XCTAssert(settings.lastBrokerJSONUpdateCheckTimestamp > 0)
             XCTAssertTrue(MockURLProtocol.requestHandlerQueue.isEmpty, "main_config request should have been made")
         } catch {

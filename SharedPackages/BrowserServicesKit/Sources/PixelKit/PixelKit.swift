@@ -782,9 +782,22 @@ public final class PixelKit {
         return map?[frequency.mapKey]
     }
 
+    /// Reads the stored per-frequency last-fire-date map for `key`, lazily migrating prior
+    /// raw-`Date` storage (used before per-frequency maps) into `[daily: date]` so the legacy
+    /// daily last-fire date is preserved. The upgraded format is persisted when a migration occurs.
+    private func migratedLastFireDateMap(forKey key: String) throws -> [String: Date] {
+        let raw = try defaults.object(forKey: key)
+        guard let legacyDate = raw as? Date else {
+            return (raw as? [String: Date]) ?? [:]
+        }
+        let map = [Frequency.daily.mapKey: legacyDate]
+        try defaults.set(map, forKey: key)
+        return map
+    }
+
     private func updatePixelLastFireDate(pixelName: String, frequency: Frequency) throws {
         let key = userDefaultsKeyName(forPixelName: pixelName)
-        var map = (try defaults.object(forKey: key) as? [String: Date]) ?? [:]
+        var map = try migratedLastFireDateMap(forKey: key)
         map[frequency.mapKey] = dateGenerator()
         try defaults.set(map, forKey: key)
     }
@@ -826,17 +839,8 @@ public final class PixelKit {
         }
 
         do {
-            let key = userDefaultsKeyName(forPixelName: name)
-            let raw = try defaults.object(forKey: key)
-            let lastFireDate: Date?
-            if let legacyDate = raw as? Date {
-                // Migrate prior raw-Date storage to the [frequency.mapKey: Date] map format.
-                try defaults.set([Frequency.daily.mapKey: legacyDate], forKey: key)
-                lastFireDate = legacyDate
-            } else {
-                lastFireDate = (raw as? [String: Date])?[Frequency.daily.mapKey]
-            }
-            if let lastFireDate {
+            let map = try migratedLastFireDateMap(forKey: userDefaultsKeyName(forPixelName: name))
+            if let lastFireDate = map[Frequency.daily.mapKey] {
                 return pixelCalendar.isDate(dateGenerator(), inSameDayAs: lastFireDate)
             }
             return false

@@ -434,6 +434,41 @@ final class PixelKitTests: XCTestCase {
         XCTAssertEqual(migrated?["daily"], legacyDate)
     }
 
+    /// Regression test for "Monthly update drops legacy daily date": firing a new frequency
+    /// (monthly) on a pixel that still has a legacy raw-`Date` (its daily last-fire date) must
+    /// preserve that daily date when upgrading storage to the map, rather than discarding it
+    /// (which would let the daily pixel re-fire the same day after the upgrade).
+    func testMonthlyFirePreservesLegacyDailyDate() throws {
+        let appVersion = "1.0.5"
+        let event = TestEventV2.dailyEvent
+        let userDefaults = userDefaults()
+        let timeMachine = TimeMachine()
+
+        let prefixedName = "m_mac_\(event.name)"
+        let storageKey = "com.duckduckgo.network-protection.pixel.\(prefixedName)"
+        let legacyDate = timeMachine.now()
+        userDefaults.set(legacyDate, forKey: storageKey)
+
+        let fired = expectation(description: "monthly pixel fires")
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: appVersion,
+                                source: PixelKit.Source.macDMG.rawValue,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                dateGenerator: timeMachine.now,
+                                defaults: userDefaults) { _, _, _, _, _, _ in
+            fired.fulfill()
+        }
+
+        // No prior monthly date, so this fires and upgrades storage from raw Date to the map format.
+        pixelKit.fire(event, frequency: .monthly)
+        wait(for: [fired], timeout: 0.2)
+
+        let map = userDefaults.object(forKey: storageKey) as? [String: Date]
+        XCTAssertEqual(map?["daily"], legacyDate, "Legacy daily last-fire date must survive the monthly upgrade")
+        XCTAssertNotNil(map?["monthly"], "Monthly fire date should be recorded")
+    }
+
     /// Test firing a daily pixel a few times
     func testDailyPixelFrequency() {
         // Prepare test parameters

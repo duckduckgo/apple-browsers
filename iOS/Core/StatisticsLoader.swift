@@ -48,9 +48,7 @@ public class StatisticsLoader {
          usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
          fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
          fireSearchExperimentPixels: @escaping () -> Void = PixelKit.fireSearchExperimentPixels,
-         fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = { metric in
-             PixelKit.fireOSDistributionPixel(metric: metric)
-         },
+         fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = PixelKit.fireOSDistributionPixel(metric:),
          pixelFiring: PixelFiring.Type = Pixel.self,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.statisticsStore = statisticsStore

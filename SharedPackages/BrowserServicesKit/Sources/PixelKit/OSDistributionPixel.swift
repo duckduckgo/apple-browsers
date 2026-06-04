@@ -51,7 +51,7 @@ public struct OSDistributionPixel: PixelKitEvent {
 
     public var parameters: [String: String]? { nil }
 
-    // No standard parameters: these pixels must not carry `pixelSource`.
+    // No standard parameters
     public var standardParameters: [PixelKitStandardParameter]? { [] }
 }
 
@@ -72,10 +72,6 @@ public extension PixelKit {
         fireOSDistributionPixel(OSDistributionPixel(metric: metric,
                                                     platform: .currentPlatform,
                                                     formFactor: DevicePlatform.formFactor))
-    }
-
-    static func fireOSDistributionPixel(_ event: OSDistributionPixel) {
-        shared?.fireOSDistributionPixel(event)
     }
 
     static func fireOSDistributionPixel(metric: OSDistributionPixel.Metric) {

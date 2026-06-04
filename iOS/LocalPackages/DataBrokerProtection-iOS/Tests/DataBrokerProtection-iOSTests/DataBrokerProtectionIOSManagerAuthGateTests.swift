@@ -194,6 +194,11 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertFalse(dependencies.queueManager.didCallStartScheduledScanOperationsIfPermitted)
         XCTAssertFalse(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
         XCTAssertEqual(mockTask.completedSuccess, true)
+
+        let backgroundTaskEvents = dependencies.database.backgroundTaskEventsToReturn
+        XCTAssertEqual(backgroundTaskEvents.map(\.eventType), [.started, .completed])
+        XCTAssertEqual(backgroundTaskEvents.first?.sessionId, backgroundTaskEvents.last?.sessionId)
+        XCTAssertNotNil(backgroundTaskEvents.last?.metadata)
     }
 
     // MARK: - dashboardDidOpen routing

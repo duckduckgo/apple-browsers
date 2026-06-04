@@ -825,6 +825,22 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
         }
     }
 
+    private func recordBackgroundTaskCompletedEvent(sessionId: String, startDate: Date) {
+        let completedAt = Date.now
+        let duration = completedAt.timeIntervalSince(startDate) * 1000.0
+        do {
+            let event = BackgroundTaskEvent(
+                sessionId: sessionId,
+                eventType: .completed,
+                timestamp: completedAt,
+                metadata: BackgroundTaskEvent.Metadata(durationInMs: duration)
+            )
+            try database.recordBackgroundTaskEvent(event)
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to record background task completed event: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     func handleBGProcessingTask(task: any DBPIOSInterface.BGTaskHandling) {
         Logger.dataBrokerProtection.log("Background task started")
         iOSPixelsHandler.fire(.backgroundTaskStarted)
@@ -879,6 +895,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
             let isAuthenticated = await self.refreshFreeScanState()
             if self.shouldSkipFreemiumBackgroundScanWork(isAuthenticated: isAuthenticated) {
                 Logger.dataBrokerProtection.log("Freemium background scan window expired; skipping background task")
+                self.recordBackgroundTaskCompletedEvent(sessionId: sessionId, startDate: startDate)
                 task.setTaskCompleted(success: true)
                 return
             }
@@ -892,20 +909,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllJobs(
                     duration: timeTaken * 1000.0))
 
-                // Record completed event
-                let duration = Date.now.timeIntervalSince(startDate) * 1000.0
-                do {
-                    let event = BackgroundTaskEvent(
-                        sessionId: sessionId,
-                        eventType: .completed,
-                        timestamp: Date.now,
-                        metadata: BackgroundTaskEvent.Metadata(durationInMs: duration)
-                    )
-                    try self.database.recordBackgroundTaskEvent(event)
-                } catch {
-                    Logger.dataBrokerProtection.error("Failed to record background task completed event: \(error.localizedDescription, privacy: .public)")
-                }
-
+                self.recordBackgroundTaskCompletedEvent(sessionId: sessionId, startDate: startDate)
                 self.scheduleBGProcessingTask()
                 task.setTaskCompleted(success: true)
             }

@@ -367,9 +367,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
         stateStore: UnifiedInputStateStoring? = nil,
         syncService: DDGSyncing? = nil,
-        aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+        aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard),
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil

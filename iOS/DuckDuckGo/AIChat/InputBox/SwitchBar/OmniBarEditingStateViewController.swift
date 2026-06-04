@@ -117,9 +117,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
-    private let aiChatSyncCleaner: AIChatSyncCleaning?
 
     // MARK: - Manager Components
 
@@ -162,9 +162,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                   privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
                   aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+                  aiChatSyncCleaner: AIChatSyncCleaning? = nil,
                   voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-                  aiChatSyncCleaner: AIChatSyncCleaning? = nil,
                   escapeHatchModel: EscapeHatchModel? = nil,
                   initialLogoHidden: Bool = false) {
         self.switchBarHandler = switchBarHandler

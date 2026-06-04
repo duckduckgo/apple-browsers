@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import WebKit
 import AIChat
 import PrivacyConfig
 
@@ -27,7 +28,7 @@ extension AIChatHistoryManager {
                                    isIPadExperience: Bool,
                                    featureFlagger: FeatureFlagger,
                                    privacyConfigurationManager: PrivacyConfigurationManaging,
-                                   chatSyncCleaner: AIChatSyncCleaning?,
+                                   chatSyncCleaner: AIChatSyncCleaning,
                                    chatSettings: AIChatSettingsProvider,
                                    nativeStorageHandler: DuckAiNativeStorageHandling?) -> (AIChatHistoryManager, AIChatSuggestionsViewModel)
     {
@@ -46,18 +47,23 @@ extension AIChatHistoryManager {
             return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
         }()
 
-        let historyCleaner = HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger,
-                                                               privacyConfig: privacyConfigurationManager,
-                                                               nativeStorageHandler: nativeStorageHandler)
+        let aiChatDeleter: AIChatDeleter = {
+            /// Important: Fire Tabs yield no Suggestions, so it's safe to ignore the `historyCleanerProvider` parameters!
+            let historyCleanerProvider = { (_: WKWebsiteDataStore?, _: Bool) -> HistoryCleaning in
+                HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager, nativeStorageHandler: nativeStorageHandler)
+            }
+
+            return AIChatDeleter(historyCleanerProvider: historyCleanerProvider, aiChatSyncCleaner: chatSyncCleaner)
+        }()
 
         let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
 
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                            aiChatSettings: chatSettings,
+                                           aiChatDeleter: aiChatDeleter,
                                            viewModel: viewModel,
-                                           historyCleaner: historyCleaner,
                                            isIPadExperience: isIPadExperience,
-                                           aiChatSyncCleaner: chatSyncCleaner)
+                                           isFireTab: isFireTab)
         return (manager, viewModel)
     }
 }

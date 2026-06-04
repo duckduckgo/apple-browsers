@@ -87,9 +87,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
-    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let syncPromoManager: SyncPromoManaging?
     private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
 

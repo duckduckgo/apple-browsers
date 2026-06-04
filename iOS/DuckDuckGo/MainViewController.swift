@@ -357,9 +357,9 @@ class MainViewController: UIViewController {
         featureFlagger: featureFlagger,
         privacyConfigurationManager: privacyConfigurationManager,
         aiChatSettings: aiChatSettings,
+        aiChatSyncCleaner: aiChatSyncCleaner,
         iPadTabFeature: aichatIPadTabFeature,
-        duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-        aiChatSyncCleaner: aiChatSyncCleaner
+        duckAiNativeStorageHandler: duckAiNativeStorageHandler
     )
     private var iPadAIChatQuery = ""
     private var allowIPadAIAutocompleteShow = false
@@ -386,7 +386,6 @@ class MainViewController: UIViewController {
         historyManager: HistoryManaging,
         homePageConfiguration: HomePageConfiguration,
         syncService: DDGSyncing,
-        aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         syncDataProviders: SyncDataProviders,
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
@@ -416,6 +415,7 @@ class MainViewController: UIViewController {
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
         aiChatSettings: AIChatSettingsProvider,
+        aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
@@ -628,14 +628,14 @@ class MainViewController: UIViewController {
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
+                                                              aiChatSyncCleaner: aiChatSyncCleaner,
                                                               aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                              aiChatSyncCleaner: aiChatSyncCleaner)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         if featureFlagger.isFeatureOn(.iPadAIToggle) {
             viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
@@ -816,12 +816,12 @@ class MainViewController: UIViewController {
                                                       featureFlagger: featureFlagger,
                                                       aichatIPadTabFeature: aichatIPadTabFeature,
                                                       aiChatSettings: aiChatSettings,
+                                                      aiChatSyncCleaner: aiChatSyncCleaner,
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization,
-                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                      aiChatSyncCleaner: aiChatSyncCleaner)
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,

@@ -29,13 +29,13 @@ protocol OmnibarDependencyProvider {
     var featureFlagger: FeatureFlagger { get }
     var aichatIPadTabFeature: AIChatIPadTabFeatureProviding { get }
     var aiChatSettings: AIChatSettingsProvider { get }
+    var aiChatSyncCleaner: AIChatSyncCleaning? { get }
     var aiChatAddressBarExperience: AIChatAddressBarExperienceProviding { get }
     var suggestionTrayDependencies: SuggestionTrayDependencies? { get }
     var appSettings: AppSettings { get }
     var daxEasterEggPresenter: DaxEasterEggPresenting { get }
     var mobileCustomization: MobileCustomization { get }
     var duckAiNativeStorageHandler: DuckAiNativeStorageHandling? { get }
-    var aiChatSyncCleaner: AIChatSyncCleaning? { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
@@ -43,11 +43,11 @@ struct OmnibarDependencies: OmnibarDependencyProvider {
     let featureFlagger: FeatureFlagger
     let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     let aiChatSettings: AIChatSettingsProvider
+    var aiChatSyncCleaner: AIChatSyncCleaning?
     let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     let appSettings: any AppSettings
     let daxEasterEggPresenter: DaxEasterEggPresenting
     let mobileCustomization: MobileCustomization
     var duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
-    var aiChatSyncCleaner: AIChatSyncCleaning? = nil
 }

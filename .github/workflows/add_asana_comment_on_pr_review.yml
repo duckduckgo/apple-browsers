@@ -91,3 +91,14 @@ jobs:
             asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
             asana-task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
             is-complete: true
+
+        # If a reviewer returns to a previously approved PR (subtask already
+        # completed) and submits a non-approve review, reopen the subtask.
+        - name: Mark subtask incomplete on non-approve review
+          if: ${{ github.event.review.state != 'approved' }}
+          uses: duckduckgo/native-github-asana-sync@v1.9
+          with:
+            action: 'mark-asana-task-complete'
+            asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
+            is-complete: false

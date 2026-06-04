@@ -32,12 +32,12 @@ public struct OSDistributionPixel: PixelKitEvent {
 
     private let metric: Metric
     private let osMajorVersion: Int
-    private let platform: String
+    private let platform: DevicePlatform
     private let formFactor: String
 
     public init(metric: Metric,
                 osMajorVersion: Int = ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
-                platform: String,
+                platform: DevicePlatform,
                 formFactor: String) {
         self.metric = metric
         self.osMajorVersion = osMajorVersion
@@ -46,7 +46,7 @@ public struct OSDistributionPixel: PixelKitEvent {
     }
 
     public var name: String {
-        "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform)_\(formFactor)"
+        "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform.rawValue.lowercased())_\(formFactor)"
     }
 
     public var parameters: [String: String]? { nil }
@@ -70,7 +70,7 @@ public extension PixelKit {
     /// `DevicePlatform.formFactor` (the same form-factor source other pixels use).
     func fireOSDistributionPixel(metric: OSDistributionPixel.Metric) {
         fireOSDistributionPixel(OSDistributionPixel(metric: metric,
-                                                    platform: DevicePlatform.currentPlatform.rawValue.lowercased(),
+                                                    platform: .currentPlatform,
                                                     formFactor: DevicePlatform.formFactor))
     }
 

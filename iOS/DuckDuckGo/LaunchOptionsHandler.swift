@@ -213,12 +213,7 @@ extension LaunchOptionsHandler {
             guard arg.hasPrefix("-") else { continue }
             let key = String(arg.dropFirst()) // Remove leading "-"
 
-            if key == UITestOverrides.internalUserKey {
-                if userDefaults.string(forKey: key)?.lowercased() == "true" {
-                    internalUserStore.isInternalUser = true
-                }
-                continue
-            }
+            if applyInternalUserOverrideIfPresent(key: key) { continue }
 
             // Feature flag: ff.<flagName>
             // Read as string (same approach as experiment which works)
@@ -258,5 +253,13 @@ extension LaunchOptionsHandler {
         if didApplyOverride {
             internalUserStore.isInternalUser = true
         }
+    }
+
+    private func applyInternalUserOverrideIfPresent(key: String) -> Bool {
+        guard key == UITestOverrides.internalUserKey else { return false }
+        if userDefaults.string(forKey: key)?.lowercased() == "true" {
+            internalUserStore.isInternalUser = true
+        }
+        return true
     }
 }

@@ -122,10 +122,11 @@ public final class LaunchOptionsHandler {
 #endif
     }
 
-    private var isUITesting: Bool {
+    public var isUITesting: Bool {
         environment["UITEST_MODE"] == "1" ||
         environment["UITEST_MODE_ONBOARDING"] == "1" ||
-        arguments.contains("isRunningUITests")
+        arguments.contains("isRunningUITests") ||
+        userDefaults.string(forKey: "isRunningUITests") == "true"
     }
 
 #if DEBUG || ALPHA
@@ -197,7 +198,9 @@ extension LaunchOptionsHandler {
     /// in UserDefaults. We iterate `ProcessInfo.arguments` to discover which keys were passed,
     /// then read their values from UserDefaults.
     ///
-    /// Internal user is only enabled if at least one override is applied.
+    /// Internal user mode is only enabled when `-isInternalUser true` is explicitly passed.
+    /// Other overrides (ff., config.rollout., experiment.) are honored by `FeatureFlagger` in
+    /// UI test mode without forcing internal user (configured in `AppDependencyProvider`).
     ///
     /// - Parameters:
     ///   - featureFlagOverrideStore: Store for feature flag and experiment overrides
@@ -207,7 +210,6 @@ extension LaunchOptionsHandler {
         configRolloutStore: UserDefaults
     ) {
         let featureFlagPersistor = FeatureFlagLocalOverridesUserDefaultsPersistor(keyValueStore: featureFlagOverrideStore)
-        var didApplyOverride = false
 
         for arg in arguments {
             guard arg.hasPrefix("-") else { continue }
@@ -223,7 +225,6 @@ extension LaunchOptionsHandler {
                    let stringValue = userDefaults.string(forKey: key) {
                     let enabled = stringValue.lowercased() == "true"
                     featureFlagPersistor.set(enabled, for: flag)
-                    didApplyOverride = true
                 }
             }
 
@@ -234,7 +235,6 @@ extension LaunchOptionsHandler {
                     let enabled = stringValue.lowercased() == "true"
                     let targetKey = "config.\(featurePath).enabled"
                     configRolloutStore.set(enabled, forKey: targetKey)
-                    didApplyOverride = true
                 }
             }
 
@@ -244,14 +244,8 @@ extension LaunchOptionsHandler {
                 if let flag = FeatureFlag(rawValue: flagName),
                    let cohortID = userDefaults.string(forKey: key), !cohortID.isEmpty {
                     featureFlagPersistor.setExperiment(cohortID, for: flag)
-                    didApplyOverride = true
                 }
             }
-        }
-
-        // Only enable internal user if we actually applied overrides
-        if didApplyOverride {
-            internalUserStore.isInternalUser = true
         }
     }
 

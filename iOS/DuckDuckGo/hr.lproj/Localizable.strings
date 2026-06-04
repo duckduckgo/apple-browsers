@@ -3037,6 +3037,51 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Odaberi preglednik";
 
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Smjestit ću se na dohvat ruke za sva tvoja svakodnevna AI čavrljanja i pregledavanja.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Sva su čavrljanja anonimizirana";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Za pristup svim AI značajkama nije potreban račun";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Nikad ne koristi tvoja čavrljanja za obuku AI-ja";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Pristupi ChatGPT-u, Claudeu i još mnogo čemu, sve na jednom mjestu";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Isprobaj Duck.ai!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Popularne umjetne inteligencije";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "AI zaštite aktivirane!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Želiš li postaviti DuckDuckGo kao svoj zadani preglednik?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Započni privatno AI čavrljanje uz Duck.ai ili prebaci na traženje za zaštićeno pregledavanje.\n\nDuck.ai s možeš koristiti bilo kojeg mjesta na kojem vidiš ikonu za čavrljanje [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Također nudimo plaćenu pretplatu s naprednim AI modelima s većim količinama dopuštenog čavrljanja od GPT-a, Claudea i Llame, siguran VPN i još mnogo toga.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Sada isprobaj svoje privatno AI čavrljanje!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Spreman za privatno čavrljanje s ChatGPT-om, Claudeom i drugim umjetnim inteligencijama besplatno, u pregledniku koji te aktivno štiti?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Pokreni AI čavrljanje";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Zapamti: Duck.ai možeš koristiti na svakom mjestu gdje vidiš ikonu za čavrljanje [[chat_icon]]";
+
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo također ima %1$@, dostupan s %2$@ i %3$@.";
 

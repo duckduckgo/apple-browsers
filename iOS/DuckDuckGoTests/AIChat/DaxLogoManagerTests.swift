@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import XCTest
 @testable import DuckDuckGo
 
@@ -113,5 +114,157 @@ final class DaxLogoManagerTests: XCTestCase {
             hasRemoteMessages: false
         )
         XCTAssertTrue(sut.shouldShowHomeDax(inputs))
+    }
+}
+
+final class FadeOutContainerViewControllerTests: XCTestCase {
+
+    func testWhenInitialModeIsAIChatThenDelegateReceivesInitialProgress() {
+        let switchBarHandler = FadeOutSwitchBarHandlerStub(currentToggleState: .aiChat)
+        let sut = SwipeContainerManager(switchBarHandler: switchBarHandler, contentTransition: .crossfade)
+        sut.containerViewController.loadViewIfNeeded()
+        let delegate = RecordingFadeOutContainerDelegate()
+
+        sut.fadeOutDelegate = delegate
+
+        XCTAssertEqual(delegate.progressUpdates, [1])
+        XCTAssertTrue(delegate.transitionedModes.isEmpty)
+    }
+
+    func testWhenInitialModeIsSearchThenDelegateReceivesInitialProgress() {
+        let switchBarHandler = FadeOutSwitchBarHandlerStub(currentToggleState: .search)
+        let sut = SwipeContainerManager(switchBarHandler: switchBarHandler, contentTransition: .crossfade)
+        sut.containerViewController.loadViewIfNeeded()
+        let delegate = RecordingFadeOutContainerDelegate()
+
+        sut.fadeOutDelegate = delegate
+
+        XCTAssertEqual(delegate.progressUpdates, [0])
+        XCTAssertTrue(delegate.transitionedModes.isEmpty)
+    }
+}
+
+final class OmniBarEditingStateViewControllerDaxVisibilityTests: XCTestCase {
+
+    func testWhenAIChatHistoryIsPendingThenAIDaxIsHidden() {
+        let isVisible = OmniBarEditingStateViewController.isAIDaxVisible(
+            isHorizontallyCompactLayoutEnabled: false,
+            isShowingChatHistory: false,
+            isURLFallbackShowingContent: false,
+            shouldDisplaySuggestionTray: false,
+            isAIChatHistoryPending: true
+        )
+
+        XCTAssertFalse(isVisible)
+    }
+
+    func testWhenAIChatHistoryIsSettledAndNoContentThenAIDaxIsVisible() {
+        let isVisible = OmniBarEditingStateViewController.isAIDaxVisible(
+            isHorizontallyCompactLayoutEnabled: false,
+            isShowingChatHistory: false,
+            isURLFallbackShowingContent: false,
+            shouldDisplaySuggestionTray: false,
+            isAIChatHistoryPending: false
+        )
+
+        XCTAssertTrue(isVisible)
+    }
+}
+
+private final class RecordingFadeOutContainerDelegate: FadeOutContainerViewControllerDelegate {
+    private(set) var progressUpdates: [CGFloat] = []
+    private(set) var transitionedModes: [TextEntryMode] = []
+
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode) {
+        transitionedModes.append(mode)
+    }
+
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didUpdateTransitionProgress progress: CGFloat) {
+        progressUpdates.append(progress)
+    }
+
+    func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool {
+        false
+    }
+
+    func fadeOutContainerViewControllerShouldKeepSearchVisible(_ controller: FadeOutContainerViewController) -> Bool {
+        false
+    }
+}
+
+private final class FadeOutSwitchBarHandlerStub: SwitchBarHandling {
+    var currentText = ""
+    var currentToggleState: TextEntryMode
+    var isVoiceSearchEnabled = false
+    var isAIVoiceChatEnabled = false
+    var hasUserInteractedWithText = false
+    var isCurrentTextValidURL = false
+    var buttonState: SwitchBarButtonState = .noButtons
+    var isTopBarPosition = true
+    var isToggleEnabled = true
+    var isFireTab = false
+    var isUsingExpandedBottomBarHeight = false
+    var isUsingFadeOutAnimation = true
+    var shouldDisableAutocorrectOnEmpty = false
+    var hidesVoiceButton = false
+    var hasSubmittedPrompt = false
+    var modeParameters: [String: String] = [:]
+
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var currentTextPublisher: AnyPublisher<String, Never> { currentTextSubject.eraseToAnyPublisher() }
+    var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { toggleStateSubject.eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { textSubmissionSubject.eraseToAnyPublisher() }
+    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { microphoneButtonTappedSubject.eraseToAnyPublisher() }
+    var clearButtonTappedPublisher: AnyPublisher<Void, Never> { clearButtonTappedSubject.eraseToAnyPublisher() }
+    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { hasUserInteractedWithTextSubject.eraseToAnyPublisher() }
+    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { isCurrentTextValidURLSubject.eraseToAnyPublisher() }
+    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { currentButtonStateSubject.eraseToAnyPublisher() }
+
+    private let currentTextSubject = PassthroughSubject<String, Never>()
+    private let toggleStateSubject = PassthroughSubject<TextEntryMode, Never>()
+    private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
+    private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
+    private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
+    private let hasUserInteractedWithTextSubject = PassthroughSubject<Bool, Never>()
+    private let isCurrentTextValidURLSubject = PassthroughSubject<Bool, Never>()
+    private let currentButtonStateSubject = PassthroughSubject<SwitchBarButtonState, Never>()
+
+    init(currentToggleState: TextEntryMode) {
+        self.currentToggleState = currentToggleState
+    }
+
+    func updateCurrentText(_ text: String) {
+        currentText = text
+        currentTextSubject.send(text)
+    }
+
+    func submitText(_ text: String) {
+        textSubmissionSubject.send((text, currentToggleState))
+    }
+
+    func setToggleState(_ state: TextEntryMode) {
+        currentToggleState = state
+        toggleStateSubject.send(state)
+    }
+
+    func clearText() {
+        updateCurrentText("")
+    }
+
+    func microphoneButtonTapped() {
+        microphoneButtonTappedSubject.send(())
+    }
+
+    func markUserInteraction() {
+        hasUserInteractedWithText = true
+        hasUserInteractedWithTextSubject.send(true)
+    }
+
+    func clearButtonTapped() {
+        clearButtonTappedSubject.send(())
+    }
+
+    func updateBarPosition(isTop: Bool) {
+        isTopBarPosition = isTop
     }
 }

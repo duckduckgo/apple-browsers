@@ -66,8 +66,6 @@ public extension PixelKit {
              doNotEnforcePrefix: true)
     }
 
-    /// Fires an OS-distribution pixel for the given metric, using the current platform and
-    /// `DevicePlatform.formFactor` (the same form-factor source other pixels use).
     func fireOSDistributionPixel(metric: OSDistributionPixel.Metric) {
         fireOSDistributionPixel(OSDistributionPixel(metric: metric,
                                                     platform: .currentPlatform,

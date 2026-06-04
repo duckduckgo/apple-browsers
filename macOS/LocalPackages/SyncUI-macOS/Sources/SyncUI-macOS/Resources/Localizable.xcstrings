@@ -4200,7 +4200,7 @@
       }
     },
     "preferences.sync.sync-with-another-device.step1" : {
-      "comment" : "First instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around 'DuckDuckGo'.",
+      "comment" : "First instruction for setting up 'Sync with another device'. The [text](url) markdown is a link and must be preserved, keeping 'DuckDuckGo App' as the link text and the URL unchanged.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4212,7 +4212,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "On another device, open **DuckDuckGo**"
+            "value" : "On another device, open the [DuckDuckGo App](https://duckduckgo.com/app/devices)"
           }
         },
         "es" : {
@@ -4315,6 +4315,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Откройте **Настройки > Sync & Backup > Синхронизировать с другим устройством**."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step3" : {
+      "comment" : "Third instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the emphasized phrase.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**Point your phone at this screen** to scan the QR code"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step4" : {
+      "comment" : "Fourth instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the emphasized phrase.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**Don’t close this window** while connecting"
           }
         }
       }

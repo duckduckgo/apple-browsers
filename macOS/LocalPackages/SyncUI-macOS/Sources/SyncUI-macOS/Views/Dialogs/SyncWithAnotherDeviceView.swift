@@ -32,13 +32,15 @@ struct SyncWithAnotherDeviceView: View {
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(spacing: 20.0) {
-                Image(.sync96)
+                Image(.syncPair96)
                 SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
             }
 
             VStack(alignment: .leading, spacing: 10) {
                 instructionStepView(number: 1, markdown: UserText.syncWithAnotherDeviceStep1, showAppIcon: true)
                 instructionStepView(number: 2, markdown: UserText.syncWithAnotherDeviceStep2)
+                instructionStepView(number: 3, markdown: UserText.syncWithAnotherDeviceStep3)
+                instructionStepView(number: 4, markdown: UserText.syncWithAnotherDeviceStep4)
             }
             .frame(minWidth: Metrics.contentMinWidth, alignment: .leading)
             .padding(.leading, 4)
@@ -240,6 +242,12 @@ struct SyncWithAnotherDeviceView: View {
             return plain
         }
         for run in result.runs {
+            // Preserve link runs as tappable, link-colored text rather than recoloring them like body copy.
+            if run.link != nil {
+                result[run.range].foregroundColor = Color(.linkBlue)
+                result[run.range].inlinePresentationIntent = nil
+                continue
+            }
             let isBold = run.inlinePresentationIntent?.contains(.stronglyEmphasized) == true
             result[run.range].foregroundColor = isBold ? .primary : .secondary
             result[run.range].inlinePresentationIntent = nil

@@ -296,7 +296,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             delegate: nullCCFDelegateReference,
             executionConfig: BrokerJobExecutionConfig(),
             shouldContinueActionHandler: { true },
-            applicationNameForUserAgent: WebViewUserAgentProvider.applicationNameForUserAgent
+            applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent }
         ) else {
             assertionFailure("Failed to create webview handler")
             return

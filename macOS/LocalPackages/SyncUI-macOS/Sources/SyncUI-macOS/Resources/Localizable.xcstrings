@@ -3299,6 +3299,30 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device.copy-confirmation.message" : {
+      "comment" : "Message of the reminder shown after the user copies the sync code.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open DuckDuckGo on your other device and paste the code."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.copy-confirmation.title" : {
+      "comment" : "Title of the reminder shown after the user copies the sync code, telling them to keep the window open.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t close this window"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.dialog-subtitle1" : {
       "comment" : "Sync with another device dialog subtitle - Instruction with sync menu path item inserted",
       "extractionState" : "stale",

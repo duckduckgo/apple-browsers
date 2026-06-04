@@ -28,6 +28,7 @@ struct SyncWithAnotherDeviceView: View {
 
     @State private var selectedSegment = 0
     @State private var showQRCode = true
+    @State private var showCopyConfirmation = false
 
     private var step3Markdown: String {
         if selectedSegment == 1 {
@@ -185,6 +186,7 @@ struct SyncWithAnotherDeviceView: View {
                     }
                     Button {
                         model.delegate?.copyCode()
+                        showCopyConfirmation = true
                     } label: {
                         HStack {
                             Image(.copy)
@@ -192,6 +194,9 @@ struct SyncWithAnotherDeviceView: View {
                         }
                         .padding(.horizontal, 12)
                         .frame(height: 28)
+                    }
+                    .popover(isPresented: $showCopyConfirmation, arrowEdge: .bottom) {
+                        copyConfirmationView()
                     }
                 }
                 .frame(width: 348, height: 32)
@@ -206,6 +211,18 @@ struct SyncWithAnotherDeviceView: View {
             .padding(.top, 8)
         }
         .frame(width: 348)
+    }
+
+    fileprivate func copyConfirmationView() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(UserText.syncWithAnotherDeviceCopyConfirmationTitle)
+                .fontWeight(.bold)
+            Text(UserText.syncWithAnotherDeviceCopyConfirmationMessage)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .multilineTextAlignment(.leading)
+        .frame(width: 240, alignment: .leading)
+        .padding(16)
     }
 
     @ViewBuilder
@@ -249,7 +266,6 @@ struct SyncWithAnotherDeviceView: View {
             return plain
         }
         for run in result.runs {
-            // Preserve link runs as tappable, link-colored text rather than recoloring them like body copy.
             if run.link != nil {
                 result[run.range].foregroundColor = Color(.linkBlue)
                 result[run.range].inlinePresentationIntent = nil

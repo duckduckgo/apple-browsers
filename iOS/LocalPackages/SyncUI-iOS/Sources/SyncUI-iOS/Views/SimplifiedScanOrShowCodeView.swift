@@ -119,14 +119,13 @@ enum SimplifiedSyncStyle {
 }
 
 #if DEBUG
-struct SimplifiedScanOrShowCodeView_Previews: PreviewProvider {
-    static var previews: some View {
-        let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
-        NavigationView {
-            SimplifiedScanOrShowCodeView(
-                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
-            )
-        }
+#Preview {
+    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+
+    return NavigationView {
+        SimplifiedScanOrShowCodeView(
+            model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
+        )
     }
 }
 #endif

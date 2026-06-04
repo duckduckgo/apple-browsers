@@ -475,6 +475,7 @@ extension MainViewController {
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
+                                                  contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                   idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                   afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,

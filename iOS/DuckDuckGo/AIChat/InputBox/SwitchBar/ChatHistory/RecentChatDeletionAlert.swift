@@ -39,4 +39,3 @@ class RecentChatDeletionAlert {
         presenter.present(alert, animated: true)
     }
 }
-

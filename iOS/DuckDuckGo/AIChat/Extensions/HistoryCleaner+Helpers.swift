@@ -31,4 +31,3 @@ extension HistoryCleaner {
                        featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
     }
 }
-

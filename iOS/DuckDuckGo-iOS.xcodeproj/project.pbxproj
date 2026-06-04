@@ -467,9 +467,7 @@
 		5B6D651F2FB4D30A00BDCF4D /* CompleteDownloadRowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D651E2FB4D30700BDCF4D /* CompleteDownloadRowViewModelTests.swift */; };
 		5B6D65212FBA000000BDCF4D /* FilePreviewHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D65202FBA000000BDCF4D /* FilePreviewHelperTests.swift */; };
 		5B7CA46B2FAE693000D69C83 /* ICSParser in Frameworks */ = {isa = PBXBuildFile; productRef = 5B7CA46A2FAE693000D69C83 /* ICSParser */; };
-		5B941E722FA29A2C00AF2CE7 /* QuickActionsMediumWidgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E712FA29A2900AF2CE7 /* QuickActionsMediumWidgetTests.swift */; };
 		5B941E752FA29FC800AF2CE7 /* ShortcutOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E742FA29FC600AF2CE7 /* ShortcutOption.swift */; };
-		5B941E762FA29FF500AF2CE7 /* ShortcutOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E742FA29FC600AF2CE7 /* ShortcutOption.swift */; };
 		5BCF854E2F7D77540053B95E /* AddressBarURLFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BCF854D2F7D774A0053B95E /* AddressBarURLFilter.swift */; };
 		5BCF85522F7D7E4B0053B95E /* AddressBarURLFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BCF85512F7D7E480053B95E /* AddressBarURLFilterTests.swift */; };
 		5BF0B1732FC784D3009D088E /* NavigationResponseRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF0B1722FC784CF009D088E /* NavigationResponseRouter.swift */; };
@@ -13917,7 +13915,6 @@
 				98E563F92DE8B32D00E6E75F /* MockUsageSegmentation.swift in Sources */,
 				98E563FA2DE8B32D00E6E75F /* MockPixelFiring.swift in Sources */,
 				98E563FB2DE8B32D00E6E75F /* MockURLOpener.swift in Sources */,
-				5B941E722FA29A2C00AF2CE7 /* QuickActionsMediumWidgetTests.swift in Sources */,
 				98E563FC2DE8B32D00E6E75F /* MockPrivacyDataReporter.swift in Sources */,
 				98E563FD2DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */,
 				9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */,

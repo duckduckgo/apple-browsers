@@ -17,13 +17,41 @@
 //  limitations under the License.
 //
 
+import Combine
 import SwiftUI
 import UIKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
-/// View controller for the native Duck.ai chat-history sheet.
 final class AIChatHistoryViewController: UIViewController {
 
     private let viewModel: AIChatHistoryViewModel
+    private var cancellables: Set<AnyCancellable> = []
+
+    private lazy var tableView: UITableView = {
+        let table = UITableView(frame: .zero, style: .insetGrouped)
+        table.dataSource = self
+        table.delegate = self
+        table.register(AIChatHistoryCell.self, forCellReuseIdentifier: AIChatHistoryCell.reuseIdentifier)
+        table.translatesAutoresizingMaskIntoConstraints = false
+        table.sectionHeaderTopPadding = 0
+        return table
+    }()
+
+    private lazy var searchBar: UISearchBar = {
+        let bar = UISearchBar()
+        bar.searchBarStyle = .minimal
+        bar.placeholder = UserText.aiChatHistorySearchBarPlaceholder
+        bar.sizeToFit()
+        return bar
+    }()
+
+    private lazy var emptyStateHost: UIHostingController<AIChatHistoryEmptyStateView> = {
+        let host = UIHostingController(rootView: AIChatHistoryEmptyStateView(viewModel: viewModel))
+        host.view.translatesAutoresizingMaskIntoConstraints = false
+        host.view.backgroundColor = .clear
+        return host
+    }()
 
     init(viewModel: AIChatHistoryViewModel) {
         self.viewModel = viewModel
@@ -37,8 +65,12 @@ final class AIChatHistoryViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = UserText.actionAIChatHistory
+
+        let backgroundColor: UIColor = .systemGroupedBackground
+        view.backgroundColor = backgroundColor
+        navigationController?.view.backgroundColor = backgroundColor
+
+        title = UserText.actionChats
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: UserText.navigationTitleDone,
             style: .plain,
@@ -46,24 +78,213 @@ final class AIChatHistoryViewController: UIViewController {
             action: #selector(doneButtonTapped)
         )
 
-        embedEmptyState()
+        setupViews()
+        configureToolbar()
+        bindViewModel()
     }
 
-    private func embedEmptyState() {
-        let host = UIHostingController(rootView: AIChatHistoryEmptyStateView(viewModel: viewModel))
-        addChild(host)
-        host.view.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(host.view)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setToolbarHidden(false, animated: animated)
+    }
+
+    private func setupViews() {
+        view.addSubview(tableView)
+
         NSLayoutConstraint.activate([
-            host.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-        host.didMove(toParent: self)
+
+        searchBar.delegate = self
+        let headerHeight = searchBar.intrinsicContentSize.height
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: headerHeight))
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        headerView.addSubview(searchBar)
+        NSLayoutConstraint.activate([
+            searchBar.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 12),
+            searchBar.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -12),
+            searchBar.topAnchor.constraint(equalTo: headerView.topAnchor),
+            searchBar.bottomAnchor.constraint(equalTo: headerView.bottomAnchor)
+        ])
+        tableView.tableHeaderView = headerView
+    }
+
+    private func configureToolbar() {
+        let fire = UIBarButtonItem(
+            image: DesignSystemImages.Glyphs.Size24.fire,
+            style: .plain,
+            target: nil,
+            action: nil
+        )
+        let compose = UIBarButtonItem(
+            image: DesignSystemImages.Glyphs.Size24.compose,
+            style: .plain,
+            target: self,
+            action: #selector(composeButtonTapped)
+        )
+        let gap = UIBarButtonItem(systemItem: .fixedSpace)
+        gap.width = 12
+        let spacer = UIBarButtonItem(systemItem: .flexibleSpace)
+        let edit = UIBarButtonItem(
+            title: UserText.actionGenericEdit,
+            style: .plain,
+            target: nil,
+            action: nil
+        )
+        toolbarItems = [fire, gap, compose, spacer, edit]
+    }
+
+    private func bindViewModel() {
+        Publishers.CombineLatest3(viewModel.$pinned, viewModel.$recent, viewModel.$hasLoaded)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, _, _ in
+                self?.refreshContent()
+            }
+            .store(in: &cancellables)
+
+        // On a load failure the list is cleared (so the empty screen shows); we surface the
+        // failure as a simple alert on top of it. `removeDuplicates` keeps it to one alert.
+        viewModel.$loadFailed
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] failed in
+                guard failed else { return }
+                self?.presentLoadErrorAlert()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func presentLoadErrorAlert() {
+        let alert = UIAlertController(
+            title: UserText.aiChatHistoryLoadErrorTitle,
+            message: UserText.aiChatHistoryLoadErrorMessage,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: UserText.actionOK, style: .default))
+        present(alert, animated: true)
+    }
+
+    private func refreshContent() {
+        guard viewModel.hasLoaded else {
+            tableView.isHidden = true
+            navigationController?.setToolbarHidden(true, animated: false)
+            return
+        }
+        // Show the illustrated empty state only when the user has no chats AND isn't
+        // searching. A no-matches search keeps the table view (and its search-bar
+        // header) visible so the user can clear the query. We read `effectiveQuery`
+        // — the query that actually produced the current `pinned`/`recent` snapshot —
+        // rather than the live `query` so the decision stays consistent with the rows
+        // on screen during the debounce window.
+        if viewModel.isEmpty && viewModel.effectiveQuery.isEmpty {
+            showEmptyState()
+        } else {
+            showList()
+        }
+    }
+
+    private func showEmptyState() {
+        guard emptyStateHost.parent == nil else { return }
+        tableView.isHidden = true
+        navigationController?.setToolbarHidden(true, animated: false)
+
+        addChild(emptyStateHost)
+        view.addSubview(emptyStateHost.view)
+        NSLayoutConstraint.activate([
+            emptyStateHost.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            emptyStateHost.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            emptyStateHost.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            emptyStateHost.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        emptyStateHost.didMove(toParent: self)
+    }
+
+    private func showList() {
+        if emptyStateHost.parent != nil {
+            emptyStateHost.willMove(toParent: nil)
+            emptyStateHost.view.removeFromSuperview()
+            emptyStateHost.removeFromParent()
+        }
+        tableView.isHidden = false
+        navigationController?.setToolbarHidden(false, animated: false)
+        tableView.reloadData()
     }
 
     @objc private func doneButtonTapped() {
         dismiss(animated: true)
+    }
+
+    @objc private func composeButtonTapped() {
+        viewModel.newChatTapped()
+    }
+}
+
+// MARK: - UITableViewDataSource
+
+extension AIChatHistoryViewController: UITableViewDataSource {
+
+    func numberOfSections(in tableView: UITableView) -> Int {
+        viewModel.numberOfSections
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        viewModel.numberOfRows(in: section)
+    }
+
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        viewModel.title(forSection: section)
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard let title = viewModel.title(forSection: section) else { return nil }
+        let label = UILabel()
+        label.text = title
+        label.font = .systemFont(ofSize: 13, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = UIView()
+        container.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 24),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -24),
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)
+        ])
+        return container
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        viewModel.title(forSection: section) == nil ? .leastNormalMagnitude : UITableView.automaticDimension
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: AIChatHistoryCell.reuseIdentifier, for: indexPath)
+        guard let chatCell = cell as? AIChatHistoryCell else { return cell }
+        chatCell.titleLabel.text = viewModel.title(forRowAt: indexPath)
+        chatCell.iconImageView.image = viewModel.icon(forRowAt: indexPath)
+        return chatCell
+    }
+}
+
+// MARK: - UITableViewDelegate
+
+extension AIChatHistoryViewController: UITableViewDelegate {
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        viewModel.chatTapped(at: indexPath)
+    }
+}
+
+// MARK: - UISearchBarDelegate
+
+extension AIChatHistoryViewController: UISearchBarDelegate {
+
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        viewModel.updateQuery(searchText)
     }
 }

@@ -891,17 +891,20 @@ extension TabViewController {
 
     private func buildVPNEntry(useSmallIcon: Bool = true, showStatusStringInDetail: Bool = false) -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
+        let promoStatus = vpnPromoHelper.subscriptionPromoStatus
         var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
         var showNotificationDot: Bool = true
         var customDotColor: UIColor?
         var accessibilityLabel: String?
         var detailText: String?
 
-        switch vpnPromoHelper.subscriptionPromoStatus {
+        switch promoStatus {
         case .promo:
             vpnPromoHelper.subscriptionPromoWasShown()
+            Pixel.fire(pixel: .subscriptionEntryAppMenuImpression)
         case .noPromo:
             showNotificationDot = false
+            Pixel.fire(pixel: .subscriptionEntryAppMenuImpression)
         case .subscribed:
             if case .connected = AppDependencyProvider.shared.connectionObserver.recentValue {
                 image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOn : DesignSystemImages.Glyphs.Size24.vpn
@@ -923,6 +926,12 @@ extension TabViewController {
                                          detailText: showStatusStringInDetail ? detailText : nil) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
             Pixel.fire(pixel: .browsingMenuVPN)
+            switch promoStatus {
+            case .promo, .noPromo:
+                Pixel.fire(pixel: .subscriptionEntryAppMenuSubscriptionClick)
+            case .subscribed:
+                break
+            }
         }
     }
 

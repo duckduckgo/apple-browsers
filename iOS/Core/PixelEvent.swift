@@ -271,6 +271,7 @@ extension Pixel {
         case onboardingDuckAIExperimentFinalDialogShownUnique
         case onboardingChatPathTryVisitSiteUnique
         case onboardingChatPathTrackersBlockedUnique
+        case onboardingSyncAutoRestoreUserFromDuckAiFlow
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -1343,6 +1344,16 @@ extension Pixel {
         case subscriptionWinBackOfferSubscriptionSettingsShown
         case subscriptionWinBackOfferSubscriptionSettingsCTAClicked
 
+        // Subscription Funnel Entry Points (App Menu, App Settings)
+        case subscriptionEntryAppMenuImpression
+        case subscriptionEntryAppMenuSubscriptionClick
+        case subscriptionEntrySettingsImpression
+        case subscriptionEntrySettingsSubscriptionClick
+
+        // VPN Access-Revoked Alert (subscription expired)
+        case vpnAccessRevokedAlertShown
+        case vpnAccessRevokedAlertSubscribeButtonClicked
+
         // Free Trial Journey
         case privacyProFreeTrialStart
         case privacyProFreeTrialVPNActivation
@@ -2210,6 +2221,7 @@ extension Pixel.Event {
         case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
         case .onboardingChatPathTryVisitSiteUnique: return "m_onboarding_chat-path_try-visit-site_unique"
         case .onboardingChatPathTrackersBlockedUnique: return "m_onboarding_chat-path_trackers-blocked_unique"
+        case .onboardingSyncAutoRestoreUserFromDuckAiFlow: return "m_onboarding_duck-ai_sync-auto-restore-user"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -3167,6 +3179,16 @@ extension Pixel.Event {
         case .subscriptionWinBackOfferSettingsLoggedInOfferShown: return "m_privacy-pro_winback_settings_logged_in_offer_shown"
         case .subscriptionWinBackOfferSubscriptionSettingsShown: return "m_privacy-pro_winback_subscription_settings_shown"
         case .subscriptionWinBackOfferSubscriptionSettingsCTAClicked: return "m_privacy-pro_winback_subscription_settings_clicked"
+
+        // Subscription Funnel Entry Points (App Menu, App Settings)
+        case .subscriptionEntryAppMenuImpression: return "m_subscription_appmenu_impression"
+        case .subscriptionEntryAppMenuSubscriptionClick: return "m_subscription_appmenu_subscription_click"
+        case .subscriptionEntrySettingsImpression: return "m_subscription_settings_impression"
+        case .subscriptionEntrySettingsSubscriptionClick: return "m_subscription_settings_subscription_click"
+
+        // VPN Access-Revoked Alert
+        case .vpnAccessRevokedAlertShown: return "m_vpn_access_revoked_alert_shown"
+        case .vpnAccessRevokedAlertSubscribeButtonClicked: return "m_vpn_access_revoked_alert_subscribe_button_clicked"
 
         // Free Trial Journey
         case .privacyProFreeTrialStart: return "m_privacy-pro_freetrial_start"

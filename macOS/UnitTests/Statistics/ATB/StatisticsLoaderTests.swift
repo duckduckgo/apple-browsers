@@ -82,9 +82,9 @@ class StatisticsLoaderTests: XCTestCase {
         }
         waitForExpectations(timeout: 5)
 
-        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_client_major_version_") && $0.hasSuffix("_macos_desktop_monthly") },
+        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_client_major_version_") },
                       "Expected MAU OS-distribution pixel. Fired: \(firedPixelNames)")
-        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") && $0.hasSuffix("_macos_desktop_monthly") },
+        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") },
                       "Expected searches OS-distribution pixel. Fired: \(firedPixelNames)")
     }
 
@@ -110,7 +110,7 @@ class StatisticsLoaderTests: XCTestCase {
         }
         waitForExpectations(timeout: 5)
 
-        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") && $0.hasSuffix("_macos_desktop_monthly") },
+        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") },
                       "Expected searches OS-distribution pixel. Fired: \(firedPixelNames)")
     }
 

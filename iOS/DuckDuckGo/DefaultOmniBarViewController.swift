@@ -347,8 +347,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         pendingHideEditingStateLogo = false
         let editingStateViewController = OmniBarEditingStateViewController(
             switchBarHandler: switchBarHandler,
-            duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
             aiChatSyncCleaner: dependencies.aiChatSyncCleaner,
+            duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
             escapeHatchModel: escapeHatchModel,
             initialLogoHidden: initialLogoHidden
         )

@@ -58,10 +58,11 @@ final class AIChatHistoryManager {
     private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaner?
+    private let historyCleaner: HistoryCleaner
     private let viewModel: AIChatSuggestionsViewModel
     private let isIPadExperience: Bool
     private let isFireTab: Bool
-    private let aiChatDeleter: AIChatDeleter?
 
     var titleLayoutConfiguration: AIChatHistoryListViewController.TitleLayoutConfiguration?
     private(set) var hasCompletedInitialFetch = false
@@ -76,16 +77,18 @@ final class AIChatHistoryManager {
 
     init(suggestionsReader: AIChatSuggestionsReading,
          aiChatSettings: AIChatSettingsProvider,
-         aiChatDeleter: AIChatDeleter,
+         aiChatSyncCleaner: AIChatSyncCleaner?,
+         historyCleaner: HistoryCleaner,
          viewModel: AIChatSuggestionsViewModel,
          isIPadExperience: Bool = false,
          isFireTab: Bool) {
         self.suggestionsReader = suggestionsReader
         self.aiChatSettings = aiChatSettings
+        self.historyCleaner = historyCleaner
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.isFireTab = isFireTab
-        self.aiChatDeleter = aiChatDeleter
+        self.aiChatSyncCleaner = aiChatSyncCleaner
     }
 
     // MARK: - Public Methods

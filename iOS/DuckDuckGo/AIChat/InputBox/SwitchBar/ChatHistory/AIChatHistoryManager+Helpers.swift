@@ -47,19 +47,32 @@ extension AIChatHistoryManager {
             return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
         }()
 
-        let historyCleaner = HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger,
-                                                               privacyConfig: privacyConfigurationManager,
-                                                               nativeStorageHandler: nativeStorageHandler)
+
+        let chatDeleter = AIChatDeleter(
+            historyCleanerProvider: { _, _ in
+                HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager, nativeStorageHandler: nativeStorageHandler)
+            },
+            aiChatSyncCleaner: chatSyncCleaner ?? NilAIChatSyncCleaner()
+        )
 
         let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
 
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                            aiChatSettings: chatSettings,
-                                           aiChatSyncCleaner: chatSyncCleaner,
-                                           historyCleaner: historyCleaner,
+                                           aiChatDeleter: chatDeleter,
                                            viewModel: viewModel,
                                            isIPadExperience: isIPadExperience,
                                            isFireTab: isFireTab)
         return (manager, viewModel)
     }
+}
+
+/// # Important:
+///     At runtime `AIChatSyncCleaning` is never expected to be nil. This is a workaround to satisfy compile time requirements
+final class NilAIChatSyncCleaner: AIChatSyncCleaning {
+    func recordAutoClearBackgroundTimestamp(date: Date?) async {}
+    func recordLocalClear(date: Date?) async {}
+    func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async {}
+    func recordChatDeletion(chatID: String) async {}
+    func deleteIfNeeded() async {}
 }

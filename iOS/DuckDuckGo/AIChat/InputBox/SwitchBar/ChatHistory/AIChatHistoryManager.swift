@@ -58,8 +58,7 @@ final class AIChatHistoryManager {
     private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider
-    private let aiChatSyncCleaner: AIChatSyncCleaning?
-    private let historyCleaner: HistoryCleaner
+    private let aiChatDeleter: AIChatDeleter
     private let viewModel: AIChatSuggestionsViewModel
     private let isIPadExperience: Bool
     private let isFireTab: Bool
@@ -77,18 +76,16 @@ final class AIChatHistoryManager {
 
     init(suggestionsReader: AIChatSuggestionsReading,
          aiChatSettings: AIChatSettingsProvider,
-         aiChatSyncCleaner: AIChatSyncCleaning?,
-         historyCleaner: HistoryCleaner,
+         aiChatDeleter: AIChatDeleter,
          viewModel: AIChatSuggestionsViewModel,
          isIPadExperience: Bool = false,
          isFireTab: Bool) {
         self.suggestionsReader = suggestionsReader
         self.aiChatSettings = aiChatSettings
-        self.historyCleaner = historyCleaner
+        self.aiChatDeleter = aiChatDeleter
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.isFireTab = isFireTab
-        self.aiChatSyncCleaner = aiChatSyncCleaner
     }
 
     // MARK: - Public Methods
@@ -175,14 +172,7 @@ final class AIChatHistoryManager {
         viewModel.removeSuggestion(suggestion)
 
         Task { @MainActor in
-            let result = await historyCleaner.deleteAIChat(chatID: suggestion.chatId)
-            switch result {
-            case .success:
-                await aiChatSyncCleaner?.recordChatDeletion(chatID: suggestion.chatId)
-            default:
-                break
-            }
-
+            await aiChatDeleter.deleteChat(chatID: suggestion.chatId, isFireMode: isFireTab)
             refreshSuggestions()
         }
     }

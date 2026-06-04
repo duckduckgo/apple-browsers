@@ -103,9 +103,9 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         )
     }
 
-    func testActiveSubscriptionOSDistributionPixel() {
+    func testOSDistributionActiveSubscription() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .activeSubscriptionOSDistribution)
+        handler.handle(pixel: .osDistributionActiveSubscription)
 
         XCTAssertTrue(firedPixels.contains { $0.name.hasPrefix("os_distribution_active_subscriptions_major_version_") && $0.name.hasSuffix("_ios_phone_monthly") },
                       "Expected active-subscriptions OS-distribution pixel. Fired: \(firedPixels.map(\.name))")

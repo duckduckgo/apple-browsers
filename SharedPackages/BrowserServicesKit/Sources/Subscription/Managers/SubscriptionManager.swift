@@ -350,7 +350,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
         if cached.isActive {
             pixelHandler.handle(pixel: .subscriptionIsActive)
-            pixelHandler.handle(pixel: .activeSubscriptionOSDistribution)
+            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
         }
         return cached
     }
@@ -424,7 +424,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
         if subscription.isActive {
             pixelHandler.handle(pixel: .subscriptionIsActive)
-            pixelHandler.handle(pixel: .activeSubscriptionOSDistribution)
+            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
         }
         return subscription
     }

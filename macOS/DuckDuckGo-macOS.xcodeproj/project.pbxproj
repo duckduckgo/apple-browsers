@@ -2464,6 +2464,7 @@
 		8449054B2E55BBD60054F4FD /* NavigationProtectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8449054A2E55BBD60054F4FD /* NavigationProtectionUITests.swift */; };
 		8449054D2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8449054C2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift */; };
 		8449054F2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8449054E2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift */; };
+		31EC9F58AE7A18707C8A0D08 /* YouTubeAdBlockingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE50795B0E1740A665901DEA /* YouTubeAdBlockingUITests.swift */; };
 		844905512E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844905502E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift */; };
 		844905532E55C9CD0054F4FD /* ErrorPageUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844905522E55C9CD0054F4FD /* ErrorPageUITests.swift */; };
 		844D7DA42C9443EA00BE61D4 /* NSPrintInfoExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */; };
@@ -5784,6 +5785,7 @@
 		8449054A2E55BBD60054F4FD /* NavigationProtectionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationProtectionUITests.swift; sourceTree = "<group>"; };
 		8449054C2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPSUpgradeUITests.swift; sourceTree = "<group>"; };
 		8449054E2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardUITests.swift; sourceTree = "<group>"; };
+		AE50795B0E1740A665901DEA /* YouTubeAdBlockingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeAdBlockingUITests.swift; sourceTree = "<group>"; };
 		844905502E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionUITests.swift; sourceTree = "<group>"; };
 		844905522E55C9CD0054F4FD /* ErrorPageUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorPageUITests.swift; sourceTree = "<group>"; };
 		844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPrintInfoExtension.swift; sourceTree = "<group>"; };
@@ -9596,6 +9598,7 @@
 				BB4339DA2C7F9606005D7ED7 /* PinnedTabsTests.swift */,
 				842FE38A2E0C28EF00E4F9E4 /* PrintingTests.swift */,
 				8449054E2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift */,
+				AE50795B0E1740A665901DEA /* YouTubeAdBlockingUITests.swift */,
 				5680BCA62F17EC6400BD624E /* SSLErrorTests.swift */,
 				844905462E559E880054F4FD /* SearchNonexistentDomainUITests.swift */,
 				7B0A53CF2F78469500F9A0DE /* StalledResourceLoadUITests.swift */,
@@ -16932,6 +16935,7 @@
 				EE54F7B32BBFEA49006218DB /* BookmarksAndFavoritesTests.swift in Sources */,
 				BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */,
 				8449054F2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift in Sources */,
+				31EC9F58AE7A18707C8A0D08 /* YouTubeAdBlockingUITests.swift in Sources */,
 				844905412E54A3540054F4FD /* AddressBarUITests.swift in Sources */,
 				844905452E54ADD40054F4FD /* AutoconsentUITests.swift in Sources */,
 				4B7948192F81DFC400DA4028 /* TabNavigationMenuItemTests.swift in Sources */,

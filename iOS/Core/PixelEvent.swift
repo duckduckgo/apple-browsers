@@ -271,6 +271,7 @@ extension Pixel {
         case onboardingDuckAIExperimentFinalDialogShownUnique
         case onboardingChatPathTryVisitSiteUnique
         case onboardingChatPathTrackersBlockedUnique
+        case onboardingSyncAutoRestoreUserFromDuckAiFlow
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -1540,7 +1541,8 @@ extension Pixel {
         case webViewErrorPageShown
 
         // MARK: External Scheme Navigation
-        case webViewExternalSchemeNavigationXSafariHTTPSLoopDetected
+        case webViewExternalSchemeNavigationSafariRedirectLoadURLRequested
+        case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown
 
         // MARK: Browsing
         case stopPageLoad
@@ -1558,6 +1560,12 @@ extension Pixel {
         case openAIChatFromWidgetLockScreenComplication
         case openAIChatFromIconShortcut
         case openAIChatFromTabManager
+        case openAIChatFromNavigationBarShortcut
+
+        case aiChatNavigationBarContextualSheetOpened
+        case aiChatNavigationBarShortcutMenuOpened
+        case aiChatNavigationBarShortcutMenuHideTapped
+        case aiChatNavigationBarShortcutMenuOpenSettingsTapped
 
         case voiceEntryPointTapped
         case voiceSessionStarted
@@ -1572,6 +1580,8 @@ extension Pixel {
         case aiChatSettingsBrowserMenuTurnedOn
         case aiChatSettingsTabManagerTurnedOff
         case aiChatSettingsTabManagerTurnedOn
+        case aiChatSettingsNavigationBarTurnedOff
+        case aiChatSettingsNavigationBarTurnedOn
         case aiChatSettingsChatSuggestionsTurnedOff
         case aiChatSettingsChatSuggestionsTurnedOn
         case aiChatSettingsDisplayed
@@ -2201,6 +2211,7 @@ extension Pixel.Event {
         case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
         case .onboardingChatPathTryVisitSiteUnique: return "m_onboarding_chat-path_try-visit-site_unique"
         case .onboardingChatPathTrackersBlockedUnique: return "m_onboarding_chat-path_trackers-blocked_unique"
+        case .onboardingSyncAutoRestoreUserFromDuckAiFlow: return "m_onboarding_duck-ai_sync-auto-restore-user"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -3348,7 +3359,8 @@ extension Pixel.Event {
         case .webViewErrorPageShown: return "m_errorpageshown"
 
         // MARK: - External Scheme Navigation
-        case .webViewExternalSchemeNavigationXSafariHTTPSLoopDetected: return "m_webview_external-scheme-navigation_x-safari-https_loop-detected"
+        case .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested: return "m_webview_external-scheme-navigation_safari-redirect_load-url-requested"
+        case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown"
 
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"
@@ -3372,6 +3384,11 @@ extension Pixel.Event {
         case .browsingMenuAIChatWebPage: return "m_aichat_menu_webpage"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
         case .openAIChatFromTabManager: return "m_aichat_tabmanager_icon"
+        case .openAIChatFromNavigationBarShortcut: return "m_aichat_navigation_bar_shortcut_open"
+        case .aiChatNavigationBarContextualSheetOpened: return "m_aichat_navigation_bar_contextual_sheet_opened"
+        case .aiChatNavigationBarShortcutMenuOpened: return "m_aichat_navigation_bar_shortcut_menu_opened"
+        case .aiChatNavigationBarShortcutMenuHideTapped: return "m_aichat_navigation_bar_shortcut_menu_hide_tapped"
+        case .aiChatNavigationBarShortcutMenuOpenSettingsTapped: return "m_aichat_navigation_bar_shortcut_menu_open_settings_tapped"
         case .voiceEntryPointTapped: return "m_aichat_voice_entry_point_tapped"
         case .voiceSessionStarted: return "m_aichat_voice_session_started"
         case .aiChatSettingsVoiceTurnedOff: return "m_aichat_settings_voice_turned_off"
@@ -3382,6 +3399,8 @@ extension Pixel.Event {
         case .aiChatSettingsBrowserMenuTurnedOn: return "m_aichat_settings_browser_menu_turned_on"
         case .aiChatSettingsTabManagerTurnedOff: return "m_aichat_settings_tab_manager_turned_off"
         case .aiChatSettingsTabManagerTurnedOn: return "m_aichat_settings_tab_manager_turned_on"
+        case .aiChatSettingsNavigationBarTurnedOff: return "m_aichat_settings_navigation_bar_turned_off"
+        case .aiChatSettingsNavigationBarTurnedOn: return "m_aichat_settings_navigation_bar_turned_on"
         case .aiChatSettingsChatSuggestionsTurnedOff: return "m_aichat_settings_chat_suggestions_turned_off"
         case .aiChatSettingsChatSuggestionsTurnedOn: return "m_aichat_settings_chat_suggestions_turned_on"
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"

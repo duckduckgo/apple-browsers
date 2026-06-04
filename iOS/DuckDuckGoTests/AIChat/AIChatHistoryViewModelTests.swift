@@ -166,7 +166,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         ])
 
         sut.updateQuery("dog")
-        waitForThrottle()
+        waitForDebounce()
 
         XCTAssertEqual(sut.pinned.map(\.chatId), ["3"])
         XCTAssertEqual(sut.recent.map(\.chatId), ["1"])
@@ -179,9 +179,9 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         ])
 
         sut.updateQuery("dog")
-        waitForThrottle()
+        waitForDebounce()
         sut.updateQuery("")
-        waitForThrottle()
+        waitForDebounce()
 
         XCTAssertEqual(sut.pinned.count, 1)
         XCTAssertEqual(sut.recent.count, 1)
@@ -191,7 +191,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
 
         sut.updateQuery("   ")
-        waitForThrottle()
+        waitForDebounce()
 
         XCTAssertEqual(sut.recent.count, 1)
     }
@@ -200,7 +200,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
 
         sut.updateQuery("nonexistent")
-        waitForThrottle()
+        waitForDebounce()
 
         XCTAssertTrue(sut.isEmpty)
     }
@@ -229,9 +229,9 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         wait(for: [drained], timeout: 1)
     }
 
-    /// Waits past the 150ms throttle window so the view model can emit the latest query value.
-    private func waitForThrottle() {
-        let drained = expectation(description: "throttle drained")
+    /// Waits past the 150ms debounce window so the view model can emit the latest query value.
+    private func waitForDebounce() {
+        let drained = expectation(description: "debounce drained")
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(200)) { drained.fulfill() }
         wait(for: [drained], timeout: 1)
     }

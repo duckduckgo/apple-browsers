@@ -1522,15 +1522,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func fireReasoningEffortSelectedPixel(mode: AIChatReasoningMode) {
         Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue])
     }
-
-    // Temporary hardcode for UX validation. Replace with API-backed per-reasoning-effort access
-    // after `/models` exposes approved metadata for reasoning mode access.
-    // https://app.asana.com/1/137249556945/project/1210947754188321/task/1214802703019277?focus=true
+    
     private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
-        if model.id == "gpt-5.2", mode == .extendedReasoning {
-            return .pro
-        }
-        return nil
+        guard !model.accessibleReasoningModes.contains(mode) else { return nil }
+        guard let effort = model.reasoningEffort(for: mode) else { return nil }
+        return model.lowestPublicAccessTier(for: effort)
     }
 
     private func canSelectReasoningModeRequiringTier(_ requiredTier: AIChatModelPublicAccessTier) -> Bool {

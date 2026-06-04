@@ -101,7 +101,7 @@ extension Tab: WKUIDelegate {
 
     // https://github.com/WebKit/WebKit/blob/995f6b1595611c934e742a4f3a9af2e678bc6b8d/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegate.h#L147
     @objc(webView:requestMediaCapturePermissionForOrigin:initiatedByFrame:type:decisionHandler:)
-    @available(macOS 12, *)
+
     func webView(_ webView: WKWebView,
                  requestMediaCapturePermissionFor origin: WKSecurityOrigin,
                  initiatedByFrame frame: WKFrameInfo,
@@ -149,7 +149,7 @@ extension Tab: WKUIDelegate {
 
     // https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L132
     @objc(_webView:requestGeolocationPermissionForOrigin:initiatedByFrame:decisionHandler:)
-    @available(macOS 12, *)
+
     func webView(_ webView: WKWebView,
                  requestGeolocationPermissionFor origin: WKSecurityOrigin,
                  initiatedBy frame: WKFrameInfo,

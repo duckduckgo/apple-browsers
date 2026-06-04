@@ -34,7 +34,6 @@ class MockSearchPreferencesPersistor: SearchPreferencesPersistor {
 }
 
 // swiftlint:disable opening_brace
-@available(macOS 12.0, *)
 final class SearchNonexistentDomainTests: XCTestCase {
 
     struct URLs {

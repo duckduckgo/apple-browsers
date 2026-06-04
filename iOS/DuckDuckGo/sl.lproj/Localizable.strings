@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Vnesite nenegativno število dni. Datum namestitve bo nastavljen pred toliko dnevi.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3034,6 +3037,51 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Izberite brskalnik";
 
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Čakal bom skrit na dosegu roke, če boste želeli klepetati in brskati z umetno inteligenco.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Vsi klepeti so anonimizirani";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Za dostop do vseh funkcij umetne inteligence ne potrebujete računa";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Nikoli ne uporablja vaših klepetov za učenje umetne inteligence";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Dostopajte do orodja ChatGPT, Claude in drugih na enem mestu";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Preizkusite Duck.ai!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Priljubljena orodja umetne inteligence";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "Zaščite UI aktivirane!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Želite DuckDuckGo nastaviti kot privzeti brskalnik?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Začni zasebni klepet z umetno inteligenco z Duck.ai ali preklopi na iskanje za zaščiteno brskanje.\n\nDuck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Ponujamo tudi plačljivo naročnino z naprednimi modeli umetne inteligence z višjimi omejitvami klepeta GPT, Claude in Llama, varnim VPN in še več.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Zdaj pa preizkusite zasebni klepet z umetno inteligenco!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Ste pripravljeni na brezplačen zasebni klepet z orodjem umetne inteligence ChatGPT, Claude in drugimi v brskalniku, ki vas aktivno ščiti?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Začni klepet z umetno inteligenco";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Ne pozabite: Duck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
+
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo je na voljo tudi z %1$@, ki vključuje omrežje %2$@ in %3$@.";
 
@@ -3421,26 +3469,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Odpri v drugi aplikaciji?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Pojdi nazaj";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Poskušali smo jo zasebno naložiti, vendar se ne prikaže.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Želite to stran odpreti v Safariju?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Odpri v Safariju";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Žal se stran ni mogla naložiti.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Ta stran se naloži samo v brskalniku Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Odpri v Safariju";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "To spletno mesto ima neveljavno varnostno potrdilo in obisk morda ni varen.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Ostani v DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Nekatere funkcije spletnega mesta morda niso združljive s tem brskalnikom.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "To spletno mesto se želi odpreti v brskalniku Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo ne more naložiti te strani.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedavni dnevniki obdelave";
@@ -5077,3 +5119,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Klepeti";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Zgodovina klepeta";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Nastavitve klepeta";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Nov";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Nov zavihek Fire";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Novo iskanje";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Nov zavihek";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Nov glasovni klepet";

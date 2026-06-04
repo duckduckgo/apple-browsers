@@ -250,21 +250,18 @@ extension Preferences {
                         })
                     }))
 
-                // Only show update status if feature flag is enabled
-                if model.shouldShowUpdateStatus {
-                    switch model.updateState {
-                    case .upToDate:
-                        Text(" — " + UserText.upToDate)
-                    case .updateCycle(let progress):
-                        if hasPendingUpdate {
-                            if hasCriticalUpdate {
-                                Text(" — " + UserText.newerCriticalUpdateAvailable)
-                            } else {
-                                Text(" — " + UserText.newerVersionAvailable)
-                            }
+                switch model.updateState {
+                case .upToDate:
+                    Text(" — " + UserText.upToDate)
+                case .updateCycle(let progress):
+                    if hasPendingUpdate {
+                        if hasCriticalUpdate {
+                            Text(" — " + UserText.newerCriticalUpdateAvailable)
                         } else {
-                            text(for: progress)
+                            Text(" — " + UserText.newerVersionAvailable)
                         }
+                    } else {
+                        text(for: progress)
                     }
                 }
             }
@@ -298,47 +295,38 @@ extension Preferences {
 
         @ViewBuilder
         private var statusIcon: some View {
-            // Only show status icon if feature flag is enabled
-            if model.shouldShowUpdateStatus {
-                switch model.updateState {
-                case .upToDate:
-                    Image(nsImage: .check)
-                        .foregroundColor(.green)
-                case .updateCycle(let progress):
-                    if hasPendingUpdate {
-                        if hasCriticalUpdate {
-                            Image(nsImage: .criticalUpdateNotificationInfo)
-                                .foregroundColor(.red)
-                        } else {
-                            Image(nsImage: .updateNotificationInfo)
-                                .foregroundColor(.blue)
-                        }
-                    } else if progress.isFailed {
+            switch model.updateState {
+            case .upToDate:
+                Image(nsImage: .check)
+                    .foregroundColor(.green)
+            case .updateCycle(let progress):
+                if hasPendingUpdate {
+                    if hasCriticalUpdate {
                         Image(nsImage: .criticalUpdateNotificationInfo)
                             .foregroundColor(.red)
                     } else {
-                        if #available(macOS 13.0, *) {
-                            ProgressView()
-                                .scaleEffect(0.6)
-                        } else {
-                            ProgressView()
-                        }
+                        Image(nsImage: .updateNotificationInfo)
+                            .foregroundColor(.blue)
+                    }
+                } else if progress.isFailed {
+                    Image(nsImage: .criticalUpdateNotificationInfo)
+                        .foregroundColor(.red)
+                } else {
+                    if #available(macOS 13.0, *) {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                    } else {
+                        ProgressView()
                     }
                 }
-            } else {
-                // Empty view when feature flag is off
-                EmptyView()
             }
         }
 
         @ViewBuilder
         private var lastCheckedText: some View {
-            // Only show last checked text if feature flag is enabled
-            if model.shouldShowUpdateStatus {
-                let lastChecked = model.updateController?.updateProgress.isIdle == true ? lastCheckedFormattedDate(model.lastUpdateCheckDate) : "-"
-                Text("\(UserText.lastChecked): \(lastChecked)")
-                    .foregroundColor(.secondary)
-            }
+            let lastChecked = model.updateController?.updateProgress.isIdle == true ? lastCheckedFormattedDate(model.lastUpdateCheckDate) : "-"
+            Text("\(UserText.lastChecked): \(lastChecked)")
+                .foregroundColor(.secondary)
         }
 
         private func lastCheckedFormattedDate(_ date: Date?) -> String {
@@ -357,19 +345,11 @@ extension Preferences {
 
         @ViewBuilder
         private var updateButton: some View {
-            if model.shouldShowUpdateStatus {
-                let configuration = model.updateButtonConfiguration
+            let configuration = model.updateButtonConfiguration
 
-                Button(configuration.title, action: configuration.action)
-                    .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
-                    .disabled(!configuration.enabled)
-            } else {
-                // Feature flag is OFF - show simple App Store button
-                Button(UserText.checkForUpdate) {
-                    model.checkForAppStoreUpdate()
-                }
-                .buttonStyle(UpdateButtonStyle(enabled: true))
-            }
+            Button(configuration.title, action: configuration.action)
+                .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
+                .disabled(!configuration.enabled)
         }
     }
 
@@ -389,12 +369,8 @@ extension Preferences {
                 let settingsText = UserText.aboutUpdateInfoAppStoreSettings
                 let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText, menuText, settingsText)
                 HStack(spacing: 0) {
-                    if #available(macOS 12.0, *) {
-                        Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
-                            .fixedSize(horizontal: false, vertical: true)
-                    } else {
-                        NSAttributedTextView(attributedString: appStoreLegacyAttributedText(fullText: fullText, linkText: linkText))
-                    }
+                    Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
+                        .fixedSize(horizontal: false, vertical: true)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -408,7 +384,6 @@ extension Preferences {
             UserText.aboutUpdateInfoAppStoreSettings
         ]
 
-        @available(macOS 12, *)
         private func appStoreAttributedText(fullText: String, linkText: String) -> AttributedString {
             var attributed = AttributedString(fullText)
             if let range = attributed.range(of: linkText) {
@@ -420,37 +395,6 @@ extension Preferences {
                 }
             }
             return attributed
-        }
-
-        private func appStoreLegacyAttributedText(fullText: String, linkText: String) -> NSAttributedString {
-            let attributedString = NSMutableAttributedString(string: fullText)
-
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = 0
-            paragraphStyle.paragraphSpacing = 0
-
-            let defaultAttributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
-                .foregroundColor: NSColor(Color(.greyText)),
-                .paragraphStyle: paragraphStyle
-            ]
-            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
-
-            if let range = fullText.range(of: linkText) {
-                let nsRange = NSRange(range, in: fullText)
-                attributedString.addAttribute(.link, value: URL.appStore, range: nsRange)
-                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
-                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
-            }
-
-            let boldFont = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
-            for word in Self.boldWords {
-                if let range = fullText.range(of: word) {
-                    attributedString.addAttribute(.font, value: boldFont, range: NSRange(range, in: fullText))
-                }
-            }
-
-            return attributedString
         }
     }
 
@@ -508,11 +452,7 @@ extension Preferences {
             let titleView = Text(titleText)
 
             let contentView: some View = HStack(alignment: .center, spacing: 0) {
-                if #available(macOS 12.0, *) {
-                    Text(bodyTextAttributed)
-                } else {
-                    NSAttributedTextView(attributedString: legacyBodyTextAttributed)
-                }
+                Text(bodyTextAttributed)
 
                 // Added to prevent bouncy animation when resizing the parent view
                 // caused by the text width being a bit jumpy.
@@ -533,38 +473,12 @@ extension Preferences {
             .frame(minWidth: 320, maxWidth: 510)
         }
 
-        @available(macOS 12, *)
         private var bodyTextAttributed: AttributedString {
             var instructions = AttributedString(bodyText)
             if canUpgradeOS, let range = instructions.range(of: Self.linkTarget) {
                 instructions[range].link = Self.softwareUpdateURL
             }
             return instructions
-        }
-
-        private var legacyBodyTextAttributed: NSAttributedString {
-            let fullText = bodyText
-            let attributedString = NSMutableAttributedString(string: fullText)
-
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = 0
-            paragraphStyle.paragraphSpacing = 0
-
-            let defaultAttributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
-                .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: paragraphStyle
-            ]
-            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
-
-            if canUpgradeOS, let range = fullText.range(of: Self.linkTarget) {
-                let nsRange = NSRange(range, in: fullText)
-                attributedString.addAttribute(.link, value: Self.softwareUpdateURL, range: nsRange)
-                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
-                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
-            }
-
-            return attributedString
         }
     }
 }

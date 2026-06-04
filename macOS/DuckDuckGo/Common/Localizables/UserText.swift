@@ -303,28 +303,14 @@ struct UserText {
                                           comment: "Title of a dialog asking the user to confirm deleting history for a given date. %@ represents the date")
         return String(format: localized, date)
     }
-    static var delete1HistoryItemMessage: String {
-        if #available(macOS 12.0, *) {
-            return NSLocalizedString("history.item.delete.dialog.message.markdown",
-                                     value: "**1** item will be deleted.",
-                                     comment: "Message in a dialog asking the user to confirm deleting a single history item. Please make sure to keep **%@** intact.")
-        } else {
-            return NSLocalizedString("history.item.delete.dialog.message",
-                                     value: "1 item will be deleted",
-                                     comment: "Message in a dialog asking the user to confirm deleting a single history item.")
-        }
-    }
+    static let delete1HistoryItemMessage = NSLocalizedString("history.item.delete.dialog.message.markdown",
+                          value: "**1** item will be deleted.",
+                          comment: "Message in a dialog asking the user to confirm deleting a single history item. Please make sure to keep **%@** intact.")
     static func deleteHistoryMessage(items: String) -> String {
         let localized = {
-            if #available(macOS 12.0, *) {
-                return NSLocalizedString("history.delete.dialog.message.markdown",
-                                         value: "**%@** items will be deleted.",
-                                         comment: "Message in a dialog asking the user to confirm deleting history items. Please make sure to keep **%@** intact. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (**%@**) will be deleted.'")
-            } else {
-                return NSLocalizedString("history.delete.dialog.message",
-                                         value: "%@ items will be deleted",
-                                         comment: "Message in a dialog asking the user to confirm deleting history. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (%@) will be deleted.'")
-            }
+            NSLocalizedString("history.delete.dialog.message.markdown",
+                              value: "**%@** items will be deleted.",
+                              comment: "Message in a dialog asking the user to confirm deleting history items. Please make sure to keep **%@** intact. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (**%@**) will be deleted.'")
         }()
         return String(format: localized, items)
     }
@@ -644,6 +630,8 @@ struct UserText {
     static let aiChatChromeShowDuckAIButton = NSLocalizedString("aichat.chrome.show-duckai-button", value: "Show Duck.ai Shortcut", comment: "Context menu item to show the Duck.ai title button in the tab bar")
     static let aiChatChromeHideSidebarButton = NSLocalizedString("aichat.chrome.hide-sidebar-button", value: "Hide Sidebar Button", comment: "Context menu item to hide the Duck.ai sidebar toggle button in the tab bar")
     static let aiChatChromeShowSidebarButton = NSLocalizedString("aichat.chrome.show-sidebar-button", value: "Show Sidebar Button", comment: "Context menu item to show the Duck.ai sidebar toggle button in the tab bar")
+    static let aiChatShowSidebar = NSLocalizedString("aichat.view.show-sidebar", value: "Show Duck.ai Sidebar", comment: "View menu item to open the Duck.ai sidebar")
+    static let aiChatHideSidebar = NSLocalizedString("aichat.view.hide-sidebar", value: "Hide Duck.ai Sidebar", comment: "View menu item to close the Duck.ai sidebar")
     static let aiChatChromeOpenAISettings = NSLocalizedString("aichat.chrome.open-ai-settings", value: "Open AI Settings", comment: "Context menu item to open AI Features settings pane")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
     static let aiChatAddressBarHideToggle = NSLocalizedString("aichat.address-bar.hide-toggle", value: "Hide Duck.ai Toggle", comment: "Button to hide duck.ai toggle in address bar")
@@ -1295,15 +1283,9 @@ struct UserText {
     static let addDuckDuckGoToDock = NSLocalizedString("preferences.add-DuckDuckGo-to-dock", value: "Add DuckDuckGo To Dock", comment: "Action button to add the app to the Dock")
     static let addToDockInstructions = NSLocalizedString("preferences.add-to-dock.instructions", value: "Get quick access to protected browsing. Add DuckDuckGo to your Dock.", comment: "Instructions for adding the app to the Dock")
     static var addToDockInstructionsCaption: String {
-        if #available(macOS 12.0, *) {
-            return NSLocalizedString("preferences.add-to-dock.instructions-caption.markdown",
-                                     value: "Hold control and click the DuckDuckGo icon, then choose **Options > Keep in Dock**.",
-                                     comment: "Instructions for adding the app to the Dock. Contains markdown for bold text.")
-        } else {
-            return NSLocalizedString("preferences.add-to-dock.instructions-caption",
-                                     value: "Hold control and click the DuckDuckGo icon, then choose Options > Keep in Dock.",
-                                     comment: "Instructions for adding the app to the Dock.")
-        }
+        NSLocalizedString("preferences.add-to-dock.instructions-caption.markdown",
+                          value: "Hold control and click the DuckDuckGo icon, then choose **Options > Keep in Dock**.",
+                          comment: "Instructions for adding the app to the Dock. Contains markdown for bold text.")
     }
     static let addToDockShowMeHow = NSLocalizedString("preferences.add-to-dock.show-me-how", value: "Show Me How", comment: "Opens a short video demonstrating how to add the app to the Dock")
 
@@ -2011,7 +1993,6 @@ struct UserText {
     // Bookmarks bar prompt
     static let bookmarksBarPromptTitle = NSLocalizedString("bookmarks.bar.prompt.title", value: "Show Bookmarks Bar?", comment: "Title for bookmarks bar prompt")
     static let bookmarksBarPromptMessageMarkdown = NSLocalizedString("bookmarks.bar.prompt.message", value: "Show the Bookmarks Bar for quick access to your favorite bookmarks. You can adjust this later in **Settings** > **Appearance**.", comment: " message with markdown show for bookmarks bar prompt, make sure to keep the ** ** for the translated words Settings and Appearance")
-    static let bookmarksBarPromptMessageFallback = NSLocalizedString("bookmarks.bar.prompt.message.fallback", value: "Show the Bookmarks Bar for quick access to your favorite bookmarks. You can adjust this later in Settings > Appearance.", comment: " message show for bookmarks bar prompt")
 
     static let bookmarksBarPromptDismiss = NSLocalizedString("bookmarks.bar.prompt.dismiss", value: "Hide", comment: "Dismiss button label on bookmarks bar prompt")
     static let bookmarksBarPromptAccept = NSLocalizedString("bookmarks.bar.prompt.accept", value: "Show", comment: "Accept button label on bookmarks bar prompt")
@@ -2084,13 +2065,9 @@ struct UserText {
     static let sessionRestorePromptTitle = NSLocalizedString("session.restore.prompt.title", value: "The browser didn’t quit as expected", comment: "Title of the prompt where the user can choose to restore the previous browser session after a crash")
     static let sessionRestorePromptMessage = NSLocalizedString("session.restore.prompt.message", value: "Would you like to restore tabs from your previous session?", comment: "Message of the prompt where the user can choose to restore the previous browser session after a crash")
     static let sessionRestorePromptExplanation: String = {
-        let localized = {
-            if #available(macOS 12, *) {
-                NSLocalizedString("session.restore.prompt.explanation.markdown", value: "You can also do this later from **%1$@** → **%2$@**.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session. Please make sure to keep **%1$@** and **%2$@** intact.")
-            } else {
-                NSLocalizedString("session.restore.prompt.explanation", value: "You can also do this later from %1$@ → %2$@.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.")
-            }
-        }()
+        let localized = NSLocalizedString("session.restore.prompt.explanation.markdown",
+                                          value: "You can also do this later from **%1$@** → **%2$@**.",
+                                          comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session. Please make sure to keep **%1$@** and **%2$@** intact.")
         return String(format: localized, mainMenuHistory, mainMenuHistoryReopenAllWindowsFromLastSession)
     }()
     static let sessionRestorePromptButtonAccept = NSLocalizedString("session.restore.prompt.button.accept", value: "Restore Session", comment: "Button the user can press to restore the previous browser session after a crash")
@@ -2299,8 +2276,6 @@ struct UserText {
     static let homePagePromotionFreemiumDBPTitle = NSLocalizedString("home.page.promotion.freemium.dbp.title", value: "Personal Information Removal", comment: "Title for the Freemium DBP Home Page Promotion")
 
     static let homePagePromotionFreemiumDBPDescriptionMarkdown = NSLocalizedString("home.page.promotion.freemium.dbp.description.markdown", value: "Find out which sites are selling **your info.**", comment: "Markdown Description for the Freemium DBP Home Page Promotion. Please make sure to keep **STRING** intact.")
-
-    static let homePagePromotionFreemiumDBPDescription = NSLocalizedString("home.page.promotion.freemium.dbp.description", value: "Find out which sites are selling your info.", comment: "Description for the Freemium DBP Home Page Promotion")
 
     static let homePagePromotionFreemiumDBPButtonTitle = NSLocalizedString("home.page.promotion.freemium.dbp.button.title", value: "Free Scan", comment: "Title for the Freemium DBP Home Page Promotion Button")
 

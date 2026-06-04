@@ -226,22 +226,20 @@ enum Preferences {
                     wideEvent.startFlow(subscriptionRestoreEmailSettingsWideEventData)
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
-                    if #available(macOS 12.0, *) {
-                        Task {
-                            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
-                                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
-                            let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
-                                restorePlatform: .appleAccount,
-                                funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
-                            )
-                            let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
-                                                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                                                     uiHandler: subscriptionUIHandler,
-                                                                                                     subscriptionRestoreWideEventData: subscriptionRestoreAppleSettingsWideEventData)
-                            await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
+                    Task {
+                        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                               storePurchaseManager: subscriptionManager.storePurchaseManager())
+                        let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
+                            restorePlatform: .appleAccount,
+                            funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
+                        )
+                        let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
+                                                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                                                 uiHandler: subscriptionUIHandler,
+                                                                                                 subscriptionRestoreWideEventData: subscriptionRestoreAppleSettingsWideEventData)
+                        await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
-                            PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
-                        }
+                        PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                     }
                 })
 

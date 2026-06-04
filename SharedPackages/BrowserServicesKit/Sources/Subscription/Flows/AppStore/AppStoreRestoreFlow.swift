@@ -56,13 +56,13 @@ public enum AppStoreRestoreFlowError: DDGError {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public protocol AppStoreRestoreFlow {
     @discardableResult func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError>
     func restoreSubscriptionAfterExpiredRefreshToken() async throws
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public final class DefaultAppStoreRestoreFlow: AppStoreRestoreFlow {
     private let subscriptionManager: any SubscriptionManager
     private let storePurchaseManager: any StorePurchaseManager

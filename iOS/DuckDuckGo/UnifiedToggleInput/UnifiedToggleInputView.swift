@@ -538,6 +538,10 @@ final class UnifiedToggleInputView: UIView {
         aiTabCollapsedMenuButton.isEnabled = !dimmed
         // Block the text view from directly becoming first responder when the user taps the pill.
         textEntryView.isUserInteractionEnabled = !dimmed
+        // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
+        handler.isOnboardingLocked = dimmed
+        let shadowOpacity: Float = dimmed ? 0.04 : 0.16
+        Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
     }
 
     // MARK: - Fire Mode
@@ -939,6 +943,8 @@ final class UnifiedToggleInputView: UIView {
         toolbarBottomConstraint.constant = 0
         toolbarHeightConstraint.constant = 0
         toolsToolbar.alpha = 0
+        attachmentsStripHeightConstraint.constant = 0
+        attachmentsStrip.alpha = 0
         textEntryView.isExpandable = false
     }
 
@@ -1155,7 +1161,7 @@ private extension UnifiedToggleInputView {
     /// Mirrors `AIChatTabChatHeaderView`'s glass-pill style swap: regular glass in light mode
     /// (visible material on white chrome), clear glass in dark mode (lighter, refractive).
     @available(iOS 26, *)
-    fileprivate static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
+    static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
         traitCollection.userInterfaceStyle == .dark ? .clearGlass() : .glass()
     }
 
@@ -1174,9 +1180,9 @@ private extension UnifiedToggleInputView {
         button.clipsToBounds = false
     }
 
-    private static func applyAITabAccessoryShadow(to button: UIButton) {
+    private static func applyAITabAccessoryShadow(to button: UIButton, opacity: Float = 0.16) {
         button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOpacity = 0.16
+        button.layer.shadowOpacity = opacity
         button.layer.shadowOffset = CGSize(width: 0, height: 8)
         button.layer.shadowRadius = 16
     }

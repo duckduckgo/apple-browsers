@@ -19,7 +19,6 @@
 import SwiftUI
 import StoreKit
 
-@available(macOS 12.0, *)
 public struct DebugPurchaseViewV2: View {
 
     @ObservedObject var model: DebugPurchaseModelV2
@@ -97,7 +96,6 @@ struct ActivityIndicator: NSViewRepresentable {
     }
 }
 
-@available(macOS 12.0, *)
 struct SubscriptionRow: View {
 
     var product: Product
@@ -156,7 +154,6 @@ struct CapsuleButton: ButtonStyle {
     }
 }
 
-@available(macOS 12.0, *)
 extension Product {
 
     var isSubscription: Bool {
@@ -171,7 +168,6 @@ extension String: @retroactive Identifiable {
     }
 }
 
-@available(macOS 12.0, *)
 struct BuyButtonStyle: ButtonStyle {
     let isPurchased: Bool
 

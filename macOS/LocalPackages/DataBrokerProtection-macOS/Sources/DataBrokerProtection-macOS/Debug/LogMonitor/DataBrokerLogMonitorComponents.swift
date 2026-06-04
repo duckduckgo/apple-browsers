@@ -312,16 +312,10 @@ struct LogEntryRowView: View {
                 .cornerRadius(4)
                 .frame(width: 100, alignment: .leading)
 
-            if #available(macOS 12.0, *) {
-                Text(log.message)
-                    .font(.caption)
-                    .lineLimit(nil)
-                    .textSelection(.enabled)
-            } else {
-                Text(log.message)
-                    .font(.caption)
-                    .lineLimit(nil)
-            }
+            Text(log.message)
+                .font(.caption)
+                .lineLimit(nil)
+                .textSelection(.enabled)
 
             Spacer()
         }

@@ -899,14 +899,6 @@ public final class PixelKit {
     static let storageKeyPrefixLegacy = "com.duckduckgo.network-protection.pixel."
     static let storageKeyPrefix = "com.duckduckgo.network-protection.pixel."
 
-    /// Initially PixelKit was configured only for serving netP so these very specific keys were used, now PixelKit serves the entire app so we need to move away from them.
-    /// NOTE: I would remove this 6 months after release
-    private func legacyUserDefaultsKeyName(forPixelName pixelName: String) -> String {
-        dryRun
-        ? "\(Self.storageKeyPrefixLegacy)\(pixelName).dry-run"
-        : "\(Self.storageKeyPrefixLegacy)\(pixelName)"
-    }
-
     private func userDefaultsKeyName(forPixelName pixelName: String) -> String {
         return "\(Self.storageKeyPrefix)\(pixelName)\( dryRun ? ".dry-run" : "" )"
     }

@@ -96,8 +96,12 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
             suggestionIDsPendingRemoval.contains(suggestion.id)
         }
 
-        // Sort by recency (most recent first)
+        // Sort by recency (most recent first). Plus: Pinned Suggestions will always go first.
         allChats.sort { lhs, rhs in
+            if lhs.isPinned != rhs.isPinned {
+                return lhs.isPinned && !rhs.isPinned
+            }
+
             let lhsDate = lhs.timestamp ?? .distantPast
             let rhsDate = rhs.timestamp ?? .distantPast
             return lhsDate > rhsDate

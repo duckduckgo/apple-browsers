@@ -9,7 +9,8 @@
                 "key": "petal",
                 "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
                 "enum": ["randomize"]
-            }
+            },
+            "channel"
         ],
         "suffixes": [
             {
@@ -35,7 +36,8 @@
                 "key": "petal",
                 "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
                 "enum": ["randomize"]
-            }
+            },
+            "channel"
         ],
         "suffixes": [
             {
@@ -61,7 +63,8 @@
                 "key": "petal",
                 "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
                 "enum": ["randomize"]
-            }
+            },
+            "channel"
         ],
         "suffixes": [
             {

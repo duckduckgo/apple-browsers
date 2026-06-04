@@ -31,6 +31,8 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
     public let maxSuggestions: Int
 
+    private var suggestionIDsPendingRemoval = Set<String>()
+
     // MARK: - Published Properties
 
     /// The suggestions to display (merged, sorted by recency, limited to max count).
@@ -88,6 +90,11 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
         // Merge pinned and recent chats
         var allChats = pinned + recent
+
+        // Remove Pending Removal: Prevent re-entrant flickers
+        allChats.removeAll { suggestion in
+            suggestionIDsPendingRemoval.contains(suggestion.id)
+        }
 
         // Sort by recency (most recent first)
         allChats.sort { lhs, rhs in
@@ -197,8 +204,12 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
 
     /// Removes a suggestion from the filtered list.
     /// - Parameter suggestion: The suggestion to remove.
+    /// - Note:
+    ///     Once removed, the Suggestion ID is also tracked in a `Pending Removal` collection. Our goal is to prevent re-entrant flows that might cause recently deleted Suggestions from flickering
     public func removeSuggestion(_ suggestion: AIChatSuggestion) {
         filteredSuggestions.removeAll { $0.id == suggestion.id }
+
+        suggestionIDsPendingRemoval.insert(suggestion.id)
 
         // Adjust selection after removal
         if let index = selectedIndex {
@@ -209,6 +220,11 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
         }
     }
 
+    /// Unmarks a Suggestion as `Pending Removal`: required if the actual underlying storage fails
+    public func cancelPendingRemoval(_ suggestion: AIChatSuggestion) {
+        suggestionIDsPendingRemoval.remove(suggestion.id)
+    }
+
     // MARK: - Reset
 
     /// Clears all chats and resets the view model completely.
@@ -217,5 +233,6 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
         isKeyboardNavigating = false
         filteredSuggestions = []
         showViewAllChats = false
+        suggestionIDsPendingRemoval.removeAll()
     }
 }

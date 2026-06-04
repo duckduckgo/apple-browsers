@@ -332,6 +332,7 @@ private extension AIChatHistoryListViewController {
 
     func applyDeleteAccessoryViewIfNeeded(to cell: UITableViewCell, chat: AIChatSuggestion) {
         guard featureFlagger.isFeatureOn(.removeChatHistory) else {
+            cell.accessoryView = nil
             return
         }
 

@@ -121,7 +121,7 @@ struct EscapeHatchModelTests {
     @available(iOS 16, *)
     @Test("isFireButtonEnabled is true when the escapeHatchFireButton flag is on", .timeLimit(.minutes(1)))
     func fireButtonEnabledWhenFlagOn() {
-        let flagger = MockFeatureFlagger(featuresStub: [FeatureFlag.escapeHatchFireButton.rawValue: true])
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.escapeHatchFireButton])
         let sut = makeSUT(targetTab: Tab(uid: "tab"),
                           router: SpyRouter(),
                           featureFlagger: flagger)

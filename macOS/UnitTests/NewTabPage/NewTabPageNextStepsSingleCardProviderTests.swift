@@ -797,11 +797,26 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenCardShownFewerThanMaxTimes_WithAdvancedOrderingEnabled_ThenCardOrderRemainsTheSame() throws {
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        let timesShown = NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown - 1
+        testPersistor.setTimesShown(timesShown, for: .personalizeBrowser)
+        testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
+        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
+
+        let cards = testProvider.cards
+
+        XCTAssertEqual(cards.first, .personalizeBrowser, "Card should remain in the same position until max times shown is reached")
+    }
+
+    @MainActor
     func testWhenCardShownMaxTimes_WithAdvancedOrderingEnabled_ThenCardMovesToBack() throws {
         let testFeatureFlagger = MockFeatureFlagger()
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
-        testPersistor.setTimesShown(10, for: .personalizeBrowser)
+        testPersistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: .personalizeBrowser)
         testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
         let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
 
@@ -812,17 +827,36 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenCardShownMaxTimes_WithAdvancedOrderingEnabled_ThenTimesShownResets() {
+    func testWhenCardShownMoreThanMaxTimes_WithAdvancedOrderingEnabled_ThenCardOrderOnlyUpdatesOnMultiplesOfMaxTimesShown() throws {
         let testFeatureFlagger = MockFeatureFlagger()
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
-        testPersistor.setTimesShown(10, for: .personalizeBrowser)
+        testPersistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown + 1, for: .personalizeBrowser)
         testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
         let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
 
-        _ = testProvider.cards
+        // Card order is unchanged
+        let cards = testProvider.cards
+        XCTAssertEqual(cards.first, .personalizeBrowser, "Card should remain in the same position until multiple of max times shown is reached")
 
-        XCTAssertEqual(testPersistor.timesShown(for: .personalizeBrowser), 0, "Times shown should reset to 0")
+        // Simulate more views and trigger card list refresh
+        var cardsEvents = [[NewTabPageDataModel.CardID]]()
+        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                cardsEvents.append(cards)
+                expectation.fulfill()
+            }
+
+        testPersistor.setTimesShown(2 * NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: .personalizeBrowser)
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
+
+        // Card order is updated
+        let updatedCards = testProvider.cards
+        XCTAssertEqual(updatedCards.last, .personalizeBrowser, "Card should move to back of list after multiple of max times shown is reached")
     }
 
     // MARK: - Card Ordering Tests (nextStepsListAdvancedCardOrdering disabled)

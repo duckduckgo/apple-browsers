@@ -270,11 +270,11 @@ private extension NewTabPageNextStepsSingleCardProvider {
 
         // Check if the first visible card has been shown 10+ times, and move it to the end of the list
         if let firstVisibleCard = orderedCards.first(where: shouldShowCard),
-           persistor.timesShown(for: firstVisibleCard) >= Constants.maxTimesCardShown,
+           persistor.timesShown(for: firstVisibleCard) > 0,
+           persistor.timesShown(for: firstVisibleCard) % Constants.maxTimesCardShown == 0,
            let index = orderedCards.firstIndex(where: { $0 == firstVisibleCard }) {
             let card = orderedCards.remove(at: index)
             orderedCards.append(card)
-            persistor.setTimesShown(0, for: card)
         }
 
         // Swap the order of levels if needed.

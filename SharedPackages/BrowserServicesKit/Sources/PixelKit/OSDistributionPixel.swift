@@ -66,10 +66,12 @@ public extension PixelKit {
              doNotEnforcePrefix: true)
     }
 
-    func fireOSDistributionPixel(metric: OSDistributionPixel.Metric) {
+    func fireOSDistributionPixel(metric: OSDistributionPixel.Metric,
+                                 platform: DevicePlatform = .currentPlatform,
+                                 formFactor: String = DevicePlatform.formFactor) {
         fireOSDistributionPixel(OSDistributionPixel(metric: metric,
-                                                    platform: .currentPlatform,
-                                                    formFactor: DevicePlatform.formFactor))
+                                                    platform: platform,
+                                                    formFactor: formFactor))
     }
 
     static func fireOSDistributionPixel(metric: OSDistributionPixel.Metric) {

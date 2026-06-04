@@ -94,21 +94,32 @@ final class OSDistributionPixelTests: XCTestCase {
 
     // MARK: - Metric-based firing
 
-    /// `fireOSDistributionPixel(metric:)` resolves platform and form factor for the running device.
-    /// These tests run on macOS, so it yields the `macos_desktop` segment.
-    func testFiringByMetricUsesCurrentDevicePlatformAndFormFactor() {
-        var firedName: String?
-        let pixelKit = PixelKit(dryRun: false,
-                                appVersion: "1.2.3",
-                                defaultHeaders: [:],
-                                defaults: InMemoryThrowingKeyValueStore()) { name, _, _, _, _, onComplete in
-            firedName = name
-            onComplete(true, nil)
+    /// `fireOSDistributionPixel(metric:)` builds the name from the given platform/form factor
+    /// (defaulting to the current device). Covers every expected OS-name / form-factor combination.
+    func testFiringByMetricCoversAllPlatformAndFormFactorCombinations() {
+        let major = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+        let combinations: [(platform: DevicePlatform, formFactor: String, expectedSegment: String)] = [
+            (.iOS, "phone", "ios_phone"),
+            (.iOS, "tablet", "ios_tablet"),
+            (.macOS, "desktop", "macos_desktop"),
+        ]
+
+        for combination in combinations {
+            var firedName: String?
+            let pixelKit = PixelKit(dryRun: false,
+                                    appVersion: "1.2.3",
+                                    defaultHeaders: [:],
+                                    defaults: InMemoryThrowingKeyValueStore()) { name, _, _, _, _, onComplete in
+                firedName = name
+                onComplete(true, nil)
+            }
+
+            pixelKit.fireOSDistributionPixel(metric: .client,
+                                             platform: combination.platform,
+                                             formFactor: combination.formFactor)
+
+            XCTAssertEqual(firedName,
+                           "os_distribution_client_major_version_\(major)_\(combination.expectedSegment)_monthly")
         }
-
-        pixelKit.fireOSDistributionPixel(metric: .client)
-
-        XCTAssertEqual(firedName?.hasPrefix("os_distribution_client_major_version_"), true)
-        XCTAssertEqual(firedName?.hasSuffix("_macos_desktop_monthly"), true)
     }
 }

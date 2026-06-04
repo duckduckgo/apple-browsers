@@ -48,6 +48,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onSubmitTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
+    var onReturnKeyTapped: (() -> Void)?
 
     // MARK: - State
 
@@ -170,6 +171,11 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    var isReturnKeyHidden: Bool {
+        get { returnKeyButton.isHidden }
+        set { returnKeyButton.isHidden = newValue }
+    }
+
     private var modelChipExplicitlyHidden = false
 
     // MARK: - UI Components
@@ -290,6 +296,28 @@ final class UnifiedToggleInputToolbarView: UIView {
         return view
     }()
 
+    private lazy var returnKeyButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
+        button.setImage(DesignSystemImages.Glyphs.Size24.enter, for: .normal)
+        button.applyReturnKeyStyle()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isHidden = true
+        // Priorities collapse(required) > width > hugging so the button is 40pt when shown yet
+        // collapses to zero when hidden, instead of keeping a frame that overlaps submit.
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        button.accessibilityLabel = UserText.aiChatToolbarReturnKeyButtonAccessibilityLabel
+        button.addTarget(self, action: #selector(returnKeyTapped), for: .touchUpInside)
+        let width = button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize)
+        width.priority = .required - 1
+        NSLayoutConstraint.activate([
+            width,
+            button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+        ])
+        return button
+    }()
+
     private lazy var submitButton: CircularButton = {
         let button = CircularButton()
         button.isShadowHidden = true
@@ -355,7 +383,7 @@ private extension UnifiedToggleInputToolbarView {
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, submitButton, stopButton])
+        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, returnKeyButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -478,6 +506,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }
+    @objc private func returnKeyTapped() { onReturnKeyTapped?() }
     @objc private func submitTapped() {
         if isAIVoiceChatActive && !isSubmitEnabled {
             onVoiceTapped?()

@@ -2485,6 +2485,11 @@ class MainViewController: UIViewController {
             if isShowingToolbar {
                 self.viewCoordinator.toolbar.alpha = 1
             }
+            // Re-sync within the rotation animation (applyWidth above resets the anchor) so the
+            // UTI rides the rotation to its keyboard position instead of snapping afterwards.
+            if let utiCoordinator = self.unifiedToggleInputCoordinator {
+                self.syncBottomOmnibarAnchorIfNeeded(for: utiCoordinator)
+            }
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
         } completion: { _ in
@@ -2503,7 +2508,12 @@ class MainViewController: UIViewController {
             }
 
             ViewHighlighter.updatePositions()
-            self.recomputeNavigationBarContainerHeightIfNeeded()
+            // iOS reframes the keyboard post-rotation with no animation, so the UTI height can only
+            // be corrected now; ease it so it settles into place instead of hard-snapping.
+            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+                self.recomputeNavigationBarContainerHeightIfNeeded()
+            }
+            self.updateFloatingReturnKeyVisibility()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()

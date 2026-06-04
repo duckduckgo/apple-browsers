@@ -441,7 +441,7 @@ private extension ContextMenuManager {
 
     func attachToDuckAIMenuItem() -> NSMenuItem {
         NSMenuItem(title: UserText.aiChatAttachSelection, action: #selector(attachToDuckAI), target: self)
-            .withImage(.init(systemSymbolName: "paperclip", accessibilityDescription: UserText.aiChatAttachSelection))
+            .withImage(DesignSystemImages.Glyphs.Size16.attach)
     }
 
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {

@@ -60,7 +60,7 @@ struct ImportPasswordsViaSyncView: View {
 
         var body: some View {
             if AppRebrand.isAppRebranded() {
-                Image("Desktop-Sync-Passwords-128")
+                Image(.desktopSyncPasswords128)
             } else {
                 Image(.syncDesktopNew128)
             }

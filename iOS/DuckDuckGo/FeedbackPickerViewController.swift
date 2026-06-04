@@ -142,7 +142,7 @@ extension FeedbackPickerViewController {
         supplementaryText.textColor = theme.feedbackSecondaryTextColor
 
         if AppRebrand.isAppRebranded() {
-            headerImage.image = UIImage(named: "Response-Bad-56")
+            headerImage.image = UIImage(resource: .responseBad56)
         }
 
         tableView.reloadData()

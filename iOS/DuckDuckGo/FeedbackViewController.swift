@@ -50,8 +50,8 @@ class FeedbackViewController: UIViewController {
         applyShadow(to: negativeFeedbackButton)
 
         if AppRebrand.isAppRebranded() {
-            postitiveFeedbackButton.setImage(UIImage(named: "Response-Good-56"), for: .normal)
-            negativeFeedbackButton.setImage(UIImage(named: "Response-Bad-56"), for: .normal)
+            postitiveFeedbackButton.setImage(UIImage(resource: .responseGood56), for: .normal)
+            negativeFeedbackButton.setImage(UIImage(resource: .responseBad56), for: .normal)
         }
     }
     

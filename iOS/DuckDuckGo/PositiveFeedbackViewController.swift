@@ -40,7 +40,7 @@ class PositiveFeedbackViewController: UIViewController {
 
     private func configureImages() {
         if AppRebrand.isAppRebranded() {
-            headerImage.image = UIImage(named: "Response-Good-56")
+            headerImage.image = UIImage(resource: .responseGood56)
         }
     }
     

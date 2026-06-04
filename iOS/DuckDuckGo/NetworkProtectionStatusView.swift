@@ -157,11 +157,11 @@ struct NetworkProtectionStatusView: View {
             VStack(alignment: .center, spacing: 8) {
                 if AppRebrand.isAppRebranded() {
                     ZStack {
-                        Image("VPN-Lock-128")
+                        Image(.vpnLock128)
                             .resizable()
                             .frame(width: 128, height: 96)
                             .opacity(statusModel.isNetPEnabled ? 1 : 0)
-                        Image("VPN-Disabled-128")
+                        Image(.vpnDisabled128)
                             .resizable()
                             .frame(width: 128, height: 96)
                             .opacity(statusModel.isNetPEnabled ? 0 : 1)

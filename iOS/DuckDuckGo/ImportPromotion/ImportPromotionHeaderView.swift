@@ -101,7 +101,7 @@ struct ImportPromotionHeaderView: View {
         
         var body: some View {
             if AppRebrand.isAppRebranded() {
-                Image("Passwords-Keychain-128")
+                Image(.passwordsKeychain128)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 128, height: 96)

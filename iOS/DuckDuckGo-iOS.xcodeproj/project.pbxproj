@@ -1742,6 +1742,7 @@
 		B2258FABEA7BDFCEF297DCFE /* RebrandedOnboardingView+SearchExperienceContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF81E0C6EDC46254CF28AFCB /* RebrandedOnboardingView+SearchExperienceContent.swift */; };
 		B39FB0F42E25368100DF2C4E /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39FB0F32E25368100DF2C4E /* AutoconsentPixels.swift */; };
 		B50DAF4F2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */; };
+		B54658362FD1198900BE139D /* DuckAISuggestionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B54658352FD1198900BE139D /* DuckAISuggestionTableViewCell.swift */; };
 		B54C59B72FA91DF30072ECCE /* DuckAIToggleDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B54C59B62FA91DF30072ECCE /* DuckAIToggleDebugView.swift */; };
 		B56523332FCF40B900B71522 /* HistoryCleaner+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56523322FCF40B900B71522 /* HistoryCleaner+Helpers.swift */; };
 		B56C4E0B2FD0E40B006569D4 /* AIChatHistoryManager+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56C4E0A2FD0E40B006569D4 /* AIChatHistoryManager+Helpers.swift */; };
@@ -4400,6 +4401,7 @@
 		AF81E0C6EDC46254CF28AFCB /* RebrandedOnboardingView+SearchExperienceContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+SearchExperienceContent.swift"; sourceTree = "<group>"; };
 		B39FB0F32E25368100DF2C4E /* AutoconsentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPixels.swift; sourceTree = "<group>"; };
 		B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscapeHatchModelTests.swift; sourceTree = "<group>"; };
+		B54658352FD1198900BE139D /* DuckAISuggestionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionTableViewCell.swift; sourceTree = "<group>"; };
 		B54C59B62FA91DF30072ECCE /* DuckAIToggleDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIToggleDebugView.swift; sourceTree = "<group>"; };
 		B56523322FCF40B900B71522 /* HistoryCleaner+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HistoryCleaner+Helpers.swift"; sourceTree = "<group>"; };
 		B56C4E0A2FD0E40B006569D4 /* AIChatHistoryManager+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatHistoryManager+Helpers.swift"; sourceTree = "<group>"; };
@@ -9960,6 +9962,7 @@
 			children = (
 				CB6D17882FA2106100ECD5AE /* DuckAIURLSuggestionsLoader.swift */,
 				CB6D178C2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift */,
+				B54658352FD1198900BE139D /* DuckAISuggestionTableViewCell.swift */,
 				CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */,
 				CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */,
 				CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */,
@@ -13439,6 +13442,7 @@
 				31CF26792E6F14AF004D52C2 /* LaunchSourceManager.swift in Sources */,
 				1E7A71172934EB6400B7EA19 /* OmniBarNotificationAnimator.swift in Sources */,
 				F4F6DFB826EA9AA600ED7E12 /* BookmarksTextFieldCell.swift in Sources */,
+				B54658362FD1198900BE139D /* DuckAISuggestionTableViewCell.swift in Sources */,
 				85F98F92296F32BD00742F4A /* SyncSettingsViewController.swift in Sources */,
 				84E341961E2F7EFB00BDBA6F /* AppDelegate.swift in Sources */,
 				65898D8C2D9C161800D5EC22 /* DuckPlayerDelayHandler.swift in Sources */,

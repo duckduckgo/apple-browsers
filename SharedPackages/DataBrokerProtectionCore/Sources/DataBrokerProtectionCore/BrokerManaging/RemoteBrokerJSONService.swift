@@ -69,7 +69,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                             endpointURL: URL,
                             contentType: String? = nil,
                             eTag: String? = nil,
-                            accessToken: String) throws -> URLRequest {
+                            accessToken: String?) throws -> URLRequest {
             var request = URLRequest(url: try url(for: endpoint, endpointURL: endpointURL))
             request.httpMethod = "GET"
             if let contentType {
@@ -79,7 +79,9 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 request.cachePolicy = .reloadIgnoringCacheData
                 request.setValue(eTag, forHTTPHeaderField: "If-None-Match")
             }
-            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            if let accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
 
             return request
         }
@@ -182,12 +184,9 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             /// 2. Use bundled JSONs to populate/update the database
             try? await localBrokerProvider?.checkForUpdates()
 
-            /// 3. Hit main_config.json endpoint for ETag and active broker changes
-            guard let accessToken = await authenticationManager.accessToken() else {
-                Logger.dataBrokerProtection.log("🧩 Skipping broker JSON update check due to absence of access token")
-                return
-            }
-
+            /// 3. Hit main_config.json endpoint for ETag and active broker changes. The endpoint is
+            ///    unauthenticated, so the access token is optional and only forwarded when present.
+            let accessToken = await authenticationManager.accessToken()
             let request = try Endpoint.request(for: .mainConfig,
                                                endpointURL: settings.endpointURL,
                                                contentType: "application/json",
@@ -259,11 +258,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         /// 2. Download all.zip if not exists
         do {
             if !fileManager.fileExists(atPath: brokerArchiveURL.path) {
-                guard let accessToken = await authenticationManager.accessToken() else {
-                    Logger.dataBrokerProtection.log("🧩 Skipping broker JSON update check due to absence of access token")
-                    return
-                }
-
+                let accessToken = await authenticationManager.accessToken()
                 let request = try Endpoint.request(for: .allBrokers,
                                                    endpointURL: settings.endpointURL,
                                                    accessToken: accessToken)

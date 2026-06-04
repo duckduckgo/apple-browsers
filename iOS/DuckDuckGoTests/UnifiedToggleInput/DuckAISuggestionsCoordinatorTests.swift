@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import Combine
 import Suggestions
 import UIKit
@@ -53,8 +54,12 @@ final class DuckAISuggestionsCoordinatorTests: XCTestCase {
         let chatManager = AIChatHistoryManager(
             suggestionsReader: MockAIChatSuggestionsReader(),
             aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatDeleter: AIChatDeleter(
+                historyCleanerProvider: { _, _ in MockHistoryCleaner() },
+                aiChatSyncCleaner: MockAIChatSyncCleaning()
+            ),
             viewModel: viewModel,
-            historyCleaner: MockHistoryCleaner()
+            isFireTab: false
         )
         let coordinator = DuckAISuggestionsCoordinator(
             chatManager: chatManager,

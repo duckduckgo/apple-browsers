@@ -47,7 +47,6 @@ extension AIChatHistoryManager {
             return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
         }()
 
-
         let chatDeleter = AIChatDeleter(
             historyCleanerProvider: { _, _ in
                 HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager, nativeStorageHandler: nativeStorageHandler)

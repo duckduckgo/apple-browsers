@@ -58,7 +58,7 @@ final class AIChatHistoryManager {
     private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider
-    private let aiChatDeleter: AIChatDeleter
+    private let aiChatDeleter: AIChatDeleting
     private let viewModel: AIChatSuggestionsViewModel
     private let isIPadExperience: Bool
     private let isFireTab: Bool
@@ -76,7 +76,7 @@ final class AIChatHistoryManager {
 
     init(suggestionsReader: AIChatSuggestionsReading,
          aiChatSettings: AIChatSettingsProvider,
-         aiChatDeleter: AIChatDeleter,
+         aiChatDeleter: AIChatDeleting,
          viewModel: AIChatSuggestionsViewModel,
          isIPadExperience: Bool = false,
          isFireTab: Bool) {

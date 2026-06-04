@@ -53,6 +53,12 @@ final class AIChatHistoryCell: UITableViewCell {
     }
 
     private func setupViews() {
+        // Setting an explicit backgroundColor on the cell is what makes the `.insetGrouped`
+        // rounded-corner mask survive the swipe gesture intact — without it, UIKit re-
+        // evaluates the cell's layer geometry mid-swipe and the bottom-corner mask of the
+        // last row in a section visibly flashes square. Bookmarks' cells do the same.
+        backgroundColor = UIColor(designSystemColor: .surface)
+
         contentView.addSubview(iconImageView)
         contentView.addSubview(titleLabel)
 

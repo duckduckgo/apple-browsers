@@ -33,11 +33,14 @@ final class AIChatHistoryViewController: UIViewController {
         table.dataSource = self
         table.delegate = self
         table.register(AIChatHistoryCell.self, forCellReuseIdentifier: AIChatHistoryCell.reuseIdentifier)
+        table.register(AIChatHistorySectionHeaderView.self,
+                       forHeaderFooterViewReuseIdentifier: AIChatHistorySectionHeaderView.reuseIdentifier)
         table.translatesAutoresizingMaskIntoConstraints = false
         table.sectionHeaderTopPadding = 0
-        // Match Bookmarks' storyboard `sectionFooterHeight="18"`. Default 0 leaves the
-        // last-row bottom rounded corner ambiguous against the section background, which
-        // visibly glitches as a trailing swipe action panel collapses.
+        // Match Bookmarks' storyboard config (`clipsSubviews="YES"`, `sectionFooterHeight="18"`).
+        // Without these the rounded bottom corner of the last row in a section visibly
+        // glitches as a trailing swipe action panel slides back in.
+        table.clipsToBounds = true
         table.sectionFooterHeight = 18
         return table
     }()
@@ -235,27 +238,11 @@ extension AIChatHistoryViewController: UITableViewDataSource {
         viewModel.numberOfRows(in: section)
     }
 
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        viewModel.title(forSection: section)
-    }
-
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard let title = viewModel.title(forSection: section) else { return nil }
-        let label = UILabel()
-        label.text = title
-        label.font = .systemFont(ofSize: 13, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.translatesAutoresizingMaskIntoConstraints = false
-
-        let container = UIView()
-        container.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 24),
-            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -24),
-            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
-            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)
-        ])
-        return container
+        let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: AIChatHistorySectionHeaderView.reuseIdentifier) as? AIChatHistorySectionHeaderView
+        header?.configure(title: title)
+        return header
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {

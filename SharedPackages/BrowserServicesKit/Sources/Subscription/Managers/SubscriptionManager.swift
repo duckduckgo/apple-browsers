@@ -642,8 +642,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     /// Completes the refresh wide event flow that the OAuthClient event mapping deferred on an invalid token.
     /// Selects the newest flow marked `.recoverInvalidToken` (by recovery start time): wide-event storage is
     /// per-process and OAuthClient dedups concurrent refreshes, so the newest such flow is always the one
-    /// this recovery belongs to. Any older orphan (e.g. from the recovery-less API refresher path) is left
-    /// for the launch backstop to reconcile to UNKNOWN.
+    /// this recovery belongs to. Any older orphan left by a process kill is reconciled by the launch backstop.
     private func completeInvalidTokenRecoveryFlow(status: WideEventStatus, error: Error?) {
         guard isAuthV2WideEventEnabled(), let wideEvent else { return }
         guard let data = wideEvent.getAllFlowData(AuthV2TokenRefreshWideEventData.self)

@@ -740,7 +740,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             if tokenContainer.decodedAccessToken.isExpired() {
                 Logger.OAuth.debug("Refreshing tokens")
-                let tokens = try await authClient.getTokens(policy: .localForceRefresh)
+                let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
                 return tokens.accessToken
             } else {
                 Logger.general.debug("Trying to refresh valid token, using the old one")

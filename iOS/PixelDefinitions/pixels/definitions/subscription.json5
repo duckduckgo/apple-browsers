@@ -740,5 +740,58 @@
                 "description": "Whether an invalid-token recovery was performed during this journey"
             }
         ]
+    },
+    // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true
+    "m_ios_wide_auth_v2_token_adoption": {
+        "description": "Wide pixel sent after an AuthV2 token adoption event",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-authv2-token-adoption"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide event",
+                "enum": ["authv2-token-adoption"]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
+                "enum": ["partial_data"]
+            },
+            {
+                "key": "feature.data.ext.failing_step",
+                "type": "string",
+                "description": "The step at which the flow failed, when applicable",
+                "enum": ["token_adoption", "token_refresh"]
+            },
+            {
+                "key": "feature.data.ext.adoption_source",
+                "type": "string",
+                "description": "What caused the token to be adopted, when known",
+                "enum": ["web_restore", "vpn"]
+            }
+        ]
     }
 }

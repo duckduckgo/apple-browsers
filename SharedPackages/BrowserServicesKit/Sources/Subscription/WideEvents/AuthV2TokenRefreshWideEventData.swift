@@ -173,13 +173,18 @@ extension AuthV2TokenRefreshWideEventData {
                 if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
                     data.errorData = WideEventErrorData(error: error)
                     if case OAuthClientError.invalidTokenRequest = error {
-                        // Invalid refresh token: the journey is not over. DefaultSubscriptionManager will attempt
-                        // recovery and complete this flow at the true terminal point. Mark the step and start
-                        // the recovery clock at detection so the recovery layer can locate the newest pending
-                        // flow and record detection-to-outcome latency.
-                        data.failingStep = .recoverInvalidToken
-                        data.recoveryDuration = .startingNow()
-                        wideEvent.updateFlow(data)
+                        if (data.refreshTrigger ?? .client) == .client {
+                            // Invalid refresh token: the journey is not over. DefaultSubscriptionManager will attempt
+                            // recovery and complete this flow at the true terminal point. Mark the step and start
+                            // the recovery clock at detection so the recovery layer can locate the newest pending
+                            // flow and record detection-to-outcome latency.
+                            data.failingStep = .recoverInvalidToken
+                            data.recoveryDuration = .startingNow()
+                            wideEvent.updateFlow(data)
+                        } else {
+                            wideEvent.updateFlow(data)
+                            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+                        }
                     } else {
                         wideEvent.updateFlow(data)
                         wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })

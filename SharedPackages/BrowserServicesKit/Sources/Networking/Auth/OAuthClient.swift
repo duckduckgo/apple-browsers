@@ -148,7 +148,7 @@ public extension OAuthClient {
 /// What initiated a token refresh. Recorded on the AuthV2 refresh wide event as `refresh_trigger`
 /// so the refresh SLO can be segmented by origin. Raw values match the schema enum.
 public enum TokenRefreshTrigger: String, Codable {
-    /// A refresh driven by a backend interaction (e.g. an API rejecting the current token).
+    /// A refresh driven by a backend interaction, such as an API 401/retry path. The token may also be locally expired.
     case backend
     /// A client-initiated refresh: proactive, lazy expiry refresh, or an explicit force refresh.
     case client

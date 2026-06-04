@@ -743,7 +743,7 @@
                 "key": "feature.data.ext.failing_step",
                 "type": "string",
                 "description": "The step at which the flow failed, when applicable",
-                "enum": ["token_refresh"]
+                "enum": ["token_adoption", "token_refresh"]
             },
             {
                 "key": "feature.data.ext.adoption_source",

@@ -61,16 +61,11 @@ final class AIChatHistoryViewModel: ObservableObject {
             .catch { Just(.failure($0)) }
             .eraseToAnyPublisher()
 
-        // Debounce typed values so the in-memory filter runs once the user pauses, not on
-        // every keystroke. `dropFirst().debounce(...).prepend("")` seeds `CombineLatest`
-        // with the initial empty query synchronously — without it, the sheet would hide for
-        // ~150ms whenever the chats publisher emits synchronously (warm cache re-opens).
-        let queryStream = $query
-            .dropFirst()
-            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
-            .prepend("")
-
-        Publishers.CombineLatest(chats, queryStream)
+        // Filter synchronously on every keystroke — the in-memory pass is microseconds, and
+        // rate-limiting (throttle/debounce) introduced a window where the rendered rows
+        // didn't match the typed query, so a tap during that window could open a chat the
+        // search no longer matched.
+        Publishers.CombineLatest(chats, $query)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] result, query in
                 self?.apply(result: result, query: query)

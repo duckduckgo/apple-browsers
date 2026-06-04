@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Core
 import DDGSync
 import Suggestions
 import UIKit
@@ -42,6 +43,7 @@ final class DuckAISuggestionsCoordinator {
     private let chatManager: AIChatHistoryManager
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let chatViewModel: AIChatSuggestionsViewModel
+    private let historyManager: HistoryManaging
     private let queryProvider: () -> String
     private let layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration
     private let syncPromoManager: SyncPromoManaging?
@@ -70,6 +72,7 @@ final class DuckAISuggestionsCoordinator {
     init(chatManager: AIChatHistoryManager,
          urlLoader: DuckAIURLSuggestionsLoader,
          chatViewModel: AIChatSuggestionsViewModel,
+         historyManager: HistoryManaging,
          queryProvider: @escaping () -> String,
          layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard,
          syncPromoManager: SyncPromoManaging? = nil,
@@ -77,6 +80,7 @@ final class DuckAISuggestionsCoordinator {
         self.chatManager = chatManager
         self.urlLoader = urlLoader
         self.chatViewModel = chatViewModel
+        self.historyManager = historyManager
         self.queryProvider = queryProvider
         self.layoutConfiguration = layoutConfiguration
         self.syncPromoManager = syncPromoManager
@@ -191,6 +195,20 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
     func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController) {
         RecentChatDeletionAlert.show(for: chat, presenter: sender) { [weak chatManager] in
             chatManager?.deleteChatSuggestion(suggestion: chat)
+        }
+    }
+
+    func duckAISuggestionsDidRequestURLDeletion(_ suggestion: Suggestion) {
+        guard case .historyEntry(_, let url, _) = suggestion else {
+            assertionFailure("Only history suggestions can be deleted")
+            return
+        }
+
+        Task {
+            await historyManager.deleteHistoryForURL(url)
+            Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
+            DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
+            urlLoader.fetch(query: queryProvider())
         }
     }
 

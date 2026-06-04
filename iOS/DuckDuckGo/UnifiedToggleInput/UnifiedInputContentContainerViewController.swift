@@ -506,6 +506,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             chatManager: chatManager,
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
+            historyManager: dependencies.historyManager,
             queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
             layoutConfiguration: .unifiedToggleInput,
             syncPromoManager: switchBarHandler.isFireTab ? nil : syncPromoManager,

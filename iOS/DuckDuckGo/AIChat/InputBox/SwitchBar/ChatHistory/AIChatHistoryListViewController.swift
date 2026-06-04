@@ -334,8 +334,8 @@ private extension AIChatHistoryListViewController {
             return
         }
 
-        cell.displaysDeleteButton = featureFlagger.isFeatureOn(.removeChatHistory)
-        cell.onDeletePressed = { [weak self] in
+        cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onAccessoryButtonPressed = { [weak self] in
             self?.presentChatDeletionConfirmation(chat: chat)
         }
     }

@@ -27,26 +27,33 @@ class DuckAISuggestionTableViewCell: UITableViewCell {
         static let size: CGSize = CGSize(width: 44, height: 44)
     }
 
-    private lazy var deleteButton: UIButton = {
-        let fireImage = DesignSystemImages.Glyphs.Size16.fire.withRenderingMode(.alwaysTemplate)
-        let deleteAction = UIAction { [weak self] _ in
-            self?.onDeletePressed?()
+    private lazy var accessoryButton: UIButton = {
+        let action = UIAction { [weak self] _ in
+            self?.onAccessoryButtonPressed?()
         }
 
         let button = UIButton(type: .system)
-        button.setImage(fireImage, for: .normal)
         button.frame.size = Metrics.size
         button.contentHorizontalAlignment = .trailing
         button.tintColor = UIColor(designSystemColor: .icons)
-        button.addAction(deleteAction, for: .touchUpInside)
+        button.addAction(action, for: .touchUpInside)
         return button
     }()
 
-    var onDeletePressed: (() -> Void)?
+    var onAccessoryButtonPressed: (() -> Void)?
 
-    var displaysDeleteButton: Bool = false {
+    var displaysAccessoryButton: Bool = false {
         didSet {
-            accessoryView = displaysDeleteButton ? deleteButton : nil
+            accessoryView = displaysAccessoryButton ? accessoryButton : nil
+        }
+    }
+
+    var accessoryButtonImage: UIImage? {
+        get {
+            accessoryButton.image(for: .normal)
+        }
+        set {
+            accessoryButton.setImage(newValue?.withRenderingMode(.alwaysTemplate), for: .normal)
         }
     }
 
@@ -60,6 +67,6 @@ class DuckAISuggestionTableViewCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        displaysDeleteButton = false
+        displaysAccessoryButton = false
     }
 }

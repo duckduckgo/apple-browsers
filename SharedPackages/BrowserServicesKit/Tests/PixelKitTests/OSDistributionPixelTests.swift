@@ -41,9 +41,9 @@ final class OSDistributionPixelTests: XCTestCase {
 
     // MARK: - Firing
 
-    /// Firing appends the `_monthly` suffix (from `.monthly` frequency) and suppresses the default
-    /// `appVersion` and `pixelSource` parameters, even when a source is configured.
-    func testFiringAppendsMonthlySuffixAndSuppressesDefaultParameters() {
+    /// Firing appends the `_monthly` suffix (from `.monthly` frequency), sends `petal=randomize`,
+    /// and suppresses the default `appVersion` and `pixelSource` parameters, even when a source is configured.
+    func testFiringAppendsMonthlySuffixSendsPetalAndSuppressesDefaultParameters() {
         var firedName: String?
         var firedParameters: [String: String]?
         let fired = expectation(description: "pixel fired")
@@ -66,6 +66,7 @@ final class OSDistributionPixelTests: XCTestCase {
         wait(for: [fired], timeout: 1.0)
 
         XCTAssertEqual(firedName, "os_distribution_client_major_version_15_macos_desktop_monthly")
+        XCTAssertEqual(firedParameters?["petal"], "randomize", "petal=randomize must be sent (PETAL pipeline tag)")
         XCTAssertNil(firedParameters?[PixelKit.Parameters.appVersion], "appVersion must be suppressed")
         XCTAssertNil(firedParameters?[PixelKit.Parameters.pixelSource], "pixelSource must not be added")
     }

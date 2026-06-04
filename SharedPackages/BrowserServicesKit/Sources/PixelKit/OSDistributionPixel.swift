@@ -49,7 +49,8 @@ public struct OSDistributionPixel: PixelKitEvent {
         "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform.rawValue.lowercased())_\(formFactor)"
     }
 
-    public var parameters: [String: String]? { nil }
+    // Self-tags the pixel to route through the PETAL (timestamp-randomization) pipeline.
+    public var parameters: [String: String]? { ["petal": "randomize"] }
 
     // No standard parameters
     public var standardParameters: [PixelKitStandardParameter]? { [] }

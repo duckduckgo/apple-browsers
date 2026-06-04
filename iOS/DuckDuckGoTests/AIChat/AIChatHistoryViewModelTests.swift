@@ -110,50 +110,40 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.didRequestOpenNewChat)
     }
 
-    func testChatTapped_validIndexPath_notifiesDelegateWithChatId() {
+    func testChatId_forValidIndexPath_returnsChatId() {
         let sut = makeSUT(chats: [
             chat(id: "p1", pinned: true),
             chat(id: "r1", pinned: false)
         ])
+
+        XCTAssertEqual(sut.chatId(forRowAt: IndexPath(row: 0, section: Section.pinned.rawValue)), "p1")
+        XCTAssertEqual(sut.chatId(forRowAt: IndexPath(row: 0, section: Section.recent.rawValue)), "r1")
+    }
+
+    func testChatId_forInvalidIndexPath_returnsNil() {
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)])
+
+        XCTAssertNil(sut.chatId(forRowAt: IndexPath(row: 99, section: Section.recent.rawValue)))
+    }
+
+    func testOpenChat_notifiesDelegateWithChatId() {
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)])
         let delegate = MockDelegate()
         sut.delegate = delegate
 
-        sut.chatTapped(at: IndexPath(row: 0, section: Section.recent.rawValue))
+        sut.openChat(chatId: "r1")
 
         XCTAssertEqual(delegate.requestedChatId, "r1")
     }
 
-    func testChatTapped_invalidIndexPath_doesNotNotifyDelegate() {
+    func testDeleteChat_notifiesDelegateWithChatId() {
         let sut = makeSUT(chats: [chat(id: "p1", pinned: true)])
         let delegate = MockDelegate()
         sut.delegate = delegate
 
-        sut.chatTapped(at: IndexPath(row: 99, section: Section.recent.rawValue))
-
-        XCTAssertNil(delegate.requestedChatId)
-    }
-
-    func testDeleteChatTapped_validIndexPath_notifiesDelegateWithChatId() {
-        let sut = makeSUT(chats: [
-            chat(id: "p1", pinned: true),
-            chat(id: "r1", pinned: false)
-        ])
-        let delegate = MockDelegate()
-        sut.delegate = delegate
-
-        sut.deleteChatTapped(at: IndexPath(row: 0, section: Section.pinned.rawValue))
+        sut.deleteChat(chatId: "p1")
 
         XCTAssertEqual(delegate.deletedChatId, "p1")
-    }
-
-    func testDeleteChatTapped_invalidIndexPath_doesNotNotifyDelegate() {
-        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)])
-        let delegate = MockDelegate()
-        sut.delegate = delegate
-
-        sut.deleteChatTapped(at: IndexPath(row: 99, section: Section.recent.rawValue))
-
-        XCTAssertNil(delegate.deletedChatId)
     }
 
     // MARK: - Search

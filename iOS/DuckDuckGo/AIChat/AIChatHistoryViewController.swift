@@ -267,12 +267,18 @@ extension AIChatHistoryViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        viewModel.chatTapped(at: indexPath)
+        guard let chatId = viewModel.chatId(forRowAt: indexPath) else { return }
+        viewModel.openChat(chatId: chatId)
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        // Resolve the chat id now, while the index path is fresh. Capturing it in the action
+        // closures means the gesture stays bound to the chat the user aimed at even if the
+        // pinned/recent arrays shift before they tap (sync arrival, another delete, etc.).
+        guard let chatId = viewModel.chatId(forRowAt: indexPath) else { return nil }
+
         let delete = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completion in
-            self?.viewModel.deleteChatTapped(at: indexPath)
+            self?.viewModel.deleteChat(chatId: chatId)
             completion(true)
         }
         delete.image = DesignSystemImages.Glyphs.Size24.trash

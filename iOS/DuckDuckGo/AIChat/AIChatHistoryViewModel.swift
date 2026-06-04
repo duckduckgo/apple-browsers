@@ -128,19 +128,27 @@ final class AIChatHistoryViewModel: ObservableObject {
         return Self.icon(for: chat)
     }
 
+    // MARK: - Row identity
+
+    /// Resolve the stable chat id at the given index path. Call this at the moment a row
+    /// gesture starts (swipe configuration, tap handler) and pass the returned id into the
+    /// intent — never re-resolve later, since the pinned/recent arrays can shift between
+    /// the gesture starting and the user committing.
+    func chatId(forRowAt indexPath: IndexPath) -> String? {
+        chat(at: indexPath)?.chatId
+    }
+
     // MARK: - Intents
 
     func newChatTapped() {
         delegate?.viewModelDidRequestOpenNewChat()
     }
 
-    func chatTapped(at indexPath: IndexPath) {
-        guard let chatId = chat(at: indexPath)?.chatId else { return }
+    func openChat(chatId: String) {
         delegate?.viewModelDidRequestOpenChat(chatId: chatId)
     }
 
-    func deleteChatTapped(at indexPath: IndexPath) {
-        guard let chatId = chat(at: indexPath)?.chatId else { return }
+    func deleteChat(chatId: String) {
         delegate?.viewModelDidRequestDeleteChat(chatId: chatId)
     }
 

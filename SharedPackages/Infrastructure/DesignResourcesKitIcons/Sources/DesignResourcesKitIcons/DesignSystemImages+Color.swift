@@ -417,8 +417,8 @@ public extension DesignSystemImages {
             }
             public static var fireTab: DesignSystemImage {
                 AppRebrand.isAppRebranded()
-                    ? .init(resource: .fireTabColor96)
-                    : .init(resource: .fireTabColor96Legacy)
+                    ? .init(resource: .fireWindowLightPhone96)
+                    : .init(resource: .fireWindowLightPhone96Legacy)
             }
             public static var fire: DesignSystemImage { .init(resource: .fire96) }
             public static var passwordsAppFeature: DesignSystemImage {

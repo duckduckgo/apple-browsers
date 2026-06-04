@@ -169,13 +169,17 @@ final class AIChatHistoryManager {
         viewModel.removeSuggestion(suggestion)
 
         Task { @MainActor [weak self] in
-            guard let self else {
-                return
-            }
-
-            let _ = await historyCleaner.deleteAIChat(chatID: suggestion.chatId)
-            refreshSuggestions()
+            await self?.removeChatSuggestionInTask(suggestion: suggestion)
         }
+    }
+
+    private func removeChatSuggestionInTask(suggestion: AIChatSuggestion) async {
+        let result = await historyCleaner.deleteAIChat(chatID: suggestion.chatId)
+        if case .failure = result {
+            viewModel.cancelPendingRemoval(suggestion)
+        }
+
+        refreshSuggestions()
     }
 
     private func refreshSuggestions() {

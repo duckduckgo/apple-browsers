@@ -40,8 +40,14 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// "no chats yet" empty state.
     @Published private(set) var loadFailed: Bool = false
 
-    /// Current search query. Empty string means no filter — full chat list is shown.
+    /// Live search query as the user types. Updated synchronously by `updateQuery`.
     @Published private(set) var query: String = ""
+
+    /// The query that produced the current `pinned`/`recent` snapshot. Lags `query` by the
+    /// debounce interval. UI state that depends on "is the user searching?" (e.g. the
+    /// illustrated empty-state decision) must read this rather than `query` to stay
+    /// consistent with what's actually on screen.
+    @Published private(set) var effectiveQuery: String = ""
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
@@ -93,6 +99,7 @@ final class AIChatHistoryViewModel: ObservableObject {
             pinned = []
             recent = []
         }
+        effectiveQuery = query
         hasLoaded = true
     }
 

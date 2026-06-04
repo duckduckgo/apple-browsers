@@ -182,6 +182,20 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(sut.isEmpty)
     }
 
+    func testEffectiveQuery_lagsLiveQueryUntilDebounceFires() {
+        let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
+
+        sut.updateQuery("foo")
+        // Before the debounce fires `query` reflects the user's input but `effectiveQuery`
+        // — the query that produced the current `pinned`/`recent` — must still be the
+        // previous value, otherwise the empty-state decision races with the filter.
+        XCTAssertEqual(sut.query, "foo")
+        XCTAssertEqual(sut.effectiveQuery, "")
+
+        waitForDebounce()
+        XCTAssertEqual(sut.effectiveQuery, "foo")
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(chats: [DuckAiChat]) -> AIChatHistoryViewModel {

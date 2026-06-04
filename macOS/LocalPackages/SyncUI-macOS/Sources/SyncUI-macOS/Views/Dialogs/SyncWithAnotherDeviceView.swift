@@ -83,6 +83,12 @@ struct SyncWithAnotherDeviceView: View {
             }
         }
         .frame(width: 420)
+        .onChange(of: selectedSegment) { _ in
+            showCopyConfirmation = false
+        }
+        .onChange(of: showQRCode) { _ in
+            showCopyConfirmation = false
+        }
     }
 
     fileprivate func pickerView() -> some View {

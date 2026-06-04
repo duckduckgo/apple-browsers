@@ -47,6 +47,9 @@ public struct SimplifiedScanOrShowCodeView: View {
             contentPanel
         }
         .background(SimplifiedSyncStyle.screenBackground)
+        .onChange(of: selectedTab) { _ in
+            showCopyConfirmation = false
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(UserText.cancelButton, action: model.cancel)

@@ -98,6 +98,7 @@ final class AIChatHistoryViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
+        searchBar.delegate = self
         let headerHeight = searchBar.intrinsicContentSize.height
         let headerView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: headerHeight))
         searchBar.translatesAutoresizingMaskIntoConstraints = false
@@ -121,8 +122,8 @@ final class AIChatHistoryViewController: UIViewController {
         let compose = UIBarButtonItem(
             image: DesignSystemImages.Glyphs.Size24.compose,
             style: .plain,
-            target: nil,
-            action: nil
+            target: self,
+            action: #selector(composeButtonTapped)
         )
         let gap = UIBarButtonItem(systemItem: .fixedSpace)
         gap.width = 12
@@ -172,7 +173,13 @@ final class AIChatHistoryViewController: UIViewController {
             navigationController?.setToolbarHidden(true, animated: false)
             return
         }
-        if viewModel.isEmpty {
+        // Show the illustrated empty state only when the user has no chats AND isn't
+        // searching. A no-matches search keeps the table view (and its search-bar
+        // header) visible so the user can clear the query. We read `effectiveQuery`
+        // — the query that actually produced the current `pinned`/`recent` snapshot —
+        // rather than the live `query` so the decision stays consistent with the rows
+        // on screen during the debounce window.
+        if viewModel.isEmpty && viewModel.effectiveQuery.isEmpty {
             showEmptyState()
         } else {
             showList()
@@ -208,6 +215,10 @@ final class AIChatHistoryViewController: UIViewController {
 
     @objc private func doneButtonTapped() {
         dismiss(animated: true)
+    }
+
+    @objc private func composeButtonTapped() {
+        viewModel.newChatTapped()
     }
 }
 
@@ -265,5 +276,15 @@ extension AIChatHistoryViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        viewModel.chatTapped(at: indexPath)
+    }
+}
+
+// MARK: - UISearchBarDelegate
+
+extension AIChatHistoryViewController: UISearchBarDelegate {
+
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        viewModel.updateQuery(searchText)
     }
 }

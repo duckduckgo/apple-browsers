@@ -96,6 +96,11 @@ class SuggestionTrayViewController: UIViewController {
 
     var coversFullScreen: Bool = false
 
+    /// Horizontal inset applied to the autocomplete content only. Favorites and the shared container stay
+    /// full width, so switching between favorites and autocomplete doesn't resize/recenter the container
+    /// (which would visibly shift the still-mounted favorites view before autocomplete reveals).
+    var autocompleteHorizontalInset: CGFloat = 0
+
     var selectedSuggestion: Suggestion? {
         autocompleteController?.selectedSuggestion
     }
@@ -304,7 +309,7 @@ class SuggestionTrayViewController: UIViewController {
         applyTopConstraintForLayoutMode()
     }
 
-    func fill(bottomOffset: CGFloat = 0.0, horizontalInset: CGFloat = 0.0) {
+    func fill(bottomOffset: CGFloat = 0.0) {
         additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomOffset, right: 0)
 
         containerView.layer.shadowColor = UIColor.clear.cgColor
@@ -317,7 +322,7 @@ class SuggestionTrayViewController: UIViewController {
         backgroundView.backgroundColor = UIColor.clear
 
         fullWidthConstraint.isActive = true
-        fullWidthConstraint.constant = -(horizontalInset * 2)
+        fullWidthConstraint.constant = 0
         fullHeightConstraint.isActive = coversFullScreen
         fullHeightSafeAreaConstraint.isActive = !coversFullScreen
         fullHeightSafeAreaInequalityConstraint.isActive = !coversFullScreen
@@ -435,7 +440,9 @@ class SuggestionTrayViewController: UIViewController {
                                                     featureDiscovery: featureDiscovery,
                                                     productSurfaceTelemetry: productSurfaceTelemetry)
         controller.suggestionFilter = suggestionFilter
-        install(controller: controller, animated: deferAutocompleteReveal ? false : animated)
+        install(controller: controller,
+                animated: deferAutocompleteReveal ? false : animated,
+                additionalInsets: UIEdgeInsets(top: 0, left: autocompleteHorizontalInset, bottom: 0, right: autocompleteHorizontalInset))
         if deferAutocompleteReveal {
             controller.view.isHidden = true
             pendingDeferredAutocompleteReveal = true

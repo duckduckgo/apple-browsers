@@ -5516,9 +5516,16 @@ extension MainViewController: TabDelegate {
 
 extension MainViewController: AIChatHistoryViewModelDelegate {
 
-    func viewModelDidRequestOpenDuckAi() {
+    func viewModelDidRequestOpenNewChat() {
         dismiss(animated: true) { [weak self] in
             self?.openAIChat()
+        }
+    }
+
+    func viewModelDidRequestOpenChat(chatId: String) {
+        let url = aiChatSettings.aiChatURL.withChatID(chatId)
+        dismiss(animated: true) { [weak self] in
+            self?.onChatHistorySelected(url: url)
         }
     }
 }

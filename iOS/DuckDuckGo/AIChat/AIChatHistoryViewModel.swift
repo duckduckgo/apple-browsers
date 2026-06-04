@@ -40,6 +40,15 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// "no chats yet" empty state.
     @Published private(set) var loadFailed: Bool = false
 
+    /// Live search query as the user types. Updated synchronously by `updateQuery`.
+    @Published private(set) var query: String = ""
+
+    /// The query that produced the current `pinned`/`recent` snapshot. Lags `query` by the
+    /// debounce interval. UI state that depends on "is the user searching?" (e.g. the
+    /// illustrated empty-state decision) must read this rather than `query` to stay
+    /// consistent with what's actually on screen.
+    @Published private(set) var effectiveQuery: String = ""
+
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
     private let reader: ChatHistoryReading
@@ -49,25 +58,49 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     init(reader: ChatHistoryReading) {
         self.reader = reader
-        reader.chatsPublisher()
+
+        // Materialize the chats publisher so failures become a sentinel value rather than
+        // terminating the stream — keeps the combined publisher alive while we surface the
+        // error via `loadFailed`.
+        let chats: AnyPublisher<Result<[DuckAiChat], Error>, Never> = reader.chatsPublisher()
+            .map(Result.success)
+            .catch { Just(.failure($0)) }
+            .eraseToAnyPublisher()
+
+        // Debounce typed values so the in-memory filter runs once the user pauses, not on
+        // every keystroke. `dropFirst().debounce(...).prepend("")` seeds `CombineLatest`
+        // with the initial empty query synchronously — without it, the sheet would hide for
+        // ~150ms whenever the chats publisher emits synchronously (warm cache re-opens).
+        let queryStream = $query
+            .dropFirst()
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
+            .prepend("")
+
+        Publishers.CombineLatest(chats, queryStream)
             .receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    if case .failure = completion {
-                        self?.pinned = []
-                        self?.recent = []
-                        self?.loadFailed = true
-                    }
-                    self?.hasLoaded = true
-                },
-                receiveValue: { [weak self] chats in
-                    self?.loadFailed = false
-                    self?.pinned = chats.filter(\.pinned)
-                    self?.recent = chats.filter { !$0.pinned }
-                    self?.hasLoaded = true
-                }
-            )
+            .sink { [weak self] result, query in
+                self?.apply(result: result, query: query)
+            }
             .store(in: &cancellables)
+    }
+
+    private func apply(result: Result<[DuckAiChat], Error>, query: String) {
+        switch result {
+        case .success(let allChats):
+            let trimmed = query.trimmingCharacters(in: .whitespaces)
+            let filtered = trimmed.isEmpty
+                ? allChats
+                : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
+            loadFailed = false
+            pinned = filtered.filter(\.pinned)
+            recent = filtered.filter { !$0.pinned }
+        case .failure:
+            loadFailed = true
+            pinned = []
+            recent = []
+        }
+        effectiveQuery = query
+        hasLoaded = true
     }
 
     // MARK: - Table data source
@@ -97,8 +130,17 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     // MARK: - Intents
 
-    func openDuckAiTapped() {
-        delegate?.viewModelDidRequestOpenDuckAi()
+    func newChatTapped() {
+        delegate?.viewModelDidRequestOpenNewChat()
+    }
+
+    func chatTapped(at indexPath: IndexPath) {
+        guard let chatId = chat(at: indexPath)?.chatId else { return }
+        delegate?.viewModelDidRequestOpenChat(chatId: chatId)
+    }
+
+    func updateQuery(_ newValue: String) {
+        query = newValue
     }
 
     // MARK: - Helpers
@@ -131,5 +173,9 @@ final class AIChatHistoryViewModel: ObservableObject {
 
 @MainActor
 protocol AIChatHistoryViewModelDelegate: AnyObject {
-    func viewModelDidRequestOpenDuckAi()
+    /// Dismiss the sheet and open Duck.ai on a fresh chat.
+    func viewModelDidRequestOpenNewChat()
+
+    /// Dismiss the sheet and open the chat identified by `chatId` in Duck.ai.
+    func viewModelDidRequestOpenChat(chatId: String)
 }

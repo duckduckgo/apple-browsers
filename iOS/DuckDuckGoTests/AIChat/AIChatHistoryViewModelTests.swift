@@ -100,14 +100,100 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(sut.loadFailed, "Storage failure should set loadFailed so the UI can show an error, not the empty state")
     }
 
-    func testOpenDuckAiTapped_notifiesDelegate() {
+    func testNewChatTapped_notifiesDelegate() {
         let sut = makeSUT(chats: [])
         let delegate = MockDelegate()
         sut.delegate = delegate
 
-        sut.openDuckAiTapped()
+        sut.newChatTapped()
 
-        XCTAssertTrue(delegate.didRequestOpenDuckAi)
+        XCTAssertTrue(delegate.didRequestOpenNewChat)
+    }
+
+    func testChatTapped_validIndexPath_notifiesDelegateWithChatId() {
+        let sut = makeSUT(chats: [
+            chat(id: "p1", pinned: true),
+            chat(id: "r1", pinned: false)
+        ])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.chatTapped(at: IndexPath(row: 0, section: Section.recent.rawValue))
+
+        XCTAssertEqual(delegate.requestedChatId, "r1")
+    }
+
+    func testChatTapped_invalidIndexPath_doesNotNotifyDelegate() {
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.chatTapped(at: IndexPath(row: 99, section: Section.recent.rawValue))
+
+        XCTAssertNil(delegate.requestedChatId)
+    }
+
+    // MARK: - Search
+
+    func testUpdateQuery_filtersChatsByTitleCaseInsensitive() {
+        let sut = makeSUT(chats: [
+            chat(id: "1", title: "Dog walking tips", pinned: false),
+            chat(id: "2", title: "Cat food", pinned: false),
+            chat(id: "3", title: "Doggy daycare", pinned: true)
+        ])
+
+        sut.updateQuery("dog")
+        waitForDebounce()
+
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["3"])
+        XCTAssertEqual(sut.recent.map(\.chatId), ["1"])
+    }
+
+    func testUpdateQuery_whenEmpty_returnsAllChats() {
+        let sut = makeSUT(chats: [
+            chat(id: "1", title: "Foo", pinned: false),
+            chat(id: "2", title: "Bar", pinned: true)
+        ])
+
+        sut.updateQuery("dog")
+        waitForDebounce()
+        sut.updateQuery("")
+        waitForDebounce()
+
+        XCTAssertEqual(sut.pinned.count, 1)
+        XCTAssertEqual(sut.recent.count, 1)
+    }
+
+    func testUpdateQuery_whenWhitespaceOnly_returnsAllChats() {
+        let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
+
+        sut.updateQuery("   ")
+        waitForDebounce()
+
+        XCTAssertEqual(sut.recent.count, 1)
+    }
+
+    func testUpdateQuery_whenNoMatches_isEmpty() {
+        let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
+
+        sut.updateQuery("nonexistent")
+        waitForDebounce()
+
+        XCTAssertTrue(sut.isEmpty)
+    }
+
+    func testEffectiveQuery_lagsLiveQueryUntilDebounceFires() {
+        let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
+
+        sut.updateQuery("foo")
+        // Before the debounce fires `query` reflects the user's input but `effectiveQuery`
+        // — the query that produced the current `pinned`/`recent` — must still be the
+        // previous value, otherwise the empty-state decision races with the filter.
+        XCTAssertEqual(sut.query, "foo")
+        XCTAssertEqual(sut.effectiveQuery, "")
+
+        waitForDebounce()
+        XCTAssertEqual(sut.effectiveQuery, "foo")
     }
 
     // MARK: - Helpers
@@ -134,8 +220,18 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         wait(for: [drained], timeout: 1)
     }
 
+    /// Waits past the 150ms debounce window so the view model can emit the latest query value.
+    private func waitForDebounce() {
+        let drained = expectation(description: "debounce drained")
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(200)) { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
+    }
+
     private final class MockDelegate: AIChatHistoryViewModelDelegate {
-        private(set) var didRequestOpenDuckAi = false
-        func viewModelDidRequestOpenDuckAi() { didRequestOpenDuckAi = true }
+        private(set) var didRequestOpenNewChat = false
+        private(set) var requestedChatId: String?
+
+        func viewModelDidRequestOpenNewChat() { didRequestOpenNewChat = true }
+        func viewModelDidRequestOpenChat(chatId: String) { requestedChatId = chatId }
     }
 }

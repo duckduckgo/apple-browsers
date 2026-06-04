@@ -108,7 +108,7 @@ struct SyncWithAnotherDeviceView: View {
             selectedSegment = tag
         } label: {
             HStack {
-                Image(imageName)
+                Image(imageName, bundle: .module)
                 Text(title)
             }
             .frame(maxWidth: .infinity)
@@ -314,4 +314,14 @@ private enum Metrics {
     static let pickerInnerRadius: CGFloat = 6
     static let appIconSize: CGFloat = 16
     static let contentMinWidth: CGFloat = 380
+}
+
+#Preview {
+    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+    
+    return SyncWithAnotherDeviceView(codeForDisplayOrPasting: sampleCode, stringForQRCode: sampleCode)
+        .environmentObject(ManagementDialogModel())
+        .environmentObject(RecoveryCodeViewModel())
+        .frame(width: 420)
+        .padding()
 }

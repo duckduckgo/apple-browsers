@@ -278,6 +278,7 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
 
     @MainActor
     private func startOrphanDetection() {
+        guard settings.isOrphanProxyDetectionEnabled else { return }
         guard heartbeatStore != nil else { return }
         proxyStartedAt = Date()
         orphanFiredForCurrentEpisode = false
@@ -299,9 +300,18 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
 
     @MainActor
     private func scheduleOrphanCheckAfterWake() {
+        guard settings.isOrphanProxyDetectionEnabled else { return }
         guard heartbeatStore != nil, proxyStartedAt != nil else { return }
+
+        // The grace period defers *engaging* the bypass after wake, so the tunnel has time to write
+        // a post-wake heartbeat before we judge the proxy orphaned. But if we resumed with the bypass
+        // already engaged, there's nothing to defer — a check can only lift it (or keep it), never
+        // falsely engage or re-fire the pixel — so run on the normal cadence to lift it promptly once
+        // the tunnel recovers, instead of holding traffic off the proxy for the full grace window.
+        let delay = isFullBypassEnabled ? Self.orphanCheckInterval : Self.postWakeGracePeriod
+
         orphanCheckTask = Task.periodic(
-            delay: Self.postWakeGracePeriod,
+            delay: delay,
             interval: Self.orphanCheckInterval
         ) { [weak self] in
             await self?.checkForOrphan()
@@ -333,7 +343,7 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
             return
         }
 
-        if !isFullBypassEnabled {
+        if settings.isOrphanProxyBypassEnabled, !isFullBypassEnabled {
             logger.log("🟠 Tunnel heartbeat stale — enabling proxy full-bypass mode")
             isFullBypassEnabled = true
         }

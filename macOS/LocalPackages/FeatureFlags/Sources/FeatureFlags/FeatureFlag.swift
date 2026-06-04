@@ -47,6 +47,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
+    /// Kill switch: enable remotely to disable orphaned-proxy detection (tunnel heartbeat + proxy detection loop + pixel).
+    case networkProtectionOrphanProxyDetectionKillSwitch
+
+    /// Kill switch: enable remotely to disable the orphaned-proxy full-bypass behavior.
+    case networkProtectionOrphanProxyBypassKillSwitch
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -436,6 +442,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension)), category: .vpn)
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage)), category: .vpn)
+        case .networkProtectionOrphanProxyDetectionKillSwitch:
+            Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.orphanProxyDetectionKillSwitch)), category: .vpn)
+        case .networkProtectionOrphanProxyBypassKillSwitch:
+            Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.orphanProxyBypassKillSwitch)), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)
         case .autoUpdateInREVIEW:

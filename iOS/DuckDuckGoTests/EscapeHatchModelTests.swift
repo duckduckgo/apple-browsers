@@ -20,6 +20,8 @@
 import Foundation
 import CoreGraphics
 import Testing
+import Core
+import PrivacyConfig
 import PersistenceTestingUtils
 @testable import DuckDuckGo
 
@@ -46,7 +48,7 @@ struct EscapeHatchModelTests {
         }
     }
 
-    private func makeSUT(targetTab: Tab, router: EscapeHatchActionRouter) -> EscapeHatchModel {
+    private func makeSUT(targetTab: Tab, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger = MockFeatureFlagger()) -> EscapeHatchModel {
         EscapeHatchModel(
             title: "title",
             subtitle: "subtitle",
@@ -55,7 +57,7 @@ struct EscapeHatchModelTests {
             targetTab: targetTab,
             tabsSource: StaticEscapeHatchTabsSource(tabs: [targetTab]),
             router: router,
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             afterInactivityOptionAdapter: AfterInactivityOptionAdapter(
                 initialOption: .lastUsedTab,
                 keyValueStore: MockKeyValueFileStore()
@@ -104,5 +106,26 @@ struct EscapeHatchModelTests {
         #expect(router.closeCalls.count == 1)
         #expect(router.closeCalls.first === targetTab)
         #expect(router.burnImmediatelyCalls.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("isFireButtonEnabled is false when the escapeHatchFireButton flag is off", .timeLimit(.minutes(1)))
+    func fireButtonDisabledWhenFlagOff() {
+        let sut = makeSUT(targetTab: Tab(uid: "tab"),
+                          router: SpyRouter(),
+                          featureFlagger: MockFeatureFlagger())
+
+        #expect(sut.isFireButtonEnabled == false)
+    }
+
+    @available(iOS 16, *)
+    @Test("isFireButtonEnabled is true when the escapeHatchFireButton flag is on", .timeLimit(.minutes(1)))
+    func fireButtonEnabledWhenFlagOn() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.escapeHatchFireButton])
+        let sut = makeSUT(targetTab: Tab(uid: "tab"),
+                          router: SpyRouter(),
+                          featureFlagger: flagger)
+
+        #expect(sut.isFireButtonEnabled == true)
     }
 }

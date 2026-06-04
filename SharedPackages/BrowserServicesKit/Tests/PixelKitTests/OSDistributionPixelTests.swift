@@ -29,15 +29,15 @@ final class OSDistributionPixelTests: XCTestCase {
 
     func testNameComposition() {
         XCTAssertEqual(
-            OSDistributionPixel(metric: .client, osMajorVersion: 15, platform: .iOS, formFactor: .phone).name,
+            OSDistributionPixel(metric: .client, osMajorVersion: 15, platform: .iOS, formFactor: "phone").name,
             "os_distribution_client_major_version_15_ios_phone")
 
         XCTAssertEqual(
-            OSDistributionPixel(metric: .searches, osMajorVersion: 18, platform: .iOS, formFactor: .tablet).name,
+            OSDistributionPixel(metric: .searches, osMajorVersion: 18, platform: .iOS, formFactor: "tablet").name,
             "os_distribution_searches_major_version_18_ios_tablet")
 
         XCTAssertEqual(
-            OSDistributionPixel(metric: .activeSubscriptions, osMajorVersion: 26, platform: .macOS, formFactor: .desktop).name,
+            OSDistributionPixel(metric: .activeSubscriptions, osMajorVersion: 26, platform: .macOS, formFactor: "desktop").name,
             "os_distribution_active_subscriptions_major_version_26_macos_desktop")
     }
 
@@ -62,7 +62,7 @@ final class OSDistributionPixelTests: XCTestCase {
         }
 
         pixelKit.fireOSDistributionPixel(
-            OSDistributionPixel(metric: .client, osMajorVersion: 15, platform: .macOS, formFactor: .desktop)
+            OSDistributionPixel(metric: .client, osMajorVersion: 15, platform: .macOS, formFactor: "desktop")
         )
 
         wait(for: [fired], timeout: 1.0)
@@ -87,38 +87,30 @@ final class OSDistributionPixelTests: XCTestCase {
             }
         }
 
-        let event = OSDistributionPixel(metric: .searches, osMajorVersion: 15, platform: .macOS, formFactor: .desktop)
+        let event = OSDistributionPixel(metric: .searches, osMajorVersion: 15, platform: .macOS, formFactor: "desktop")
         makePixelKit().fireOSDistributionPixel(event)
         makePixelKit().fireOSDistributionPixel(event)
 
         XCTAssertEqual(fireCount, 1, "Monthly pixel should only fire once per calendar month")
     }
 
-    // MARK: - Source-derived platform / form factor
+    // MARK: - Metric-based firing
 
-    /// `fireOSDistributionPixel(metric:)` derives platform/formFactor from the configured PixelKit
-    /// `source`, and no-ops for unknown/unset sources.
-    func testFiringByMetricDerivesPlatformAndFormFactorFromSource() {
-        func capturedName(forSource source: String?) -> String? {
-            var pixelName: String?
-            let pixelKit = PixelKit(dryRun: false,
-                                    appVersion: "1.2.3",
-                                    source: source,
-                                    defaultHeaders: [:],
-                                    defaults: userDefaults()) { name, _, _, _, _, onComplete in
-                pixelName = name
-                onComplete(true, nil)
-            }
-            pixelKit.fireOSDistributionPixel(metric: .client)
-            return pixelName
+    /// `fireOSDistributionPixel(metric:)` resolves platform and form factor for the running device.
+    /// These tests run on macOS, so it yields the `macos_desktop` segment.
+    func testFiringByMetricUsesCurrentDevicePlatformAndFormFactor() {
+        var firedName: String?
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.2.3",
+                                defaultHeaders: [:],
+                                defaults: userDefaults()) { name, _, _, _, _, onComplete in
+            firedName = name
+            onComplete(true, nil)
         }
 
-        XCTAssertEqual(capturedName(forSource: "phone")?.hasSuffix("_ios_phone_monthly"), true)
-        XCTAssertEqual(capturedName(forSource: "tablet")?.hasSuffix("_ios_tablet_monthly"), true)
-        XCTAssertEqual(capturedName(forSource: "browser-dmg")?.hasSuffix("_macos_desktop_monthly"), true)
-        XCTAssertEqual(capturedName(forSource: "browser-appstore")?.hasSuffix("_macos_desktop_monthly"), true)
-        XCTAssertEqual(capturedName(forSource: "phone")?.hasPrefix("os_distribution_client_major_version_"), true)
-        XCTAssertNil(capturedName(forSource: "unknown-source"), "Unknown source must not fire")
-        XCTAssertNil(capturedName(forSource: nil), "Unset source must not fire")
+        pixelKit.fireOSDistributionPixel(metric: .client)
+
+        XCTAssertEqual(firedName?.hasPrefix("os_distribution_client_major_version_"), true)
+        XCTAssertEqual(firedName?.hasSuffix("_macos_desktop_monthly"), true)
     }
 }

@@ -63,7 +63,6 @@ class StatisticsLoaderTests: XCTestCase {
         var firedPixelNames: [String] = []
         let capturingPixelKit = PixelKit(dryRun: false,
                                          appVersion: "1.0.0",
-                                         source: "browser-dmg",
                                          defaultHeaders: [:],
                                          defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
                                          fireRequest: { name, _, _, _, _, onComplete in
@@ -93,7 +92,6 @@ class StatisticsLoaderTests: XCTestCase {
         var firedPixelNames: [String] = []
         let capturingPixelKit = PixelKit(dryRun: false,
                                          appVersion: "1.0.0",
-                                         source: "browser-dmg",
                                          defaultHeaders: [:],
                                          defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
                                          fireRequest: { name, _, _, _, _, onComplete in

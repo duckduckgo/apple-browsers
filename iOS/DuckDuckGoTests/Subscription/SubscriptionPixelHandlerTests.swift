@@ -104,23 +104,11 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
     }
 
     func testActiveSubscriptionOSDistributionPixel() {
-        var firedNames: [String] = []
-        let phonePixelKit = PixelKit(
-            dryRun: false,
-            appVersion: "1.0.0",
-            source: PixelKit.Source.iOS.rawValue,
-            defaultHeaders: [:],
-            defaults: UserDefaults(suiteName: "SubscriptionPixelHandlerTests.osdist.\(UUID().uuidString)")!,
-            fireRequest: { pixelName, _, _, _, _, onComplete in
-                firedNames.append(pixelName)
-                onComplete(true, nil)
-            }
-        )
-        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: phonePixelKit)
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
         handler.handle(pixel: .activeSubscriptionOSDistribution)
 
-        XCTAssertTrue(firedNames.contains { $0.hasPrefix("os_distribution_active_subscriptions_major_version_") && $0.hasSuffix("_ios_phone_monthly") },
-                      "Expected active-subscriptions OS-distribution pixel. Fired: \(firedNames)")
+        XCTAssertTrue(firedPixels.contains { $0.name.hasPrefix("os_distribution_active_subscriptions_major_version_") && $0.name.hasSuffix("_ios_phone_monthly") },
+                      "Expected active-subscriptions OS-distribution pixel. Fired: \(firedPixels.map(\.name))")
     }
 
     func testGetTokensErrorPixel() {

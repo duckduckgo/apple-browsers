@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 /// Monthly pixels for deciding when to end support for an operating system version.
 ///
@@ -34,21 +35,15 @@ public struct OSDistributionPixel: PixelKitEvent {
         case macOS = "macos"
     }
 
-    public enum FormFactor: String {
-        case phone
-        case tablet
-        case desktop
-    }
-
     private let metric: Metric
     private let osMajorVersion: Int
     private let platform: Platform
-    private let formFactor: FormFactor
+    private let formFactor: String
 
     public init(metric: Metric,
                 osMajorVersion: Int = ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
                 platform: Platform,
-                formFactor: FormFactor) {
+                formFactor: String) {
         self.metric = metric
         self.osMajorVersion = osMajorVersion
         self.platform = platform
@@ -56,7 +51,7 @@ public struct OSDistributionPixel: PixelKitEvent {
     }
 
     public var name: String {
-        "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform.rawValue)_\(formFactor.rawValue)"
+        "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform.rawValue)_\(formFactor)"
     }
 
     public var parameters: [String: String]? { nil }
@@ -76,19 +71,13 @@ public extension PixelKit {
              doNotEnforcePrefix: true)
     }
 
-    /// Fires an OS-distribution pixel for the given metric, deriving `platform` and `formFactor`
-    /// from the `source` configured at `setUp` (set per-context — app or extension — without UIKit).
+    /// Fires an OS-distribution pixel for the given metric, using the current platform and
+    /// `DevicePlatform.formFactor` (the same form-factor source other pixels use).
     func fireOSDistributionPixel(metric: OSDistributionPixel.Metric) {
-        switch source {
-        case Source.iOS.rawValue:
-            fireOSDistributionPixel(OSDistributionPixel(metric: metric, platform: .iOS, formFactor: .phone))
-        case Source.iPadOS.rawValue:
-            fireOSDistributionPixel(OSDistributionPixel(metric: metric, platform: .iOS, formFactor: .tablet))
-        case Source.macStore.rawValue, Source.macDMG.rawValue:
-            fireOSDistributionPixel(OSDistributionPixel(metric: metric, platform: .macOS, formFactor: .desktop))
-        default:
-            return
-        }
+        let platform: OSDistributionPixel.Platform = DevicePlatform.isMac ? .macOS : .iOS
+        fireOSDistributionPixel(OSDistributionPixel(metric: metric,
+                                                    platform: platform,
+                                                    formFactor: DevicePlatform.formFactor))
     }
 
     static func fireOSDistributionPixel(_ event: OSDistributionPixel) {

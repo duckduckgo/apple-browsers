@@ -166,7 +166,7 @@ public final class PixelKit {
     private let defaultHeaders: [String: String]
     private let fireRequest: FireRequest
     private var dryRun: Bool
-    let source: String?
+    private let source: String?
     private let channel: String?
     private let pixelCalendar: Calendar
 

@@ -94,10 +94,8 @@ protocol FireExecuting {
     /// True for the duration of a `burn(...)` call. Read it to avoid re-entering the executor from a delegate callback.
     var burnInProgress: Bool { get }
 
-    /// Burn a single Duck.ai chat by id — clears it from local SQLite, tells Duck.ai's
-    /// webview to clear its IDB for the chat, and records the deletion in sync metadata.
-    /// Used by the chat-history sheet's swipe-to-delete; mirrors the path Android takes
-    /// for single-chat deletion via `DuckChatDataClearingPlugin.deleteSelected`.
+    /// Burn a single Duck.ai chat by id. Peer to `burn(request:)` so the chat-history
+    /// sheet's swipe-to-delete can stay on the same execution path as fire-mode clears.
     @discardableResult
     @MainActor
     func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error>

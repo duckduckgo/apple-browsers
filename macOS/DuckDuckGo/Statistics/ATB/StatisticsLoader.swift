@@ -68,6 +68,8 @@ final class StatisticsLoader {
         load {
             dispatchPrecondition(condition: .onQueue(.main))
 
+            self.fireOSDistributionPixel(.client)
+
             if isSearch && !isDuckAI {
                 self.refreshSearchRetentionAtb {
                     self.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
@@ -186,6 +188,8 @@ final class StatisticsLoader {
     func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
 
+        fireOSDistributionPixel(.searches)
+
         guard !isSearchRetentionRequestInProgress else {
             completion()
             return
@@ -275,6 +279,8 @@ final class StatisticsLoader {
     func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
 
+        fireOSDistributionPixel(.searches)
+
         guard !isDuckAIRetentionRequestInProgress else {
             completion()
             return
@@ -323,6 +329,10 @@ final class StatisticsLoader {
             statisticsStore.atb = updateVersion
             statisticsStore.variant = nil
         }
+    }
+
+    private func fireOSDistributionPixel(_ metric: OSDistributionPixel.Metric) {
+        PixelKit.fireOSDistributionPixel(metric: metric)
     }
 
     private func fireDailyOsVersionCounterPixel() {

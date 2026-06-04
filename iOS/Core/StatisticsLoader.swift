@@ -38,6 +38,7 @@ public class StatisticsLoader {
     private let parser = AtbParser()
     private let fireSearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
+    private let fireOSDistributionPixel: (OSDistributionPixel.Metric) -> Void
     private let pixelFiring: PixelFiring.Type
     private var isDuckAIRetentionRequestInProgress = false
     private let isPad: Bool
@@ -47,6 +48,9 @@ public class StatisticsLoader {
          usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
          fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
          fireSearchExperimentPixels: @escaping () -> Void = PixelKit.fireSearchExperimentPixels,
+         fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = { metric in
+             PixelKit.fireOSDistributionPixel(metric: metric)
+         },
          pixelFiring: PixelFiring.Type = Pixel.self,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.statisticsStore = statisticsStore
@@ -54,6 +58,7 @@ public class StatisticsLoader {
         self.usageSegmentation = usageSegmentation
         self.fireSearchExperimentPixels = fireSearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
+        self.fireOSDistributionPixel = fireOSDistributionPixel
         self.pixelFiring = pixelFiring
         self.isPad = isPad
     }
@@ -128,6 +133,7 @@ public class StatisticsLoader {
 
     public func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {
         fireSearchExperimentPixels()
+        fireOSDistributionPixel(.searches)
         guard let url = StatisticsDependentURLFactory(statisticsStore: statisticsStore).makeSearchAtbURL() else {
             requestInstallStatistics {
                 self.updateUsageSegmentationAfterInstall(activityType: .search)
@@ -158,6 +164,7 @@ public class StatisticsLoader {
 
     public func refreshAppRetentionAtb(completion: @escaping Completion = {}) {
         fireAppRetentionExperimentPixels()
+        fireOSDistributionPixel(.client)
         guard let url = StatisticsDependentURLFactory(statisticsStore: statisticsStore).makeAppAtbURL() else {
             requestInstallStatistics {
                 self.updateUsageSegmentationAfterInstall(activityType: .appUse)
@@ -207,6 +214,8 @@ public class StatisticsLoader {
 
     private func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
+
+        fireOSDistributionPixel(.searches)
 
         guard !isDuckAIRetentionRequestInProgress else {
             completion()

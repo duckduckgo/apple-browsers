@@ -59,6 +59,63 @@ class StatisticsLoaderTests: XCTestCase {
         pixelKit = nil
     }
 
+    func testRefreshRetentionAtbOnNavigationFiresClientAndSearchesOSDistributionPixels() {
+        var firedPixelNames: [String] = []
+        let capturingPixelKit = PixelKit(dryRun: false,
+                                         appVersion: "1.0.0",
+                                         source: "browser-dmg",
+                                         defaultHeaders: [:],
+                                         defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+                                         fireRequest: { name, _, _, _, _, onComplete in
+                                             firedPixelNames.append(name)
+                                             onComplete(true, nil)
+                                         })
+        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "retentionatb"
+        mockStatisticsStore.variant = "test"
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: #function)
+        testee.refreshRetentionAtbOnNavigation(isSearch: true, isDuckAI: false) {
+            expect.fulfill()
+        }
+        waitForExpectations(timeout: 5)
+
+        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_client_major_version_") && $0.hasSuffix("_macos_desktop_monthly") },
+                      "Expected MAU OS-distribution pixel. Fired: \(firedPixelNames)")
+        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") && $0.hasSuffix("_macos_desktop_monthly") },
+                      "Expected searches OS-distribution pixel. Fired: \(firedPixelNames)")
+    }
+
+    func testRefreshDuckAIRetentionAtbFiresSearchesOSDistributionPixel() {
+        var firedPixelNames: [String] = []
+        let capturingPixelKit = PixelKit(dryRun: false,
+                                         appVersion: "1.0.0",
+                                         source: "browser-dmg",
+                                         defaultHeaders: [:],
+                                         defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+                                         fireRequest: { name, _, _, _, _, onComplete in
+                                             firedPixelNames.append(name)
+                                             onComplete(true, nil)
+                                         })
+        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.variant = "test"
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: #function)
+        testee.refreshDuckAIRetentionAtb {
+            expect.fulfill()
+        }
+        waitForExpectations(timeout: 5)
+
+        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") && $0.hasSuffix("_macos_desktop_monthly") },
+                      "Expected searches OS-distribution pixel. Fired: \(firedPixelNames)")
+    }
+
     func testWhenSearchRefreshHasSuccessfulUpdateAtbRequestThenSearchRetentionAtbUpdated() {
 
         mockStatisticsStore.atb = "atb"

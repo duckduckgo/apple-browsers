@@ -82,3 +82,12 @@ jobs:
             asana-task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
             asana-task-comment: ${{ steps.comment.outputs.text }}
             asana-task-comment-pinned: false
+
+        - name: Mark subtask complete on approve
+          if: ${{ github.event.review.state == 'approved' }}
+          uses: duckduckgo/native-github-asana-sync@v1.9
+          with:
+            action: 'mark-asana-task-complete'
+            asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ fromJSON(steps.find-subtask.outputs.subtask-ids)[0] }}
+            is-complete: true

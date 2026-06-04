@@ -852,7 +852,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func codeCopied(_ code: String) {
         fireBarcodeCodeCopiedPixel(for: code)
-        ActionMessageView.present(message: UserText.simplifiedCodeCopiedToast)
     }
 
     @MainActor

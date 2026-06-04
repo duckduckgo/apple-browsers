@@ -32,6 +32,7 @@ public struct SimplifiedScanOrShowCodeView: View {
     @ObservedObject var model: ScanOrPasteCodeViewModel
     @State var qrCodeModel: ShowQRCodeViewModel
     @State private var selectedTab: Tab = .scanQRCode
+    @State var showCopyConfirmation = false
 
     public init(model: ScanOrPasteCodeViewModel) {
         self.model = model
@@ -113,3 +114,16 @@ enum SimplifiedSyncStyle {
     // various elements of the QR code panel.
     static let qrCodeBackground = Color(red: 0.92, green: 0.92, blue: 0.92)
 }
+
+#if DEBUG
+struct SimplifiedScanOrShowCodeView_Previews: PreviewProvider {
+    static var previews: some View {
+        let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+        NavigationView {
+            SimplifiedScanOrShowCodeView(
+                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
+            )
+        }
+    }
+}
+#endif

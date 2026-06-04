@@ -256,7 +256,7 @@ final class AIChatHistoryManagerTests: XCTestCase {
 
     func testRemoveChatSuggestion_RecordsDeletionWithSyncCleaner() async {
         let chat = AIChatSuggestion(id: "1", title: "Test Chat", isPinned: false, chatId: "chat-1")
-        sut.removeChatSuggestion(suggestion: chat)
+        sut.deleteChatSuggestion(suggestion: chat)
 
         let predicate = NSPredicate { _, _ in
             self.mockChatSyncCleaner.recordChatDeletionCalls == ["chat-1"]

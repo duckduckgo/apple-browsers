@@ -110,7 +110,7 @@ final class AIChatHistoryManager {
                 self.delegate?.aiChatHistoryManager(self, didSelectChatURL: url)
             },
             onChatDeleted: { [weak self] chat in
-                self?.removeChatSuggestion(suggestion: chat)
+                self?.deleteChatSuggestion(suggestion: chat)
             }
         )
 
@@ -172,21 +172,23 @@ final class AIChatHistoryManager {
 
     /// Removes an AIChatSuggestion and refreshes the Suggestions List
     ///
-    func removeChatSuggestion(suggestion: AIChatSuggestion) {
+    func deleteChatSuggestion(suggestion: AIChatSuggestion) {
         viewModel.removeSuggestion(suggestion)
 
         Task { @MainActor [weak self] in
-            await self?.removeChatSuggestionInTask(suggestion: suggestion)
+            await self?.deleteChatSuggestionFromHistory(suggestion: suggestion)
+            self?.refreshSuggestions()
         }
     }
 
-    private func removeChatSuggestionInTask(suggestion: AIChatSuggestion) async {
+    private func deleteChatSuggestionFromHistory(suggestion: AIChatSuggestion) async {
         let result = await aiChatDeleter.deleteChat(chatID: suggestion.chatId, isFireMode: isFireTab)
         if case .failure = result {
             viewModel.cancelPendingRemoval(suggestion)
+            return
         }
 
-        refreshSuggestions()
+        aiChatDeleter.scheduleSync()
     }
 
     private func refreshSuggestions() {

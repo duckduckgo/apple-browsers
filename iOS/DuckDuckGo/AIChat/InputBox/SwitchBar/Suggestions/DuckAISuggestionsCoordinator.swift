@@ -190,7 +190,7 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
 
     func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController) {
         RecentChatDeletionAlert.show(for: chat, presenter: sender) { [weak chatManager] in
-            chatManager?.removeChatSuggestion(suggestion: chat)
+            chatManager?.deleteChatSuggestion(suggestion: chat)
         }
     }
 

@@ -69,7 +69,6 @@ public extension PixelKit {
 
     /// Fires an OS-distribution pixel with the fixed configuration these pixels require:
     /// `.monthly` frequency, no `appVersion`, no `pixelSource`, and no platform-prefix enforcement.
-    /// (On macOS, `channel` is still added like every other macOS pixel; iOS does not send it.)
     func fireOSDistributionPixel(_ event: OSDistributionPixel) {
         fire(event,
              frequency: .monthly,
@@ -79,21 +78,17 @@ public extension PixelKit {
 
     /// Fires an OS-distribution pixel for the given metric, deriving `platform` and `formFactor`
     /// from the `source` configured at `setUp` (set per-context — app or extension — without UIKit).
-    /// No-ops if the source is unknown/unset, so it is safe to call from any context.
     func fireOSDistributionPixel(metric: OSDistributionPixel.Metric) {
-        let platform: OSDistributionPixel.Platform
-        let formFactor: OSDistributionPixel.FormFactor
         switch source {
         case Source.iOS.rawValue:
-            (platform, formFactor) = (.iOS, .phone)
+            fireOSDistributionPixel(OSDistributionPixel(metric: metric, platform: .iOS, formFactor: .phone))
         case Source.iPadOS.rawValue:
-            (platform, formFactor) = (.iOS, .tablet)
+            fireOSDistributionPixel(OSDistributionPixel(metric: metric, platform: .iOS, formFactor: .tablet))
         case Source.macStore.rawValue, Source.macDMG.rawValue:
-            (platform, formFactor) = (.macOS, .desktop)
+            fireOSDistributionPixel(OSDistributionPixel(metric: metric, platform: .macOS, formFactor: .desktop))
         default:
             return
         }
-        fireOSDistributionPixel(OSDistributionPixel(metric: metric, platform: platform, formFactor: formFactor))
     }
 
     static func fireOSDistributionPixel(_ event: OSDistributionPixel) {

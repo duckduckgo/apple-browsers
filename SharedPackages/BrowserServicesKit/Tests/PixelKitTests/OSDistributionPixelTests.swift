@@ -29,15 +29,15 @@ final class OSDistributionPixelTests: XCTestCase {
 
     func testNameComposition() {
         XCTAssertEqual(
-            OSDistributionPixel(metric: .client, osMajorVersion: 15, platform: .iOS, formFactor: "phone").name,
+            OSDistributionPixel(metric: .client, osMajorVersion: 15, platform: "ios", formFactor: "phone").name,
             "os_distribution_client_major_version_15_ios_phone")
 
         XCTAssertEqual(
-            OSDistributionPixel(metric: .searches, osMajorVersion: 18, platform: .iOS, formFactor: "tablet").name,
+            OSDistributionPixel(metric: .searches, osMajorVersion: 18, platform: "ios", formFactor: "tablet").name,
             "os_distribution_searches_major_version_18_ios_tablet")
 
         XCTAssertEqual(
-            OSDistributionPixel(metric: .activeSubscriptions, osMajorVersion: 26, platform: .macOS, formFactor: "desktop").name,
+            OSDistributionPixel(metric: .activeSubscriptions, osMajorVersion: 26, platform: "macos", formFactor: "desktop").name,
             "os_distribution_active_subscriptions_major_version_26_macos_desktop")
     }
 
@@ -62,7 +62,7 @@ final class OSDistributionPixelTests: XCTestCase {
         }
 
         pixelKit.fireOSDistributionPixel(
-            OSDistributionPixel(metric: .client, osMajorVersion: 15, platform: .macOS, formFactor: "desktop")
+            OSDistributionPixel(metric: .client, osMajorVersion: 15, platform: "macos", formFactor: "desktop")
         )
 
         wait(for: [fired], timeout: 1.0)
@@ -87,7 +87,7 @@ final class OSDistributionPixelTests: XCTestCase {
             }
         }
 
-        let event = OSDistributionPixel(metric: .searches, osMajorVersion: 15, platform: .macOS, formFactor: "desktop")
+        let event = OSDistributionPixel(metric: .searches, osMajorVersion: 15, platform: "macos", formFactor: "desktop")
         makePixelKit().fireOSDistributionPixel(event)
         makePixelKit().fireOSDistributionPixel(event)
 

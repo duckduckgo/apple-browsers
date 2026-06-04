@@ -30,19 +30,14 @@ public struct OSDistributionPixel: PixelKitEvent {
         case activeSubscriptions = "active_subscriptions"
     }
 
-    public enum Platform: String {
-        case iOS = "ios"
-        case macOS = "macos"
-    }
-
     private let metric: Metric
     private let osMajorVersion: Int
-    private let platform: Platform
+    private let platform: String
     private let formFactor: String
 
     public init(metric: Metric,
                 osMajorVersion: Int = ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
-                platform: Platform,
+                platform: String,
                 formFactor: String) {
         self.metric = metric
         self.osMajorVersion = osMajorVersion
@@ -51,7 +46,7 @@ public struct OSDistributionPixel: PixelKitEvent {
     }
 
     public var name: String {
-        "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform.rawValue)_\(formFactor)"
+        "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform)_\(formFactor)"
     }
 
     public var parameters: [String: String]? { nil }
@@ -74,9 +69,8 @@ public extension PixelKit {
     /// Fires an OS-distribution pixel for the given metric, using the current platform and
     /// `DevicePlatform.formFactor` (the same form-factor source other pixels use).
     func fireOSDistributionPixel(metric: OSDistributionPixel.Metric) {
-        let platform: OSDistributionPixel.Platform = DevicePlatform.isMac ? .macOS : .iOS
         fireOSDistributionPixel(OSDistributionPixel(metric: metric,
-                                                    platform: platform,
+                                                    platform: DevicePlatform.currentPlatform.rawValue.lowercased(),
                                                     formFactor: DevicePlatform.formFactor))
     }
 

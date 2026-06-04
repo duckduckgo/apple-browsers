@@ -127,6 +127,30 @@ public final class TestRunHelper: NSObject {
         loadedViews.append(.init(view: view))
     }
 
+    @MainActor
+    private func stopActiveWebViewActivityOnMainActor() {
+        for ref in loadedViews {
+            guard let webView = ref.view as? WKWebView else { continue }
+            webView.stopLoading()
+            webView.navigationDelegate = nil
+            webView.uiDelegate = nil
+        }
+    }
+
+    fileprivate func stopActiveWebViewActivity() {
+        let stopWebViewActivity = {
+            MainActor.assumeIsolated {
+                self.stopActiveWebViewActivityOnMainActor()
+            }
+        }
+
+        if Thread.isMainThread {
+            stopWebViewActivity()
+        } else {
+            DispatchQueue.main.sync(execute: stopWebViewActivity)
+        }
+    }
+
 }
 
 extension TestRunHelper: XCTestObservation {
@@ -176,6 +200,7 @@ extension TestRunHelper: XCTestObservation {
         if !loadedViews.isEmpty {
             let descr = loadedViews.compactMap(\.view).description
             Logger.tests.warning("Loaded views not empty at start of test case: \(descr)")
+            stopActiveWebViewActivity()
             loadedViews = []
         }
 
@@ -195,6 +220,7 @@ extension TestRunHelper: XCTestObservation {
             FileManager.default.cleanupTemporaryDirectory()
         }
         NSApp.swizzled_currentEvent = nil
+        stopActiveWebViewActivity()
         WKWebView.customHandlerSchemes = []
 
         // Check for non-nil variables that should be cleaned up

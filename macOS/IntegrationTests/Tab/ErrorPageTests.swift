@@ -180,6 +180,50 @@ class ErrorPageTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenIntegrationTestCreatesNewTabPageTab_initialPageDoesNotLoadByDefault() async {
+        let navigationStarted = expectation(description: "New tab page navigation should not start")
+        navigationStarted.isInverted = true
+
+        let tab = Tab(content: .newtab, webViewConfiguration: WKWebViewConfiguration(), privacyFeatures: privacyFeaturesMock)
+        let cancellable = tab.webView.publisher(for: \.url)
+            .compactMap { $0 }
+            .sink { _ in
+                navigationStarted.fulfill()
+            }
+        if tab.webView.url != nil {
+            navigationStarted.fulfill()
+        }
+
+        await fulfillment(of: [navigationStarted], timeout: 1)
+        withExtendedLifetime((tab, cancellable)) {}
+    }
+
+    @MainActor
+    func testWhenIntegrationTestCreatesNewTabPageTabWithBackgroundLoading_initialPageLoads() async {
+        let pageLoaded = expectation(description: "New tab page loaded")
+
+        let tab = Tab(
+            content: .newtab,
+            webViewConfiguration: WKWebViewConfiguration(),
+            privacyFeatures: privacyFeaturesMock,
+            shouldLoadInBackground: true
+        )
+        var cancellable: AnyCancellable?
+        if tab.webView.url != URL.newtab {
+            cancellable = tab.webView.publisher(for: \.url)
+                .filter { $0 == URL.newtab }
+                .sink { _ in
+                    pageLoaded.fulfill()
+                }
+        } else {
+            pageLoaded.fulfill()
+        }
+
+        await fulfillment(of: [pageLoaded], timeout: 5)
+        withExtendedLifetime((tab, cancellable)) {}
+    }
+
+    @MainActor
     func testWhenPageFailsToLoad_errorPageShown() async throws {
         // open Tab with newtab page
         let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)

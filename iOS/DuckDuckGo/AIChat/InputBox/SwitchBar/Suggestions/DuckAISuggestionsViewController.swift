@@ -50,7 +50,6 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let cellIdentifier = "DuckAISuggestionsCell"
         static let iconSize: CGFloat = 24
         static let iconTextSpacing: CGFloat = 10
-        static let fireSize = CGSize(width: 44, height: 44)
         static let cellHeight: CGFloat = 44
         static let cellHeightWithSubtitle: CGFloat = 58
         static let horizontalInset: CGFloat = 16
@@ -109,7 +108,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         tableView.dataSource = self
         tableView.alwaysBounceVertical = true
         tableView.keyboardDismissMode = .onDrag
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
+        tableView.register(DuckAISuggestionTableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         // Without this, iPad readable-width pulls cells narrower than the UTI input above.
@@ -431,7 +430,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         let icon = chat.isPinned ? DesignSystemImages.Glyphs.Size24.pin : DesignSystemImages.Glyphs.Size24.aiChat
 
         applyConfiguration(to: cell, title: chat.title, subtitle: nil, icon: icon)
-        applyDeleteAccessoryViewIfNeeded(to: cell, chat: chat)
+        configureDeleteActionIfNeeded(to: cell, chat: chat)
     }
 
     private func configureURLCell(_ cell: UITableViewCell, with suggestion: Suggestion) {
@@ -510,31 +509,18 @@ final class DuckAISuggestionsViewController: UIViewController {
 
 private extension DuckAISuggestionsViewController {
 
-    func applyDeleteAccessoryViewIfNeeded(to cell: UITableViewCell, chat: AIChatSuggestion) {
-        guard featureFlagger.isFeatureOn(.removeChatHistory) else {
-            cell.accessoryView = nil
+    func configureDeleteActionIfNeeded(to cell: UITableViewCell, chat: AIChatSuggestion) {
+        guard let cell = cell as? DuckAISuggestionTableViewCell else {
             return
         }
 
-        cell.accessoryView = buildDeleteAccessoryView(chat: chat)
-    }
-
-    func buildDeleteAccessoryView(chat: AIChatSuggestion) -> UIView {
-        let fireImage = DesignSystemImages.Glyphs.Size16.fire.withRenderingMode(.alwaysTemplate)
-        let deleteAction = UIAction { [weak self] _ in
-            self?.requestChatDeletion(for: chat)
+        cell.displaysDeleteButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onDeletePressed = { [weak self] in
+            self?.requestChatDeletion(chat: chat)
         }
-
-        let button = UIButton(type: .system)
-        button.setImage(fireImage, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .icons)
-        button.frame.size = Constants.fireSize
-        button.contentHorizontalAlignment = .trailing
-        button.addAction(deleteAction, for: .touchUpInside)
-        return button
     }
 
-    func requestChatDeletion(for chat: AIChatSuggestion) {
+    func requestChatDeletion(chat: AIChatSuggestion) {
         delegate?.duckAISuggestionsDidRequestChatDeletion(chat, sender: self)
     }
 }

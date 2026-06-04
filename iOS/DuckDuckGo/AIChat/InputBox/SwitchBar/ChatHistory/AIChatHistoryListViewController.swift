@@ -36,7 +36,6 @@ final class AIChatHistoryListViewController: UIViewController {
         static let iconSize: CGFloat = 16
         static let iconTextSpacing: CGFloat = 12
         static let cellHeight: CGFloat = 44
-        static let fireSize: CGSize = CGSize(width: 44, height: 44)
         static let horizontalInset: CGFloat = 16
         static let topContentInset: CGFloat = -20
         // Use a tighter top padding when a section title sits below the hatch so they feel grouped;
@@ -96,7 +95,7 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.dataSource = self
         tableView.alwaysBounceVertical = true
         tableView.keyboardDismissMode = .onDrag
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
+        tableView.register(DuckAISuggestionTableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionFooterHeight = 0
@@ -322,7 +321,7 @@ final class AIChatHistoryListViewController: UIViewController {
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor(designSystemColor: .surface)
 
-        applyDeleteAccessoryViewIfNeeded(to: cell, chat: chat)
+        configureDeleteActionIfNeeded(cell: cell, chat: chat)
     }
 }
 
@@ -330,28 +329,15 @@ final class AIChatHistoryListViewController: UIViewController {
 
 private extension AIChatHistoryListViewController {
 
-    func applyDeleteAccessoryViewIfNeeded(to cell: UITableViewCell, chat: AIChatSuggestion) {
-        guard featureFlagger.isFeatureOn(.removeChatHistory) else {
-            cell.accessoryView = nil
+    func configureDeleteActionIfNeeded(cell: UITableViewCell, chat: AIChatSuggestion) {
+        guard let cell = cell as? DuckAISuggestionTableViewCell else {
             return
         }
 
-        cell.accessoryView = buildDeleteAccessoryView(chat: chat)
-    }
-
-    func buildDeleteAccessoryView(chat: AIChatSuggestion) -> UIView {
-        let fireImage = DesignSystemImages.Glyphs.Size16.fire.withRenderingMode(.alwaysTemplate)
-        let deleteAction = UIAction { [weak self] _ in
+        cell.displaysDeleteButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onDeletePressed = { [weak self] in
             self?.presentChatDeletionConfirmation(chat: chat)
         }
-
-        let button = UIButton(type: .system)
-        button.setImage(fireImage, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .icons)
-        button.frame.size = Constants.fireSize
-        button.contentHorizontalAlignment = .trailing
-        button.addAction(deleteAction, for: .touchUpInside)
-        return button
     }
 
     func presentChatDeletionConfirmation(chat: AIChatSuggestion) {

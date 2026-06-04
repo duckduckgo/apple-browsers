@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import Core
 
@@ -88,8 +89,11 @@ struct AutofillItemsEmptyView: View {
     }
 
     private func maxButtonWidth() -> CGFloat {
-        let maxWidth = AutofillViews.maxWidthFor(title1: UserText.autofillEmptyViewImportButtonTitle, title2: UserText.autofillEmptyViewImportViaSyncButtonTitle, font: UIFont.boldAppFont(ofSize: 15))
-        return min(maxWidth, 300)
+        let labelFont = AppRebrand.isAppRebranded()
+            ? UIFont.systemFont(ofSize: 17, weight: .medium)
+            : UIFont.boldAppFont(ofSize: 15)
+        let maxWidth = AutofillViews.maxWidthFor(title1: UserText.autofillEmptyViewImportButtonTitle, title2: UserText.autofillEmptyViewImportViaSyncButtonTitle, font: labelFont)
+        return min(maxWidth.rounded(.up), 300)
     }
 
 }

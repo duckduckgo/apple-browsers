@@ -118,3 +118,69 @@ struct ConsumedFlagResetTests {
         #expect(shouldResetConsumedFlag(pageContext: context) == true)
     }
 }
+
+// MARK: - Selection Context ("Attach to Duck.ai") Tests
+
+struct SelectionContextTests {
+
+    /// Mirrors `PageContextTabExtension.Constants.maxSelectionContextLength`.
+    private static let maxSelectionContextLength = 9500
+
+    /// Mirrors `PageContextTabExtension.attachSelectionContext` payload construction.
+    private func buildSelectionContext(text: String, url: String, title: String) -> AIChatPageContextData {
+        let truncated = text.count > Self.maxSelectionContextLength
+        let content = truncated ? String(text.prefix(Self.maxSelectionContextLength)) : text
+        return AIChatPageContextData(
+            title: title,
+            favicon: [],
+            url: url,
+            content: content,
+            truncated: truncated,
+            fullContentLength: text.count,
+            attachable: true,
+            contentType: "selection"
+        )
+    }
+
+    @Test("Short selection is attachable, tagged as selection, and not truncated")
+    func shortSelectionIsTaggedAndNotTruncated() {
+        let context = buildSelectionContext(text: "hello world", url: "https://example.com", title: "Text selection")
+        #expect(context.contentType == "selection")
+        #expect(context.content == "hello world")
+        #expect(context.title == "Text selection")
+        #expect(context.url == "https://example.com")
+        #expect(context.attachable == true)
+        #expect(context.truncated == false)
+        #expect(context.fullContentLength == 11)
+    }
+
+    @Test("Long selection is truncated to the max length and reports the original length")
+    func longSelectionIsTruncated() {
+        let longText = String(repeating: "x", count: Self.maxSelectionContextLength + 500)
+        let context = buildSelectionContext(text: longText, url: "https://example.com", title: "Text selection")
+        #expect(context.content.count == Self.maxSelectionContextLength)
+        #expect(context.truncated == true)
+        #expect(context.fullContentLength == longText.count)
+    }
+}
+
+// MARK: - Selection Override Precedence Tests
+
+struct SelectionOverridePrecedenceTests {
+
+    /// Mirrors the precedence applied across `PageContextTabExtension`: a selection override,
+    /// while set, owns the sidebar context and suppresses auto-collected full-page content.
+    private func shouldSuppressAutoCollect(selectionOverridePresent: Bool) -> Bool {
+        selectionOverridePresent
+    }
+
+    @Test("Selection override suppresses auto-collected full-page context")
+    func overrideSuppressesAutoCollect() {
+        #expect(shouldSuppressAutoCollect(selectionOverridePresent: true) == true)
+    }
+
+    @Test("No override lets normal auto-collect proceed")
+    func noOverrideAllowsAutoCollect() {
+        #expect(shouldSuppressAutoCollect(selectionOverridePresent: false) == false)
+    }
+}

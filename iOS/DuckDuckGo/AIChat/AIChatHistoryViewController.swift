@@ -182,8 +182,11 @@ final class AIChatHistoryViewController: UIViewController {
         }
         // Show the illustrated empty state only when the user has no chats AND isn't
         // searching. A no-matches search keeps the table view (and its search-bar
-        // header) visible so the user can clear the query.
-        if viewModel.isEmpty && viewModel.query.isEmpty {
+        // header) visible so the user can clear the query. We read `effectiveQuery`
+        // — the query that actually produced the current `pinned`/`recent` snapshot —
+        // rather than the live `query` so the decision stays consistent with the rows
+        // on screen during the debounce window.
+        if viewModel.isEmpty && viewModel.effectiveQuery.isEmpty {
             showEmptyState()
         } else {
             showList()

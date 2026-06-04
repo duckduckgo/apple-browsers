@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Εισαγάγετε έναν μη αρνητικό αριθμό ημερών. Η ημερομηνία εγκατάστασης θα οριστεί σε αυτήν πριν από πολλές ημέρες.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -2478,6 +2481,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Αρχική σελίδα";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Δεν υποστηρίζονται πολλαπλά συμβάντα. Αντ' αυτού δοκίμασε να ανοίξεις το αρχείο που κατέβασες.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Δεν είναι δυνατή η επεξεργασία αυτού του αρχείου. Αντ' αυτού δοκίμασε να ανοίξεις το αρχείο που κατέβασες.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Μη υποστηριζόμενη ζώνη ώρας. Αντ' αυτού δοκίμασε να ανοίξεις το αρχείο που κατέβασες.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Το συμβάν προστέθηκε στο Ημερολόγιο Apple";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Αναγνωριστικό: %1$@ | %2$@ | %3$@";
@@ -3409,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Άνοιγμα σε άλλη εφαρμογή;";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Επιστροφή";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Προσπαθήσαμε να το φορτώσουμε ιδιωτικά, αλλά δεν εμφανίζεται.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Θα θέλατε να ανοίξετε αυτήν τη σελίδα στο Safari;";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Ανοίξτε στο Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Δυστυχώς, η σελίδα δεν ήταν δυνατό να φορτώσει.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Αυτή η σελίδα φορτώνει μόνο στο Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Ανοίξτε στο Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Ο ιστότοπος αυτός διαθέτει μη έγκυρο πιστοποιητικό ασφαλείας και ενδέχεται να μην είναι ασφαλές να το επισκεφτείτε.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Μείνετε στο DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Ορισμένες λειτουργίες του ιστότοπου ενδέχεται να μην είναι συμβατές σε αυτό το πρόγραμμα περιήγησης.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Αυτός ο ιστότοπος θέλει να ανοίξει στο Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "Το DuckDuckGo δεν μπορεί να φορτώσει τη σελίδα αυτή.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Πρόσφατα αρχεία καταγραφής επεξεργασίας";
@@ -3598,14 +3607,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Χρονόμετρο αδράνειας";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Οθόνη έναρξης";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Νέα καρτέλα";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Μετά από αδράνεια";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Δοκιμάστε τη νέα επιλογή για εναλλαγή μεταξύ αναζήτησης και Duck.ai στη γραμμή διευθύνσεων.";
@@ -5065,3 +5074,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Συνομιλίες";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Ιστορικό συνομιλιών";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Ρυθμίσεις συνομιλίας";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Νέα";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Νέα καρτέλα Fire";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Νέα αναζήτηση";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Νέα καρτέλα";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Νέα φωνητική συνομιλία";

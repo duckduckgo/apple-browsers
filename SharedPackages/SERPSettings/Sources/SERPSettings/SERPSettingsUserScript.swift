@@ -225,14 +225,9 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// - Parameters:
     ///   - params: Unused parameters from the message
     ///   - message: The message context
-    /// - Returns: JSONBlob containing stored settings, or `nil` if feature is disabled
+    /// - Returns: JSONBlob containing stored settings
     @MainActor
     private func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        // Feature flag check - allows disabling the feature remotely
-        guard serpSettingsProviding.isSERPSettingsFeatureOn() else {
-            return nil
-        }
-
         return serpSettingsProviding.getSERPSettings()
     }
 
@@ -253,11 +248,6 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// - Returns: Always returns `nil` (no response needed)
     @MainActor
     private func updateNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        // Feature flag check
-        guard serpSettingsProviding.isSERPSettingsFeatureOn() else {
-            return nil
-        }
-
         // Validate parameters are a dictionary
         guard let settings = params as? [String: Any] else { return nil }
 

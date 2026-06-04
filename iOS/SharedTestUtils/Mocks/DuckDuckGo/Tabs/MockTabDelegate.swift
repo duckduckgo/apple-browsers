@@ -87,6 +87,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {}
 
+    func tabDidRequestAIChatHistory(tab: TabViewController) {}
+
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {}
 
     func tabDidRequestSettings(tab: DuckDuckGo.TabViewController) {}

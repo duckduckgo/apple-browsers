@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Adj meg egy nem negatív napszámot. A telepítés dátuma ennyi nappal korábbira lesz állítva.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -2478,6 +2481,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Kezdőlap";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Több esemény nem támogatott. Próbáld meg inkább megnyitni a letöltött fájlt.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Ez a fájl nem dolgozható fel. Próbáld meg inkább megnyitni a letöltött fájlt.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Nem támogatott időzóna. Próbáld meg inkább megnyitni a letöltött fájlt.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Az esemény hozzáadva az Apple naptárhoz";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
@@ -3409,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Megnyitás másik alkalmazásban?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Visszalépés";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Megpróbáltuk privát módon betölteni, de nem jeleníthető meg.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Szeretnéd megnyitni ezt az oldalt a Safariban?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Megnyitás Safariban";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Sajnos nem sikerült betölteni az oldalt.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Ez az oldal csak Safariban tölthető be";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Megnyitás Safariban";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "A webhely biztonsági tanúsítványa érvénytelen, ezért előfordulhat, hogy a meglátogatása nem biztonságos.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Maradok a DuckDuckGónál";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Előfordulhat, hogy a webhely egyes funkciói nem kompatibilisek ezzel a böngészővel.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Az oldal a Safariban próbál megnyílni.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "A DuckDuckGo nem tudja betölteni ezt az oldalt.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Legutóbbi feldolgozási naplók";
@@ -3598,14 +3607,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Tétlenségi időzítő";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Nyitóképernyő";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Utoljára használt lap";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Új lap";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Inaktivitás után";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Próbáld ki az új funkciót, amellyel a címsorban váltogathatsz a keresés és a Duck.ai között.";
@@ -5065,3 +5074,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Csevegések";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Csevegési előzmények";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Csevegési beállítások";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Új";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Új Fire-lap";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Új keresés";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Új lap";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Új hangcsevegés";

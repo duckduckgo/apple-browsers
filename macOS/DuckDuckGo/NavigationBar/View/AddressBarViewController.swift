@@ -440,17 +440,12 @@ final class AddressBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        // hide Suggestions when child window is shown (Suggestions, Bookmarks, Downloads etc…, excluding Tab Previews and Suggestions)
         window.publisher(for: \.childWindows)
             .debounce(for: 0.05, scheduler: DispatchQueue.main)
             .sink { [weak self] childWindows in
-                guard let self, let childWindows, childWindows.contains(where: {
-                    !(
-                        $0.windowController is TabPreviewWindowController
-                        || $0.contentViewController is SuggestionViewController
-                        || $0 === self.view.window?.titlebarView?.window // fullscreen titlebar owning window
-                    )
-                }) else { return }
+                guard let childWindows, let self, self.mustDismissSuggestionsWindow(childWindows, titlebarWindow: self.view.window?.titlebarView?.window) else {
+                    return
+                }
 
                 addressBarTextField.hideSuggestionWindow()
             }
@@ -461,6 +456,19 @@ final class AddressBarViewController: NSViewController {
                 self?.refreshAddressBarAppearance(nil)
             }
             .store(in: &cancellables)
+    }
+
+    /// Determines if the Suggestions Window must be hidden, whenever the specified collection of Child Windows is onscreen
+    ///
+    private func mustDismissSuggestionsWindow(_ childWindows: [NSWindow], titlebarWindow: NSWindow?) -> Bool {
+        childWindows.contains { window in
+            !(
+                window.windowController is TabPreviewWindowController
+                || window.contentViewController is SuggestionViewController
+                || window === titlebarWindow
+                || window.contentViewController?.identifier == .updateNotificationPopover
+            )
+        }
     }
 
     private func subscribeToFireproofDomainsChanges() {

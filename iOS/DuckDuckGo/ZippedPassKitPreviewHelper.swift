@@ -18,6 +18,7 @@
 //
 
 import Common
+import Core
 import FoundationExtensions
 import Foundation
 import UIKit
@@ -28,26 +29,49 @@ import os.log
 class ZippedPassKitPreviewHelper: FilePreview {
     private weak var viewController: UIViewController?
     private let filePath: URL
-    
-    required init(_ filePath: URL, viewController: UIViewController) {
+    private let pixelFiring: PixelFiring.Type
+
+    required convenience init(_ filePath: URL, viewController: UIViewController) {
+        self.init(filePath, viewController: viewController, pixelFiring: Pixel.self)
+    }
+
+    init(_ filePath: URL, viewController: UIViewController, pixelFiring: PixelFiring.Type) {
         self.filePath = filePath
         self.viewController = viewController
+        self.pixelFiring = pixelFiring
     }
-    
+
     func preview() {
+        let entries: [Data]
         do {
-            let passes: [PKPass] = try extractDataEntriesFromZipAtFilePath(self.filePath).compactMap({ try? PKPass(data: $0) })
-            if passes.count > 0,
-               let controller = PKAddPassesViewController(passes: passes) {
-                viewController?.present(controller, animated: true)
-            } else {
-                Logger.general.error("Can't present passkit: No valid passes in passes file")
-            }
+            entries = try extractDataEntriesFromZipAtFilePath(self.filePath)
         } catch {
+            // ZIP-side failures (missing file, corrupt archive) mean no pass bytes reached PassKit, mirroring
+            // the file-read failure path in PassKitPreviewHelper.preview().
             Logger.general.error("Can't present passkit: \(error.localizedDescription, privacy: .public)")
+            pixelFiring.fire(.walletPassPreviewFailed,
+                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "no_data_supplied"])
+            return
         }
+
+        guard !entries.isEmpty else {
+            Logger.general.error("Can't present passkit: empty passes archive")
+            pixelFiring.fire(.walletPassPreviewFailed,
+                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "no_data_supplied"])
+            return
+        }
+
+        let passes: [PKPass] = entries.compactMap({ try? PKPass(data: $0) })
+        guard !passes.isEmpty, let controller = PKAddPassesViewController(passes: passes) else {
+            Logger.general.error("Can't present passkit: No valid passes in passes file")
+            pixelFiring.fire(.walletPassPreviewFailed,
+                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "parse_error"])
+            return
+        }
+
+        viewController?.present(controller, animated: true)
     }
- 
+
     func extractDataEntriesFromZipAtFilePath(_ zipPath: URL) throws -> [Data] {
         var dataObjects = [Data]()
         let archive = try Archive(url: zipPath, accessMode: .read)
@@ -56,7 +80,7 @@ class ZippedPassKitPreviewHelper: FilePreview {
             _ = try archive.extract(entry, skipCRC32: true) { data in
                 passData.append(data)
             }
-            
+
             if passData.count > 0 {
                 dataObjects.append(passData)
             }

@@ -23,21 +23,21 @@ import XCTest
 class TabSwitcherStaticButtonTests: XCTestCase {
 
     func testInitialState() {
-        let button = TabSwitcherStaticButton()
+        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
         XCTAssertEqual(0, button.tabCount)
         XCTAssertFalse(button.hasUnread)
         XCTAssertNil(button.text)
     }
 
     func testWhenAnimateCalledThenCountIsNotIncremented() {
-        let button = TabSwitcherStaticButton()
+        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
         button.animateUpdate { }
         XCTAssertEqual(0, button.tabCount)
         XCTAssertNil(button.text)
     }
 
     func testWhenCountSetBackToZeroThenTextIsBlank() {
-        let button = TabSwitcherStaticButton()
+        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
         button.tabCount = 1
         XCTAssertNotNil(button.text)
         button.tabCount = 0
@@ -45,14 +45,14 @@ class TabSwitcherStaticButtonTests: XCTestCase {
     }
 
     func testWhenExceedsMaxThenLabelIsSetAppropriately() {
-        let button = TabSwitcherStaticButton()
+        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
         button.tabCount = 100
         XCTAssertEqual("∞", button.text)
     }
 
 
     func testWhenCountIsUpdatedThenLabelIsUpdated() {
-        let button = TabSwitcherStaticButton()
+        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
         button.tabCount = 99
         XCTAssertEqual("99", button.text)
     }

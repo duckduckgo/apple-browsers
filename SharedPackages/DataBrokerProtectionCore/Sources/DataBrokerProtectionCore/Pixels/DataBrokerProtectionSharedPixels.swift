@@ -745,32 +745,29 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
     public init(pixelKit: PixelKit, platform: Platform) {
         self.pixelKit = pixelKit
         self.platform = platform
-        super.init { _, _, _, _ in
-        }
-
-        self.eventMapper = { event, _, parameters, _ in
+        super.init { event, _, parameters, _ in
             switch event {
             case .generateEmailHTTPErrorDaily:
-                self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .emptyAccessTokenDaily:
-                self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultDatabaseRecreated:
-                self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _, _),
                     .actionFailedError(let error, _, _, _, _, _, _, _),
                     .otherError(let error, _, _, _):
-                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),
                     .miscError(let error, _),
                     .userScriptLoadJSFailed(_, let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
                     .secureVaultKeyStoreReadError(let error, _, _),
                     .secureVaultKeyStoreUpdateError(let error),
                     .failedToOpenDatabase(let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,
                     .optOutEmailGenerate,
@@ -830,14 +827,14 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .serviceEmailConfirmationJobSuccess,
                     .updateDataBrokersSuccess:
 
-                self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
             case .firstScan, .freemiumUpsell:
-                self.pixelKit.fire(event, frequency: .uniqueByName, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, frequency: .uniqueByName, withNamePrefix: platform.pixelNamePrefix)
             case .updateDataBrokersFailure(_, _, _, let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
 #if os(iOS)
             case .scanStarted:
-                self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
 #endif
 
             }

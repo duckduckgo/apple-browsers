@@ -134,7 +134,7 @@ extension OnboardingRebranding.OnboardingStyles {
                             backgroundType.image
                                 .resizable()
                                 .scaledToFit()
-                                .frame(maxHeight: maxHeightMetrics)
+                                .frame(maxHeight: maxHeightMetrics, alignment: .bottom)
                                 .background(
                                     GeometryReader { proxy in
                                         Color.clear
@@ -163,6 +163,7 @@ extension OnboardingRebranding.OnboardingStyles {
                 content
             }
             .ignoresSafeArea(.keyboard)
+            .ignoresSafeArea(.container, edges: ignoredContainerEdges)
         }
 
         // Calculates the vertical offset needed to adjust the background image when the keyboard appears.
@@ -209,6 +210,13 @@ extension OnboardingRebranding.OnboardingStyles {
         private static let maxHeightContextualAssets = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200)
         private static let maxHeightNewTabPageAssets = MetricBuilder<CGFloat?>(default: nil).iPad(290).iPhone(landscape: 290)
         #endif
+
+        /// Pushes the modifier's frame past the home-indicator inset on iPhone landscape so
+        /// the screen background fills the entire device width and height; portrait and iPad
+        /// keep respecting the bottom safe area.
+        private var ignoredContainerEdges: Edge.Set {
+            vSizeClass == .compact ? [.horizontal, .bottom] : .horizontal
+        }
 
         var maxHeightMetrics: CGFloat? {
             #if os(iOS)

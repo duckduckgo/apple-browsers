@@ -1777,6 +1777,7 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Sazinies ar Duck.ai, izmantojot Siri!";
 
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Visas tērzēšanas sarunas ir %@ privātas";
 
 /* No comment provided by engineer. */
@@ -2021,6 +2022,9 @@
 
 /* No comment provided by engineer. */
 "Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Ievadi dienu skaitu, kas nav negatīvs. Instalēšanas datums tiks iestatīts uz tik daudzām dienām pagātnē.";
 
 /* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
@@ -2477,6 +2481,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Sākums";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Vairāki notikumi netiek atbalstīti. Mēģini atvērt lejupielādēto failu.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Šo failu nevar apstrādāt. Mēģini atvērt lejupielādēto failu.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Neatbalstīta laika zona. Mēģini atvērt lejupielādēto failu.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Pasākums pievienots Apple kalendāram";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
@@ -3408,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Vai atvērt citā lietotnē?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Atgriezties";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Mēs mēģinājām to ielādēt privāti, bet tas netiek parādīts.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Vai vēlies atvērt šo lapu pārlūkprogrammā Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Atvērt ar Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Diemžēl lapu neizdevās ielādēt.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Šī lapa ielādējas tikai pārlūkprogrammā Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Atvērt Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Šai vietnei ir nederīgs drošības sertifikāts, un tās apmeklēšana var nebūt droša.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Paliec DuckDuckGo platformā";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Dažas vietnes funkcijas var nebūt saderīgas ar šo pārlūkprogrammu.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Šī vietne vēlas atvērties Safari pārlūkprogrammā.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo nevar ielādēt šo lapu.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Jaunākie apstrādes žurnāli";
@@ -3597,14 +3607,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Neaktivitātes taimeris";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Ekrāna atvēršana";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Pēdējā lietotā cilne";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Jauna cilne";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Pēc neaktivitātes perioda";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Izmēģini jauno iespēju pārslēgties starp meklēšanu un Duck.ai adrešu joslā.";
@@ -5064,3 +5074,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Tērzēšana";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Tērzēšanas vēsture";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Tērzēšanas iestatījumi";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Jauns";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Jauna Fire cilne";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Jauna meklēšana";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Jauna cilne";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Jauna balss tērzēšana";

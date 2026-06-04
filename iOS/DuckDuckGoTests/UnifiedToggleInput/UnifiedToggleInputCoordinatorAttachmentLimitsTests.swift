@@ -722,7 +722,7 @@ private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
-    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
+    func unifiedToggleInputDidRequestAppMenu() {}
 }
 
 private final class StubAIChatPreferences: AIChatPreferencesPersisting {

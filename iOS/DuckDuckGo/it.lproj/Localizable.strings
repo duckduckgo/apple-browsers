@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Inserisci un numero di giorni non negativo. La data di installazione sarà impostata a quella di molti giorni fa.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -2478,6 +2481,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Schermata iniziale";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Non sono supportati eventi multipli. Prova invece ad aprire il file scaricato.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Impossibile elaborare questo file. Prova invece ad aprire il file scaricato.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Fuso orario non supportato. Prova invece ad aprire il file scaricato.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Evento aggiunto ad Apple Calendar";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
@@ -3409,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Aprire in un'altra app?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Torna indietro";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Abbiamo provato a caricarla in modalità privata, ma non viene visualizzata.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Vuoi aprire questa pagina in Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Apri in Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Purtroppo, la pagina non è riuscita a caricarsi.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Questa pagina si carica solo in Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Apri in Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Questo sito web dispone di un certificato di sicurezza non valido e potrebbe non essere sicuro da visitare.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Rimani su DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Alcune funzionalità del sito web potrebbero non essere compatibili con questo browser.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Questo sito vuole essere aperto in Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo non riesce a caricare questa pagina.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Registri di elaborazione recenti";
@@ -3598,14 +3607,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Timer di inattività";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Schermata di apertura";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ultima scheda usata";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nuova scheda";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Dopo l'inattività";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Prova la nuova opzione per passare dalla ricerca a Duck.ai nella barra degli indirizzi.";
@@ -5065,3 +5074,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Cosa vuoi importare?";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Chat";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Cronologia chat";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Impostazioni chat";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Nuova";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Nuova scheda Fire";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Nuova ricerca";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Nuova scheda";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Nuova chat vocale";

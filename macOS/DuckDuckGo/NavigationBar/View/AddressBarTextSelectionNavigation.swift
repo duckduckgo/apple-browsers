@@ -19,7 +19,6 @@
 import AppKit
 import Foundation
 
-@available(macOS 12.0, *)
 final class AddressBarTextSelectionNavigation: NSTextSelectionNavigation {
     private weak var dataSource: NSTextLayoutManager?
 
@@ -64,7 +63,6 @@ final class AddressBarTextSelectionNavigation: NSTextSelectionNavigation {
 
 }
 
-@available(macOS 12.0, *)
 extension NSSelectionGranularity {
 
     init(_ textSelectionGranularity: NSTextSelection.Granularity) {

@@ -54,7 +54,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         /// Extra clearance above the natural insetGrouped top padding so the first cell stays below the floating (x) dismiss button.
         static let topContentInset: CGFloat = 12
         static let escapeHatchCardHeight: CGFloat = 56
-        static let escapeHatchTopPadding: CGFloat = 8
+        static let escapeHatchTopPadding: CGFloat = 14
         static let headerBottomPadding: CGFloat = 24
         static let syncPromoInterCardSpacing: CGFloat = 20
         static let recentChatsHeaderHeight: CGFloat = 48
@@ -74,7 +74,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         )
 
         static let unifiedToggleInput = LayoutConfiguration(
-            tableHorizontalInset: 0,
+            tableHorizontalInset: 8,
             escapeHatchHorizontalInset: Constants.horizontalInset,
             escapeHatchMaxWidth: nil
         )
@@ -139,6 +139,9 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let syncPromoViewModel: AIChatSyncPromoViewModel?
     private var syncPromoHostingController: UIHostingController<AIChatSyncPromoView>?
     private var isVisibleContent = false
+
+    /// Fired when the list transitions from hidden to visible. 
+    var onBecameVisible: (() -> Void)?
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
@@ -264,6 +267,9 @@ final class DuckAISuggestionsViewController: UIViewController {
         guard visible != isVisibleContent else { return }
         isVisibleContent = visible
         recordSyncPromoImpressionIfNeeded()
+        if visible {
+            onBecameVisible?()
+        }
     }
 
     // MARK: - Header (escape hatch + sync promo)

@@ -65,7 +65,6 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
     }
 
     private func executeAppStoreTierChange(to productId: String, changeType: SubscriptionPlanChangeWideEventData.ChangeType?, fromPlan: String, contextName: String) async -> PurchaseUpdate? {
-        guard #available(macOS 12.0, *) else { return nil }
 
         // Initialize wide event data
         let wideData = SubscriptionPlanChangeWideEventData(
@@ -145,7 +144,6 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
         }
     }
 
-    @available(macOS 12.0, *)
     private func makeAppStorePurchaseFlow() -> DefaultAppStorePurchaseFlow {
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(
             subscriptionManager: subscriptionManager,

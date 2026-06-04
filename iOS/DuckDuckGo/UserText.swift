@@ -121,13 +121,18 @@ public struct UserText {
     public static let actionPrintSite = NSLocalizedString("action.title.print.site", value: "Print", comment: "Print action in the menu list")
     public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "Duck.ai", comment: "Open AI Chat action in the menu list")
     public static let actionToggleAIChatContextualSheet = NotLocalizedString("action.title.aiChat.toggleContextualSheet", value: "Toggle Duck.ai sheet", comment: "Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. Not translated; final copy will land in a follow-up PR.")
+    public static let accessibilityLabelOpenAIChat = NotLocalizedString("accessibility.label.aiChat.openDuckAI", value: "Open Duck.ai", comment: "Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\". Not translated; final copy will land in a follow-up PR.")
+    public static let actionHideAIChatChromeShortcut = NotLocalizedString("action.title.aiChat.hideChromeShortcut", value: "Hide Duck.ai Shortcut", comment: "Title of the long-press menu item on the iPad Duck.ai chrome chip that turns off the navigation-bar shortcut. Not translated; final copy will land in a follow-up PR.")
+    public static let actionOpenAISettings = NotLocalizedString("action.title.aiChat.openSettings", value: "Open AI Settings", comment: "Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. Not translated; final copy will land in a follow-up PR.")
     public static let accessibilityValueAIChatContextualSheetOpen = NotLocalizedString("accessibility.value.aiChat.contextualSheet.open", value: "Open", comment: "Accessibility value when the Duck.ai contextual sheet is open. Not translated; final copy will land in a follow-up PR.")
     public static let accessibilityValueAIChatContextualSheetClosed = NotLocalizedString("accessibility.value.aiChat.contextualSheet.closed", value: "Closed", comment: "Accessibility value when the Duck.ai contextual sheet is closed. Not translated; final copy will land in a follow-up PR.")
     public static let actionDuckAIVoice = NSLocalizedString("action.title.duckai.voice", value: "Duck.ai Voice", comment: "Open Duck.ai Voice mode action")
     public static let actionNewAIChat = NSLocalizedString("action.title.aiChat.new", value: "New Chat", comment: "Start new AI Chat action in the menu list")
     public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
+    public static let actionChats = NotLocalizedString("action.title.chats", value: "Chats", comment: "Open the native Duck.ai chat history sheet from the browser menu. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryEmptyStateTitle = NotLocalizedString("aiChat.history.emptyState.title", value: "No recent chats", comment: "Title shown when the user has no Duck.ai chat history yet. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryEmptyStateOpenDuckAi = NotLocalizedString("aiChat.history.emptyState.openDuckAi", value: "Open Duck.ai", comment: "Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. Not translated; final copy will land in a follow-up PR.")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
-    public static let aiChatRecentChatsTitle = NotLocalizedString("aiChat.recentChats.title", value: "Recent Chats", comment: "Section header title for the recent chats list in Duck.ai")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
 
@@ -202,13 +207,12 @@ public struct UserText {
     public static let customUrlSchemeOpen = NSLocalizedString("prompt.custom.url.scheme.open", value: "Open", comment: "Confirm action")
     public static let customUrlSchemeDontOpen = NSLocalizedString("prompt.custom.url.scheme.dontopen", value: "Cancel", comment: "Deny action")
 
-    public static let xSafariHTTPSTryOpenTitle = NSLocalizedString("prompt.x-safari-https.try-open.title", value: "This site wants to open in Safari.", comment: "Alert title when a site tries to redirect to Safari via x-safari-https scheme")
-    public static let xSafariHTTPSTryOpenMessage = NSLocalizedString("prompt.x-safari-https.try-open.message", value: "Some website features may not be compatible in this browser.", comment: "Alert message when a site tries to redirect to Safari via x-safari-https scheme")
-    public static let xSafariHTTPSStayInDDG = NSLocalizedString("prompt.x-safari-https.stay", value: "Stay in DuckDuckGo", comment: "Button to stay in DuckDuckGo instead of opening Safari")
-    public static let xSafariHTTPSOpenInSafari = NSLocalizedString("prompt.x-safari-https.open-in-safari", value: "Open in Safari", comment: "Button to open the page in Safari")
-    public static let xSafariHTTPSLoopTitle = NSLocalizedString("prompt.x-safari-https.loop.title", value: "Unfortunately, the page couldn't load.", comment: "Alert title when a redirect loop is detected after staying in DuckDuckGo")
-    public static let xSafariHTTPSLoopMessage = NSLocalizedString("prompt.x-safari-https.loop.message", value: "Would you like to open this page in Safari?", comment: "Alert message when a redirect loop is detected")
-    public static let xSafariHTTPSGoBack = NSLocalizedString("prompt.x-safari-https.go-back", value: "Go Back", comment: "Button to go back to the previous page after redirect loop")
+    public static let webPageLoadErrorTitle = NSLocalizedString("prompt.web-page-load-error.title", value: "DuckDuckGo can’t load this page.", comment: "Default native error page title")
+    public static let webPageLoadErrorMessage = NSLocalizedString("prompt.web-page-load-error.message", value: "This website has an invalid security certificate and might not be safe to visit.", comment: "Default native error page message")
+
+    public static let generalPageProblemTitle = NSLocalizedString("prompt.general-page-problem.title", value: "This page only loads in Safari", comment: "Special error page title for pages that can only be opened in Safari")
+    public static let generalPageProblemMessage = NSLocalizedString("prompt.general-page-problem.message", value: "We tried to load it privately, but it won't display.", comment: "Special error page message for pages that can only be opened in Safari")
+    public static let generalPageProblemOpenInBrowserButton = NSLocalizedString("prompt.general-page-problem.open-in-browser", value: "Open in Safari", comment: "Special error page primary button for opening the page in Safari")
 
     public static let failedToOpenExternally = NSLocalizedString("open.externally.failed", value: "The app required to open that link can’t be found", comment: "’Link’ is link on a website")
 
@@ -1613,7 +1617,7 @@ public struct UserText {
     public static let settingsAutoLockDescription = NSLocalizedString("settings.autolock.description", value: "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.", comment: "Section footer Autolock description")
 
     // After Inactivity (NTP / Last Used Tab)
-    public static let settingsAfterInactivityLabel = NSLocalizedString("settings.afterInactivity.label", value: "Opening Screen", comment: "Settings picker label for what to show when returning after inactivity")
+    public static let settingsAfterInactivityLabel = NSLocalizedString("settings.afterInactivity.v2.label", value: "After Inactivity", comment: "Settings picker label for what to show when returning after inactivity")
     public static let settingsAfterInactivityOptionNewTab = NSLocalizedString("settings.afterInactivity.option.newTab", value: "New Tab", comment: "Option: show New Tab when returning after inactivity")
     public static let settingsAfterInactivityOptionLastUsedTab = NSLocalizedString("settings.afterInactivity.option.lastUsedTab", value: "Last Used Tab", comment: "Option: show last used tab when returning after inactivity")
     public static let settingsAfterInactivityFooterFormat = NSLocalizedString("settings.afterInactivity.footer.format", value: "Choose what you see when you return to DuckDuckGo after %@ of inactivity.", comment: "Section footer; %@ is the idle interval (e.g. 5 minutes)")
@@ -2176,7 +2180,16 @@ public struct UserText {
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")
     public static let aiChatHeaderRecentChatsAccessibilityLabel = NotLocalizedString("aichat.header.recentChats.a11y", value: "Recent chats", comment: "Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header")
-    public static let aiChatHeaderNewChatAccessibilityLabel = NotLocalizedString("aichat.header.newChat.a11y", value: "New chat", comment: "Accessibility label for the new-chat / compose button in the Duck.ai tab header")
+    public static let aiChatHeaderCloseTabAccessibilityLabel = NotLocalizedString("aichat.header.closeTab.a11y", value: "Close tab", comment: "Accessibility label for the close-tab button in the Duck.ai tab header")
+    public static let aiChatHeaderNewChatAccessibilityLabel = NotLocalizedString("aichat.header.newChat.a11y", value: "New chat", comment: "Accessibility label for the new-chat button in the Duck.ai tab header")
+    public static let aiChatHeaderPlusMenuAccessibilityLabel = NSLocalizedString("aichat.header.plusMenu.a11y", value: "New", comment: "Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions")
+    public static let aiChatHeaderNewVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newVoiceChat", value: "New Voice Chat", comment: "Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu")
+    public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")
+    public static let aiChatHeaderNewSearchTitle = NSLocalizedString("aichat.header.plusMenu.newSearch", value: "New Search", comment: "Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry")
+    public static let aiChatHeaderNewFireTabTitle = NSLocalizedString("aichat.header.plusMenu.newFireTab", value: "New Fire Tab", comment: "Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu")
+    public static let aiChatAppMenuHeaderChatHistory = NSLocalizedString("aichat.appMenu.header.chatHistory", value: "Chat History", comment: "Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar")
+    public static let aiChatAppMenuHeaderChatSettings = NSLocalizedString("aichat.appMenu.header.chatSettings", value: "Chat Settings", comment: "Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen")
+    public static let aiChatAppMenuChats = NSLocalizedString("aichat.appMenu.chats", value: "Chats", comment: "List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar")
     public static let aiChatAdvancedModelsMenuTitle = NotLocalizedString("aichat.model-picker.advanced-section-header", value: "Advanced Models - DuckDuckGo subscription", comment: "Section header in the model picker menu for premium models that require a subscription")
     public static let aiChatAdvancedModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-advanced-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when the user has an active subscription")
     public static let aiChatBasicModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-basic-section-header", value: "Basic Models", comment: "Section header in the model picker menu for basic/free models when the user has an active subscription")
@@ -2869,12 +2882,10 @@ public struct UserText {
     public static let daxEasterEggLogoSaved = NSLocalizedString("dax.easter.egg.logo.saved", value: "Logo Saved", comment: "Toast message shown when the user saves a custom logo")
 
     // MARK: - ICS Calendar Links
-    // Not localized while the feature ships internal-only; swap to NSLocalizedString in the
-    // follow-up PR that flips the flag to enabled.
-    public static let icsAddToCalendarMultipleEvents = NotLocalizedString("ics.add-to-calendar.multiple-events", value: "Multiple events aren't supported. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add")
-    public static let icsAddToCalendarUnrecognizedTimeZone = NotLocalizedString("ics.add-to-calendar.unrecognized-time-zone", value: "Unsupported time zone. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve")
-    public static let icsAddToCalendarParseFailure = NotLocalizedString("ics.add-to-calendar.parse-failure", value: "This file can't be processed. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content)")
-    public static let icsEventAddedToCalendar = NotLocalizedString("ics.event-added-to-calendar", value: "Event added to Apple Calendar", comment: "Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar")
+    public static let icsAddToCalendarMultipleEvents = NSLocalizedString("ics.add-to-calendar.multiple-events", value: "Multiple events aren't supported. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add")
+    public static let icsAddToCalendarUnrecognizedTimeZone = NSLocalizedString("ics.add-to-calendar.unrecognized-time-zone", value: "Unsupported time zone. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve")
+    public static let icsAddToCalendarParseFailure = NSLocalizedString("ics.add-to-calendar.parse-failure", value: "This file can't be processed. Try opening the downloaded file instead.", comment: "Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content)")
+    public static let icsEventAddedToCalendar = NSLocalizedString("ics.event-added-to-calendar", value: "Event added to Apple Calendar", comment: "Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar")
 
     // MARK: - OmniBar Long Press Menu
     public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")

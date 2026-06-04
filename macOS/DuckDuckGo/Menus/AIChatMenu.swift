@@ -51,14 +51,14 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.image = origin == .moreOptionsMenu ? DesignSystemImages.Glyphs.Size16.duckAi : DesignSystemImages.Glyphs.Size12.duckAi
+        item.image = DesignSystemImages.Glyphs.Size12.duckAi
         return item
     }()
 
     private lazy var newChatItem: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(newChatTapped), keyEquivalent: "")
         item.target = self
-        item.image = origin == .moreOptionsMenu ? DesignSystemImages.Glyphs.Size16.compose : DesignSystemImages.Glyphs.Size12.compose
+        item.image = DesignSystemImages.Glyphs.Size12.compose
         return item
     }()
 
@@ -70,7 +70,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.image = origin == .moreOptionsMenu ? DesignSystemImages.Glyphs.Size16.voice : DesignSystemImages.Glyphs.Size12.voice
+        item.image = DesignSystemImages.Glyphs.Size12.voice
         return item
     }()
 
@@ -81,7 +81,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.image = origin == .moreOptionsMenu ? DesignSystemImages.Glyphs.Size16.images : DesignSystemImages.Glyphs.Size12.images
+        item.image = DesignSystemImages.Glyphs.Size12.images
         return item
     }()
 
@@ -94,7 +94,7 @@ final class AIChatMenu: NSMenu {
     private lazy var deleteAllChatsItem: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuDeleteAllChats, action: #selector(deleteAllChatsTapped), keyEquivalent: "")
         item.target = self
-        item.image = origin == .moreOptionsMenu ? DesignSystemImages.Glyphs.Size16.fire : DesignSystemImages.Glyphs.Size12.fire
+        item.image = DesignSystemImages.Glyphs.Size12.fire
         return item
     }()
 

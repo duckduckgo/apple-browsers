@@ -242,27 +242,7 @@ private struct FeedbackFormIssueDescriptionView<Label: View, Content: View, Foot
 
     @ViewBuilder
     func textEditor() -> some View {
-        if #available(macOS 12, *) {
-            FocusableTextEditor(text: $viewModel.feedbackFormText, characterLimit: 1000)
-        } else {
-            TextEditor(text: $viewModel.feedbackFormText)
-                .frame(height: 197.0)
-                .font(.body)
-                .foregroundColor(.primary)
-                .onChange(of: viewModel.feedbackFormText) {
-                    viewModel.feedbackFormText = String($0.prefix(1000))
-                }
-                .padding(EdgeInsets(top: 3.0, leading: 6.0, bottom: 5.0, trailing: 0.0))
-                .clipShape(RoundedRectangle(cornerRadius: 8.0, style: .continuous))
-                .background(
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8.0)
-                            .stroke(Color(.textEditorBorder), lineWidth: 0.4)
-                        RoundedRectangle(cornerRadius: 8.0)
-                            .fill(Color(.textEditorBackground))
-                    }
-                )
-        }
+        FocusableTextEditor(text: $viewModel.feedbackFormText, characterLimit: 1000)
     }
 }
 

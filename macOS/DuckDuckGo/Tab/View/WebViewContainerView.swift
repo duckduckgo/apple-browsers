@@ -140,7 +140,7 @@ final class WebViewContainerView: NSView {
      https://app.asana.com/0/1177771139624306/1204370242122745/f
     */
     private func observeFullScreenWindowWillExitFullScreen(_ fullScreenWindowController: NSWindowController) {
-        guard #available(macOS 12.0, *) else { return } // works fine on Big Sur
+
         NotificationCenter.default.publisher(for: NSWindow.willExitFullScreenNotification, object: fullScreenWindowController.window)
             .sink { [weak self, weak fullScreenWindowController] _ in
                 guard let self else { return }

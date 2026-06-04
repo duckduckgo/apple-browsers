@@ -114,8 +114,8 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         let header = try XCTUnwrap(table.tableHeaderView)
         let hatchView = try XCTUnwrap(header.subviews.first)
         let hatchFrame = hatchView.convert(hatchView.bounds, to: vc.view)
-        let expectedTableInset: CGFloat = 0
-        let expectedHatchInset: CGFloat = 16
+        let expectedTableInset: CGFloat = 8
+        let expectedHatchInset: CGFloat = 24
 
         XCTAssertEqual(table.frame.minX, expectedTableInset, accuracy: 0.5)
         XCTAssertEqual(vc.view.bounds.width - table.frame.maxX, expectedTableInset, accuracy: 0.5)

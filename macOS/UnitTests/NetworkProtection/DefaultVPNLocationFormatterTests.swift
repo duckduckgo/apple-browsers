@@ -46,16 +46,14 @@ final class DefaultVPNLocationFormatterTests: XCTestCase {
         XCTAssertEqual(formatter.string(from: server.serverLocation, preferredLocation: preferredLocation), "Lafayette, United States")
         XCTAssertEqual(formatter.string(from: server.serverLocation, preferredLocation: otherPreferredLocation), "Lafayette, United States")
 
-        if #available(macOS 12, *) {
-            XCTAssertEqual(NSAttributedString(formatter.string(from: server.serverLocation,
-                                                               preferredLocation: .nearest,
-                                                               locationTextColor: .black,
-                                                               preferredLocationTextColor: .black)).string, "Lafayette, United States (Nearest)")
-            XCTAssertEqual(NSAttributedString(formatter.string(from: server.serverLocation,
-                                                               preferredLocation: preferredLocation,
-                                                               locationTextColor: .black,
-                                                               preferredLocationTextColor: .black)).string, "Lafayette, United States")
-        }
+        XCTAssertEqual(NSAttributedString(formatter.string(from: server.serverLocation,
+                                                           preferredLocation: .nearest,
+                                                           locationTextColor: .black,
+                                                           preferredLocationTextColor: .black)).string, "Lafayette, United States (Nearest)")
+        XCTAssertEqual(NSAttributedString(formatter.string(from: server.serverLocation,
+                                                           preferredLocation: preferredLocation,
+                                                           locationTextColor: .black,
+                                                           preferredLocationTextColor: .black)).string, "Lafayette, United States")
     }
 
     func testCALocation() {
@@ -76,15 +74,13 @@ final class DefaultVPNLocationFormatterTests: XCTestCase {
         XCTAssertEqual(formatter.string(from: server.serverLocation, preferredLocation: preferredLocation), "Toronto, Canada")
         XCTAssertEqual(formatter.string(from: server.serverLocation, preferredLocation: otherPreferredLocation), "Toronto, Canada")
 
-        if #available(macOS 12, *) {
-            XCTAssertEqual(NSAttributedString(formatter.string(from: server.serverLocation,
-                                                               preferredLocation: .nearest,
-                                                               locationTextColor: .black,
-                                                               preferredLocationTextColor: .black)).string, "Toronto, Canada (Nearest)")
-            XCTAssertEqual(NSAttributedString(formatter.string(from: server.serverLocation,
-                                                               preferredLocation: preferredLocation,
-                                                               locationTextColor: .black,
-                                                               preferredLocationTextColor: .black)).string, "Toronto, Canada")
-        }
+        XCTAssertEqual(NSAttributedString(formatter.string(from: server.serverLocation,
+                                                           preferredLocation: .nearest,
+                                                           locationTextColor: .black,
+                                                           preferredLocationTextColor: .black)).string, "Toronto, Canada (Nearest)")
+        XCTAssertEqual(NSAttributedString(formatter.string(from: server.serverLocation,
+                                                           preferredLocation: preferredLocation,
+                                                           locationTextColor: .black,
+                                                           preferredLocationTextColor: .black)).string, "Toronto, Canada")
     }
 }

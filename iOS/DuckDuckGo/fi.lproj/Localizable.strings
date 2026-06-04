@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Anna ei-negatiivinen päivien määrä. Asennuspäivämääräksi asetetaan niin monta päivää sitten.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -2478,6 +2481,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Koti";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Useita tapahtumia ei tueta. Kokeile sen sijaan avata ladattu tiedosto.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Tätä tiedostoa ei voida käsitellä. Kokeile sen sijaan avata ladattu tiedosto.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Aikavyöhykettä ei tueta. Kokeile sen sijaan avata ladattu tiedosto.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Tapahtuma lisätty Apple-kalenteriin";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Tunnus: %1$@ | %2$@ | %3$@";
@@ -3409,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Avataanko toisessa sovelluksessa?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Edellinen";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Yritimme ladata sen yksityisesti, mutta se ei näy.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Haluatko avata tämän sivun Safarissa?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Avaa Safarissa";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Valitettavasti sivu ei latautunut.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Tämä sivu latautuu vain Safarissa";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Avaa Safarissa";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Tällä verkkosivustolla on virheellinen turvasertifikaatti, eikä se ehkä ole turvallinen.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Pysy DuckDuckGossa";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Jotkin verkkosivuston ominaisuudet eivät välttämättä ole yhteensopivia tämän selaimen kanssa.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Tämä sivusto haluaa avata Safarin.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo ei voi ladata tätä sivua.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Viimeaikaiset käsittelylokit";
@@ -3598,14 +3607,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Passiivisuusajastin";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Aloitusnäyttö";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Viimeksi käytetty välilehti";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Uusi välilehti";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Käyttämättömyyden jälkeen";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Kokeile uutta vaihtoehtoa vaihtaa haun ja Duck.ai:n välillä osoitekentällä.";
@@ -5065,3 +5074,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Keskustelut";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Keskusteluhistoria";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Keskusteluasetukset";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Uusi";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Uusi Fire-välilehti";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Uusi haku";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Uusi välilehti";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Uusi äänikeskustelu";

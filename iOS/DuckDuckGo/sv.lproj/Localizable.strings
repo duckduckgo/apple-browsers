@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Ange ett icke-negativt antal dagar. Det angivna installationsdatumet kommer att vara för så många dagar sedan.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -2478,6 +2481,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Hem";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Flera händelser stöds inte. Försök att öppna den nedladdade filen istället.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Den här filen kan inte bearbetas. Försök att öppna den nedladdade filen istället.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Tidszonen stöds inte. Försök att öppna den nedladdade filen istället.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Händelse tillagd i Apple Kalender";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
@@ -3409,26 +3424,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Öppna i annan app?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Gå tillbaka";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Vi försökte ladda upp den privat, men den visas inte.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Vill du öppna den här sidan i Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Öppna i Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Det gick tyvärr inte att läsa in sidan.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Den här sidan laddas bara i Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Öppna i Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Webbplatsen har ett ogiltigt säkerhetscertifikat och kan vara riskabel att besöka.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Stanna kvar på DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Vissa webbplatsfunktioner kanske inte är kompatibla med den här webbläsaren.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Webbplatsen vill öppnas i Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo kan inte läsa in den här sidan.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Senaste bearbetningsloggar";
@@ -3598,14 +3607,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Inaktivitetstimer";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Öppningsskärm";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Senast använda flik";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Ny flik";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Efter inaktivitet";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Prova det nya alternativet för att växla mellan sökning och Duck.ai i adressfältet.";
@@ -5065,3 +5074,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Chattar";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Chattlogg";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Chattinställningar";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Ny";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Ny Fire-flik";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Ny sökning";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Ny flik";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Ny röstchatt";

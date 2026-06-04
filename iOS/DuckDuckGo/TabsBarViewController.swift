@@ -40,6 +40,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController)
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
+    func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController)
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
@@ -95,12 +96,13 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var daxDialogsManager: DaxDialogsManaging?
     var fireModeCapability: FireModeCapable? {
         didSet {
+            configureTabSwitcherLongPressMenu()
             configureAddTabButtonLongPressMenu()
         }
     }
     private weak var tabsModel: TabsModelManaging?
 
-    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton()
+    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
     private var cancellables = Set<AnyCancellable>()
@@ -161,6 +163,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
         aiChatChip.textButton.addTarget(self, action: #selector(onAIChatPressed), for: .touchUpInside)
         aiChatChip.iconButton.addTarget(self, action: #selector(onAIChatContextualSheetIconPressed), for: .touchUpInside)
+        configureAIChatChipMenu()
         fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
         tabSwitcherButton.delegate = self
 
@@ -267,10 +270,14 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     @objc private func onAIChatPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .openAIChatFromNavigationBarShortcut)
         delegate?.tabsBarDidRequestAIChat(self)
     }
 
     @objc private func onAIChatContextualSheetIconPressed() {
+        if aiChatChip.sheetState == .closed {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarContextualSheetOpened)
+        }
         delegate?.tabsBarDidRequestToggleAIChatContextualSheet(self)
     }
 
@@ -406,6 +413,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
 
+    private func configureTabSwitcherLongPressMenu() {
+        tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
+    }
+
     private func configureAddTabButtonLongPressMenu() {
         guard fireModeCapability?.isFireModeEnabled ?? false else {
             addTabButton.menu = nil
@@ -440,6 +451,34 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         addTabButton.showsMenuAsPrimaryAction = false
     }
 
+    private func configureAIChatChipMenu() {
+        let menu = makeAIChatChipMenu()
+        aiChatChip.textButton.menu = menu
+        aiChatChip.textButton.showsMenuAsPrimaryAction = false
+        aiChatChip.iconButton.menu = menu
+        aiChatChip.iconButton.showsMenuAsPrimaryAction = false
+        aiChatChip.addInteraction(UIContextMenuInteraction(delegate: self))
+    }
+
+    private func makeAIChatChipMenu() -> UIMenu {
+        UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpened)
+                completion([
+                    UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
+                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
+                        self?.aiChatSettings?.enableAIChatNavigationBarUserSettings(enable: false)
+                    },
+                    UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
+                        guard let self else { return }
+                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpenSettingsTapped)
+                        self.delegate?.tabsBarDidRequestOpenAISettings(self)
+                    }
+                ])
+            }
+        ])
+    }
+
     private func createButton(image: UIImage) -> UIButton {
         let button = BrowserChromeButton()
         button.setImage(image)
@@ -452,6 +491,17 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 }
 
+extension TabsBarViewController: UIContextMenuInteractionDelegate {
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            self?.makeAIChatChipMenu()
+        }
+    }
+
+}
+
 extension TabsBarViewController: TabSwitcherButtonDelegate {
     
     func showTabSwitcher(_ button: TabSwitcherButton) {
@@ -460,6 +510,14 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
     
     func launchNewTabWithCurrentMode(_ button: any TabSwitcherButton) {
         requestNewTab(type: .currentMode)
+    }
+    
+    func launchNewNormalTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .normal)
+    }
+
+    func launchNewFireTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .fire)
     }
 }
 
@@ -617,6 +675,10 @@ extension MainViewController: TabsBarDelegate {
             // is honored — presenting the coordinator directly would skip it and open a blank chat.
             currentTab.presentContextualAIChatSheet(from: self)
         }
+    }
+
+    func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {
+        segueToSettingsAIChat()
     }
 
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {

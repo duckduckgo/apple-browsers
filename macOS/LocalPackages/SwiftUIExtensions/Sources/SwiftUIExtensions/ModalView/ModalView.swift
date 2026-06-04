@@ -46,7 +46,7 @@ public extension ModalView {
 
         var capturedWeakWindow: NSWindow?
 
-        let rootView = self.environment(\.dismiss, {
+        let rootView = self.legacyOnDismiss {
             guard let window = capturedWeakWindow else {
                 return
             }
@@ -57,7 +57,7 @@ public extension ModalView {
             } else {
                 parentWindow?.endSheet(window)
             }
-        })
+        }
 
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false

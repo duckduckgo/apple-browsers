@@ -40,6 +40,8 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
 
     func makeNewTabEntry() -> BrowsingMenuEntry
     func makeChatEntry() -> BrowsingMenuEntry?
+    func makeDuckAiChatsEntry() -> BrowsingMenuEntry?
+    func makeDuckAIMenuItems() -> [BrowsingMenuEntry]
     func makeSettingsEntry() -> BrowsingMenuEntry
     func makeShareEntry() -> BrowsingMenuEntry
     func makePrintEntry() -> BrowsingMenuEntry

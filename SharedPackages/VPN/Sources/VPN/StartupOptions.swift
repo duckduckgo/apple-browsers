@@ -50,7 +50,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
                 selectedLocation: VPNSettings.SelectedLocation,
                 dnsSettings: NetworkProtectionDNSSettings,
                 excludeLocalNetworks: Bool,
-                isOrphanProxyDetectionEnabled: Bool = true) {
+                isOrphanProxyDetectionEnabled: Bool = UserDefaults.orphanProxyDetectionEnabledDefaultValue) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer
@@ -61,7 +61,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
     }
 
     /// Custom decoding so snapshots persisted by older versions (which lack `isOrphanProxyDetectionEnabled`)
-    /// still decode, defaulting the missing flag to enabled rather than failing the whole snapshot.
+    /// still decode, falling back to the pre-kill-switch behavior rather than failing the whole snapshot.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         registrationKeyValidity = try container.decode(VPNSettings.RegistrationKeyValidity.self, forKey: .registrationKeyValidity)
@@ -70,7 +70,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         selectedLocation = try container.decode(VPNSettings.SelectedLocation.self, forKey: .selectedLocation)
         dnsSettings = try container.decode(NetworkProtectionDNSSettings.self, forKey: .dnsSettings)
         excludeLocalNetworks = try container.decode(Bool.self, forKey: .excludeLocalNetworks)
-        isOrphanProxyDetectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyDetectionEnabled) ?? true
+        isOrphanProxyDetectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyDetectionEnabled)
+            ?? UserDefaults.orphanProxyDetectionEnabledDefaultValue
     }
 
     /// Apply these settings to a VPNSettings instance

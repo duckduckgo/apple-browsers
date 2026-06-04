@@ -235,8 +235,8 @@ public struct TransparentProxySettingsSnapshot: Codable {
 
     public init(appRoutingRules: VPNAppRoutingRules,
                 excludedDomains: [String],
-                isOrphanProxyDetectionEnabled: Bool = true,
-                isOrphanProxyBypassEnabled: Bool = true) {
+                isOrphanProxyDetectionEnabled: Bool = UserDefaults.orphanProxyDetectionEnabledDefaultValue,
+                isOrphanProxyBypassEnabled: Bool = UserDefaults.orphanProxyBypassEnabledDefaultValue) {
         self.appRoutingRules = appRoutingRules
         self.excludedDomains = excludedDomains
         self.isOrphanProxyDetectionEnabled = isOrphanProxyDetectionEnabled
@@ -244,12 +244,14 @@ public struct TransparentProxySettingsSnapshot: Codable {
     }
 
     /// Custom decoding so snapshots persisted by older versions (which lack the orphan-proxy flags) still
-    /// decode, defaulting the missing flags to enabled rather than failing the whole snapshot.
+    /// decode, falling back to the pre-kill-switch behavior rather than failing the whole snapshot.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         appRoutingRules = try container.decode(VPNAppRoutingRules.self, forKey: .appRoutingRules)
         excludedDomains = try container.decode([String].self, forKey: .excludedDomains)
-        isOrphanProxyDetectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyDetectionEnabled) ?? true
-        isOrphanProxyBypassEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyBypassEnabled) ?? true
+        isOrphanProxyDetectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyDetectionEnabled)
+            ?? UserDefaults.orphanProxyDetectionEnabledDefaultValue
+        isOrphanProxyBypassEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyBypassEnabled)
+            ?? UserDefaults.orphanProxyBypassEnabledDefaultValue
     }
 }

@@ -23,6 +23,9 @@ extension UserDefaults {
 
     // MARK: - Orphan proxy detection
 
+    /// The behavior before the orphan-proxy kill switches existed: detection ran unconditionally.
+    public static let orphanProxyDetectionEnabledDefaultValue = true
+
     private var orphanProxyDetectionEnabledKey: String {
         "vpnProxyOrphanDetectionEnabled"
     }
@@ -30,7 +33,7 @@ extension UserDefaults {
     @objc
     dynamic var vpnProxyOrphanDetectionEnabled: Bool {
         get {
-            value(forKey: orphanProxyDetectionEnabledKey) as? Bool ?? true
+            value(forKey: orphanProxyDetectionEnabledKey) as? Bool ?? Self.orphanProxyDetectionEnabledDefaultValue
         }
 
         set {
@@ -44,6 +47,9 @@ extension UserDefaults {
 
     // MARK: - Orphan proxy full bypass
 
+    /// The behavior before the orphan-proxy kill switches existed: bypass engaged on detection.
+    public static let orphanProxyBypassEnabledDefaultValue = true
+
     private var orphanProxyBypassEnabledKey: String {
         "vpnProxyOrphanBypassEnabled"
     }
@@ -51,7 +57,7 @@ extension UserDefaults {
     @objc
     dynamic var vpnProxyOrphanBypassEnabled: Bool {
         get {
-            value(forKey: orphanProxyBypassEnabledKey) as? Bool ?? true
+            value(forKey: orphanProxyBypassEnabledKey) as? Bool ?? Self.orphanProxyBypassEnabledDefaultValue
         }
 
         set {

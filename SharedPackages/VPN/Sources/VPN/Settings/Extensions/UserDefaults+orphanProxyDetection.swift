@@ -24,7 +24,8 @@ extension UserDefaults {
         "networkProtectionSettingOrphanProxyDetectionEnabled"
     }
 
-    static let orphanProxyDetectionEnabledDefaultValue = true
+    /// The behavior before the orphan-proxy kill switch existed: detection ran unconditionally.
+    public static let orphanProxyDetectionEnabledDefaultValue = true
 
     @objc
     dynamic var networkProtectionSettingOrphanProxyDetectionEnabled: Bool {

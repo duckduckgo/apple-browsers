@@ -1,0 +1,60 @@
+# Mark PR task complete when the PR is merged or closed without merging.
+
+name: Shared - Close Asana PR Review Subtasks on PR Closed
+
+on:
+    pull_request:
+        types: [closed]
+
+jobs:
+
+    resolve-pr-review-subtasks:
+        name: "Resolve PR review subtasks"
+        runs-on: ubuntu-latest
+        outputs:
+            subtask-ids: ${{ steps.find-subtasks.outputs.subtask-ids }}
+
+        steps:
+        - name: Get Task ID
+          id: get-task-id
+          env:
+            BODY: ${{ github.event.pull_request.body }}
+          run: |
+            task_id=$(grep -i "task/issue url.*https://app.asana.com/" <<< "$BODY" \
+              | perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
+                s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
+                s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)(?:\?focus=true)?|\1|'
+            )
+            echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
+
+        - name: Skip if no Asana task URL in PR body
+          if: ${{ steps.get-task-id.outputs.task_id == '' }}
+          run: |
+            echo "::notice::No Asana task URL found in the PR body — nothing to clean up."
+
+        - name: Find incomplete PR review subtasks
+          id: find-subtasks
+          if: ${{ steps.get-task-id.outputs.task_id != '' }}
+          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@main
+          with:
+            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ steps.get-task-id.outputs.task_id }}
+            complete: 'false'
+
+    close-pr-review-subtask:
+        name: "Close PR review subtask in Asana"
+        needs: resolve-pr-review-subtasks
+        if: ${{ needs.resolve-pr-review-subtasks.outputs.subtask-ids != '' && needs.resolve-pr-review-subtasks.outputs.subtask-ids != '[]' }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                subtask-id: ${{ fromJSON(needs.resolve-pr-review-subtasks.outputs.subtask-ids) }}
+
+        steps:
+        - name: Mark PR review subtask as complete
+          uses: duckduckgo/native-github-asana-sync@v1.9
+          with:
+            action: 'mark-asana-task-complete'
+            asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ matrix.subtask-id }}
+            is-complete: 'true'

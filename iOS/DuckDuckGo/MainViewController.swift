@@ -3923,6 +3923,12 @@ extension MainViewController: OmniBarDelegate {
         // and resolves to .dismissed, not .suspended.
         hideSuggestionTray()
         omniBar.cancel()
+        // A direct address-bar submission is a terminal `.barUsed` action, same as
+        // selecting a suggestion (`handleSuggestionSelected`). Ending the post-idle
+        // session here keeps direct searches in parity with the suggestion path;
+        // without it, a typed search left the session open to later complete as
+        // `app_backgrounded`, undercounting `bar_used`.
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         loadQuery(query)
         hideNotificationBarIfBrokenSitePromptShown()
         showHomeRowReminder()

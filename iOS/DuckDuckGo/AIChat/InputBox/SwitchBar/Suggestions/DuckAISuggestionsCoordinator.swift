@@ -165,6 +165,10 @@ final class DuckAISuggestionsCoordinator {
         viewController?.setIsVisibleContent(visible)
     }
 
+    func refreshURLSuggestions() {
+        urlLoader.refreshSuggestions()
+    }
+
     func tearDown() {
         cancellables.removeAll()
         onContentChanged = nil
@@ -191,10 +195,6 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
         delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: query)
-    }
-
-    func refreshURLSuggestions() {
-        urlLoader.refreshSuggestions()
     }
 
     func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController) {

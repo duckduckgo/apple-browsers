@@ -816,7 +816,8 @@ class TabViewController: UIViewController {
             /// manages its own native bottom layout via the UnifiedToggleInput container.
             let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
             let effectiveBarsVisibilityPercent: CGFloat
-            if #available(iOS 26, *) {
+            if #available(iOS 26, *),
+               featureFlagger.isFeatureOn(.bottomBarViewportFixedElementsWorkaround) {
                 /// iOS 26 regressed fixed-bottom webpage elements when the browser continuously
                 /// resizes the webview's bottom inset while chrome hides/shows. Keep the inset
                 /// stable in bottom-address-bar mode to avoid pushing page-fixed footers offscreen.

@@ -286,6 +286,8 @@ private final class MockDuckAISuggestionsCoordinatorDelegate: DuckAISuggestionsC
         selectedSearchQuery = query
     }
 
+    func duckAISuggestionsDidDeleteURL(_ suggestion: Suggestion) {}
+
     func duckAISuggestionsDidRequestSyncSetup() {
         syncSetupRequestCount += 1
     }

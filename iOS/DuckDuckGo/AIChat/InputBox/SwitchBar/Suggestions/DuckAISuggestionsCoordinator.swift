@@ -28,6 +28,7 @@ import PrivacyConfig
 protocol DuckAISuggestionsCoordinatorDelegate: AnyObject {
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion)
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion)
+    func duckAISuggestionsDidDeleteURL(_ suggestion: Suggestion)
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String)
     func duckAISuggestionsDidRequestSyncSetup()
 }
@@ -192,6 +193,10 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
         delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: query)
     }
 
+    func refreshURLSuggestions() {
+        urlLoader.refreshSuggestions()
+    }
+
     func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController) {
         RecentChatDeletionAlert.show(for: chat, presenter: sender) { [weak chatManager] in
             chatManager?.deleteChatSuggestion(suggestion: chat)
@@ -206,6 +211,7 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
 
         Task {
             await historyManager.deleteHistoryForURL(url)
+            delegate?.duckAISuggestionsDidDeleteURL(suggestion)
             Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
             DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
             urlLoader.refreshSuggestions()

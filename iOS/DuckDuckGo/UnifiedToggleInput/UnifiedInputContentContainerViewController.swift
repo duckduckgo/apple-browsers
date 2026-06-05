@@ -842,6 +842,10 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
     }
 
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didDeleteSuggestion suggestion: Suggestion) {
+        duckAISuggestionsCoordinator?.refreshURLSuggestions()
+    }
+
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
     }
@@ -906,6 +910,10 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion) {
         fireDuckAISuggestionClickPixel(for: suggestion)
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
+    }
+
+    func duckAISuggestionsDidDeleteURL(_ suggestion: Suggestion) {
+        suggestionTrayManager?.refreshCurrentSuggestions()
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {

@@ -197,10 +197,10 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
         delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: query)
     }
 
-    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController) {
+    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController, source: UIView) {
         DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
 
-        RecentChatDeletionAlert.show(for: chat, presenter: sender) {
+        FireConfirmationPresenter.presentFireConfirmation(suggestion: chat, presenter: sender, source: source) {
             DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
 
         } onConfirm: { [weak self] in

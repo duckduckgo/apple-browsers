@@ -19,37 +19,65 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
 
     override func tearDown() { cancellables.removeAll(); super.tearDown() }
 
-    private func makeSource(chats: [AIChatSuggestion], urls: [Suggestion], query: String)
-        -> DuckAISuggestionsSource {
-        let subject = CurrentValueSubject<DuckAISuggestionsPipeline.Snapshot, Never>(
-            .init(chats: chats, urls: urls, isPending: false))
-        let source = DuckAISuggestionsSource(snapshotPublisher: subject.eraseToAnyPublisher(),
-                                             query: { query })
-        // Drain one emission so the source captures the snapshot.
+    // MARK: - Helpers
+
+    private func makeSource(chats: [AIChatSuggestion] = [],
+                            urls: [Suggestion] = [],
+                            query: String = "") -> DuckAISuggestionsSource {
+        let chatViewModel = AIChatSuggestionsViewModel()
+        chatViewModel.setChats(pinned: [], recent: chats)
+
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        urlLoader.publishURLsForTesting(urls)
+
+        let chatManager = AIChatHistoryManager(
+            suggestionsReader: NilSuggestionsReader(),
+            aiChatSettings: MockAIChatSettingsProvider(),
+            viewModel: chatViewModel
+        )
+
+        let source = DuckAISuggestionsSource(
+            chatViewModel: chatViewModel,
+            urlLoader: urlLoader,
+            chatManager: chatManager,
+            query: { query }
+        )
+        // Drain one emission so internal state is current.
         source.sectionsPublisher.sink { _ in }.store(in: &cancellables)
         return source
     }
 
+    // MARK: - Tests
+
     func test_resolvesChatRowToChatSelection() {
         let chat = AIChatSuggestion(id: "abc", title: "Hi", isPinned: false, chatId: "c1")
-        let source = makeSource(chats: [chat], urls: [], query: "")
+        let source = makeSource(chats: [chat], query: "")
         XCTAssertEqual(source.selection(forRowID: "chat-abc"), .chat(chat))
     }
 
     func test_resolvesURLRowToURLSelection() {
         let url = URL(string: "https://swift.org")!
         let suggestion = Suggestion.website(url: url)
-        let source = makeSource(chats: [], urls: [suggestion], query: "sw")
+        let source = makeSource(urls: [suggestion], query: "sw")
         XCTAssertEqual(source.selection(forRowID: "urls-website-\(url.absoluteString)"), .url(suggestion))
     }
 
     func test_resolvesSearchRowToSearchSelection() {
-        let source = makeSource(chats: [], urls: [], query: "weather")
+        let source = makeSource(query: "weather")
         XCTAssertEqual(source.selection(forRowID: "search-searchDuckDuckGo"), .searchDuckDuckGo("weather"))
     }
 
     func test_unknownRowIDResolvesToNil() {
-        let source = makeSource(chats: [], urls: [], query: "")
+        let source = makeSource(query: "")
         XCTAssertNil(source.selection(forRowID: "does-not-exist"))
     }
+}
+
+// MARK: - Stubs
+
+private final class StubSuggestionLoadingDataSource: SuggestionLoadingDataSource {
+    func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] { [] }
+    func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark] { [] }
+    func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage] { [] }
+    func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab] { [] }
 }

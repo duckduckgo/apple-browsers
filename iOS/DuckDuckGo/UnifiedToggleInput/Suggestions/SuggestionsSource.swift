@@ -15,6 +15,8 @@ import Suggestions
 @MainActor
 protocol SuggestionsSource {
     var sectionsPublisher: AnyPublisher<[SuggestionSection], Never> { get }
+    func start(textPublisher: AnyPublisher<String, Never>)
+    func tearDown()
 }
 
 /// Duck.ai-typing source: recents + URL hits + a "Search DuckDuckGo" row.
@@ -23,57 +25,91 @@ final class DuckAISuggestionsSource: SuggestionsSource {
 
     let sectionsPublisher: AnyPublisher<[SuggestionSection], Never>
 
+    private let chatViewModel: AIChatSuggestionsViewModel
+    private let urlLoader: DuckAIURLSuggestionsLoader
+    private let chatManager: AIChatHistoryManager
     private let query: () -> String
-    /// Reference holder recording the latest snapshot for `selection(forRowID:)`. A class lets the
-    /// `map` closure (built in `init` before `self` is fully initialized) record without capturing `self`.
-    private let captureBox = SnapshotBox()
 
-    init(snapshotPublisher: AnyPublisher<DuckAISuggestionsPipeline.Snapshot, Never>,
+    init(chatViewModel: AIChatSuggestionsViewModel,
+         urlLoader: DuckAIURLSuggestionsLoader,
+         chatManager: AIChatHistoryManager,
          query: @escaping () -> String) {
+        self.chatViewModel = chatViewModel
+        self.urlLoader = urlLoader
+        self.chatManager = chatManager
         self.query = query
-        let box = captureBox
-        sectionsPublisher = snapshotPublisher
-            .map { snapshot in
-                box.value = snapshot
-                var sections: [SuggestionSection] = []
-                if !snapshot.chats.isEmpty {
-                    sections.append(SuggestionSection(
-                        id: "chats",
-                        rows: snapshot.chats.map { SuggestionRowMapper.row(for: $0) }))
-                }
-                if !snapshot.urls.isEmpty {
-                    let q = query()
-                    sections.append(SuggestionSection(
-                        id: "urls",
-                        rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: q, idPrefix: "urls", includesDeleteAccessory: true) }))
-                }
-                let q = query()
-                if !q.isEmpty {
-                    sections.append(SuggestionSection(
-                        id: "search",
-                        rows: [SuggestionRowMapper.searchRow(query: q, idPrefix: "search")]))
-                }
-                return sections
-            }
+
+        let pipeline = DuckAISuggestionsPipeline(
+            chatsPublisher: chatViewModel.$filteredSuggestions.eraseToAnyPublisher(),
+            urlsPublisher: urlLoader.$topURLs.eraseToAnyPublisher(),
+            latestDispatchedQuery: query,
+            lastCompletedURLQuery: { [weak urlLoader] in urlLoader?.lastCompletedFetchQuery ?? "" }
+        )
+
+        sectionsPublisher = pipeline.snapshotPublisher
+            .map { snapshot in Self.sections(from: snapshot, query: query()) }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
 
+    func start(textPublisher: AnyPublisher<String, Never>) {
+        chatManager.subscribeToTextChanges(textPublisher)
+        urlLoader.subscribeToTextChanges(textPublisher)
+        chatManager.refreshSuggestions(query: query())
+    }
+
+    func tearDown() {
+        chatManager.tearDown()
+        urlLoader.tearDown()
+    }
+
+    // MARK: - Section mapping
+
+    static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String) -> [SuggestionSection] {
+        var sections: [SuggestionSection] = []
+        if !snapshot.chats.isEmpty {
+            sections.append(SuggestionSection(
+                id: "chats",
+                rows: snapshot.chats.map { SuggestionRowMapper.row(for: $0) }))
+        }
+        if !snapshot.urls.isEmpty {
+            sections.append(SuggestionSection(
+                id: "urls",
+                rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: "urls", includesDeleteAccessory: true) }))
+        }
+        if !query.isEmpty {
+            sections.append(SuggestionSection(
+                id: "search",
+                rows: [SuggestionRowMapper.searchRow(query: query, idPrefix: "search")]))
+        }
+        return sections
+    }
+
+    // MARK: - Selection resolution
+
     /// Resolves a row id (as minted by `SuggestionRowMapper`) back to a typed selection.
     func selection(forRowID id: String) -> DuckAISuggestionsSelection? {
-        let snapshot = captureBox.value
+        let chats = chatViewModel.filteredSuggestions
+        let urls = urlLoader.topURLs
+        let q = query()
+
         if id.hasPrefix("chat-") {
             let chatID = String(id.dropFirst("chat-".count))
-            return snapshot.chats.first { $0.id == chatID }.map { .chat($0) }
+            return chats.first { $0.id == chatID }.map { .chat($0) }
         }
         if id == "search-searchDuckDuckGo" {
-            return .searchDuckDuckGo(query())
+            return .searchDuckDuckGo(q)
         }
         if id.hasPrefix("urls-") {
-            return snapshot.urls.first { SuggestionRowMapper.row(for: $0, query: query(), idPrefix: "urls").id == id }
+            return urls.first { SuggestionRowMapper.row(for: $0, query: q, idPrefix: "urls").id == id }
                 .map { .url($0) }
         }
         return nil
+    }
+
+    /// Triggers a fresh URL suggestions fetch; call after a history deletion.
+    func fetchURLSuggestions(query: String) {
+        urlLoader.fetch(query: query)
     }
 }
 
@@ -93,10 +129,7 @@ final class RecentsSuggestionsSource: SuggestionsSource {
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
-}
 
-/// Reference holder so the section-mapping closure can record the latest snapshot
-/// without capturing `self` (which isn't fully initialized when the publisher is built).
-private final class SnapshotBox {
-    var value = DuckAISuggestionsPipeline.Snapshot(chats: [], urls: [], isPending: false)
+    func start(textPublisher: AnyPublisher<String, Never>) {}
+    func tearDown() {}
 }

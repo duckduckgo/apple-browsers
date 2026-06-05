@@ -52,7 +52,7 @@ final class UnifiedSuggestionsHost {
                              textPublisher: P) where P.Output == String, P.Failure == Never {
         guard hostingController == nil else { return }
 
-        config.onStart()
+        config.source.start(textPublisher: textPublisher.eraseToAnyPublisher())
 
         listViewModel.onSelect = { [weak self] id in self?.config.onSelectRow(id) }
         listViewModel.onTapAhead = { [weak self] id in self?.config.onTapAheadRow(id) }
@@ -102,7 +102,7 @@ final class UnifiedSuggestionsHost {
     func tearDown() {
         cancellables.removeAll()
         onContentChanged = nil
-        config.onTearDown()
+        config.source.tearDown()
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()

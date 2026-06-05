@@ -22,9 +22,4 @@ struct UnifiedSuggestionsHostConfig {
     /// Imperative facts the container reads for Dax visibility.
     let hasContent: () -> Bool
     let hasSettled: (String) -> Bool
-    let onStart: () -> Void
-    let onTearDown: () -> Void
-    /// Objects that must live for the surface's lifetime (loaders/managers). The host holds the
-    /// config strongly, so listing them here keeps them alive — closures only capture them weakly.
-    let retainedObjects: [AnyObject]
 }

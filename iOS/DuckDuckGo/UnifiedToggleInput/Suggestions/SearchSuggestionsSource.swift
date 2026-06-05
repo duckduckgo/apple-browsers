@@ -16,59 +16,72 @@ final class SearchSuggestionsSource: SuggestionsSource {
 
     let sectionsPublisher: AnyPublisher<[SuggestionSection], Never>
 
+    private let loader: SearchSuggestionsLoader
     private let query: () -> String
-    private let resultBox = ResultBox()
+    private let showAskAIChat: Bool
 
-    init(resultPublisher: AnyPublisher<SuggestionResult, Never>,
+    init(loader: SearchSuggestionsLoader,
          query: @escaping () -> String,
          showAskAIChat: Bool) {
+        self.loader = loader
         self.query = query
-        let box = resultBox
-        sectionsPublisher = resultPublisher
-            .map { result in
-                box.value = result
-                let q = query()
-                var sections: [SuggestionSection] = []
-
-                func section(_ id: String, _ suggestions: [Suggestion]) {
-                    guard !suggestions.isEmpty else { return }
-                    sections.append(SuggestionSection(
-                        id: id,
-                        rows: suggestions.map { SuggestionRowMapper.row(for: $0, query: q, idPrefix: id, includesDeleteAccessory: true) }))
-                }
-
-                var topHits = result.topHits
-                // Empty → single non-tap-ahead phrase fallback (mirrors AutocompleteViewModel).
-                if topHits.isEmpty && result.duckduckgoSuggestions.isEmpty && result.localSuggestions.isEmpty && !q.isEmpty {
-                    topHits = [.phrase(phrase: q)]
-                }
-                section("topHits", topHits)
-                section("ddg", result.duckduckgoSuggestions)
-                section("local", result.localSuggestions)
-                if showAskAIChat, !q.isEmpty {
-                    section("askAIChat", [.askAIChat(value: q)])
-                }
-                return sections
-            }
+        self.showAskAIChat = showAskAIChat
+        let showChat = showAskAIChat
+        sectionsPublisher = loader.$result
+            .map { result in Self.sections(from: result, query: query(), showAskAIChat: showChat) }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
 
+    func start(textPublisher: AnyPublisher<String, Never>) {
+        loader.subscribeToTextChanges(textPublisher)
+    }
+
+    func tearDown() {
+        loader.tearDown()
+    }
+
+    // MARK: - Section mapping
+
+    static func sections(from result: SuggestionResult, query: String, showAskAIChat: Bool) -> [SuggestionSection] {
+        var sections: [SuggestionSection] = []
+
+        func section(_ id: String, _ suggestions: [Suggestion]) {
+            guard !suggestions.isEmpty else { return }
+            sections.append(SuggestionSection(
+                id: id,
+                rows: suggestions.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: id, includesDeleteAccessory: true) }))
+        }
+
+        var topHits = result.topHits
+        // Empty → single non-tap-ahead phrase fallback (mirrors AutocompleteViewModel).
+        if topHits.isEmpty && result.duckduckgoSuggestions.isEmpty && result.localSuggestions.isEmpty && !query.isEmpty {
+            topHits = [.phrase(phrase: query)]
+        }
+        section("topHits", topHits)
+        section("ddg", result.duckduckgoSuggestions)
+        section("local", result.localSuggestions)
+        if showAskAIChat, !query.isEmpty {
+            section("askAIChat", [.askAIChat(value: query)])
+        }
+        return sections
+    }
+
+    // MARK: - Row resolution
+
     /// Resolves a row id back to its `Suggestion` (across all categories).
     func suggestion(forRowID id: String) -> Suggestion? {
-        let r = resultBox.value
-        let all = r.topHits + r.duckduckgoSuggestions + r.localSuggestions
-        let q = query()
+        Self.suggestion(forRowID: id, in: loader.result, query: query())
+    }
+
+    static func suggestion(forRowID id: String, in result: SuggestionResult, query: String) -> Suggestion? {
+        let all = result.topHits + result.duckduckgoSuggestions + result.localSuggestions
         for prefix in ["topHits", "ddg", "local"] {
-            if let match = all.first(where: { SuggestionRowMapper.row(for: $0, query: q, idPrefix: prefix, includesDeleteAccessory: true).id == id }) {
+            if let match = all.first(where: { SuggestionRowMapper.row(for: $0, query: query, idPrefix: prefix, includesDeleteAccessory: true).id == id }) {
                 return match
             }
         }
-        if id == "askAIChat-askAIChat-\(q)" { return .askAIChat(value: q) }
+        if id == "askAIChat-askAIChat-\(query)" { return .askAIChat(value: query) }
         return nil
     }
-}
-
-private final class ResultBox {
-    var value: SuggestionResult = .appEmpty
 }

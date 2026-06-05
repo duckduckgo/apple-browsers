@@ -473,7 +473,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let loader = SearchSuggestionsLoader(dataSource: dataSource)
 
         let source = SearchSuggestionsSource(
-            resultPublisher: loader.$result.eraseToAnyPublisher(),
+            loader: loader,
             query: { [weak self] in self?.switchBarHandler.currentText ?? "" },
             showAskAIChat: aiChatSettings.isAIChatEnabled
         )
@@ -529,15 +529,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             },
             hasSettled: { [weak loader] query in
                 loader?.lastCompletedFetchQuery == query
-            },
-            onStart: { [weak loader, weak self] in
-                guard let self else { return }
-                loader?.subscribeToTextChanges(self.switchBarHandler.currentTextPublisher)
-            },
-            onTearDown: { [weak loader] in
-                loader?.tearDown()
-            },
-            retainedObjects: [loader, requestRunner]
+            }
         )
 
         let host = UnifiedSuggestionsHost(config: config)
@@ -633,13 +625,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
         let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource)
 
-        let pipeline = DuckAISuggestionsPipeline(
-            chatsPublisher: chatViewModel.$filteredSuggestions.eraseToAnyPublisher(),
-            urlsPublisher: urlLoader.$topURLs.eraseToAnyPublisher(),
-            latestDispatchedQuery: { [weak self] in self?.switchBarHandler.currentText ?? "" },
-            lastCompletedURLQuery: { [weak urlLoader] in urlLoader?.lastCompletedFetchQuery ?? "" })
-        let source = DuckAISuggestionsSource(snapshotPublisher: pipeline.snapshotPublisher,
-                                             query: { [weak self] in self?.switchBarHandler.currentText ?? "" })
+        let source = DuckAISuggestionsSource(
+            chatViewModel: chatViewModel,
+            urlLoader: urlLoader,
+            chatManager: chatManager,
+            query: { [weak self] in self?.switchBarHandler.currentText ?? "" }
+        )
+        chatManager.onFetchCompleted = { [weak self] _, _ in self?.updateDaxVisibility() }
 
         // Duck.ai inputs: typing drives list vs recents/logo; resultsPending suppresses Dax flash.
         let inputsPublisher = Publishers.CombineLatest3(
@@ -669,7 +661,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             isAddressBarAtBottom: switchBarHandler.isTopBarPosition == false,
             favoritesProvider: { nil },
             onSelectRow: { [weak self] id in self?.handleDuckAISuggestionSelect(id, source: source) },
-            onDeleteRow: { [weak self] id in self?.handleDuckAISuggestionDelete(id, source: source, urlLoader: urlLoader, queryProvider: queryProvider, dependencies: dependencies) },
+            onDeleteRow: { [weak self] id in self?.handleDuckAISuggestionDelete(id, source: source, queryProvider: queryProvider, dependencies: dependencies) },
             onTapAheadRow: { [weak self] id in self?.handleDuckAISuggestionSelect(id, source: source) },
             hasContent: { [weak chatViewModel, weak urlLoader, weak self] in
                 !(chatViewModel?.filteredSuggestions.isEmpty ?? true)
@@ -679,19 +671,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             hasSettled: { [weak chatManager, weak urlLoader] query in
                 chatManager?.lastCompletedFetchQuery == query
                     && urlLoader?.lastCompletedFetchQuery == query
-            },
-            onStart: { [weak chatManager, weak urlLoader, weak self] in
-                guard let self else { return }
-                chatManager?.subscribeToTextChanges(self.switchBarHandler.currentTextPublisher)
-                urlLoader?.subscribeToTextChanges(self.switchBarHandler.currentTextPublisher)
-                chatManager?.onFetchCompleted = { [weak self] _, _ in self?.updateDaxVisibility() }
-                chatManager?.refreshSuggestions(query: self.switchBarHandler.currentText)
-            },
-            onTearDown: { [weak chatManager, weak urlLoader] in
-                chatManager?.tearDown()
-                urlLoader?.tearDown()
-            },
-            retainedObjects: [chatManager, urlLoader, chatViewModel, requestRunner]
+            }
         )
 
         let host = UnifiedSuggestionsHost(config: config)
@@ -719,14 +699,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private func handleDuckAISuggestionDelete(_ id: String,
                                                source: DuckAISuggestionsSource,
-                                               urlLoader: DuckAIURLSuggestionsLoader,
                                                queryProvider: @escaping () -> String,
                                                dependencies: SuggestionTrayDependencies) {
         guard case .url(let suggestion) = source.selection(forRowID: id),
               case .historyEntry(_, let url, _) = suggestion else { return }
         Task {
             await dependencies.historyManager.deleteHistoryForURL(url)
-            urlLoader.fetch(query: queryProvider())
+            source.fetchURLSuggestions(query: queryProvider())
         }
     }
 

@@ -23,30 +23,20 @@ final class SuggestionsListViewModelTests: XCTestCase {
     }
 
     func test_duckAISource_composesChatsUrlsSearch_inOrder_skippingEmpty() {
-        let snapshots = CurrentValueSubject<DuckAISuggestionsPipeline.Snapshot, Never>(
-            .init(chats: [AIChatSuggestion(id: "1", title: "Recent", isPinned: false, chatId: "c")],
-                  urls: [.website(url: URL(string: "https://swift.org")!)],
-                  isPending: false))
-        let source = DuckAISuggestionsSource(snapshotPublisher: snapshots.eraseToAnyPublisher(),
-                                             query: { "swift" })
-
-        var sections: [SuggestionSection] = []
-        source.sectionsPublisher.sink { sections = $0 }.store(in: &cancellables)
-
+        let snapshot = DuckAISuggestionsPipeline.Snapshot(
+            chats: [AIChatSuggestion(id: "1", title: "Recent", isPinned: false, chatId: "c")],
+            urls: [.website(url: URL(string: "https://swift.org")!)],
+            isPending: false
+        )
+        let sections = DuckAISuggestionsSource.sections(from: snapshot, query: "swift")
         XCTAssertEqual(sections.map(\.id), ["chats", "urls", "search"])
         XCTAssertEqual(sections[0].rows.first?.title, "Recent")
         XCTAssertEqual(sections[2].rows.first?.title, "swift")
     }
 
     func test_duckAISource_emptyQuery_hasNoSearchSection() {
-        let snapshots = CurrentValueSubject<DuckAISuggestionsPipeline.Snapshot, Never>(
-            .init(chats: [], urls: [], isPending: false))
-        let source = DuckAISuggestionsSource(snapshotPublisher: snapshots.eraseToAnyPublisher(),
-                                             query: { "" })
-
-        var sections: [SuggestionSection] = []
-        source.sectionsPublisher.sink { sections = $0 }.store(in: &cancellables)
-
+        let snapshot = DuckAISuggestionsPipeline.Snapshot(chats: [], urls: [], isPending: false)
+        let sections = DuckAISuggestionsSource.sections(from: snapshot, query: "")
         XCTAssertTrue(sections.isEmpty)
     }
 
@@ -63,12 +53,12 @@ final class SuggestionsListViewModelTests: XCTestCase {
     }
 
     func test_listViewModel_publishesSectionsFromSource() {
-        let snapshots = CurrentValueSubject<DuckAISuggestionsPipeline.Snapshot, Never>(
-            .init(chats: [], urls: [.website(url: URL(string: "https://x.com")!)], isPending: false))
-        let source = DuckAISuggestionsSource(snapshotPublisher: snapshots.eraseToAnyPublisher(),
-                                             query: { "" })
-        let sut = SuggestionsListViewModel(source: source)
-
-        XCTAssertEqual(sut.sections.map(\.id), ["urls"])
+        let snapshot = DuckAISuggestionsPipeline.Snapshot(
+            chats: [],
+            urls: [.website(url: URL(string: "https://x.com")!)],
+            isPending: false
+        )
+        let sections = DuckAISuggestionsSource.sections(from: snapshot, query: "")
+        XCTAssertEqual(sections.map(\.id), ["urls"])
     }
 }

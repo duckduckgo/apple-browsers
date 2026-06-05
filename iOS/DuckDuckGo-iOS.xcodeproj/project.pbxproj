@@ -2195,6 +2195,7 @@
 		CBB4A8532FD302B700A65956 /* DuckAISuggestionsSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8522FD302B700A65956 /* DuckAISuggestionsSelection.swift */; };
 		CBB4A8552FD3036500A65956 /* SuggestionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8542FD3036500A65956 /* SuggestionsListView.swift */; };
 		CBB4A8572FD3047E00A65956 /* UnifiedDuckAISuggestionsHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8562FD3047E00A65956 /* UnifiedDuckAISuggestionsHost.swift */; };
+		CBB4A8592FD3180500A65956 /* SearchSuggestionsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8582FD3180500A65956 /* SearchSuggestionsLoader.swift */; };
 		CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */; };
 		CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE22C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift */; };
 		CBC88EE52C8097B500F0F8C5 /* URLCredentialCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE42C8097B500F0F8C5 /* URLCredentialCreator.swift */; };
@@ -4879,6 +4880,7 @@
 		CBB4A8522FD302B700A65956 /* DuckAISuggestionsSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsSelection.swift; sourceTree = "<group>"; };
 		CBB4A8542FD3036500A65956 /* SuggestionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsListView.swift; sourceTree = "<group>"; };
 		CBB4A8562FD3047E00A65956 /* UnifiedDuckAISuggestionsHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedDuckAISuggestionsHost.swift; sourceTree = "<group>"; };
+		CBB4A8582FD3180500A65956 /* SearchSuggestionsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchSuggestionsLoader.swift; sourceTree = "<group>"; };
 		CBB6B2542AF6D543006B777C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC7AB542AF6D583008CB798 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScriptTests.swift; sourceTree = "<group>"; };
@@ -10099,6 +10101,7 @@
 				CBB4A8522FD302B700A65956 /* DuckAISuggestionsSelection.swift */,
 				CBB4A8542FD3036500A65956 /* SuggestionsListView.swift */,
 				CBB4A8562FD3047E00A65956 /* UnifiedDuckAISuggestionsHost.swift */,
+				CBB4A8582FD3180500A65956 /* SearchSuggestionsLoader.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -12586,6 +12589,7 @@
 				9FE59CE22E31E5A500C4B65D /* SystemSettingsPiPTutorialPixelHandler.swift in Sources */,
 				98DA8E8F2EBA361800BB34B0 /* ContentBlockingService.swift in Sources */,
 				9874F9EE2187AFCE00CAF33D /* Themable.swift in Sources */,
+				CBB4A8592FD3180500A65956 /* SearchSuggestionsLoader.swift in Sources */,
 				0283A1FC2C6E3D8100508FBD /* BrokenSitePromptView.swift in Sources */,
 				F44D279E27F331BB0037F371 /* AutofillLoginPromptViewModel.swift in Sources */,
 				C1D8B58E2F2F5A8500553D02 /* UIResponder+FirstResponder.swift in Sources */,

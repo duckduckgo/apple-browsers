@@ -1,5 +1,5 @@
 //
-//  UnifiedSuggestionsView.swift
+//  SuggestionsListView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -9,9 +9,9 @@
 import DesignResourcesKit
 import SwiftUI
 
-/// The unified Duck.ai suggestions surface: an optional escape-hatch + sync-promo header
+/// The suggestions rows surface: an optional escape-hatch + sync-promo header
 /// followed by the data-driven sections. Replaces `DuckAISuggestionsViewController`'s table.
-struct UnifiedSuggestionsView: View {
+struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool

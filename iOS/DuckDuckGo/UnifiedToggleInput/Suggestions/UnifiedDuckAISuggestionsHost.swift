@@ -42,7 +42,7 @@ final class UnifiedDuckAISuggestionsHost {
 
     private let source: DuckAISuggestionsSource
     private let listViewModel: SuggestionsListViewModel
-    private var hostingController: UIHostingController<UnifiedSuggestionsView>?
+    private var hostingController: UIHostingController<SuggestionsListView>?
     private var escapeHatchModel: EscapeHatchModel?
     private var cancellables = Set<AnyCancellable>()
 
@@ -104,7 +104,7 @@ final class UnifiedDuckAISuggestionsHost {
             .sink { [weak self] _ in self?.onContentChanged?() }
             .store(in: &cancellables)
 
-        let view = UnifiedSuggestionsView(
+        let view = SuggestionsListView(
             viewModel: listViewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             header: makeHeader())
@@ -161,7 +161,7 @@ final class UnifiedDuckAISuggestionsHost {
 
     private func rebuildRootView() {
         guard let hosting = hostingController else { return }
-        hosting.rootView = UnifiedSuggestionsView(
+        hosting.rootView = SuggestionsListView(
             viewModel: listViewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             header: makeHeader())

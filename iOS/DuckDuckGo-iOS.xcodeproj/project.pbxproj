@@ -2193,7 +2193,7 @@
 		CBB4A84F2FD301AA00A65956 /* SuggestionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A84E2FD301AA00A65956 /* SuggestionRowView.swift */; };
 		CBB4A8512FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8502FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift */; };
 		CBB4A8532FD302B700A65956 /* DuckAISuggestionsSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8522FD302B700A65956 /* DuckAISuggestionsSelection.swift */; };
-		CBB4A8552FD3036500A65956 /* UnifiedSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8542FD3036500A65956 /* UnifiedSuggestionsView.swift */; };
+		CBB4A8552FD3036500A65956 /* SuggestionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8542FD3036500A65956 /* SuggestionsListView.swift */; };
 		CBB4A8572FD3047E00A65956 /* UnifiedDuckAISuggestionsHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8562FD3047E00A65956 /* UnifiedDuckAISuggestionsHost.swift */; };
 		CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */; };
 		CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE22C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift */; };
@@ -4877,7 +4877,7 @@
 		CBB4A84E2FD301AA00A65956 /* SuggestionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionRowView.swift; sourceTree = "<group>"; };
 		CBB4A8502FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsSelectionTests.swift; sourceTree = "<group>"; };
 		CBB4A8522FD302B700A65956 /* DuckAISuggestionsSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsSelection.swift; sourceTree = "<group>"; };
-		CBB4A8542FD3036500A65956 /* UnifiedSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsView.swift; sourceTree = "<group>"; };
+		CBB4A8542FD3036500A65956 /* SuggestionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsListView.swift; sourceTree = "<group>"; };
 		CBB4A8562FD3047E00A65956 /* UnifiedDuckAISuggestionsHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedDuckAISuggestionsHost.swift; sourceTree = "<group>"; };
 		CBB6B2542AF6D543006B777C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC7AB542AF6D583008CB798 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -10097,7 +10097,7 @@
 				CBB4A84C2FD3019400A65956 /* SuggestionRowIcon+Glyph.swift */,
 				CBB4A84E2FD301AA00A65956 /* SuggestionRowView.swift */,
 				CBB4A8522FD302B700A65956 /* DuckAISuggestionsSelection.swift */,
-				CBB4A8542FD3036500A65956 /* UnifiedSuggestionsView.swift */,
+				CBB4A8542FD3036500A65956 /* SuggestionsListView.swift */,
 				CBB4A8562FD3047E00A65956 /* UnifiedDuckAISuggestionsHost.swift */,
 			);
 			path = Suggestions;
@@ -13105,7 +13105,7 @@
 				569B072A2DD7378700E0719A /* ThreatProtectionView.swift in Sources */,
 				7B4F87EE2D0739EB0010B18F /* SiriBubbleView.swift in Sources */,
 				85DFEDF124C7EEA400973FE7 /* LargeOmniBarState.swift in Sources */,
-				CBB4A8552FD3036500A65956 /* UnifiedSuggestionsView.swift in Sources */,
+				CBB4A8552FD3036500A65956 /* SuggestionsListView.swift in Sources */,
 				CB3CC3372D9EFFB4004D6B33 /* SiteThemeColorManager.swift in Sources */,
 				5BF0B1732FC784D3009D088E /* NavigationResponseRouter.swift in Sources */,
 				D6E83C602B22B3C9006C8AFB /* SettingsState.swift in Sources */,

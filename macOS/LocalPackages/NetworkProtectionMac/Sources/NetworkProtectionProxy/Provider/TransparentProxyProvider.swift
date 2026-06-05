@@ -100,7 +100,7 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     // MARK: - Orphan detection
 
     private let heartbeatStore: TunnelHeartbeatStore?
-    private static let orphanCheckInterval: TimeInterval = 30
+    private static let orphanCheckInterval: TimeInterval = 15
     private static let orphanProxyAgeThreshold: TimeInterval = 60
     private static let orphanHeartbeatAgeThreshold: TimeInterval = 60
     private static let postWakeGracePeriod: TimeInterval = 60

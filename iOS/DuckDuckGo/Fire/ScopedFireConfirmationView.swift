@@ -92,7 +92,7 @@ struct ScopedFireConfirmationView: View {
     
     /// Scope selection buttons
     private var scopeButtons: some View {
-        VStack(spacing: Constants.buttonSpacing) {
+        VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
             ForEach(viewModel.buttons.indices, id: \.self) { index in
                 let button = viewModel.buttons[index]
                 Button(action: button.action) {
@@ -141,8 +141,42 @@ private extension ScopedFireConfirmationView {
         static let headerSectionPaddingNoAnimation: EdgeInsets = .init(top: 36, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96
         static let headlineTextSpacing: CGFloat = 4
-        static let buttonSpacing: CGFloat = 16
         static let closeButtonPadding: CGFloat = 8
         static let animationDelay: Double = 0.5
     }
 }
+
+#if DEBUG
+private struct PreviewDataClearingCapability: DataClearingCapable {
+    var isFireButtonRefinementsEnabled: Bool { false }
+}
+
+private final class PreviewDownloadManager: DownloadManaging {
+    var downloadList: Set<Download> { [] }
+    var downloadsDirectoryFiles: [URL] { [] }
+    func cancelDownload(_ download: Download) {}
+    func cancelAllDownloads() {}
+    func markAllDownloadsSeen() {}
+    func startMonitoringDownloadsDirectoryChanges() {}
+    func stopMonitoringDownloadsDirectoryChanges() {}
+}
+
+#Preview {
+    // Inject lightweight dependencies so the preview doesn't touch
+    // `AppDependencyProvider.shared` / `ContentBlocking.shared`, which require the
+    // app group container that isn't available in SwiftUI Previews.
+    ScopedFireConfirmationView(
+        viewModel: ScopedFireConfirmationViewModel(
+            tabViewModel: nil,
+            source: .tabSwitcher,
+            fireContext: .singleTab,
+            downloadManager: PreviewDownloadManager(),
+            appSettings: AppUserDefaults(),
+            dataClearingCapability: PreviewDataClearingCapability(),
+            browsingMode: .normal,
+            onConfirm: { _ in },
+            onCancel: {}
+        )
+    )
+}
+#endif

@@ -34,6 +34,7 @@ let package = Package(
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/UIComponents"),
+        .package(path: "../../../SharedPackages/Infrastructure/MetricBuilder"),
     ],
     targets: [
         .target(
@@ -42,6 +43,7 @@ let package = Package(
                 "DesignResourcesKit",
                 "DesignResourcesKitIcons",
                 "UIComponents",
+                "MetricBuilder",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

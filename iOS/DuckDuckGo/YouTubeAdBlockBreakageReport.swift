@@ -120,3 +120,9 @@ private extension YouTubeAdBlockBreakageReportView {
         static let buttonSpacing: CGFloat = 8
     }
 }
+
+#if DEBUG
+#Preview {
+    YouTubeAdBlockBreakageReportView()
+}
+#endif

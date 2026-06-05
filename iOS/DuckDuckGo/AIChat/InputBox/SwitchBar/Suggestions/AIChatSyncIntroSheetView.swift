@@ -45,7 +45,7 @@ struct AIChatSyncIntroSheetView: View {
             .padding(.vertical, 20)
             .foregroundStyle(Color(designSystemColor: .textPrimary))
 
-            VStack {
+            VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
                 Button(action: onScanTap) {
                     HStack {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
@@ -61,7 +61,7 @@ struct AIChatSyncIntroSheetView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, ButtonStackMetrics.containerPadding)
         .padding(.top, 20)
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }

@@ -61,7 +61,7 @@ struct SyncRecoveryAlternativeView: View {
 
             Spacer()
 
-            VStack(spacing: 8) {
+            VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
                 Button(action: { onSyncFlowSelected(SyncSettingsViewController.SourceConstants.startSyncFlow) }) {
                     Text(UserText.syncRecoveryAlternativePromptSyncButton)
                 }
@@ -79,7 +79,7 @@ struct SyncRecoveryAlternativeView: View {
 
             }
             .frame(maxWidth: 360)
-            .padding(.horizontal, 30)
+            .padding(.horizontal, ButtonStackMetrics.containerPadding)
         }
         .padding(.bottom)
         .background(Color(designSystemColor: .backgroundSheets))

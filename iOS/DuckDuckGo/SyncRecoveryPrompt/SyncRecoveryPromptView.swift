@@ -55,7 +55,7 @@ struct SyncRecoveryPromptView: View {
 
             Spacer()
 
-            VStack(spacing: 8) {
+            VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
                 Button(action: onSyncWithAnotherDevice) {
                     Text(UserText.syncRecoveryPromptSyncButton)
                 }
@@ -67,7 +67,7 @@ struct SyncRecoveryPromptView: View {
                 .buttonStyle(GhostButtonStyle())
             }
             .frame(maxWidth: 360)
-            .padding(.horizontal, 30)
+            .padding(.horizontal, ButtonStackMetrics.containerPadding)
         }
         .padding(.bottom)
         .background(Color(designSystemColor: .backgroundSheets))

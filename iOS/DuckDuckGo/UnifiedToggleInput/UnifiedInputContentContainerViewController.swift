@@ -843,6 +843,7 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
     }
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didDeleteSuggestion suggestion: Suggestion) {
+        // The duck.ai URL list shares the same history store. Refresh it so the deleted entry disappears there too.
         duckAISuggestionsCoordinator?.refreshURLSuggestions()
     }
 
@@ -913,6 +914,7 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     }
 
     func duckAISuggestionsDidDeleteURL(_ suggestion: Suggestion) {
+        // The search tray reads the same history store. Re-fetch so the deleted entry disappears there too.
         suggestionTrayManager?.refreshCurrentSuggestions()
     }
 

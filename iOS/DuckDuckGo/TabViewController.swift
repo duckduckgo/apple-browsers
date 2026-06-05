@@ -2429,8 +2429,19 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
-
-        navigationPixelResponder.willStart(navigationAction)
+        // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
+        // Doing it any earlier — e.g. at the top of this function — would race when policy decisions
+        // overlap: for instance, the content-blocking wait below can hold nav1's `decisionHandler` while
+        // nav2 enters `decidePolicyFor`, and a second `willStart` would overwrite the pending type before
+        // nav1's `didStartProvisionalNavigation` consumed it. WebKit serializes delegate callbacks on the
+        // main queue, so firing from inside the `.allow` branch guarantees the next event is the matching
+        // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
+        let wrappedHandler: (WKNavigationActionPolicy) -> Void = { [weak self] policy in
+            if policy == .allow {
+                self?.navigationPixelResponder.willStart(navigationAction)
+            }
+            decisionHandler(policy)
+        }
 
         // There is an `isUserInitiated` var on navigationAction that uses private API
         //  but this approach is public API.  Unfortunately this means that on iOS 17 and older
@@ -2442,7 +2453,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = navigationAction.request.url {
             if !tabURLInterceptor.allowsNavigatingTo(url: url) {
-                decisionHandler(.cancel)
+                wrappedHandler(.cancel)
                 // If there is history or a page loaded keep the tab open
                 if self.currentlyLoadedURL == nil {
                     delegate?.tabDidRequestClose(self)
@@ -2452,7 +2463,7 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         if duckPlayerNavigationHandler.handleDelegateNavigation(navigationAction: navigationAction, webView: webView) {
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             return
         }
         
@@ -2460,10 +2471,10 @@ extension TabViewController: WKNavigationDelegate {
            !url.isDuckDuckGoSearch,
            true == shouldWaitUntilContentBlockingIsLoaded({ [weak self, webView /* decision handler must be called */] in
                guard let self = self else {
-                   decisionHandler(.cancel)
+                   wrappedHandler(.cancel)
                    return
                }
-               self.webView(webView, decidePolicyFor: navigationAction, decisionHandler: decisionHandler)
+               self.webView(webView, decidePolicyFor: navigationAction, decisionHandler: wrappedHandler)
            }) {
             // will wait for Content Blocking to load and re-call on completion
             return
@@ -2484,11 +2495,11 @@ extension TabViewController: WKNavigationDelegate {
 
         switch Self.aiChatNewWindowDecision(currentURL: webView.url, navigationAction: navigationAction) {
         case .loadInTab(let aiChatNewWindowURL):
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             load(url: aiChatNewWindowURL)
             return
         case .openInNewTab(let aiChatNewWindowURL):
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             delegate?.tab(self,
                           didRequestNewTabForUrl: aiChatNewWindowURL,
                           openedByPage: true,
@@ -2513,7 +2524,7 @@ extension TabViewController: WKNavigationDelegate {
                 unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
             )
             if decision == .openInNewTab {
-                decisionHandler(.cancel)
+                wrappedHandler(.cancel)
                 delegate?.tab(self,
                               didRequestNewTabForUrl: linkURL,
                               openedByPage: true,
@@ -2535,7 +2546,7 @@ extension TabViewController: WKNavigationDelegate {
                 guard let self = self else { return }
                 self.load(urlRequest: newRequest)
             },
-                                                                           policyDecisionHandler: decisionHandler)
+                                                                           policyDecisionHandler: wrappedHandler)
 
             if didRewriteLink {
                 return
@@ -2547,7 +2558,7 @@ extension TabViewController: WKNavigationDelegate {
            navigationAction.navigationType != .backForward,
            let newRequest = referrerTrimming.trimReferrer(forNavigation: navigationAction,
                                                           originUrl: webView.url ?? navigationAction.sourceFrame.webView?.url) {
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             load(urlRequest: newRequest)
             return
         }
@@ -2558,7 +2569,7 @@ extension TabViewController: WKNavigationDelegate {
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
            navigationAction.navigationType != .backForward,
            let request = requestForDoNotSell(basedOn: navigationAction.request) {
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             load(urlRequest: request)
             return
         }
@@ -2569,14 +2580,14 @@ extension TabViewController: WKNavigationDelegate {
 
             if modifierFlags.contains(.command) {
                 if modifierFlags.contains(.shift) {
-                    decisionHandler(.cancel)
+                    wrappedHandler(.cancel)
                     delegate?.tab(self,
                                   didRequestNewTabForUrl: url,
                                   openedByPage: false,
                                   inheritingAttribution: adClickAttributionLogic.state)
                     return
                 } else {
-                    decisionHandler(.cancel)
+                    wrappedHandler(.cancel)
                     delegate?.tab(self, didRequestNewBackgroundTabForUrl: url, inheritingAttribution: adClickAttributionLogic.state)
                     return
                 }
@@ -2614,7 +2625,7 @@ extension TabViewController: WKNavigationDelegate {
             if let self, decision == .allow, !self.specialErrorPageNavigationHandler.isSpecialErrorPageRequest {
                 self.specialErrorPageNavigationHandler.handleDecidePolicy(for: navigationAction, webView: webView)
             }
-            decisionHandler(decision)
+            wrappedHandler(decision)
         }
     }
     // swiftlint:enable cyclomatic_complexity

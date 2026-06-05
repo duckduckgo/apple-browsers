@@ -96,7 +96,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private var swipeContainerManager: SwipeContainerManager?
     private var suggestionTrayManager: SuggestionTrayManager?
-    private var duckAISuggestionsCoordinator: DuckAISuggestionsCoordinator?
+    private var duckAISuggestionsHost: UnifiedDuckAISuggestionsHost?
     private var urlAutocompleteTask: URLSessionDataTask?
     private var isContentActive = false
     private var needsVisibleRefresh = true
@@ -166,8 +166,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        duckAISuggestionsCoordinator?.tearDown()
-        duckAISuggestionsCoordinator = nil
+        duckAISuggestionsHost?.tearDown()
+        duckAISuggestionsHost = nil
         urlAutocompleteTask?.cancel()
         urlAutocompleteTask = nil
     }
@@ -235,7 +235,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func updateDuckAISuggestionsActiveState() {
-        duckAISuggestionsCoordinator?.setIsVisibleContent(
+        duckAISuggestionsHost?.setIsVisibleContent(
             isContentActive && switchBarHandler.currentToggleState == .aiChat
         )
     }
@@ -258,7 +258,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         suggestionTrayManager?.setEscapeHatch(model)
         // Fire tabs render their own empty state via DaxLogoManager — suppress the hatch to avoid stacking affordances.
         let duckAIHatchModel = switchBarHandler.isFireTab ? nil : model
-        duckAISuggestionsCoordinator?.setEscapeHatch(duckAIHatchModel)
+        duckAISuggestionsHost?.setEscapeHatch(duckAIHatchModel)
         updateEscapeHatchTopInset()
         // The dax offset depends on hatch presence (`hatchClearance` is added when present),
         // so refresh visibility when the hatch is added or removed mid-session.
@@ -275,7 +275,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func updateEscapeHatchTopInset() {
         let inset = escapeHatchTopInset
         suggestionTrayManager?.setAdditionalTopInset(inset)
-        duckAISuggestionsCoordinator?.setAdditionalTopInset(inset)
+        duckAISuggestionsHost?.setAdditionalTopInset(inset)
     }
 
     /// Returns the top inset needed so the UTI escape hatch lines up with the NTP
@@ -458,16 +458,16 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installDuckAISuggestionsIfNeeded() {
-        guard duckAISuggestionsCoordinator == nil,
+        guard duckAISuggestionsHost == nil,
               featureFlagger.isFeatureOn(.aiChatSuggestions),
               aiChatSettings.isChatSuggestionsEnabled else { return }
         installDuckAISuggestions()
     }
 
     private func rebuildDuckAISuggestionsCoordinator() {
-        guard duckAISuggestionsCoordinator != nil else { return }
-        duckAISuggestionsCoordinator?.tearDown()
-        duckAISuggestionsCoordinator = nil
+        guard duckAISuggestionsHost != nil else { return }
+        duckAISuggestionsHost?.tearDown()
+        duckAISuggestionsHost = nil
         installDuckAISuggestionsIfNeeded()
     }
 
@@ -513,30 +513,26 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
         let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource)
 
-        let coordinator = DuckAISuggestionsCoordinator(
+        let host = UnifiedDuckAISuggestionsHost(
             chatManager: chatManager,
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
             queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
-            layoutConfiguration: .unifiedToggleInput,
-            syncPromoManager: switchBarHandler.isFireTab ? nil : syncPromoManager,
-            syncService: switchBarHandler.isFireTab ? nil : syncService
-        )
-        coordinator.delegate = self
-        coordinator.onContentChanged = { [weak self] in
-            // Dax visibility and section composition depend on coordinator content.
+            isAddressBarAtBottom: switchBarHandler.isTopBarPosition == false)
+        host.delegate = self
+        host.onContentChanged = { [weak self] in
             self?.refreshVisibleContent(suggestionRefresh: .none, animateContentUpdates: true)
         }
-
         chatManager.onFetchCompleted = { [weak self] _, _ in
             self?.updateDaxVisibility()
         }
-
-        swipeContainerManager.installDuckAISuggestions(using: coordinator, textPublisher: switchBarHandler.currentTextPublisher)
-        coordinator.setAdditionalTopInset(escapeHatchTopInset)
-        coordinator.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
-
-        duckAISuggestionsCoordinator = coordinator
+        // Part 2b: sync promo (syncPromoManager / syncService wiring deferred)
+        host.start(in: swipeContainerManager.chatPageContainer,
+                   parentViewController: swipeContainerManager.containerViewController,
+                   textPublisher: switchBarHandler.currentTextPublisher)
+        host.setAdditionalTopInset(escapeHatchTopInset)
+        host.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
+        duckAISuggestionsHost = host
         updateDuckAISuggestionsActiveState()
     }
 
@@ -680,13 +676,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isShowingTray = suggestionTrayManager?.isShowingSuggestionTray ?? false
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
-        let isShowingDuckAISuggestions = duckAISuggestionsCoordinator?.hasContent == true
+        let isShowingDuckAISuggestions = duckAISuggestionsHost?.hasContent == true
         // Suppress the Duck.ai empty state (Dax) whenever fetchers haven't settled for the
         // current query — covers both the initial-load window and the keystroke-to-result lag,
         // which would otherwise cause Dax to flash when the user backspaces to empty after
         // a no-match query (one fetcher's empty result lands before the other's).
-        let isDuckAISuggestionsPending = duckAISuggestionsCoordinator != nil
-            && duckAISuggestionsCoordinator?.hasSettled(forQuery: switchBarHandler.currentText) != true
+        let isDuckAISuggestionsPending = duckAISuggestionsHost != nil
+            && duckAISuggestionsHost?.hasSettled(forQuery: switchBarHandler.currentText) != true
             && switchBarHandler.currentToggleState == .aiChat
             && !switchBarHandler.isFireTab
 

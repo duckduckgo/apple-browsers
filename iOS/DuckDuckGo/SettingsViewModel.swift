@@ -1877,11 +1877,11 @@ extension SettingsViewModel {
         )
     }
 
-    var aiChatNavigationBarEnabledBinding: Binding<Bool> {
+    var aiChatTabBarEnabledBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatNavigationBarUserSettingsEnabled },
+            get: { self.aiChatSettings.isAIChatTabBarUserSettingsEnabled },
             set: { newValue in
-                self.aiChatSettings.enableAIChatNavigationBarUserSettings(enable: newValue)
+                self.aiChatSettings.enableAIChatTabBarUserSettings(enable: newValue)
                 DailyPixel.fireDailyAndCount(pixel: newValue ? .aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff)
             }
         )

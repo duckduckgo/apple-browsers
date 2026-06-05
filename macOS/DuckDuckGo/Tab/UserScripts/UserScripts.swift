@@ -304,9 +304,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         let homepageSeedKey = HomepageSearchModeToggleSeedUserScript.pendingSeedDefaultsKey
         if UserDefaults.standard.object(forKey: homepageSeedKey) != nil {
             let showSearchModeToggle = UserDefaults.standard.bool(forKey: homepageSeedKey)
-            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: showSearchModeToggle, onApplied: {
-                UserDefaults.standard.removeObject(forKey: homepageSeedKey)
-            }))
+            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: showSearchModeToggle))
         }
     }
 
@@ -337,21 +335,22 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
 /// Applies the duckduckgo.com web homepage "search mode toggle" preference into the page's own
 /// localStorage to mirror the user's onboarding choice ("Search & Duck.ai" shows the toggle,
-/// "Search Only" hides it), then consumes a one-shot native marker so it runs once per choice.
+/// "Search Only" hides it). A one-shot native marker gates injection and is consumed natively after
+/// the first successful homepage navigation (see `OnboardingActionsManager.goToAddressBar`).
 ///
-/// Injected at document-start and host-gated to duckduckgo.com so no other site's storage is
-/// touched. It *overwrites* the existing value (the homepage may already have `homepageSettings`
-/// persisted from earlier visits), but only when the chosen value differs from what was last
-/// applied (tracked in `__ddgSearchModeSeedApplied`). That way a value the user later sets on the
-/// web is respected on reload, while a *changed* onboarding choice still takes effect. After
-/// writing it posts `homepageSearchModeSeedApplied` to native, whose handler clears the marker
-/// (`onApplied`) so the script is no longer injected on subsequent loads.
+/// Runs at document-start in the *page content world* so the SERP's own startup read sees the value
+/// with no flash, and host-gated to duckduckgo.com so no other site's storage is touched. It
+/// *overwrites* the existing value (the homepage may already have `homepageSettings` persisted from
+/// earlier visits), but only when the chosen value differs from what was last applied (tracked in
+/// `__ddgSearchModeSeedApplied`). That way a value the user later sets on the web is respected on
+/// reload, while a *changed* onboarding choice still takes effect.
 final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
     static let pendingSeedDefaultsKey = "aichat.pendingHomepageSearchModeSeed"
 
-    let messageNames: [String] = ["homepageSearchModeSeedApplied"]
+    let messageNames: [String] = []
     let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
     let forMainFrameOnly: Bool = true
+    let requiresRunInPageContentWorld: Bool = true
 
     private let showSearchModeToggle: Bool
 
@@ -368,21 +367,14 @@ final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
             settings.showSearchModeToggle = desired;
             window.localStorage.setItem(key, JSON.stringify(settings));
             window.localStorage.setItem(appliedKey, String(desired));
-            window.webkit.messageHandlers.homepageSearchModeSeedApplied.postMessage({});
         } catch (e) {}
         """
     }
 
-    private let onApplied: () -> Void
-
-    init(showSearchModeToggle: Bool, onApplied: @escaping () -> Void) {
+    init(showSearchModeToggle: Bool) {
         self.showSearchModeToggle = showSearchModeToggle
-        self.onApplied = onApplied
         super.init()
     }
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == "homepageSearchModeSeedApplied" else { return }
-        onApplied()
-    }
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
 }

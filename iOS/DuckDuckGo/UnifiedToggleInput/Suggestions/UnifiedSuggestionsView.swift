@@ -45,7 +45,8 @@ struct UnifiedSuggestionsView: View {
                 }
             }
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
+        .modifier(CompactSectionSpacingModifier())
         .modifier(HideScrollContentBackgroundModifier())
         .background(Color(designSystemColor: .background))
         .scrollDismissesKeyboardIfAvailable()
@@ -66,6 +67,12 @@ struct UnifiedSuggestionsView: View {
 private struct HideScrollContentBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 16, *) { content.scrollContentBackground(.hidden) } else { content }
+    }
+}
+
+private struct CompactSectionSpacingModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *) { content.listSectionSpacing(.compact) } else { content }
     }
 }
 

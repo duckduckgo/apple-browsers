@@ -38,6 +38,16 @@ final class SuggestionRowMapperTests: XCTestCase {
         XCTAssertEqual(row.subtitle, UserText.autocompleteSearchDuckDuckGo)
     }
 
+    func test_history_deleteAccessory_offByDefault_onWhenRequested() {
+        let url = URL(string: "https://example.com/page")!
+        let off = SuggestionRowMapper.row(for: .historyEntry(title: "T", url: url, score: 0),
+                                          query: nil, idPrefix: "url")
+        XCTAssertEqual(off.accessory, .none)
+        let on = SuggestionRowMapper.row(for: .historyEntry(title: "T", url: url, score: 0),
+                                         query: nil, idPrefix: "url", includesDeleteAccessory: true)
+        XCTAssertEqual(on.accessory, .delete)
+    }
+
     func test_openTab_subtitlePrefixedWithSwitchToTab() {
         let url = URL(string: "https://example.com")!
         let row = SuggestionRowMapper.row(for: .openTab(title: "Tab", url: url, tabId: "1", score: 0),

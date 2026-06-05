@@ -38,6 +38,7 @@ final class UnifiedDuckAISuggestionsHost {
     private let chatViewModel: AIChatSuggestionsViewModel
     private let queryProvider: () -> String
     private let isAddressBarAtBottom: Bool
+    private let deleteHistory: (URL) async -> Void
 
     private let source: DuckAISuggestionsSource
     private let listViewModel: SuggestionsListViewModel
@@ -49,12 +50,14 @@ final class UnifiedDuckAISuggestionsHost {
          urlLoader: DuckAIURLSuggestionsLoader,
          chatViewModel: AIChatSuggestionsViewModel,
          queryProvider: @escaping () -> String,
-         isAddressBarAtBottom: Bool) {
+         isAddressBarAtBottom: Bool,
+         deleteHistory: @escaping (URL) async -> Void) {
         self.chatManager = chatManager
         self.urlLoader = urlLoader
         self.chatViewModel = chatViewModel
         self.queryProvider = queryProvider
         self.isAddressBarAtBottom = isAddressBarAtBottom
+        self.deleteHistory = deleteHistory
 
         let pipeline = DuckAISuggestionsPipeline(
             chatsPublisher: chatViewModel.$filteredSuggestions.eraseToAnyPublisher(),
@@ -111,11 +114,13 @@ final class UnifiedDuckAISuggestionsHost {
 
         parentViewController.addChild(hosting)
         containerView.addSubview(hosting.view)
+        // The SwiftUI List needs a definite height or it collapses; pin the bottom to the
+        // keyboard guide (mirrors the legacy DuckAISuggestionsViewController table pinning).
         NSLayoutConstraint.activate([
             hosting.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             hosting.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             hosting.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            hosting.view.bottomAnchor.constraint(lessThanOrEqualTo: containerView.safeAreaLayoutGuide.bottomAnchor)
+            hosting.view.bottomAnchor.constraint(equalTo: containerView.keyboardLayoutGuide.topAnchor)
         ])
         hosting.didMove(toParent: parentViewController)
         hostingController = hosting
@@ -177,7 +182,12 @@ final class UnifiedDuckAISuggestionsHost {
     }
 
     private func handleDelete(_ id: String) {
-        // Part 2b: wire history-row delete through the unified delete path.
-        _ = id
+        guard case .url(let suggestion) = source.selection(forRowID: id),
+              case .historyEntry(_, let url, _) = suggestion else { return }
+        Task { [weak self] in
+            await self?.deleteHistory(url)
+            guard let self else { return }
+            self.urlLoader.fetch(query: self.queryProvider())
+        }
     }
 }

@@ -518,7 +518,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
             queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
-            isAddressBarAtBottom: switchBarHandler.isTopBarPosition == false)
+            isAddressBarAtBottom: switchBarHandler.isTopBarPosition == false,
+            deleteHistory: { url in await dependencies.historyManager.deleteHistoryForURL(url) })
         host.delegate = self
         host.onContentChanged = { [weak self] in
             self?.refreshVisibleContent(suggestionRefresh: .none, animateContentUpdates: true)

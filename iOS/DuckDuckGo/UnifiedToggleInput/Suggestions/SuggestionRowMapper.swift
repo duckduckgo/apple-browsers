@@ -14,7 +14,12 @@ import Suggestions
 /// Title/subtitle/icon logic mirrors the legacy renderers so output is identical.
 enum SuggestionRowMapper {
 
-    static func row(for suggestion: Suggestion, query: String?, idPrefix: String) -> SuggestionRow {
+    /// `includesDeleteAccessory` adds the X-to-remove affordance to history rows. The Search
+    /// autocomplete enables it; the Duck.ai suggestions list does not (matches the legacy surface).
+    static func row(for suggestion: Suggestion,
+                    query: String?,
+                    idPrefix: String,
+                    includesDeleteAccessory: Bool = false) -> SuggestionRow {
         switch suggestion {
         case .website(let url):
             return SuggestionRow(
@@ -40,7 +45,7 @@ enum SuggestionRowMapper {
                 title: url.searchQuery ?? "",
                 query: query,
                 subtitle: UserText.autocompleteSearchDuckDuckGo,
-                accessory: .delete,
+                accessory: includesDeleteAccessory ? .delete : .none,
                 accessibilityID: "Autocomplete.Suggestions.ListItem.SERPHistory-\(url.searchQuery ?? "")")
 
         case .historyEntry(let title, let url, _):
@@ -50,7 +55,7 @@ enum SuggestionRowMapper {
                 title: title ?? url.formattedForSuggestion(),
                 query: query,
                 subtitle: title == nil ? nil : url.formattedForSuggestion(),
-                accessory: .delete,
+                accessory: includesDeleteAccessory ? .delete : .none,
                 accessibilityID: "Autocomplete.Suggestions.ListItem.History-\(url.formattedForSuggestion())")
 
         case .openTab(let title, let url, _, _):

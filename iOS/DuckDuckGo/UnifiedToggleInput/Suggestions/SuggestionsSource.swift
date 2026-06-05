@@ -45,7 +45,7 @@ final class DuckAISuggestionsSource: SuggestionsSource {
                     let q = query()
                     sections.append(SuggestionSection(
                         id: "urls",
-                        rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: q, idPrefix: "urls") }))
+                        rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: q, idPrefix: "urls", includesDeleteAccessory: true) }))
                 }
                 let q = query()
                 if !q.isEmpty {

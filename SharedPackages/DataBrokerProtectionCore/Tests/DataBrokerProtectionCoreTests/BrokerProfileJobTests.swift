@@ -786,20 +786,24 @@ private extension BrokerProfileJobTests {
         optOutJobData: [OptOutJobData] = []
     ) -> BrokerProfileQueryData {
         BrokerProfileQueryData(
-            dataBroker: dataBroker ?? .mock(withId: brokerId),
+            dataBroker: dataBroker ?? makeBroker(id: brokerId, scanActionType: .click),
             profileQuery: makeProfileQuery(id: profileQueryId),
             scanJobData: scanJobData,
             optOutJobData: optOutJobData
         )
     }
 
-    func makeSubscriptionRequiredBroker(id: Int64) -> DataBroker {
+    func makeBroker(id: Int64, scanActionType: ActionType) -> DataBroker {
         DataBroker.mockWithDefaults(
             id: id,
             steps: [
-                Step(type: .scan, actions: [MockAction(actionType: .generateEmail)])
+                Step(type: .scan, actions: [MockAction(actionType: scanActionType)])
             ]
         )
+    }
+
+    func makeSubscriptionRequiredBroker(id: Int64) -> DataBroker {
+        makeBroker(id: id, scanActionType: .generateEmail)
     }
 
     func makeScanJobData(

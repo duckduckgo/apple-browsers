@@ -160,6 +160,13 @@ final class AIChatHistoryListViewController: UIViewController {
         subscribeToViewModel()
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        /// Dismiss FireConfirmation if present. On iPad this ViewController is dismissed upon rotation
+        presentedViewController?.dismiss(animated: true)
+    }
+
     // MARK: - Private Methods
 
     private func setupView() {

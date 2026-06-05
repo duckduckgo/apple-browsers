@@ -76,7 +76,7 @@ final class NavigationPixelNavigationResponder {
         pendingNavigationType = nil
     }
 
-    /// Forwarded from `webView(_:didFinish:)`. Fires `.siteLoadingSuccess` for tracked navigations.
+    /// Forwarded from `webView(_:didFinish:)`. Fires `.siteLoadingSuccess` for navigations that passed the `willStart` gate.
     func didFinish(_ navigation: WKNavigation?) {
         guard let navigation,
               let startTime = navigation.siteLoadingStartTime,
@@ -87,8 +87,8 @@ final class NavigationPixelNavigationResponder {
     }
 
     /// Forwarded from both `webView(_:didFail:withError:)` and
-    /// `webView(_:didFailProvisionalNavigation:withError:)`. Fires `.siteLoadingFailure` for tracked
-    /// navigations.
+    /// `webView(_:didFailProvisionalNavigation:withError:)`. Fires `.siteLoadingFailure` for navigations
+    /// that passed the `willStart` gate.
     func didFail(_ navigation: WKNavigation?, error: Error) {
         guard let navigation,
               let startTime = navigation.siteLoadingStartTime,

@@ -21,8 +21,8 @@ import Navigation
 import PixelKit
 import WebKit
 
-/// Tracks user navigation journey outcomes to measure site loading success rates and rendering performance.
-/// Complements navigation attempt tracking with outcome-specific data.
+/// Measures site loading success rates and rendering performance from navigation outcomes.
+/// Complements the per-attempt navigation pixel with outcome-specific data.
 ///
 /// The `.siteLoadingTiming` case is sourced from `WKPageLoadTiming` via the BSK `Navigation` library and
 /// is therefore only fired on macOS today; iOS constructs only `.siteLoadingSuccess` / `.siteLoadingFailure`.

@@ -47,7 +47,7 @@ final class TabViewControllerSiteLoadingPixelTests: XCTestCase {
         XCTAssertFalse(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .redirect(.developer), isStartingFromErrorPage: false))
         XCTAssertFalse(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .redirect(.client(delay: 0)), isStartingFromErrorPage: false))
         XCTAssertFalse(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .alternateHtmlLoad, isStartingFromErrorPage: false))
-        // Server-side redirects (.server) should still be tracked
+        // Server-side redirects (.server) should still fire the pixel
         XCTAssertTrue(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .redirect(.server), isStartingFromErrorPage: false))
     }
 

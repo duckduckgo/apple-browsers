@@ -35,7 +35,7 @@ class DuckAISuggestionTableViewCell: UITableViewCell {
         let button = UIButton(type: .system)
         button.frame.size = Metrics.size
         button.contentHorizontalAlignment = .trailing
-        button.tintColor = UIColor(designSystemColor: .icons)
+        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
         button.addAction(action, for: .touchUpInside)
         return button
     }()

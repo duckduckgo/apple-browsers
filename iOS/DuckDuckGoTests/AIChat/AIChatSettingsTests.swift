@@ -178,60 +178,60 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
     }
 
-    // MARK: - Navigation Bar shortcut (iPad Duck.ai chrome)
+    // MARK: - Tab Bar shortcut (iPad Duck.ai chrome)
 
-    func testIsAIChatNavigationBarUserSettingsEnabled_returnsTrueByDefault_whenAIChatIsEnabled() {
+    func testIsAIChatTabBarUserSettingsEnabled_returnsTrueByDefault_whenAIChatIsEnabled() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter,
                                       featureFlagger: mockFeatureFlagger)
         // Pin the AI Chat global gate explicitly so the test only depends on
-        // showAIChatNavigationBarDefaultValue, not the isAIChatEnabled default.
+        // showAIChatTabBarDefaultValue, not the isAIChatEnabled default.
         settings.enableAIChat(enable: true)
 
-        XCTAssertTrue(settings.isAIChatNavigationBarUserSettingsEnabled)
+        XCTAssertTrue(settings.isAIChatTabBarUserSettingsEnabled)
     }
 
-    func testEnableAIChatNavigationBarUserSettings_persistsValue() {
+    func testEnableAIChatTabBarUserSettings_persistsValue() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter,
                                       featureFlagger: mockFeatureFlagger)
 
-        settings.enableAIChatNavigationBarUserSettings(enable: false)
-        XCTAssertFalse(settings.isAIChatNavigationBarUserSettingsEnabled)
+        settings.enableAIChatTabBarUserSettings(enable: false)
+        XCTAssertFalse(settings.isAIChatTabBarUserSettingsEnabled)
 
-        settings.enableAIChatNavigationBarUserSettings(enable: true)
-        XCTAssertTrue(settings.isAIChatNavigationBarUserSettingsEnabled)
+        settings.enableAIChatTabBarUserSettings(enable: true)
+        XCTAssertTrue(settings.isAIChatTabBarUserSettingsEnabled)
     }
 
-    func testIsAIChatNavigationBarUserSettingsEnabled_returnsFalse_whenAIChatGloballyDisabled() {
+    func testIsAIChatTabBarUserSettingsEnabled_returnsFalse_whenAIChatGloballyDisabled() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter,
                                       featureFlagger: mockFeatureFlagger)
-        settings.enableAIChatNavigationBarUserSettings(enable: true)
+        settings.enableAIChatTabBarUserSettings(enable: true)
         settings.enableAIChat(enable: false)
 
-        XCTAssertFalse(settings.isAIChatNavigationBarUserSettingsEnabled)
+        XCTAssertFalse(settings.isAIChatTabBarUserSettingsEnabled)
     }
 
-    func testEnableAIChatNavigationBarUserSettings_postsNotification() {
+    func testEnableAIChatTabBarUserSettings_postsNotification() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter,
                                       featureFlagger: mockFeatureFlagger)
 
-        let expectation = self.expectation(description: "Notification posted on Navigation Bar setting change")
+        let expectation = self.expectation(description: "Notification posted on Tab Bar setting change")
         let observer = mockNotificationCenter.addObserver(forName: .aiChatSettingsChanged, object: nil, queue: nil) { _ in
             expectation.fulfill()
         }
 
-        settings.enableAIChatNavigationBarUserSettings(enable: false)
+        settings.enableAIChatTabBarUserSettings(enable: false)
         waitForExpectations(timeout: 1, handler: nil)
         mockNotificationCenter.removeObserver(observer)
     }
@@ -262,7 +262,7 @@ class AIChatSettingsTests: XCTestCase {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
         XCTAssertTrue(DuckAIChromeShortcutVisibility.isChromeButtonVisible(
             featureFlagger: flagger,
-            isAIChatNavigationBarUserSettingsEnabled: true
+            isAIChatTabBarUserSettingsEnabled: true
         ))
     }
 
@@ -270,7 +270,7 @@ class AIChatSettingsTests: XCTestCase {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
         XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeButtonVisible(
             featureFlagger: flagger,
-            isAIChatNavigationBarUserSettingsEnabled: true
+            isAIChatTabBarUserSettingsEnabled: true
         ))
     }
 
@@ -278,13 +278,13 @@ class AIChatSettingsTests: XCTestCase {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
         XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeButtonVisible(
             featureFlagger: flagger,
-            isAIChatNavigationBarUserSettingsEnabled: false
+            isAIChatTabBarUserSettingsEnabled: false
         ))
     }
 
     // MARK: - DuckAIChromeShortcutVisibility — Address Bar row / button
 
-    func testDuckAIChromeShortcutVisibility_addressBarRowHidden_whenNavigationBarRowIsShown() {
+    func testDuckAIChromeShortcutVisibility_addressBarRowHidden_whenTabBarRowIsShown() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
         XCTAssertFalse(DuckAIChromeShortcutVisibility.isAddressBarRowVisible(isIPad: true, featureFlagger: flagger))
     }
@@ -302,27 +302,27 @@ class AIChatSettingsTests: XCTestCase {
     func testDuckAIChromeShortcutVisibility_addressBarButtonHidden_onIPad_atLargeWidth() {
         XCTAssertFalse(DuckAIChromeShortcutVisibility.isAddressBarButtonVisibleOnIPad(
             isLargeWidth: true,
-            isAIChatNavigationBarUserSettingsEnabled: true
+            isAIChatTabBarUserSettingsEnabled: true
         ))
     }
 
     func testDuckAIChromeShortcutVisibility_addressBarButtonVisible_onIPad_atNarrowWidth_whenSettingOn() {
         XCTAssertTrue(DuckAIChromeShortcutVisibility.isAddressBarButtonVisibleOnIPad(
             isLargeWidth: false,
-            isAIChatNavigationBarUserSettingsEnabled: true
+            isAIChatTabBarUserSettingsEnabled: true
         ))
     }
 
     func testDuckAIChromeShortcutVisibility_addressBarButtonHidden_onIPad_atNarrowWidth_whenSettingOff() {
         XCTAssertFalse(DuckAIChromeShortcutVisibility.isAddressBarButtonVisibleOnIPad(
             isLargeWidth: false,
-            isAIChatNavigationBarUserSettingsEnabled: false
+            isAIChatTabBarUserSettingsEnabled: false
         ))
     }
 
-    // MARK: - Address Bar → Navigation Bar migration
+    // MARK: - Address Bar → Tab Bar migration
 
-    func testMigration_preservesAddressBarOff_asNavigationBarOff() {
+    func testMigration_preservesAddressBarOff_asTabBarOff() {
         mockKeyValueStore.set(false, forKey: LegacyAiChatUserDefaultsKeys.showAIChatAddressBarKey)
 
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
@@ -332,7 +332,7 @@ class AIChatSettingsTests: XCTestCase {
                                       featureFlagger: mockFeatureFlagger)
         settings.enableAIChat(enable: true)
 
-        XCTAssertFalse(settings.isAIChatNavigationBarUserSettingsEnabled)
+        XCTAssertFalse(settings.isAIChatTabBarUserSettingsEnabled)
     }
 
     func testMigration_doesNothing_whenAddressBarWasOn() {
@@ -346,7 +346,7 @@ class AIChatSettingsTests: XCTestCase {
         settings.enableAIChat(enable: true)
 
         // No prior Nav Bar value, no migration override — falls through to default (true).
-        XCTAssertTrue(settings.isAIChatNavigationBarUserSettingsEnabled)
+        XCTAssertTrue(settings.isAIChatTabBarUserSettingsEnabled)
     }
 
     func testMigration_doesNothing_whenAddressBarValueNeverSet() {
@@ -357,13 +357,13 @@ class AIChatSettingsTests: XCTestCase {
                                       featureFlagger: mockFeatureFlagger)
         settings.enableAIChat(enable: true)
 
-        XCTAssertTrue(settings.isAIChatNavigationBarUserSettingsEnabled)
+        XCTAssertTrue(settings.isAIChatTabBarUserSettingsEnabled)
     }
 
-    func testMigration_doesNotOverrideExplicitNavigationBarValue() {
+    func testMigration_doesNotOverrideExplicitTabBarValue() {
         // User had Address Bar off AND Nav Bar already explicitly set to true — keep Nav Bar.
         mockKeyValueStore.set(false, forKey: LegacyAiChatUserDefaultsKeys.showAIChatAddressBarKey)
-        mockKeyValueStore.set(true, forKey: LegacyAiChatUserDefaultsKeys.showAIChatNavigationBarKey)
+        mockKeyValueStore.set(true, forKey: LegacyAiChatUserDefaultsKeys.showAIChatTabBarKey)
 
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
@@ -372,10 +372,10 @@ class AIChatSettingsTests: XCTestCase {
                                       featureFlagger: mockFeatureFlagger)
         settings.enableAIChat(enable: true)
 
-        XCTAssertTrue(settings.isAIChatNavigationBarUserSettingsEnabled)
+        XCTAssertTrue(settings.isAIChatTabBarUserSettingsEnabled)
     }
 
-    func testMigration_isOneShot_subsequentAddressBarToggleDoesNotResetNavigationBar() {
+    func testMigration_isOneShot_subsequentAddressBarToggleDoesNotResetTabBar() {
         mockKeyValueStore.set(false, forKey: LegacyAiChatUserDefaultsKeys.showAIChatAddressBarKey)
 
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
@@ -384,16 +384,16 @@ class AIChatSettingsTests: XCTestCase {
                                       notificationCenter: mockNotificationCenter,
                                       featureFlagger: mockFeatureFlagger)
         settings.enableAIChat(enable: true)
-        XCTAssertFalse(settings.isAIChatNavigationBarUserSettingsEnabled)
+        XCTAssertFalse(settings.isAIChatTabBarUserSettingsEnabled)
 
         // User then turns Nav Bar back on; a new AIChatSettings instance must not re-migrate.
-        settings.enableAIChatNavigationBarUserSettings(enable: true)
+        settings.enableAIChatTabBarUserSettings(enable: true)
         let secondInstance = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                             debugSettings: mockAIChatDebugSettings,
                                             keyValueStore: mockKeyValueStore,
                                             notificationCenter: mockNotificationCenter,
                                             featureFlagger: mockFeatureFlagger)
-        XCTAssertTrue(secondInstance.isAIChatNavigationBarUserSettingsEnabled)
+        XCTAssertTrue(secondInstance.isAIChatTabBarUserSettingsEnabled)
     }
 
 }

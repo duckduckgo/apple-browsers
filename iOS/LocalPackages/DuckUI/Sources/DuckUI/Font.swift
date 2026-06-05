@@ -18,6 +18,8 @@
 //
 
 import UIKit
+import SwiftUI
+import DesignResourcesKit
 
 extension UIFont {
 
@@ -38,16 +40,15 @@ extension UIFont {
     }
 }
 
-// MARK: - Previews
+// MARK: - Debug gallery
 
-#if DEBUG
-import SwiftUI
-
-private struct AppFontGallery: View {
+public struct AppFontGallery: View {
     private let sampleSizes: [CGFloat] = [13, 15, 17, 22]
     private let sample = "DuckDuckGo — The quick brown fox jumps over the lazy dog 0123456789"
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 section("UIFont.lightAppFont(ofSize:)") { size in
@@ -66,12 +67,13 @@ private struct AppFontGallery: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 24)
         }
+        .background(Color(designSystemColor: .background))
     }
 
     @ViewBuilder
     private func section(_ title: String, font: @escaping (CGFloat) -> UIFont) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+            Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 .foregroundColor(.secondary)
             ForEach(sampleSizes, id: \.self) { size in
@@ -80,7 +82,7 @@ private struct AppFontGallery: View {
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(.secondary)
                         .frame(width: 36, alignment: .trailing)
-                    Text(sample)
+                    Text(verbatim: sample)
                         .font(Font(uiFont: font(size)))
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -90,13 +92,16 @@ private struct AppFontGallery: View {
     }
 }
 
+#if DEBUG
 #Preview("Fonts / Light") {
     AppFontGallery()
+        .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
 }
 
 #Preview("Fonts / Dark") {
     AppFontGallery()
+        .environment(\.colorScheme, .dark)
         .preferredColorScheme(.dark)
 }
 

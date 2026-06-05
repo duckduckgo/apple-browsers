@@ -37,6 +37,10 @@ extension MainViewController {
         static let floatingReturnKeyActiveAnchorPriority = UILayoutPriority(999)
         static let floatingReturnKeyInactiveAnchorPriority = UILayoutPriority(250)
 
+        /// Gap kept between the bottom of the expanded UTI and the top of the keyboard when
+        /// constraining the UTI's growth to the available space (landscape).
+        static let utiLandscapeKeyboardGap: CGFloat = 8
+
         // Bottom is longer to accommodate concurrent keyboard descent.
         static func omnibarTransitionDuration(isBottom: Bool) -> TimeInterval {
             isBottom ? 0.35 : 0.25
@@ -323,11 +327,36 @@ extension MainViewController {
               coordinator.isInputEditing else {
             return
         }
-        let height = coordinator.editingHeight()
+        updateLandscapeEditingCap()
+        var height = coordinator.editingHeight()
+        if let cap = landscapeEditingHeightCap {
+            height = min(height, cap)
+        }
         guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else { return }
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         coordinator.pushContentInsets()
+    }
+
+    /// Caps the expandable editing field to the space above the keyboard in landscape (the field
+    /// scrolls internally), and lifts the cap in portrait. The single source of truth for the cap;
+    /// call it from any path that changes the keyboard, orientation, or content.
+    func updateLandscapeEditingCap() {
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isInputEditing else { return }
+        coordinator.viewController.setAvailableExpandedHeight(landscapeEditingHeightCap)
+    }
+
+    /// Height budget above the keyboard the expanded UTI must fit within, or nil when unconstrained.
+    var landscapeEditingHeightCap: CGFloat? {
+        isPhoneLandscape ? availableUTIEditingHeight() : nil
+    }
+
+    private func availableUTIEditingHeight() -> CGFloat {
+        // Measure from the top safe-area edge — a stable reference. The container's own top moves
+        // with its height when it's keyboard-anchored from the bottom, so it can't be used here.
+        let keyboardTopY = view.keyboardLayoutGuide.layoutFrame.minY
+        let safeAreaTopY = view.safeAreaInsets.top
+        return max(0, keyboardTopY - safeAreaTopY - Constants.utiLandscapeKeyboardGap)
     }
 
 }
@@ -444,6 +473,8 @@ private extension MainViewController {
             .sink { [weak self] in
                 guard let self, let coordinator = unifiedToggleInputCoordinator else { return }
                 if coordinator.isInputEditing {
+                    // Attachments grow the card, so re-cap before sizing or it overflows in landscape.
+                    updateLandscapeEditingCap()
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
                 }
                 updateFloatingReturnKeyVisibility()
@@ -932,8 +963,18 @@ extension MainViewController {
     func updateFloatingReturnKeyVisibility() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         let renderState = coordinator.computeRenderState()
-        updateFloatingReturnKeyAnchor(aboveUnifiedInput: renderState.isFloatingReturnKeyVisible && renderState.cardPosition == .bottom)
-        coordinator.floatingReturnKeyViewController.view.isHidden = !renderState.isFloatingReturnKeyVisible
+        // In phone landscape the return key moves into the tools toolbar (between the model
+        // chip and submit) so it clears the Dynamic Island; otherwise it floats above the UTI.
+        let useInlineToolbarReturnKey = renderState.isFloatingReturnKeyVisible && isPhoneLandscape
+        let showFloating = renderState.isFloatingReturnKeyVisible && !isPhoneLandscape
+        updateFloatingReturnKeyAnchor(aboveUnifiedInput: showFloating && renderState.cardPosition == .bottom)
+        coordinator.floatingReturnKeyViewController.view.isHidden = !showFloating
+        coordinator.viewController.isToolbarReturnKeyHidden = !useInlineToolbarReturnKey
+    }
+
+    var isPhoneLandscape: Bool {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return false }
+        return view.window?.windowScene?.interfaceOrientation.isLandscape ?? false
     }
 
     func updateFloatingReturnKeyAnchor(aboveUnifiedInput: Bool) {

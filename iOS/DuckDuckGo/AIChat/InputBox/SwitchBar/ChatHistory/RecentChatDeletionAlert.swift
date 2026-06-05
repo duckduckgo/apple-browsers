@@ -24,16 +24,15 @@ import UIKit
 class RecentChatDeletionAlert {
 
     @MainActor
-    static func show(for suggestion: AIChatSuggestion, presenter: UIViewController, confirmed: @escaping () -> Void) {
+    static func show(for suggestion: AIChatSuggestion, presenter: UIViewController, onCancel: @escaping () -> Void, onConfirm: @escaping () -> Void) {
         let alert = UIAlertController(title: UserText.removeRecentChatConfirmationTitle,
                                       message: String(format: UserText.removeRecentChatConfirmationMessage, suggestion.title),
                                       preferredStyle: .alert)
         alert.addAction(title: UserText.actionCancel, style: .cancel) {
-            // TODO: Wire Pixel
+            onCancel()
         }
         alert.addAction(title: UserText.removeRecentChatConfirmationButton, style: .destructive) {
-            // TODO: Wire Pixel
-            confirmed()
+            onConfirm()
         }
 
         presenter.present(alert, animated: true)

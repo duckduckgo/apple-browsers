@@ -342,8 +342,14 @@ private extension AIChatHistoryListViewController {
     }
 
     func presentChatDeletionConfirmation(chat: AIChatSuggestion) {
-        RecentChatDeletionAlert.show(for: chat, presenter: self) { [weak self] in
+        DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
+
+        RecentChatDeletionAlert.show(for: chat, presenter: self) {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
+
+        } onConfirm: { [weak self] in
             self?.onChatDeleted(chat)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteConfirmed)
         }
     }
 }

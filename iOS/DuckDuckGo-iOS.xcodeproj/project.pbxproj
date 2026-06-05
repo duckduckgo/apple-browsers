@@ -2201,6 +2201,7 @@
 		CBB4A85F2FD3193D00A65956 /* UnifiedSuggestionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A85E2FD3193D00A65956 /* UnifiedSuggestionsViewModelTests.swift */; };
 		CBB4A8612FD3194900A65956 /* UnifiedSuggestionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8602FD3194900A65956 /* UnifiedSuggestionsViewModel.swift */; };
 		CBB4A8652FD31A0A00A65956 /* SuggestionsFavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8642FD31A0A00A65956 /* SuggestionsFavoritesView.swift */; };
+		CBB4A8672FD31A4D00A65956 /* UnifiedSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8662FD31A4D00A65956 /* UnifiedSuggestionsView.swift */; };
 		CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */; };
 		CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE22C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift */; };
 		CBC88EE52C8097B500F0F8C5 /* URLCredentialCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE42C8097B500F0F8C5 /* URLCredentialCreator.swift */; };
@@ -4891,6 +4892,7 @@
 		CBB4A85E2FD3193D00A65956 /* UnifiedSuggestionsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsViewModelTests.swift; sourceTree = "<group>"; };
 		CBB4A8602FD3194900A65956 /* UnifiedSuggestionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsViewModel.swift; sourceTree = "<group>"; };
 		CBB4A8642FD31A0A00A65956 /* SuggestionsFavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsFavoritesView.swift; sourceTree = "<group>"; };
+		CBB4A8662FD31A4D00A65956 /* UnifiedSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsView.swift; sourceTree = "<group>"; };
 		CBB6B2542AF6D543006B777C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC7AB542AF6D583008CB798 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScriptTests.swift; sourceTree = "<group>"; };
@@ -10115,6 +10117,7 @@
 				CBB4A85C2FD318BE00A65956 /* SearchSuggestionsSource.swift */,
 				CBB4A8602FD3194900A65956 /* UnifiedSuggestionsViewModel.swift */,
 				CBB4A8642FD31A0A00A65956 /* SuggestionsFavoritesView.swift */,
+				CBB4A8662FD31A4D00A65956 /* UnifiedSuggestionsView.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -12689,6 +12692,7 @@
 				EE458D0D2AB1DA4600FC651A /* EventMapping+NetworkProtectionError.swift in Sources */,
 				6F5DCFCE2E854C2000758C8A /* UniversalOmniBarEditingStateTransition.swift in Sources */,
 				9F8828482EBAAF68006C878B /* ModalPromptCoordinationDebugMenu.swift in Sources */,
+				CBB4A8672FD31A4D00A65956 /* UnifiedSuggestionsView.swift in Sources */,
 				F44D279F27F331BB0037F371 /* AutofillLoginPromptViewController.swift in Sources */,
 				C1BF0BA529B63D7200482B73 /* AutofillLoginPromptHelper.swift in Sources */,
 				56BE17D52DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift in Sources */,

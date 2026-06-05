@@ -266,6 +266,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     @IBAction func onNewTabPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .tabBarNewTab)
         requestNewTab(type: .currentMode)
     }
 
@@ -290,6 +291,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
         recomputeItemSize()
         reloadData()
+        fireUsageDailyPixels()
 
         if scrollToSelected {
             DispatchQueue.main.async {
@@ -312,6 +314,23 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
             flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
+        }
+    }
+
+    /// Once-per-day baseline snapshots: open-tab count (bucketed) and whether the strip overflows
+    /// (scroll required). DailyPixel dedupes per day, so these capture the first qualifying state of the day.
+    private func fireUsageDailyPixels() {
+        guard tabsCount > 0 else { return }
+
+        if let tabCountBucket = TabSwitcherOpenDailyPixel.tabCountBucket(forCount: tabsCount) {
+            // Shared "tab_count" bucket param (matches m_tab_manager_opened_daily), not the legacy PixelParameters.tabCount ("tc").
+            DailyPixel.fire(pixel: .tabBarOpenTabCountDaily, withAdditionalParameters: ["tab_count": tabCountBucket])
+        }
+
+        let availableWidth = collectionView.frame.size.width
+        let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
+        if availableWidth > 0, itemWidth > 0, CGFloat(tabsCount) * itemWidth > availableWidth {
+            DailyPixel.fire(pixel: .tabBarOverflowDaily)
         }
     }
 
@@ -524,6 +543,7 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        DailyPixel.fireDailyAndCount(pixel: .tabBarTabSelected)
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
 
@@ -568,6 +588,8 @@ extension TabsBarViewController: UICollectionViewDataSource {
             guard let self = self, let model = model,
                 let tabIndex = self.tabsModel?.indexOf(tab: model)
                 else { return }
+            let tabState = tabIndex == self.currentIndex ? "active" : "inactive"
+            DailyPixel.fireDailyAndCount(pixel: .tabBarTabClosed, withAdditionalParameters: [PixelParameters.tabState: tabState])
             self.delegate?.tabsBar(self, didRemoveTabAtIndex: tabIndex)
         }
         return cell

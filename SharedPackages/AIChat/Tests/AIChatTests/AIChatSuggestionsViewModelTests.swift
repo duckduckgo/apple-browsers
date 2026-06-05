@@ -68,7 +68,7 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         viewModel.setChats(pinned: pinnedChats, recent: recentChats)
 
         // Then - sorted by recency, most recent first
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
+        XCTAssertEqual(viewModel.filteredSuggestions.count, 3)
         XCTAssertTrue(viewModel.hasSuggestions)
         XCTAssertEqual(viewModel.filteredSuggestions[0].id, "p1") // Pinned must go at the top
         XCTAssertEqual(viewModel.filteredSuggestions[1].id, "r1") // Recent

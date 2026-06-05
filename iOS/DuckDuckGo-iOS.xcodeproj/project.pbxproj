@@ -2198,6 +2198,8 @@
 		CBB4A8592FD3180500A65956 /* SearchSuggestionsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8582FD3180500A65956 /* SearchSuggestionsLoader.swift */; };
 		CBB4A85B2FD318A500A65956 /* SearchSuggestionsSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A85A2FD318A500A65956 /* SearchSuggestionsSourceTests.swift */; };
 		CBB4A85D2FD318BE00A65956 /* SearchSuggestionsSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A85C2FD318BE00A65956 /* SearchSuggestionsSource.swift */; };
+		CBB4A85F2FD3193D00A65956 /* UnifiedSuggestionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A85E2FD3193D00A65956 /* UnifiedSuggestionsViewModelTests.swift */; };
+		CBB4A8612FD3194900A65956 /* UnifiedSuggestionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8602FD3194900A65956 /* UnifiedSuggestionsViewModel.swift */; };
 		CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */; };
 		CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE22C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift */; };
 		CBC88EE52C8097B500F0F8C5 /* URLCredentialCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE42C8097B500F0F8C5 /* URLCredentialCreator.swift */; };
@@ -4885,6 +4887,8 @@
 		CBB4A8582FD3180500A65956 /* SearchSuggestionsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchSuggestionsLoader.swift; sourceTree = "<group>"; };
 		CBB4A85A2FD318A500A65956 /* SearchSuggestionsSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchSuggestionsSourceTests.swift; sourceTree = "<group>"; };
 		CBB4A85C2FD318BE00A65956 /* SearchSuggestionsSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchSuggestionsSource.swift; sourceTree = "<group>"; };
+		CBB4A85E2FD3193D00A65956 /* UnifiedSuggestionsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsViewModelTests.swift; sourceTree = "<group>"; };
+		CBB4A8602FD3194900A65956 /* UnifiedSuggestionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsViewModel.swift; sourceTree = "<group>"; };
 		CBB6B2542AF6D543006B777C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC7AB542AF6D583008CB798 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScriptTests.swift; sourceTree = "<group>"; };
@@ -10107,6 +10111,7 @@
 				CBB4A8562FD3047E00A65956 /* UnifiedDuckAISuggestionsHost.swift */,
 				CBB4A8582FD3180500A65956 /* SearchSuggestionsLoader.swift */,
 				CBB4A85C2FD318BE00A65956 /* SearchSuggestionsSource.swift */,
+				CBB4A8602FD3194900A65956 /* UnifiedSuggestionsViewModel.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -10120,6 +10125,7 @@
 				CBB4A84A2FD2FB7600A65956 /* SuggestionsListViewModelTests.swift */,
 				CBB4A8502FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift */,
 				CBB4A85A2FD318A500A65956 /* SearchSuggestionsSourceTests.swift */,
+				CBB4A85E2FD3193D00A65956 /* UnifiedSuggestionsViewModelTests.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -12795,6 +12801,7 @@
 				CBAD0F1D2D02EE43006267B8 /* IdleReturnNTPDebugView.swift in Sources */,
 				F4D9C4FA25117A0F00814B71 /* HomeMessageStorage.swift in Sources */,
 				6F5041C92CC11A5100989E48 /* NewTabPageView.swift in Sources */,
+				CBB4A8612FD3194900A65956 /* UnifiedSuggestionsViewModel.swift in Sources */,
 				CBAD0F212D02EE46006267B8 /* EscapeHatchModel.swift in Sources */,
 				CBAD0F232D02EE47006267B8 /* ReturnToTabCard.swift in Sources */,
 				BFA000022F90000000FEEE01 /* FreemiumPIREligibility.swift in Sources */,
@@ -14107,6 +14114,7 @@
 				564DE45A2C450BE600D23241 /* DaxDialogsNewTabTests.swift in Sources */,
 				8521FDE6238D414B00A44CC3 /* FileStoreTests.swift in Sources */,
 				F14E491F1E391CE900DC037C /* URLExtensionTests.swift in Sources */,
+				CBB4A85F2FD3193D00A65956 /* UnifiedSuggestionsViewModelTests.swift in Sources */,
 				9FBC76672CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift in Sources */,
 				9F23B8062C2BE22700950875 /* OnboardingIntroViewModelTests.swift in Sources */,
 				C1D9D8E82F6CD61100B8A123 /* OnboardingRestorePromptHandlerTests.swift in Sources */,

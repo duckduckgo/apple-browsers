@@ -30,10 +30,7 @@ import Common
 
     /// See: `Launching.swift`
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // SwiftUI Previews launch the app but must not load the full environment
-        // (databases, keychain, app group containers), which isn't provisioned in
-        // the preview sandbox. Skip app initialization entirely so previews can render
-        // without crashing on the unavailable app group container.
+        // SwiftUI Previews run without the app group container, so skip app initialization to avoid crashing.
         guard AppVersion.runType != .xcPreviews else { return true }
 
         let isTesting: Bool = ProcessInfo().arguments.contains("testing")

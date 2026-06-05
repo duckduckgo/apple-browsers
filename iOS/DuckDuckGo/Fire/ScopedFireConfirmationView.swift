@@ -161,9 +161,7 @@ private final class PreviewDownloadManager: DownloadManaging {
 }
 
 #Preview {
-    // Inject lightweight dependencies so the preview doesn't touch
-    // `AppDependencyProvider.shared` / `ContentBlocking.shared`, which require the
-    // app group container that isn't available in SwiftUI Previews.
+    // Lightweight dependencies so the preview avoids the app-group-backed shared providers.
     ScopedFireConfirmationView(
         viewModel: ScopedFireConfirmationViewModel(
             tabViewModel: nil,

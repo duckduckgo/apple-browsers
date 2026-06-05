@@ -1,5 +1,5 @@
 //
-//  ButtonStackMetrics.swift
+//  ContainerMetrics.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,20 +19,14 @@
 #if os(iOS)
 import SwiftUI
 
-/// Spacing for rebranded button stacks.
-public enum ButtonStackMetrics {
+/// Corner radius for rebranded container surfaces (cards, popups, panels). Sheets use `SheetMetrics.cornerRadius`.
+public enum ContainerMetrics {
 
-    private static let interButtonSpacingMetric = MetricBuilder<CGFloat>(default: 8)
-    private static let containerPaddingMetric = MetricBuilder<CGFloat>(default: 24)
+    private static let cornerRadiusMetric = MetricBuilder<CGFloat>(default: 26)
 
-    /// Vertical gap between stacked buttons.
-    @MainActor public static var interButtonSpacing: CGFloat {
-        interButtonSpacingMetric.build()
-    }
-
-    /// Padding around a button stack (or a single full-width button).
-    @MainActor public static var containerPadding: CGFloat {
-        containerPaddingMetric.build()
+    /// Corner radius for a container surface.
+    @MainActor public static var cornerRadius: CGFloat {
+        cornerRadiusMetric.build()
     }
 }
 #endif

@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 import DuckUI
 import BrowserServicesKit
 import Lottie
+import MetricBuilder
 
 struct DataImportSummaryView: View {
 
@@ -411,7 +412,7 @@ struct DataImportSummaryView: View {
             }
             .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 24)
+                RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                     .fill(Color(designSystemColor: .surface))
             )
         }
@@ -455,7 +456,7 @@ struct DataImportSummaryView: View {
             }
             .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 24)
+                RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                     .fill(Color(designSystemColor: .surface))
             )
         }

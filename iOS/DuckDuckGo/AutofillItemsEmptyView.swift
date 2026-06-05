@@ -82,9 +82,7 @@ struct AutofillItemsEmptyView: View {
                     .buttonStyle(PrimaryButtonStyle(compact: true))
                 }
             }
-            // Both buttons share one width, dictated by the wider title: the buttons are
-            // full-width (fill their frame) and `.fixedSize(horizontal:)` collapses the
-            // group to the wider button's intrinsic width, which both then fill.
+            // fixedSize sizes both buttons to the wider title's width.
             .fixedSize(horizontal: true, vertical: false)
             .padding(8)
         }

@@ -96,7 +96,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private var swipeContainerManager: SwipeContainerManager?
     private var suggestionTrayManager: SuggestionTrayManager?
-    private var duckAISuggestionsHost: UnifiedDuckAISuggestionsHost?
+    private var duckAISuggestionsHost: UnifiedSuggestionsHost?
     private var urlAutocompleteTask: URLSessionDataTask?
     private var isContentActive = false
     private var needsVisibleRefresh = true
@@ -513,19 +513,69 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
         let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource)
 
-        let host = UnifiedDuckAISuggestionsHost(
-            chatManager: chatManager,
-            urlLoader: urlLoader,
-            chatViewModel: chatViewModel,
-            queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
+        let pipeline = DuckAISuggestionsPipeline(
+            chatsPublisher: chatViewModel.$filteredSuggestions.eraseToAnyPublisher(),
+            urlsPublisher: urlLoader.$topURLs.eraseToAnyPublisher(),
+            latestDispatchedQuery: { [weak self] in self?.switchBarHandler.currentText ?? "" },
+            lastCompletedURLQuery: { [weak urlLoader] in urlLoader?.lastCompletedFetchQuery ?? "" })
+        let source = DuckAISuggestionsSource(snapshotPublisher: pipeline.snapshotPublisher,
+                                             query: { [weak self] in self?.switchBarHandler.currentText ?? "" })
+
+        // Duck.ai inputs: typing drives list vs recents/logo; resultsPending suppresses Dax flash.
+        let inputsPublisher = Publishers.CombineLatest3(
+            switchBarHandler.currentTextPublisher.map { !$0.isEmpty },
+            chatViewModel.$filteredSuggestions.map { !$0.isEmpty },
+            urlLoader.$topURLs.map { _ in () }.prepend(())
+        )
+        .map { [weak chatManager, weak urlLoader, weak self] isTyping, hasRecents, _ -> UnifiedSuggestionsInputs in
+            let query = self?.switchBarHandler.currentText ?? ""
+            let settled = chatManager?.lastCompletedFetchQuery == query
+                && urlLoader?.lastCompletedFetchQuery == query
+            return UnifiedSuggestionsInputs(
+                mode: .aiChat,
+                isTyping: isTyping,
+                hasFavorites: false,
+                hasMessages: false,
+                hasRecents: hasRecents,
+                resultsPending: !settled)
+        }
+        .eraseToAnyPublisher()
+
+        let queryProvider = { [weak self] in self?.switchBarHandler.currentText ?? "" }
+
+        let config = UnifiedSuggestionsHostConfig(
+            source: source,
+            inputsPublisher: inputsPublisher,
             isAddressBarAtBottom: switchBarHandler.isTopBarPosition == false,
-            deleteHistory: { url in await dependencies.historyManager.deleteHistoryForURL(url) })
-        host.delegate = self
+            favoritesProvider: { nil },
+            onSelectRow: { [weak self] id in self?.handleDuckAISuggestionSelect(id, source: source) },
+            onDeleteRow: { [weak self] id in self?.handleDuckAISuggestionDelete(id, source: source, urlLoader: urlLoader, queryProvider: queryProvider, dependencies: dependencies) },
+            onTapAheadRow: { [weak self] id in self?.handleDuckAISuggestionSelect(id, source: source) },
+            hasContent: { [weak chatViewModel, weak urlLoader, weak self] in
+                !(chatViewModel?.filteredSuggestions.isEmpty ?? true)
+                    || !(urlLoader?.topURLs.isEmpty ?? true)
+                    || !(self?.switchBarHandler.currentText.isEmpty ?? true)
+            },
+            hasSettled: { [weak chatManager, weak urlLoader] query in
+                chatManager?.lastCompletedFetchQuery == query
+                    && urlLoader?.lastCompletedFetchQuery == query
+            },
+            onStart: { [weak chatManager, weak urlLoader, weak self] in
+                guard let self else { return }
+                chatManager?.subscribeToTextChanges(self.switchBarHandler.currentTextPublisher)
+                urlLoader?.subscribeToTextChanges(self.switchBarHandler.currentTextPublisher)
+                chatManager?.onFetchCompleted = { [weak self] _, _ in self?.updateDaxVisibility() }
+                chatManager?.refreshSuggestions(query: self.switchBarHandler.currentText)
+            },
+            onTearDown: { [weak chatManager, weak urlLoader] in
+                chatManager?.tearDown()
+                urlLoader?.tearDown()
+            }
+        )
+
+        let host = UnifiedSuggestionsHost(config: config)
         host.onContentChanged = { [weak self] in
             self?.refreshVisibleContent(suggestionRefresh: .none, animateContentUpdates: true)
-        }
-        chatManager.onFetchCompleted = { [weak self] _, _ in
-            self?.updateDaxVisibility()
         }
         // Part 2b: sync promo (syncPromoManager / syncService wiring deferred)
         host.start(in: swipeContainerManager.chatPageContainer,
@@ -535,6 +585,28 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
         duckAISuggestionsHost = host
         updateDuckAISuggestionsActiveState()
+    }
+
+    private func handleDuckAISuggestionSelect(_ id: String, source: DuckAISuggestionsSource) {
+        switch source.selection(forRowID: id) {
+        case .chat(let chat): duckAISuggestionsDidSelectChat(chat)
+        case .url(let suggestion): duckAISuggestionsDidSelectURL(suggestion)
+        case .searchDuckDuckGo(let query): duckAISuggestionsDidSelectSearchDuckDuckGo(query: query)
+        case .none: break
+        }
+    }
+
+    private func handleDuckAISuggestionDelete(_ id: String,
+                                               source: DuckAISuggestionsSource,
+                                               urlLoader: DuckAIURLSuggestionsLoader,
+                                               queryProvider: @escaping () -> String,
+                                               dependencies: SuggestionTrayDependencies) {
+        guard case .url(let suggestion) = source.selection(forRowID: id),
+              case .historyEntry(_, let url, _) = suggestion else { return }
+        Task {
+            await dependencies.historyManager.deleteHistoryForURL(url)
+            urlLoader.fetch(query: queryProvider())
+        }
     }
 
     private func installDaxLogoView() {

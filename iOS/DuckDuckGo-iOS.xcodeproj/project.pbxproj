@@ -2189,6 +2189,9 @@
 		CBB4A8472FD2FB2600A65956 /* SuggestionsListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8462FD2FB2600A65956 /* SuggestionsListViewModel.swift */; };
 		CBB4A8492FD2FB6600A65956 /* DuckAISuggestionsPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8482FD2FB6600A65956 /* DuckAISuggestionsPipelineTests.swift */; };
 		CBB4A84B2FD2FB7600A65956 /* SuggestionsListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A84A2FD2FB7600A65956 /* SuggestionsListViewModelTests.swift */; };
+		CBB4A84D2FD3019400A65956 /* SuggestionRowIcon+Glyph.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A84C2FD3019400A65956 /* SuggestionRowIcon+Glyph.swift */; };
+		CBB4A84F2FD301AA00A65956 /* SuggestionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A84E2FD301AA00A65956 /* SuggestionRowView.swift */; };
+		CBB4A8512FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8502FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift */; };
 		CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */; };
 		CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE22C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift */; };
 		CBC88EE52C8097B500F0F8C5 /* URLCredentialCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE42C8097B500F0F8C5 /* URLCredentialCreator.swift */; };
@@ -4867,6 +4870,9 @@
 		CBB4A8462FD2FB2600A65956 /* SuggestionsListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsListViewModel.swift; sourceTree = "<group>"; };
 		CBB4A8482FD2FB6600A65956 /* DuckAISuggestionsPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsPipelineTests.swift; sourceTree = "<group>"; };
 		CBB4A84A2FD2FB7600A65956 /* SuggestionsListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsListViewModelTests.swift; sourceTree = "<group>"; };
+		CBB4A84C2FD3019400A65956 /* SuggestionRowIcon+Glyph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SuggestionRowIcon+Glyph.swift"; sourceTree = "<group>"; };
+		CBB4A84E2FD301AA00A65956 /* SuggestionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionRowView.swift; sourceTree = "<group>"; };
+		CBB4A8502FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsSelectionTests.swift; sourceTree = "<group>"; };
 		CBB6B2542AF6D543006B777C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC7AB542AF6D583008CB798 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScriptTests.swift; sourceTree = "<group>"; };
@@ -10082,6 +10088,8 @@
 				CBB4A8422FD2FB0E00A65956 /* DuckAISuggestionsPipeline.swift */,
 				CBB4A8442FD2FB1C00A65956 /* SuggestionsSource.swift */,
 				CBB4A8462FD2FB2600A65956 /* SuggestionsListViewModel.swift */,
+				CBB4A84C2FD3019400A65956 /* SuggestionRowIcon+Glyph.swift */,
+				CBB4A84E2FD301AA00A65956 /* SuggestionRowView.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -10093,6 +10101,7 @@
 				CBE77C7A2FD2F4A000CB7C6D /* UnifiedSuggestionsContentResolverTests.swift */,
 				CBB4A8482FD2FB6600A65956 /* DuckAISuggestionsPipelineTests.swift */,
 				CBB4A84A2FD2FB7600A65956 /* SuggestionsListViewModelTests.swift */,
+				CBB4A8502FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -13214,6 +13223,7 @@
 				84AD2FE12F87E95200151B7F /* OnboardingResumeStepStore.swift in Sources */,
 				9FD6E6132DFA6B4900C2B032 /* PictureInPictureEvent.swift in Sources */,
 				31951E8E2823003200CAF535 /* AutofillLoginDetailsHeaderView.swift in Sources */,
+				CBB4A84D2FD3019400A65956 /* SuggestionRowIcon+Glyph.swift in Sources */,
 				F194FAED1F14E2B3009B4DF8 /* UIFontExtension.swift in Sources */,
 				D67969112BC84CE700BA8B34 /* SubscriptionContainerViewModel.swift in Sources */,
 				9F5179D82D54598800E40B40 /* DaxDialogsOnboardingMigrator.swift in Sources */,
@@ -13584,6 +13594,7 @@
 				F4F6DFB626E6B71300ED7E12 /* BookmarkFoldersTableViewController.swift in Sources */,
 				8586A11024CCCD040049720E /* TabsBarViewController.swift in Sources */,
 				3119AA0A2E84A1B100A1C001 /* DuckAIChromeChipView.swift in Sources */,
+				CBB4A84F2FD301AA00A65956 /* SuggestionRowView.swift in Sources */,
 				1ECED0812F87B45B00E2C38E /* AdBlockingNavigationHandler.swift in Sources */,
 				1ECED0832F87B45B00E2C38E /* AdBlockingAvailability.swift in Sources */,
 				1ECED0912F87B45B00E2C38E /* AdBlockingDebugView.swift in Sources */,
@@ -14105,6 +14116,7 @@
 				3170048227A9504F00C03F35 /* DownloadMocks.swift in Sources */,
 				317045C02858C6B90016ED1F /* AutofillInterfaceEmailTruncatorTests.swift in Sources */,
 				65D748412D9D34C900554B1D /* DuckPlayerNativeUIPresenterTests.swift in Sources */,
+				CBB4A8512FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift in Sources */,
 				987130C6294AAB9F00AB05E0 /* BookmarkListViewModelTests.swift in Sources */,
 				CB22D7A22FC603EB00128979 /* MainViewControllerRefreshActionTests.swift in Sources */,
 				CCC9F3BA2EA66E0F00D442CA /* VPNSubscriptionPromotionHelperTests.swift in Sources */,

@@ -47,7 +47,6 @@ final class UnifiedToggleInputToggleView: UIView {
 
     // MARK: - Drag State
 
-    private let selectionFeedback = UISelectionFeedbackGenerator()
     private var dragStartMode: TextEntryMode = .aiChat
     /// Resting leading-x of the indicator for each mode, in this view's coordinate space,
     /// captured at drag start so the gesture stays correct across resize / rotation / Dynamic Type.
@@ -222,7 +221,6 @@ final class UnifiedToggleInputToggleView: UIView {
         guard mode != selectedMode else { return }
         selectedMode = mode
         updateIndicator(animated: true)
-        selectionFeedback.selectionChanged()
         updateButtonAppearance()
         onModeChanged?(mode)
     }
@@ -243,7 +241,6 @@ final class UnifiedToggleInputToggleView: UIView {
     }
 
     private func beginDrag() {
-        selectionFeedback.prepare()
         dragStartMode = selectedMode
         // Indicator rest positions equal the buttons' leading edges (see the indicator constraints).
         dragSearchRestX = convert(searchButton.bounds, from: searchButton).minX
@@ -286,7 +283,6 @@ final class UnifiedToggleInputToggleView: UIView {
         selectedMode = target
         updateIndicator(animated: true)
         guard modeChanged else { return }
-        selectionFeedback.selectionChanged()
         updateButtonAppearance()
         onModeChanged?(target)
     }

@@ -218,7 +218,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         if let featureFlagger, let aiChatSettings {
             isVisible = DuckAIChromeShortcutVisibility.isChromeButtonVisible(
                 featureFlagger: featureFlagger,
-                isAIChatNavigationBarUserSettingsEnabled: aiChatSettings.isAIChatNavigationBarUserSettingsEnabled
+                isAIChatTabBarUserSettingsEnabled: aiChatSettings.isAIChatTabBarUserSettingsEnabled
             )
         } else {
             isVisible = false
@@ -227,13 +227,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     /// Pushes per-tab state into the chip. Called by `MainViewController` when the
-    /// current tab changes, its URL changes (Duck.ai vs not), or its contextual sheet
-    /// is presented/dismissed.
-    func updateAIChatChipState(isCurrentTabAIChat: Bool, isCurrentTabHome: Bool, isContextualSheetPresented: Bool) {
+    /// current tab changes or its contextual sheet is presented/dismissed.
+    func updateAIChatChipState(isContextualSheetPresented: Bool) {
         aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
-        // The icon half toggles the page-context sheet; hide it where there's no page to attach
-        // — Duck.ai tabs and the New Tab Page.
-        aiChatChip.setIconVisible(!isCurrentTabAIChat && !isCurrentTabHome)
     }
 
     @IBAction func onFireButtonPressed() {
@@ -467,7 +463,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 completion([
                     UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
                         DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
-                        self?.aiChatSettings?.enableAIChatNavigationBarUserSettings(enable: false)
+                        self?.aiChatSettings?.enableAIChatTabBarUserSettings(enable: false)
                     },
                     UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
                         guard let self else { return }

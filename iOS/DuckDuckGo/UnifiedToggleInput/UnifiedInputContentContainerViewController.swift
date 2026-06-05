@@ -97,6 +97,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var swipeContainerManager: SwipeContainerManager?
     private var suggestionTrayManager: SuggestionTrayManager?
     private var duckAISuggestionsHost: UnifiedSuggestionsHost?
+    private var searchSuggestionsHost: UnifiedSuggestionsHost?
     private var urlAutocompleteTask: URLSessionDataTask?
     private var isContentActive = false
     private var needsVisibleRefresh = true
@@ -257,8 +258,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // The model self-updates `openTabCount` from `TabManaging.tabsModel(for:).tabsPublisher`, so SwiftUI consumers redraw reactively.
         suggestionTrayManager?.setEscapeHatch(model)
         // Fire tabs render their own empty state via DaxLogoManager — suppress the hatch to avoid stacking affordances.
-        let duckAIHatchModel = switchBarHandler.isFireTab ? nil : model
-        duckAISuggestionsHost?.setEscapeHatch(duckAIHatchModel)
+        let nonFireHatchModel = switchBarHandler.isFireTab ? nil : model
+        duckAISuggestionsHost?.setEscapeHatch(nonFireHatchModel)
+        searchSuggestionsHost?.setEscapeHatch(nonFireHatchModel)
         updateEscapeHatchTopInset()
         // The dax offset depends on hatch presence (`hatchClearance` is added when present),
         // so refresh visibility when the hatch is added or removed mid-session.
@@ -271,11 +273,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         Self.computeSuggestionTrayEscapeHatchInset(hasEscapeHatch: escapeHatchModel != nil)
     }
 
-    /// Updates both surfaces' top insets so the escape hatch aligns with the NTP hatch.
+    /// Updates all surfaces' top insets so the escape hatch aligns with the NTP hatch.
     private func updateEscapeHatchTopInset() {
         let inset = escapeHatchTopInset
         suggestionTrayManager?.setAdditionalTopInset(inset)
         duckAISuggestionsHost?.setAdditionalTopInset(inset)
+        searchSuggestionsHost?.setAdditionalTopInset(inset)
     }
 
     /// Returns the top inset needed so the UTI escape hatch lines up with the NTP
@@ -370,7 +373,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private func installComponents() {
         installSwipeContainer()
-        installSuggestionsTray()
+        installUnifiedSearch()
         installDaxLogoView()
     }
 
@@ -455,6 +458,131 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                                        escapeHatchModel: trayEscapeHatchModel,
                                        deferAutocompleteReveal: true)
         suggestionTrayManager = manager
+    }
+
+    private func installUnifiedSearch() {
+        guard let swipeContainerManager,
+              let dependencies = suggestionTrayDependencies else { return }
+
+        let dataSource = AutocompleteSuggestionsDataSource(
+            historyManager: dependencies.historyManager,
+            bookmarksDatabase: dependencies.bookmarksDatabase,
+            featureFlagger: dependencies.featureFlagger,
+            tabsModel: dependencies.tabsModelProvider()
+        ) { [weak self] request, completion in
+            self?.urlAutocompleteTask?.cancel()
+            self?.urlAutocompleteTask = URLSession.shared.dataTask(with: request) { data, _, error in
+                completion(data, error)
+            }
+            self?.urlAutocompleteTask?.resume()
+        }
+        let loader = SearchSuggestionsLoader(dataSource: dataSource)
+
+        let source = SearchSuggestionsSource(
+            resultPublisher: loader.$result.eraseToAnyPublisher(),
+            query: { [weak self] in self?.switchBarHandler.currentText ?? "" },
+            showAskAIChat: aiChatSettings.isAIChatEnabled
+        )
+
+        let hasFavorites: () -> Bool = {
+            !dependencies.favoritesViewModel.favorites.isEmpty
+        }
+        let hasMessages: () -> Bool = {
+            !dependencies.newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
+        }
+
+        let inputsPublisher = switchBarHandler.currentTextPublisher
+            .map { [weak self] text -> UnifiedSuggestionsInputs in
+                UnifiedSuggestionsInputs(
+                    mode: .search,
+                    isTyping: !text.isEmpty,
+                    hasFavorites: hasFavorites(),
+                    hasMessages: hasMessages(),
+                    hasRecents: false,
+                    resultsPending: false
+                )
+            }
+            .eraseToAnyPublisher()
+
+        let config = UnifiedSuggestionsHostConfig(
+            source: source,
+            inputsPublisher: inputsPublisher,
+            isAddressBarAtBottom: switchBarHandler.isTopBarPosition == false,
+            favoritesProvider: { [weak self] in self?.makeSearchFavoritesController() },
+            onSelectRow: { [weak self] id in
+                guard let suggestion = source.suggestion(forRowID: id) else { return }
+                self?.delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
+            },
+            onDeleteRow: { [weak self, weak loader] id in
+                guard let self,
+                      let suggestion = source.suggestion(forRowID: id),
+                      case .historyEntry(_, let url, _) = suggestion else { return }
+                Task {
+                    await dependencies.historyManager.deleteHistoryForURL(url)
+                    loader?.fetch(query: self.switchBarHandler.currentText)
+                }
+            },
+            onTapAheadRow: { [weak self] id in
+                guard let suggestion = source.suggestion(forRowID: id) else { return }
+                switch suggestion {
+                case .phrase(let phrase): self?.delegate?.unifiedInputEditingStateDidRequestTextUpdate(phrase)
+                case .website(let url): self?.delegate?.unifiedInputEditingStateDidRequestTextUpdate(url.absoluteString)
+                default: break
+                }
+            },
+            hasContent: { [weak self] in
+                !(self?.switchBarHandler.currentText.isEmpty ?? true)
+            },
+            hasSettled: { [weak loader] query in
+                loader?.lastCompletedFetchQuery == query
+            },
+            onStart: { [weak loader, weak self] in
+                guard let self else { return }
+                loader?.subscribeToTextChanges(self.switchBarHandler.currentTextPublisher)
+            },
+            onTearDown: { [weak loader] in
+                loader?.tearDown()
+            }
+        )
+
+        let host = UnifiedSuggestionsHost(config: config)
+        host.onContentChanged = { [weak self] in
+            self?.refreshVisibleContent(suggestionRefresh: .none, animateContentUpdates: true)
+        }
+        host.start(in: swipeContainerManager.searchPageContainer,
+                   parentViewController: swipeContainerManager.containerViewController,
+                   textPublisher: switchBarHandler.currentTextPublisher)
+        host.setAdditionalTopInset(escapeHatchTopInset)
+        host.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
+        searchSuggestionsHost = host
+    }
+
+    private func makeSearchFavoritesController() -> NewTabPageViewController? {
+        guard let dependencies = suggestionTrayDependencies else { return nil }
+        let ntpDeps = dependencies.newTabPageDependencies
+        let controller = NewTabPageViewController(
+            isFocussedState: true,
+            dismissKeyboardOnScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            tab: Tab(fireTab: dependencies.tabsModelProvider().shouldCreateFireTabs),
+            interactionModel: ntpDeps.favoritesModel,
+            homePageMessagesConfiguration: ntpDeps.homePageMessagesConfiguration,
+            subscriptionDataReporting: ntpDeps.subscriptionDataReporting,
+            newTabDialogFactory: ntpDeps.newTabDialogFactory,
+            daxDialogsManager: ntpDeps.newTabDaxDialogManager,
+            onboardingFlowProvider: ntpDeps.onboardingFlowProvider,
+            faviconLoader: ntpDeps.faviconLoader,
+            remoteMessagingActionHandler: ntpDeps.remoteMessagingActionHandler,
+            remoteMessagingImageLoader: ntpDeps.remoteMessagingImageLoader,
+            remoteMessagingPixelReporter: ntpDeps.remoteMessagingPixelReporter,
+            fireModePromotionEligibility: ntpDeps.fireModePromotionEligibility,
+            appSettings: ntpDeps.appSettings,
+            faviconsCache: ntpDeps.faviconsCache,
+            subscriptionManager: ntpDeps.subscriptionManager,
+            internalUserCommands: ntpDeps.internalUserCommands
+        )
+        controller.hideBorderView()
+        controller.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
+        return controller
     }
 
     private func installDuckAISuggestionsIfNeeded() {
@@ -745,9 +873,31 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             markNeedsVisibleRefresh()
             return
         }
-        let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
-        let isShowingTray = suggestionTrayManager?.isShowingSuggestionTray ?? false
-        let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
+
+        let shouldDisplaySuggestionTray: Bool
+        let isShowingTray: Bool
+        let shouldDisplayFavoritesOverlay: Bool
+        let hasFavorites: Bool
+        let hasRemoteMessages: Bool
+
+        if searchSuggestionsHost != nil, let deps = suggestionTrayDependencies {
+            // UTI path: facts come from dependencies directly; tray is not installed.
+            let isTyping = !switchBarHandler.currentText.isBlank
+            let favs = !deps.favoritesViewModel.favorites.isEmpty
+            let msgs = !deps.newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
+            shouldDisplaySuggestionTray = isTyping
+            isShowingTray = isTyping
+            hasFavorites = favs
+            hasRemoteMessages = msgs
+            shouldDisplayFavoritesOverlay = !switchBarHandler.isFireTab && !isTyping && (favs || msgs)
+        } else {
+            shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
+            isShowingTray = suggestionTrayManager?.isShowingSuggestionTray ?? false
+            shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
+            hasFavorites = suggestionTrayManager?.hasFavorites ?? false
+            hasRemoteMessages = suggestionTrayManager?.hasRemoteMessages ?? false
+        }
+
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingDuckAISuggestions = duckAISuggestionsHost?.hasContent == true
         // Suppress the Duck.ai empty state (Dax) whenever fetchers haven't settled for the
@@ -764,8 +914,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             hasContent: hasContent,
             shouldDisplayFavoritesOverlay: shouldDisplayFavoritesOverlay,
             hasEscapeHatch: escapeHatchModel != nil,
-            hasFavorites: suggestionTrayManager?.hasFavorites ?? false,
-            hasRemoteMessages: suggestionTrayManager?.hasRemoteMessages ?? false
+            hasFavorites: hasFavorites,
+            hasRemoteMessages: hasRemoteMessages
         )
         let isSearchMode = switchBarHandler.currentToggleState == .search
         let isHomeDaxVisible = isSearchMode && daxLogoManager.shouldShowHomeDax(homeDaxInputs)
@@ -904,6 +1054,9 @@ extension UnifiedInputContentContainerViewController: FadeOutContainerViewContro
     }
 
     func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool {
+        if searchSuggestionsHost != nil {
+            return !switchBarHandler.currentText.isBlank
+        }
         return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
     }
 

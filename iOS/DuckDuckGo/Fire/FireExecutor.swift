@@ -93,6 +93,12 @@ protocol FireExecuting {
 
     /// True for the duration of a `burn(...)` call. Read it to avoid re-entering the executor from a delegate callback.
     var burnInProgress: Bool { get }
+
+    /// Burn a single Duck.ai chat by id. Peer to `burn(request:)` so the chat-history
+    /// sheet's swipe-to-delete can stay on the same execution path as fire-mode clears.
+    @discardableResult
+    @MainActor
+    func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error>
 }
 
 class FireExecutor: FireExecuting {
@@ -310,6 +316,12 @@ class FireExecutor: FireExecuting {
         delegate?.didFinishBurning(fireRequest: fireRequest)
     }
     
+    @discardableResult
+    @MainActor
+    func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> {
+        await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: isFireMode)
+    }
+
     @MainActor
     private func burnTabsWithDelegateCallbacks(request: FireRequest, domains: [String]?) {
         delegate?.willStartBurningTabs(fireRequest: request)

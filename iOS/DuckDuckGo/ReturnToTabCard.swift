@@ -127,7 +127,7 @@ struct ReturnToTabCard: View {
     /// fire tabs burn immediately, everything else asks for confirmation (anchored to this button on iPad).
     private var fireButton: some View {
         Button(action: deleteTab) {
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.fireTabs)
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
                 .foregroundColor(Color(designSystemColor: .icons))
                 .padding(.horizontal, Metrics.actionIconPadding)
                 .frame(maxHeight: .infinity)

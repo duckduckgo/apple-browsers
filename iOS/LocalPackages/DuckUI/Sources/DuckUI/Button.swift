@@ -47,10 +47,6 @@ private struct PrimaryButtonColors {
         textDisabled: Color(designSystemColor: .buttonsWhite).opacity(0.36)
     )
 
-    // Rebranded sets keep `disabled`/`textDisabled` equal to their active counterparts;
-    // `makeRebrandedPrimaryBody` ignores those fields and dims the composite via a single
-    // outer `.opacity(Consts.disabledOpacity)` instead. The fields stay on the struct only
-    // for compatibility with legacy bodies that still consume them.
     static let rebrandedPrimary = PrimaryButtonColors(
         standard: Color(singleUseColor: .rebranding(.accentPrimary)),
         pressed: Color(singleUseColor: .rebranding(.accentPrimaryPressed)),
@@ -96,8 +92,7 @@ private func rebrandedButtonFont(compact: Bool) -> Font {
 // MARK: - Body builders
 
 /// `forcePressed` lets debug/preview surfaces render the pressed appearance without a
-/// live press gesture (SwiftUI doesn't expose a way to synthesize
-/// `ButtonStyleConfiguration` with `isPressed = true`). Production callers leave it `false`.
+/// live press gesture. Default to false in production.
 @ViewBuilder
 private func makeLegacyPrimaryBody(
     configuration: ButtonStyleConfiguration,
@@ -696,7 +691,7 @@ public struct GhostButtonStyle: ButtonStyle {
         let isPressed = configuration.isPressed || pressed
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
-            .foregroundColor(foregroundColor(isPressed))
+            .foregroundColor(Color(singleUseColor: .rebranding(.accentPrimary)))
             .padding()
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(backgroundColor(isPressed))
@@ -704,12 +699,6 @@ public struct GhostButtonStyle: ButtonStyle {
             .contentShape(Capsule())
             .opacity(disabled ? Consts.disabledOpacity : 1)
             .ddgButtonDynamicTypeCap()
-    }
-
-    private func foregroundColor(_ isPressed: Bool) -> Color {
-        isPressed
-            ? Color(singleUseColor: .rebranding(.accentPrimaryPressed))
-            : Color(singleUseColor: .rebranding(.accentPrimary))
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {
@@ -792,24 +781,18 @@ private enum Consts {
     static let rebrandedHeightLarge: CGFloat = 50
     static let rebrandedHeightSmall: CGFloat = 40
     static let pressedOpacity: CGFloat = 0.7
-    /// Outer opacity applied to the whole rebranded button when `disabled`, matching the
-    /// Figma spec where active-state tokens are kept and the composite is dimmed instead.
     static let disabledOpacity: CGFloat = 0.36
 }
 
-// MARK: - Previews
+// MARK: - Debug galleries
 
-#if DEBUG
-
-/// Scoped override of `AppRebrand.isAppRebranded` for the preview's lifetime.
+/// Scoped override of `AppRebrand.isAppRebranded` for the host view's lifetime.
 ///
-/// Captures the previous closure at init and restores it on deinit, so the preview
-/// doesn't permanently mutate global state. Held by `@StateObject` so its lifetime
-/// matches the view's, and its mutation runs once (in `init`, before `body`) rather
-/// than on every body re-evaluation.
+/// Captures the previous closure at init and restores it on deinit, so it doesn't
+/// permanently mutate global state.
 ///
-/// Internal (not `private`) so debug-preview files in the same module can reuse it
-/// — e.g. `IOSButtonsDebugView.swift`.
+/// Internal so the galleries (Xcode previews and the runtime debug menu) can reuse it
+/// within the module, e.g. `IOSButtonsDebugView.swift`.
 final class RebrandPreviewOverride: ObservableObject {
     private let previous: () -> Bool
 
@@ -823,22 +806,23 @@ final class RebrandPreviewOverride: ObservableObject {
     }
 }
 
-private struct ButtonStylesGallery: View {
+public struct ButtonStylesGallery: View {
     let isRebranded: Bool
 
     @StateObject private var override: RebrandPreviewOverride
 
-    init(isRebranded: Bool) {
+    public init(isRebranded: Bool) {
         self.isRebranded = isRebranded
         _override = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
     }
 
-    var body: some View {
+    public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 section("PrimaryButtonStyle") {
                     Button("Default") {}.buttonStyle(PrimaryButtonStyle())
                     Button("Disabled") {}.buttonStyle(PrimaryButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(PrimaryButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(PrimaryButtonStyle(compact: true))
                     Button("Hug content") {}.buttonStyle(PrimaryButtonStyle(fullWidth: false))
                 }
@@ -854,6 +838,7 @@ private struct ButtonStylesGallery: View {
                 section("PrimaryDestructiveButtonStyle") {
                     Button("Default") {}.buttonStyle(PrimaryDestructiveButtonStyle())
                     Button("Disabled") {}.buttonStyle(PrimaryDestructiveButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(PrimaryDestructiveButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(PrimaryDestructiveButtonStyle(compact: true))
                     Button("Hug content") {}.buttonStyle(PrimaryDestructiveButtonStyle(fullWidth: false))
                 }
@@ -868,29 +853,35 @@ private struct ButtonStylesGallery: View {
                 section("SecondaryDestructiveButtonStyle") {
                     Button("Default") {}.buttonStyle(SecondaryDestructiveButtonStyle())
                     Button("Disabled") {}.buttonStyle(SecondaryDestructiveButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(SecondaryDestructiveButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(SecondaryDestructiveButtonStyle(compact: true))
                     Button("Hug content") {}.buttonStyle(SecondaryDestructiveButtonStyle(fullWidth: false))
                 }
 
                 section("SecondaryButtonStyle (deprecated)") {
                     Button("Default") {}.buttonStyle(SecondaryButtonStyle())
+                    Button("Pressed") {}.buttonStyle(SecondaryButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(SecondaryButtonStyle(compact: true))
                 }
 
                 section("SecondaryFillButtonStyle") {
                     Button("Default") {}.buttonStyle(SecondaryFillButtonStyle())
                     Button("Disabled") {}.buttonStyle(SecondaryFillButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(SecondaryFillButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(SecondaryFillButtonStyle(compact: true))
                     Button("Hug content") {}.buttonStyle(SecondaryFillButtonStyle(fullWidth: false))
                 }
 
                 section("GhostButtonStyle") {
                     Button("Default") {}.buttonStyle(GhostButtonStyle())
+                    Button("Disabled") {}.buttonStyle(GhostButtonStyle(disabled: true))
+                    Button("Pressed") {}.buttonStyle(GhostButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(GhostButtonStyle(compact: true))
                 }
 
                 section("GhostAltButtonStyle") {
                     Button("Default") {}.buttonStyle(GhostAltButtonStyle())
+                    Button("Pressed") {}.buttonStyle(GhostAltButtonStyle(pressed: true))
                     Button("Compact") {}.buttonStyle(GhostAltButtonStyle(compact: true))
                 }
             }
@@ -903,7 +894,7 @@ private struct ButtonStylesGallery: View {
     @ViewBuilder
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+            Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
             content()
@@ -911,23 +902,28 @@ private struct ButtonStylesGallery: View {
     }
 }
 
+#if DEBUG
 #Preview("Buttons Legacy / Light") {
     ButtonStylesGallery(isRebranded: false)
+        .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
 }
 
 #Preview("Buttons Legacy / Dark") {
     ButtonStylesGallery(isRebranded: false)
+        .environment(\.colorScheme, .dark)
         .preferredColorScheme(.dark)
 }
 
 #Preview("Buttons Rebranded / Light") {
     ButtonStylesGallery(isRebranded: true)
+        .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
 }
 
 #Preview("Buttons Rebranded / Dark") {
     ButtonStylesGallery(isRebranded: true)
+        .environment(\.colorScheme, .dark)
         .preferredColorScheme(.dark)
 }
 

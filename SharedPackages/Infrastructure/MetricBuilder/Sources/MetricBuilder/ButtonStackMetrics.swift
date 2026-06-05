@@ -1,6 +1,5 @@
 //
 //  ButtonStackMetrics.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +16,8 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import SwiftUI
-import MetricBuilder
 
 /// Shared spacing for rebranded button stacks, matching the Figma "Buttons" component:
 /// stacked buttons sit `containerPadding` (24pt) away from their container on every side and
@@ -41,3 +40,4 @@ public enum ButtonStackMetrics {
         containerPaddingMetric.build()
     }
 }
+#endif

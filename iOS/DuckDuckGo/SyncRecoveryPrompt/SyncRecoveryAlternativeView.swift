@@ -21,6 +21,7 @@ import SwiftUI
 import UIKit
 import DesignResourcesKit
 import DuckUI
+import MetricBuilder
 import SyncUI_iOS
 
 struct SyncRecoveryAlternativeView: View {
@@ -45,7 +46,7 @@ struct SyncRecoveryAlternativeView: View {
 
                     Text(UserText.syncRecoveryAlternativePromptTitle)
                         .daxTitle1()
-                        .padding(.bottom, 24)
+                        .padding(.bottom, SheetMetrics.contentSpacing)
 
                     Text(UserText.syncRecoveryAlternativePromptMessage)
                         .font(.callout)
@@ -55,7 +56,7 @@ struct SyncRecoveryAlternativeView: View {
 
                 }
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
                 .foregroundStyle(Color(designSystemColor: .textPrimary))
             }
 

@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DuckUI
+import MetricBuilder
 import Core
 
 struct AutofillItemsEmptyView: View {

@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import Core
 import DuckUI
+import MetricBuilder
 
 struct ImportPasswordsViaSyncView: View {
 

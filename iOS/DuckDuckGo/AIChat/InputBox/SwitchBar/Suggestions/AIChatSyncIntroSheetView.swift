@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 import SwiftUI
 
 struct AIChatSyncIntroSheetView: View {
@@ -28,8 +29,8 @@ struct AIChatSyncIntroSheetView: View {
     let onNotNowTap: () -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 24) {
+        VStack(spacing: SheetMetrics.contentSpacing) {
+            VStack(spacing: SheetMetrics.contentSpacing) {
                 Image(rebrandable: "Sync-Desktop-Mobile-Pair-Feature-128")
 
                 Text(UserText.aiChatSyncIntroSheetTitle)

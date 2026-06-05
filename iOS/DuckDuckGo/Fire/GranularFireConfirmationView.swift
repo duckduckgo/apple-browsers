@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
 import DuckUI
+import MetricBuilder
 
 struct GranularFireConfirmationView: View {
     
@@ -29,12 +30,12 @@ struct GranularFireConfirmationView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: Constants.mainSectionSpacing) {
+            VStack(spacing: SheetMetrics.contentSpacing) {
                 headerSection
                 optionsList
                 footerButtons
             }
-            .padding(.horizontal, Constants.mainViewPadding.leading)
+            .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
             .padding(.vertical, Constants.mainViewPadding.top)
         }
         .background(Color(designSystemColor: .backgroundTertiary))
@@ -43,7 +44,7 @@ struct GranularFireConfirmationView: View {
     
     /// Header with title and large icon
     private var headerSection: some View {
-        VStack(spacing: Constants.headerSectionSpacing) {
+        VStack(spacing: SheetMetrics.contentSpacing) {
             Image(uiImage: DesignSystemImages.Color.Size72.fire)
                 .resizable()
                 .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
@@ -129,11 +130,9 @@ struct GranularFireConfirmationView: View {
 private extension GranularFireConfirmationView {
     enum Constants {
         // Main View
-        static let mainSectionSpacing: CGFloat = 24
         static let mainViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         
         // Header section
-        static let headerSectionSpacing: CGFloat = 8
         static let headerIconSize: CGFloat = 96
         
         // Options List

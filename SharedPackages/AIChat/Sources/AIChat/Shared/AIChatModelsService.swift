@@ -87,6 +87,7 @@ public struct AIChatRemoteModel: Decodable, Equatable {
     public let supportedTools: [String]
     public let accessTier: [String]
     public let supportedReasoningEffort: [AIChatReasoningEffort]
+    public let reasoningEffortAccess: [AIChatReasoningEffortAccess]?
 
     public init(
         id: String,
@@ -98,7 +99,8 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         supportedFileTypes: [String]? = nil,
         supportedTools: [String],
         accessTier: [String],
-        supportedReasoningEffort: [AIChatReasoningEffort] = []
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
     ) {
         self.id = id
         self.name = name
@@ -110,10 +112,19 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.supportedTools = supportedTools
         self.accessTier = accessTier
         self.supportedReasoningEffort = supportedReasoningEffort
+        self.reasoningEffortAccess = reasoningEffortAccess
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedFileTypes, supportedTools, supportedReasoningEffort, accessTier
+        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedFileTypes, supportedTools, supportedReasoningEffort, accessTier, reasoningEffortAccess
+    }
+
+    /// Raw wire shape of a single `reasoningEffortAccess` entry. Decoded as `String` for
+    /// `id` so that future / unknown effort IDs do not fail the whole `/models` decode.
+    private struct RawReasoningEffortAccess: Decodable {
+        let id: String
+        let accessTier: [String]
+        let entityHasAccess: Bool
     }
 
     public init(from decoder: Decoder) throws {
@@ -129,6 +140,21 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.supportedReasoningEffort = try container.decodeIfPresent([String].self, forKey: .supportedReasoningEffort)?
             .compactMap(AIChatReasoningEffort.init(rawValue:)) ?? []
         self.accessTier = try container.decode([String].self, forKey: .accessTier)
+
+        do {
+            let rawEntries = try container.decodeIfPresent([RawReasoningEffortAccess].self, forKey: .reasoningEffortAccess)
+            self.reasoningEffortAccess = rawEntries?.compactMap { entry in
+                guard let effort = AIChatReasoningEffort(rawValue: entry.id) else { return nil }
+                return AIChatReasoningEffortAccess(
+                    effort: effort,
+                    accessTier: entry.accessTier,
+                    entityHasAccess: entry.entityHasAccess
+                )
+            }
+        } catch {
+            Logger.aiChat.error("Failed to decode AI Chat reasoningEffortAccess: \(error.localizedDescription)")
+            self.reasoningEffortAccess = nil
+        }
     }
 }
 
@@ -205,6 +231,13 @@ extension AIChatModel {
 
     public init(remoteModel: AIChatRemoteModel, userTier: AIChatUserTier) {
         let hasAccess = remoteModel.accessTier.contains(userTier.rawValue)
+        let hasEffortAccess = remoteModel.reasoningEffortAccess?.map { entry in
+            AIChatReasoningEffortAccess(
+                effort: entry.effort,
+                accessTier: entry.accessTier,
+                entityHasAccess: entry.accessTier.contains(userTier.rawValue)
+            )
+        }
         self.init(
             id: remoteModel.id,
             name: remoteModel.name,
@@ -216,7 +249,8 @@ extension AIChatModel {
             supportedTools: remoteModel.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
             entityHasAccess: hasAccess,
             accessTier: remoteModel.accessTier,
-            supportedReasoningEffort: remoteModel.supportedReasoningEffort
+            supportedReasoningEffort: remoteModel.supportedReasoningEffort,
+            reasoningEffortAccess: hasEffortAccess
         )
     }
 }

@@ -40,6 +40,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAppMenu(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -205,6 +206,16 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isReasoningButtonHidden: Bool {
         get { inputBarView.isReasoningButtonHidden }
         set { inputBarView.isReasoningButtonHidden = newValue }
+    }
+
+    var isToolbarReturnKeyHidden: Bool {
+        get { inputBarView.isToolbarReturnKeyHidden }
+        set { inputBarView.isToolbarReturnKeyHidden = newValue }
+    }
+
+    func setAvailableExpandedHeight(_ available: CGFloat?) {
+        loadViewIfNeeded()
+        inputBarView.setAvailableExpandedHeight(available)
     }
 
     var isImageButtonHidden: Bool {
@@ -431,6 +442,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapAppMenu(self)
     }
+
+    func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapReturnKey(self)
+    }
 }
 
 private final class UnifiedToggleInputContainerView: UIView {
@@ -505,12 +520,14 @@ private extension UnifiedToggleInputContainerView {
         bannerBottomToContainerConstraint = errorBannerView.bottomAnchor.constraint(equalTo: bottomAnchor)
         bannerTopToInputConstraint = errorBannerView.topAnchor.constraint(equalTo: unifiedInputView.bottomAnchor, constant: Metrics.bannerSpacing)
         bannerBottomToInputConstraint = errorBannerView.bottomAnchor.constraint(equalTo: unifiedInputView.topAnchor, constant: -Metrics.bannerSpacing)
-        bannerLeadingConstraint = errorBannerView.leadingAnchor.constraint(equalTo: leadingAnchor)
-        bannerTrailingConstraint = errorBannerView.trailingAnchor.constraint(equalTo: trailingAnchor)
+        bannerLeadingConstraint = errorBannerView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor)
+        bannerTrailingConstraint = errorBannerView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor)
 
+        // Pin content horizontally to the safe area so the card and its flanking buttons clear the
+        // Dynamic Island in landscape; the horizontal safe-area inset is 0 in portrait and on iPad.
         NSLayoutConstraint.activate([
-            unifiedInputView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            unifiedInputView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            unifiedInputView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+            unifiedInputView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
             bannerLeadingConstraint,
             bannerTrailingConstraint,
             bannerHeightConstraint,

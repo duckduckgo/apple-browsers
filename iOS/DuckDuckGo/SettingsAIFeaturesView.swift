@@ -123,14 +123,18 @@ struct SettingsAIFeaturesView: View {
 
             if !viewModel.openedFromSERPSettingsButton {
                 Section {
-                    NavigationLink(destination: SERPSettingsView(page: .searchAssist, featureFlagger: viewModel.featureFlagger)) {
+                    NavigationLink(destination: SERPSettingsView(page: .searchAssist,
+                                                                 contentBlockingAssetsPublisher: viewModel.contentBlockingAssetsPublisher,
+                                                                 keyValueStore: viewModel.keyValueStore)) {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                          subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
                                          image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
                     }
                     .listRowBackground(Color(designSystemColor: .surface))
 
-                    NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages, featureFlagger: viewModel.featureFlagger)
+                    NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages,
+                                                                 contentBlockingAssetsPublisher: viewModel.contentBlockingAssetsPublisher,
+                                                                 keyValueStore: viewModel.keyValueStore)
                             .onAppear {
                                 PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
                             }

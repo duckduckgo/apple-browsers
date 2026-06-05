@@ -29,7 +29,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatAddressBarShortcutFeatureEnabled: Bool
     public var isAIChatVoiceSearchUserSettingsEnabled: Bool
     public var isAIChatTabSwitcherUserSettingsEnabled: Bool
-    public var isAIChatNavigationBarUserSettingsEnabled: Bool
+    public var isAIChatTabBarUserSettingsEnabled: Bool
     public var sessionTimerInMinutes: Int
     public var isAIChatSearchInputUserSettingsEnabled: Bool
     public var isAIChatSearchInputUserSettingsDisabledByUser: Bool
@@ -45,7 +45,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
                 isAIChatAddressBarShortcutFeatureEnabled: Bool = false,
                 isAIChatVoiceSearchUserSettingsEnabled: Bool = false,
                 isAIChatTabSwitcherUserSettingsEnabled: Bool = false,
-                isAIChatNavigationBarUserSettingsEnabled: Bool = false,
+                isAIChatTabBarUserSettingsEnabled: Bool = false,
                 isAIChatSearchInputUserSettingsEnabled: Bool = false,
                 isAIChatSearchInputUserSettingsDisabledByUser: Bool = false,
                 isAutomaticContextAttachmentEnabled: Bool = false,
@@ -60,7 +60,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.isAIChatAddressBarShortcutFeatureEnabled = isAIChatAddressBarShortcutFeatureEnabled
         self.isAIChatVoiceSearchUserSettingsEnabled = isAIChatVoiceSearchUserSettingsEnabled
         self.isAIChatTabSwitcherUserSettingsEnabled = isAIChatTabSwitcherUserSettingsEnabled
-        self.isAIChatNavigationBarUserSettingsEnabled = isAIChatNavigationBarUserSettingsEnabled
+        self.isAIChatTabBarUserSettingsEnabled = isAIChatTabBarUserSettingsEnabled
         self.isAIChatSearchInputUserSettingsEnabled = isAIChatSearchInputUserSettingsEnabled
         self.isAIChatSearchInputUserSettingsDisabledByUser = isAIChatSearchInputUserSettingsDisabledByUser
         self.isAutomaticContextAttachmentEnabled = isAutomaticContextAttachmentEnabled
@@ -85,8 +85,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         isAIChatTabSwitcherUserSettingsEnabled = enable
     }
 
-    public func enableAIChatNavigationBarUserSettings(enable: Bool) {
-        isAIChatNavigationBarUserSettingsEnabled = enable
+    public func enableAIChatTabBarUserSettings(enable: Bool) {
+        isAIChatTabBarUserSettingsEnabled = enable
     }
 
     public func enableAIChat(enable: Bool) {

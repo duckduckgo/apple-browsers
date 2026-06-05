@@ -613,7 +613,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 internalUserDecider: internalUserDecider,
                 privacyConfigManager: privacyConfigurationManager,
                 localOverrides: featureFlagOverrides,
-                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
+                allowOverrides: { [internalUserDecider, isRunningUITests=[.uiTests, .uiTestsOnboarding].contains(AppVersion.runType)] in
                     internalUserDecider.isInternalUser || isRunningUITests
                 },
                 experimentManager: ExperimentCohortsManager(
@@ -2380,7 +2380,7 @@ extension AppDelegate: UserScriptDependenciesProviding {}
 private extension FeatureFlagLocalOverrides {
 
     func applyUITestsFeatureFlagsIfNeeded() {
-        guard AppVersion.runType == .uiTests else { return }
+        guard [.uiTests, .uiTestsOnboarding].contains(AppVersion.runType) else { return }
 
         for item in ProcessInfo().environment["FEATURE_FLAGS", default: ""].split(separator: " ") {
             let keyValue = item.split(separator: "=")

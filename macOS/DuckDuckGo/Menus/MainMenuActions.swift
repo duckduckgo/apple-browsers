@@ -1334,6 +1334,12 @@ extension MainViewController {
         duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .sidebar)
     }
 
+    @objc func toggleDuckAISidebar(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
+              aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
+        aiChatCoordinator.toggleSidebar()
+    }
+
     @objc func toggleAutofillShortcut(_ sender: Any) {
         pinningManager.togglePinning(for: .autofill)
     }
@@ -1899,6 +1905,11 @@ extension MainViewController: NSMenuItemValidation {
 
         case #selector(MainViewController.summarize(_:)):
             return aiChatMenuConfig.shouldDisplaySummarizationMenuItem
+
+        case #selector(MainViewController.toggleDuckAISidebar(_:)):
+            let isOpen = aiChatCoordinator.isSidebarOpenForCurrentTab()
+            menuItem.title = isOpen ? UserText.aiChatHideSidebar : UserText.aiChatShowSidebar
+            return true
 
         default:
             return true

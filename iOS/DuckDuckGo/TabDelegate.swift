@@ -35,8 +35,6 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestNewTab(_ tab: TabViewController)
 
-    func tabDidRequestNewSearch(_ tab: TabViewController)
-
     func tabDidRequestNewVoiceChat(_ tab: TabViewController)
 
     func newTab(reuseExisting: Bool)
@@ -186,8 +184,6 @@ extension TabDelegate {
     }
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
-
-    func tabDidRequestNewSearch(_ tab: TabViewController) {}
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
 

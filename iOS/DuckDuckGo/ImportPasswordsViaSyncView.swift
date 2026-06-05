@@ -59,11 +59,7 @@ struct ImportPasswordsViaSyncView: View {
         @State private var navigate = false
 
         var body: some View {
-            if AppRebrand.isAppRebranded() {
-                Image(.desktopSyncPasswords128)
-            } else {
-                Image(.syncDesktopNew128)
-            }
+            Image(rebrandable: "Desktop-Sync-Passwords-128")
 
             Text(UserText.autofillImportPasswordsViaSyncTitle)
                 .daxTitle2()

@@ -26,8 +26,7 @@ struct PrivateSearchView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: SettingsDescription {
-        let imageName = AppRebrand.isAppRebranded() ? "Search-pondwater-128" : "SettingsPrivateSearchContent"
-        return SettingsDescription(imageName: imageName,
+        return SettingsDescription(imageName: "Search-pondwater-128",
                                    title: UserText.privateSearch,
                                    status: .alwaysOn,
                                    explanation: UserText.privateSearchExplanation)

@@ -84,7 +84,7 @@ class FeedbackFormViewController: UIViewController {
         loadViewIfNeeded()
         hideWebsiteField()
 
-        headerImage.image = AppRebrand.isAppRebranded() ? UIImage(resource: .responseGood56) : UIImage(resource: .happyFaceLegacy)
+        headerImage.image = UIImage(rebrandable: "Response-Good-56")
 
         headerText.setAttributedTextString(UserText.feedbackPositiveFormHeader)
         supplementaryText.setAttributedTextString(UserText.feedbackPositiveFormSupplementary)
@@ -102,7 +102,7 @@ class FeedbackFormViewController: UIViewController {
 
         loadViewIfNeeded()
         
-        headerImage.image = AppRebrand.isAppRebranded() ? UIImage(resource: .responseBad56) : UIImage(resource: .sadFaceLegacy)
+        headerImage.image = UIImage(rebrandable: "Response-Bad-56")
         self.headerText.text = FeedbackPresenter.title(for: category)
         
         switch type {

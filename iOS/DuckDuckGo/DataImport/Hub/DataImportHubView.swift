@@ -43,8 +43,14 @@ struct DataImportHubView: View {
 
     private var hubHeaderView: some View {
         VStack(spacing: 0) {
-            Image(uiImage: DesignSystemImages.Color.Size128.bringStuff)
-                .padding(.bottom, 8)
+            Group {
+                if AppRebrand.isAppRebranded() {
+                    Image(.bringStuffDownload128)
+                } else {
+                    Image(uiImage: DesignSystemImages.Color.Size128.bringStuff)
+                }
+            }
+            .padding(.bottom, 8)
 
             Text(UserText.dataImportHubTitle)
                 .daxTitle2()

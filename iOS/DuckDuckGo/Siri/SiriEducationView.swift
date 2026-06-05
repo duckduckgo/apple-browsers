@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import Core
 
 struct SiriEducationView: View {
@@ -60,7 +61,7 @@ struct SiriEducationView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .center, spacing: Spacing.headerInterContent) {
-                Image(.siriControl128)
+                Image(rebrandable: "Siri-Control-128")
                     .resizable()
                     .frame(maxWidth: 128)
 

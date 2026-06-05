@@ -1,0 +1,113 @@
+//
+//  SuggestionRowMapper.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Licensed under the Apache License, Version 2.0.
+//
+
+import AIChat
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import Suggestions
+import SwiftUI
+
+/// Pure mapping of existing suggestion models to the unified `SuggestionRow`.
+/// Title/subtitle/icon logic mirrors the legacy renderers so output is identical.
+enum SuggestionRowMapper {
+
+    static func row(for suggestion: Suggestion, query: String?, idPrefix: String) -> SuggestionRow {
+        switch suggestion {
+        case .website(let url):
+            return SuggestionRow(
+                id: "\(idPrefix)-website-\(url.absoluteString)",
+                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
+                title: url.formattedForSuggestion(),
+                query: query,
+                accessibilityID: "Autocomplete.Suggestions.ListItem.Website-\(url.formattedForSuggestion())")
+
+        case .bookmark(let title, let url, let isFavorite, _):
+            return SuggestionRow(
+                id: "\(idPrefix)-bookmark-\(url.absoluteString)",
+                icon: Image(uiImage: isFavorite ? DesignSystemImages.Glyphs.Size24.bookmarkFavorite
+                                                 : DesignSystemImages.Glyphs.Size24.bookmark),
+                title: title,
+                query: query,
+                subtitle: url.formattedForSuggestion(),
+                accessibilityID: "Autocomplete.Suggestions.ListItem.Bookmark-\(url.formattedForSuggestion())")
+
+        case .historyEntry(_, let url, _) where url.isDuckDuckGoSearch:
+            return SuggestionRow(
+                id: "\(idPrefix)-serp-\(url.absoluteString)",
+                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
+                title: url.searchQuery ?? "",
+                query: query,
+                subtitle: UserText.autocompleteSearchDuckDuckGo,
+                accessory: .delete,
+                accessibilityID: "Autocomplete.Suggestions.ListItem.SERPHistory-\(url.searchQuery ?? "")")
+
+        case .historyEntry(let title, let url, _):
+            return SuggestionRow(
+                id: "\(idPrefix)-history-\(url.absoluteString)",
+                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
+                title: title ?? url.formattedForSuggestion(),
+                query: query,
+                subtitle: title == nil ? nil : url.formattedForSuggestion(),
+                accessory: .delete,
+                accessibilityID: "Autocomplete.Suggestions.ListItem.History-\(url.formattedForSuggestion())")
+
+        case .openTab(let title, let url, _, _):
+            return SuggestionRow(
+                id: "\(idPrefix)-openTab-\(url.absoluteString)",
+                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.tabsMobile),
+                title: title,
+                query: query,
+                subtitle: "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())",
+                accessibilityID: "Autocomplete.Suggestions.ListItem.OpenTab-\(url.formattedForSuggestion())")
+
+        case .phrase(let phrase):
+            return SuggestionRow(
+                id: "\(idPrefix)-phrase-\(phrase)",
+                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.findSearchSmall),
+                title: phrase,
+                query: query,
+                accessory: .tapAhead,
+                accessibilityID: "Autocomplete.Suggestions.ListItem.SearchPhrase-\(phrase)")
+
+        case .askAIChat(let value):
+            return SuggestionRow(
+                id: "\(idPrefix)-askAIChat-\(value)",
+                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
+                title: value,
+                query: query,
+                subtitle: UserText.autocompleteAskAIChat,
+                accessibilityID: "Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
+
+        case .internalPage, .unknown:
+            assertionFailure("Unsupported suggestion type in unified list: \(suggestion)")
+            return SuggestionRow(
+                id: "\(idPrefix)-unknown",
+                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
+                title: "",
+                accessibilityID: "Autocomplete.Suggestions.ListItem.Unknown")
+        }
+    }
+
+    static func row(for chat: AIChatSuggestion) -> SuggestionRow {
+        SuggestionRow(
+            id: "chat-\(chat.id)",
+            icon: Image(uiImage: chat.isPinned ? DesignSystemImages.Glyphs.Size24.pin
+                                               : DesignSystemImages.Glyphs.Size24.aiChat),
+            title: chat.title,
+            accessibilityID: "DuckAISuggestions.Chat-\(chat.id)")
+    }
+
+    static func searchRow(query: String, idPrefix: String) -> SuggestionRow {
+        SuggestionRow(
+            id: "\(idPrefix)-searchDuckDuckGo",
+            icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.findSearchSmall),
+            title: query,
+            subtitle: UserText.autocompleteSearchDuckDuckGo,
+            accessibilityID: "DuckAISuggestions.SearchDuckDuckGo")
+    }
+}

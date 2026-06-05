@@ -334,6 +334,7 @@ private extension AIChatHistoryListViewController {
             return
         }
 
+        cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.fire
         cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
         cell.onAccessoryButtonPressed = { [weak self] in
             self?.presentChatDeletionConfirmation(chat: chat)

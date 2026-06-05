@@ -40,14 +40,6 @@ class DuckAISuggestionTableViewCell: UITableViewCell {
         return button
     }()
 
-    var onAccessoryButtonPressed: (() -> Void)?
-
-    var displaysAccessoryButton: Bool = false {
-        didSet {
-            accessoryView = displaysAccessoryButton ? accessoryButton : nil
-        }
-    }
-
     var accessoryButtonImage: UIImage? {
         get {
             accessoryButton.image(for: .normal)
@@ -56,6 +48,14 @@ class DuckAISuggestionTableViewCell: UITableViewCell {
             accessoryButton.setImage(newValue?.withRenderingMode(.alwaysTemplate), for: .normal)
         }
     }
+
+    var displaysAccessoryButton: Bool = false {
+        didSet {
+            accessoryView = displaysAccessoryButton ? accessoryButton : nil
+        }
+    }
+
+    var onAccessoryButtonPressed: (() -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)

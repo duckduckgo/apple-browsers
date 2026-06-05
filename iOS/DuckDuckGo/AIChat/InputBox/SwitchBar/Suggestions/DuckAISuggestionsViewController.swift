@@ -531,7 +531,7 @@ private extension DuckAISuggestionsViewController {
         cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.clear
         cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
         cell.onAccessoryButtonPressed = { [weak self] in
-            self?.requestURLDeletion(suggestion)
+            self?.requestURLDeletion(suggestion: suggestion)
         }
     }
 
@@ -539,7 +539,7 @@ private extension DuckAISuggestionsViewController {
         delegate?.duckAISuggestionsDidRequestChatDeletion(chat, sender: self)
     }
 
-    func requestURLDeletion(_ suggestion: Suggestion) {
+    func requestURLDeletion(suggestion: Suggestion) {
         delegate?.duckAISuggestionsDidRequestURLDeletion(suggestion)
     }
 }

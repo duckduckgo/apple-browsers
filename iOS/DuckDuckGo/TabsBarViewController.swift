@@ -323,7 +323,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         guard tabsCount > 0 else { return }
 
         if let tabCountBucket = TabSwitcherOpenDailyPixel.tabCountBucket(forCount: tabsCount) {
-            // Shared "tab_count" bucket param (matches m_tab_manager_opened_daily), not the legacy PixelParameters.tabCount ("tc").
             DailyPixel.fire(pixel: .tabBarOpenTabCountDaily, withAdditionalParameters: ["tab_count": tabCountBucket])
         }
 

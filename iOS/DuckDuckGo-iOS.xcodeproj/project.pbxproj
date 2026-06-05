@@ -654,6 +654,7 @@
 		7BFD5FD52C9DA310000FF959 /* VPNAddWidgetTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD42C9DA310000FF959 /* VPNAddWidgetTip.swift */; };
 		7BFD5FD72C9DB9D7000FF959 /* VPNGeoswitchingTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD62C9DB9D7000FF959 /* VPNGeoswitchingTip.swift */; };
 		7BFD5FD92C9DBC24000FF959 /* VPNSnoozeTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD82C9DBC24000FF959 /* VPNSnoozeTip.swift */; };
+		7F0590FDBBA0EEECF880FEE9 /* TabViewController+SiteLoadingPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C0392BCA1E0C259E1E239DB /* TabViewController+SiteLoadingPixel.swift */; };
 		801870A92F86CD6800E2DC44 /* LastActiveTabStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 801870A82F86CD6800E2DC44 /* LastActiveTabStore.swift */; };
 		8026361E2F983C2A009FD281 /* TabSwitcherTitleBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8026361D2F983C2A009FD281 /* TabSwitcherTitleBarView.swift */; };
 		80273AB82ED3E22E00EA03A1 /* SpyDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80273AB72ED3E22B00EA03A1 /* SpyDownloadManager.swift */; };
@@ -1765,6 +1766,7 @@
 		B6BA95E828924730004ABA20 /* JSAlertController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B6BA95E728924730004ABA20 /* JSAlertController.storyboard */; };
 		B772933486CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B772933186CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift */; };
 		B7A3E1F20A1B2C3D4E5F6A70 /* AIChatRecentChatsPopupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C4F2A31B2C3D4E5F6A7081 /* AIChatRecentChatsPopupViewModel.swift */; };
+		B7A97190FB026429E034DB99 /* TabViewControllerSiteLoadingPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3652B1D4CCA25401F948AB69 /* TabViewControllerSiteLoadingPixelTests.swift */; };
 		BB10B2A22EABF9A30005F174 /* SERPSettingsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB10B2A12EABF99D0005F174 /* SERPSettingsProvider.swift */; };
 		BB1D99D72EB9F3710050D8CF /* MockWinBackOfferPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1D99D62EB9F3710050D8CF /* MockWinBackOfferPresenter.swift */; };
 		BB1D99D82EB9F3710050D8CF /* MockWinBackOfferPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1D99D62EB9F3710050D8CF /* MockWinBackOfferPresenter.swift */; };
@@ -2892,6 +2894,7 @@
 		31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentalAIChatManager.swift; sourceTree = "<group>"; };
 		33CC9145E578E99B3052757F /* UnifiedToggleInputModelMenuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputModelMenuTests.swift; sourceTree = "<group>"; };
 		362AB8372F69A33700E3F222 /* ActionResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionResult.swift; sourceTree = "<group>"; };
+		3652B1D4CCA25401F948AB69 /* TabViewControllerSiteLoadingPixelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TabViewControllerSiteLoadingPixelTests.swift; sourceTree = "<group>"; };
 		365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatIntent.swift; sourceTree = "<group>"; };
 		365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchInAppIntent.swift; sourceTree = "<group>"; };
 		369809BE2E5635E1007FE895 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
@@ -3218,6 +3221,7 @@
 		7BFD5FD42C9DA310000FF959 /* VPNAddWidgetTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAddWidgetTip.swift; sourceTree = "<group>"; };
 		7BFD5FD62C9DB9D7000FF959 /* VPNGeoswitchingTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNGeoswitchingTip.swift; sourceTree = "<group>"; };
 		7BFD5FD82C9DBC24000FF959 /* VPNSnoozeTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNSnoozeTip.swift; sourceTree = "<group>"; };
+		7C0392BCA1E0C259E1E239DB /* TabViewController+SiteLoadingPixel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "TabViewController+SiteLoadingPixel.swift"; sourceTree = "<group>"; };
 		801870A82F86CD6800E2DC44 /* LastActiveTabStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastActiveTabStore.swift; sourceTree = "<group>"; };
 		8026361D2F983C2A009FD281 /* TabSwitcherTitleBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherTitleBarView.swift; sourceTree = "<group>"; };
 		80273AB72ED3E22B00EA03A1 /* SpyDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpyDownloadManager.swift; sourceTree = "<group>"; };
@@ -8284,6 +8288,7 @@
 				9FD1BDEB2D8C183C002F4EFE /* OnboardingManagerTests.swift */,
 				9F3361B92F2B24B000E0C21A /* ContextualDaxDialogsProviderTests.swift */,
 				9F3038F32F99C2840007310C /* OnboardingFlowEvaluatorTests.swift */,
+				3652B1D4CCA25401F948AB69 /* TabViewControllerSiteLoadingPixelTests.swift */,
 			);
 			name = Onboarding;
 			sourceTree = "<group>";
@@ -10713,6 +10718,7 @@
 				B6BA95E728924730004ABA20 /* JSAlertController.storyboard */,
 				85010501292FB1000033978F /* FireproofFaviconUpdater.swift */,
 				D6ACEA312BBD55BF008FADDF /* TabURLInterceptor.swift */,
+				7C0392BCA1E0C259E1E239DB /* TabViewController+SiteLoadingPixel.swift */,
 			);
 			name = UI;
 			sourceTree = "<group>";
@@ -13624,6 +13630,7 @@
 				BBAFF0312F6A940A00029537 /* SubscriptionPromoModalPromptProvider.swift in Sources */,
 				DA9073A7F6F11BD081C2FA27 /* RebrandedOnboardingSearchExperiencePicker.swift in Sources */,
 				AAE51CD3558F68CEF6919A73 /* DBPIOSContentBlocking.swift in Sources */,
+				7F0590FDBBA0EEECF880FEE9 /* TabViewController+SiteLoadingPixel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -14121,6 +14128,7 @@
 				85AFA1212B45D14F0028A504 /* BookmarksMigrationAssertionTests.swift in Sources */,
 				4EEE6B9BEB9F0F385341C0F1 /* DarkReaderFeatureSettingsTests.swift in Sources */,
 				39BD5432CF6280442CDE88F0 /* DBPIOSContentBlockingTests.swift in Sources */,
+				B7A97190FB026429E034DB99 /* TabViewControllerSiteLoadingPixelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

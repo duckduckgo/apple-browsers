@@ -21,6 +21,7 @@ import Foundation
 import Navigation
 import PixelKit
 import PrivacyConfig
+import PrivacyDashboard
 import WebKit
 
 extension Navigation {
@@ -63,57 +64,6 @@ final class NavigationPixelNavigationResponder {
 }
 
 extension NavigationPixelNavigationResponder: NavigationResponder {
-
-    /// Converts NavigationType to a safe string for pixel tracking, avoiding PII in custom types
-    private func safeNavigationTypeString(_ navigationType: NavigationType) -> String {
-        switch navigationType {
-        case .linkActivated:
-            return "linkActivated"
-        case .formSubmitted:
-            return "formSubmitted"
-        case .formResubmitted:
-            return "formResubmitted"
-        case .backForward:
-            return "backForward"
-        case .reload:
-            return "reload"
-        case .redirect:
-            return "redirect"
-        case .sessionRestoration:
-            return "sessionRestoration"
-        case .alternateHtmlLoad:
-            return "alternateHtmlLoad"
-        case .sameDocumentNavigation:
-            return "sameDocumentNavigation"
-        case .other:
-            return "other"
-        case .custom(let customType):
-            // Only include known safe custom types to avoid PII
-            switch customType.rawValue {
-            case "userEnteredUrl":
-                return "custom.userEnteredUrl"
-            case "loadedByStateRestoration":
-                return "custom.loadedByStateRestoration"
-            case "appOpenUrl":
-                return "custom.appOpenUrl"
-            case "historyEntry":
-                return "custom.historyEntry"
-            case "bookmark":
-                return "custom.bookmark"
-            case "ui":
-                return "custom.ui"
-            case "link":
-                return "custom.link"
-            case "webViewUpdated":
-                return "custom.webViewUpdated"
-            case "userRequestedPageDownload":
-                return "custom.userRequestedPageDownload"
-            default:
-                // Unknown custom type - return generic "custom" to avoid PII
-                return "custom.unknown"
-            }
-        }
-    }
 
     func didStart(_ navigation: Navigation) {
         guard navigation.navigationAction.isForMainFrame else {
@@ -166,7 +116,7 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
         }
 
         let duration = Date().timeIntervalSince(startTime)
-        let navigationType = safeNavigationTypeString(navigation.navigationAction.navigationType)
+        let navigationType = SiteLoadingPixel.safeNavigationType(for: navigation.navigationAction.navigationType)
         pixelFiring?.fire(SiteLoadingPixel.siteLoadingSuccess(duration: duration, navigationType: navigationType))
     }
 
@@ -177,7 +127,7 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
         }
 
         let duration = Date().timeIntervalSince(startTime)
-        let navigationType = safeNavigationTypeString(navigation.navigationAction.navigationType)
+        let navigationType = SiteLoadingPixel.safeNavigationType(for: navigation.navigationAction.navigationType)
         pixelFiring?.fire(SiteLoadingPixel.siteLoadingFailure(duration: duration, error: error, navigationType: navigationType))
     }
 

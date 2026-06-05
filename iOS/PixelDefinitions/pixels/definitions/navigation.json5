@@ -1,7 +1,41 @@
 {
+    "m_site_loading_success": {
+        "description": "Fired when a site loading navigation completes successfully.",
+        "owners": ["diegoreymendez, THISISDINOSAUR"],
+        "triggers": ["page_load"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "duration",
+            {
+                "key": "navigation_type",
+                "type": "string",
+                "description": "Safe-string representation of the WKNavigationType that initiated the navigation"
+            }
+        ]
+    },
+    "m_site_loading_failure": {
+        "description": "Fired when a site loading navigation fails.",
+        "owners": ["diegoreymendez, THISISDINOSAUR"],
+        "triggers": ["page_load"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "duration",
+            {
+                "key": "navigation_type",
+                "type": "string",
+                "description": "Safe-string representation of the WKNavigationType that initiated the navigation"
+            },
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain"
+        ]
+    },
     "m_site_loading_performance": {
         "description": "Fired when CSS pushes privacy-aware performance metrics via expandedPerformanceMetricsResult notification",
-        "owners": ["diegoreymendez"],
+        "owners": ["diegoreymendez, THISISDINOSAUR"],
         "triggers": ["page_load"],
         "suffixes": [
             "platform",

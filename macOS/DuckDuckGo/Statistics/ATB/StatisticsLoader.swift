@@ -68,8 +68,6 @@ final class StatisticsLoader {
         load {
             dispatchPrecondition(condition: .onQueue(.main))
 
-            PixelKit.fireOSDistributionPixel(metric: .client)
-
             if isSearch && !isDuckAI {
                 self.refreshSearchRetentionAtb {
                     self.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
@@ -84,6 +82,9 @@ final class StatisticsLoader {
                 }
                 self.fireDockPixel()
             }
+
+            PixelKit.fireOSDistributionPixel(metric: .client)
+
             if !self.statisticsStore.isAppRetentionFiredToday {
                 self.refreshAppRetentionAtb(completion: completion)
                 self.fireAppRetentionExperimentPixels()

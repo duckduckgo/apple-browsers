@@ -132,6 +132,7 @@ public class StatisticsLoader {
     public func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {
         fireSearchExperimentPixels()
         fireOSDistributionPixel(.searches)
+
         guard let url = StatisticsDependentURLFactory(statisticsStore: statisticsStore).makeSearchAtbURL() else {
             requestInstallStatistics {
                 self.updateUsageSegmentationAfterInstall(activityType: .search)
@@ -163,6 +164,7 @@ public class StatisticsLoader {
     public func refreshAppRetentionAtb(completion: @escaping Completion = {}) {
         fireAppRetentionExperimentPixels()
         fireOSDistributionPixel(.client)
+
         guard let url = StatisticsDependentURLFactory(statisticsStore: statisticsStore).makeAppAtbURL() else {
             requestInstallStatistics {
                 self.updateUsageSegmentationAfterInstall(activityType: .appUse)

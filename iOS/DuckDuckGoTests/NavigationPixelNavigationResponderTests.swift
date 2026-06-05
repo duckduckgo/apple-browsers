@@ -50,7 +50,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
 
         sut = NavigationPixelNavigationResponder(
             isOnErrorPage: { [weak self] in self?.isOnErrorPage ?? false },
-            isLoadingErrorPage: { [weak self] in self?.isLoadingErrorPage ?? false }
+            isLoadingErrorPage: { [weak self] _ in self?.isLoadingErrorPage ?? false }
         )
     }
 

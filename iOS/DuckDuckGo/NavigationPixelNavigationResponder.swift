@@ -35,9 +35,16 @@ final class NavigationPixelNavigationResponder {
 
     private var pendingNavigationType: String?
     private let isOnErrorPage: () -> Bool
-    private let isLoadingErrorPage: () -> Bool
+    private let isLoadingErrorPage: (WKNavigationAction) -> Bool
 
-    init(isOnErrorPage: @escaping () -> Bool, isLoadingErrorPage: @escaping () -> Bool) {
+    /// - Parameters:
+    ///   - isOnErrorPage: Closure returning whether the currently-displayed page is a special error page.
+    ///   - isLoadingErrorPage: Closure returning whether the supplied `WKNavigationAction` is loading the
+    ///     special error page itself. Must be navigation-specific (URL-matched), not a stateful flag —
+    ///     otherwise an unrelated main-frame navigation initiated during the brief error-page-load window
+    ///     would also be dropped.
+    init(isOnErrorPage: @escaping () -> Bool,
+         isLoadingErrorPage: @escaping (WKNavigationAction) -> Bool) {
         self.isOnErrorPage = isOnErrorPage
         self.isLoadingErrorPage = isLoadingErrorPage
     }
@@ -49,7 +56,7 @@ final class NavigationPixelNavigationResponder {
     func willStart(_ navigationAction: WKNavigationAction) {
         guard navigationAction.isTargetingMainFrame() else { return }
 
-        guard !isLoadingErrorPage() else {
+        guard !isLoadingErrorPage(navigationAction) else {
             pendingNavigationType = nil
             return
         }

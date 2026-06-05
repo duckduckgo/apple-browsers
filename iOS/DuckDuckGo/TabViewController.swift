@@ -1521,8 +1521,16 @@ class TabViewController: UIViewController {
         isOnErrorPage: { [weak self] in
             self?.specialErrorPageNavigationHandler.isSpecialErrorPageVisible ?? false
         },
-        isLoadingErrorPage: { [weak self] in
-            self?.specialErrorPageNavigationHandler.isSpecialErrorPageRequest ?? false
+        isLoadingErrorPage: { [weak self] navigationAction in
+            // Keyed on URL — not just the flag — so an unrelated main-frame nav (back/forward, URL bar)
+            // initiated while the simulated error-page request is in flight isn't also dropped. The
+            // simulated request always uses `failedURL` (set alongside `isSpecialErrorPageRequest`).
+            guard let self,
+                  self.specialErrorPageNavigationHandler.isSpecialErrorPageRequest,
+                  let failedURL = self.specialErrorPageNavigationHandler.failedURL else {
+                return false
+            }
+            return navigationAction.request.url == failedURL
         }
     )
 

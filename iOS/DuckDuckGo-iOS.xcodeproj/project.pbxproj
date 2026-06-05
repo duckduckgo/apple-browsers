@@ -2201,6 +2201,8 @@
 		CBB4A8692FD31B9600A65956 /* UnifiedSuggestionsHostConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8682FD31B9600A65956 /* UnifiedSuggestionsHostConfig.swift */; };
 		CBB4A86B2FD32B4700A65956 /* AutocompleteRequestRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A86A2FD32B4700A65956 /* AutocompleteRequestRunner.swift */; };
 		CBB4A86D2FD3439900A65956 /* DuckAISuggestionsCoordinatorDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A86C2FD3439900A65956 /* DuckAISuggestionsCoordinatorDelegate.swift */; };
+		CBB4A86F2FD35FDE00A65956 /* UnifiedSuggestionsInputsMerger.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A86E2FD35FDE00A65956 /* UnifiedSuggestionsInputsMerger.swift */; };
+		CBB4A8712FD3601400A65956 /* UnifiedSuggestionsInputsMergerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8702FD3601400A65956 /* UnifiedSuggestionsInputsMergerTests.swift */; };
 		CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */; };
 		CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE22C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift */; };
 		CBC88EE52C8097B500F0F8C5 /* URLCredentialCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE42C8097B500F0F8C5 /* URLCredentialCreator.swift */; };
@@ -4891,6 +4893,8 @@
 		CBB4A8682FD31B9600A65956 /* UnifiedSuggestionsHostConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsHostConfig.swift; sourceTree = "<group>"; };
 		CBB4A86A2FD32B4700A65956 /* AutocompleteRequestRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteRequestRunner.swift; sourceTree = "<group>"; };
 		CBB4A86C2FD3439900A65956 /* DuckAISuggestionsCoordinatorDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsCoordinatorDelegate.swift; sourceTree = "<group>"; };
+		CBB4A86E2FD35FDE00A65956 /* UnifiedSuggestionsInputsMerger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsInputsMerger.swift; sourceTree = "<group>"; };
+		CBB4A8702FD3601400A65956 /* UnifiedSuggestionsInputsMergerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsInputsMergerTests.swift; sourceTree = "<group>"; };
 		CBB6B2542AF6D543006B777C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC7AB542AF6D583008CB798 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScriptTests.swift; sourceTree = "<group>"; };
@@ -10115,6 +10119,7 @@
 				CBB4A8662FD31A4D00A65956 /* UnifiedSuggestionsView.swift */,
 				CBB4A8682FD31B9600A65956 /* UnifiedSuggestionsHostConfig.swift */,
 				CBB4A86A2FD32B4700A65956 /* AutocompleteRequestRunner.swift */,
+				CBB4A86E2FD35FDE00A65956 /* UnifiedSuggestionsInputsMerger.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -10129,6 +10134,7 @@
 				CBB4A8502FD301EE00A65956 /* DuckAISuggestionsSelectionTests.swift */,
 				CBB4A85A2FD318A500A65956 /* SearchSuggestionsSourceTests.swift */,
 				CBB4A85E2FD3193D00A65956 /* UnifiedSuggestionsViewModelTests.swift */,
+				CBB4A8702FD3601400A65956 /* UnifiedSuggestionsInputsMergerTests.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -12547,6 +12553,7 @@
 				4B67012B2E3BE3660066176A /* LogViewerDataSource.swift in Sources */,
 				4B67012C2E3BE3660066176A /* LogFilterViewController.swift in Sources */,
 				C149BB7C2E78B0E8008AD6DD /* SyncRecoveryPromptPresenter.swift in Sources */,
+				CBB4A86F2FD35FDE00A65956 /* UnifiedSuggestionsInputsMerger.swift in Sources */,
 				9F989C172E9CCF8700EC2701 /* CardsListView.swift in Sources */,
 				4B67012D2E3BE3660066176A /* LogEntryDetailViewController.swift in Sources */,
 				4B67012E2E3BE3660066176A /* LogEntry+Formatting.swift in Sources */,
@@ -13992,6 +13999,7 @@
 				9FF967B42E0E270300E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift in Sources */,
 				C14CA6492E589F6A0060FA7B /* DaxEasterEggLogoCacheTests.swift in Sources */,
 				9F387E062EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift in Sources */,
+				CBB4A8712FD3601400A65956 /* UnifiedSuggestionsInputsMergerTests.swift in Sources */,
 				98E563F42DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */,
 				9FF967BF2E0E7F5200E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift in Sources */,
 				98E564A22DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,

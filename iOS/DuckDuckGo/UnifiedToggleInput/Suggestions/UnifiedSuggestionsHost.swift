@@ -23,6 +23,14 @@ final class UnifiedSuggestionsHost {
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
     private var escapeHatchModel: EscapeHatchModel?
     private var cancellables = Set<AnyCancellable>()
+    /// Built once on first `.favorites` render; NTP has a heavy init, so don't rebuild per body pass.
+    private var cachedFavoritesController: NewTabPageViewController?
+
+    private func memoizedFavoritesController() -> NewTabPageViewController? {
+        if let cachedFavoritesController { return cachedFavoritesController }
+        cachedFavoritesController = config.favoritesProvider()
+        return cachedFavoritesController
+    }
 
     init(config: UnifiedSuggestionsHostConfig) {
         self.config = config
@@ -60,7 +68,7 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: config.isAddressBarAtBottom,
             header: makeHeader(),
-            favoritesProvider: config.favoritesProvider)
+            favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
         let hosting = UIHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
@@ -114,6 +122,6 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: config.isAddressBarAtBottom,
             header: makeHeader(),
-            favoritesProvider: config.favoritesProvider)
+            favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
     }
 }

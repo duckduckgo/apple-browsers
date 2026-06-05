@@ -63,6 +63,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let actionIDKey = "action_id"
         public static let stepTypeKey = "stepType"
         public static let environmentKey = "environment"
+        public static let subscribedKey = "subscribed"
         public static let httpCode = "http_code"
         public static let backendServiceCallSite = "backend_service_callsite"
         public static let isImmediateOperation = "is_manual_scan"

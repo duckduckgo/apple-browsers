@@ -109,7 +109,7 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             // which would inflate startup timings by arbitrary user think-time. Flag the
             // measurement as invalid up-front so the startup pixel is discarded for this launch.
             if PFMoveToApplicationsFolderWillPrompt(/*allowAlertSilencing:*/ true) {
-                Application.appDelegate.startupProfiler.markStartupInterrupted()
+                Application.appDelegate.startupProfiler.invalidate()
             }
             PFMoveToApplicationsFolderIfNecessary(/*allowAlertSilencing:*/ true)
         }

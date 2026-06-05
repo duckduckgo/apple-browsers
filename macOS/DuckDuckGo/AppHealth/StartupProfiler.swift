@@ -32,7 +32,7 @@ final class StartupProfiler: @unchecked Sendable {
 
     private let lock = NSLock()
     private var metrics = StartupMetrics()
-    private var isInterrupted = false
+    private var isInvalid = false
     private let logger: Logger
     weak var delegate: StartupProfilerDelegate?
 
@@ -76,12 +76,13 @@ final class StartupProfiler: @unchecked Sendable {
         }
     }
 
-    /// Marks the current launch as interrupted by an event that invalidates startup timings
-    /// (e.g. a modal prompt blocking the launch). The completion callback — and therefore the
-    /// startup metrics pixel — is suppressed for this launch.
-    func markStartupInterrupted() {
+    /// Invalidates the current startup measurement so its metrics are discarded. The completion
+    /// callback — and therefore the startup metrics pixel — is suppressed for this launch.
+    /// Used when something contaminates the timings, such as the Move to Applications Folder
+    /// prompt blocking the launch before the measured sequence begins.
+    func invalidate() {
         lock.withLock {
-            isInterrupted = true
+            isInvalid = true
         }
     }
 }
@@ -121,8 +122,8 @@ private extension StartupProfiler {
             return
         }
 
-        guard !lock.withLock({ isInterrupted }) else {
-            logger.log(level: .debug, "🏁 [Startup Metrics] discarded — launch was interrupted")
+        guard !lock.withLock({ isInvalid }) else {
+            logger.log(level: .debug, "🏁 [Startup Metrics] discarded — measurement invalidated")
             return
         }
 

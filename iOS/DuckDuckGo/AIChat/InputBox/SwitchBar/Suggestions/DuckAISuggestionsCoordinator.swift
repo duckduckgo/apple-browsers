@@ -208,7 +208,7 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
             await historyManager.deleteHistoryForURL(url)
             Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
             DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
-            urlLoader.fetch(query: queryProvider())
+            urlLoader.refreshSuggestions()
         }
     }
 

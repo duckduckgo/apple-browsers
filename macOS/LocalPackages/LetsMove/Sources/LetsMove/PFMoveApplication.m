@@ -57,7 +57,7 @@ static NSString *ShellQuotedString(NSString *string);
 static void Relaunch(NSString *destinationPath);
 
 // Main worker function
-void PFMoveToApplicationsFolderIfNecessary(BOOL allowAlertSilencing) {     
+void PFMoveToApplicationsFolderIfNecessary(BOOL allowAlertSilencing) {
 
 	// Make sure to do our work on the main thread.
 	// Apparently Electron apps need this for things to work properly.

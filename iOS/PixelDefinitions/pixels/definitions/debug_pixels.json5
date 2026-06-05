@@ -49,7 +49,7 @@
             }
         ]
     },
-    "m_debug_tabs-bar_cell-index-out-of-range": {
+    "debug_tabs-bar_cell-index-out-of-range": {
         "description": "Fires when the iPad tabs bar collection view requests a cell for an index that no longer exists in the tabs model (a desync between the layout and the model). The view now renders a placeholder instead of crashing. Expecting minimal numbers of these pixels - ideally zero.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],

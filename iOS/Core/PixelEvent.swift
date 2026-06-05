@@ -2728,7 +2728,7 @@ extension Pixel.Event {
 
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
         case .debugTabsModelCrossModeMismatch: return "m_debug_tabs-model_cross-mode-mismatch"
-        case .debugTabsBarCellIndexOutOfRange: return "m_debug_tabs-bar_cell-index-out-of-range"
+        case .debugTabsBarCellIndexOutOfRange: return "debug_tabs-bar_cell-index-out-of-range"
 
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             

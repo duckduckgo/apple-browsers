@@ -35,4 +35,6 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
 
 private final class EmptySuggestionsSource: SuggestionsSource {
     let sectionsPublisher: AnyPublisher<[SuggestionSection], Never> = Just([]).eraseToAnyPublisher()
+    func start(textPublisher: AnyPublisher<String, Never>) {}
+    func tearDown() {}
 }

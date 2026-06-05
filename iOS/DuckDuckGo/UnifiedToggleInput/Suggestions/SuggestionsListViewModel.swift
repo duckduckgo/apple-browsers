@@ -34,4 +34,24 @@ final class SuggestionsListViewModel: ObservableObject {
     func selectRow(id: String) { onSelect?(id) }
     func tapAheadRow(id: String) { onTapAhead?(id) }
     func deleteRow(id: String) { onDelete?(id) }
+
+    // MARK: - Keyboard navigation
+
+    func moveSelectionDown() { moveSelection(by: +1) }
+    func moveSelectionUp() { moveSelection(by: -1) }
+
+    func commitSelection() {
+        if let id = selectedRowID { onSelect?(id) }
+    }
+
+    private func moveSelection(by delta: Int) {
+        let ids = sections.flatMap { $0.rows.map(\.id) }
+        guard !ids.isEmpty else { selectedRowID = nil; return }
+        guard let current = selectedRowID, let idx = ids.firstIndex(of: current) else {
+            selectedRowID = delta > 0 ? ids.first : ids.last
+            return
+        }
+        let next = idx + delta
+        if ids.indices.contains(next) { selectedRowID = ids[next] }
+    }
 }

@@ -802,6 +802,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         onSwipeDownRequested?()
     }
 
+    // MARK: - Keyboard navigation
+
+    var hasKeyboardSelection: Bool { activeHost?.hasSelection == true }
+    func keyboardMoveSelectionDown() { activeHost?.moveSelectionDown() }
+    func keyboardMoveSelectionUp() { activeHost?.moveSelectionUp() }
+    func commitKeyboardSelection() { activeHost?.commitSelection() }
+
+    private var activeHost: UnifiedSuggestionsHost? {
+        switch switchBarHandler.currentToggleState {
+        case .search: return searchSuggestionsHost
+        case .aiChat: return duckAISuggestionsHost
+        }
+    }
+
     func setContentInset(top: CGFloat, bottom: CGFloat) {
         guard requestedContentInset.top != top || requestedContentInset.bottom != bottom else { return }
         requestedContentInset = (top, bottom)

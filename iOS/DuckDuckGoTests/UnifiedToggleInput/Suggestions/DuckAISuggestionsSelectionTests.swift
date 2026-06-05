@@ -76,8 +76,13 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
 // MARK: - Stubs
 
 private final class StubSuggestionLoadingDataSource: SuggestionLoadingDataSource {
+    var platform: Platform { .mobile }
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] { [] }
     func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark] { [] }
     func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage] { [] }
     func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab] { [] }
+    func suggestionLoading(_ suggestionLoading: SuggestionLoading,
+                           suggestionDataFromUrl url: URL,
+                           withParameters parameters: [String: String],
+                           completion: @escaping (Data?, Error?) -> Void) {}
 }

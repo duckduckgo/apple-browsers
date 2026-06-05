@@ -98,7 +98,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var suggestionTrayManager: SuggestionTrayManager?
     private var duckAISuggestionsHost: UnifiedSuggestionsHost?
     private var searchSuggestionsHost: UnifiedSuggestionsHost?
-    private var urlAutocompleteTask: URLSessionDataTask?
     private var isContentActive = false
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
@@ -169,8 +168,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         super.viewDidDisappear(animated)
         duckAISuggestionsHost?.tearDown()
         duckAISuggestionsHost = nil
-        urlAutocompleteTask?.cancel()
-        urlAutocompleteTask = nil
     }
 
     // MARK: - Public Methods
@@ -464,17 +461,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         guard let swipeContainerManager,
               let dependencies = suggestionTrayDependencies else { return }
 
+        let requestRunner = AutocompleteRequestRunner()
         let dataSource = AutocompleteSuggestionsDataSource(
             historyManager: dependencies.historyManager,
             bookmarksDatabase: dependencies.bookmarksDatabase,
             featureFlagger: dependencies.featureFlagger,
             tabsModel: dependencies.tabsModelProvider()
-        ) { [weak self] request, completion in
-            self?.urlAutocompleteTask?.cancel()
-            self?.urlAutocompleteTask = URLSession.shared.dataTask(with: request) { data, _, error in
-                completion(data, error)
-            }
-            self?.urlAutocompleteTask?.resume()
+        ) { request, completion in
+            requestRunner.run(request, completion: completion)
         }
         let loader = SearchSuggestionsLoader(dataSource: dataSource)
 
@@ -542,7 +536,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             },
             onTearDown: { [weak loader] in
                 loader?.tearDown()
-            }
+            },
+            retainedObjects: [loader, requestRunner]
         )
 
         let host = UnifiedSuggestionsHost(config: config)
@@ -627,17 +622,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         )
 
         // Build the URL-side fetcher reusing the Search-side suggestion stream + ranking.
+        let requestRunner = AutocompleteRequestRunner()
         let dataSource = AutocompleteSuggestionsDataSource(
             historyManager: dependencies.historyManager,
             bookmarksDatabase: dependencies.bookmarksDatabase,
             featureFlagger: dependencies.featureFlagger,
             tabsModel: dependencies.tabsModelProvider()
-        ) { [weak self] request, completion in
-            self?.urlAutocompleteTask?.cancel()
-            self?.urlAutocompleteTask = URLSession.shared.dataTask(with: request) { data, _, error in
-                completion(data, error)
-            }
-            self?.urlAutocompleteTask?.resume()
+        ) { request, completion in
+            requestRunner.run(request, completion: completion)
         }
         let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource)
 
@@ -698,7 +690,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             onTearDown: { [weak chatManager, weak urlLoader] in
                 chatManager?.tearDown()
                 urlLoader?.tearDown()
-            }
+            },
+            retainedObjects: [chatManager, urlLoader, chatViewModel, requestRunner]
         )
 
         let host = UnifiedSuggestionsHost(config: config)

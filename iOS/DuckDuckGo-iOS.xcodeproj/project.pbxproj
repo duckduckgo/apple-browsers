@@ -2203,6 +2203,7 @@
 		CBB4A8652FD31A0A00A65956 /* SuggestionsFavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8642FD31A0A00A65956 /* SuggestionsFavoritesView.swift */; };
 		CBB4A8672FD31A4D00A65956 /* UnifiedSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8662FD31A4D00A65956 /* UnifiedSuggestionsView.swift */; };
 		CBB4A8692FD31B9600A65956 /* UnifiedSuggestionsHostConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8682FD31B9600A65956 /* UnifiedSuggestionsHostConfig.swift */; };
+		CBB4A86B2FD32B4700A65956 /* AutocompleteRequestRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A86A2FD32B4700A65956 /* AutocompleteRequestRunner.swift */; };
 		CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */; };
 		CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE22C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift */; };
 		CBC88EE52C8097B500F0F8C5 /* URLCredentialCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE42C8097B500F0F8C5 /* URLCredentialCreator.swift */; };
@@ -4895,6 +4896,7 @@
 		CBB4A8642FD31A0A00A65956 /* SuggestionsFavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsFavoritesView.swift; sourceTree = "<group>"; };
 		CBB4A8662FD31A4D00A65956 /* UnifiedSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsView.swift; sourceTree = "<group>"; };
 		CBB4A8682FD31B9600A65956 /* UnifiedSuggestionsHostConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsHostConfig.swift; sourceTree = "<group>"; };
+		CBB4A86A2FD32B4700A65956 /* AutocompleteRequestRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteRequestRunner.swift; sourceTree = "<group>"; };
 		CBB6B2542AF6D543006B777C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC7AB542AF6D583008CB798 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScriptTests.swift; sourceTree = "<group>"; };
@@ -10121,6 +10123,7 @@
 				CBB4A8642FD31A0A00A65956 /* SuggestionsFavoritesView.swift */,
 				CBB4A8662FD31A4D00A65956 /* UnifiedSuggestionsView.swift */,
 				CBB4A8682FD31B9600A65956 /* UnifiedSuggestionsHostConfig.swift */,
+				CBB4A86A2FD32B4700A65956 /* AutocompleteRequestRunner.swift */,
 			);
 			path = Suggestions;
 			sourceTree = "<group>";
@@ -13349,6 +13352,7 @@
 				97EFB1592EFAB15900CF06E1 /* OnboardingSearchExperienceSettingsResolver.swift in Sources */,
 				1DEAADFF2BA7832F00E25A97 /* EmailProtectionView.swift in Sources */,
 				F1AF3A412F44AE2600D2BAD3 /* AppIconManaging.swift in Sources */,
+				CBB4A86B2FD32B4700A65956 /* AutocompleteRequestRunner.swift in Sources */,
 				31C314A22D2EF614009A412A /* AIChatViewControllerManager.swift in Sources */,
 				D6FEB8B12B7498A300C3615F /* HeadlessWebView.swift in Sources */,
 				9FDEC7BC2C91204900C7A692 /* AppIconPickerViewModel.swift in Sources */,

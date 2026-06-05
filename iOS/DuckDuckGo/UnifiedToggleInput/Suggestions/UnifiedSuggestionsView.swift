@@ -20,10 +20,12 @@ struct UnifiedSuggestionsView: View {
 
     var body: some View {
         switch viewModel.content {
-        case .list:
+        case .list(let kind):
+            // The escape hatch is hidden while typing (search / duck.ai suggestion lists);
+            // it only shows in the non-typing recents list (mirrors legacy `isQueryActive`).
             SuggestionsListView(viewModel: viewModel.listViewModel,
                                 isAddressBarAtBottom: isAddressBarAtBottom,
-                                header: header)
+                                header: kind == .recents ? header : nil)
         case .favorites:
             if let controller = favoritesProvider() {
                 SuggestionsFavoritesView(controller: controller)
@@ -31,8 +33,18 @@ struct UnifiedSuggestionsView: View {
                 Color.clear
             }
         case .logo:
-            // Part 2c moves the logo into the view; for now DaxLogoManager keeps drawing it.
-            Color.clear
+            // The logo itself stays drawn by DaxLogoManager (moved into the view in Part 2c).
+            // The escape hatch is chrome and must still show in the empty state, pinned at the top.
+            if let header {
+                VStack(spacing: 0) {
+                    header
+                        .padding(.horizontal, 16)
+                        .padding(.top, 14)
+                    Spacer(minLength: 0)
+                }
+            } else {
+                Color.clear
+            }
         }
     }
 }

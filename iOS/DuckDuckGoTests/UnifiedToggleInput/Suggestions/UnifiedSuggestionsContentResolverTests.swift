@@ -13,25 +13,33 @@ final class UnifiedSuggestionsContentResolverTests: XCTestCase {
 
     private func inputs(mode: TextEntryMode,
                         isTyping: Bool = false,
-                        hasFavoritesOrMessages: Bool = false,
+                        hasFavorites: Bool = false,
+                        hasMessages: Bool = false,
                         hasRecents: Bool = false,
                         resultsPending: Bool = false) -> UnifiedSuggestionsInputs {
         UnifiedSuggestionsInputs(mode: mode,
                                  isTyping: isTyping,
-                                 hasFavoritesOrMessages: hasFavoritesOrMessages,
+                                 hasFavorites: hasFavorites,
+                                 hasMessages: hasMessages,
                                  hasRecents: hasRecents,
                                  resultsPending: resultsPending)
     }
 
     func test_searchEmpty_withFavorites_isFavorites() {
         let kind = UnifiedSuggestionsContentResolver.resolve(
-            inputs(mode: .search, hasFavoritesOrMessages: true), previous: nil)
+            inputs(mode: .search, hasFavorites: true), previous: nil)
         XCTAssertEqual(kind, .favorites)
     }
 
-    func test_searchEmpty_noFavorites_isLogo() {
+    func test_searchEmpty_noFavoritesButHasMessages_isFavorites() {
         let kind = UnifiedSuggestionsContentResolver.resolve(
-            inputs(mode: .search, hasFavoritesOrMessages: false), previous: nil)
+            inputs(mode: .search, hasFavorites: false, hasMessages: true), previous: nil)
+        XCTAssertEqual(kind, .favorites)
+    }
+
+    func test_searchEmpty_noFavoritesNoMessages_isLogo() {
+        let kind = UnifiedSuggestionsContentResolver.resolve(
+            inputs(mode: .search, hasFavorites: false, hasMessages: false), previous: nil)
         XCTAssertEqual(kind, .logo)
     }
 

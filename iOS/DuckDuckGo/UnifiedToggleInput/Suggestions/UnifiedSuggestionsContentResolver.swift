@@ -26,7 +26,8 @@ enum UnifiedSuggestionsContentKind: Equatable {
 struct UnifiedSuggestionsInputs: Equatable {
     let mode: TextEntryMode
     let isTyping: Bool
-    let hasFavoritesOrMessages: Bool
+    let hasFavorites: Bool
+    let hasMessages: Bool
     let hasRecents: Bool
     let resultsPending: Bool
 }
@@ -40,7 +41,7 @@ enum UnifiedSuggestionsContentResolver {
         switch inputs.mode {
         case .search:
             guard inputs.isTyping else {
-                return inputs.hasFavoritesOrMessages ? .favorites : .logo
+                return (inputs.hasFavorites || inputs.hasMessages) ? .favorites : .logo
             }
             return .list(.search)
 

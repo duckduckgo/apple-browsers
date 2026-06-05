@@ -90,7 +90,8 @@ Derived from one explicit input struct — no UIKit, no managers, no offsets:
 struct Inputs: Equatable {
     let mode: TextEntryMode            // .search | .aiChat
     let isTyping: Bool                 // query non-empty
-    let hasFavoritesOrMessages: Bool   // search empty-state content exists
+    let hasFavorites: Bool             // search empty-state: favorites exist
+    let hasMessages: Bool              // search empty-state: remote messages exist
     let hasRecents: Bool               // duck.ai empty-state content exists
     let resultsPending: Bool           // fetchers not settled for current query
 }

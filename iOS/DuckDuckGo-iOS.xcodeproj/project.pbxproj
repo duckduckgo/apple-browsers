@@ -1718,6 +1718,7 @@
 		A1F4C5322F8D100000D1A111 /* DataImportHubPixelContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5302F8D100000D1A111 /* DataImportHubPixelContext.swift */; };
 		A1F4C5332F8D100000D1A111 /* DataImportHubSimulatedCompletionPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5312F8D100000D1A111 /* DataImportHubSimulatedCompletionPersistor.swift */; };
 		A5B373DCAC231125EC470ADF /* RebrandedOnboardingView+AddressBarPositionContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E935251F047CE4825824A5 /* RebrandedOnboardingView+AddressBarPositionContent.swift */; };
+		A627D8C9C6C477E0A51B89E5 /* NavigationPixelNavigationResponderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A30EF03B7EC51B89770CA36 /* NavigationPixelNavigationResponderTests.swift */; };
 		AA2000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift */; };
 		AA2000040000000000000004 /* TabSwitcherTrackerCountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000040000000000000004 /* TabSwitcherTrackerCountViewModel.swift */; };
 		AA2000050000000000000005 /* TabSwitcherTrackerCountViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000050000000000000005 /* TabSwitcherTrackerCountViewModelTests.swift */; };
@@ -3101,6 +3102,7 @@
 		65F436132D9AD4610034CC36 /* NativeDuckPlayerNavigationHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDuckPlayerNavigationHandlerTests.swift; sourceTree = "<group>"; };
 		65F436142D9AD4610034CC36 /* YoutublePlayerNavigationHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutublePlayerNavigationHandlerTests.swift; sourceTree = "<group>"; };
 		65F4CB452D7A0EFF00E89416 /* DuckPlayerWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerWebView.swift; sourceTree = "<group>"; };
+		6A30EF03B7EC51B89770CA36 /* NavigationPixelNavigationResponderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NavigationPixelNavigationResponderTests.swift; sourceTree = "<group>"; };
 		6AC6DAB228804F97002723C0 /* BarsAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarsAnimator.swift; sourceTree = "<group>"; };
 		6AC98418288055C1005FA9CA /* BarsAnimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarsAnimatorTests.swift; sourceTree = "<group>"; };
 		6EFAB87418082C5BDE38CE4D /* NewAddressBarPickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerViewModelTests.swift; sourceTree = "<group>"; };
@@ -8304,6 +8306,7 @@
 				9F3361B92F2B24B000E0C21A /* ContextualDaxDialogsProviderTests.swift */,
 				9F3038F32F99C2840007310C /* OnboardingFlowEvaluatorTests.swift */,
 				3652B1D4CCA25401F948AB69 /* TabViewControllerSiteLoadingPixelTests.swift */,
+				6A30EF03B7EC51B89770CA36 /* NavigationPixelNavigationResponderTests.swift */,
 			);
 			name = Onboarding;
 			sourceTree = "<group>";
@@ -14153,6 +14156,7 @@
 				4EEE6B9BEB9F0F385341C0F1 /* DarkReaderFeatureSettingsTests.swift in Sources */,
 				39BD5432CF6280442CDE88F0 /* DBPIOSContentBlockingTests.swift in Sources */,
 				B7A97190FB026429E034DB99 /* TabViewControllerSiteLoadingPixelTests.swift in Sources */,
+				A627D8C9C6C477E0A51B89E5 /* NavigationPixelNavigationResponderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

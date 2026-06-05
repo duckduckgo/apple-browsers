@@ -297,7 +297,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             self?.viewModel.deleteChat(chatId: chatId)
             completion(true)
         }
-        delete.image = DesignSystemImages.Glyphs.Size24.trash
+        delete.image = DesignSystemImages.Glyphs.Size24.fire
         delete.accessibilityLabel = UserText.aiChatHistoryDeleteSwipeAccessibilityLabel
 
         let download = UIContextualAction(style: .normal, title: nil) { _, _, completion in

@@ -2434,10 +2434,15 @@ extension TabViewController: WKNavigationDelegate {
         // overlap: for instance, the content-blocking wait below can hold nav1's `decisionHandler` while
         // nav2 enters `decidePolicyFor`, and a second `willStart` would overwrite the pending type before
         // nav1's `didStartProvisionalNavigation` consumed it. WebKit serializes delegate callbacks on the
-        // main queue, so firing from inside the `.allow` branch guarantees the next event is the matching
+        // main queue, so firing from inside the allow branches guarantees the next event is the matching
         // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
+        //
+        // `determineAllowPolicy()` may also return the private `WKNavigationActionPolicy(rawValue: 3)`
+        // (`_WKNavigationActionPolicyAllowWithoutTryingAppLink`) to disable Universal Links handling
+        // (set via `preventUniversalLinksOnce` — notably after a tab restoration). WebKit still produces
+        // a `didStartProvisional` for it, so `willStart` must fire just like for the public `.allow` value.
         let wrappedHandler: (WKNavigationActionPolicy) -> Void = { [weak self] policy in
-            if policy == .allow {
+            if policy == .allow || policy.rawValue == 3 {
                 self?.navigationPixelResponder.willStart(navigationAction)
             }
             decisionHandler(policy)

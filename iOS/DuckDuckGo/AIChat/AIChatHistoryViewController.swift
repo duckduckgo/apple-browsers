@@ -33,6 +33,7 @@ final class AIChatHistoryViewController: UIViewController {
         table.dataSource = self
         table.delegate = self
         table.register(AIChatHistoryCell.self, forCellReuseIdentifier: AIChatHistoryCell.reuseIdentifier)
+        table.register(AIChatHistoryNoResultsCell.self, forCellReuseIdentifier: AIChatHistoryNoResultsCell.reuseIdentifier)
         table.translatesAutoresizingMaskIntoConstraints = false
         table.sectionHeaderTopPadding = 0
         // Both are needed to keep the `.insetGrouped` rounded bottom corner of the last
@@ -56,6 +57,14 @@ final class AIChatHistoryViewController: UIViewController {
         host.view.backgroundColor = .clear
         return host
     }()
+
+    /// True when the user is searching AND the filter matched nothing. Drives the table
+    /// view to render a single `AIChatHistoryNoResultsCell` (matching Bookmarks' visual: an inset-grouped
+    /// row with "No matches found"), while preserving the search-bar header so the user
+    /// can edit or clear the query.
+    private var isShowingNoSearchResults: Bool {
+        viewModel.isEmpty && !viewModel.effectiveQuery.isEmpty
+    }
 
     init(viewModel: AIChatHistoryViewModel) {
         self.viewModel = viewModel
@@ -226,14 +235,15 @@ final class AIChatHistoryViewController: UIViewController {
 extension AIChatHistoryViewController: UITableViewDataSource {
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        viewModel.numberOfSections
+        isShowingNoSearchResults ? 1 : viewModel.numberOfSections
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.numberOfRows(in: section)
+        isShowingNoSearchResults ? 1 : viewModel.numberOfRows(in: section)
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        if isShowingNoSearchResults { return nil }
         guard let title = viewModel.title(forSection: section) else { return nil }
         let label = UILabel()
         label.text = title
@@ -253,10 +263,14 @@ extension AIChatHistoryViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        viewModel.title(forSection: section) == nil ? .leastNormalMagnitude : UITableView.automaticDimension
+        if isShowingNoSearchResults { return .leastNormalMagnitude }
+        return viewModel.title(forSection: section) == nil ? .leastNormalMagnitude : UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if isShowingNoSearchResults {
+            return tableView.dequeueReusableCell(withIdentifier: AIChatHistoryNoResultsCell.reuseIdentifier, for: indexPath)
+        }
         let cell = tableView.dequeueReusableCell(withIdentifier: AIChatHistoryCell.reuseIdentifier, for: indexPath)
         guard let chatCell = cell as? AIChatHistoryCell else { return cell }
         chatCell.titleLabel.text = viewModel.title(forRowAt: indexPath)

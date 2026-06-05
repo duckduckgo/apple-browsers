@@ -1,7 +1,7 @@
 # duckai_chrome_shortcut_global_disable.yaml
 #
 # Scenario 6: Disabling Duck.ai entirely hides the chrome shortcut regardless of
-# the per-shortcut Navigation Bar preference; re-enabling Duck.ai restores it.
+# the per-shortcut Tab Bar preference; re-enabling Duck.ai restores it.
 appId: com.duckduckgo.mobile.ios
 tags:
     - ipad
@@ -14,12 +14,12 @@ tags:
 - assertVisible:
     id: "Browser.TabsBar.AIChatChip"
 
-# Disable Duck.ai globally. The per-shortcut Navigation Bar preference stays on.
+# Disable Duck.ai globally. The per-shortcut Tab Bar preference stays on.
 - runFlow: ../shared/open_ai_features_settings.yaml
 - assertVisible:
-    id: "Settings.AIChat.EnableToggle"
+    id: "Settings.AIFeatures.EnableToggle"
 - tapOn:
-    id: "Settings.AIChat.EnableToggle"
+    id: "Settings.AIFeatures.EnableToggle"
 - waitForAnimationToEnd
 - tapOn: "Settings"
 - tapOn: "Done"
@@ -33,13 +33,13 @@ tags:
 # Re-enable Duck.ai.
 - runFlow: ../shared/open_ai_features_settings.yaml
 - tapOn:
-    id: "Settings.AIChat.EnableToggle"
+    id: "Settings.AIFeatures.EnableToggle"
 - waitForAnimationToEnd
 - tapOn: "Settings"
 - tapOn: "Done"
 - waitForAnimationToEnd:
     timeout: 2000
 
-# The chrome shortcut reappears (per-shortcut Navigation Bar toggle is still on).
+# The chrome shortcut reappears (per-shortcut Tab Bar toggle is still on).
 - assertVisible:
     id: "Browser.TabsBar.AIChatChip"

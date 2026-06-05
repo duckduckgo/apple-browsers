@@ -1,7 +1,7 @@
 # duckai_chrome_shortcut_settings_toggle.yaml
 #
 # Scenario 5: Toggling Settings -> AI Features -> Manage Duck.ai Shortcuts ->
-# Navigation Bar off/on updates the chrome shortcut live.
+# Tab Bar off/on updates the chrome shortcut live.
 appId: com.duckduckgo.mobile.ios
 tags:
     - ipad
@@ -14,10 +14,10 @@ tags:
 - assertVisible:
     id: "Browser.TabsBar.AIChatChip"
 
-# Turn the Navigation Bar shortcut OFF.
+# Turn the Tab Bar shortcut OFF.
 - runFlow: ../shared/open_manage_duckai_shortcuts.yaml
 - tapOn:
-    id: "Settings.AIChat.NavigationBarToggle"
+    id: "Settings.AIChat.TabBarToggle"
 - tapOn: "AI Features"
 - tapOn: "Settings"
 - tapOn: "Done"
@@ -28,10 +28,10 @@ tags:
 - assertNotVisible:
     id: "Browser.TabsBar.AIChatChip"
 
-# Turn the Navigation Bar shortcut back ON.
+# Turn the Tab Bar shortcut back ON.
 - runFlow: ../shared/open_manage_duckai_shortcuts.yaml
 - tapOn:
-    id: "Settings.AIChat.NavigationBarToggle"
+    id: "Settings.AIChat.TabBarToggle"
 - tapOn: "AI Features"
 - tapOn: "Settings"
 - tapOn: "Done"

@@ -767,6 +767,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case embeddedRollout
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear
+    /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
+    case protectedDataLoadGate
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

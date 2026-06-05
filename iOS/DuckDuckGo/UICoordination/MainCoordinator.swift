@@ -451,7 +451,9 @@ final class MainCoordinator {
         // Reading the extension archive from Application Support while protected data is
         // unavailable (device locked / before first unlock) makes WKWebExtension fail with
         // WKWebExtensionErrorInvalidArchive (domain code 9). Stay pending and retry on unlock.
-        guard UIApplication.shared.isProtectedDataAvailable else {
+        // Failsafe-disableable via .webExtensionProtectedDataLoadGate (off → load immediately).
+        if featureFlagger.isFeatureOn(.webExtensionProtectedDataLoadGate),
+           !UIApplication.shared.isProtectedDataAvailable {
             isWebExtensionLoadPending = true
             deferUntilProtectedDataAvailable { [weak self] in
                 self?.loadWebExtensionsIfPending()
@@ -521,7 +523,9 @@ final class MainCoordinator {
         // Installing copies/loads the extension archive from Application Support; like the load
         // path this fails with WKWebExtensionErrorInvalidArchive (code 9) while protected data is
         // unavailable. Defer the sync until protected data becomes available.
-        guard UIApplication.shared.isProtectedDataAvailable else {
+        // Failsafe-disableable via .webExtensionProtectedDataLoadGate (off → install immediately).
+        if featureFlagger.isFeatureOn(.webExtensionProtectedDataLoadGate),
+           !UIApplication.shared.isProtectedDataAvailable {
             deferUntilProtectedDataAvailable { [weak self] in
                 Task { @MainActor in await self?.syncEmbeddedExtensions() }
             }

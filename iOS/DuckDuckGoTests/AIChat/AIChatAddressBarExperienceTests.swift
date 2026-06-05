@@ -158,7 +158,7 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
     func testWhenIPadAndChromeShortcutOnAndLargeWidthThenAddressBarButtonHidden() {
         MockUIDevice.mockUserInterfaceIdiom = .pad
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatNavigationBarUserSettingsEnabled: true)
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatTabBarUserSettingsEnabled: true)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
                                                 aiChatSettings: aiChatSettings,
                                                 largeWidthProvider: MockLargeWidthProvider(isLargeWidth: true))
@@ -169,7 +169,7 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
     func testWhenIPadAndChromeShortcutOnAndNarrowWidthThenAddressBarButtonShown() {
         MockUIDevice.mockUserInterfaceIdiom = .pad
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatNavigationBarUserSettingsEnabled: true)
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatTabBarUserSettingsEnabled: true)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
                                                 aiChatSettings: aiChatSettings,
                                                 largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
@@ -177,10 +177,10 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
     }
 
-    func testWhenIPadAndChromeShortcutOnAndNavigationBarOffThenAddressBarButtonHiddenAtAnyWidth() {
+    func testWhenIPadAndChromeShortcutOnAndTabBarOffThenAddressBarButtonHiddenAtAnyWidth() {
         MockUIDevice.mockUserInterfaceIdiom = .pad
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatNavigationBarUserSettingsEnabled: false)
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatTabBarUserSettingsEnabled: false)
 
         let large = AIChatAddressBarExperience(featureFlagger: featureFlagger,
                                                aiChatSettings: aiChatSettings,
@@ -198,7 +198,7 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         MockUIDevice.mockUserInterfaceIdiom = .pad
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
-                                                        isAIChatNavigationBarUserSettingsEnabled: false)
+                                                        isAIChatTabBarUserSettingsEnabled: false)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
                                                 aiChatSettings: aiChatSettings,
                                                 largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
@@ -210,7 +210,7 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         MockUIDevice.mockUserInterfaceIdiom = .phone
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: false,
-                                                        isAIChatNavigationBarUserSettingsEnabled: true)
+                                                        isAIChatTabBarUserSettingsEnabled: true)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
                                                 aiChatSettings: aiChatSettings)
 

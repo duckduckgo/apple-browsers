@@ -36,6 +36,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -250,6 +251,25 @@ final class UnifiedToggleInputView: UIView {
     var isReasoningButtonHidden: Bool {
         get { toolsToolbar.isReasoningButtonHidden }
         set { toolsToolbar.isReasoningButtonHidden = newValue }
+    }
+
+    var isToolbarReturnKeyHidden: Bool {
+        get { toolsToolbar.isReturnKeyHidden }
+        set { toolsToolbar.isReturnKeyHidden = newValue }
+    }
+
+    /// Caps the text field so the whole card fits within `available` height (the gap above the
+    /// keyboard in landscape); nil lifts the cap. Chrome is constant, so the field's ceiling is
+    /// the budget minus chrome, and it scrolls beyond that.
+    func setAvailableExpandedHeight(_ available: CGFloat?) {
+        guard let available else {
+            textEntryView.externalMaxHeightCap = nil
+            return
+        }
+        layoutIfNeeded()
+        guard bounds.height > 0 else { return }
+        let chrome = bounds.height - textEntryView.bounds.height
+        textEntryView.externalMaxHeightCap = available - chrome
     }
 
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
@@ -540,6 +560,8 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isUserInteractionEnabled = !dimmed
         // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
         handler.isOnboardingLocked = dimmed
+        let shadowOpacity: Float = dimmed ? 0.04 : 0.16
+        Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
     }
 
     // MARK: - Fire Mode
@@ -1159,7 +1181,7 @@ private extension UnifiedToggleInputView {
     /// Mirrors `AIChatTabChatHeaderView`'s glass-pill style swap: regular glass in light mode
     /// (visible material on white chrome), clear glass in dark mode (lighter, refractive).
     @available(iOS 26, *)
-    fileprivate static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
+    static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
         traitCollection.userInterfaceStyle == .dark ? .clearGlass() : .glass()
     }
 
@@ -1178,9 +1200,9 @@ private extension UnifiedToggleInputView {
         button.clipsToBounds = false
     }
 
-    private static func applyAITabAccessoryShadow(to button: UIButton) {
+    private static func applyAITabAccessoryShadow(to button: UIButton, opacity: Float = 0.16) {
         button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOpacity = 0.16
+        button.layer.shadowOpacity = opacity
         button.layer.shadowOffset = CGSize(width: 0, height: 8)
         button.layer.shadowRadius = 16
     }
@@ -1275,6 +1297,10 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onSelectedToolClearTapped = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputViewDidClearSelectedTool(self)
+        }
+        toolsToolbar.onReturnKeyTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidTapReturnKey(self)
         }
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)

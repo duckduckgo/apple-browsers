@@ -58,7 +58,7 @@ public protocol AIChatSettingsProvider {
     var isAIChatTabSwitcherUserSettingsEnabled: Bool { get }
 
     /// The user settings state for the Duck.ai shortcut in the iPad browser chrome (tabs bar).
-    var isAIChatNavigationBarUserSettingsEnabled: Bool { get }
+    var isAIChatTabBarUserSettingsEnabled: Bool { get }
 
     /// The user settings state for automatically attaching page context
     var isAutomaticContextAttachmentEnabled: Bool { get }
@@ -82,7 +82,7 @@ public protocol AIChatSettingsProvider {
     func enableAIChatTabSwitcherUserSettings(enable: Bool)
 
     /// Updates the user settings state for the Duck.ai shortcut in the iPad browser chrome.
-    func enableAIChatNavigationBarUserSettings(enable: Bool)
+    func enableAIChatTabBarUserSettings(enable: Bool)
 
     /// Updates the user settings state for the AI Chat Search Input
     func enableAIChatSearchInputUserSettings(enable: Bool)

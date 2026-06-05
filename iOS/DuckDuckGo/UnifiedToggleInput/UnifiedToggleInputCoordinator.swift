@@ -1776,6 +1776,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         submitCurrentInputFromCoordinator()
     }
 
+    func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController) {
+        insertNewlineFromFloatingReturnKey()
+    }
+
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
 

@@ -102,6 +102,7 @@ final class YouTubeAdBlockingUITests: UITestCase {
     private let youTubeAdBlockButtonIdentifier = "AddressBarButtonsViewController.youTubeAdBlockButton"
 
     func testYouTubeAdBlockButtonAndPillAppear_onYouTubeVideo_whenEnabled() throws {
+        try skipFlakyTest()
         try skipIfUnsupported()
         try clearYouTubeAdBlockingEnabledDefault()
         app = XCUIApplication.setUp(featureFlags: [
@@ -156,6 +157,7 @@ final class YouTubeAdBlockingUITests: UITestCase {
     // MARK: - Popover items
 
     func testPopoverShowsExpectedItems_whenYouTubeAdBlockButtonTapped() throws {
+        try skipFlakyTest()
         try skipIfUnsupported()
         try clearYouTubeAdBlockingEnabledDefault()
         app = XCUIApplication.setUp(featureFlags: [
@@ -215,5 +217,11 @@ final class YouTubeAdBlockingUITests: UITestCase {
         guard #available(macOS 15.4, *) else {
             throw XCTSkip("YouTube ad blocking requires macOS 15.4+")
         }
+    }
+
+    // Temporarily disabled: these assertions depend on live YouTube navigation and the animated
+    // ad-block "on" pill appearing within a timeout, which is flaky on CI. Re-enable once stabilised.
+    private func skipFlakyTest() throws {
+        throw XCTSkip("Flaky: relies on live YouTube navigation and ad-block pill animation timing, currently failing in CI")
     }
 }

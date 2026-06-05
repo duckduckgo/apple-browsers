@@ -25,7 +25,7 @@ import WebKit
 /// Complements the per-attempt navigation pixel with outcome-specific data.
 ///
 /// The `.siteLoadingTiming` case is sourced from `WKPageLoadTiming` via the BSK `Navigation` library and
-/// is therefore only fired on macOS today; iOS constructs only `.siteLoadingSuccess` / `.siteLoadingFailure`.
+/// is therefore only fired on macOS today; iOS only fires`.siteLoadingSuccess` / `.siteLoadingFailure`.
 public enum SiteLoadingPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
 
     /// Whether a site-loading success/failure pixel should fire for the given navigation. Skips JS-driven

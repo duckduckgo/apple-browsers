@@ -3539,7 +3539,7 @@ extension TabViewController: UserContentControllerDelegate {
         breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: breakageReportingSubfeature!)
 
-        siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature(targetWebview: webView)
+        siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: siteLoadingPerformanceSubfeature!)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)

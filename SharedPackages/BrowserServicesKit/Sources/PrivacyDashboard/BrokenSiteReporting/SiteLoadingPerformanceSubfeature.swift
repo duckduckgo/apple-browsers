@@ -35,16 +35,13 @@ public final class SiteLoadingPerformanceSubfeature: Subfeature {
     public var featureName: String = "performanceMetrics"
     public weak var broker: UserScriptMessageBroker?
 
-    private weak var targetWebview: WKWebView?
     private let samplePercentage: Int
     private let pixelFire: (PixelKitEvent, PixelKit.Frequency) -> Void
 
-    public init(targetWebview: WKWebView,
-                samplePercentage: Int = 20,
+    public init(samplePercentage: Int = 20,
                 pixelFire: @escaping (PixelKitEvent, PixelKit.Frequency) -> Void = { event, frequency in
                     PixelKit.fire(event, frequency: frequency)
                 }) {
-        self.targetWebview = targetWebview
         self.samplePercentage = samplePercentage
         self.pixelFire = pixelFire
     }

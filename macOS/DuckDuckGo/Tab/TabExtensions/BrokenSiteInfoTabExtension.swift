@@ -44,7 +44,7 @@ final class BrokenSiteInfoTabExtension {
 
         webViewPublisher.sink { [weak self] webView in
             self?.breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
-            self?.siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature(targetWebview: webView)
+            self?.siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
         }.store(in: &cancellables)
 
         contentScopeUserScriptPublisher.sink { [weak self] contentScopeUserScript in

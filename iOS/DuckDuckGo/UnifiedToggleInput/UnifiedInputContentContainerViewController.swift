@@ -501,7 +501,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let config = UnifiedSuggestionsHostConfig(
             source: source,
             inputsPublisher: inputsPublisher,
-            isAddressBarAtBottom: switchBarHandler.isTopBarPosition == false,
+            isAddressBarAtBottom: appSettings.currentAddressBarPosition == .bottom,
             favoritesProvider: { [weak self] in self?.makeSearchFavoritesController() },
             onSelectRow: { [weak self] id in
                 guard let suggestion = source.suggestion(forRowID: id) else { return }
@@ -658,7 +658,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let config = UnifiedSuggestionsHostConfig(
             source: source,
             inputsPublisher: inputsPublisher,
-            isAddressBarAtBottom: switchBarHandler.isTopBarPosition == false,
+            isAddressBarAtBottom: appSettings.currentAddressBarPosition == .bottom,
             favoritesProvider: { nil },
             onSelectRow: { [weak self] id in self?.handleDuckAISuggestionSelect(id, source: source) },
             onDeleteRow: { [weak self] id in self?.handleDuckAISuggestionDelete(id, source: source, queryProvider: queryProvider, dependencies: dependencies) },
@@ -987,9 +987,8 @@ private extension UnifiedInputContentContainerViewController {
     }
 
     func refreshContentPresentationState() {
-        // Duck.ai mode now renders chats / URLs / search-DDG inline via DuckAISuggestionsCoordinator,
-        // so there's no fallback toggling to do here. Search mode is unchanged — the suggestion tray
-        // decides its own visibility from query state.
+        // Duck.ai mode renders suggestions inline; no fallback toggling needed here.
+        // Search mode is unchanged — the suggestion tray decides its own visibility from query state.
         updateDuckAISuggestionsActiveState()
     }
 }

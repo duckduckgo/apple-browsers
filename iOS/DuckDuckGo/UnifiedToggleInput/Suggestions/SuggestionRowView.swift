@@ -24,6 +24,7 @@ struct SuggestionRowView: View {
         static let iconTextSpacing: CGFloat = 10
         static let trailingPadding: CGFloat = 20
         static let accessoryLeadingPadding: CGFloat = 4
+        static let subtitleMinHeight: CGFloat = 21
     }
 
     var body: some View {
@@ -56,6 +57,7 @@ struct SuggestionRowView: View {
                         .daxFootnoteRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .lineLimit(1)
+                        .frame(minHeight: Metrics.subtitleMinHeight)
                 }
             }
             .padding(.leading, Metrics.iconTextSpacing)

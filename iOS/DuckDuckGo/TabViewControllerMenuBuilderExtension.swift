@@ -1028,10 +1028,15 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         // Duck.ai Settings is intentionally omitted here for now: there's no settings-open Duck.ai URL,
         // and the in-page submitOpenSettingsAction is a no-op off a Duck.ai tab. It will return once the
         // frontend exposes a settings-open URL (scoped as a follow-up), wired like Chats below.
+        // When the native chat-history flag is on, the Chats entry opens our native sheet rather
+        // than Duck.ai web — keeps the UTI cluster aligned with the standalone Chats entry.
+        let chatsEntry: BrowsingMenuEntry = featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+            ? buildDuckAiChatsEntry(withSmallIcon: false)
+            : buildOpenChatListEntry(useSmallIcon: false)
         return [
             buildNewAIChatEntry(withSmallIcon: false),
             buildAINewVoiceChatEntry(useSmallIcon: false),
-            buildOpenChatListEntry(useSmallIcon: false)
+            chatsEntry
         ]
     }
 

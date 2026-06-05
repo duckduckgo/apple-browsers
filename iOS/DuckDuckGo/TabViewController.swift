@@ -814,9 +814,17 @@ class TabViewController: UIViewController {
             /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
             /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
             /// manages its own native bottom layout via the UnifiedToggleInput container.
-
             let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
-            webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
+            let effectiveBarsVisibilityPercent: CGFloat
+            if #available(iOS 26, *) {
+                /// iOS 26 regressed fixed-bottom webpage elements when the browser continuously
+                /// resizes the webview's bottom inset while chrome hides/shows. Keep the inset
+                /// stable in bottom-address-bar mode to avoid pushing page-fixed footers offscreen.
+                effectiveBarsVisibilityPercent = 1.0
+            } else {
+                effectiveBarsVisibilityPercent = barsVisibilityPercent
+            }
+            webViewBottomAnchorConstraint?.constant = -targetHeight * effectiveBarsVisibilityPercent
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }

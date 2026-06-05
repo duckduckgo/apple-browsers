@@ -321,7 +321,7 @@ struct DataImportSummaryView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private struct AnimationView: View {
+    fileprivate struct AnimationView: View {
         @Binding var isAnimating: Bool
 
         var body: some View {
@@ -333,7 +333,7 @@ struct DataImportSummaryView: View {
         }
     }
 
-    private struct SummaryListRow: View {
+    fileprivate struct SummaryListRow: View {
         enum Icon {
             case success(UIImage)
             case failure
@@ -377,7 +377,7 @@ struct DataImportSummaryView: View {
         }
     }
 
-    private struct ContinueImportCard: View {
+    fileprivate struct ContinueImportCard: View {
         let title: String
         let icon: Image
         let dismissButtonTitle: String
@@ -479,4 +479,36 @@ private extension DataImport.DataType {
             return DesignSystemImages.Color.Size24.creditCardCheck
         }
     }
+}
+
+#Preview("Summary Rows") {
+    List {
+        DataImportSummaryView.SummaryListRow(
+            icon: .success(DataImport.DataType.passwords.summarySuccessIcon),
+            label: "Passwords",
+            count: 42,
+            onFrameChange: nil
+        )
+        DataImportSummaryView.SummaryListRow(
+            icon: .failure,
+            label: "Failed",
+            count: 3,
+            onFrameChange: nil
+        )
+    }
+}
+
+#Preview("Continue Import Card") {
+    DataImportSummaryView.ContinueImportCard(
+        title: "Continue importing your passwords?",
+        icon: Image(uiImage: DesignSystemImages.Color.Size96.passwordsKeychainFeature),
+        dismissButtonTitle: "Not Now",
+        continueButtonTitle: "Continue",
+        onDismissTapped: {},
+        onContinueTapped: {}
+    )
+}
+
+#Preview("Summary Animation") {
+    DataImportSummaryView.AnimationView(isAnimating: .constant(true))
 }

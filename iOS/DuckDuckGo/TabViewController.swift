@@ -1517,10 +1517,14 @@ class TabViewController: UIViewController {
         }
     }
 
-    /// Set by `webView(_:decidePolicyFor:decisionHandler:)` for main-frame navigations and consumed by
-    /// `webView(_:didStartProvisionalNavigation:)`, which stamps it onto the resulting `WKNavigation` for
-    /// later use by the site-loading success/failure pixels.
-    var pendingSiteLoadingNavigationType: String?
+    private lazy var navigationPixelResponder = NavigationPixelNavigationResponder(
+        isOnErrorPage: { [weak self] in
+            self?.specialErrorPageNavigationHandler.isSpecialErrorPageVisible ?? false
+        },
+        isLoadingErrorPage: { [weak self] in
+            self?.specialErrorPageNavigationHandler.isSpecialErrorPageRequest ?? false
+        }
+    )
 
     private func resetDashboardInfo() {
         if let url = url {
@@ -1955,7 +1959,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        recordSiteLoadingStart(for: navigation)
+        navigationPixelResponder.didStart(navigation)
         lastError = nil
         lastRenderedURL = webView.url
         cancelTrackerNetworksAnimation()
@@ -1970,7 +1974,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        fireSiteLoadingSuccessPixel(for: navigation)
+        navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
         didFinishURLSubject.send(webView.url)
@@ -2305,7 +2309,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        fireSiteLoadingFailurePixel(for: navigation, error: error)
+        navigationPixelResponder.didFail(navigation, error: error)
         Logger.general.debug("didFailNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
         adClickExternalOpenDetector.failNavigation(error: error)
@@ -2334,7 +2338,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        fireSiteLoadingFailurePixel(for: navigation, error: error)
+        navigationPixelResponder.didFail(navigation, error: error)
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
         adClickExternalOpenDetector.failNavigation(error: error)
@@ -2426,7 +2430,7 @@ extension TabViewController: WKNavigationDelegate {
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
 
-        captureSiteLoadingNavigationType(navigationAction)
+        navigationPixelResponder.willStart(navigationAction)
 
         // There is an `isUserInitiated` var on navigationAction that uses private API
         //  but this approach is public API.  Unfortunately this means that on iOS 17 and older

@@ -28,6 +28,26 @@ import WebKit
 /// is therefore only fired on macOS today; iOS constructs only `.siteLoadingSuccess` / `.siteLoadingFailure`.
 public enum SiteLoadingPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
 
+    /// Whether a site-loading success/failure pixel should fire for the given navigation. Skips JS-driven
+    /// redirects (`.developer` / `.client`) and the alternate-HTML loads BSK uses to render the macOS
+    /// `duck://error` page; also skips `.other` navigations originating from a visible error page (e.g.
+    /// tapping the error page's reload button, which doesn't surface as `.reload`). `isStartingFromErrorPage`
+    /// is the platform-specific "currently on the error page" signal — macOS reads `targetFrame.url == .error`
+    /// off the BSK `Navigation` handle; iOS reads `SpecialErrorPageNavigationHandler.isSpecialErrorPageVisible`.
+    /// iOS callers must also short-circuit on `SpecialErrorPageNavigationHandler.isSpecialErrorPageRequest`
+    /// to cover the load-the-error-page navigation itself, which macOS catches via `.alternateHtmlLoad` below.
+    public static func shouldFireSiteLoadingPixel(for navigationType: NavigationType,
+                                                  isStartingFromErrorPage: Bool) -> Bool {
+        switch navigationType {
+        case .redirect(.developer), .redirect(.client), .alternateHtmlLoad:
+            return false
+        case .other where isStartingFromErrorPage:
+            return false
+        default:
+            return true
+        }
+    }
+
     /// Maps `NavigationType` to a safe string for the `navigation_type` pixel parameter, avoiding PII.
     /// `NavigationType` (from BSK `Navigation`) is cross-platform with the richer cases gated by
     /// `#if os(macOS)` / `PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED`; this function is therefore

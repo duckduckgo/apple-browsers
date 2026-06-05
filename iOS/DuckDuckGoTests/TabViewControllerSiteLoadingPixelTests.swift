@@ -42,4 +42,20 @@ final class TabViewControllerSiteLoadingPixelTests: XCTestCase {
         XCTAssertEqual(SiteLoadingPixel.safeNavigationType(for: .custom(.init(rawValue: "bookmark"))),       "custom.bookmark")
         XCTAssertEqual(SiteLoadingPixel.safeNavigationType(for: .custom(.init(rawValue: "leaked-pii"))),     "custom.unknown")
     }
+
+    func test_shouldFireSiteLoadingPixel_skipsJSRedirectsAndAlternateHtmlLoad() {
+        XCTAssertFalse(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .redirect(.developer),       isStartingFromErrorPage: false))
+        XCTAssertFalse(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .redirect(.client(delay: 0)), isStartingFromErrorPage: false))
+        XCTAssertFalse(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .alternateHtmlLoad,           isStartingFromErrorPage: false))
+        // Server-side redirects (.server) should still be tracked
+        XCTAssertTrue(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .redirect(.server),            isStartingFromErrorPage: false))
+    }
+
+    func test_shouldFireSiteLoadingPixel_skipsOtherWhenStartingFromErrorPage() {
+        XCTAssertFalse(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .other,         isStartingFromErrorPage: true))
+        XCTAssertTrue(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .other,          isStartingFromErrorPage: false))
+        // The error-page guard intentionally only catches `.other`; explicit user-driven types still fire.
+        XCTAssertTrue(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .linkActivated,  isStartingFromErrorPage: true))
+        XCTAssertTrue(SiteLoadingPixel.shouldFireSiteLoadingPixel(for: .reload,         isStartingFromErrorPage: true))
+    }
 }

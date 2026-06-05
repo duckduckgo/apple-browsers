@@ -169,13 +169,19 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     private static func icon(for chat: DuckAiChat) -> UIImage {
         let kind = AIChatSuggestion.kind(forModel: chat.model)
+        let image: UIImage
         switch (kind, chat.pinned) {
-        case (.text, true): return DesignSystemImages.Glyphs.Size24.chatPinned
-        case (.text, false): return DesignSystemImages.Glyphs.Size24.chat
-        case (.voice, true): return DesignSystemImages.Glyphs.Size24.voicePinned
-        case (.voice, false): return DesignSystemImages.Glyphs.Size24.voice
-        case (.image, _): return DesignSystemImages.Glyphs.Size24.image
+        case (.text, true): image = DesignSystemImages.Glyphs.Size24.chatPinned
+        case (.text, false): image = DesignSystemImages.Glyphs.Size24.chat
+        case (.voice, true): image = DesignSystemImages.Glyphs.Size24.voicePinned
+        case (.voice, false): image = DesignSystemImages.Glyphs.Size24.voice
+        case (.image, _): image = DesignSystemImages.Glyphs.Size24.image
         }
+        // The chat-family glyph assets aren't marked `template-rendering-intent` in their
+        // Contents.json, so without forcing template mode they render in their own
+        // light-mode-tuned colors and become unreadable in dark mode. Force template so
+        // the cell's `.icons` tint (which adapts to appearance) takes effect.
+        return image.withRenderingMode(.alwaysTemplate)
     }
 }
 

@@ -296,6 +296,18 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManager)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
+
+        // One-shot: an onboarding choice arms a native marker whose value is the chosen
+        // "show search-mode toggle" state (presence of the key == a seed is pending). On the first
+        // duckduckgo.com load the seed script applies it and posts back to clear the marker, so it
+        // runs once per choice and later web changes are respected.
+        let homepageSeedKey = HomepageSearchModeToggleSeedUserScript.pendingSeedDefaultsKey
+        if UserDefaults.standard.object(forKey: homepageSeedKey) != nil {
+            let showSearchModeToggle = UserDefaults.standard.bool(forKey: homepageSeedKey)
+            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: showSearchModeToggle, onApplied: {
+                UserDefaults.standard.removeObject(forKey: homepageSeedKey)
+            }))
+        }
     }
 
     lazy var userScripts: [UserScript] = [
@@ -321,4 +333,56 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
     }
 
+}
+
+/// Applies the duckduckgo.com web homepage "search mode toggle" preference into the page's own
+/// localStorage to mirror the user's onboarding choice ("Search & Duck.ai" shows the toggle,
+/// "Search Only" hides it), then consumes a one-shot native marker so it runs once per choice.
+///
+/// Injected at document-start and host-gated to duckduckgo.com so no other site's storage is
+/// touched. It *overwrites* the existing value (the homepage may already have `homepageSettings`
+/// persisted from earlier visits), but only when the chosen value differs from what was last
+/// applied (tracked in `__ddgSearchModeSeedApplied`). That way a value the user later sets on the
+/// web is respected on reload, while a *changed* onboarding choice still takes effect. After
+/// writing it posts `homepageSearchModeSeedApplied` to native, whose handler clears the marker
+/// (`onApplied`) so the script is no longer injected on subsequent loads.
+final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
+    static let pendingSeedDefaultsKey = "aichat.pendingHomepageSearchModeSeed"
+
+    let messageNames: [String] = ["homepageSearchModeSeedApplied"]
+    let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    let forMainFrameOnly: Bool = true
+
+    private let showSearchModeToggle: Bool
+
+    var source: String {
+        """
+        const host = (window.location && window.location.hostname) || "";
+        if (host !== "duckduckgo.com" && !host.endsWith(".duckduckgo.com")) { return; }
+        try {
+            const appliedKey = "__ddgSearchModeSeedApplied";
+            const desired = \(showSearchModeToggle);
+            if (window.localStorage.getItem(appliedKey) === String(desired)) { return; }
+            const key = "homepageSettings";
+            const settings = JSON.parse(window.localStorage.getItem(key) || "{}");
+            settings.showSearchModeToggle = desired;
+            window.localStorage.setItem(key, JSON.stringify(settings));
+            window.localStorage.setItem(appliedKey, String(desired));
+            window.webkit.messageHandlers.homepageSearchModeSeedApplied.postMessage({});
+        } catch (e) {}
+        """
+    }
+
+    private let onApplied: () -> Void
+
+    init(showSearchModeToggle: Bool, onApplied: @escaping () -> Void) {
+        self.showSearchModeToggle = showSearchModeToggle
+        self.onApplied = onApplied
+        super.init()
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "homepageSearchModeSeedApplied" else { return }
+        onApplied()
+    }
 }

@@ -291,7 +291,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func setDuckAiInAddressBar(enabled: Bool) {
+        // Mirror the onboarding choice across all surfaces. The address-bar toggle and the native
+        // New Tab Page reflect `enabled` directly...
         aiChatPreferencesStorage.showSearchAndDuckAIToggle = enabled
+        aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
+        // ...and arm a one-shot marker carrying the chosen value (true = show the search-mode toggle)
+        // so the duckduckgo.com web homepage applies it once on next load
+        // (HomepageSearchModeToggleSeedUserScript consumes the marker), then respects any later
+        // change the user makes via the web "Customize Homepage" UI.
+        UserDefaults.standard.set(enabled, forKey: HomepageSearchModeToggleSeedUserScript.pendingSeedDefaultsKey)
     }
 
     private func onMainThreadIfNeeded(_ function: @escaping () -> Void) {

@@ -28,7 +28,16 @@ struct UnifiedSuggestionsView: View {
                                 header: kind == .recents ? header : nil)
         case .favorites:
             if let controller = favoritesProvider() {
-                SuggestionsFavoritesView(controller: controller)
+                // The escape hatch is the unified view's chrome (same as logo/recents/duck.ai),
+                // not the NTP's own — so it renders identically across every UTI state.
+                VStack(spacing: 0) {
+                    if let header {
+                        header
+                            .padding(.horizontal, 16)
+                            .padding(.top, 14)
+                    }
+                    SuggestionsFavoritesView(controller: controller)
+                }
             } else {
                 Color.clear
             }

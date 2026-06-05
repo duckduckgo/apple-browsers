@@ -568,7 +568,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             internalUserCommands: ntpDeps.internalUserCommands
         )
         controller.hideBorderView()
-        controller.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
+        // The escape hatch is rendered by the unified view's chrome (see UnifiedSuggestionsView
+        // `.favorites`), not by the NTP — so it's consistent across every UTI state.
+        controller.setEscapeHatch(nil)
         return controller
     }
 

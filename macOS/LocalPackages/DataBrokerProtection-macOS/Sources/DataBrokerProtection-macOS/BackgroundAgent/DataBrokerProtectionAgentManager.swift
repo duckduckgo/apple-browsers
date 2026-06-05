@@ -337,9 +337,17 @@ private extension DataBrokerProtectionAgentManager {
         Task {
             let isAuthenticated = await refreshIsAuthenticatedState()
             if isAuthenticated {
-                queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
+                queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView,
+                                                                    isAuthenticatedUser: true,
+                                                                    jobDependencies: jobDependencies,
+                                                                    errorHandler: errorHandler,
+                                                                    completion: completion)
             } else {
-                queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
+                queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView,
+                                                                     isAuthenticatedUser: false,
+                                                                     jobDependencies: jobDependencies,
+                                                                     errorHandler: errorHandler,
+                                                                     completion: completion)
             }
         }
     }
@@ -399,7 +407,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
         }
 
         do {
-            let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
+            let hasCompletedInitialScans = try database.haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: currentRunIsFreeScan != true)
             if hasCompletedInitialScans {
                 let profile = try database.fetchProfile()
                 eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0, isFreeScan: currentRunIsFreeScan)
@@ -424,7 +432,9 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
         await fireMonitoringPixels()
         await checkForEmailConfirmationData()
 
-        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies) { [weak self] errors in
+        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                             isAuthenticatedUser: currentRunIsFreeScan != true,
+                                                             jobDependencies: jobDependencies) { [weak self] errors in
             guard let self = self else { return }
 
             if let errors = errors {
@@ -503,6 +513,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
     public func startImmediateOperations(showWebView: Bool) {
         queueManager.startImmediateScanOperationsIfPermitted(showWebView: showWebView,
+                                                             isAuthenticatedUser: currentRunIsFreeScan != true,
                                                              jobDependencies: jobDependencies,
                                                              errorHandler: nil,
                                                              completion: nil)
@@ -517,6 +528,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
     public func runAllOptOuts(showWebView: Bool) {
         queueManager.startImmediateOptOutOperationsIfPermitted(showWebView: showWebView,
+                                                               isAuthenticatedUser: true,
                                                                jobDependencies: jobDependencies,
                                                                errorHandler: nil,
                                                                completion: nil)

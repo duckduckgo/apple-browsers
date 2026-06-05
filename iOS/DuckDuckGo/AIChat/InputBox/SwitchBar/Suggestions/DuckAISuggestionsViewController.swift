@@ -140,6 +140,9 @@ final class DuckAISuggestionsViewController: UIViewController {
     private var syncPromoHostingController: UIHostingController<AIChatSyncPromoView>?
     private var isVisibleContent = false
 
+    /// Fired when the list transitions from hidden to visible. 
+    var onBecameVisible: (() -> Void)?
+
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
          queryProvider: @escaping () -> String,
@@ -264,6 +267,9 @@ final class DuckAISuggestionsViewController: UIViewController {
         guard visible != isVisibleContent else { return }
         isVisibleContent = visible
         recordSyncPromoImpressionIfNeeded()
+        if visible {
+            onBecameVisible?()
+        }
     }
 
     // MARK: - Header (escape hatch + sync promo)

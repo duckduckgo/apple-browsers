@@ -473,8 +473,12 @@
 		3646AC482F88F0050093AEA7 /* FireWindowSubscriptionPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3646AC462F88F0050093AEA7 /* FireWindowSubscriptionPromoDelegateTests.swift */; };
 		365B21792F64460D00DE0CB0 /* DataClearingWideEventServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365B21782F64460D00DE0CB0 /* DataClearingWideEventServiceTests.swift */; };
 		365B217A2F64460D00DE0CB0 /* DataClearingWideEventServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365B21782F64460D00DE0CB0 /* DataClearingWideEventServiceTests.swift */; };
+		36763A052FBB930600383BAE /* URL+SubscriptionAttributionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36763A042FBB930600383BAE /* URL+SubscriptionAttributionTests.swift */; };
+		36763A062FBB930600383BAE /* URL+SubscriptionAttributionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36763A042FBB930600383BAE /* URL+SubscriptionAttributionTests.swift */; };
 		3689AA742F61F1F300EF7CBA /* DataClearingWideEventService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3689AA732F61F1F300EF7CBA /* DataClearingWideEventService.swift */; };
 		3689AA752F61F1F300EF7CBA /* DataClearingWideEventService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3689AA732F61F1F300EF7CBA /* DataClearingWideEventService.swift */; };
+		369A0CE82FAE24FB00494F41 /* URL+SubscriptionAttribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369A0CE72FAE24FB00494F41 /* URL+SubscriptionAttribution.swift */; };
+		369A0CE92FAE24FB00494F41 /* URL+SubscriptionAttribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369A0CE72FAE24FB00494F41 /* URL+SubscriptionAttribution.swift */; };
 		369BA9862F31305F0037B56D /* DataClearingPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369BA9852F31305C0037B56D /* DataClearingPixels.swift */; };
 		369BA9872F31305F0037B56D /* DataClearingPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369BA9852F31305C0037B56D /* DataClearingPixels.swift */; };
 		36E19A022F322D0200556F78 /* DataClearingPixelsReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E19A012F322CFE00556F78 /* DataClearingPixelsReporterTests.swift */; };
@@ -3867,6 +3871,8 @@
 		C16127EF2BDFB46400966BB9 /* DataImportShortcutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16127ED2BDFB46400966BB9 /* DataImportShortcutsView.swift */; };
 		C167D9032DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9022DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
 		C167D9042DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9022DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
+		C167D9052DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9022DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
+		C167D9062DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9022DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
 		C168B9AC2B31DC7E001AFAD9 /* AutofillNeverPromptWebsitesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C168B9AB2B31DC7E001AFAD9 /* AutofillNeverPromptWebsitesManager.swift */; };
 		C168B9AD2B31DC7F001AFAD9 /* AutofillNeverPromptWebsitesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C168B9AB2B31DC7E001AFAD9 /* AutofillNeverPromptWebsitesManager.swift */; };
 		C172E72F2C9329D300521D9A /* FlippedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C172E72E2C9329D300521D9A /* FlippedView.swift */; };
@@ -4993,7 +4999,9 @@
 		3646AC3F2F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+SubscriptionPromo.swift"; sourceTree = "<group>"; };
 		3646AC462F88F0050093AEA7 /* FireWindowSubscriptionPromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowSubscriptionPromoDelegateTests.swift; sourceTree = "<group>"; };
 		365B21782F64460D00DE0CB0 /* DataClearingWideEventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingWideEventServiceTests.swift; sourceTree = "<group>"; };
+		36763A042FBB930600383BAE /* URL+SubscriptionAttributionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+SubscriptionAttributionTests.swift"; sourceTree = "<group>"; };
 		3689AA732F61F1F300EF7CBA /* DataClearingWideEventService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingWideEventService.swift; sourceTree = "<group>"; };
+		369A0CE72FAE24FB00494F41 /* URL+SubscriptionAttribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+SubscriptionAttribution.swift"; sourceTree = "<group>"; };
 		369BA9852F31305C0037B56D /* DataClearingPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixels.swift; sourceTree = "<group>"; };
 		36E19A012F322CFE00556F78 /* DataClearingPixelsReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporterTests.swift; sourceTree = "<group>"; };
 		36E19A042F3230D200556F78 /* DataClearingPixelsReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporter.swift; sourceTree = "<group>"; };
@@ -10355,6 +10363,7 @@
 		9F64346E2BECB9FB00D2D8A0 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
+				36763A042FBB930600383BAE /* URL+SubscriptionAttributionTests.swift */,
 				F14B813E2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift */,
 				BBB819102EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift */,
 				BBB819122EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift */,
@@ -13004,6 +13013,7 @@
 		F118EA7B2BEA2B8700F77634 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
+				369A0CE72FAE24FB00494F41 /* URL+SubscriptionAttribution.swift */,
 				BB7C38442F322455008D6FEC /* FreeTrialPixelHandler.swift */,
 				F1C70D7B2BFF510000599292 /* SubscriptionEnvironment+Default.swift */,
 				F1D447222D9EAA950085809A /* SubscriptionPixelHandler.swift */,
@@ -14946,6 +14956,7 @@
 				7BD5049C2E5FA3F3008A0646 /* WebExtensionInternalSiteHandler.swift in Sources */,
 				B696AFFC2AC5924800C93203 /* FileLineError.swift in Sources */,
 				F1D43AEF2B98D8DF00BAB743 /* MainMenuActions+VanillaBrowser.swift in Sources */,
+				369A0CE92FAE24FB00494F41 /* URL+SubscriptionAttribution.swift in Sources */,
 				B6E1491129A5C30A00AAFBE8 /* FBProtectionTabExtension.swift in Sources */,
 				BB6C58692EFF01CA00B07E6B /* BaseURLDebugSettings.swift in Sources */,
 				840B66872F3A023C001E20C6 /* UpdatesDebugMenu.swift in Sources */,
@@ -16125,6 +16136,7 @@
 				CC87770D2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */,
 				3706FDEF293F661700E42796 /* PinnedTabsManagerTests.swift in Sources */,
 				CC951AD82EB524240047E245 /* MockDefaultBrowserAndDockPromptUserActivityStore.swift in Sources */,
+				36763A052FBB930600383BAE /* URL+SubscriptionAttributionTests.swift in Sources */,
 				56A054292C201D05007D8FAB /* MockSchemeTask.swift in Sources */,
 				3706FDF0293F661700E42796 /* WebKitVersionProviderTests.swift in Sources */,
 				37A0BA302D747C7000130447 /* CapturingHistoryViewTabOpener.swift in Sources */,
@@ -16748,6 +16760,7 @@
 				7BD1688E2AD4A4C400D24876 /* NetworkExtensionController.swift in Sources */,
 				7BA7CC3E2AD11E380042E5CE /* TunnelControllerIPCService.swift in Sources */,
 				F1DA51982BF6083B00CF29FA /* SubscriptionPixel.swift in Sources */,
+				C167D9052DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */,
 				F1C70D802BFF510000599292 /* SubscriptionEnvironment+Default.swift in Sources */,
 				7BA7CC402AD11E3D0042E5CE /* AppLauncher+DefaultInitializer.swift in Sources */,
 				7B78444D2D75F7E200A96B77 /* VPNExtensionResolver.swift in Sources */,
@@ -16799,6 +16812,7 @@
 				4BF0E5152AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift in Sources */,
 				7B7BD9482DFBDC780074633C /* VPNNotificationsObserver.swift in Sources */,
 				F1DA51992BF6083B00CF29FA /* SubscriptionPixel.swift in Sources */,
+				C167D9062DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */,
 				F1C70D812BFF510000599292 /* SubscriptionEnvironment+Default.swift in Sources */,
 				7BA7CC5C2AD120C30042E5CE /* EventMapping+NetworkProtectionError.swift in Sources */,
 				B65DA5F02A77CC3C00CBEE8D /* Bundle+NetworkProtectionExtensions.swift in Sources */,
@@ -17222,6 +17236,7 @@
 				EEEE20172E57BE7A0071A566 /* SyncDeviceButtonModel.swift in Sources */,
 				37B11B3928095E6600CBB621 /* TabLazyLoader.swift in Sources */,
 				BBC7BDAC2D5BB0890037A4AE /* BannerView.swift in Sources */,
+				369A0CE82FAE24FB00494F41 /* URL+SubscriptionAttribution.swift in Sources */,
 				8589063C267BCDC000D23B0D /* SaveCredentialsViewController.swift in Sources */,
 				CC0DD9172E5DF4B600277E46 /* SessionRestorePromptViewModel.swift in Sources */,
 				4BBE0AA727B9B027003B37A8 /* PopUpButton.swift in Sources */,
@@ -18814,6 +18829,7 @@
 				CCB2EBE12F62001600C65813 /* MockPromoDelegate.swift in Sources */,
 				311309792ECE77BC00FCD220 /* AddressBarSharedTextStateTests.swift in Sources */,
 				56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */,
+				36763A062FBB930600383BAE /* URL+SubscriptionAttributionTests.swift in Sources */,
 				CCD89A132ECE2C01008E738B /* DefaultBrowserAndDockPromptNotificationPresenterTests.swift in Sources */,
 				56A214AF2CB583BF00E5BC0E /* TrackerMessageProviderTests.swift in Sources */,
 				CC6E89802E5F0DE100F6BED0 /* SessionRestorePromptCoordinatorMock.swift in Sources */,

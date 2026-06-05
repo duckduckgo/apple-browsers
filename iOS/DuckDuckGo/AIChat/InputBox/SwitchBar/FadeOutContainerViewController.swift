@@ -224,7 +224,7 @@ final class FadeOutContainerViewController: UIViewController {
         updateTransitionProgress(currentProgress)
     }
 
-    private func updateTransitionProgress(_ progress: CGFloat) {
+    func updateTransitionProgress(_ progress: CGFloat) {
         transitionProgress = progress
         delegate?.fadeOutContainerViewController(self, didUpdateTransitionProgress: progress)
     }

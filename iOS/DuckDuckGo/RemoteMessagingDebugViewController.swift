@@ -50,21 +50,23 @@ struct RemoteMessagingDebugRootView: View {
         List {
             Section {
                 HStack {
-                    Text("Days Since Installed")
+                    Text(verbatim: "Days Since Installed")
                         .font(.system(size: 15))
                     Spacer()
                     Text(model.currentDaysSinceInstalled.map(String.init) ?? "Not set")
                         .font(.system(size: 15))
                         .foregroundStyle(Color(baseColor: .gray70))
                 }
-                Button("Set Days Since Installed…") {
+                Button {
                     daysInput = model.currentDaysSinceInstalled.map(String.init) ?? ""
                     isShowingDaysAlert = true
+                } label: {
+                    Text(verbatim: "Set Days Since Installed…")
                 }
             } header: {
-                Text("Install Date")
+                Text(verbatim: "Install Date")
             } footer: {
-                Text("Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Refresh Config” afterwards to re-evaluate.")
+                Text(verbatim: "Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Refresh Config” afterwards to re-evaluate.")
             }
 
             Section {

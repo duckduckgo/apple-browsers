@@ -22,29 +22,22 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import PrivacyConfig
+import Combine
+import Persistence
 
 struct SERPSettingsView: View {
 
     /// Used to show the right settings screen on SERP
     let page: Page
-    
-    let webViewModel: AsyncHeadlessWebViewViewModel
-
-    init(page: Page, featureFlagger: FeatureFlagger) {
-        self.page = page
-        self.webViewModel = AsyncHeadlessWebViewViewModel(
-            settings: AsyncHeadlessWebViewSettings(bounces: false,
-                                                   userScriptsDependencies: nil,
-                                                   featureFlagger: featureFlagger))
-    }
+    let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
+    let keyValueStore: ThrowingKeyValueStoring
 
     var body: some View {
-        AsyncHeadlessWebView(viewModel: webViewModel)
+        SERPSettingsWebView(url: page.url,
+                            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+                            keyValueStore: keyValueStore)
             .ignoresSafeArea(edges: .bottom)
             .background()
-            .onAppear {
-                webViewModel.navigationCoordinator.navigateTo(url: page.url)
-            }
     }
 
     enum Page {

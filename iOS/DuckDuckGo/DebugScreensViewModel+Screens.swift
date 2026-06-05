@@ -26,6 +26,7 @@ import Core
 import DataBrokerProtection_iOS
 import AIChat
 import WebExtensions
+import DuckUI
 
 extension DebugScreensViewModel {
 
@@ -88,6 +89,9 @@ extension DebugScreensViewModel {
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
 
             // MARK: SwiftUI Views
+            .view(title: "DuckUI", { _ in
+                DuckUIDebugMenuView()
+            }),
             .view(title: "Ad Blocking", { d in
                 AdBlockingDebugView(keyValueStore: d.keyValueStore)
             }),

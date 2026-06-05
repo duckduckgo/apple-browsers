@@ -330,6 +330,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213821747548995?focus=true
     case escapeHatchActions
 
+    /// Surfaces the escape-hatch "delete tab" action as a dedicated Fire button on the card and removes it from the menu.
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
+    case escapeHatchFireButton
+
     /// Test-only feature flag for verifying UI test override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestFeatureFlag
@@ -431,6 +435,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUI
+
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
+    case removeChatHistory
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -626,7 +633,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment),
                    cohortType: DuckAIQueryExperimentCohort.self)
         case .onboardingDuckAIFlow:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiOnboardingFlow))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiOnboardingFlow))
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration))
         case .allowProTierPurchase:
@@ -683,6 +690,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
         case .escapeHatchActions:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchActions))
+        case .escapeHatchFireButton:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchFireButton))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:
@@ -747,6 +756,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .floatingUI:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUI))
+        case .removeChatHistory:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
         }
     }
 

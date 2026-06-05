@@ -51,7 +51,7 @@ extension XCTestCase {
                     objToDeinit = nil
 
                 } else if view is WKWebView {
-                    if view.window != nil || AppVersion.runType == .integrationTests {
+                    if view.window != nil {
                         objToDeinit = view
                     }
 

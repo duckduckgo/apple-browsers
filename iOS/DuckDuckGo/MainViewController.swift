@@ -3463,6 +3463,10 @@ class MainViewController: UIViewController {
 
     func onDuckAIVoiceModeRequested() {
         Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.ntp.rawValue])
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         openAIChatInVoiceMode()
     }
 
@@ -3958,6 +3962,10 @@ extension MainViewController: OmniBarDelegate {
         // and resolves to .dismissed, not .suspended.
         hideSuggestionTray()
         omniBar.cancel()
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         loadQuery(query)
         hideNotificationBarIfBrokenSitePromptShown()
         showHomeRowReminder()
@@ -6418,11 +6426,19 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
         switch target {
         case .SERP:
             Pixel.fire(pixel: .voiceSearchSERPDone)
+            if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+                ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+            }
+            postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
             loadQuery(query)
 
         case .AIChat:
             Pixel.fire(pixel: .voiceSearchAIChatDone)
             if let coordinator = unifiedToggleInputCoordinator, coordinator.isAITabState, coordinator.hasBoundUserScript {
+                if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+                    ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+                }
+                postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()

@@ -137,6 +137,8 @@ public struct UserText {
     public static let aiChatHistoryRecentSectionTitle = NotLocalizedString("aiChat.history.section.recent", value: "RECENT", comment: "Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. Not translated; final copy will land in a follow-up PR.")
     public static let aiChatHistoryLoadErrorTitle = NotLocalizedString("aiChat.history.loadError.title", value: "Couldn't load chats", comment: "Title of the alert shown when Duck.ai chat history fails to load. Not translated; final copy will land in a follow-up PR.")
     public static let aiChatHistoryLoadErrorMessage = NotLocalizedString("aiChat.history.loadError.message", value: "Something went wrong loading your Duck.ai chats. Please try again later.", comment: "Message of the alert shown when Duck.ai chat history fails to load. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryDeleteSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.delete.a11y", value: "Delete chat", comment: "Accessibility label for the delete action revealed by swiping a Duck.ai chat row. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryDownloadSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.download.a11y", value: "Download chat", comment: "Accessibility label for the download action revealed by swiping a Duck.ai chat row. Not translated; final copy will land in a follow-up PR.")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
@@ -2112,6 +2114,7 @@ public struct UserText {
     public static let aiChatToolbarAttachButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.attach.button.accessibility.label", value: "Attach", comment: "Accessibility label for the attachment button in the Duck.ai native input toolbar")
     public static let aiChatToolbarSubmitButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.submit.button.accessibility.label", value: "Submit", comment: "Accessibility label for the submit button in the Duck.ai native input toolbar")
     public static let aiChatToolbarStopGeneratingButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.stop.button.accessibility.label", value: "Stop generating", comment: "Accessibility label for the stop generating button in the Duck.ai native input toolbar")
+    public static let aiChatToolbarReturnKeyButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.returnkey.button.accessibility.label", value: "Insert new line", comment: "Accessibility label for the return/new-line button in the Duck.ai native input toolbar")
     public static let aiChatToolbarWebSearchToolTitle = NSLocalizedString("aichat.toolbar.tools.websearch.title", value: "Web Search", comment: "Title for the web search tool in the unified input tools menu")
     public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Source answers from the web", comment: "Subtitle for the web search tool in the unified input tools menu")
     public static let aiChatToolbarImageGenerationToolTitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.title", value: "Create Image", comment: "Title for the image generation tool in the unified input tools menu")
@@ -2259,10 +2262,10 @@ public struct UserText {
     public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
     // Held as NotLocalizedString until copy is approved at Ship Review; convert to NSLocalizedString afterwards.
-    public static let aiChatSettingsEnableNavigationBarToggle = NotLocalizedString("duckai.settings.enable.navigation-bar-toggle", value: "Navigation Bar", comment: "Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar)")
+    public static let aiChatSettingsEnableTabBarToggle = NotLocalizedString("duckai.settings.enable.tab-bar-toggle", value: "Tab Bar", comment: "Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar)")
 
     // Held as NotLocalizedString until copy is approved at Ship Review; convert to NSLocalizedString afterwards.
-    public static let aiChatSettingsEnableNavigationBarSubtitle = NotLocalizedString("duckai.settings.enable.navigation-bar-subtitle", value: "Show in the browser navigation bar or address bar, depending on window size.", comment: "Subtitle for the Navigation Bar toggle row in Manage Duck.ai Shortcuts settings")
+    public static let aiChatSettingsEnableTabBarSubtitle = NotLocalizedString("duckai.settings.enable.tab-bar-subtitle", value: "Show in the browser tab bar or address bar, depending on window size.", comment: "Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings")
     
     public static let aiChatSettingsBrowserShortcutsSectionTitle = NSLocalizedString("duckai.settings.browserShortcuts.section.title", value: "Browser shortcuts", comment: "Title for section that groups shortcuts related to browser")
 

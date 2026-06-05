@@ -56,10 +56,13 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     // MARK: - Setting Chats Tests
 
-    func testSetChats_MergesAndSortsByRecency() {
+    func testSetChats_MergesAndSortsByRecencyWhileAccountingForPinnedTabs() {
         // Given - pinned is older, recent is newer
         let pinnedChats = [makeSuggestion(id: "p1", title: "Pinned", isPinned: true, timestamp: Date().addingTimeInterval(-3600))]
-        let recentChats = [makeSuggestion(id: "r1", title: "Recent", timestamp: Date())]
+        let recentChats = [
+            makeSuggestion(id: "r1", title: "Recent", timestamp: Date()),
+            makeSuggestion(id: "r2", title: "Recent", timestamp: Date.distantPast)
+        ]
 
         // When
         viewModel.setChats(pinned: pinnedChats, recent: recentChats)
@@ -67,8 +70,9 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         // Then - sorted by recency, most recent first
         XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
         XCTAssertTrue(viewModel.hasSuggestions)
-        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "r1") // More recent
-        XCTAssertEqual(viewModel.filteredSuggestions[1].id, "p1") // Older
+        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "p1") // Pinned must go at the top
+        XCTAssertEqual(viewModel.filteredSuggestions[1].id, "r1") // Recent
+        XCTAssertEqual(viewModel.filteredSuggestions[2].id, "r2") // Oldest
     }
 
     func testSetChats_ReplacesExistingChats() {

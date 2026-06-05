@@ -99,13 +99,6 @@ final class UnifiedSuggestionsHost {
     /// No-op: visibility gating is handled by `DaxLogoManager` + `hasContent`/`hasSettled`.
     func setIsVisibleContent(_ visible: Bool) {}
 
-    // MARK: - Keyboard navigation
-
-    var hasSelection: Bool { listViewModel.selectedRowID != nil }
-    func moveSelectionDown() { listViewModel.moveSelectionDown() }
-    func moveSelectionUp() { listViewModel.moveSelectionUp() }
-    func commitSelection() { listViewModel.commitSelection() }
-
     func tearDown() {
         cancellables.removeAll()
         onContentChanged = nil

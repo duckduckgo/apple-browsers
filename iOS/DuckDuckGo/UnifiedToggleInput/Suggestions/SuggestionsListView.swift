@@ -38,9 +38,7 @@ struct SuggestionsListView: View {
                                 onTapAhead: { viewModel.tapAheadRow(id: row.id) },
                                 onDelete: { viewModel.deleteRow(id: row.id) })
                         }
-                        .listRowBackground(row.id == viewModel.selectedRowID
-                            ? Color(designSystemColor: .accent)
-                            : Color(designSystemColor: .surface))
+                        .listRowBackground(Color(designSystemColor: .surface))
                     }
                 } header: {
                     sectionHeader(section.title)

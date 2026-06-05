@@ -71,8 +71,7 @@ extension MainViewController {
         }
         
         var arrowKeys = [UIKeyCommand]()
-        let isUTIEditing = unifiedToggleInputCoordinator?.isInputEditing == true
-        if viewCoordinator.omniBar.isTextFieldEditing || isUTIEditing {
+        if viewCoordinator.omniBar.isTextFieldEditing {
             arrowKeys = [
                 UIKeyCommand(title: "", action: #selector(keyboardMoveSelectionUp), input: UIKeyCommand.inputUpArrow, modifierFlags: []),
                 UIKeyCommand(title: "", action: #selector(keyboardMoveSelectionDown), input: UIKeyCommand.inputDownArrow, modifierFlags: [])
@@ -130,19 +129,11 @@ extension MainViewController {
     }
 
     @objc func keyboardMoveSelectionUp() {
-        if let utiContainer = unifiedToggleInputCoordinator?.contentViewController {
-            utiContainer.keyboardMoveSelectionUp()
-        } else {
-            suggestionTrayController?.keyboardMoveSelectionUp()
-        }
+        suggestionTrayController?.keyboardMoveSelectionUp()
     }
 
     @objc func keyboardMoveSelectionDown() {
-        if let utiContainer = unifiedToggleInputCoordinator?.contentViewController {
-            utiContainer.keyboardMoveSelectionDown()
-        } else {
-            suggestionTrayController?.keyboardMoveSelectionDown()
-        }
+        suggestionTrayController?.keyboardMoveSelectionDown()
     }
 
     @objc func keyboardReload() {

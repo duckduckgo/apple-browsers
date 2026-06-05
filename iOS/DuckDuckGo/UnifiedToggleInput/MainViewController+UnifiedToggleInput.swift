@@ -1187,11 +1187,6 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
-        let contentVC = unifiedToggleInputCoordinator?.contentViewController
-        if contentVC?.hasKeyboardSelection == true {
-            contentVC?.commitKeyboardSelection()
-            return
-        }
         handleUnifiedToggleInputSearchSubmission(query)
     }
 

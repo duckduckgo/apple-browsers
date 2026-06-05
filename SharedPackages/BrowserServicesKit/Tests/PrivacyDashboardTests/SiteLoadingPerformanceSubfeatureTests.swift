@@ -30,14 +30,13 @@ final class SiteLoadingPerformanceSubfeatureTests: XCTestCase {
     }
 
     func testFeatureNameMatchesContentScopeScriptsFeature() {
-        let subfeature = SiteLoadingPerformanceSubfeature(targetWebview: WKWebView())
+        let subfeature = SiteLoadingPerformanceSubfeature()
         XCTAssertEqual(subfeature.featureName, "performanceMetrics")
     }
 
     func testWhenExpandedMetricsPayloadIsValidThenSiteLoadingPerformancePixelIsFiredWithSampleFrequency() async throws {
         var fired: [FiredPixel] = []
         let subfeature = SiteLoadingPerformanceSubfeature(
-            targetWebview: WKWebView(),
             samplePercentage: 20,
             pixelFire: { event, frequency in
                 fired.append(FiredPixel(event: event, frequency: frequency))
@@ -85,7 +84,6 @@ final class SiteLoadingPerformanceSubfeatureTests: XCTestCase {
     func testWhenPayloadIsNotADictionaryThenNoPixelIsFired() async throws {
         var fired = 0
         let subfeature = SiteLoadingPerformanceSubfeature(
-            targetWebview: WKWebView(),
             samplePercentage: 20,
             pixelFire: { _, _ in fired += 1 }
         )
@@ -100,7 +98,6 @@ final class SiteLoadingPerformanceSubfeatureTests: XCTestCase {
     func testWhenPayloadHasNoMetricsKeyThenNoPixelIsFired() async throws {
         var fired = 0
         let subfeature = SiteLoadingPerformanceSubfeature(
-            targetWebview: WKWebView(),
             samplePercentage: 20,
             pixelFire: { _, _ in fired += 1 }
         )
@@ -113,7 +110,7 @@ final class SiteLoadingPerformanceSubfeatureTests: XCTestCase {
     }
 
     func testHandlerForMethodNameReturnsHandlerForExpandedPerformanceMetricsResultOnly() {
-        let subfeature = SiteLoadingPerformanceSubfeature(targetWebview: WKWebView())
+        let subfeature = SiteLoadingPerformanceSubfeature()
         XCTAssertNotNil(subfeature.handler(forMethodNamed: "expandedPerformanceMetricsResult"))
         XCTAssertNil(subfeature.handler(forMethodNamed: "vitalsResult"))
         XCTAssertNil(subfeature.handler(forMethodNamed: "breakageReportResult"))

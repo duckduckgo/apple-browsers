@@ -6131,8 +6131,13 @@ extension MainViewController: FireExecutorDelegate {
         }
         if #available(iOS 18.4, *) {
             Task { @MainActor [weak self] in
-                await self?.webExtensionManager?.reloadInstalledExtensions()
-                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+                guard let self else { return }
+                if self.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {
+                    await self.webExtensionManager?.reloadInstalledExtensions()
+                } else {
+                    await self.webExtensionManager?.loadInstalledExtensions()
+                }
+                self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
         }
         switch fireRequest.trigger {

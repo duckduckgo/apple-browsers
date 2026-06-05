@@ -765,6 +765,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
+    /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
+    case lightweightReloadOnDataClear
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

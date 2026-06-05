@@ -256,6 +256,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case minimalChromeInLandscape
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
+    case bottomBarViewportFixedElementsWorkaround
+
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
 

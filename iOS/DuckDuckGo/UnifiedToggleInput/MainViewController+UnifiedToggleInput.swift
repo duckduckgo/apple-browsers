@@ -1093,6 +1093,7 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         loadQuery(query)
     }
 

@@ -32,6 +32,7 @@ final class StartupProfiler: @unchecked Sendable {
 
     private let lock = NSLock()
     private var metrics = StartupMetrics()
+    private var isInterrupted = false
     private let logger: Logger
     weak var delegate: StartupProfilerDelegate?
 
@@ -74,6 +75,15 @@ final class StartupProfiler: @unchecked Sendable {
             metrics
         }
     }
+
+    /// Marks the current launch as interrupted by an event that invalidates startup timings
+    /// (e.g. a modal prompt blocking the launch). The completion callback — and therefore the
+    /// startup metrics pixel — is suppressed for this launch.
+    func markStartupInterrupted() {
+        lock.withLock {
+            isInterrupted = true
+        }
+    }
 }
 
 // MARK: - Private Helpers
@@ -108,6 +118,11 @@ private extension StartupProfiler {
 
     func notifyCompletionIfNeeded(metrics: StartupMetrics?) {
         guard let delegate, let metrics, metrics.isComplete else {
+            return
+        }
+
+        guard !lock.withLock({ isInterrupted }) else {
+            logger.log(level: .debug, "🏁 [Startup Metrics] discarded — launch was interrupted")
             return
         }
 

@@ -57,7 +57,7 @@ static NSString *ShellQuotedString(NSString *string);
 static void Relaunch(NSString *destinationPath);
 
 // Main worker function
-void PFMoveToApplicationsFolderIfNecessary(BOOL allowAlertSilencing) {
+void PFMoveToApplicationsFolderIfNecessary(BOOL allowAlertSilencing) {     
 
 	// Make sure to do our work on the main thread.
 	// Apparently Electron apps need this for things to work properly.
@@ -217,6 +217,22 @@ fail:
 
 BOOL PFMoveIsInProgress(void) {
     return MoveInProgress;
+}
+
+BOOL PFMoveToApplicationsFolderWillPrompt(BOOL allowAlertSilencing) {
+	// Mirrors the early-return conditions in PFMoveToApplicationsFolderIfNecessary that decide
+	// whether the prompt is shown, without presenting any UI.
+
+	// Suppressed by the user before
+	if (allowAlertSilencing && [[NSUserDefaults standardUserDefaults] boolForKey:AlertSuppressKey]) return NO;
+
+	NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+	BOOL isNestedApplication = IsApplicationAtPathNested(bundlePath);
+
+	// Already in some Applications folder, unless nested inside another app's bundle
+	if (IsInApplicationsFolder(bundlePath) && !isNestedApplication) return NO;
+
+	return YES;
 }
 
 #pragma mark -

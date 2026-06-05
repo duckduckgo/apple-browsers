@@ -50,7 +50,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                 isCommandPressed: { false },
                 firePixel: { [weak self] event in self?.firedPixels.append(event.name) }
             )
-            tab = Tab(content: .newtab)
+            tab = Tab(content: .none)
             window = WindowsManager.openNewWindow(with: tab)!
         }
     }

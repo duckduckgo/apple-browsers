@@ -59,33 +59,40 @@ class StatisticsLoaderTests: XCTestCase {
         pixelKit = nil
     }
 
-    func testRefreshRetentionAtbOnNavigationFiresClientAndSearchesOSDistributionPixels() {
-        var firedPixelNames: [String] = []
-        let capturingPixelKit = PixelKit(dryRun: false,
-                                         appVersion: "1.0.0",
-                                         defaultHeaders: [:],
-                                         defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
-                                         fireRequest: { name, _, _, _, _, onComplete in
-                                             firedPixelNames.append(name)
-                                             onComplete(true, nil)
-                                         })
-        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+    func testRefreshRetentionAtbOnNavigationFiresClientOSDistributionPixelRegardlessOfInputs() {
+        let configurations: [(isSearch: Bool, isDuckAI: Bool)] = [
+            (isSearch: true, isDuckAI: false),
+            (isSearch: true, isDuckAI: true),
+            (isSearch: false, isDuckAI: true)
+        ]
 
-        mockStatisticsStore.atb = "atb"
-        mockStatisticsStore.searchRetentionAtb = "retentionatb"
-        mockStatisticsStore.variant = "test"
-        loadSuccessfulUpdateAtbStub()
+        for configuration in configurations {
+            var firedPixelNames: [String] = []
+            // Fresh defaults per configuration so the monthly client pixel isn't deduped across iterations.
+            let capturingPixelKit = PixelKit(dryRun: false,
+                                             appVersion: "1.0.0",
+                                             defaultHeaders: [:],
+                                             defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+                                             fireRequest: { name, _, _, _, _, onComplete in
+                                                 firedPixelNames.append(name)
+                                                 onComplete(true, nil)
+                                             })
+            PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
 
-        let expect = expectation(description: #function)
-        testee.refreshRetentionAtbOnNavigation(isSearch: true, isDuckAI: false) {
-            expect.fulfill()
+            mockStatisticsStore.atb = "atb"
+            mockStatisticsStore.searchRetentionAtb = "retentionatb"
+            mockStatisticsStore.variant = "test"
+            loadSuccessfulUpdateAtbStub()
+
+            let expect = expectation(description: "\(#function) isSearch:\(configuration.isSearch) isDuckAI:\(configuration.isDuckAI)")
+            testee.refreshRetentionAtbOnNavigation(isSearch: configuration.isSearch, isDuckAI: configuration.isDuckAI) {
+                expect.fulfill()
+            }
+            waitForExpectations(timeout: 5)
+
+            XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_client_major_version_") },
+                          "Expected MAU OS-distribution pixel for isSearch:\(configuration.isSearch) isDuckAI:\(configuration.isDuckAI). Fired: \(firedPixelNames)")
         }
-        waitForExpectations(timeout: 5)
-
-        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_client_major_version_") },
-                      "Expected MAU OS-distribution pixel. Fired: \(firedPixelNames)")
-        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") },
-                      "Expected searches OS-distribution pixel. Fired: \(firedPixelNames)")
     }
 
     func testRefreshDuckAIRetentionAtbFiresSearchesOSDistributionPixel() {

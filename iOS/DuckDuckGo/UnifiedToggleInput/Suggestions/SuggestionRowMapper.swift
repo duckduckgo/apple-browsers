@@ -7,10 +7,8 @@
 //
 
 import AIChat
-import DesignResourcesKit
-import DesignResourcesKitIcons
+import Foundation
 import Suggestions
-import SwiftUI
 
 /// Pure mapping of existing suggestion models to the unified `SuggestionRow`.
 /// Title/subtitle/icon logic mirrors the legacy renderers so output is identical.
@@ -21,7 +19,7 @@ enum SuggestionRowMapper {
         case .website(let url):
             return SuggestionRow(
                 id: "\(idPrefix)-website-\(url.absoluteString)",
-                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
+                icon: .globe,
                 title: url.formattedForSuggestion(),
                 query: query,
                 accessibilityID: "Autocomplete.Suggestions.ListItem.Website-\(url.formattedForSuggestion())")
@@ -29,8 +27,7 @@ enum SuggestionRowMapper {
         case .bookmark(let title, let url, let isFavorite, _):
             return SuggestionRow(
                 id: "\(idPrefix)-bookmark-\(url.absoluteString)",
-                icon: Image(uiImage: isFavorite ? DesignSystemImages.Glyphs.Size24.bookmarkFavorite
-                                                 : DesignSystemImages.Glyphs.Size24.bookmark),
+                icon: isFavorite ? .favorite : .bookmark,
                 title: title,
                 query: query,
                 subtitle: url.formattedForSuggestion(),
@@ -39,7 +36,7 @@ enum SuggestionRowMapper {
         case .historyEntry(_, let url, _) where url.isDuckDuckGoSearch:
             return SuggestionRow(
                 id: "\(idPrefix)-serp-\(url.absoluteString)",
-                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
+                icon: .history,
                 title: url.searchQuery ?? "",
                 query: query,
                 subtitle: UserText.autocompleteSearchDuckDuckGo,
@@ -49,7 +46,7 @@ enum SuggestionRowMapper {
         case .historyEntry(let title, let url, _):
             return SuggestionRow(
                 id: "\(idPrefix)-history-\(url.absoluteString)",
-                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
+                icon: .history,
                 title: title ?? url.formattedForSuggestion(),
                 query: query,
                 subtitle: title == nil ? nil : url.formattedForSuggestion(),
@@ -59,7 +56,7 @@ enum SuggestionRowMapper {
         case .openTab(let title, let url, _, _):
             return SuggestionRow(
                 id: "\(idPrefix)-openTab-\(url.absoluteString)",
-                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.tabsMobile),
+                icon: .openTab,
                 title: title,
                 query: query,
                 subtitle: "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())",
@@ -68,7 +65,7 @@ enum SuggestionRowMapper {
         case .phrase(let phrase):
             return SuggestionRow(
                 id: "\(idPrefix)-phrase-\(phrase)",
-                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.findSearchSmall),
+                icon: .search,
                 title: phrase,
                 query: query,
                 accessory: .tapAhead,
@@ -77,7 +74,7 @@ enum SuggestionRowMapper {
         case .askAIChat(let value):
             return SuggestionRow(
                 id: "\(idPrefix)-askAIChat-\(value)",
-                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
+                icon: .aiChat,
                 title: value,
                 query: query,
                 subtitle: UserText.autocompleteAskAIChat,
@@ -87,7 +84,7 @@ enum SuggestionRowMapper {
             assertionFailure("Unsupported suggestion type in unified list: \(suggestion)")
             return SuggestionRow(
                 id: "\(idPrefix)-unknown",
-                icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
+                icon: .globe,
                 title: "",
                 accessibilityID: "Autocomplete.Suggestions.ListItem.Unknown")
         }
@@ -96,8 +93,7 @@ enum SuggestionRowMapper {
     static func row(for chat: AIChatSuggestion) -> SuggestionRow {
         SuggestionRow(
             id: "chat-\(chat.id)",
-            icon: Image(uiImage: chat.isPinned ? DesignSystemImages.Glyphs.Size24.pin
-                                               : DesignSystemImages.Glyphs.Size24.aiChat),
+            icon: chat.isPinned ? .pin : .aiChat,
             title: chat.title,
             accessibilityID: "DuckAISuggestions.Chat-\(chat.id)")
     }
@@ -105,7 +101,7 @@ enum SuggestionRowMapper {
     static func searchRow(query: String, idPrefix: String) -> SuggestionRow {
         SuggestionRow(
             id: "\(idPrefix)-searchDuckDuckGo",
-            icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.findSearchSmall),
+            icon: .search,
             title: query,
             subtitle: UserText.autocompleteSearchDuckDuckGo,
             accessibilityID: "DuckAISuggestions.SearchDuckDuckGo")

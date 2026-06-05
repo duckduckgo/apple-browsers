@@ -6,7 +6,22 @@
 //  Licensed under the Apache License, Version 2.0.
 //
 
-import SwiftUI
+import Foundation
+
+/// Semantic icon for a suggestion row. The view resolves each case to a concrete
+/// `DesignSystemImages.Glyphs.Size24` glyph; keeping the model glyph-free makes
+/// `SuggestionRow` fully value-`Equatable` (so section diffing / `removeDuplicates`
+/// is correct) and decouples it from the design system.
+enum SuggestionRowIcon: Equatable {
+    case globe
+    case bookmark
+    case favorite
+    case history
+    case openTab
+    case search
+    case aiChat
+    case pin
+}
 
 /// One row in the unified UTI suggestions list. Pure data — carries no actions.
 /// Selection and tap handling are dispatched by `id` to the active view model.
@@ -19,7 +34,7 @@ struct SuggestionRow: Identifiable, Equatable {
     }
 
     let id: String
-    let icon: Image
+    let icon: SuggestionRowIcon
     let title: String
     /// When set, the matched prefix of `title` is rendered bold.
     let query: String?
@@ -28,7 +43,7 @@ struct SuggestionRow: Identifiable, Equatable {
     let accessibilityID: String
 
     init(id: String,
-         icon: Image,
+         icon: SuggestionRowIcon,
          title: String,
          query: String? = nil,
          subtitle: String? = nil,

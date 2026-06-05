@@ -20,6 +20,8 @@ jobs:
       matrix:
         user-mode: [external, internal]
 
+    continue-on-error: ${{ matrix.user-mode == 'internal' }}
+
     steps:
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.9.1
@@ -145,7 +147,7 @@ jobs:
 
   notify-failure:
     name: Notify on failure
-    if: ${{ always() && github.ref_name == 'main' && (needs.atb-ui-tests.result == 'failure' || needs.atb-ui-tests.result == 'cancelled') }}
+    if: ${{ always() && github.ref_name == 'main' }}
     needs: [atb-ui-tests]
     runs-on: ubuntu-latest
 

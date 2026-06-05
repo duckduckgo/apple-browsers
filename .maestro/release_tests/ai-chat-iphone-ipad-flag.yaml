@@ -16,6 +16,7 @@ tags:
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         isInternalUser: ${INTERNAL_USER_MODE}
+        ff.iPadAIToggle: "true"
 
 # iPhone address bar should still show Duck.ai button and never show iPad mode toggle controls
 - assertVisible:

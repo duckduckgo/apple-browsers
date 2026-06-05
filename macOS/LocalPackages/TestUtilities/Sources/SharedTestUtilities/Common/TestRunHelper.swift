@@ -50,8 +50,10 @@ extension XCTestCase {
 
                     objToDeinit = nil
 
-                } else if !(view is WKWebView),
-                          let viewController = view.nextResponder as? NSViewController,
+                } else if view is WKWebView {
+                    objToDeinit = view
+
+                } else if let viewController = view.nextResponder as? NSViewController,
                           !viewController.className.hasPrefix("TUINS"),
                           !viewController.className.hasPrefix("NSTextInsertionIndicator"),
                           !viewController.className.hasPrefix("STWeb"),
@@ -83,6 +85,20 @@ extension XCTestCase {
 @objc(TestRunHelper)
 public final class TestRunHelper: NSObject {
     @objc(sharedInstance) static let shared = TestRunHelper()
+    private static let testBodyActiveLock = NSLock()
+    private static var isTestBodyActiveStorage = true
+    fileprivate static var isTestBodyActive: Bool {
+        get {
+            testBodyActiveLock.lock()
+            defer { testBodyActiveLock.unlock() }
+            return isTestBodyActiveStorage
+        }
+        set {
+            testBodyActiveLock.lock()
+            isTestBodyActiveStorage = newValue
+            testBodyActiveLock.unlock()
+        }
+    }
     private var windowObserver: Any?
 
     fileprivate let processPool = WKProcessPool()
@@ -107,6 +123,7 @@ public final class TestRunHelper: NSObject {
 
         // swizzle WKWebViewConfiguration.init to use a shared process pool
         WKWebViewConfiguration.swizzleInitOnce(processPool: self.processPool)
+        _=WKWebView.swizzleLoadRequestForTestSafetyOnce
         _=WKWebView.swizzleInstallScreenTimeWebpageControllerIfNeededOnce
 
         // swizzle NSView.init to track loaded views
@@ -149,6 +166,53 @@ public final class TestRunHelper: NSObject {
         } else {
             DispatchQueue.main.sync(execute: stopWebViewActivity)
         }
+    }
+
+    @MainActor
+    private func closeOpenWindowsOnMainActor() -> Bool {
+        var didCloseWindows = false
+        autoreleasepool {
+            let windows = NSApp.windows.filter(\.shouldCloseAtEndOfTest)
+            didCloseWindows = !windows.isEmpty
+            windows.forEach { $0.close() }
+        }
+        return didCloseWindows
+    }
+
+    @MainActor
+    private func waitForOpenWindowsToCloseOnMainActor(timeout: TimeInterval = 2) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline,
+              NSApp.windows.contains(where: { $0.shouldCloseAtEndOfTest && $0.isVisible }) {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        }
+    }
+
+    fileprivate func closeOpenWindowsAndDrainMainRunLoop() {
+        let closeWindows = {
+            MainActor.assumeIsolated {
+                guard self.closeOpenWindowsOnMainActor() else { return }
+                self.waitForOpenWindowsToCloseOnMainActor()
+            }
+        }
+
+        if Thread.isMainThread {
+            closeWindows()
+        } else {
+            DispatchQueue.main.sync(execute: closeWindows)
+        }
+    }
+
+    fileprivate static func shouldAllowLoadRequest(from webView: WKWebView, request: URLRequest) -> Bool {
+        guard isTestBodyActive else { return false }
+
+        guard webView.window == nil,
+              Thread.callStackSymbols.contains(where: { $0.contains("Tab.setupWebView") }) else {
+            return true
+        }
+
+        Logger.tests.warning("Skipped automatic off-window WebKit load during test setup: \(request)")
+        return false
     }
 
 }
@@ -196,11 +260,13 @@ extension TestRunHelper: XCTestObservation {
 
     public func testCaseWillStart(_ testCase: XCTestCase) {
         Self.allowAppSendUserEvents = false
+        Self.isTestBodyActive = false
 
         if !loadedViews.isEmpty {
             let descr = loadedViews.compactMap(\.view).description
             Logger.tests.warning("Loaded views not empty at start of test case: \(descr)")
             stopActiveWebViewActivity()
+            closeOpenWindowsAndDrainMainRunLoop()
             loadedViews = []
         }
 
@@ -210,6 +276,11 @@ extension TestRunHelper: XCTestObservation {
             NSAnimationContext.current.duration = 0
         }
         NSApp.swizzled_currentEvent = nil
+
+        testCase.addTeardownBlock {
+            Self.isTestBodyActive = false
+        }
+        Self.isTestBodyActive = true
     }
 
     public func testCaseDidFinish(_ testCase: XCTestCase) {
@@ -219,8 +290,12 @@ extension TestRunHelper: XCTestObservation {
             // cleanup dedicated temporary directory after each test run
             FileManager.default.cleanupTemporaryDirectory()
         }
+
+        Self.isTestBodyActive = false
+
         NSApp.swizzled_currentEvent = nil
         stopActiveWebViewActivity()
+        closeOpenWindowsAndDrainMainRunLoop()
         WKWebView.customHandlerSchemes = []
 
         // Check for non-nil variables that should be cleaned up
@@ -387,7 +462,32 @@ extension NSView {
 
 }
 
+private extension NSWindow {
+
+    var shouldCloseAtEndOfTest: Bool {
+        !(className.contains("NSMenu")
+          || className.contains("NSNextStep")
+          || className.contains("TUINSWindow")
+          || className == "NSStatusBarWindow")
+    }
+
+}
+
 extension WKWebView {
+
+    // Prevent unsafe test-only loads from starting a WebKit navigation.
+    static var swizzleLoadRequestForTestSafetyOnce: Void = {
+        let loadRequestMethod = class_getInstanceMethod(WKWebView.self, NSSelectorFromString("loadRequest:"))!
+        let swizzledLoadRequestMethod = class_getInstanceMethod(WKWebView.self, #selector(swizzled_loadRequestForTestSafety(_:)))!
+
+        method_exchangeImplementations(loadRequestMethod, swizzledLoadRequestMethod)
+    }()
+
+    @objc dynamic func swizzled_loadRequestForTestSafety(_ request: URLRequest) -> WKNavigation? {
+        guard TestRunHelper.shouldAllowLoadRequest(from: self, request: request) else { return nil }
+        return swizzled_loadRequestForTestSafety(request)
+    }
+
     static var swizzleInstallScreenTimeWebpageControllerIfNeededOnce: Void = {
         guard let originalMethod = class_getInstanceMethod(WKWebView.self, NSSelectorFromString("_installScreenTimeWebpageControllerIfNeeded")) else { return }
         let swizzledMethod = class_getInstanceMethod(WKWebView.self, #selector(swizzled_installScreenTimeWebpageControllerIfNeeded))!

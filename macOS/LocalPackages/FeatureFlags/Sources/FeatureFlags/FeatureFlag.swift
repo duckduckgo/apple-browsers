@@ -61,6 +61,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
     /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
     case webExtensionLightweightReload
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576

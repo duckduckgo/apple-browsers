@@ -95,6 +95,32 @@ class StatisticsLoaderTests: XCTestCase {
         }
     }
 
+    func testRefreshSearchRetentionAtbFiresSearchesOSDistributionPixel() {
+        var firedPixelNames: [String] = []
+        let capturingPixelKit = PixelKit(dryRun: false,
+                                         appVersion: "1.0.0",
+                                         defaultHeaders: [:],
+                                         defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+                                         fireRequest: { name, _, _, _, _, onComplete in
+                                             firedPixelNames.append(name)
+                                             onComplete(true, nil)
+                                         })
+        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.variant = "test"
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: #function)
+        testee.refreshSearchRetentionAtb {
+            expect.fulfill()
+        }
+        waitForExpectations(timeout: 5)
+
+        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") },
+                      "Expected searches OS-distribution pixel. Fired: \(firedPixelNames)")
+    }
+
     func testRefreshDuckAIRetentionAtbFiresSearchesOSDistributionPixel() {
         var firedPixelNames: [String] = []
         let capturingPixelKit = PixelKit(dryRun: false,

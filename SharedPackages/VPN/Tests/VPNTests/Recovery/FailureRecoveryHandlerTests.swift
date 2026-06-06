@@ -290,6 +290,36 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         XCTAssertEqual(failedCount, 3)
     }
 
+    func testAttemptRecovery_configUpdateCancelled_doesNotSendTerminalEventOrRetry() async {
+        let retryConfig = FailureRecoveryHandler.RetryConfig(times: 3, initialDelay: 0.1, maxDelay: 1.0, factor: 2)
+        var failedCount = 0
+        var completedCount = 0
+        var updateConfigCount = 0
+        failureRecoveryHandler = FailureRecoveryHandler(deviceManager: deviceManager, reassertingControl: reassertingControl, retryConfig: retryConfig, eventHandler: { step in
+            if case .failed = step {
+                failedCount += 1
+            }
+            if case .completed = step {
+                completedCount += 1
+            }
+        })
+
+        let newServerName = "server2"
+        deviceManager.stubGenerateTunnelConfiguration = (
+            tunnelConfiguration: .make(named: newServerName),
+            server: .registeredServer(named: newServerName, allowedIPs: ["1.2.3.4/5"])
+        )
+
+        await failureRecoveryHandler.attemptRecovery(to: .mockRegisteredServer, excludeLocalNetworks: false, dnsSettings: .ddg(blockRiskyDomains: false)) { _ in
+            updateConfigCount += 1
+            throw CancellationError()
+        }
+
+        XCTAssertEqual(updateConfigCount, 1)
+        XCTAssertEqual(failedCount, 0)
+        XCTAssertEqual(completedCount, 0)
+    }
+
     func attemptRecoveryWithLastAndNewServerNamesAndAllowedIPsEqual() async {
         let lastAndNewServerName = "previousAndNewServerName"
         let lastAndNewAllowedIPs = ["1.2.3.4/5", "10.9.8.7/6"]

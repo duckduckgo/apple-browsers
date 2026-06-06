@@ -131,6 +131,13 @@ final class TunnelMonitorsTests: XCTestCase {
         }
     }
 
+    private func makeFailureRecoveryConfigResult() -> NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult {
+        (
+            tunnelConfiguration: .make(named: "replacement-server"),
+            server: .registeredServer(named: "replacement-server")
+        )
+    }
+
     // MARK: - start()
 
     func testStart_callsStartOnAllMonitors_whenPreconditionsMet() async throws {
@@ -270,6 +277,12 @@ final class TunnelMonitorsTests: XCTestCase {
         XCTAssertEqual(connectionStop, 1)
     }
 
+    func testStop_stopsFailureRecovery() async {
+        await monitors.stop()
+
+        XCTAssertEqual(failureRecoveryHandler.stopCount, 1)
+    }
+
     // MARK: - Tunnel-failure callback
 
     func testTunnelFailureCallback_firesReportTunnelFailureEvent() async throws {
@@ -291,6 +304,30 @@ final class TunnelMonitorsTests: XCTestCase {
 
         XCTAssertEqual(failureRecoveryHandler.attemptCount, 1)
         XCTAssertEqual(failureRecoveryHandler.lastExcludeLocalNetworks, false)
+    }
+
+    func testTunnelFailureCallback_failureDetected_whenRecoveryGenerationIsCurrent_appliesRecoveryConfig() async throws {
+        let configResult = makeFailureRecoveryConfigResult()
+        failureRecoveryHandler.configResultToUpdate = configResult
+
+        try await monitors.start(testImmediately: false)
+        await tunnelFailureMonitor.fire(.failureDetected)
+        await waitForSpawnedTasks()
+
+        XCTAssertEqual(hooks.lastFailureRecoveryConfigUpdate?.server.serverName, configResult.server.serverName)
+    }
+
+    func testTunnelFailureCallback_failureDetected_whenGenerationChangesBeforeRecoveryUpdate_skipsRecoveryConfigUpdate() async throws {
+        failureRecoveryHandler.configResultToUpdate = makeFailureRecoveryConfigResult()
+        failureRecoveryHandler.beforeUpdateConfig = { [weak tunnelState] in
+            tunnelState?.tunnelPathGeneration += 1
+        }
+
+        try await monitors.start(testImmediately: false)
+        await tunnelFailureMonitor.fire(.failureDetected)
+        await waitForSpawnedTasks()
+
+        XCTAssertNil(hooks.lastFailureRecoveryConfigUpdate)
     }
 
     func testTunnelFailureCallback_failureRecovered_stopsFailureRecovery() async throws {
@@ -606,6 +643,8 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
     var lastServer: NetworkProtectionServer?
     var lastExcludeLocalNetworks: Bool?
     var lastDNSSettings: NetworkProtectionDNSSettings?
+    var configResultToUpdate: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult?
+    var beforeUpdateConfig: (@MainActor () -> Void)?
 
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
@@ -617,6 +656,11 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
         lastServer = lastConnectedServer
         lastExcludeLocalNetworks = excludeLocalNetworks
         lastDNSSettings = dnsSettings
+
+        if let configResultToUpdate {
+            await beforeUpdateConfig?()
+            try? await updateConfig(configResultToUpdate)
+        }
     }
 
     func stop() async {

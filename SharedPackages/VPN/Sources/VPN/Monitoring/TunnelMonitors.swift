@@ -115,6 +115,7 @@ final class TunnelMonitors: TunnelMonitoring {
         connectionTester.stop()
         await keyExpirationTester.stop()
         await tunnelFailureMonitor.stop()
+        await failureRecoveryHandler.stop()
         await latencyMonitor.stop()
         await entitlementMonitor.stop()
         await serverStatusMonitor.stop()
@@ -147,17 +148,24 @@ final class TunnelMonitors: TunnelMonitoring {
     private func startServerFailureRecovery() {
         Task { [weak self] in
             guard let self,
-                  let server = self.tunnelState?.lastSelectedServer else {
+                  let tunnelState = self.tunnelState,
+                  let server = tunnelState.lastSelectedServer else {
                 return
             }
-            let excludeLocalNetworks = self.tunnelState?.excludeLocalNetworks ?? false
+            let tunnelPathGeneration = tunnelState.tunnelPathGeneration
+            let excludeLocalNetworks = tunnelState.excludeLocalNetworks
             await self.failureRecoveryHandler.attemptRecovery(
                 to: server,
                 excludeLocalNetworks: excludeLocalNetworks,
                 dnsSettings: self.settings.dnsSettings) { [weak self] generateConfigResult in
 
-                try await self?.onFailureRecoveryConfigUpdate(generateConfigResult)
-                self?.events.fire(.failureRecoveryAttempt(.completed(.unhealthy)))
+                guard let self,
+                      self.tunnelState?.tunnelPathGeneration == tunnelPathGeneration else {
+                    throw CancellationError()
+                }
+
+                try await self.onFailureRecoveryConfigUpdate(generateConfigResult)
+                self.events.fire(.failureRecoveryAttempt(.completed(.unhealthy)))
             }
         }
     }

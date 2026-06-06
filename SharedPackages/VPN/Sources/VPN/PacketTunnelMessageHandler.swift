@@ -28,6 +28,7 @@ protocol TunnelStateProviding: AnyObject {
     @MainActor var currentServerSelectionMethod: NetworkProtectionServerSelectionMethod { get }
     @MainActor var lastSelectedServer: NetworkProtectionServer? { get }
     @MainActor var lastSelectedServerInfo: NetworkProtectionServerInfo? { get }
+    @MainActor var tunnelPathGeneration: UInt64 { get }
     @MainActor var tunnelInterfaceName: String? { get }
     @MainActor var excludeLocalNetworks: Bool { get }
 }

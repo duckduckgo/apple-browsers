@@ -33,6 +33,13 @@ final actor KeyExpirationTester: KeyExpirationTesting {
     /// The interval of time between the start of each TCP connection test.
     ///
     private let intervalBetweenTests: TimeInterval = .seconds(15)
+    private let rekeyFailureBackoffIntervals: [TimeInterval] = [
+        .seconds(15),
+        .seconds(30),
+        .seconds(60),
+        .seconds(120),
+        .seconds(300)
+    ]
 
     /// Provides a simple mechanism to synchronize an `isRunning` flag for the tester to know if it needs to interrupt its operation.
     /// The reason why this is necessary is that the tester may be stopped while the connection tests are already executing, in a bit
@@ -40,15 +47,19 @@ final actor KeyExpirationTester: KeyExpirationTesting {
     ///
     private(set) var isRunning = false
     private var isTestingExpiration = false
+    private var consecutiveFailedRekeyCount = 0
+    private var nextRekeyAttemptDate: Date?
     private let keyStore: NetworkProtectionKeyStore
     private let rekey: @MainActor () async throws -> Void
     private let settings: VPNSettings
     private var task: Task<Never, Error>?
+    private let currentDate: @Sendable () -> Date
 
     // MARK: - Init & deinit
 
     init(keyStore: NetworkProtectionKeyStore,
          settings: VPNSettings,
+         currentDate: @escaping @Sendable () -> Date = { Date() },
          canRekey: @escaping @MainActor () async -> Bool,
          rekey: @escaping @MainActor () async throws -> Void) {
 
@@ -56,6 +67,7 @@ final actor KeyExpirationTester: KeyExpirationTesting {
         self.rekey = rekey
         self.canRekey = canRekey
         self.settings = settings
+        self.currentDate = currentDate
 
         Logger.networkProtectionMemory.debug("[+] \(String(describing: self), privacy: .public)")
     }
@@ -82,6 +94,7 @@ final actor KeyExpirationTester: KeyExpirationTesting {
     func stop() {
         Logger.networkProtectionKeyManagement.log("🔴 Stopping rekey timer")
         stopScheduledTimer()
+        resetRekeyFailureBackoff()
         isRunning = false
     }
 
@@ -111,7 +124,7 @@ final actor KeyExpirationTester: KeyExpirationTesting {
             return true
         }
 
-        return currentExpirationDate <= Date()
+        return currentExpirationDate <= currentDate()
     }
 
     // MARK: - Expiration check
@@ -137,16 +150,35 @@ final actor KeyExpirationTester: KeyExpirationTesting {
 
         guard isKeyExpired else {
             Logger.networkProtectionKeyManagement.log("The key is not expired")
+            resetRekeyFailureBackoff()
+            return
+        }
+
+        if let nextRekeyAttemptDate, currentDate() < nextRekeyAttemptDate {
+            Logger.networkProtectionKeyManagement.log("Rekeying is delayed after a previous failure.")
             return
         }
 
         Logger.networkProtectionKeyManagement.log("Rekeying now.")
         do {
             try await rekey()
+            resetRekeyFailureBackoff()
             Logger.networkProtectionKeyManagement.log("Rekeying completed.")
         } catch {
+            recordRekeyFailure()
             Logger.networkProtectionKeyManagement.error("Rekeying failed with error: \(error, privacy: .public).")
         }
+    }
+
+    private func recordRekeyFailure() {
+        consecutiveFailedRekeyCount += 1
+        let backoffIndex = min(consecutiveFailedRekeyCount - 1, rekeyFailureBackoffIntervals.count - 1)
+        nextRekeyAttemptDate = currentDate().addingTimeInterval(rekeyFailureBackoffIntervals[backoffIndex])
+    }
+
+    private func resetRekeyFailureBackoff() {
+        consecutiveFailedRekeyCount = 0
+        nextRekeyAttemptDate = nil
     }
 
     // MARK: - Key Validity

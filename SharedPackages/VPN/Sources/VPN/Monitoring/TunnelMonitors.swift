@@ -165,7 +165,6 @@ final class TunnelMonitors: TunnelMonitoring {
                 }
 
                 try await self.onFailureRecoveryConfigUpdate(generateConfigResult)
-                self.events.fire(.failureRecoveryAttempt(.completed(.unhealthy)))
             }
         }
     }

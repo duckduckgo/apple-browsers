@@ -235,9 +235,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         tab.navigationDidEndPublisher
             .first()
             .sink { [weak self] _ in
-                // The homepage seed script has applied on this first successful duckduckgo.com load;
-                // consume the one-shot marker so it is no longer injected on subsequent tabs.
-                UserDefaults.standard.removeObject(forKey: HomepageSearchModeToggleSeedUserScript.pendingSeedDefaultsKey)
                 self?.navigation.focusOnAddressBar()
             }
             .store(in: &cancellables)
@@ -300,8 +297,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
         // ...and arm a one-shot marker carrying the chosen value (true = show the search-mode toggle).
         // HomepageSearchModeToggleSeedUserScript applies it to the duckduckgo.com web homepage on
-        // next load; the marker is consumed after the first successful homepage navigation
-        // (see goToAddressBar), after which later web changes are respected.
+        // next load and reports back to clear the marker once applied, after which later web changes
+        // are respected. Clearing is tied to the script running (not a navigation event) so it works
+        // regardless of how onboarding finishes and survives the homepage's script-install race.
         UserDefaults.standard.set(enabled, forKey: HomepageSearchModeToggleSeedUserScript.pendingSeedDefaultsKey)
     }
 

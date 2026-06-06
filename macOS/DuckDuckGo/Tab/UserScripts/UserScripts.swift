@@ -304,7 +304,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         let homepageSeedKey = HomepageSearchModeToggleSeedUserScript.pendingSeedDefaultsKey
         if UserDefaults.standard.object(forKey: homepageSeedKey) != nil {
             let showSearchModeToggle = UserDefaults.standard.bool(forKey: homepageSeedKey)
-            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: showSearchModeToggle))
+            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: showSearchModeToggle, onApplied: {
+                UserDefaults.standard.removeObject(forKey: homepageSeedKey)
+            }))
         }
     }
 
@@ -335,8 +337,11 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
 /// Applies the duckduckgo.com web homepage "search mode toggle" preference into the page's own
 /// localStorage to mirror the user's onboarding choice ("Search & Duck.ai" shows the toggle,
-/// "Search Only" hides it). A one-shot native marker gates injection and is consumed natively after
-/// the first successful homepage navigation (see `OnboardingActionsManager.goToAddressBar`).
+/// "Search Only" hides it). A one-shot native marker gates injection; after the script applies the
+/// value it posts `homepageSearchModeSeedApplied` back to native, whose handler clears the marker
+/// (`onApplied`). Consumption is tied to the script actually running — not a navigation event — so
+/// it works regardless of how onboarding finishes and self-heals if the homepage's first load
+/// happens before the user scripts finish installing (the homepage does not await them).
 ///
 /// Runs at document-start in the *page content world* so the SERP's own startup read sees the value
 /// with no flash, and host-gated to duckduckgo.com so no other site's storage is touched. It
@@ -347,7 +352,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
     static let pendingSeedDefaultsKey = "aichat.pendingHomepageSearchModeSeed"
 
-    let messageNames: [String] = []
+    let messageNames: [String] = ["homepageSearchModeSeedApplied"]
     let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
     let forMainFrameOnly: Bool = true
     let requiresRunInPageContentWorld: Bool = true
@@ -367,14 +372,21 @@ final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
             settings.showSearchModeToggle = desired;
             window.localStorage.setItem(key, JSON.stringify(settings));
             window.localStorage.setItem(appliedKey, String(desired));
+            window.webkit.messageHandlers.homepageSearchModeSeedApplied.postMessage({});
         } catch (e) {}
         """
     }
 
-    init(showSearchModeToggle: Bool) {
+    private let onApplied: () -> Void
+
+    init(showSearchModeToggle: Bool, onApplied: @escaping () -> Void) {
         self.showSearchModeToggle = showSearchModeToggle
+        self.onApplied = onApplied
         super.init()
     }
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "homepageSearchModeSeedApplied" else { return }
+        onApplied()
+    }
 }

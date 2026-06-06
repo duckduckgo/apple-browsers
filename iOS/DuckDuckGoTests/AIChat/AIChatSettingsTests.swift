@@ -236,7 +236,7 @@ class AIChatSettingsTests: XCTestCase {
         mockNotificationCenter.removeObserver(observer)
     }
 
-    func testHidingBothTabBarHalves_turnsMasterToggleOff() {
+    func testHidingBothTabBarHalves_turnsTabBarToggleOff() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,

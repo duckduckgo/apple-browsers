@@ -297,15 +297,12 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
 
-        // One-shot: an onboarding choice arms a native marker whose value is the chosen
-        // "show search-mode toggle" state (presence of the key == a seed is pending). On the first
-        // duckduckgo.com load the seed script applies it and posts back to clear the marker, so it
-        // runs once per choice and later web changes are respected.
-        let homepageSeedKey = HomepageSearchModeToggleSeedUserScript.pendingSeedDefaultsKey
-        if UserDefaults.standard.object(forKey: homepageSeedKey) != nil {
-            let showSearchModeToggle = UserDefaults.standard.bool(forKey: homepageSeedKey)
-            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: showSearchModeToggle, onApplied: {
-                UserDefaults.standard.removeObject(forKey: homepageSeedKey)
+        let homepageSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor()
+        if let pendingShowSearchModeToggle = homepageSeedPersistor.pendingShowSearchModeToggle {
+            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: pendingShowSearchModeToggle, onApplied: { applied in
+                if homepageSeedPersistor.pendingShowSearchModeToggle == applied {
+                    homepageSeedPersistor.pendingShowSearchModeToggle = nil
+                }
             }))
         }
     }
@@ -335,58 +332,73 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
 }
 
-/// Applies the duckduckgo.com web homepage "search mode toggle" preference into the page's own
-/// localStorage to mirror the user's onboarding choice ("Search & Duck.ai" shows the toggle,
-/// "Search Only" hides it). A one-shot native marker gates injection; after the script applies the
-/// value it posts `homepageSearchModeSeedApplied` back to native, whose handler clears the marker
-/// (`onApplied`). Consumption is tied to the script actually running — not a navigation event — so
-/// it works regardless of how onboarding finishes and self-heals if the homepage's first load
-/// happens before the user scripts finish installing (the homepage does not await them).
-///
-/// Runs at document-start in the *page content world* so the SERP's own startup read sees the value
-/// with no flash, and host-gated to duckduckgo.com so no other site's storage is touched. It
-/// *overwrites* the existing value (the homepage may already have `homepageSettings` persisted from
-/// earlier visits), but only when the chosen value differs from what was last applied (tracked in
-/// `__ddgSearchModeSeedApplied`). That way a value the user later sets on the web is respected on
-/// reload, while a *changed* onboarding choice still takes effect.
+/// Document-start, page-content-world script that mirrors the onboarding search-mode choice onto the
+/// duckduckgo.com homepage by writing `homepageSettings.showSearchModeToggle` in its localStorage,
+/// then reports the applied value so the one-shot marker is cleared and later web changes are kept.
 final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
-    static let pendingSeedDefaultsKey = "aichat.pendingHomepageSearchModeSeed"
+    private static let messageName = "homepageSearchModeSeedApplied"
 
-    let messageNames: [String] = ["homepageSearchModeSeedApplied"]
+    var messageNames: [String] { [Self.messageName] }
     let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
     let forMainFrameOnly: Bool = true
     let requiresRunInPageContentWorld: Bool = true
 
     private let showSearchModeToggle: Bool
+    private let onApplied: (Bool?) -> Void
 
     var source: String {
         """
         const host = (window.location && window.location.hostname) || "";
         if (host !== "duckduckgo.com" && !host.endsWith(".duckduckgo.com")) { return; }
+        const desired = \(showSearchModeToggle);
         try {
             const appliedKey = "__ddgSearchModeSeedApplied";
-            const desired = \(showSearchModeToggle);
-            if (window.localStorage.getItem(appliedKey) === String(desired)) { return; }
-            const key = "homepageSettings";
-            const settings = JSON.parse(window.localStorage.getItem(key) || "{}");
-            settings.showSearchModeToggle = desired;
-            window.localStorage.setItem(key, JSON.stringify(settings));
-            window.localStorage.setItem(appliedKey, String(desired));
-            window.webkit.messageHandlers.homepageSearchModeSeedApplied.postMessage({});
+            if (window.localStorage.getItem(appliedKey) !== String(desired)) {
+                let settings = {};
+                try { settings = JSON.parse(window.localStorage.getItem("homepageSettings") || "{}") || {}; } catch (e) {}
+                settings.showSearchModeToggle = desired;
+                window.localStorage.setItem("homepageSettings", JSON.stringify(settings));
+                window.localStorage.setItem(appliedKey, String(desired));
+            }
         } catch (e) {}
+        try { window.webkit.messageHandlers.\(Self.messageName).postMessage({ showSearchModeToggle: desired }); } catch (e) {}
         """
     }
 
-    private let onApplied: () -> Void
-
-    init(showSearchModeToggle: Bool, onApplied: @escaping () -> Void) {
+    init(showSearchModeToggle: Bool, onApplied: @escaping (Bool?) -> Void) {
         self.showSearchModeToggle = showSearchModeToggle
         self.onApplied = onApplied
         super.init()
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == "homepageSearchModeSeedApplied" else { return }
-        onApplied()
+        onApplied((message.body as? [String: Any])?["showSearchModeToggle"] as? Bool)
+    }
+}
+
+protocol HomepageSearchModeSeedPersistor {
+    var pendingShowSearchModeToggle: Bool? { get nonmutating set }
+}
+
+struct HomepageSearchModeSeedUserDefaultsPersistor: HomepageSearchModeSeedPersistor {
+    enum Key: String {
+        case pendingShowSearchModeToggle = "aichat.homepage-search-mode-seed.pending"
+    }
+
+    private let keyValueStore: KeyValueStoring
+
+    init(keyValueStore: KeyValueStoring = UserDefaults.standard) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var pendingShowSearchModeToggle: Bool? {
+        get { try? keyValueStore.object(forKey: Key.pendingShowSearchModeToggle.rawValue) as? Bool }
+        nonmutating set {
+            if let newValue {
+                try? keyValueStore.set(newValue, forKey: Key.pendingShowSearchModeToggle.rawValue)
+            } else {
+                try? keyValueStore.removeObject(forKey: Key.pendingShowSearchModeToggle.rawValue)
+            }
+        }
     }
 }

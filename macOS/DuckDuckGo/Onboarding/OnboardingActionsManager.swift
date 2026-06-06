@@ -111,6 +111,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
+    private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private var cancellables = Set<AnyCancellable>()
@@ -207,6 +208,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         startupPreferences: StartupPreferences,
         dataImportProvider: DataImportStatusProviding,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     ) {
@@ -217,6 +219,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
     }
@@ -291,16 +294,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func setDuckAiInAddressBar(enabled: Bool) {
-        // Mirror the onboarding choice across all surfaces. The address-bar toggle and the native
-        // New Tab Page reflect `enabled` directly...
         aiChatPreferencesStorage.showSearchAndDuckAIToggle = enabled
         aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
-        // ...and arm a one-shot marker carrying the chosen value (true = show the search-mode toggle).
-        // HomepageSearchModeToggleSeedUserScript applies it to the duckduckgo.com web homepage on
-        // next load and reports back to clear the marker once applied, after which later web changes
-        // are respected. Clearing is tied to the script running (not a navigation event) so it works
-        // regardless of how onboarding finishes and survives the homepage's script-install race.
-        UserDefaults.standard.set(enabled, forKey: HomepageSearchModeToggleSeedUserScript.pendingSeedDefaultsKey)
+        homepageSearchModeSeedPersistor.pendingShowSearchModeToggle = enabled
     }
 
     private func onMainThreadIfNeeded(_ function: @escaping () -> Void) {

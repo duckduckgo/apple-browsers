@@ -216,7 +216,13 @@ extension Pixel {
         case bookmarksButtonPressed
         case tabBarBookmarksLongPressed
         case tabBarTabSwitcherOpened
-        
+
+        case tabBarTabSelected
+        case tabBarTabClosed
+        case tabBarNewTab
+        case tabBarOverflowDaily
+        case tabBarOpenTabCountDaily
+
         case homeScreenShown
         case homeScreenEditFavorite
         case homeScreenDeleteFavorite
@@ -2160,6 +2166,11 @@ extension Pixel.Event {
         case .bookmarksButtonPressed: return "mt_bm"
         case .tabBarBookmarksLongPressed: return "mt_bl"
         case .tabBarTabSwitcherOpened: return "m_tab_manager_opened"
+        case .tabBarTabSelected: return "m_tab_bar_tab_selected"
+        case .tabBarTabClosed: return "m_tab_bar_tab_closed"
+        case .tabBarNewTab: return "m_tab_bar_new_tab"
+        case .tabBarOverflowDaily: return "m_tab_bar_overflow_daily"
+        case .tabBarOpenTabCountDaily: return "m_tab_bar_open_tab_count_daily"
 
         case .bookmarkLaunchList: return "m_bookmark_launch_list"
         case .bookmarkLaunchScored: return "m_bookmark_launch_scored"

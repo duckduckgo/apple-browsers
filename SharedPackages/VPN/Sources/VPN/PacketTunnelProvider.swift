@@ -1077,48 +1077,68 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             providerEvents.fire(.reportConnectionAttempt(attempt: .connecting, source: attemptSource))
         }
 
-        if reassert {
-            await stopMonitors()
+        try await TunnelConfigurationUpdateOperation.run(
+            reassert: reassert,
+            generateTunnelConfiguration: {
+                switch updateMethod {
+                case .selectServer(let serverSelectionMethod):
+                    return try await generateTunnelConfiguration(
+                        serverSelectionMethod: serverSelectionMethod,
+                        dnsSettings: settings.dnsSettings,
+                        regenerateKey: regenerateKey)
+
+                case .useConfiguration(let newTunnelConfiguration):
+                    return newTunnelConfiguration
+                }
+            },
+            stopMonitors: { [weak self] in
+                await self?.stopMonitors()
+            },
+            updateAdapterConfiguration: { [weak self] tunnelConfiguration in
+                guard let self else { throw CancellationError() }
+                try await self.updateAdapterConfiguration(tunnelConfiguration: tunnelConfiguration, reassert: reassert)
+            },
+            handleAdapterStarted: { [weak self] in
+                guard let self else { throw CancellationError() }
+                try await self.handleAdapterStarted(startReason: .reconnected)
+            },
+            handleFailure: { [weak self] error in
+                guard let self else { return false }
+                return await self.handleTunnelConfigurationUpdateFailure(error, attemptSource: attemptSource)
+            },
+            restartMonitorsAfterFailure: { [weak self] in
+                await self?.restartMonitorsAfterFailedReassert()
+            }
+        )
+
+        providerEvents.fire(.tunnelUpdateAttempt(.success))
+        if attemptSource.isConnectionAttempt {
+            providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: attemptSource))
+        }
+    }
+
+    @MainActor
+    private func handleTunnelConfigurationUpdateFailure(_ error: Error, attemptSource: ConnectionAttemptSource) async -> Bool {
+        providerEvents.fire(.tunnelUpdateAttempt(.failure(error)))
+        if attemptSource.isConnectionAttempt {
+            providerEvents.fire(.reportConnectionAttempt(attempt: .failure, source: attemptSource))
         }
 
+        switch error {
+        case WireGuardAdapterError.setWireguardConfig:
+            await cancelTunnel(with: error)
+            return true
+        default:
+            return false
+        }
+    }
+
+    @MainActor
+    private func restartMonitorsAfterFailedReassert() async {
         do {
-            let tunnelConfiguration: TunnelConfiguration
-
-            switch updateMethod {
-            case .selectServer(let serverSelectionMethod):
-                tunnelConfiguration = try await generateTunnelConfiguration(
-                    serverSelectionMethod: serverSelectionMethod,
-                    dnsSettings: settings.dnsSettings,
-                    regenerateKey: regenerateKey)
-
-            case .useConfiguration(let newTunnelConfiguration):
-                tunnelConfiguration = newTunnelConfiguration
-            }
-
-            try await updateAdapterConfiguration(tunnelConfiguration: tunnelConfiguration, reassert: reassert)
-
-            if reassert {
-                try await handleAdapterStarted(startReason: .reconnected)
-            }
-
-            providerEvents.fire(.tunnelUpdateAttempt(.success))
-            if attemptSource.isConnectionAttempt {
-                providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: attemptSource))
-            }
+            try await startMonitors(testImmediately: true)
         } catch {
-            providerEvents.fire(.tunnelUpdateAttempt(.failure(error)))
-            if attemptSource.isConnectionAttempt {
-                providerEvents.fire(.reportConnectionAttempt(attempt: .failure, source: attemptSource))
-            }
-
-            switch error {
-            case WireGuardAdapterError.setWireguardConfig:
-                await cancelTunnel(with: error)
-            default:
-                break
-            }
-
-            throw error
+            Logger.networkProtection.error("Failed to restart monitors after failed reassert update: \(error.localizedDescription, privacy: .public)")
         }
     }
 

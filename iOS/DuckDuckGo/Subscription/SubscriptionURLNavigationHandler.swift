@@ -37,6 +37,7 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
     /// Navigates to the subscription settings section.
     /// Called when Duck.ai need to navigate to subscription management.
     func navigateToSettings() {
+        print("🇯🇵 [subscriptions bridge] Native navigating to subscription settings from FE request")
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionSettings
@@ -46,6 +47,7 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
     /// Navigates to the subscription restore/activation flow.
     /// Called when Duck.ai need to restore an existing subscription.
     func navigateToSubscriptionActivation() {
+        print("🇯🇵 [subscriptions bridge] Native navigating to subscription activation from FE request")
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.restoreFlow
@@ -57,6 +59,7 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
     func navigateToSubscriptionPurchase(origin: String?, featurePage: String?) {
         let components = makeURLComponents(origin: origin, featurePage: featurePage)
         let settingsDeepLink = SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: components)
+        print("🇯🇵 [subscriptions bridge] Native navigating to subscription purchase origin=\(origin ?? "nil") featurePage=\(featurePage ?? "nil")")
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: settingsDeepLink
@@ -68,6 +71,7 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
     func navigateToSubscriptionPlans(origin: String?, featurePage: String?) {
         let components = makeURLComponents(origin: origin, featurePage: featurePage)
         let settingsDeepLink = SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(redirectURLComponents: components)
+        print("🇯🇵 [subscriptions bridge] Native navigating to subscription plans origin=\(origin ?? "nil") featurePage=\(featurePage ?? "nil")")
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: settingsDeepLink

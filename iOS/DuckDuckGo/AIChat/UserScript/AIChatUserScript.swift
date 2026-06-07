@@ -303,6 +303,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         // (omnibar's multi-tab case on macOS). iOS today always sends the single form, which
         // matches the duck.ai sidebar's existing current-page semantics.
         let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext.map(AIChatPageContextPayload.single), reasoningEffort: reasoningEffort)
+        print("🇯🇵🍣 [AIChat bridge submit] sentModelId=\(modelId ?? "nil") reasoningEffort=\(reasoningEffort?.rawValue ?? "nil") path=text")
         push(.submitPrompt(promptPayload))
     }
 
@@ -323,6 +324,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             pageContext: attachedPageContextProvider?().map(AIChatPageContextPayload.single),
             reasoningEffort: reasoningEffort
         )
+        print("🇯🇵🍣 [AIChat bridge submit] sentModelId=\(modelId ?? "nil") reasoningEffort=\(reasoningEffort?.rawValue ?? "nil") path=multimodal tools=\(tools?.map(\.rawValue) ?? []) images=\(images?.count ?? 0) files=\(files?.count ?? 0)")
         push(.submitPrompt(promptPayload))
         onPromptSubmitted?()
     }

@@ -70,11 +70,13 @@ final class SubscriptionAIChatStateHandler: SubscriptionAIChatStateHandling {
     }
 
     private func handleSubscriptionStateChange(_ notification: Notification) {
+        print("🇯🇵 [AIChat subscription refresh] Native observed \(notification.name.rawValue); marking Duck.ai for refresh")
         shouldForceAIChatRefresh = true
         onSubscriptionStateChanged?()
     }
 
     func reset() {
+        print("🇯🇵 [AIChat subscription refresh] Native reset shouldForceAIChatRefresh")
         shouldForceAIChatRefresh = false
     }
 }

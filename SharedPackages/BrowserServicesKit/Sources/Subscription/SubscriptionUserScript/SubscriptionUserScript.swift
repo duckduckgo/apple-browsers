@@ -112,45 +112,65 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     func setBroker(_ broker: UserScriptMessagePushing) {
         self.broker = broker
+        print("🇯🇵 [subscriptions bridge] Native registered message broker for platform=\(platform.rawValue)")
     }
 
     func setWebView(_ webView: WKWebView?) {
         self.webView = webView
+        print("🇯🇵 [subscriptions bridge] Native attached webView host=\(webView?.url?.host ?? "nil") platform=\(platform.rawValue)")
     }
 
     func setUserScript(_ userScript: SubscriptionUserScript) {
         self.userScript = userScript
+        print("🇯🇵 [subscriptions bridge] Native attached SubscriptionUserScript platform=\(platform.rawValue)")
     }
 
     func handshake(params: Any, message: any UserScriptMessage) async throws -> DataModel.HandshakeResponse {
-        return .init(availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .openSubscriptionUpgrade, .authUpdate], platform: platform)
+        let response = DataModel.HandshakeResponse(
+            availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .openSubscriptionUpgrade, .authUpdate],
+            platform: platform
+        )
+        print("🇯🇵 [subscriptions bridge] FE -> Native handshake host=\(message.messageHost) platform=\(platform.rawValue) availableMessages=\(response.availableMessages.map(\.rawValue))")
+        return response
     }
 
     func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> DataModel.SubscriptionDetails {
+        print("🇯🇵 [subscriptions bridge] FE -> Native subscriptionDetails requested host=\(message.messageHost)")
         guard let subscription = try? await subscriptionManager.getSubscription() else {
+            print("🇯🇵 [subscriptions bridge] FE -> Native subscriptionDetails host=\(message.messageHost) result=notSubscribed")
             return .notSubscribed
         }
-        return .init(subscription)
+        let details = DataModel.SubscriptionDetails(subscription)
+        print("🇯🇵 [subscriptions bridge] FE -> Native subscriptionDetails host=\(message.messageHost) isSubscribed=\(details.isSubscribed) status=\(details.status ?? "nil") expiresOrRenewsAt=\(details.expiresOrRenewsAt.map(String.init) ?? "nil") paymentPlatform=\(details.paymentPlatform ?? "nil")")
+        return details
     }
 
     func getAuthAccessToken(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetAuthAccessTokenResponse {
-        guard let accessToken = try? await subscriptionManager.getAccessToken() else { return .init(accessToken: "") }
+        guard let accessToken = try? await subscriptionManager.getAccessToken() else {
+            print("🇯🇵 [subscriptions bridge] FE -> Native getAuthAccessToken host=\(message.messageHost) result=missing")
+            return .init(accessToken: "")
+        }
+        print("🇯🇵 [subscriptions bridge] FE -> Native getAuthAccessToken host=\(message.messageHost) result=available length=\(accessToken.count)")
         return .init(accessToken: accessToken)
     }
 
     @MainActor
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse {
-        return .init(usePaidDuckAi: featureFlagProvider.usePaidDuckAi, useProTier: featureFlagProvider.useProTier)
+        let response = DataModel.GetFeatureConfigurationResponse(usePaidDuckAi: featureFlagProvider.usePaidDuckAi, useProTier: featureFlagProvider.useProTier)
+        print("🇯🇵 [subscriptions bridge] FE -> Native getFeatureConfig host=\(message.messageHost) usePaidDuckAi=\(response.usePaidDuckAi) useProTier=\(response.useProTier)")
+        return response
     }
 
     @MainActor
     func backToSettings(params: Any, message: any UserScriptMessage) async throws -> Encodable? {
+        print("🇯🇵 [subscriptions bridge] FE -> Native backToSettings host=\(message.messageHost)")
         navigationDelegate?.navigateToSettings()
         return nil
     }
 
     @MainActor
     func openSubscriptionActivation(params: Any, message: any UserScriptMessage) async throws -> Encodable? {
+        print("🇯🇵 [subscriptions bridge] FE -> Native openSubscriptionActivation host=\(message.messageHost)")
         navigationDelegate?.navigateToSubscriptionActivation()
         return nil
     }
@@ -170,6 +190,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
             return nil
         }()
 
+        print("🇯🇵 [subscriptions bridge] FE -> Native openSubscriptionPurchase host=\(message.messageHost) origin=\(purchaseParams?.origin ?? "nil") featurePage=\(FeaturePage.duckai)")
         navigationDelegate?.navigateToSubscriptionPurchase(origin: purchaseParams?.origin, featurePage: FeaturePage.duckai)
         return nil
     }
@@ -189,13 +210,18 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
             return nil
         }()
 
+        print("🇯🇵 [subscriptions bridge] FE -> Native openSubscriptionUpgrade host=\(message.messageHost) origin=\(upgradeParams?.origin ?? "nil") featurePage=\(FeaturePage.duckai)")
         navigationDelegate?.navigateToSubscriptionPlans(origin: upgradeParams?.origin, featurePage: FeaturePage.duckai)
 
         return nil
     }
 
     private func handleSubscriptionChanged() {
-        guard let webView, let userScript else { return }
+        guard let webView, let userScript else {
+            print("🇯🇵 [subscriptions bridge] Native observed subscription/account change but cannot push authUpdate webViewSet=\(webView != nil) userScriptSet=\(userScript != nil) platform=\(platform.rawValue)")
+            return
+        }
+        print("🇯🇵 [subscriptions bridge] Native -> FE authUpdate host=\(webView.url?.host ?? "nil") platform=\(platform.rawValue)")
         broker?.push(method: SubscriptionUserScript.MessageName.authUpdate.rawValue, params: nil, for: userScript, into: webView)
     }
 

@@ -25,11 +25,30 @@ private final class RekeyRecorder {
     var callCount = 0
     var shouldThrow = true
 
+    /// When `true`, `call()` suspends until `resume()` is invoked, letting a test interleave other
+    /// work (e.g. `stop()`) while a rekey is in flight. `onPaused` fires once the suspension begins.
+    var shouldPause = false
+    var onPaused: (() -> Void)?
+    private var pauseContinuation: CheckedContinuation<Void, Never>?
+
     func call() async throws {
         callCount += 1
+
+        if shouldPause {
+            await withCheckedContinuation { continuation in
+                pauseContinuation = continuation
+                onPaused?()
+            }
+        }
+
         if shouldThrow {
             throw RekeyError.failure
         }
+    }
+
+    func resume() {
+        pauseContinuation?.resume()
+        pauseContinuation = nil
     }
 }
 
@@ -155,6 +174,33 @@ final class KeyExpirationTesterTests: XCTestCase {
         XCTAssertEqual(rekeyRecorder.callCount, 1)
 
         await tester.stop()
+        await tester.rekeyIfExpired()
+
+        XCTAssertEqual(rekeyRecorder.callCount, 2)
+    }
+
+    func testStop_whenRekeyFailsAfterStopping_doesNotRestoreFailureBackoff() async {
+        let tester = makeTester()
+
+        // Pause inside `rekey()` so we can stop the tester while a rekey is still in flight.
+        rekeyRecorder.shouldPause = true
+        let paused = expectation(description: "rekey paused mid-flight")
+        rekeyRecorder.onPaused = { paused.fulfill() }
+
+        let inFlightRekey = Task { await tester.rekeyIfExpired() }
+        await fulfillment(of: [paused], timeout: 1.0)
+        XCTAssertEqual(rekeyRecorder.callCount, 1)
+
+        // Stop clears the failure backoff while the rekey is suspended at `await rekey()`.
+        await tester.stop()
+
+        // Let the in-flight rekey resume and throw. Its failure must not restore the backoff
+        // that `stop()` just cleared.
+        rekeyRecorder.resume()
+        await inFlightRekey.value
+
+        // With no stale backoff date, an immediate rekey should run rather than be delayed.
+        rekeyRecorder.shouldPause = false
         await tester.rekeyIfExpired()
 
         XCTAssertEqual(rekeyRecorder.callCount, 2)

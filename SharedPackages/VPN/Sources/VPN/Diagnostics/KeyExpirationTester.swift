@@ -33,6 +33,7 @@ final actor KeyExpirationTester: KeyExpirationTesting {
     /// The interval of time between the start of each TCP connection test.
     ///
     private let intervalBetweenTests: TimeInterval = .seconds(15)
+
     private let rekeyFailureBackoffIntervals: [TimeInterval] = [
         .seconds(15),
         .seconds(30),
@@ -49,6 +50,10 @@ final actor KeyExpirationTester: KeyExpirationTesting {
     private var isTestingExpiration = false
     private var consecutiveFailedRekeyCount = 0
     private var nextRekeyAttemptDate: Date?
+
+    /// Bumped on every `stop()`. A rekey attempt captures this before it suspends so it can tell,
+    /// once it resumes, whether a `stop()` interleaved while it was awaiting.
+    private var stopGeneration = 0
     private let keyStore: NetworkProtectionKeyStore
     private let rekey: @MainActor () async throws -> Void
     private let settings: VPNSettings
@@ -95,6 +100,7 @@ final actor KeyExpirationTester: KeyExpirationTesting {
         Logger.networkProtectionKeyManagement.log("🔴 Stopping rekey timer")
         stopScheduledTimer()
         resetRekeyFailureBackoff()
+        stopGeneration &+= 1
         isRunning = false
     }
 
@@ -141,6 +147,12 @@ final actor KeyExpirationTester: KeyExpirationTesting {
             isTestingExpiration = false
         }
 
+        // Remember the stop generation before we start awaiting. `rekeyIfExpired()` suspends at the
+        // `await`s below, during which `stop()` can run on the actor and clear the failure backoff.
+        // If that happens, recording a failure afterwards would restore the very backoff `stop()`
+        // just cleared, causing a fresh `start()` to honor a stale delay.
+        let stopGenerationAtStart = stopGeneration
+
         guard await canRekey() else {
             Logger.networkProtectionKeyManagement.log("Can't rekey right now as some preconditions aren't met.")
             return
@@ -165,6 +177,11 @@ final actor KeyExpirationTester: KeyExpirationTesting {
             resetRekeyFailureBackoff()
             Logger.networkProtectionKeyManagement.log("Rekeying completed.")
         } catch {
+            guard stopGenerationAtStart == stopGeneration else {
+                Logger.networkProtectionKeyManagement.log("Rekey failed after the tester was stopped; not recording a failure backoff.")
+                return
+            }
+
             recordRekeyFailure()
             Logger.networkProtectionKeyManagement.error("Rekeying failed with error: \(error, privacy: .public).")
         }

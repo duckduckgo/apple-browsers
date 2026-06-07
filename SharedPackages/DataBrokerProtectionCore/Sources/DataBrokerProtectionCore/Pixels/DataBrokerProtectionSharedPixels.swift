@@ -809,7 +809,6 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .weeklyReportBackgroundTaskSession,
                     .weeklyReportStalledScans,
                     .weeklyReportStalledOptOuts,
-                    .freemiumPIRMaintenanceScanSkipped,
                     .optOutJobAt7DaysConfirmed,
                     .optOutJobAt7DaysUnconfirmed,
                     .optOutJobAt14DaysConfirmed,
@@ -838,6 +837,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .updateDataBrokersSuccess:
 
                 pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+            case .freemiumPIRMaintenanceScanSkipped:
+                pixelKit.fire(event, frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .firstScan, .freemiumUpsell:
                 pixelKit.fire(event, frequency: .uniqueByName, withNamePrefix: platform.pixelNamePrefix)
             case .updateDataBrokersFailure(_, _, _, let error):

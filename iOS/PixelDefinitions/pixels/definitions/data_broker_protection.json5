@@ -559,7 +559,7 @@
         "description": "Temporary telemetry fired when PIR skips at least one maintenance scan job for an unauthenticated freemium user.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"],
         "expires": "2026-08-31"
     },

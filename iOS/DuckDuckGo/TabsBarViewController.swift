@@ -554,7 +554,10 @@ extension TabsBarViewController: UICollectionViewDataSource {
         }
         
         guard let model = tabsModel?.get(tabAt: indexPath.row) else {
-            fatalError("Failed to load tab at \(indexPath.row)")
+            assertionFailure("TabsBarViewController: failed to load tab at \(indexPath.row) of \(tabsCount)")
+            DailyPixel.fireDailyAndCount(pixel: .debugTabsBarCellIndexOutOfRange)
+            cell.configurePlaceholder(withTheme: ThemeManager.shared.currentTheme)
+            return cell
         }
         let isCurrent = indexPath.row == currentIndex
         let isNextCurrent = indexPath.row + 1 == currentIndex

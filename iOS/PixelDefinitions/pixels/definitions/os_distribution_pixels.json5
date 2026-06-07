@@ -4,6 +4,13 @@
         "owners": ["jdjackson"],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1215252656518903?focus=true"],
         "triggers": ["scheduled"],
+        "parameters": [
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
+            }
+        ],
         "suffixes": [
             {
                 "description": "OS major version",
@@ -23,6 +30,13 @@
         "owners": ["jdjackson"],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1215252656518903?focus=true"],
         "triggers": ["scheduled"],
+        "parameters": [
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
+            }
+        ],
         "suffixes": [
             {
                 "description": "OS major version",
@@ -42,6 +56,13 @@
         "owners": ["jdjackson"],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1215252656518903?focus=true"],
         "triggers": ["scheduled"],
+        "parameters": [
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
+            }
+        ],
         "suffixes": [
             {
                 "description": "OS major version",

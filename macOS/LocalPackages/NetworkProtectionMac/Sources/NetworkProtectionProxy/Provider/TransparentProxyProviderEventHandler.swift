@@ -66,7 +66,7 @@ public final class TransparentProxyProviderEventHandler: TransparentProxyProvide
         case .orphaned(let heartbeatAge, let proxyAge):
             logger.log("🟠 Proxy provider orphaned (heartbeat: \(heartbeatAge.rawValue, privacy: .public), proxyAge: \(proxyAge.rawValue, privacy: .public))")
             let pixel = TransparentProxyProvider.OrphanedEvent(heartbeatAge: heartbeatAge, proxyAge: proxyAge)
-            pixelKit?.fire(pixel, frequency: .legacyDailyAndCount)
+            pixelKit?.fire(pixel, frequency: .dailyAndCount)
         }
     }
 }

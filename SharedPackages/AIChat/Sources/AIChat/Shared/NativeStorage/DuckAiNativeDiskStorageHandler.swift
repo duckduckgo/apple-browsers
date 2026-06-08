@@ -119,10 +119,11 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, 
 
         try settingsLock.withLock {
             var settings = try loadSettingsBlob()
-            var deletedIDs = settings[key] as? Set<String> ?? Set()
+            let deletedIDs = settings[key] as? [String] ?? []
 
-            deletedIDs.insert(chatId)
-            settings[key] = Array(deletedIDs)
+            var updatedIDs = Set(deletedIDs)
+            updatedIDs.insert(chatId)
+            settings[key] = Array(updatedIDs)
 
             try saveSettingsBlob(settings)
         }

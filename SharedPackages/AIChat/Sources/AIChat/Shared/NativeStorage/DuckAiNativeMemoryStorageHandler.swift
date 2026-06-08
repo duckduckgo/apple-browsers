@@ -128,15 +128,16 @@ public final class DuckAiNativeMemoryStorageHandler: DuckAiNativeStorageHandling
         defer { lock.unlock() }
 
         chats.removeValue(forKey: chatId)
+        try markChatLocallyDeleted(chatId: chatId)
     }
 
     private func markChatLocallyDeleted(chatId: String) throws {
-        let key = DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue
-        let deletedIDs = entries[key] as? [String] ?? []
-        var updatedIDs = Set(deletedIDs)
-        updatedIDs.insert(chatId)
-
-        entries[key] = Array(updatedIDs)
+        try updateEntry(key: .locallyDeletedChatIds) { deletedChats in
+            let deletedIDs = deletedChats as? [String] ?? []
+            var updatedIDs = Set(deletedIDs)
+            updatedIDs.insert(chatId)
+            return Array(updatedIDs)
+        }
     }
 
     public func deleteAllChats() throws {
@@ -192,6 +193,16 @@ public final class DuckAiNativeMemoryStorageHandler: DuckAiNativeStorageHandling
         lock.lock()
         defer { lock.unlock() }
         files.removeAll()
+    }
+
+    // MARK: - Settings Helpers
+
+    private func updateEntry(key: DuckAiNativeStorageReservedEntryKeys, work: (Any?) -> Any?) throws {
+        try updateEntry(key: key.rawValue, work: work)
+    }
+
+    private func updateEntry(key: String, work: (_ oldValue: Any?) -> Any?) throws {
+        entries[key] = work(entries[key])
     }
 
     // MARK: - Migration

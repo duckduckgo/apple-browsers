@@ -59,21 +59,24 @@ final class NavigationPixelNavigationResponder {
 
     private var pendingNavigationType: String?
     private let samplePercentage: Int
-    private let isOnErrorPage: () -> Bool
+    private let isErrorPageReload: (WKNavigationAction) -> Bool
     private let isLoadingErrorPage: (WKNavigationAction) -> Bool
 
     /// - Parameters:
     ///   - samplePercentage: Pixel sampling rate (1–100). Defaults to `SiteLoadingPixel.samplePercentage`
-    ///   - isOnErrorPage: Closure returning whether the currently-displayed page is a special error page.
+    ///   - isErrorPageReload: Closure returning whether the supplied action looks like an error-page
+    ///     reload (i.e. the error page is showing AND the action targets the failed URL). Used to skip
+    ///     `.other` reload-like navigations the error page issues internally, while letting unrelated
+    ///     main-frame navigations initiated from the error page (e.g. a user-typed URL) fire the pixel.
     ///   - isLoadingErrorPage: Closure returning whether the supplied `WKNavigationAction` is loading the
     ///     special error page itself. Must be navigation-specific (URL-matched), not a stateful flag —
     ///     otherwise an unrelated main-frame navigation initiated during the brief error-page-load window
     ///     would also be dropped.
     init(samplePercentage: Int = SiteLoadingPixel.samplePercentage,
-         isOnErrorPage: @escaping () -> Bool,
+         isErrorPageReload: @escaping (WKNavigationAction) -> Bool,
          isLoadingErrorPage: @escaping (WKNavigationAction) -> Bool) {
         self.samplePercentage = samplePercentage
-        self.isOnErrorPage = isOnErrorPage
+        self.isErrorPageReload = isErrorPageReload
         self.isLoadingErrorPage = isLoadingErrorPage
     }
 
@@ -91,7 +94,7 @@ final class NavigationPixelNavigationResponder {
         let navigationType = NavigationType(navigationAction, currentHistoryItemIdentity: nil)
         let shouldFire = SiteLoadingPixel.shouldFireSiteLoadingPixel(
             for: navigationType,
-            isStartingFromErrorPage: isOnErrorPage()
+            isStartingFromErrorPage: isErrorPageReload(navigationAction)
         )
         guard shouldFire else {
             pendingNavigationType = nil

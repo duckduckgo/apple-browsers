@@ -33,7 +33,7 @@ private final class MockNavigation: SiteLoadingNavigation {
 final class NavigationPixelNavigationResponderTests: XCTestCase {
 
     private var firedPixels: [(name: String, params: [String: String])] = []
-    private var isOnErrorPage = false
+    private var isErrorPageReload = false
     private var isLoadingErrorPage = false
     private var sut: NavigationPixelNavigationResponder!
 
@@ -44,7 +44,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
     override func setUp() {
         super.setUp()
         firedPixels = []
-        isOnErrorPage = false
+        isErrorPageReload = false
         isLoadingErrorPage = false
 
         let defaults = UserDefaults(suiteName: "test_\(UUID().uuidString)")!
@@ -60,7 +60,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
 
         sut = NavigationPixelNavigationResponder(
             samplePercentage: testSamplePercentage,
-            isOnErrorPage: { [weak self] in self?.isOnErrorPage ?? false },
+            isErrorPageReload: { [weak self] _ in self?.isErrorPageReload ?? false },
             isLoadingErrorPage: { [weak self] _ in self?.isLoadingErrorPage ?? false }
         )
     }
@@ -149,7 +149,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
     func test_willStart_whenOnErrorPage_otherNavigationDoesNotFire() {
         // Mirrors macOS's `case .other where targetFrame?.url == .error` — error-page reload buttons surface
         // as `.other`, not `.reload`, so the gate keys off the page state instead of the type alone.
-        isOnErrorPage = true
+        isErrorPageReload = true
         let nav = MockNavigation()
 
         sut.willStart(mainFrameAction(.other))
@@ -161,7 +161,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
 
     func test_willStart_whenOnErrorPage_userInitiatedNavigationStillFires() {
         // `.linkActivated` is an explicit user action even from an error page — should fire.
-        isOnErrorPage = true
+        isErrorPageReload = true
         let nav = MockNavigation()
 
         sut.willStart(mainFrameAction(.linkActivated))

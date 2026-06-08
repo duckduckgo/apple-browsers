@@ -1518,8 +1518,17 @@ class TabViewController: UIViewController {
     }
 
     private lazy var navigationPixelResponder = NavigationPixelNavigationResponder(
-        isOnErrorPage: { [weak self] in
-            self?.specialErrorPageNavigationHandler.isSpecialErrorPageVisible ?? false
+        isErrorPageReload: { [weak self] navigationAction in
+            // Keyed on URL — not just `isSpecialErrorPageVisible` — so the "error page reload" gate
+            // only catches reload-like `.other` navs the error page issues against the same URL, not a
+            // user-typed URL (or back/forward) initiated from the error page, which targets a different
+            // URL and represents a real navigation we want to measure.
+            guard let self,
+                  self.specialErrorPageNavigationHandler.isSpecialErrorPageVisible,
+                  let failedURL = self.specialErrorPageNavigationHandler.failedURL else {
+                return false
+            }
+            return navigationAction.request.url == failedURL
         },
         isLoadingErrorPage: { [weak self] navigationAction in
             // Keyed on URL — not just the flag — so an unrelated main-frame nav (back/forward, URL bar)

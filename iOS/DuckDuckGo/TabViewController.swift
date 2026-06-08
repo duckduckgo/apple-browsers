@@ -2346,7 +2346,6 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        navigationPixelResponder.didFail(navigation, error: error)
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
         adClickExternalOpenDetector.failNavigation(error: error)
@@ -2380,6 +2379,10 @@ extension TabViewController: WKNavigationDelegate {
             self.url = webView.url
             return
         }
+
+        // Fire the site-loading failure pixel after the early-return guards above so download handoffs
+        // (WebKit error 102) and user cancellations (NSURLErrorCancelled) aren't miscounted as failures.
+        navigationPixelResponder.didFail(navigation, error: error)
 
         // wait before showing errors in case they recover automatically
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

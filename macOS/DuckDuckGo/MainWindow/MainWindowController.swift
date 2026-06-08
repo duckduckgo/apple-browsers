@@ -86,6 +86,7 @@ final class MainWindowController: NSWindowController {
         subscribeToFullScreenToolbarChanges()
         subscribeToKeyWindow()
         subscribeToThemeChanges()
+        subscribeToEffectiveAppearance()
 
         applyThemeStyle()
 
@@ -173,6 +174,21 @@ final class MainWindowController: NSWindowController {
         NotificationCenter.default.addObserver(self, selector: #selector(didChangeScreenParameters), name: NSApplication.didChangeScreenParametersNotification, object: NSApp)
     }
 
+    private func subscribeToEffectiveAppearance() {
+        // The titlebarView layer color set in applyThemeStyle is a frozen CGColor that, unlike
+        // window.backgroundColor, does not track the effective appearance. Re-apply the theme when the
+        // appearance changes (e.g. the system switches between light and dark while following the system
+        // setting) so the strip above the tab bar stays in sync. Only relevant on Liquid Glass UI.
+        guard AppVersion.isLiquidGlassSupported else { return }
+        NSApp.publisher(for: \.effectiveAppearance)
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
+            .store(in: &cancellables)
+    }
+
     private func subscribeToFullScreenToolbarChanges() {
         NotificationCenter.default.publisher(for: AppearancePreferences.Notifications.showTabsAndBookmarksBarOnFullScreenChanged)
             .compactMap { $0.userInfo?[AppearancePreferences.Constants.showTabsAndBookmarksBarOnFullScreenParameter] as? Bool }
@@ -226,7 +242,7 @@ final class MainWindowController: NSWindowController {
 
     private var trafficLightsAlphaCancellables = [AnyCancellable]()
     private func subscribeToTrafficLightsAlpha() {
-        guard let window, let featureFlagger, featureFlagger.isFeatureOn(.semaphoreAlwaysVisible) else {
+        guard let window else {
             return
         }
 
@@ -361,7 +377,9 @@ extension MainWindowController: ThemeUpdateListening {
         // white, so coloring the titlebarView's layer itself is the only way to fill that strip.
         if AppVersion.isLiquidGlassSupported, let titlebarView = window?.titlebarView {
             titlebarView.wantsLayer = true
-            titlebarView.layer?.backgroundColor = theme.colorsProvider.baseBackgroundColor.cgColor
+            titlebarView.effectiveAppearance.performAsCurrentDrawingAppearance {
+                titlebarView.layer?.backgroundColor = theme.colorsProvider.baseBackgroundColor.cgColor
+            }
         }
     }
 }

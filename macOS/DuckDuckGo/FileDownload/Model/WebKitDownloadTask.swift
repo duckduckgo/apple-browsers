@@ -582,17 +582,6 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
         }
         performRegardlessOfMainThread()
 #endif
-
-        // WebKit objects must be deallocated on the main thread on pre-macOS 12
-        if #unavailable(macOS 12), !Thread.isMainThread {
-            let extendLifetime = DispatchWorkItem { [download] in
-                withExtendedLifetime(download) {}
-            }
-            // to avoid race condition we clear the ivar first,
-            // then pass the WKDownload lifetime extension to the main queue
-            self.download = nil
-            DispatchQueue.main.async(execute: extendLifetime)
-        }
     }
 
 }

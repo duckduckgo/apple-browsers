@@ -107,9 +107,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         /// Whether attempts from this source should be recorded in the connection-attempt SLO.
         public var isConnectionAttempt: Bool {
             switch self {
-            case .start, .rekey, .serverChange, .locationChange,
+            case .start, .serverChange, .locationChange,
                  .adapterRestart, .failureRecovery, .serverMigration:
                 return true
+            case .rekey:
+                return false
             }
         }
     }

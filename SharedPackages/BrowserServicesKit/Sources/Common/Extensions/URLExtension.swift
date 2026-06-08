@@ -355,6 +355,12 @@ extension URL {
         return components.url
     }
 
+    public func replacing(scheme: String?) -> URL? {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
+        components.scheme = scheme
+        return components.url
+    }
+
     public func replacing(path: String?) -> URL {
         guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
         components.path = ""

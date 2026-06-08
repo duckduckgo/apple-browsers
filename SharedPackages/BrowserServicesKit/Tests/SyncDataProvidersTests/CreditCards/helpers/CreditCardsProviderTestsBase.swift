@@ -238,7 +238,7 @@ final class TestBitFlipCryptoProvider: SecureStorageCryptoProvider {
            data.starts(with: decryptionFailureMarker) {
             throw SecureStorageError.invalidPassword
         }
-        Data(data.map { ~$0 })
+        return Data(data.map { ~$0 })
     }
 
     func generateSalt() throws -> Data { Data() }

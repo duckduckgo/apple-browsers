@@ -182,7 +182,8 @@
                 "type": "string",
                 "enum": ["none", "few", "moderate", "many"],
                 "description": "Redirect count bucket to prevent fingerprinting"
-            }
+            },
+            "channel"
         ]
     }
 }

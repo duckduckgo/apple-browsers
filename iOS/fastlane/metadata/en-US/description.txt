@@ -44,3 +44,5 @@ Privacy Policy: https://duckduckgo.com/privacy/ 
 Terms of Service: https://duckduckgo.com/terms 
 
 Note about 3rd-Party Tracker Protection and Search Ads: while there are some limitations following search ad clicks, viewing ads on DuckDuckGo search is anonymous. Learn more here https://help.duckduckgo.com/privacy/web-tracking-protections 
+
+Privacy. Simplified. ™

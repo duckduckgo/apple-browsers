@@ -347,6 +347,13 @@ final class AIChatContextualSheetViewController: UIViewController {
         hideDimmingView(animated: animated)
     }
 
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isBeingDismissed {
+            delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateShadowPath()
@@ -1091,10 +1098,6 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
 
     func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
         isCurrentlyMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
-    }
-
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
     }
 }
 

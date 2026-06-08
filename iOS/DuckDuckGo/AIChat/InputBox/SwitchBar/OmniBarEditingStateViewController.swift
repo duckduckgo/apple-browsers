@@ -410,6 +410,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                     self.view.layoutIfNeeded()
                 }
             }
+        manager.onFetchCompleted = { [weak self] _, _ in
+            guard let self else { return }
+            self.scheduleAnimation {
+                self.updateDaxVisibility()
+                self.view.layoutIfNeeded()
+            }
+        }
         aiChatHistoryManager = manager
 
         manager.setEscapeHatch(escapeHatchModel)
@@ -446,8 +453,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             daxLogoManager.installInViewController(self,
                                                    asSubviewOf: contentContainerView,
                                                    anchorView: switchBarVC.view,
-                                                   isTopBarPosition: isUsingTopBarPosition,
-                                                   escapeHatch: escapeHatchModel)
+                                                   isTopBarPosition: isUsingTopBarPosition)
         } else if let view = switchBarVC.segmentedPickerView {
             daxLogoManager.installInViewController(self,
                                                    asSubviewOf: contentContainerView,
@@ -720,6 +726,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
+        let isAIChatHistoryPending = aiChatHistoryManager != nil
+            && aiChatHistoryManager?.hasSettled(forQuery: switchBarHandler.currentText) != true
+            && switchBarHandler.currentToggleState == .aiChat
+            && !switchBarHandler.isFireTab
 
         let hasRemoteMessages = suggestionTrayManager?.hasRemoteMessages ?? false
         let hasEscapeHatchWithoutFavoritesOrMessages = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false) && !hasRemoteMessages
@@ -727,16 +737,29 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
 
-        let isAIDaxVisible: Bool
-        if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
-        } else {
-            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent
-        }
+        let isAIDaxVisible = Self.isAIDaxVisible(
+            isHorizontallyCompactLayoutEnabled: isHorizontallyCompactLayoutEnabled,
+            isShowingChatHistory: isShowingChatHistory,
+            isURLFallbackShowingContent: isURLFallbackShowingContent,
+            shouldDisplaySuggestionTray: shouldDisplaySuggestionTray,
+            isAIChatHistoryPending: isAIChatHistoryPending
+        )
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
         let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Constants.escapeHatchLogoZoneHeight : 0
         daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
+    }
+
+    static func isAIDaxVisible(isHorizontallyCompactLayoutEnabled: Bool,
+                               isShowingChatHistory: Bool,
+                               isURLFallbackShowingContent: Bool,
+                               shouldDisplaySuggestionTray: Bool,
+                               isAIChatHistoryPending: Bool) -> Bool {
+        !isAIChatHistoryPending
+        && !isHorizontallyCompactLayoutEnabled
+        && !isShowingChatHistory
+        && !isURLFallbackShowingContent
+        && !shouldDisplaySuggestionTray
     }
 
 }

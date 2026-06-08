@@ -55,6 +55,10 @@ final class AIChatHistoryManager {
             .eraseToAnyPublisher()
     }
 
+    func hasSettled(forQuery query: String) -> Bool {
+        lastCompletedFetchQuery.map { $0 == query } ?? false
+    }
+
     private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider
@@ -155,6 +159,10 @@ final class AIChatHistoryManager {
                 self.fetchSuggestionsIfNeeded(query: text)
             }
             .store(in: &cancellables)
+    }
+
+    func refreshSuggestions(query: String) {
+        fetchSuggestionsIfNeeded(query: query)
     }
 
     /// Fetches suggestions from the API with cancellation support

@@ -23,6 +23,7 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import Configuration
+import DesignResourcesKitIcons
 import FeatureFlags
 import FoundationExtensions
 import History
@@ -86,17 +87,25 @@ final class MainMenu: NSMenu {
     // MARK: DuckDuckGo
     let servicesMenu = NSMenu(title: UserText.mainMenuAppServices)
     let preferencesMenuItem = NSMenuItem(title: UserText.mainMenuAppPreferences, action: #selector(AppDelegate.openPreferences), keyEquivalent: ",").withAccessibilityIdentifier("MainMenu.preferencesMenuItem")
+        .withImage(DesignSystemImages.Glyphs.Size12.settings)
 
     // MARK: File
     let newWindowMenuItem = NSMenuItem(title: UserText.newWindowMenuItem, action: #selector(AppDelegate.newWindow), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.windowNew)
     let newBurnerWindowMenuItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem, action: #selector(AppDelegate.newBurnerWindow), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.fireWindow)
     let newTabMenuItem = NSMenuItem(title: UserText.mainMenuFileNewTab, action: #selector(AppDelegate.newTab), keyEquivalent: "t")
+        .withImage(DesignSystemImages.Glyphs.Size12.tabNew)
     let openLocationMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenLocation, action: #selector(AppDelegate.openLocation), keyEquivalent: "l")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowUpRight)
     let openFileMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenFile, action: #selector(AppDelegate.openFile), keyEquivalent: "o")
+        .withImage(DesignSystemImages.Glyphs.Size12.folder)
     let closeWindowMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseWindow, action: #selector(NSWindow.performClose), keyEquivalent: "W")
+        .withImage(DesignSystemImages.Glyphs.Size12.close)
     let closeAllWindowsMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseAllWindows, action: #selector(AppDelegate.closeAllWindows), keyEquivalent: [.option, .command, "W"])
     let closeTabMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(MainViewController.closeTab), keyEquivalent: "w")
     let importBrowserDataMenuItem = NSMenuItem(title: UserText.mainMenuFileImportBookmarksandPasswords, action: #selector(AppDelegate.openImportBrowserDataWindow))
+        .withImage(DesignSystemImages.Glyphs.Size12.import)
     let newAIChatFileMenuItem = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: "")
 
     @MainActor
@@ -104,12 +113,17 @@ final class MainMenu: NSMenu {
 
     // MARK: View
     let stopMenuItem = NSMenuItem(title: UserText.mainMenuViewStop, action: #selector(MainViewController.stopLoadingPage), keyEquivalent: ".")
+        .withImage(DesignSystemImages.Glyphs.Size12.close)
     let reloadMenuItem = NSMenuItem(title: UserText.mainMenuViewReloadPage, action: #selector(MainViewController.reloadPage), keyEquivalent: "r")
+        .withImage(DesignSystemImages.Glyphs.Size12.reloadSmall)
 
     let toggleFullscreenMenuItem = NSMenuItem(title: UserText.mainMenuViewEnterFullScreen, action: #selector(NSWindow.toggleFullScreen), keyEquivalent: [.control, .command, "f"])
     let actualSizeMenuItem = NSMenuItem(title: UserText.mainMenuViewActualSize, action: #selector(MainViewController.actualSize), keyEquivalent: "0")
+        .withImage(DesignSystemImages.Glyphs.Size12.zoomActualSize)
     let zoomInMenuItem = NSMenuItem(title: UserText.mainMenuViewZoomIn, action: #selector(MainViewController.zoomIn), keyEquivalent: "+")
+        .withImage(DesignSystemImages.Glyphs.Size12.zoomIn)
     let zoomOutMenuItem = NSMenuItem(title: UserText.mainMenuViewZoomOut, action: #selector(MainViewController.zoomOut), keyEquivalent: "-")
+        .withImage(DesignSystemImages.Glyphs.Size12.zoomOut)
 
     // MARK: History
     @MainActor
@@ -123,8 +137,10 @@ final class MainMenu: NSMenu {
     // MARK: Bookmarks
     let manageBookmarksMenuItem = NSMenuItem(title: UserText.mainMenuHistoryManageBookmarks, action: #selector(MainViewController.showManageBookmarks), keyEquivalent: [.command, .option, "b"])
         .withAccessibilityIdentifier("MainMenu.manageBookmarksMenuItem")
+        .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
     var bookmarksMenuToggleBookmarksBarMenuItem = NSMenuItem(title: "BookmarksBarMenuPlaceholder", action: #selector(MainViewController.toggleBookmarksBarFromMenu), keyEquivalent: "B")
     let importBookmarksMenuItem = NSMenuItem(title: UserText.importBookmarks, action: #selector(AppDelegate.openImportBookmarksWindow))
+        .withImage(DesignSystemImages.Glyphs.Size12.import)
     let bookmarksMenu = NSMenu(title: UserText.bookmarks)
     let favoritesMenu = NSMenu(title: UserText.favorites)
 
@@ -141,19 +157,30 @@ final class MainMenu: NSMenu {
         action: #selector(MainViewController.toggleDuckAIChromeSidebarButtonVisibility(_:)),
         keyEquivalent: "U"
     )
+    private let toggleDuckAISidebarMenuItem = NSMenuItem(
+        title: UserText.aiChatShowSidebar,
+        action: #selector(MainViewController.toggleDuckAISidebar(_:)),
+        keyEquivalent: [.option, .command, "l"]
+    )
+    private let toggleDuckAISidebarSeparatorMenuItem = NSMenuItem.separator()
 
     var homeButtonMenuItem = NSMenuItem(title: "HomeButtonPlaceholder")
     var showTabsAndBookmarksBarOnFullScreenMenuItem = NSMenuItem(title: "ShowTabsAndBookmarksBarOnFullScreenMenuItem")
     let toggleShareShortcutMenuItem = NSMenuItem(title: UserText.shareMenuItem, action: #selector(MainViewController.toggleShareShortcut), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
     let toggleDownloadsShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowDownloadsShortcut, action: #selector(MainViewController.toggleDownloadsShortcut), keyEquivalent: "J")
+        .withImage(DesignSystemImages.Glyphs.Size12.downloads)
     let toggleAutofillShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowAutofillShortcut, action: #selector(MainViewController.toggleAutofillShortcut), keyEquivalent: "A")
+        .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
     let toggleBookmarksShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowBookmarksShortcut, action: #selector(MainViewController.toggleBookmarksShortcut), keyEquivalent: "K")
+        .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
     private(set) lazy var aiChatMenu: NSMenuItem = MainActor.assumeMainThread {
         let container = NSMenuItem(title: "Duck.ai")
         container.submenu = makeAIChatMenu()
         return container
     }
     let toggleNetworkProtectionShortcutMenuItem = NSMenuItem(title: UserText.showNetworkProtectionShortcut, action: #selector(MainViewController.toggleNetworkProtectionShortcut), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.vpnUnlock)
 
     // MARK: Window
     let windowsMenu = NSMenu(title: UserText.mainMenuWindow)
@@ -173,14 +200,21 @@ final class MainMenu: NSMenu {
 
     let helpMenu = NSMenu(title: UserText.mainMenuHelp)
     let aboutMenuItem = NSMenuItem(title: UserText.about, action: #selector(AppDelegate.showAbout))
+        .withImage(DesignSystemImages.Glyphs.Size12.info)
     let addToDockMenuItem = NSMenuItem(title: UserText.addDuckDuckGoToDock, action: #selector(AppDelegate.addToDock))
+        .withImage(DesignSystemImages.Glyphs.Size12.addToTaskbar)
     let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser + "…", action: #selector(AppDelegate.setAsDefault))
+        .withImage(DesignSystemImages.Glyphs.Size12.browserDefault)
     let releaseNotesMenuItem = NSMenuItem(title: UserText.releaseNotesMenuItem, action: #selector(AppDelegate.showReleaseNotes))
+        .withImage(DesignSystemImages.Glyphs.Size12.note)
     let whatIsNewMenuItem = NSMenuItem(title: UserText.whatsNewMenuItem, action: #selector(AppDelegate.showWhatIsNew))
+        .withImage(DesignSystemImages.Glyphs.Size12.news)
 
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
+        .withImage(DesignSystemImages.Glyphs.Size12.feedback)
 
     let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
+        .withImage(DesignSystemImages.Glyphs.Size12.info)
 
     private let featureFlagger: FeatureFlagger
     private let isLazyMenuRebuild: Bool
@@ -325,6 +359,7 @@ final class MainMenu: NSMenu {
             closeAllWindowsMenuItem
             closeTabMenuItem
             NSMenuItem(title: UserText.mainMenuFileSaveAs, action: #selector(MainViewController.saveAs), keyEquivalent: "s")
+                .withImage(DesignSystemImages.Glyphs.Size12.save)
             NSMenuItem.separator()
 
             importBrowserDataMenuItem
@@ -332,13 +367,16 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: UserText.mainMenuFileExportPasswords, action: #selector(AppDelegate.openExportLogins))
                 NSMenuItem(title: UserText.mainMenuFileExportBookmarks, action: #selector(AppDelegate.openExportBookmarks))
             }
+            .withImage(DesignSystemImages.Glyphs.Size12.export)
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.shareMenuItem)
                 .submenu(sharingMenu)
+                .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), keyEquivalent: "p")
+                .withImage(DesignSystemImages.Glyphs.Size12.print)
         }
     }
 
@@ -414,8 +452,11 @@ final class MainMenu: NSMenu {
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.mainMenuViewHome, action: #selector(MainViewController.home), keyEquivalent: "H")
+                .withImage(DesignSystemImages.Glyphs.Size12.home)
             NSMenuItem.separator()
 
+            toggleDuckAISidebarMenuItem
+            toggleDuckAISidebarSeparatorMenuItem
             toggleDuckAIChromeButtonMenuItem
             toggleDuckAIChromeSidebarButtonMenuItem
             duckAIChromeButtonsSeparatorMenuItem
@@ -425,6 +466,7 @@ final class MainMenu: NSMenu {
             toggleBookmarksBarMenuItem
 
             NSMenuItem(title: UserText.openDownloads, action: #selector(MainViewController.toggleDownloads), keyEquivalent: "j")
+                .withImage(DesignSystemImages.Glyphs.Size12.downloads)
             NSMenuItem.separator()
 
             homeButtonMenuItem
@@ -466,6 +508,7 @@ final class MainMenu: NSMenu {
             .submenu(bookmarksMenu.buildItems {
                 NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(MainViewController.bookmarkThisPage), keyEquivalent: "d")
                     .withAccessibilityIdentifier("MainMenu.addBookmark")
+                    .withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd)
                 NSMenuItem(title: UserText.bookmarkAllTabs, action: #selector(MainViewController.bookmarkAllOpenTabs), keyEquivalent: [.command, .shift, "d"])
                 manageBookmarksMenuItem
                 bookmarksMenuToggleBookmarksBarMenuItem
@@ -473,16 +516,17 @@ final class MainMenu: NSMenu {
 
                 importBookmarksMenuItem
                 NSMenuItem(title: UserText.exportBookmarks, action: #selector(AppDelegate.openExportBookmarks))
+                    .withImage(DesignSystemImages.Glyphs.Size12.export)
                 NSMenuItem.separator()
 
                 NSMenuItem(title: UserText.favorites)
                     .submenu(favoritesMenu.buildItems {
                         NSMenuItem(title: UserText.mainMenuHistoryFavoriteThisPage, action: #selector(MainViewController.favoriteThisPage))
-                            .withImage(.favorite)
+                            .withImage(DesignSystemImages.Glyphs.Size12.favorite)
                             .withAccessibilityIdentifier("MainMenu.favoriteThisPage")
                         NSMenuItem.separator()
                     })
-                    .withImage(.favorite)
+                    .withImage(DesignSystemImages.Glyphs.Size12.favorite)
 
                 NSMenuItem.separator()
             })
@@ -496,8 +540,11 @@ final class MainMenu: NSMenu {
                 NSMenuItem.separator()
 
                 NSMenuItem(title: UserText.newTabToTheRight, action: #selector(MainViewController.newTabNextToActive))
+                    .withImage(DesignSystemImages.Glyphs.Size12.tabNew)
                 NSMenuItem(title: UserText.duplicateTab, action: #selector(MainViewController.duplicateTab))
+                    .withImage(DesignSystemImages.Glyphs.Size12.windowDuplicate)
                 NSMenuItem(title: UserText.pinTab, action: #selector(MainViewController.pinOrUnpinTab))
+                    .withImage(DesignSystemImages.Glyphs.Size12.pin)
                 NSMenuItem(title: UserText.moveTabToNewWindow, action: #selector(MainViewController.moveTabToNewWindow))
                 NSMenuItem(title: UserText.mainMenuWindowMergeAllWindows, action: #selector(NSWindow.mergeAllWindows))
                 NSMenuItem.separator()
@@ -594,6 +641,8 @@ final class MainMenu: NSMenu {
         updateWebExtensionsMenuItem()
         updateAlwaysShowFirstTimeQuitSurvey()
         updateDuckAIChromeButtonMenuItems()
+
+        alignItemTextWithIconsRecursively()
     }
 
     private func updateAlwaysShowFirstTimeQuitSurvey() {
@@ -832,6 +881,8 @@ final class MainMenu: NSMenu {
     private func updateDuckAIChromeButtonMenuItems() {
         let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
             && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
+        toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
         toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
         toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
         duckAIChromeButtonsSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
@@ -946,6 +997,8 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "Remote Messaging Framework")
                 .submenu(RemoteMessagingDebugMenu(configurationURLProvider: configurationURLProvider))
+            NSMenuItem(title: "OS Support")
+                .submenu(OSSupportDebugMenu())
             NSMenuItem(title: "User Scripts") {
                 NSMenuItem(title: "Remove user scripts from selected tab", action: #selector(MainViewController.removeUserScripts))
             }
@@ -1034,49 +1087,44 @@ final class MainMenu: NSMenu {
             }
 
             // Closure to handle subscription selection via the user script handler
-            let subscriptionSelectionHandler: SubscriptionSelectionHandler? = {
-                if #available(macOS 12.0, *) {
-                    return { @MainActor (productId: String, changeType: String?) async in
-                        let subscriptionManager = Application.appDelegate.subscriptionManager
-                        let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
-                        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-                        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-                        let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
-                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
+            let subscriptionSelectionHandler: SubscriptionSelectionHandler = { @MainActor (productId: String, changeType: String?) async in
+                let subscriptionManager = Application.appDelegate.subscriptionManager
+                let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+                let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+                let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+                let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
+                let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
 
-                        let flowPerformer = DefaultSubscriptionFlowsExecuter(
-                            subscriptionManager: subscriptionManager,
-                            uiHandler: Application.appDelegate.subscriptionUIHandler,
-                            wideEvent: Application.appDelegate.wideEvent,
-                            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
-                            pendingTransactionHandler: pendingTransactionHandler
-                        )
+                let flowPerformer = DefaultSubscriptionFlowsExecuter(
+                    subscriptionManager: subscriptionManager,
+                    uiHandler: Application.appDelegate.subscriptionUIHandler,
+                    wideEvent: Application.appDelegate.wideEvent,
+                    subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+                    pendingTransactionHandler: pendingTransactionHandler
+                )
 
-                        let feature = SubscriptionPagesUseSubscriptionFeature(
-                            subscriptionManager: subscriptionManager,
-                            stripePurchaseFlow: stripePurchaseFlow,
-                            uiHandler: Application.appDelegate.subscriptionUIHandler,
-                            aiChatURL: AIChatRemoteSettings().aiChatURL,
-                            wideEvent: Application.appDelegate.wideEvent,
-                            pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
-                        )
+                let feature = SubscriptionPagesUseSubscriptionFeature(
+                    subscriptionManager: subscriptionManager,
+                    stripePurchaseFlow: stripePurchaseFlow,
+                    uiHandler: Application.appDelegate.subscriptionUIHandler,
+                    aiChatURL: AIChatRemoteSettings().aiChatURL,
+                    wideEvent: Application.appDelegate.wideEvent,
+                    pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
+                )
 
-                        // Create params matching what the web would send
-                        var params: [String: Any] = ["id": productId]
-                        if let changeType = changeType {
-                            params["change"] = changeType
-                        }
-
-                        // Call the appropriate handler based on whether it's a tier change or new purchase
-                        if changeType != nil {
-                            _ = try? await feature.subscriptionChangeSelected(params: params, original: WKScriptMessage())
-                        } else {
-                            _ = try? await feature.subscriptionSelected(params: params, original: WKScriptMessage())
-                        }
-                    }
+                // Create params matching what the web would send
+                var params: [String: Any] = ["id": productId]
+                if let changeType = changeType {
+                    params["change"] = changeType
                 }
-                return nil
-            }()
+
+                // Call the appropriate handler based on whether it's a tier change or new purchase
+                if changeType != nil {
+                    _ = try? await feature.subscriptionChangeSelected(params: params, original: WKScriptMessage())
+                } else {
+                    _ = try? await feature.subscriptionSelected(params: params, original: WKScriptMessage())
+                }
+            }
 
             SubscriptionDebugMenu(currentEnvironment: currentEnvironment,
                                   updateServiceEnvironment: updateServiceEnvironment,

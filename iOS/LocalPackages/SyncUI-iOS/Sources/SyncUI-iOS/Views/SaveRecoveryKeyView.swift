@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct SaveRecoveryKeyView: View {
 
@@ -114,7 +115,7 @@ public struct SaveRecoveryKeyView: View {
     @ViewBuilder
     func mainContent() -> some View {
         VStack(spacing: 0) {
-            Image("Sync-QR-Download-128")
+            Image(rebrandable: "Sync-QR-Download-128")
                 .padding(.bottom, 16)
 
             Text(UserText.saveRecoveryCodeSheetTitle)

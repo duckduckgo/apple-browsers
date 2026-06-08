@@ -104,6 +104,20 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         )
     }
 
+    /// Regression guard: chat→voice opens a new tab while the coordinator is still in `.aiTab(.expanded)` from the source chat. Preserving that presentation leaves the bottom UTI rendered expanded once voice ends (no fire button / app menu) even though the keyboard is down. Voice must force collapse instead of inheriting expanded state.
+    func test_aiTab_voiceModeRequested_coordinatorAlreadyAIState_forcesCollapse() {
+        let inputs = makeInputs(
+            tabIsAITab: true,
+            tabIsVoiceModeRequested: true,
+            coordinatorIsAITabState: true,
+            isNavigationChromeHidden: true
+        )
+        XCTAssertEqual(
+            MainViewController.decideRefreshAction(for: inputs),
+            .refreshAITab(.showCollapsed(expandAfterRefresh: false))
+        )
+    }
+
     // MARK: - Helpers
 
     private func makeInputs(

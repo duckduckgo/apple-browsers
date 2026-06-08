@@ -199,6 +199,22 @@ class TabsModelTests: XCTestCase {
         XCTAssertEqual(testee.currentIndex, 0)
     }
 
+    func testWhenCurrentIsLastItemAndItIsRemovedThenCurrentMovesToNewLast() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[2])
+        let tabToRemove = testee.tabs[2]
+        testee.remove(tab: tabToRemove)
+        XCTAssertEqual(testee.currentIndex, 1)
+    }
+
+    func testWhenCurrentIsMiddleItemAndItIsRemovedThenCurrentMovesToPrevious() {
+        let testee = filledModel
+        testee.select(tab: testee.tabs[1])
+        let tabToRemove = testee.tabs[1]
+        testee.remove(tab: tabToRemove)
+        XCTAssertEqual(testee.currentIndex, 0)
+    }
+
     func testWhenLastIsRemovedThenHomeTabCreated() {
         let testee = singleModel
         let tab = testee.tabs[0]

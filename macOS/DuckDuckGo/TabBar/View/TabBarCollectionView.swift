@@ -127,7 +127,7 @@ open class TabBarCollectionView: NSCollectionView {
 
     /// Performs an animated update on the collection view.
     /// On macOS 13+ uses `performBatchUpdates` for proper implicit animations.
-    /// On macOS 12 and earlier uses `NSAnimationContext` with explicit layout invalidation
+    /// On macOS 12 uses `NSAnimationContext` with explicit layout invalidation
     /// to avoid a crash caused by data source consistency validation in `performBatchUpdates`.
     private func performAnimatedUpdate(_ updates: @escaping () -> Void, completionHandler: ((Bool) -> Void)? = nil) {
         if #available(macOS 13.0, *) {

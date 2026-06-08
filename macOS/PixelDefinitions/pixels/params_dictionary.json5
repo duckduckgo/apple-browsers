@@ -302,6 +302,24 @@
         "type": "boolean",
         "description": "Whether the user is eligible for a free trial"
     },
+    "subscribed": {
+        "key": "subscribed",
+        "type": "boolean",
+        "description": "Whether the user has an active subscription at the time the pixel fires."
+    },
+    "subscriptionEntryStatus": {
+        "key": "status",
+        "type": "string",
+        "description": "Visual state of the subscription entry-point promo at impression time. Indicates which badge variant the user saw on a non-subscriber surface (App Menu, Preferences).",
+        "enum": ["churned", "free-eligible", "free-ineligible"]
+    },
+    "subscriptionFunnelOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Values follow the convention `funnel_<entry-point>_<platform>[_<modifier>]`.",
+        "pattern": "^funnel_",
+        "examples": ["funnel_appmenu_macos", "funnel_appsettings_macos", "funnel_freescan_macos", "funnel_appmenu_macos_winback"]
+    },
     "onboardingEventType": {
         "key": "e",
         "type": "string",

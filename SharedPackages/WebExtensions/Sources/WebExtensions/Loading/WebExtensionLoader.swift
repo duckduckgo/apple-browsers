@@ -41,6 +41,10 @@ public protocol WebExtensionLoading: AnyObject {
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
     func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws
+
+    /// Reloads an already-parsed extension into the controller, reusing the in-memory
+    /// `WKWebExtension` to skip disk resolution and manifest parsing.
+    func reloadWebExtension(_ webExtension: WKWebExtension, identifier: String, into controller: WKWebExtensionController) async throws
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -117,6 +121,21 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
 
         return result
+    }
+
+    /// Reloads an already-parsed extension into the controller, reusing the in-memory
+    /// `WKWebExtension` to skip disk resolution and manifest parsing. Used when re-loading an
+    /// extension that is unchanged on disk (e.g. after clearing browser data).
+    @MainActor
+    public func reloadWebExtension(_ webExtension: WKWebExtension,
+                                   identifier: String,
+                                   into controller: WKWebExtensionController) async throws {
+        let context = makeContext(for: webExtension, identifier: identifier)
+
+        // Notify delegate before loading to allow handler registration.
+        delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
+
+        try controller.load(context)
     }
 
     public func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {

@@ -125,6 +125,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
     case aiChatOmnibarOnboarding
 
+    /// macOS only, on by default. Gates whether the onboarding Search/Duck.ai toggle choice also
+    /// affects the New Tab Page search-mode toggle and the duckduckgo.com homepage.
+    case aiChatOnboardingToggleAffectsNtpAndDdg
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
     case osSupportForceUnsupportedMessage
 
@@ -483,6 +487,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarTools), category: .duckAI)
         case .aiChatOmnibarOnboarding:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarOnboarding), category: .duckAI)
+        case .aiChatOnboardingToggleAffectsNtpAndDdg:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.onboardingToggleAffectsNtpAndDdg), category: .duckAI)
         case .osSupportForceUnsupportedMessage:
             Config(source: .disabled, category: .osSupportWarnings)
         case .osSupportWarning:

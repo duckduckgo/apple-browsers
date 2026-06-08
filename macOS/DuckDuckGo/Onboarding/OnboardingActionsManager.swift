@@ -295,6 +295,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func setDuckAiInAddressBar(enabled: Bool) {
         aiChatPreferencesStorage.showSearchAndDuckAIToggle = enabled
+        guard featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg) else { return }
         aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
         homepageSearchModeSeedPersistor.pendingShowSearchModeToggle = enabled
     }

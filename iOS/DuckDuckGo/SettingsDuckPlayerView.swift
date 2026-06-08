@@ -49,7 +49,8 @@ struct SettingsDuckPlayerView: View {
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 VStack(alignment: .center) {
-                    Image(.settingsDuckPlayerHero)
+                    Image(rebrandable: "SettingsDuckPlayerHero")
+                        .accessibilityIdentifier("SettingsDuckPlayerHero")
                         .padding(.top, -20) // Adjust for the image padding
 
                     Text(UserText.duckPlayerFeatureName)

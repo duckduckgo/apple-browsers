@@ -17,10 +17,11 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 
 protocol UnifiedToggleInputOmnibarActivating: AnyObject {
-    func activateFromOmnibarIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision
 }
 
 enum UnifiedToggleInputActivationDecision {

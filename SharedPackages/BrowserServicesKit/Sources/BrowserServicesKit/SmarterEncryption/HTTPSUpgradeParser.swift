@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 public final class HTTPSUpgradeParser {
 

@@ -55,7 +55,7 @@ struct SettingsPrivacyProtectionsView: View {
             // Threat Protection
             NavigationLink(destination: ThreatProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.threatProtection,
-                                 image: Image(.radarColor24),
+                                 image: Image(rebrandable: "Radar-Color-24"),
                                  statusIndicator: StatusIndicatorView(status: .on))
             }
 
@@ -71,6 +71,15 @@ struct SettingsPrivacyProtectionsView: View {
                 SettingsCellView(label: UserText.emailProtection,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.emailProtection),
                                  statusIndicator: StatusIndicatorView(status: viewModel.emailProtectionStatus))
+            }
+
+            // Ad Blocking
+            if viewModel.state.youTubeAdBlockingAvailable {
+                NavigationLink(destination: SettingsYouTubeAdBlockingView().environmentObject(viewModel)) {
+                    SettingsCellView(label: UserText.youTubeAdBlockingTitle,
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked),
+                                     statusIndicator: StatusIndicatorView(status: .on))
+                }
             }
         }
 

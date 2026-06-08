@@ -18,7 +18,10 @@
 //
 
 import Foundation
+import CoreGraphics
 import Combine
+import SwiftUI
+import Persistence
 import PrivacyConfig
 import Core
 
@@ -40,8 +43,10 @@ extension TabManager: EscapeHatchTabsSource {
 protocol EscapeHatchActionRouter: AnyObject {
     func escapeHatchDidRequestSwitch(to tab: Tab)
     func escapeHatchDidRequestClose(_ tab: Tab)
-    func escapeHatchDidRequestBurn(_ tab: Tab)
+    func escapeHatchDidRequestBurnWithConfirmation(_ tab: Tab, sourceRect: CGRect)
+    func escapeHatchDidRequestBurnImmediately(_ tab: Tab)
     func escapeHatchDidRequestTabSwitcher()
+    func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption)
 }
 
 /// Model for the NTP "Return to..." escape hatch card that navigates to the most recently used tab.
@@ -60,6 +65,7 @@ final class EscapeHatchModel: ObservableObject {
 
     @Published private(set) var openTabCount: Int = 0
     @Published private(set) var isTargetTabPresent: Bool = true
+    private let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     private var cancellables = [AnyCancellable]()
 
     let title: String
@@ -68,10 +74,15 @@ final class EscapeHatchModel: ObservableObject {
     let domain: String?
     let targetTab: Tab
     let isActionsEnabled: Bool
+    /// When on, the destructive "delete tab" action is surfaced as a dedicated Fire button on the card
+    /// instead of (and removed from) the three-dots menu. Gated by the `escapeHatchFireButton` feature flag.
+    let isFireButtonEnabled: Bool
     let onCardTap: () -> Void
     let onTabSwitcherTap: () -> Void
     let onCloseTab: () -> Void
-    let onBurnTab: () -> Void
+    let onBurnTabWithConfirmation: (CGRect) -> Void
+    let onBurnTabImmediately: () -> Void
+    let onOpeningScreenOptionChanged: (AfterInactivityOption) -> Void
 
     init(title: String,
          subtitle: String,
@@ -80,27 +91,36 @@ final class EscapeHatchModel: ObservableObject {
          targetTab: Tab,
          tabsSource: some EscapeHatchTabsSource,
          isActionsEnabled: Bool,
+         isFireButtonEnabled: Bool = false,
+         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
          onCardTap: @escaping () -> Void,
          onTabSwitcherTap: @escaping () -> Void,
          onCloseTab: @escaping () -> Void,
-         onBurnTab: @escaping () -> Void) {
+         onBurnTabWithConfirmation: @escaping (CGRect) -> Void,
+         onBurnTabImmediately: @escaping () -> Void,
+         onOpeningScreenOptionChanged: @escaping (AfterInactivityOption) -> Void = { _ in }) {
         self.title = title
         self.subtitle = subtitle
         self.tabType = tabType
         self.domain = domain
         self.targetTab = targetTab
         self.isActionsEnabled = isActionsEnabled
+        self.isFireButtonEnabled = isFireButtonEnabled
+        self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.onCardTap = onCardTap
         self.onTabSwitcherTap = onTabSwitcherTap
         self.onCloseTab = onCloseTab
-        self.onBurnTab = onBurnTab
+        self.onBurnTabWithConfirmation = onBurnTabWithConfirmation
+        self.onBurnTabImmediately = onBurnTabImmediately
+        self.onOpeningScreenOptionChanged = onOpeningScreenOptionChanged
 
         subscribeToTabsSource(tabsSource)
+        startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
     }
 
-    /// Builds the model with action closures wired to a router. The router is captured weakly so holders
-    /// of `EscapeHatchModel` don't pin its owner's lifecycle.
-    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger) {
+    /// Builds the model with action closures wired to a router. The router is captured weakly so holders of `EscapeHatchModel` don't pin its owner's lifecycle.
+    ///
+    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger, afterInactivityOptionAdapter: AfterInactivityOptionAdapter) {
         self.init(
             title: title,
             subtitle: subtitle,
@@ -109,6 +129,8 @@ final class EscapeHatchModel: ObservableObject {
             targetTab: targetTab,
             tabsSource: tabsSource,
             isActionsEnabled: featureFlagger.isFeatureOn(.escapeHatchActions),
+            isFireButtonEnabled: featureFlagger.isFeatureOn(.escapeHatchFireButton),
+            afterInactivityOptionAdapter: afterInactivityOptionAdapter,
             onCardTap: { [weak router] in
                 router?.escapeHatchDidRequestSwitch(to: targetTab)
             },
@@ -118,10 +140,53 @@ final class EscapeHatchModel: ObservableObject {
             onCloseTab: { [weak router] in
                 router?.escapeHatchDidRequestClose(targetTab)
             },
-            onBurnTab: { [weak router] in
-                router?.escapeHatchDidRequestBurn(targetTab)
+            onBurnTabWithConfirmation: { [weak router] sourceRect in
+                router?.escapeHatchDidRequestBurnWithConfirmation(targetTab, sourceRect: sourceRect)
+            },
+            onBurnTabImmediately: { [weak router] in
+                router?.escapeHatchDidRequestBurnImmediately(targetTab)
+            },
+            onOpeningScreenOptionChanged: { [weak router] option in
+                router?.escapeHatchDidChangeOpeningScreenOption(to: option)
             }
         )
+    }
+}
+
+extension EscapeHatchModel {
+
+    /// Pairs the user-facing label for the primary swipe gesture with the closure it fires.
+    /// Bundled so the view can ask one question ("what does swipe do?") instead of branching
+    /// on tab type once per call site.
+    struct SwipeAction {
+        let label: String
+        let perform: () -> Void
+    }
+
+    /// Wraps the adapter's binding so writes from the Escape Hatch UI fire `onOpeningScreenOptionChanged`.
+    /// Mirrors `SettingsViewModel.afterInactivityOptionBinding` — each surface owns its own pixel via its own binding,
+    /// so observing the adapter's `@Published` would conflate sources.
+    var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
+        let upstream = afterInactivityOptionAdapter.afterInactivityOptionBinding
+        return Binding<AfterInactivityOption>(
+            get: { upstream.wrappedValue },
+            set: { [weak self] newValue in
+                upstream.wrappedValue = newValue
+                self?.onOpeningScreenOptionChanged(newValue)
+            }
+        )
+    }
+
+    var isFireTab: Bool {
+        targetTab.mode == .fire
+    }
+
+    /// Fire tabs have no soft-close semantics, so swipe defaults to burn-immediately.
+    /// Everything else defaults to close.
+    var primarySwipeAction: SwipeAction {
+        isFireTab
+            ? SwipeAction(label: UserText.escapeHatchMenuDeleteTab, perform: onBurnTabImmediately)
+            : SwipeAction(label: UserText.escapeHatchMenuCloseTab, perform: onCloseTab)
     }
 }
 
@@ -154,6 +219,17 @@ private extension EscapeHatchModel {
         if mode == .normal {
             openTabCount = allTabs.count
         }
+    }
+
+    /// Forward `AfterInactivityOptionAdapter.objectWillChange` Events:
+    /// This causes `model.afterInactivityOptionBinding` to react to `AfterInactivityOptionAdapter` changes
+    ///
+    func startForwardingAdapterWillChangeEvents(_ adapter: AfterInactivityOptionAdapter) {
+        adapter.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 }
 

@@ -39,6 +39,7 @@ struct EscapeHatchView: View {
         }
         .animation(.easeInOut(duration: Metrics.collapseDuration), value: model.isTargetTabPresent)
         .frame(height: TabSwitcherPill.compactSize)
+        .id(model.targetTab.uid)
     }
 
     private enum Metrics {

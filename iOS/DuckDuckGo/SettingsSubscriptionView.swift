@@ -37,6 +37,7 @@ struct SettingsSubscriptionView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
+
     @State var isShowingDBP = false
     @State var isShowingITP = false
     @State var isShowingVPN = false
@@ -148,6 +149,7 @@ struct SettingsSubscriptionView: View {
                     .foregroundColor(Color.init(designSystemColor: .accent))
                     .padding(.leading, 32.0)
             }, action: {
+                Pixel.fire(pixel: .subscriptionEntrySettingsSubscriptionClick)
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }, isButton: true)
 
@@ -161,6 +163,9 @@ struct SettingsSubscriptionView: View {
                            isActive: $isShowingRestoreFlow) {
                 SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
             }
+        }
+        .onFirstAppear {
+            Pixel.fire(pixel: .subscriptionEntrySettingsImpression)
         }
     }
 

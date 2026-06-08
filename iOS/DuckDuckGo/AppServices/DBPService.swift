@@ -21,9 +21,11 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import Networking
+import Subscription
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
@@ -71,6 +73,10 @@ final class DBPService: NSObject {
             let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
             #endif
 
+            let dbpContentBlocking: DBPWebViewContentBlocking? = featureFlagger.isContentBlockingOn
+                ? DBPIOSContentBlocking(contentBlockingManager: contentBlocking.contentBlockingManager)
+                : nil
+
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -80,6 +86,15 @@ final class DBPService: NSObject {
                 wideEvent: appDependencies.wideEvent,
                 subscriptionManager: dbpSubscriptionManager,
                 quickLinkOpenURLHandler: { url in
+                    if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                       SubscriptionPurchaseFlowPath.contains(components.path) {
+                        let urlInterceptor = TabURLInterceptorDefault(featureFlagger: appDependencies.featureFlagger) {
+                            appDependencies.subscriptionManager.isSubscriptionPurchaseEligible
+                        }
+
+                        guard urlInterceptor.allowsNavigatingTo(url: url) else { return }
+                    }
+
                     guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
                     UIApplication.shared.open(quickLinkURL)
                 },
@@ -97,7 +112,8 @@ final class DBPService: NSObject {
                 eventsHandler: eventsHandler,
                 freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                 isWebViewInspectable: isWebViewInspectable,
-                freeTrialConversionService: appDependencies.freeTrialConversionService)
+                freeTrialConversionService: appDependencies.freeTrialConversionService,
+                contentBlocking: dbpContentBlocking)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -133,16 +149,16 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
     }
 
-    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
-    }
-
     var isContinuedProcessingFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpContinuedProcessing)
     }
 
     var isWebViewUserAgentOn: Bool {
         false
+    }
+
+    var isContentBlockingOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpContentBlocking)
     }
 
     var isFreemiumPIREnabled: Bool {

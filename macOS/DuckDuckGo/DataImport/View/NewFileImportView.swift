@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import SwiftUI
 import UniformTypeIdentifiers
 import os.log

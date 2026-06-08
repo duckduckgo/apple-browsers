@@ -20,6 +20,7 @@ import AppKit
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import PixelKit
 import os.log
 import DesignResourcesKitIcons
@@ -451,7 +452,7 @@ final class SaveCredentialsViewController: NSViewController {
             faviconImage.image = .web
             return
         }
-        faviconImage.image = faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image ?? .web
+        faviconImage.image = faviconManagement.getCachedFaviconSafeForRendering(for: domain, sizeCategory: .small)?.image ?? .web
     }
 
     private func updatePasswordFieldVisibility(visible: Bool) {

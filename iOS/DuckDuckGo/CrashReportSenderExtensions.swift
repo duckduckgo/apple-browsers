@@ -19,6 +19,7 @@
 
 import Crashes
 import Common
+import FoundationExtensions
 import Core
 
 extension CrashReportSender {

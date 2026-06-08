@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Combine
 import DDGSync
 import FeatureFlags
@@ -54,6 +55,12 @@ final class PreferencesSidebarModel: ObservableObject {
                 pixelFiring?.fire(AIChatPixel.aiChatSettingsDisplayed, frequency: .dailyAndCount)
             case .subscription where winBackOfferVisibilityManager.isOfferAvailable:
                 pixelFiring?.fire(SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown)
+            case .emailProtection:
+                pixelFiring?.fire(
+                    SettingsPixel.settingsPaneOpened(selectedPane),
+                    frequency: .dailyAndStandard,
+                    withAdditionalParameters: ["subscribed": String(subscriptionManager.isUserAuthenticated)]
+                )
             default:
                 pixelFiring?.fire(SettingsPixel.settingsPaneOpened(selectedPane), frequency: .daily)
             }
@@ -197,7 +204,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingAIChat: includeAIChat,
-                includingYouTubeAdBlocking: adBlockingAvailability.isFeatureAvailable,
+                includingYouTubeAdBlocking: adBlockingAvailability.isFeatureSupported,
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -337,6 +344,8 @@ final class PreferencesSidebarModel: ObservableObject {
             return PrivacyProtectionStatus(statusPublisher: publisher, initialValue: EmailManager().isSignedIn ? .on : .off) { _ in
                 EmailManager().isSignedIn ? .on : .off
             }
+        case .youTubeAdBlocking:
+            return PrivacyProtectionStatus(statusIndicator: .on)
         case .vpn:
             return vpnProtectionStatus()
         case .personalInformationRemoval:
@@ -517,9 +526,27 @@ final class PreferencesSidebarModel: ObservableObject {
             return
         }
 
-        if sections.flatMap(\.panes).contains(identifier), identifier != selectedPane {
-            selectedPane = identifier
+        let visiblePanes = sections.flatMap(\.panes)
+        let resolvedIdentifier = Self.resolveTargetPane(identifier, visiblePanes: visiblePanes)
+
+        if visiblePanes.contains(resolvedIdentifier), resolvedIdentifier != selectedPane {
+            selectedPane = resolvedIdentifier
         }
+    }
+
+    /// Redirect navigations targeting panes that have been folded into a parent surface.
+    /// Currently: `.duckPlayer` → `.youTubeAdBlocking` when ad blocking is available, since
+    /// Duck Player settings live as a sub-section of YouTube Ad Blocking in that build.
+    /// Without this, deep links from Duck Player's web UI (e.g. `duck://settings/duckplayer`)
+    /// silently no-op because the standalone `.duckPlayer` pane is hidden from the sidebar.
+    private static func resolveTargetPane(_ identifier: PreferencePaneIdentifier,
+                                          visiblePanes: [PreferencePaneIdentifier]) -> PreferencePaneIdentifier {
+        if identifier == .duckPlayer,
+           !visiblePanes.contains(.duckPlayer),
+           visiblePanes.contains(.youTubeAdBlocking) {
+            return .youTubeAdBlocking
+        }
+        return identifier
     }
 
     func resetTabSelectionIfNeeded() {
@@ -540,6 +567,8 @@ final class PreferencesSidebarModel: ObservableObject {
     ///   longer considered new (typically 1-2 app releases after launch)
     func isPaneNew(pane: PreferencePaneIdentifier) -> Bool {
         switch pane {
+        case .youTubeAdBlocking:
+            true
         default:
             false
         }

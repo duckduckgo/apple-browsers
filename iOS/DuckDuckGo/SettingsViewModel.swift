@@ -23,6 +23,7 @@ import Persistence
 import PrivacyConfig
 import SwiftUI
 import Common
+import FoundationExtensions
 import Combine
 import SyncUI_iOS
 import DuckPlayer
@@ -41,6 +42,7 @@ enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
     case youTubeAnalyticsEnabled = "com_duckduckgo_ios_youTubeAnalyticsEnabled"
     case shouldHideYouTubeAdBlockingDisclosure = "com_duckduckgo_ios_shouldHideYouTubeAdBlockingDisclosure"
+    case youTubeAdBlockUnavailableNoticeShown = "com_duckduckgo_ios_youTubeAdBlockUnavailableNoticeShown"
 
     static let youTubeAdBlockingEnabledDidChangeNotification = Notification.Name("youTubeAdBlockingEnabledDidChange")
 }
@@ -49,6 +51,7 @@ struct YouTubeAdBlockingKeys: StoringKeys {
     let youTubeAdBlockingEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabled)
     let youTubeAnalyticsEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabled)
     let shouldHideYouTubeAdBlockingDisclosure = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.shouldHideYouTubeAdBlockingDisclosure)
+    let youTubeAdBlockUnavailableNoticeShown = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAdBlockUnavailableNoticeShown)
 }
 
 final class SettingsViewModel: ObservableObject {
@@ -105,6 +108,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    private let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -144,7 +148,8 @@ final class SettingsViewModel: ObservableObject {
     private var aiChatSettingsObserver: Any?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let keyValueStore: ThrowingKeyValueStoring
+    let keyValueStore: ThrowingKeyValueStoring
+    let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     // Closures to interact with legacy view controllers through the container
@@ -198,10 +203,6 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    var shouldShowHideAIGeneratedImagesSection: Bool {
-        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
-    }
-
     var isDefaultOmnibarModeEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
     }
@@ -251,7 +252,9 @@ final class SettingsViewModel: ObservableObject {
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
 
-    @Published var afterInactivityOption: AfterInactivityOption = .lastUsedTab
+    var afterInactivityOption: AfterInactivityOption {
+        afterInactivityOptionAdapter.afterInactivityOption
+    }
     @Published var afterInactivityIdleInterval: AfterInactivityIdleInterval = .default
 
     // MARK: Bindings
@@ -402,11 +405,11 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
-        Binding<AfterInactivityOption>(
-            get: { self.afterInactivityOption },
+        let upstream = afterInactivityOptionAdapter.afterInactivityOptionBinding
+        return Binding<AfterInactivityOption>(
+            get: { upstream.wrappedValue },
             set: { newValue in
-                self.afterInactivityOption = newValue
-                try? self.afterInactivityStorage.set(newValue.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                upstream.wrappedValue = newValue
                 let pixel: Pixel.Event = newValue == .newTab
                     ? .ntpAfterIdleSettingChangedToNewTab
                     : .ntpAfterIdleSettingChangedToLastUsedTab
@@ -691,8 +694,11 @@ final class SettingsViewModel: ObservableObject {
 
     var youTubeAdBlockingEnabled: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.youTubeAdBlockingEnabled },
+            get: {
+                self.state.youTubeAdBlockingEnabled && !self.adBlockingAvailability.isDisabledUntilRelaunch
+            },
             set: {
+                self.adBlockingAvailability.clearDisableUntilRelaunch()
                 guard $0 != self.state.youTubeAdBlockingEnabled else { return }
                 let disclosureVisibleAtToggle = !self.state.youTubeAdBlockingDisclosureHidden
                 try? self.youTubeAdBlockingStorage.set($0, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
@@ -711,6 +717,10 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var isYouTubeAdBlockingDisabledUntilRelaunch: Bool {
+        state.youTubeAdBlockingEnabled && adBlockingAvailability.isDisabledUntilRelaunch
+    }
+
     func setYouTubeAnalyticsEnabled(_ enabled: Bool) {
         try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
     }
@@ -719,7 +729,11 @@ final class SettingsViewModel: ObservableObject {
         state.youTubeAdBlockingDisclosureHidden
     }
 
-      var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
+    var isYouTubeAdBlockingRemotelyDisabled: Bool {
+        adBlockingAvailability.isRemotelyDisabled
+    }
+
+    var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
                 return self.state.duckPlayerNativeYoutubeMode
@@ -936,7 +950,9 @@ final class SettingsViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
+         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
@@ -975,8 +991,9 @@ final class SettingsViewModel: ObservableObject {
         self.urlOpener = urlOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
-        self.afterInactivityOption = idleReturnEligibilityManager.effectiveAfterInactivityOption()
+        self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
@@ -993,6 +1010,7 @@ final class SettingsViewModel: ObservableObject {
         self.adBlockingAvailability = adBlockingAvailability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
+        startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
     }
 
     deinit {
@@ -1013,15 +1031,24 @@ extension SettingsViewModel {
     // and we can use subscribers (Currently called from the view onAppear)
     @MainActor
     private func initState() {
-        // One-time migration: pin the disclosure preference to the current
-        // YouTube Ad Blocking toggle so existing users (toggle already on)
-        // get the disclosure hidden, while new users (toggle off) keep it
-        // until they explicitly opt in. Done here — not in the destination
-        // view's `onAppear` — so the resulting `@Published` change can't
-        // race with a push transition and pop the screen on iPad.
-        if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
-            let enabled = (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
-            try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+        // Pin the disclosure preference based on the YouTube Ad Blocking
+        // storage state. For users who made an explicit choice (storage
+        // non-nil), pin once and preserve it — the rollout doesn't change
+        // their effective state, so the disclosure shown at their decision
+        // moment is the right one. For users with no explicit choice
+        // (storage nil), re-pin to the current rollout default on every
+        // Settings open so the rollout flip doesn't strand them with a stale
+        // "show disclosure" pin from a pre-rollout visit. Done here — not in
+        // the destination view's `onAppear` — so the resulting `@Published`
+        // change can't race with a push transition and pop the screen on iPad.
+        let storageEnabled = try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+        if let storageEnabled {
+            if (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == nil {
+                try? youTubeAdBlockingStorage.set(storageEnabled, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+            }
+        } else {
+            try? youTubeAdBlockingStorage.set(adBlockingAvailability.defaultYouTubeAdBlockingEnabled,
+                                              for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
         }
 
         self.state = SettingsState(
@@ -1056,7 +1083,7 @@ extension SettingsViewModel {
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
             syncSource: nil,
-            duckPlayerEnabled: !adBlockingAvailability.isFeatureAvailable && (featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage),
+            duckPlayerEnabled: !adBlockingAvailability.isFeatureSupported && (featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage),
             duckPlayerMode: duckPlayerSettings.mode,
             duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
@@ -1064,8 +1091,9 @@ extension SettingsViewModel {
             duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
             duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
             autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode,
-            youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureAvailable,
-            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false,
+            youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureSupported,
+            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled))
+                ?? adBlockingAvailability.defaultYouTubeAdBlockingEnabled,
             youTubeAdBlockingDisclosureHidden: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
         )
 
@@ -1077,6 +1105,43 @@ extension SettingsViewModel {
             }
             .store(in: &cancellables)
 
+        // Republish when YouTube Ad Block state changes (including the in-memory
+        // disable-until-relaunch override on `adBlockingAvailability`). Refresh
+        // `state.youTubeAdBlockingEnabled` from storage so the toggle binding
+        // reflects writes made by other surfaces (e.g. the browsing menu).
+        NotificationCenter.default.publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.state.youTubeAdBlockingEnabled =
+                    (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled))
+                    ?? self.adBlockingAvailability.defaultYouTubeAdBlockingEnabled
+                self.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        // Re-pin the disclosure and refresh the resolved YouTube Ad Blocking
+        // state when the feature flagger emits — covers mid-session rollout
+        // flips while Settings is open. Skips users with explicit storage so
+        // their conscious decision is preserved.
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                // Refresh the UI for every flag flip so the contingency notice
+                // (which reads `adBlockingAvailability.isRemotelyDisabled` live)
+                // re-renders even for users with explicit storage who skip the
+                // disclosure re-pin below.
+                defer { self.objectWillChange.send() }
+                guard (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) == nil else { return }
+                let resolvedDefault = self.adBlockingAvailability.defaultYouTubeAdBlockingEnabled
+                try? self.youTubeAdBlockingStorage.set(resolvedDefault, for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)
+                self.state.youTubeAdBlockingEnabled = resolvedDefault
+                self.state.youTubeAdBlockingDisclosureHidden =
+                    (try? self.youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) == true
+            }
+            .store(in: &cancellables)
+
         updateRecentlyVisitedSitesVisibility()
 
         if #available(iOS 18.2, *) {
@@ -1085,6 +1150,17 @@ extension SettingsViewModel {
 
         setupSubscribers()
         Task { await setupSubscriptionEnvironment() }
+    }
+
+    /// Forward `AfterInactivityOptionAdapter.objectWillChange` Events:
+    /// This causes `model.afterInactivityOption` to react to `AfterInactivityOptionAdapter` changes
+    ///
+    private func startForwardingAdapterWillChangeEvents(_ adapter: AfterInactivityOptionAdapter) {
+        adapter.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     private func updateRecentlyVisitedSitesVisibility() {
@@ -1797,6 +1873,16 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatTabBarEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatTabBarUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatTabBarUserSettings(enable: newValue)
+                DailyPixel.fireDailyAndCount(pixel: newValue ? .aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff)
             }
         )
     }

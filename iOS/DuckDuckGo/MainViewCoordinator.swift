@@ -241,7 +241,6 @@ class MainViewCoordinator {
 
     func updateUnifiedToggleInputColors(inputView: UIView?) {
         inputView?.backgroundColor = .clear
-        unifiedToggleInputContainer.backgroundColor = .clear
     }
 
     @MainActor
@@ -259,7 +258,11 @@ class MainViewCoordinator {
         if !constraints.navigationBarContainerBottom.isActive {
             constraints.navigationBarContainerBottom.isActive = true
         }
-        setNavBarContainerBottomToKeyboard()
+        // Hidden toolbars keep their 49pt frame in auto layout — pinning the UTI above an
+        // invisible toolbar (landscape minimal chrome) would leave a toolbar-sized gap, so
+        // fall back to the safe-area floor when there's no visible toolbar to respect.
+        let floor: NSLayoutYAxisAnchor? = toolbar.isHidden ? nil : toolbar.topAnchor
+        setNavBarContainerBottomToKeyboard(floorAnchor: floor)
     }
 
 
@@ -314,6 +317,14 @@ class MainViewCoordinator {
         animator.startAnimation()
     }
 
+    /// Hides chrome and brings the omnibar collection above UTI so icons can fade in on top of the collapsing UTI.
+    func prepareOmnibarForInlineDismissReveal() {
+        guard !isNavigationChromeHidden, let barView = omniBar?.barView else { return }
+        barView.hideBarChrome()
+        navigationBarCollectionView.alpha = 1
+        navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+    }
+
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
     func animateUnifiedToggleInputOmnibarDismissLayout() {
         if addressBarPosition.isBottom {
@@ -334,10 +345,12 @@ class MainViewCoordinator {
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
         } else {
-            // Snap omnibar in, no fade — crossfading would produce visible double-text mid-dismiss.
+            // Snap chrome (pill + text field) back now that UTI is gone; icons faded in alongside the collapse.
             navigationBarCollectionView.alpha = 1
             unifiedToggleInputContainer.isHidden = true
             unifiedToggleInputContainer.alpha = 1
+            omniBar?.barView.restoreBarChrome()
+            omniBar?.barView.setIconContainersAlpha(1)
         }
     }
 
@@ -379,6 +392,7 @@ class MainViewCoordinator {
     }
 
     func hideAITabChrome() {
+        cancelInFlightLayoutAnimations()
         hideAIChatTabChatHeader()
         setNavigationChromeHidden(false)
     }
@@ -488,13 +502,11 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            // Match the AI chat header's `.surfaceTertiary` background so the safe-area inset
-            // above it doesn't show as a different colour band.
-            UIColor(designSystemColor: .surfaceTertiary)
+            UIColor(designSystemColor: .surfaceCanvas)
         }
     }
 
-    func setNavBarContainerBottomToKeyboard() {
+    func setNavBarContainerBottomToKeyboard(floorAnchor: NSLayoutYAxisAnchor? = nil) {
         constraints.navigationBarContainerBottom.isActive = false
         constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
 
@@ -503,9 +515,13 @@ class MainViewCoordinator {
         constraints.navigationBarContainerBottom.priority = .defaultHigh
         constraints.navigationBarContainerBottom.isActive = true
 
-        // Prevent the nav bar from going below safe area when keyboard is hidden
+        // Cap how far the nav bar can follow the keyboard guide down. Default floor is the
+        // safe-area bottom (AI tab — toolbar is hidden, so the UTI is meant to sit at the
+        // screen bottom). Callers anchored above a visible toolbar pass `toolbar.topAnchor`
+        // so the UTI doesn't slide over the toolbar when the keyboard is dragged off-screen.
+        let floor = floorAnchor ?? superview.safeAreaLayoutGuide.bottomAnchor
         let safeAreaFloor = navigationBarContainer.bottomAnchor
-            .constraint(lessThanOrEqualTo: superview.safeAreaLayoutGuide.bottomAnchor)
+            .constraint(lessThanOrEqualTo: floor)
         safeAreaFloor.isActive = true
         constraints.navigationBarContainerBottomSafeAreaFloor = safeAreaFloor
 

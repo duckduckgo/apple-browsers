@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 /// This class provides a mechanism to store and announce errors with the tunnel.
 /// The reason this class is necessary is because we need to store and share failures across different UI elements.  As an example

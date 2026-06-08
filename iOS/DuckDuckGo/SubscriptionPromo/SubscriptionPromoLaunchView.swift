@@ -43,7 +43,7 @@ struct SubscriptionPromoLaunchView: View {
             Content(title: title, message: message)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.bottom, Metrics.Content.bottomPadding)
-            Footer(ctaText: ctaText, dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.notNow, ctaAction: ctaAction, dismissAction: closeAction)
+            Footer(ctaText: ctaText, dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip, ctaAction: ctaAction, dismissAction: closeAction)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, Metrics.Footer.verticalPadding)
         }
@@ -85,7 +85,7 @@ private extension SubscriptionPromoLaunchView {
             VStack(spacing: Metrics.Content.itemsVerticalSpacing) {
                 let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-                Image(.privacyProHeader)
+                Image(rebrandable: "SheetIcon")
                     .resizable()
                     .scaledToFit()
                     .frame(width: imageSize.width, height: imageSize.height)
@@ -164,7 +164,7 @@ private enum Metrics {
 #Preview {
     SubscriptionPromoLaunchView(
         title: "Did you know?",
-        message: AttributedString("DuckDuckGo also has an optional paid subscription, with a secure VPN and advanced, private AI."),
+        message: AttributedString("DuckDuckGo also has an optional paid subscription, available with a VPN and advanced, private AI."),
         ctaText: "Learn More",
         closeAction: {},
         ctaAction: {}

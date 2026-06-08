@@ -19,6 +19,7 @@
 import AIChat
 import Cocoa
 import Common
+import FoundationExtensions
 import os.log
 import Suggestions
 
@@ -202,7 +203,8 @@ final class SuggestionTableCellView: NSTableCellView {
         self.suggestion = nil
 
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 13)
+            .font: NSFont.systemFont(ofSize: 13),
+            .paragraphStyle: SuggestionViewModel.paragraphStyle
         ]
         attributedString = NSAttributedString(string: userText, attributes: attributes)
         iconImageView.image = icon

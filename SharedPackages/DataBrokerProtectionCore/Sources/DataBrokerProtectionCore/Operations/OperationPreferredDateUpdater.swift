@@ -207,7 +207,7 @@ extension OperationPreferredDateUpdater: OperationPreferredDateNilMigrator {
     }
 
     private func runPreferredRunDateNilMigration() throws {
-        let allQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        let allQueryData = try database.fetchAllBrokerProfileQueryData(reason: .oneTimeMigration)
         for queryData in allQueryData {
             guard let brokerId = queryData.dataBroker.id,
                   let profileQueryId = queryData.profileQuery.id else {

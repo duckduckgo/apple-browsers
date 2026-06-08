@@ -26,6 +26,7 @@ import AIChat
 import OSLog
 import WebKit
 import Common
+import FoundationExtensions
 import DDGSync
 import Core
 import Persistence
@@ -153,7 +154,11 @@ protocol AIChatUserScriptHandling: AnyObject {
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable?
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
+    func setOpenLinkHandler(_ handler: ((URL) -> Void)?)
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
     func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?)
@@ -170,6 +175,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -186,6 +192,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var payloadHandler: (any AIChatConsumableDataHandling)?
     private let promptHandler: any AIChatConsumableDataHandling
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
+    private var openLinkHandler: ((URL) -> Void)?
     private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let syncHandler: AIChatSyncHandling
@@ -255,6 +262,27 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             userInfo: nil
         )
 
+        return nil
+    }
+
+    @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable? {
+        return await openAIChatLink(params: params, message: message)
+    }
+
+    @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable? {
+        return await openAIChatLink(params: params, message: message)
+    }
+
+    @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params),
+              let url = URL(string: openLinkParams.url),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              url.host != nil else {
+            return nil
+        }
+
+        openLinkHandler?(url)
         return nil
     }
 
@@ -339,7 +367,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
-        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && unifiedToggleInputFeature.isFeatureFlagEnabled
+        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && unifiedToggleInputFeature.isAvailable
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt
         let fireMode = isFireModeProvider?() ?? false
 
@@ -418,6 +446,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {
         self.payloadHandler = payloadHandler
+    }
+
+    func setOpenLinkHandler(_ handler: ((URL) -> Void)?) {
+        openLinkHandler = handler
     }
 
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {
@@ -523,6 +555,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Image Generation Chat
+
+    @MainActor
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatNewImageGenerationChatStarted, object: message.messageWebView)
         return nil
     }
 
@@ -690,3 +730,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 }
 // swiftlint:enable inclusive_language
+
+extension AIChatUserScriptHandler {
+
+    struct OpenLink: Codable, Equatable {
+        let url: String
+    }
+}

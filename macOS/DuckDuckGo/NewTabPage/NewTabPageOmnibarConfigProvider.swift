@@ -26,6 +26,7 @@ import os.log
 import Persistence
 import PixelKit
 import Common
+import FoundationExtensions
 
 protocol NewTabPageAIChatShortcutSettingProviding: AnyObject {
     var isAIChatShortcutEnabled: Bool { get set }
@@ -94,6 +95,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let featureFlagger: FeatureFlagger
     private let firePixel: (PixelKitEvent) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
+    private let searchPreferences: SearchPreferences
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     @Published private var hasExcessChats = false
@@ -103,11 +105,13 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
+         searchPreferences: SearchPreferences,
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
+        self.searchPreferences = searchPreferences
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
@@ -247,6 +251,19 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .eraseToAnyPublisher()
     }
 
+    var showAskAiSuggestion: Bool {
+        searchPreferences.showAutocompleteSuggestions
+    }
+
+    /// Drops the initial value so subscriber attachment during init doesn't push a redundant
+    /// `omnibar_onConfigUpdate` — matches the other `*Publisher` shapes in this provider.
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> {
+        searchPreferences.$showAutocompleteSuggestions
+            .dropFirst()
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip
@@ -259,18 +276,34 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     var showViewAllAiChats: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
             && featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+            && searchPreferences.showAutocompleteSuggestions
             && hasExcessChats
     }
 
+    /// Re-evaluates `showViewAllAiChats` whenever either `hasExcessChats` or the autocomplete
+    /// preference flips. Without the second input, disabling Autocomplete suggestions would leave
+    /// a stale `true` in `hasExcessChats` (set on a prior `aiChats(query:)` call that fetched
+    /// suggestions), and the web could be told to show a "View All" button while the chats
+    /// response is empty.
+    ///
+    /// The closure reads the values straight off `CombineLatest` rather than calling
+    /// `self.showViewAllAiChats`. `@Published` fires in `willSet`, so the stored property is
+    /// still the old value when the publisher emits — reading the getter at that point would
+    /// race against the assignment.
     var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> {
-        $hasExcessChats
-            .map { [weak self] hasExcess in
-                guard let self else { return false }
-                return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
-                    && self.featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
-                    && hasExcess
-            }
-            .eraseToAnyPublisher()
+        Publishers.CombineLatest(
+            $hasExcessChats,
+            searchPreferences.$showAutocompleteSuggestions
+        )
+        .map { [weak self] hasExcess, showAutocomplete in
+            guard let self else { return false }
+            return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+                && self.featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+                && showAutocomplete
+                && hasExcess
+        }
+        .removeDuplicates()
+        .eraseToAnyPublisher()
     }
 
     func configure(aiChatsProvider: NewTabPageOmnibarAiChatsProviding) {

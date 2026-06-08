@@ -18,8 +18,10 @@
 
 import Cocoa
 import Combine
+import CombineExtensions
 import Lottie
 import Common
+import FoundationExtensions
 import AIChat
 import UIComponents
 import PixelKit
@@ -233,6 +235,13 @@ final class AddressBarViewController: NSViewController {
     /// Callback to check if a point (in window coordinates) is within the AI Chat omnibar
     var isPointInAIChatOmnibar: ((NSPoint) -> Bool)?
 
+    /// Called from `escapeKeyDown()` BEFORE any focus-resign work, so the duck.ai omnibar
+    /// can swallow Esc when its `@`-mention picker is visible. Returns `true` to indicate
+    /// the picker was open and got dismissed; in that case the address bar leaves its
+    /// focus / selection state alone. Returns `false` (or nil callback) to fall through
+    /// to the regular Esc behavior.
+    var aiChatOmnibarHandledEscape: (() -> Bool)?
+
     weak var delegate: AddressBarViewControllerDelegate?
 
     // MARK: - View Lifecycle
@@ -431,17 +440,12 @@ final class AddressBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        // hide Suggestions when child window is shown (Suggestions, Bookmarks, Downloads etc…, excluding Tab Previews and Suggestions)
         window.publisher(for: \.childWindows)
             .debounce(for: 0.05, scheduler: DispatchQueue.main)
             .sink { [weak self] childWindows in
-                guard let self, let childWindows, childWindows.contains(where: {
-                    !(
-                        $0.windowController is TabPreviewWindowController
-                        || $0.contentViewController is SuggestionViewController
-                        || $0 === self.view.window?.titlebarView?.window // fullscreen titlebar owning window
-                    )
-                }) else { return }
+                guard let childWindows, let self, self.mustDismissSuggestionsWindow(childWindows, titlebarWindow: self.view.window?.titlebarView?.window) else {
+                    return
+                }
 
                 addressBarTextField.hideSuggestionWindow()
             }
@@ -452,6 +456,19 @@ final class AddressBarViewController: NSViewController {
                 self?.refreshAddressBarAppearance(nil)
             }
             .store(in: &cancellables)
+    }
+
+    /// Determines if the Suggestions Window must be hidden, whenever the specified collection of Child Windows is onscreen
+    ///
+    private func mustDismissSuggestionsWindow(_ childWindows: [NSWindow], titlebarWindow: NSWindow?) -> Bool {
+        childWindows.contains { window in
+            !(
+                window.windowController is TabPreviewWindowController
+                || window.contentViewController is SuggestionViewController
+                || window === titlebarWindow
+                || window.contentViewController?.identifier == .updateNotificationPopover
+            )
+        }
     }
 
     private func subscribeToFireproofDomainsChanges() {
@@ -1067,6 +1084,14 @@ final class AddressBarViewController: NSViewController {
     // MARK: - Event handling
 
     func escapeKeyDown() -> Bool {
+        /// Duck.ai's `@`-mention picker gets first crack at Esc. When the picker is
+        /// visible, dismissing it is the user's intent — they don't expect Esc to also
+        /// resign the omnibar's focus or move the bar out of duck.ai mode. Returning
+        /// here short-circuits the entire focus-state machine below.
+        if aiChatOmnibarHandledEscape?() == true {
+            return true
+        }
+
         /// Second Escape press while unfocused in duck.ai mode: fully exit duck.ai for this tab, mirroring the
         /// "clear content and mode" step search mode performs. `addressBarTextField.escapeKeyDown()` resets the
         /// bar's value to the tab's URL (or empty for NTP) and calls `sharedTextState?.reset(clearingDuckAIState: true)`

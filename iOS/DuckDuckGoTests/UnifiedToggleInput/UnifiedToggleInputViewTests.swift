@@ -19,7 +19,9 @@
 
 import AIChat
 import Combine
+import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 import XCTest
 import UIKit
 import UniformTypeIdentifiers
@@ -50,6 +52,24 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         flushMainQueue()
 
         XCTAssertFalse(sut.isToolbarSubmitEnabled)
+    }
+
+    func test_dismissPoseFadesAttachmentsStripOutSoItAnimatesWithTheCollapse() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        sut.addAttachment(makeFileAttachment())
+        flushMainQueue()
+
+        let strip = try XCTUnwrap(firstDescendant(of: UnifiedToggleInputAttachmentsStripView.self, in: sut))
+        XCTAssertEqual(strip.alpha, 1, accuracy: 0.001)
+
+        // The top + toggle-on dismiss pose. Without fading the strip here it stays fully opaque
+        // through the collapse and then blinks out when the container is hidden.
+        sut.applyToggleHideChanges()
+
+        XCTAssertEqual(strip.alpha, 0, accuracy: 0.001)
     }
 
     func test_attachmentStripScrollsToTrailingEdgeAfterAttachmentLayoutChange() throws {
@@ -337,6 +357,27 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
     }
 
+    func test_legacyExpandedAIChatLayoutTopPlaceholderAlignsWithTextContainerTopInset() throws {
+        let handler = LegacyTextEntryMockHandler(
+            currentToggleState: .aiChat,
+            isTopBarPosition: true,
+            isUsingFadeOutAnimation: true,
+            usesExpandedAIChatTextEntryLayout: true
+        )
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        let height = applyFittingHeight(to: sut)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        let expectedPlaceholderMinY = textView.convert(CGPoint(x: 0, y: textView.textContainerInset.top), to: sut).y
+
+        XCTAssertEqual(height, 68, accuracy: 1)
+        XCTAssertFalse(placeholderLabel.isHidden)
+        XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+    }
+
     func test_barPositionChangeRefreshesExpandedAIChatPose() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         handler.updateBarPosition(isTop: false)
@@ -439,6 +480,21 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertGreaterThan(callbacks, 0)
     }
 
+    func test_flankedAIChatShadowUsesTransparentBlackTokenInDarkMode() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.overrideUserInterfaceStyle = .dark
+        sut.applyCardLayout(.flanked, animated: false)
+        prepareForFitting(sut, width: 402, height: 80)
+
+        let shadowView = try XCTUnwrap(firstDescendant(of: CompositeShadowView.self, in: sut))
+        let rimShadowLayer = try XCTUnwrap(shadowView.subviews.first { $0.layer.name == "rim" }?.layer)
+        let expectedShadowColor = UIColor(designSystemColor: .shadowSecondary).resolvedColor(with: sut.traitCollection)
+
+        XCTAssertFalse(shadowView.isHidden)
+        assertColor(rimShadowLayer.shadowColor, equals: expectedShadowColor)
+    }
+
     private func flushMainQueue() {
         let expectation = expectation(description: "main queue flushed")
         DispatchQueue.main.async {
@@ -527,6 +583,30 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         return nil
     }
+
+    private func assertColor(_ actualColor: CGColor?, equals expectedColor: UIColor, file: StaticString = #filePath, line: UInt = #line) {
+        guard let actualColor else {
+            XCTFail("Expected color", file: file, line: line)
+            return
+        }
+
+        let actualComponents = rgbaComponents(of: UIColor(cgColor: actualColor))
+        let expectedComponents = rgbaComponents(of: expectedColor)
+
+        XCTAssertEqual(actualComponents.red, expectedComponents.red, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(actualComponents.green, expectedComponents.green, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(actualComponents.blue, expectedComponents.blue, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(actualComponents.alpha, expectedComponents.alpha, accuracy: 0.001, file: file, line: line)
+    }
+
+    private func rgbaComponents(of color: UIColor) -> (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return (red, green, blue, alpha)
+    }
 }
 
 private final class SpyFloatingReturnKeyDelegate: UnifiedToggleInputFloatingReturnKeyDelegate {
@@ -550,6 +630,7 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isFireTab: Bool = false
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool
+    var usesExpandedAIChatTextEntryLayout: Bool
     var shouldDisableAutocorrectOnEmpty: Bool = false
     var hidesVoiceButton: Bool = false
     var hasSubmittedPrompt: Bool = false
@@ -565,10 +646,14 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
 
-    init(currentToggleState: TextEntryMode, isTopBarPosition: Bool, isUsingFadeOutAnimation: Bool) {
+    init(currentToggleState: TextEntryMode,
+         isTopBarPosition: Bool,
+         isUsingFadeOutAnimation: Bool,
+         usesExpandedAIChatTextEntryLayout: Bool = false) {
         self.currentToggleState = currentToggleState
         self.isTopBarPosition = isTopBarPosition
         self.isUsingFadeOutAnimation = isUsingFadeOutAnimation
+        self.usesExpandedAIChatTextEntryLayout = usesExpandedAIChatTextEntryLayout
     }
 
     func updateCurrentText(_ text: String) {

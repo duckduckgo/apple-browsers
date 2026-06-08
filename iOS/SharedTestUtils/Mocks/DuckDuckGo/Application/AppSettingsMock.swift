@@ -19,6 +19,7 @@
 
 import Bookmarks
 import Foundation
+import Onboarding
 @testable import DuckDuckGo
 
 class AppSettingsMock: AppSettings {
@@ -107,6 +108,7 @@ class AppSettingsMock: AppSettings {
 
     var onboardingUserType: OnboardingUserType = .notSet
     var onboardingForceRestorePromptEligible: Bool = false
+    var onboardingFlowType: OnboardingFlowType?
 
     var duckPlayerNativeUISERPEnabled: Bool = true
     var duckPlayerNativeYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!

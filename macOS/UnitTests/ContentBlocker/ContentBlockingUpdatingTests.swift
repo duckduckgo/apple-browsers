@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import PersistenceTestingUtils
@@ -76,7 +77,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        configStorage: MockConfigurationStore(),
                                        webTrackingProtectionPreferences: preferences,
                                        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
-                                       duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider),
+                                       duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger),
                                        experimentManager: MockContentScopeExperimentManager(),
                                        tld: TLD(),
                                        featureFlagger: featureFlagger,

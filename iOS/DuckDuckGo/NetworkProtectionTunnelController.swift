@@ -20,6 +20,7 @@
 import PrivacyConfig
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import Foundation
 import NetworkExtension
@@ -185,7 +186,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         do {
             try await startWithError()
-            completeAndCleanupConnectionWideEvent()
 
             persistentPixel.fire(
                 pixel: .networkProtectionControllerStartSuccess,
@@ -393,40 +393,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
-    /// Setups the tunnel manager if it's not set up already.
-    ///
     @MainActor
     private func setup(_ tunnelManager: NETunnelProviderManager) {
-        tunnelManager.localizedDescription = "DuckDuckGo VPN"
-        tunnelManager.isEnabled = true
-
-        tunnelManager.protocolConfiguration = {
-            let protocolConfiguration = NETunnelProviderProtocol()
-            protocolConfiguration.serverAddress = "127.0.0.1" // Dummy address... the NetP service will take care of grabbing a real server
-
-            protocolConfiguration.providerConfiguration = [:]
-
-            // always-on
-            protocolConfiguration.disconnectOnSleep = false
-
-            protocolConfiguration.enforceRoutes = settings.enforceRoutes
-            protocolConfiguration.includeAllNetworks = settings.includeAllNetworks
-            protocolConfiguration.excludeLocalNetworks = settings.excludeLocalNetworks
-
-            if #available(iOS 16.4, *) {
-                protocolConfiguration.excludeAPNs = settings.excludeAPNs
-                protocolConfiguration.excludeCellularServices = settings.excludeCellularServices
-            }
-
-            if #available(iOS 17.4, *) {
-                protocolConfiguration.excludeDeviceCommunication = settings.excludeDeviceCommunication
-            }
-
-            return protocolConfiguration
-        }()
-
-        // reconnect on reboot
-        tunnelManager.onDemandRules = [NEOnDemandRuleConnect()]
+        tunnelManager.applyDuckDuckGoConfiguration(from: settings)
     }
 
     // MARK: - Observing Configuration Changes
@@ -478,11 +447,25 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             switch session.status {
             case .connected:
+                completeAndCleanupConnectionWideEvent()
                 try await enableOnDemand(tunnelManager: manager)
+            case .disconnected, .invalid:
+                let disconnectError = await lastDisconnectError(from: session)
+                completeConnectionWideEventAsObservedFailure(with: disconnectError)
             default:
                 break
             }
 
+        }
+    }
+
+    private func lastDisconnectError(from session: NETunnelProviderSession) async -> Error? {
+        guard #available(iOS 16, *) else { return nil }
+        do {
+            try await session.fetchLastDisconnectError()
+            return nil
+        } catch {
+            return error
         }
     }
 
@@ -553,6 +536,16 @@ private extension NetworkProtectionTunnelController {
         } else {
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
         }
+        self.connectionWideEventData = nil
+    }
+
+    func completeConnectionWideEventAsObservedFailure(with error: Error? = nil) {
+        guard let data = self.connectionWideEventData else { return }
+        data.overallDuration?.complete()
+        if let error {
+            data.errorData = .init(error: error)
+        }
+        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
         self.connectionWideEventData = nil
     }
 }

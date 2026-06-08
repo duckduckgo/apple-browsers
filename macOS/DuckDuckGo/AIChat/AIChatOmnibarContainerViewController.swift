@@ -418,7 +418,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         NSAppearance.withAppAppearance {
             if enabled {
                 if submitButtonMode == .voice {
-                    submitButton.normalTintColor = NSColor(designSystemColor: .accentAltContentPrimary)
+                    submitButton.normalTintColor = NSColor(designSystemColor: .iconsPrimary)
                 } else {
                     submitButton.normalTintColor = NSColor(designSystemColor: .accentContentPrimary)
                 }
@@ -446,11 +446,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             designSystemColor = nil
         } else if submitButtonMode == .voice {
             if submitButton.isMouseDown {
-                designSystemColor = .accentAltTertiary
+                designSystemColor = .controlsFillTertiary
             } else if submitButton.isMouseOver {
-                designSystemColor = .accentAltSecondary
+                designSystemColor = .controlsFillSecondary
             } else {
-                designSystemColor = .accentAltPrimary
+                designSystemColor = .controlsFillPrimary
             }
         } else {
             if submitButton.isMouseDown {
@@ -740,9 +740,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self.omnibarController.removeImageAttachmentFromActiveTab(id: id)
         }
         attachmentsCarouselView.onTabAttachmentRemoveRequested = { [weak self] id in
+            // × on a tab card is the primary tab-removal action. The carousel doesn't
+            // remember whether the tab was attached via the "Add Page Content" submenu or
+            // the @-mention picker, so we fire `attach_tab_removed` here uniformly (the
+            // mention-specific `mention_tab_removed` continues to fire only when the user
+            // deselects through the @-picker UI, which keeps it as a clean signal of
+            // @-picker engagement).
+            PixelKit.fire(AIChatPixel.aiChatAddressBarAttachTabRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
             self?.omnibarController.removeTabAttachmentFromActiveTab(id: id)
         }
         attachmentsCarouselView.onFileAttachmentRemoveRequested = { [weak self] id in
+            PixelKit.fire(AIChatPixel.aiChatAddressBarFileRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
             self?.omnibarController.removeFileAttachmentFromActiveTab(id: id)
         }
         containerView.addSubview(attachmentsCarouselView)
@@ -1225,6 +1233,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         return menu
     }
 
+    /// Observer installed as the `NSMenuDelegate` of the "Add Page Content" submenu so we can
+    /// fire the picker-shown / picker-canceled pixels exactly once per open/close cycle. The
+    /// row's `onToggle` callback below flips the observer's `didMutateDuringSession` flag so
+    /// the canceled pixel is only fired when nothing was toggled during the session.
+    /// Retained on the VC because `NSMenu.delegate` is weak.
+    private var attachTabsSubmenuObserver: AttachTabsSubmenuObserver?
+
     /// Builds the "Attach Page Content" submenu. When the user has open URL tabs, the submenu
     /// starts with a "Recent Tabs" section header followed by a custom-view row per tab — each
     /// row stays-open-on-click via `AIChatTabPickerMenuRowView` so the user can multi-toggle
@@ -1233,6 +1248,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func buildAttachTabsSubmenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
+
+        // Observer fires the picker-shown pixel on willOpen and the picker-canceled pixel on
+        // didClose when no row was toggled in between. Stored on the VC so its lifetime
+        // covers the menu's lifetime (NSMenu's delegate ref is weak).
+        let observer = AttachTabsSubmenuObserver()
+        attachTabsSubmenuObserver = observer
+        menu.delegate = observer
 
         let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
         let candidates = omnibarController.openTabsForOmnibarPicker()
@@ -1257,8 +1279,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 attachment: candidate,
                 isAttached: attachedIds.contains(candidate.id),
                 isCurrentTab: candidate.id == currentTabId,
-                onToggle: { [weak omnibarController] in
-                    omnibarController?.toggleTabAttachment(candidate)
+                onToggle: { [weak omnibarController, weak observer] in
+                    guard let omnibarController else { return }
+                    // Read state BEFORE toggle so we know which pixel to fire — the toggle
+                    // flips it, so post-toggle we'd see the opposite of "what just happened".
+                    let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
+                    omnibarController.toggleTabAttachment(candidate)
+                    let pixel: AIChatPixel = wasAttached
+                        ? .aiChatAddressBarAttachTabRemoved
+                        : .aiChatAddressBarAttachTabChosen
+                    PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                    observer?.markDidMutate()
                 }
             )
             item.view = row
@@ -1439,6 +1470,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         attachmentsCarouselView.setAttachments(filtered)
         guard !isDeferringCarouselLayout else { return }
         updateAttachmentsLayout()
+        // The height constraint just flipped to `expandedHeight` (when the carousel went
+        // from zero → some attachments). Force layout to settle on the new frame before
+        // scrolling, otherwise `scrollToVisible` reads the still-zero carousel height.
+        attachmentsCarouselView.superview?.layoutSubtreeIfNeeded()
+        attachmentsCarouselView.scrollLastAddedAttachmentIntoView()
     }
 
     /// Re-applies the active tab's saved panel attachments through the carousel filter — used
@@ -1662,22 +1698,33 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateSubmitButtonState(for: omnibarController.currentText)
 
         let toolButtonTintColor = NSColor(designSystemColor: .textPrimary)
+        // Focus-ring colour follows the active theme's primary accent, the same source the
+        // search/AI toggle uses, so all controls in the duck.ai address bar agree on the glow.
+        // (The submit button is excluded — it uses AppKit's native focus ring, which can't
+        // be themed without a deeper rewrite.)
+        let focusRingColor = colorsProvider.accentPrimaryColor
         toolsButton.tintColor = toolButtonTintColor
         toolsButton.hoverBackgroundColor = .buttonMouseOver
         toolsButton.pressedBackgroundColor = .buttonMouseDown
+        toolsButton.focusRingColor = focusRingColor
         imageGenActiveButton.tintColor = toolButtonTintColor
         imageGenActiveButton.hoverBackgroundColor = .buttonMouseOver
         imageGenActiveButton.pressedBackgroundColor = .buttonMouseDown
+        imageGenActiveButton.focusRingColor = focusRingColor
         webSearchActiveButton.tintColor = toolButtonTintColor
         webSearchActiveButton.hoverBackgroundColor = .buttonMouseOver
         webSearchActiveButton.pressedBackgroundColor = .buttonMouseDown
+        webSearchActiveButton.focusRingColor = focusRingColor
         imageUploadButton.tintColor = toolButtonTintColor
         imageUploadButton.hoverBackgroundColor = .buttonMouseOver
         imageUploadButton.pressedBackgroundColor = .buttonMouseDown
+        imageUploadButton.focusRingColor = focusRingColor
         reasoningPickerButton.tintColor = toolButtonTintColor
         reasoningPickerButton.hoverBackgroundColor = .buttonMouseOver
         reasoningPickerButton.pressedBackgroundColor = .buttonMouseDown
+        reasoningPickerButton.focusRingColor = focusRingColor
         modelPickerButton.tintColor = toolButtonTintColor
+        modelPickerButton.focusRingColor = focusRingColor
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")
@@ -1742,6 +1789,11 @@ final class AIChatSubmitButton: MouseOverButton {
     // AppKit's default focus ring fits the image content, which makes it hug the icon instead
     // of the rounded button frame. Overriding the mask + bounds makes the focus ring match the
     // button's actual shape.
+    //
+    // Note: the ring colour is the system `controlAccentColor`, so it does *not* follow the
+    // in-app theme switcher (Pink etc.) the way the other AIChat controls do. AppKit's focus
+    // ring colour can't be overridden without taking ownership of the entire focus-ring render
+    // path on an NSButton subclass — left as a known limitation for a separate PR.
     override var focusRingMaskBounds: NSRect {
         bounds
     }
@@ -1764,5 +1816,44 @@ extension AIChatOmnibarContainerViewController: NSMenuDelegate {
         guard isDeferringCarouselLayout else { return }
         isDeferringCarouselLayout = false
         updateAttachmentsLayout()
+        attachmentsCarouselView.superview?.layoutSubtreeIfNeeded()
+        attachmentsCarouselView.scrollLastAddedAttachmentIntoView()
+    }
+}
+
+// MARK: - "Add Page Content" submenu observer
+
+/// Observes one open/close cycle of the "Add Page Content" submenu so the picker-shown and
+/// picker-canceled pixels fire exactly once per session. Sits as the submenu's
+/// `NSMenuDelegate` (the VC's own conformance already handles the top-level attach menu's
+/// `menuDidClose`, so we keep this submenu-only logic separate to avoid mixing concerns).
+private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
+
+    /// `true` once any row's `onToggle` fired during the current open session. Reset on the
+    /// next `menuWillOpen` so each open/close pair is evaluated independently.
+    private var didMutateDuringSession = false
+
+    func menuWillOpen(_ menu: NSMenu) {
+        didMutateDuringSession = false
+        PixelKit.fire(
+            AIChatPixel.aiChatAddressBarAttachTabsPickerShown,
+            frequency: .dailyAndCount,
+            includeAppVersionParameter: true
+        )
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        guard !didMutateDuringSession else { return }
+        PixelKit.fire(
+            AIChatPixel.aiChatAddressBarAttachPickerCanceled,
+            frequency: .dailyAndCount,
+            includeAppVersionParameter: true
+        )
+    }
+
+    /// Called from the row's `onToggle` closure so the cancel pixel is suppressed when the
+    /// user actually picked or removed something during this session.
+    func markDidMutate() {
+        didMutateDuringSession = true
     }
 }

@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 
 public struct PreparingToSyncView: View {
@@ -34,7 +35,7 @@ public struct PreparingToSyncView: View {
         let preparingToSyncDescription = isAIChatSyncEnabled ? UserText.preparingToSyncSheetDescriptionUpdated : UserText.preparingToSyncSheetDescription
         UnderflowContainer {
             VStack(spacing: 0) {
-                Image("Sync-128")
+                Image(rebrandable: "Sync-128")
                     .padding(20)
                     .padding(.top, 56)
 

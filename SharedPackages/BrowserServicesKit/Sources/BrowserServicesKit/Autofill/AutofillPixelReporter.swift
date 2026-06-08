@@ -20,6 +20,7 @@ import Foundation
 import Persistence
 import SecureStorage
 import Common
+import FoundationExtensions
 
 public enum AutofillPixelEvent {
     case autofillActiveUser

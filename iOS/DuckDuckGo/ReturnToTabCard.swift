@@ -25,43 +25,65 @@ import DesignResourcesKitIcons
 struct ReturnToTabCard: View {
     @Environment(\.layoutDirection) private var layoutDirection
 
-    let model: EscapeHatchModel
+    @ObservedObject var model: EscapeHatchModel
+
+    /// Frames of the Fire button and the three-dots menu button in the key window's coordinate space.
+    /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter expects
+    /// window-space coordinates because it attaches the popover to the key window. The Fire button is the
+    /// anchor when the Fire-button flag is on; the menu button is the anchor for the legacy in-menu action.
+    @State private var fireButtonFrameInWindow: CGRect = .zero
+    @State private var menuFrameInWindow: CGRect = .zero
 
     var body: some View {
-        Group {
+        GeometryReader { proxy in
             if model.isActionsEnabled {
-                SwipeActionView(onCommit: model.onCloseTab) {
-                    contentView
-                } actions: {
-                    swipeableActionsView
-                }
-                .contextMenu {
-                    menuContentView
-                }
-                // We're Clipping with the shape `( ]` as the `swipeableActionsView` subview is not expected to be a perfect pill, on its right hand side during Swipe
-                .clipShape(LeftCapsuleShape())
+                bodyWithActions(width: proxy.size.width)
             } else {
                 contentView
             }
         }
-        .id(model.targetTab.uid)
         .frame(height: Metrics.height)
+    }
+
+    @ViewBuilder
+    private func bodyWithActions(width: CGFloat) -> some View {
+        SwipeActionView(onCommit: model.primarySwipeAction.perform) {
+            contentView
+        } actions: {
+            swipeableActionsView
+        }
+
+        // `.contentMenu` causes the Preview View to overlap with surrounding elements.
+        // We're relying on the `.contextMenu(preview:)` API, as it allows us to fine tune the Preview dimensions.
+        .contextMenuWithPreviewIfAvailable {
+            menuContentView
+        } preview: {
+            contentView
+                .frame(width: width, height: Metrics.height)
+        }
+        // We're Clipping with the shape `( ]` as the `swipeableActionsView` subview is not expected to be a perfect pill, on its right hand side during Swipe
+        .clipShape(LeftCapsuleShape())
     }
 
     private var contentView: some View {
         HStack(spacing: Metrics.innerSpacing) {
             mainView
             if model.isActionsEnabled {
-                menuView
+                actionButtonsView
             }
         }
-        .padding(.horizontal, Metrics.horizontalPadding)
+        .padding(contentPaddingEdges, Metrics.horizontalPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .frame(height: Metrics.height)
         .background(
             Capsule()
                 .fill(Color(designSystemColor: .controlsFillSecondary))
         )
+    }
+
+    private var contentPaddingEdges: Edge.Set {
+        /// Avoid trailing padding when the Menu is visible
+        model.isActionsEnabled ? .leading : .horizontal
     }
 
     private var mainView: some View {
@@ -83,11 +105,46 @@ struct ReturnToTabCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityLabelText))
         .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
         .accessibilityIdentifier("NTP.escapeHatch.card")
+    }
+
+    /// Trailing controls: when enabled, the Fire (delete tab) button sits to the left of the three-dots menu.
+    private var actionButtonsView: some View {
+        HStack(spacing: 0) {
+            if model.isFireButtonEnabled {
+                fireButton
+            }
+            menuView
+        }
+    }
+
+    /// Deletes the tab directly from the card. Mirrors the old "Delete Tab" menu item:
+    /// fire tabs burn immediately, everything else asks for confirmation (anchored to this button on iPad).
+    private var fireButton: some View {
+        Button(action: deleteTab) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
+                .foregroundColor(Color(designSystemColor: .icons))
+                .padding(.horizontal, Metrics.actionIconPadding)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(UserText.escapeHatchMenuDeleteTab))
+        .accessibilityIdentifier("NTP.escapeHatch.fireButton")
+        .onFrameUpdate(in: .global, using: FireButtonFrameInWindowKey.self) { fireButtonFrameInWindow = $0 }
+    }
+
+    private func deleteTab() {
+        if model.isFireTab {
+            model.onBurnTabImmediately()
+        } else {
+            model.onBurnTabWithConfirmation(fireButtonFrameInWindow)
+        }
     }
 
     private var menuView: some View {
@@ -96,39 +153,69 @@ struct ReturnToTabCard: View {
         } label: {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal)
                 .foregroundColor(Color(designSystemColor: .icons))
-                .padding(.horizontal, Metrics.horizontalPadding)
+                // Tighten the leading gap to the Fire button when it's present; otherwise keep the original padding.
+                .padding(.leading, model.isFireButtonEnabled ? Metrics.actionIconPadding : Metrics.horizontalPadding)
+                .padding(.trailing, Metrics.horizontalPadding)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
         .accessibilityIdentifier("NTP.escapeHatch.moreButton")
+        .onFrameUpdate(in: .global, using: MenuFrameInWindowKey.self) { menuFrameInWindow = $0 }
     }
 
     @ViewBuilder
     private var menuContentView: some View {
         Section(header: Text(model.subtitle)) {
-            Button(action: model.onCardTap) {
-                Label {
-                    Text(UserText.escapeHatchMenuReturnToTab)
-                } icon: {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.goBackCircle)
-                        .foregroundColor(Color(designSystemColor: .icons))
+            MenuActionButton(
+                text: UserText.escapeHatchMenuReturnToTab,
+                icon: DesignSystemImages.Glyphs.Size16.goBackCircle,
+                role: .none,
+                action: model.onCardTap
+            )
+            if model.isFireTab {
+                // When the Fire button is enabled, deleting a fire tab is handled by that button instead.
+                if !model.isFireButtonEnabled {
+                    MenuActionButton(
+                        text: UserText.escapeHatchMenuDeleteTab,
+                        icon: DesignSystemImages.Glyphs.Size16.fire,
+                        role: .destructive,
+                        action: model.onBurnTabImmediately
+                    )
+                }
+            } else {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuCloseTab,
+                    icon: DesignSystemImages.Glyphs.Size16.closeOutline,
+                    role: .destructive,
+                    action: model.onCloseTab
+                )
+                // When the Fire button is enabled, deleting the tab is handled by that button instead.
+                if !model.isFireButtonEnabled {
+                    MenuActionButton(
+                        text: UserText.escapeHatchMenuDeleteTab,
+                        icon: DesignSystemImages.Glyphs.Size16.fire,
+                        role: .destructive,
+                        action: { model.onBurnTabWithConfirmation(menuFrameInWindow) }
+                    )
                 }
             }
-            Button(role: .destructive, action: model.onCloseTab) {
-                Label {
-                    Text(UserText.escapeHatchMenuCloseTab)
-                } icon: {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+            Picker(selection: model.afterInactivityOptionBinding) {
+                ForEach(AfterInactivityOption.allCases, id: \.self) { option in
+                    Text(option.description)
+                        .tag(option)
                 }
+            } label: {
+                Text(UserText.settingsAfterInactivityLabel)
+                Text(model.afterInactivityOptionBinding.wrappedValue.description)
+                    .foregroundColor(.secondary)
+                    .font(.subheadline)
+
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
+                    .foregroundColor(Color(designSystemColor: .icons))
+
             }
-            Button(role: .destructive, action: model.onBurnTab) {
-                Label {
-                    Text(UserText.escapeHatchMenuBurnTab)
-                } icon: {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
-                }
-            }
+            .pickerStyle(.menu)
         }
     }
 
@@ -136,7 +223,7 @@ struct ReturnToTabCard: View {
         ZStack(alignment: .center) {
             Color(designSystemColor: .destructivePrimary)
 
-            Text(UserText.escapeHatchMenuCloseTab)
+            Text(model.primarySwipeAction.label)
                 .daxSubheadRegular()
                 .foregroundColor(.white)
                 .lineLimit(1)
@@ -221,9 +308,46 @@ private struct DomainFaviconView: View {
     }
 }
 
+/// One-line menu row: icon glyph on the leading side, text on the trailing side (Apple's standard `Label` layout).
+/// Captures the icon-coloring asymmetry: non-destructive rows apply the `icons` design token explicitly;
+/// destructive rows inherit SwiftUI's auto-tint from `role: .destructive`.
+private struct MenuActionButton: View {
+    let text: String
+    let icon: UIImage
+    let role: ButtonRole?
+    let action: () -> Void
+
+    var body: some View {
+        Button(role: role, action: action) {
+            Label {
+                Text(text)
+            } icon: {
+                Image(uiImage: icon)
+                    .foregroundColor(role == nil ? Color(designSystemColor: .icons) : nil)
+            }
+        }
+    }
+}
+
+private struct MenuFrameInWindowKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
+private struct FireButtonFrameInWindowKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
 private enum Metrics {
     static let height: CGFloat = 56
     static let horizontalPadding: CGFloat = 16
+    /// Padding around the Fire / menu glyphs so the two trailing buttons sit ~16pt apart, matching the design.
+    static let actionIconPadding: CGFloat = 8
     static let innerSpacing: CGFloat = 8
     static let titleToSubtitleSpacing: CGFloat = 0
     static let textRowHeight: CGFloat = 20
@@ -270,6 +394,32 @@ private enum Metrics {
                                     domain: nil,
                                     targetTab: target,
                                     tabCount: 1))
+        .padding()
+        .frame(width: 360)
+}
+
+#Preview("Return to tab — New Tab selected") {
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Tokamak - Wikipedia",
+                                    subtitle: "en.wikipedia.org/wiki/Tokamak",
+                                    tabType: .regular,
+                                    domain: "en.wikipedia.org",
+                                    targetTab: target,
+                                    tabCount: 9,
+                                    afterInactivityOption: .newTab))
+        .padding()
+        .frame(width: 360)
+}
+
+#Preview("Return to tab — Fire button") {
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Tokamak - Wikipedia",
+                                    subtitle: "en.wikipedia.org/wiki/Tokamak",
+                                    tabType: .regular,
+                                    domain: "en.wikipedia.org",
+                                    targetTab: target,
+                                    tabCount: 9,
+                                    isFireButtonEnabled: true))
         .padding()
         .frame(width: 360)
 }

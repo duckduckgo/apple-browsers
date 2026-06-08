@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import UserScript
 import Foundation
 import AIChat
@@ -44,7 +45,6 @@ protocol AIChatUserScriptDelegate: AnyObject {
 // MARK: - AIChatUserScript Class
 
 final class AIChatUserScript: NSObject, Subfeature {
-
     // MARK: - Push Message Enum
 
     enum AIChatPushMessage {
@@ -187,6 +187,12 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatPageContext
         case .openAIChat:
             return handler.openAIChat
+        case .openSummarizationSourceLink:
+            return handler.openSummarizationSourceLink
+        case .openTranslationSourceLink:
+            return handler.openTranslationSourceLink
+        case .openAIChatLink:
+            return handler.openAIChatLink
         case .hideChatInput:
             return handler.hideChatInput
         case .showChatInput:
@@ -227,6 +233,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.voiceSessionStarted
         case .voiceSessionEnded:
             return handler.voiceSessionEnded
+        case .newImageGenerationChatStarted:
+            return handler.newImageGenerationChatStarted
         default:
             return nil
         }
@@ -234,6 +242,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling) {
         handler.setPayloadHandler(payloadHandler)
+    }
+
+    func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
+        handler.setOpenLinkHandler(openLinkHandler)
     }
 
     func setDisplayMode(_ displayMode: AIChatDisplayMode) {
@@ -277,6 +289,10 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     // MARK: - AI Chat Actions
+
+    var canDispatchBridgeMessages: Bool {
+        webView != nil && broker != nil
+    }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         submitPrompt(prompt, pageContext: pageContext, modelId: nil)

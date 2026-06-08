@@ -21,12 +21,14 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import Network
 import NetworkExtension
-import UserNotifications
 import os.log
 import PixelKit
+import UserNotifications
 
 open class PacketTunnelProvider: NEPacketTunnelProvider {
 
@@ -38,7 +40,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case tunnelStopAttempt(_ step: TunnelStopAttemptStep)
         case tunnelUpdateAttempt(_ step: TunnelUpdateAttemptStep)
         case tunnelWakeAttempt(_ step: TunnelWakeAttemptStep)
-        case tunnelStartOnDemandWithoutAccessToken
+        case tunnelStartOnDemandWithoutAccessToken(_ error: Error)
         case reportTunnelFailure(result: NetworkProtectionTunnelFailureMonitor.Result)
         case reportLatency(result: NetworkProtectionLatencyMonitor.Result, location: VPNSettings.SelectedLocation)
         case rekeyAttempt(_ step: RekeyAttemptStep)
@@ -105,9 +107,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         /// Whether attempts from this source should be recorded in the connection-attempt SLO.
         public var isConnectionAttempt: Bool {
             switch self {
-            case .start, .rekey, .serverChange, .locationChange,
+            case .start, .serverChange, .locationChange,
                  .adapterRestart, .failureRecovery, .serverMigration:
                 return true
+            case .rekey:
+                return false
             }
         }
     }
@@ -799,8 +803,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
 #if os(iOS)
-            if (try? await tokenHandlerProvider.getToken()) == nil {
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
+            do {
+                _ = try await tokenHandlerProvider.getToken()
+            } catch {
+                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
             }
 
             // Load resources that require the device to be unlocked.
@@ -818,7 +824,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // manual start attempt that preceded failed, or if the subscription has
                 // expired.  In either case it should be enough to record the manual failures
                 // for these prerequisited to avoid flooding our metrics.
-                providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken)
+                providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken(error))
                 Logger.networkProtection.log("Going to sleep...")
                 try? await Task.sleep(interval: .seconds(15))
                 Logger.networkProtection.log("Waking up...")

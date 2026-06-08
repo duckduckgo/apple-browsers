@@ -6,19 +6,58 @@ defaults:
 
 on:
   workflow_dispatch:
+    inputs:
+      user_modes:
+        description: "User mode(s) to run. 'production' = production behaviour (release-gating). 'internal' = isInternalUser=true, runs internally-gated features (advance warning). 'both' = run both legs."
+        type: choice
+        default: production
+        options:
+        - production
+        - internal
+        - both
   schedule:
     - cron: '0 2 * * *' # Run at 2 AM UTC
 
 jobs:
+  setup-user-modes:
+    name: Resolve user modes
+    runs-on: ubuntu-latest
+    outputs:
+      user-modes: ${{ steps.define.outputs.user-modes }}
+    steps:
+    - name: Define user-modes
+      id: define
+      run: |
+        event="${{ github.event_name }}"
+        input_modes="${{ inputs.user_modes }}"
+        case "$event" in
+          schedule)
+            user_modes='["production", "internal"]'
+            ;;
+          workflow_dispatch)
+            case "$input_modes" in
+              internal) user_modes='["internal"]' ;;
+              both)     user_modes='["production", "internal"]' ;;
+              *)        user_modes='["production"]' ;;
+            esac
+            ;;
+          *)
+            user_modes='["production"]'
+            ;;
+        esac
+        echo "user-modes=${user_modes}" >> $GITHUB_OUTPUT
+        echo "Resolved user-modes: ${user_modes}"
+
   atb-ui-tests:
     name: ATB UI Tests${{ matrix.user-mode == 'internal' && ' (internal)' || '' }}
+    needs: setup-user-modes
     runs-on: macos-26-xlarge
     timeout-minutes: 30
 
     strategy:
       fail-fast: false
       matrix:
-        user-mode: [production, internal]
+        user-mode: ${{ fromJSON(needs.setup-user-modes.outputs.user-modes) }}
 
     continue-on-error: ${{ matrix.user-mode == 'internal' }}
 

@@ -8,6 +8,15 @@ on:
   schedule:
     - cron: '0 4 * * *' # run at 4 AM UTC
   workflow_dispatch:
+    inputs:
+      user_modes:
+        description: "User mode(s) to run. 'production' = production behaviour (release-gating). 'internal' = isInternalUser=true, runs internally-gated features (advance warning). 'both' = run both legs."
+        type: choice
+        default: production
+        options:
+        - production
+        - internal
+        - both
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -134,9 +143,51 @@ jobs:
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
+  setup-matrix:
+    name: Resolve test matrix
+    needs: build-end-to-end-tests
+    runs-on: ubuntu-latest
+    outputs:
+      include: ${{ steps.define.outputs.include }}
+    steps:
+    - name: Define include
+      id: define
+      run: |
+        event="${{ github.event_name }}"
+        input_modes="${{ inputs.user_modes }}"
+        case "$event" in
+          schedule)
+            modes='["production", "internal"]'
+            ;;
+          workflow_dispatch)
+            case "$input_modes" in
+              internal) modes='["internal"]' ;;
+              both)     modes='["production", "internal"]' ;;
+              *)        modes='["production"]' ;;
+            esac
+            ;;
+          *)
+            modes='["production"]'
+            ;;
+        esac
+        # iPhone tests exclude iPad-tagged tests; iPad tests exclude iPhone-tagged tests.
+        base='[
+          {"test-tag":"release","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
+          {"test-tag":"privacy","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
+          {"test-tag":"securityTest","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
+          {"test-tag":"adClick","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
+          {"test-tag":"duckplayer_native","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
+          {"test-tag":"device_info","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
+          {"test-tag":"device_info","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
+          {"test-tag":"duckplayer_classic","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"}
+        ]'
+        include=$(echo "$base" | jq -c --argjson modes "$modes" '[.[] as $b | $modes[] | $b + {"user-mode": .}]')
+        echo "include=$include" >> $GITHUB_OUTPUT
+        echo "Resolved include: $include"
+
   end-to-end-tests:
     name: End to end Tests (${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && ' / internal' || '' }})
-    needs: build-end-to-end-tests
+    needs: [build-end-to-end-tests, setup-matrix]
     runs-on: macos-26
     timeout-minutes: 300
 
@@ -145,97 +196,7 @@ jobs:
 
     strategy:
       matrix:
-        include:
-          # iPhone tests - exclude iPad tagged tests
-          - test-tag: release
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-            user-mode: production
-          - test-tag: privacy
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-            user-mode: production
-          - test-tag: securityTest
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-            user-mode: production
-          - test-tag: adClick
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-            user-mode: production
-          - test-tag: duckplayer_native
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device: iphone
-            user-mode: production
-          - test-tag: device_info
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device: iphone
-            user-mode: production
-          # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
-          - test-tag: device_info
-            exclude-tags: iphone
-            device-model: iPad-10th-generation
-            device: ipad
-            user-mode: production
-          - test-tag: duckplayer_classic
-            exclude-tags: iphone
-            device-model: iPad-10th-generation
-            device: ipad
-            user-mode: production
-          - test-tag: release
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-            user-mode: internal
-          - test-tag: privacy
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-            user-mode: internal
-          - test-tag: securityTest
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-            user-mode: internal
-          - test-tag: adClick
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-            user-mode: internal
-          - test-tag: duckplayer_native
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device: iphone
-            user-mode: internal
-          - test-tag: device_info
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device: iphone
-            user-mode: internal
-          - test-tag: device_info
-            exclude-tags: iphone
-            device-model: iPad-10th-generation
-            device: ipad
-            user-mode: internal
-          - test-tag: duckplayer_classic
-            exclude-tags: iphone
-            device-model: iPad-10th-generation
-            device: ipad
-            user-mode: internal
+        include: ${{ fromJSON(needs.setup-matrix.outputs.include) }}
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
 

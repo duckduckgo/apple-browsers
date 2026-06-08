@@ -417,11 +417,15 @@ public extension DesignSystemImages {
             }
             public static var fireTab: DesignSystemImage {
                 AppRebrand.isAppRebranded()
-                    ? .init(resource: .fireTabColor96)
-                    : .init(resource: .fireTabColor96Legacy)
+                    ? .init(resource: .fireWindowLightPhone96)
+                    : .init(resource: .fireWindowLightPhone96Legacy)
             }
             public static var fire: DesignSystemImage { .init(resource: .fire96) }
-            public static var passwordsAppFeature: DesignSystemImage { .init(resource: .passwordsAppFeature96) }
+            public static var passwordsAppFeature: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .passwordsApp96)
+                    : .init(resource: .passwordsAppFeature96)
+            }
             public static var passwordsKeychainFeature: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .passwordsKeychainFeature96)
@@ -429,7 +433,7 @@ public extension DesignSystemImages {
             }
             public static var syncPasswordsDesktop: DesignSystemImage {
                 AppRebrand.isAppRebranded()
-                    ? .init(resource: .syncPasswordsDesktop96)
+                    ? .init(resource: .desktopSyncPasswords96)
                     : .init(resource: .syncPasswordsDesktop96Legacy)
             }
         }

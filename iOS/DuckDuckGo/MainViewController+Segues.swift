@@ -497,8 +497,7 @@ extension MainViewController {
         settingsViewModel.autoClearActionDelegate = self
         settingsViewModel.onRequestOpenDuckAIChat = { [weak self] in
             self?.dismiss(animated: true) {
-                guard let url = URL(string: "https://duck.ai/?settings=open") else { return }
-                self?.loadUrlInNewTab(url, inheritedAttribution: nil)
+                self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
             }
         }
         Pixel.fire(pixel: .settingsPresented)

@@ -15,11 +15,7 @@
             "appVersion",
             "pixelSource",
             "duration",
-            {
-                "key": "navigation_type",
-                "type": "string",
-                "description": "Safe-string representation of the WKNavigationType that initiated the navigation"
-            }
+            "navigation_type"
         ]
     },
     "m_site_loading_failure": {
@@ -38,11 +34,7 @@
             "appVersion",
             "pixelSource",
             "duration",
-            {
-                "key": "navigation_type",
-                "type": "string",
-                "description": "Safe-string representation of the WKNavigationType that initiated the navigation"
-            },
+            "navigation_type",
             "errorCode",
             "errorDomain",
             "underlyingErrorCode",

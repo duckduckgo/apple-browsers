@@ -373,7 +373,8 @@ final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        onApplied((message.body as? [String: Any])?["showSearchModeToggle"] as? Bool)
+        let value = (message.body as? [String: Any])?["showSearchModeToggle"]
+        onApplied((value as? Bool) ?? (value as? NSNumber)?.boolValue)
     }
 }
 

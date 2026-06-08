@@ -218,7 +218,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         if let featureFlagger, let aiChatSettings {
             isVisible = DuckAIChromeShortcutVisibility.isChromeButtonVisible(
                 featureFlagger: featureFlagger,
-                isAIChatNavigationBarUserSettingsEnabled: aiChatSettings.isAIChatNavigationBarUserSettingsEnabled
+                isAIChatTabBarUserSettingsEnabled: aiChatSettings.isAIChatTabBarUserSettingsEnabled
             )
         } else {
             isVisible = false
@@ -227,13 +227,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     /// Pushes per-tab state into the chip. Called by `MainViewController` when the
-    /// current tab changes, its URL changes (Duck.ai vs not), or its contextual sheet
-    /// is presented/dismissed.
-    func updateAIChatChipState(isCurrentTabAIChat: Bool, isCurrentTabHome: Bool, isContextualSheetPresented: Bool) {
+    /// current tab changes or its contextual sheet is presented/dismissed.
+    func updateAIChatChipState(isContextualSheetPresented: Bool) {
         aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
-        // The icon half toggles the page-context sheet; hide it where there's no page to attach
-        // — Duck.ai tabs and the New Tab Page.
-        aiChatChip.setIconVisible(!isCurrentTabAIChat && !isCurrentTabHome)
     }
 
     @IBAction func onFireButtonPressed() {
@@ -266,6 +262,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     @IBAction func onNewTabPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .tabBarNewTab)
         requestNewTab(type: .currentMode)
     }
 
@@ -290,6 +287,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
         recomputeItemSize()
         reloadData()
+        fireUsageDailyPixels()
 
         if scrollToSelected {
             DispatchQueue.main.async {
@@ -312,6 +310,22 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
             flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
+        }
+    }
+
+    /// Once-per-day baseline snapshots: open-tab count (bucketed) and whether the strip overflows
+    /// (scroll required). DailyPixel dedupes per day, so these capture the first qualifying state of the day.
+    private func fireUsageDailyPixels() {
+        guard tabsCount > 0 else { return }
+
+        if let tabCountBucket = TabSwitcherOpenDailyPixel.tabCountBucket(forCount: tabsCount) {
+            DailyPixel.fire(pixel: .tabBarOpenTabCountDaily, withAdditionalParameters: ["tab_count": tabCountBucket])
+        }
+
+        let availableWidth = collectionView.frame.size.width
+        let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
+        if availableWidth > 0, itemWidth > 0, CGFloat(tabsCount) * itemWidth > availableWidth {
+            DailyPixel.fire(pixel: .tabBarOverflowDaily)
         }
     }
 
@@ -467,7 +481,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 completion([
                     UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
                         DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
-                        self?.aiChatSettings?.enableAIChatNavigationBarUserSettings(enable: false)
+                        self?.aiChatSettings?.enableAIChatTabBarUserSettings(enable: false)
                     },
                     UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
                         guard let self else { return }
@@ -524,6 +538,7 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        DailyPixel.fireDailyAndCount(pixel: .tabBarTabSelected)
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
 
@@ -558,7 +573,10 @@ extension TabsBarViewController: UICollectionViewDataSource {
         }
         
         guard let model = tabsModel?.get(tabAt: indexPath.row) else {
-            fatalError("Failed to load tab at \(indexPath.row)")
+            assertionFailure("TabsBarViewController: failed to load tab at \(indexPath.row) of \(tabsCount)")
+            DailyPixel.fireDailyAndCount(pixel: .debugTabsBarCellIndexOutOfRange)
+            cell.configurePlaceholder(withTheme: ThemeManager.shared.currentTheme)
+            return cell
         }
         let isCurrent = indexPath.row == currentIndex
         let isNextCurrent = indexPath.row + 1 == currentIndex
@@ -568,6 +586,8 @@ extension TabsBarViewController: UICollectionViewDataSource {
             guard let self = self, let model = model,
                 let tabIndex = self.tabsModel?.indexOf(tab: model)
                 else { return }
+            let tabState = tabIndex == self.currentIndex ? "active" : "inactive"
+            DailyPixel.fireDailyAndCount(pixel: .tabBarTabClosed, withAdditionalParameters: [PixelParameters.tabState: tabState])
             self.delegate?.tabsBar(self, didRemoveTabAtIndex: tabIndex)
         }
         return cell

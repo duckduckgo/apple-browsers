@@ -71,15 +71,15 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     /// One-shot: if a user had the legacy Address Bar toggle off, carry that into the
-    /// Navigation Bar toggle so the iPad chrome shortcut doesn't silently re-enable
+    /// Tab Bar toggle so the iPad chrome shortcut doesn't silently re-enable
     /// the surface under a new name.
     private func migrateAddressBarSettingIfNeeded() {
-        guard keyValueStore.object(forKey: .showAIChatNavigationBarKey) == nil,
+        guard keyValueStore.object(forKey: .showAIChatTabBarKey) == nil,
               let legacyAddressBarValue = keyValueStore.object(forKey: .showAIChatAddressBarKey) as? Bool,
               legacyAddressBarValue == false else {
             return
         }
-        keyValueStore.set(false, forKey: .showAIChatNavigationBarKey)
+        keyValueStore.set(false, forKey: .showAIChatTabBarKey)
     }
 
     // MARK: - Public
@@ -136,8 +136,8 @@ final class AIChatSettings: AIChatSettingsProvider {
             && isAIChatEnabled
     }
 
-    var isAIChatNavigationBarUserSettingsEnabled: Bool {
-        keyValueStore.bool(.showAIChatNavigationBarKey, defaultValue: .showAIChatNavigationBarDefaultValue)
+    var isAIChatTabBarUserSettingsEnabled: Bool {
+        keyValueStore.bool(.showAIChatTabBarKey, defaultValue: .showAIChatTabBarDefaultValue)
             && isAIChatEnabled
     }
 
@@ -255,8 +255,8 @@ final class AIChatSettings: AIChatSettingsProvider {
         }
     }
 
-    func enableAIChatNavigationBarUserSettings(enable: Bool) {
-        keyValueStore.set(enable, forKey: .showAIChatNavigationBarKey)
+    func enableAIChatTabBarUserSettings(enable: Bool) {
+        keyValueStore.set(enable, forKey: .showAIChatTabBarKey)
         triggerSettingsChangedNotification()
     }
 
@@ -329,7 +329,7 @@ private extension String {
     static let showAIChatAddressBarKey = "aichat.settings.showAIChatAddressBar"
     static let showAIChatVoiceSearchKey = "aichat.settings.showAIChatVoiceSearch"
     static let showAIChatTabSwitcherKey = "aichat.settings.showAIChatTabSwitcher"
-    static let showAIChatNavigationBarKey = "aichat.settings.showAIChatNavigationBar"
+    static let showAIChatTabBarKey = "aichat.settings.showAIChatTabBar"
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
     static let showChatSuggestionsKey = "aichat.settings.showChatSuggestions"
     static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
@@ -343,7 +343,7 @@ enum LegacyAiChatUserDefaultsKeys {
     static let showAIChatAddressBarKey: String = .showAIChatAddressBarKey
     static let showAIChatVoiceSearchKey: String = .showAIChatVoiceSearchKey
     static let showAIChatTabSwitcherKey: String = .showAIChatTabSwitcherKey
-    static let showAIChatNavigationBarKey: String = .showAIChatNavigationBarKey
+    static let showAIChatTabBarKey: String = .showAIChatTabBarKey
     static let showAIChatExperimentalSearchInputKey: String = .showAIChatExperimentalSearchInputKey
     static let defaultOmnibarModeKey: String = .defaultOmnibarModeKey
 
@@ -358,7 +358,7 @@ private extension Bool {
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
-    static let showAIChatNavigationBarDefaultValue = true
+    static let showAIChatTabBarDefaultValue = true
     static let showAIChatExperimentalSearchInputDefaultValue = false
     static let showChatSuggestionsDefaultValue = true
 

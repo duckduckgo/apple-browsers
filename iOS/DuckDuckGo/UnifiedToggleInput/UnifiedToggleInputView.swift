@@ -36,6 +36,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -250,6 +251,25 @@ final class UnifiedToggleInputView: UIView {
     var isReasoningButtonHidden: Bool {
         get { toolsToolbar.isReasoningButtonHidden }
         set { toolsToolbar.isReasoningButtonHidden = newValue }
+    }
+
+    var isToolbarReturnKeyHidden: Bool {
+        get { toolsToolbar.isReturnKeyHidden }
+        set { toolsToolbar.isReturnKeyHidden = newValue }
+    }
+
+    /// Caps the text field so the whole card fits within `available` height (the gap above the
+    /// keyboard in landscape); nil lifts the cap. Chrome is constant, so the field's ceiling is
+    /// the budget minus chrome, and it scrolls beyond that.
+    func setAvailableExpandedHeight(_ available: CGFloat?) {
+        guard let available else {
+            textEntryView.externalMaxHeightCap = nil
+            return
+        }
+        layoutIfNeeded()
+        guard bounds.height > 0 else { return }
+        let chrome = bounds.height - textEntryView.bounds.height
+        textEntryView.externalMaxHeightCap = available - chrome
     }
 
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
@@ -1277,6 +1297,10 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onSelectedToolClearTapped = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputViewDidClearSelectedTool(self)
+        }
+        toolsToolbar.onReturnKeyTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidTapReturnKey(self)
         }
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)

@@ -1682,7 +1682,7 @@
 "duckai.settings.enable.browsing-menu-toggle" = "Browser Menu";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Tabs Screen";
+"duckai.settings.enable.tab-switcher-toggle" = "Tab Manager Screen";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Voice Search";

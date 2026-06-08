@@ -28,7 +28,7 @@ struct UnifiedSuggestionsView: View {
             if showsHatch, let header {
                 header
                     .padding(.horizontal, Metrics.contentHorizontalMargin)
-                    .padding(.top, Metrics.hatchTopInset)
+                    .padding(.top, hatchTopInset)
                     .padding(.bottom, Metrics.hatchBottomInset)
                     .background(
                         GeometryReader { proxy in
@@ -54,6 +54,12 @@ struct UnifiedSuggestionsView: View {
         case .favorites, .logo: return true
         case .list(let kind): return kind == .recents
         }
+    }
+
+    /// Top bar: the hatch sits 6pt below the input's bottom margin (Figma). Bottom bar: it keeps the
+    /// larger inset that lines it up with the NTP escape hatch.
+    private var hatchTopInset: CGFloat {
+        isAddressBarAtBottom ? Metrics.hatchTopInsetBottomBar : Metrics.hatchTopInsetTopBar
     }
 
     private var contentArea: some View {
@@ -102,8 +108,9 @@ struct UnifiedSuggestionsView: View {
         /// Matches the NTP's `sectionsViewHorizontalPadding` (regularPadding) so the hatch and the
         /// suggestion list share the favorites grid's side margins.
         static let contentHorizontalMargin: CGFloat = 24
-        /// Matches the NTP's hatch top inset so the chrome hatch lines up with the NTP hatch.
-        static let hatchTopInset: CGFloat = 16
+        /// Top bar: 6pt below the input (Figma). Bottom bar: lines the hatch up with the NTP hatch.
+        static let hatchTopInsetTopBar: CGFloat = 6
+        static let hatchTopInsetBottomBar: CGFloat = 16
         static let hatchBottomInset: CGFloat = 16
     }
 }

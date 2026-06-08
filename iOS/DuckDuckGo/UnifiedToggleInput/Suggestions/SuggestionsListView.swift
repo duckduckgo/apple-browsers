@@ -16,6 +16,11 @@ struct SuggestionsListView: View {
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
 
+    private enum Metrics {
+        /// Per Figma: the list table sits 6pt below the top-positioned input's bottom margin.
+        static let listTopInset: CGFloat = 6
+    }
+
     var body: some View {
         List {
             ForEach(viewModel.sections) { section in
@@ -28,9 +33,9 @@ struct SuggestionsListView: View {
         }
         .listStyle(.insetGrouped)
         .modifier(CompactSectionSpacingModifier())
-        // Trim insetGrouped's variable top margin so the first row sits tight below the input
-        // (the escape hatch, when present, is spaced separately above the list by the parent).
-        .modifier(TightTopContentMarginModifier())
+        // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
+        // input on the top bar; 0 on the bottom bar, where the input sits below the list).
+        .modifier(ListTopContentMarginModifier(top: isAddressBarAtBottom ? 0 : Metrics.listTopInset))
         .modifier(HideScrollContentBackgroundModifier())
         .background(Color(designSystemColor: .background))
         .scrollDismissesKeyboardIfAvailable()
@@ -64,16 +69,15 @@ struct SuggestionsListView: View {
     }
 }
 
-/// insetGrouped reserves a large top inset above the first section; trim it so the first row sits
-/// just below the input (matching legacy Search) rather than ~40pt down.
-private struct TightTopContentMarginModifier: ViewModifier {
+/// insetGrouped reserves a large variable top inset above the first section; replace it with the
+/// design's `top` inset, and pin the horizontal margin to the NTP's content margin (regularPadding,
+/// 24) so the rows align with the escape hatch and favorites grid in every orientation.
+private struct ListTopContentMarginModifier: ViewModifier {
+    let top: CGFloat
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
             content
-                .contentMargins(.top, 0, for: .scrollContent)
-                // Pin the cards to the NTP's content margin (regularPadding, 24) so they align with
-                // the escape hatch and the favorites grid in every orientation; insetGrouped otherwise
-                // widens its margins (readable width) in landscape, leaving the rows misaligned.
+                .contentMargins(.top, top, for: .scrollContent)
                 .contentMargins(.horizontal, 24, for: .scrollContent)
         } else {
             content

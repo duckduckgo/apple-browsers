@@ -672,9 +672,6 @@ private extension MainViewController {
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 let enabled = self.isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
                 coordinator.updateToggleEnabled(enabled)
-                // Swipe follows the actual toggle visibility — the kill-switch term drops out on
-                // non-AI tabs, so behavior there matches the raw user setting as before.
-                coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
             }
             .store(in: &unifiedToggleInputCancellables)
@@ -750,8 +747,6 @@ private extension MainViewController {
 
         updateUnifiedInputContentVisibility(for: coordinator)
         refreshAIChatTabChatHeaderSubscriptionState()
-        // `isToggleVisible` flipped with the AI-tab transition — re-gate swipe to match.
-        coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
         return true
     }
 
@@ -821,8 +816,6 @@ private extension MainViewController {
             coordinator.hide()
             coordinator.unbind()
         }
-        // Leaving an AI tab can re-reveal the toggle (kill-switch term drops on non-AI tabs) — re-gate swipe.
-        coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
     }
 
     func setUpAIChatTabChatHeader() {
@@ -923,7 +916,6 @@ extension MainViewController {
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             coordinator.dismissOmnibarKeyboard()
         }
-        contentVC.isSwipeEnabled = coordinator.isToggleVisible
 
         addChild(contentVC)
         contentVC.view.translatesAutoresizingMaskIntoConstraints = false
@@ -1161,7 +1153,6 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
-        coordinator.contentViewController.isSwipeEnabled = coordinator.isToggleVisible
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept
     }

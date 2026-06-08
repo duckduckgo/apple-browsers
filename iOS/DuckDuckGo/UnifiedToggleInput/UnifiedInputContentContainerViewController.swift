@@ -601,9 +601,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the
         // standalone NTP (the embedded controller has no owner to set this otherwise).
         controller.delegate = self
-        // The escape hatch is rendered by the unified view's chrome (see UnifiedSuggestionsView
-        // `.favorites`), not by the NTP — so it's consistent across every UTI state.
+        // The escape hatch and the empty-state Dax logo are UTI chrome (the unified view's hatch +
+        // DaxLogoManager), not the NTP's — suppress the NTP's own so we never get two Dax logos.
         controller.setEscapeHatch(nil)
+        controller.setLogoHidden(true)
         return controller
     }
 

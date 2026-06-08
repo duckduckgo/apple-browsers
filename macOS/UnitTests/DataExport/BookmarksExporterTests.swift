@@ -21,7 +21,7 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-class BookmarksExporterTests: XCTestCase {
+final class BookmarksExporterTests: XCTestCase {
 
     struct TestData {
         static let exampleUrl = URL(string: "https://example.com")!

@@ -23,7 +23,7 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-class CSVLoginExporterTests: XCTestCase {
+final class CSVLoginExporterTests: XCTestCase {
 
     func testWhenExportingLogins_ThenLoginsArePersistedToDisk() throws {
         let mockFileStore = FileStoreMock()

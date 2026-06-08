@@ -235,6 +235,23 @@ class BookmarksExporterTests: XCTestCase {
         ].joined())
     }
 
+    // #3 — Folder names are written into the exported HTML raw, while bookmark titles are escaped.
+    // A folder named with HTML metacharacters (e.g. "News & Politics", or one containing `<`/`>`)
+    // produces malformed HTML, so that folder's subtree is mis-parsed / lost on re-import.
+    func test_WhenFolderNameHasHTMLEntities_ThenTheExportedFolderNameIsEscaped() throws {
+        let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
+            BookmarkFolder(id: UUID().uuidString, title: TestData.titleWithUnescapedHTMLEntities)
+        ]))
+
+        try exporter.exportBookmarksTo(url: tmpFile)
+
+        let actual = try XCTUnwrap(try? String(contentsOf: tmpFile))
+        XCTAssertTrue(actual.contains("<DT><H3 FOLDED>\(TestData.titleWithEscapedHTMLEntities)</H3>"),
+                      "Folder name was not HTML-escaped on export; re-import will mis-parse the folder. Exported:\n\(actual)")
+        XCTAssertFalse(actual.contains("<DT><H3 FOLDED>\(TestData.titleWithUnescapedHTMLEntities)</H3>"),
+                       "Folder name was written with raw HTML metacharacters")
+    }
+
     private func assertExportedFileEquals(_ expected: String, _ file: StaticString = #file, _ line: UInt = #line) {
         let actual = try? String(contentsOf: tmpFile)
         XCTAssertEqual(expected, actual, file: file, line: line)

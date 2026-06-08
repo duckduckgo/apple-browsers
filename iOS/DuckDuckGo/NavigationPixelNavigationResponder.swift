@@ -23,6 +23,30 @@ import PixelKit
 import PrivacyDashboard
 import WebKit
 
+/// Navigation handle that can carry the start time and safe-string navigation type used to compute
+/// site-loading pixel duration. `WKNavigation` conforms in app code (storage via associated objects);
+/// tests use a lightweight class double — both to express the contract on the navigation handle and
+/// to avoid `WKNavigation()`, whose direct-init deinit crashes (see `WebViewNavigationHandling.swift`).
+protocol SiteLoadingNavigation: AnyObject {
+    var siteLoadingStartTime: Date? { get set }
+    var siteLoadingNavigationType: String? { get set }
+}
+
+extension WKNavigation: SiteLoadingNavigation {
+    private static var startTimeKey: UInt8 = 0
+    private static var navigationTypeKey: UInt8 = 0
+
+    var siteLoadingStartTime: Date? {
+        get { objc_getAssociatedObject(self, UnsafeRawPointer(&Self.startTimeKey)) as? Date }
+        set { objc_setAssociatedObject(self, UnsafeRawPointer(&Self.startTimeKey), newValue, .OBJC_ASSOCIATION_RETAIN) }
+    }
+
+    var siteLoadingNavigationType: String? {
+        get { objc_getAssociatedObject(self, UnsafeRawPointer(&Self.navigationTypeKey)) as? String }
+        set { objc_setAssociatedObject(self, UnsafeRawPointer(&Self.navigationTypeKey), newValue, .OBJC_ASSOCIATION_RETAIN) }
+    }
+}
+
 /// Measures the duration of main-frame navigations and fires `SiteLoadingPixel.siteLoadingSuccess`
 /// or `.siteLoadingFailure` (sampled per `SiteLoadingPixel.samplePercentage`) when each navigation
 /// completes. 
@@ -34,25 +58,28 @@ import WebKit
 final class NavigationPixelNavigationResponder {
 
     private var pendingNavigationType: String?
+    private let samplePercentage: Int
     private let isOnErrorPage: () -> Bool
     private let isLoadingErrorPage: (WKNavigationAction) -> Bool
 
     /// - Parameters:
+    ///   - samplePercentage: Pixel sampling rate (1–100). Defaults to `SiteLoadingPixel.samplePercentage`
     ///   - isOnErrorPage: Closure returning whether the currently-displayed page is a special error page.
     ///   - isLoadingErrorPage: Closure returning whether the supplied `WKNavigationAction` is loading the
     ///     special error page itself. Must be navigation-specific (URL-matched), not a stateful flag —
     ///     otherwise an unrelated main-frame navigation initiated during the brief error-page-load window
     ///     would also be dropped.
-    init(isOnErrorPage: @escaping () -> Bool,
+    init(samplePercentage: Int = SiteLoadingPixel.samplePercentage,
+         isOnErrorPage: @escaping () -> Bool,
          isLoadingErrorPage: @escaping (WKNavigationAction) -> Bool) {
+        self.samplePercentage = samplePercentage
         self.isOnErrorPage = isOnErrorPage
         self.isLoadingErrorPage = isLoadingErrorPage
     }
 
-    /// Forwarded from `webView(_:decidePolicyFor:decisionHandler:)`. Captures the safe-string
-    /// `navigation_type` so the next `didStart` can attach it to the produced `WKNavigation`. Mirrors
-    /// macOS's `shouldFireNavigationPixel` gating (JS redirects, alternate-HTML loads, error-page reloads)
-    /// and additionally short-circuits the iOS-only "loading the special error page itself" case.
+    /// Records the safe-string navigation type for this main-frame action when its navigation should be
+    /// measured. The captured type is consumed by the next `didStart` call; navigations that fail the
+    /// gating clear any pending value instead.
     func willStart(_ navigationAction: WKNavigationAction) {
         guard navigationAction.isTargetingMainFrame() else { return }
 
@@ -74,42 +101,42 @@ final class NavigationPixelNavigationResponder {
         pendingNavigationType = SiteLoadingPixel.safeNavigationType(for: navigationType)
     }
 
-    /// Forwarded from `webView(_:didStartProvisionalNavigation:)`. Stamps start time + navigation type onto
-    /// the navigation handle so success/failure can compute duration later.
-    func didStart(_ navigation: WKNavigation?) {
+    /// Stamps the start timestamp + pending navigation type onto the supplied navigation. The
+    /// stamped state is consumed by `didFinish` / `didFail` to compute duration. No-op when no
+    /// `willStart` recorded a pending type.
+    func didStart(_ navigation: SiteLoadingNavigation?) {
         guard let navigation, let type = pendingNavigationType else { return }
         navigation.siteLoadingStartTime = Date()
         navigation.siteLoadingNavigationType = type
         pendingNavigationType = nil
     }
 
-    /// Forwarded from `webView(_:didFinish:)`. Fires `.siteLoadingSuccess` for navigations that passed the `willStart` gate.
-    func didFinish(_ navigation: WKNavigation?) {
+    /// Fires `.siteLoadingSuccess` for navigations that `didStart` previously stamped.
+    func didFinish(_ navigation: SiteLoadingNavigation?) {
         guard let navigation,
               let startTime = navigation.siteLoadingStartTime,
               let navigationType = navigation.siteLoadingNavigationType else { return }
         let duration = Date().timeIntervalSince(startTime)
         PixelKit.fire(SiteLoadingPixel.siteLoadingSuccess(duration: duration,
                                                           navigationType: navigationType),
-                      frequency: .sample(percentage: SiteLoadingPixel.samplePercentage))
+                      frequency: .sample(percentage: samplePercentage))
         clearState(on: navigation)
     }
 
-    /// Forwarded from both `webView(_:didFail:withError:)` and
-    /// `webView(_:didFailProvisionalNavigation:withError:)`. Fires `.siteLoadingFailure` for navigations
-    /// that passed the `willStart` gate.
-    func didFail(_ navigation: WKNavigation?, error: Error) {
+    /// Fires `.siteLoadingFailure` for navigations that `didStart` previously stamped.
+    func didFail(_ navigation: SiteLoadingNavigation?, error: Error) {
         guard let navigation,
               let startTime = navigation.siteLoadingStartTime,
               let navigationType = navigation.siteLoadingNavigationType else { return }
         let duration = Date().timeIntervalSince(startTime)
         PixelKit.fire(SiteLoadingPixel.siteLoadingFailure(duration: duration,
-                                                          error: error, navigationType: navigationType),
-                      frequency: .sample(percentage: SiteLoadingPixel.samplePercentage))
+                                                          error: error,
+                                                          navigationType: navigationType),
+                      frequency: .sample(percentage: samplePercentage))
         clearState(on: navigation)
     }
 
-    private func clearState(on navigation: WKNavigation) {
+    private func clearState(on navigation: SiteLoadingNavigation) {
         navigation.siteLoadingStartTime = nil
         navigation.siteLoadingNavigationType = nil
     }

@@ -19,7 +19,6 @@
 import Foundation
 import Navigation
 import PixelKit
-import WebKit
 
 /// Measures site loading success rates and rendering performance from navigation outcomes.
 /// Complements the per-attempt navigation pixel with outcome-specific data.
@@ -202,20 +201,3 @@ public enum SiteLoadingPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     }
 }
 
-/// Per-navigation storage used to compute the duration and `navigation_type` parameters at success/failure
-/// time. macOS uses an equivalent extension on BSK Navigation library's `Navigation` type; iOS attaches the
-/// state directly to `WKNavigation` since it talks to `WKNavigationDelegate` directly.
-public extension WKNavigation {
-    private static var startTimeKey: UInt8 = 0
-    private static var navigationTypeKey: UInt8 = 0
-
-    var siteLoadingStartTime: Date? {
-        get { objc_getAssociatedObject(self, UnsafeRawPointer(&Self.startTimeKey)) as? Date }
-        set { objc_setAssociatedObject(self, UnsafeRawPointer(&Self.startTimeKey), newValue, .OBJC_ASSOCIATION_RETAIN) }
-    }
-
-    var siteLoadingNavigationType: String? {
-        get { objc_getAssociatedObject(self, UnsafeRawPointer(&Self.navigationTypeKey)) as? String }
-        set { objc_setAssociatedObject(self, UnsafeRawPointer(&Self.navigationTypeKey), newValue, .OBJC_ASSOCIATION_RETAIN) }
-    }
-}

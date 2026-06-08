@@ -24,12 +24,22 @@ import WebKit
 import XCTest
 @testable import DuckDuckGo
 
+/// Class double for `SiteLoadingNavigation`. Avoids `WKNavigation()`, whose direct-init deinit crashes.
+private final class MockNavigation: SiteLoadingNavigation {
+    var siteLoadingStartTime: Date?
+    var siteLoadingNavigationType: String?
+}
+
 final class NavigationPixelNavigationResponderTests: XCTestCase {
 
     private var firedPixels: [(name: String, params: [String: String])] = []
     private var isOnErrorPage = false
     private var isLoadingErrorPage = false
     private var sut: NavigationPixelNavigationResponder!
+
+    /// Use 100% sampling in tests to make pixel firing deterministic.
+    private let testSamplePercentage = 100
+    private var expectedSampleSuffix: String { "_sample\(testSamplePercentage)" }
 
     override func setUp() {
         super.setUp()
@@ -49,6 +59,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
         }
 
         sut = NavigationPixelNavigationResponder(
+            samplePercentage: testSamplePercentage,
             isOnErrorPage: { [weak self] in self?.isOnErrorPage ?? false },
             isLoadingErrorPage: { [weak self] _ in self?.isLoadingErrorPage ?? false }
         )
@@ -83,19 +94,19 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
     // MARK: - Happy paths
 
     func test_willStart_didStart_didFinish_firesSiteLoadingSuccess() {
-        let nav = WKNavigation()
+        let nav = MockNavigation()
 
         sut.willStart(mainFrameAction(.linkActivated))
         sut.didStart(nav)
         sut.didFinish(nav)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, "m_site_loading_success")
+        XCTAssertEqual(firedPixels.first?.name, "m_site_loading_success" + expectedSampleSuffix)
         XCTAssertEqual(firedPixels.first?.params["navigation_type"], "linkActivated")
     }
 
     func test_willStart_didStart_didFail_firesSiteLoadingFailure() {
-        let nav = WKNavigation()
+        let nav = MockNavigation()
         let error = NSError(domain: "TestDomain", code: 42, userInfo: nil)
 
         sut.willStart(mainFrameAction(.reload))
@@ -103,16 +114,17 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
         sut.didFail(nav, error: error)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, "m_site_loading_failure")
+        XCTAssertEqual(firedPixels.first?.name, "m_site_loading_failure" + expectedSampleSuffix)
         XCTAssertEqual(firedPixels.first?.params["navigation_type"], "reload")
-        XCTAssertEqual(firedPixels.first?.params["errorCode"], "42")
-        XCTAssertEqual(firedPixels.first?.params["errorDomain"], "TestDomain")
+        // PixelKit emits the error as the short query-string keys defined in `PixelKit.Parameters`.
+        XCTAssertEqual(firedPixels.first?.params[PixelKit.Parameters.errorCode], "42")
+        XCTAssertEqual(firedPixels.first?.params[PixelKit.Parameters.errorDomain], "TestDomain")
     }
 
     // MARK: - Sub-frame is ignored
 
     func test_subFrameWillStart_isIgnored() {
-        let nav = WKNavigation()
+        let nav = MockNavigation()
 
         sut.willStart(subFrameAction(.linkActivated))
         sut.didStart(nav)
@@ -125,7 +137,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
 
     func test_willStart_whenLoadingErrorPage_doesNotFire() {
         isLoadingErrorPage = true
-        let nav = WKNavigation()
+        let nav = MockNavigation()
 
         sut.willStart(mainFrameAction(.other))
         sut.didStart(nav)
@@ -138,7 +150,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
         // Mirrors macOS's `case .other where targetFrame?.url == .error` — error-page reload buttons surface
         // as `.other`, not `.reload`, so the gate keys off the page state instead of the type alone.
         isOnErrorPage = true
-        let nav = WKNavigation()
+        let nav = MockNavigation()
 
         sut.willStart(mainFrameAction(.other))
         sut.didStart(nav)
@@ -150,21 +162,21 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
     func test_willStart_whenOnErrorPage_userInitiatedNavigationStillFires() {
         // `.linkActivated` is an explicit user action even from an error page — should fire.
         isOnErrorPage = true
-        let nav = WKNavigation()
+        let nav = MockNavigation()
 
         sut.willStart(mainFrameAction(.linkActivated))
         sut.didStart(nav)
         sut.didFinish(nav)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, "m_site_loading_success")
+        XCTAssertEqual(firedPixels.first?.name, "m_site_loading_success" + expectedSampleSuffix)
         XCTAssertEqual(firedPixels.first?.params["navigation_type"], "linkActivated")
     }
 
     // MARK: - Missing-state behavior
 
     func test_didStart_withoutPriorWillStart_doesNotFire() {
-        let nav = WKNavigation()
+        let nav = MockNavigation()
 
         sut.didStart(nav)
         sut.didFinish(nav)
@@ -173,7 +185,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
     }
 
     func test_didFinish_clearsState_secondDidFinishDoesNotRefire() {
-        let nav = WKNavigation()
+        let nav = MockNavigation()
 
         sut.willStart(mainFrameAction(.linkActivated))
         sut.didStart(nav)
@@ -184,7 +196,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
     }
 
     func test_didFail_clearsState_secondCallbackDoesNotRefire() {
-        let nav = WKNavigation()
+        let nav = MockNavigation()
         let error = NSError(domain: "TestDomain", code: 1, userInfo: nil)
 
         sut.willStart(mainFrameAction(.linkActivated))
@@ -193,6 +205,6 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
         sut.didFinish(nav) // both didFail and didFinish should never produce two pixels
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, "m_site_loading_failure")
+        XCTAssertEqual(firedPixels.first?.name, "m_site_loading_failure" + expectedSampleSuffix)
     }
 }

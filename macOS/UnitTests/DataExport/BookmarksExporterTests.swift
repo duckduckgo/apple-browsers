@@ -252,6 +252,27 @@ class BookmarksExporterTests: XCTestCase {
                        "Folder name was written with raw HTML metacharacters")
     }
 
+    // Cross-importer round-trip: parse the exported HTML with Foundation's generic tidy-HTML parser
+    // (the same loose-HTML reading other browsers use to import the Netscape bookmark format) and
+    // confirm a folder name containing HTML metacharacters decodes back to the original — proving the
+    // escaping is portable, not specific to DuckDuckGo's own importer.
+    func test_ExportedFolderNameIsRecoverableByAGenericHTMLParser() throws {
+        let folderName = "News & Politics <2024> \"q\""
+        let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
+            BookmarkFolder(id: UUID().uuidString, title: folderName, children: [
+                Bookmark(id: UUID().uuidString, url: TestData.exampleUrl.absoluteString, title: TestData.exampleTitle, isFavorite: false)
+            ])
+        ]))
+
+        try exporter.exportBookmarksTo(url: tmpFile)
+
+        let document = try XMLDocument(contentsOf: tmpFile, options: [.documentTidyHTML])
+        let folderNames = try document.nodes(forXPath: "//h3")
+            .compactMap { $0.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines) }
+        XCTAssertTrue(folderNames.contains(folderName),
+                      "A generic HTML parser did not recover the folder name. Got: \(folderNames)")
+    }
+
     private func assertExportedFileEquals(_ expected: String, _ file: StaticString = #file, _ line: UInt = #line) {
         let actual = try? String(contentsOf: tmpFile)
         XCTAssertEqual(expected, actual, file: file, line: line)

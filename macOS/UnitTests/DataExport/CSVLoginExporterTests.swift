@@ -94,4 +94,80 @@ class CSVLoginExporterTests: XCTestCase {
         XCTAssertThrowsError(try exporter.exportVaultLogins(to: URL(fileURLWithPath: "mock-url")),
                              "Export must throw when the file write fails")
     }
+
+    // Cross-importer round-trip: parse the exported file with a strict RFC 4180 reader (quote-doubling
+    // only, no DuckDuckGo-specific leniency) to confirm a third-party importer — Chrome, Bitwarden,
+    // 1Password — recovers every field intact, including a field that contains both a quote and a comma.
+    func testExportedCSVIsRecoverableByAStrictRFC4180Importer() throws {
+        let mockFileStore = FileStoreMock()
+        let vault = try MockSecureVaultFactory.makeVault(reporter: nil)
+
+        var account = SecureVaultModels.WebsiteAccount(id: "1",
+                                                       title: "My \"work\" account",
+                                                       username: "user@example.com",
+                                                       domain: "example.com")
+        account.notes = "needs a \"key\", urgently" // both a quote and the delimiter in one field
+        let credential = SecureVaultModels.WebsiteCredentials(account: account,
+                                                              password: "p4\"ss,w0rd".data(using: .utf8)!)
+        vault.storedAccounts = [account]
+        vault.storedCredentials = [1: credential]
+
+        let exporter = CSVLoginExporter(secureVault: vault, fileStore: mockFileStore)
+        let mockURL = URL(fileURLWithPath: "mock-url")
+        try exporter.exportVaultLogins(to: mockURL)
+
+        let data = try XCTUnwrap(mockFileStore.loadData(at: mockURL))
+        let csv = try XCTUnwrap(String(data: data, encoding: .utf8))
+
+        let rows = Self.parseStrictRFC4180(csv)
+        XCTAssertEqual(rows.first, ["title", "url", "username", "password", "notes"])
+        XCTAssertEqual(rows.count, 2, "Expected header + one row, got: \(rows)")
+        XCTAssertEqual(rows.last, ["My \"work\" account",
+                                   "example.com",
+                                   "user@example.com",
+                                   "p4\"ss,w0rd",
+                                   "needs a \"key\", urgently"],
+                       "A strict RFC 4180 importer did not recover the fields intact")
+    }
+
+    /// A strict RFC 4180 CSV reader: fields may be wrapped in quotes, an embedded quote is a doubled
+    /// quote, and commas/newlines inside quotes are literal. No backslash handling — this mirrors how
+    /// mainstream importers parse, deliberately stricter than DuckDuckGo's own CSVParser.
+    private static func parseStrictRFC4180(_ text: String) -> [[String]] {
+        var rows: [[String]] = []
+        var row: [String] = []
+        var field = ""
+        var inQuotes = false
+        let chars = Array(text)
+        var i = 0
+        while i < chars.count {
+            let c = chars[i]
+            if inQuotes {
+                if c == "\"" {
+                    if i + 1 < chars.count, chars[i + 1] == "\"" {
+                        field.append("\"")
+                        i += 1
+                    } else {
+                        inQuotes = false
+                    }
+                } else {
+                    field.append(c)
+                }
+            } else {
+                switch c {
+                case "\"": inQuotes = true
+                case ",": row.append(field); field = ""
+                case "\n": row.append(field); field = ""; rows.append(row); row = []
+                case "\r": break
+                default: field.append(c)
+                }
+            }
+            i += 1
+        }
+        row.append(field)
+        if !(row.count == 1 && row[0].isEmpty) {
+            rows.append(row)
+        }
+        return rows
+    }
 }

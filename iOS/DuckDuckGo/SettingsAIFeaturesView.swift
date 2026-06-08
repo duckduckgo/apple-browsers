@@ -67,14 +67,16 @@ struct SettingsAIFeaturesView: View {
                                  image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
                                  accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding))
 
-                SettingsCellView(label: UserText.settingsDuckAISettings,
-                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.settingsAiChat),
-                                 action: { viewModel.openDuckAIChat() },
-                                 accessory: .custom(AnyView(
-                                    Image(uiImage: DesignSystemImages.Glyphs.Size24.openInSmall)
-                                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
-                                 )),
-                                 isButton: true)
+                if viewModel.isAiChatEnabledBinding.wrappedValue {
+                    SettingsCellView(label: UserText.settingsDuckAISettings,
+                                     image: Image(uiImage: DesignSystemImages.Glyphs.Size24.settingsAiChat),
+                                     action: { viewModel.openDuckAIChat() },
+                                     accessory: .custom(AnyView(
+                                        Image(uiImage: DesignSystemImages.Glyphs.Size24.openInSmall)
+                                            .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                                     )),
+                                     isButton: true)
+                }
             }
 
             if viewModel.isAiChatEnabledBinding.wrappedValue {

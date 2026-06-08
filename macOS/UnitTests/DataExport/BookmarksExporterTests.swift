@@ -254,10 +254,11 @@ final class BookmarksExporterTests: XCTestCase {
 
     // Cross-importer round-trip: parse the exported HTML with Foundation's generic tidy-HTML parser
     // (the same loose-HTML reading other browsers use to import the Netscape bookmark format) and
-    // confirm a folder name containing HTML metacharacters decodes back to the original — proving the
-    // escaping is portable, not specific to DuckDuckGo's own importer.
+    // confirm the folder name survives. The `<feed>` is the data-loss case: `<` followed by a letter
+    // is read as a tag and silently dropped unless escaped, so without the fix the name comes back as
+    // "News & Politics " — proving the escaping prevents real, user-visible data loss on import.
     func test_ExportedFolderNameIsRecoverableByAGenericHTMLParser() throws {
-        let folderName = "News & Politics <2024> \"q\""
+        let folderName = "News & Politics <feed>"
         let exporter = BookmarksExporter(list: BookmarkList(entities: [], topLevelEntities: [
             BookmarkFolder(id: UUID().uuidString, title: folderName, children: [
                 Bookmark(id: UUID().uuidString, url: TestData.exampleUrl.absoluteString, title: TestData.exampleTitle, isFavorite: false)

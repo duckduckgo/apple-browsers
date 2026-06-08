@@ -22,6 +22,9 @@ jobs:
   setup-user-modes:
     name: Resolve user modes
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
     outputs:
       user-modes: ${{ steps.define.outputs.user-modes }}
     steps:

@@ -23,14 +23,14 @@ import PixelKit
 import PrivacyDashboard
 import WebKit
 
-/// iOS counterpart of macOS's `NavigationPixelNavigationResponder`. The host `WKNavigationDelegate`
-/// (e.g. `TabViewController`) just forwards its callbacks via `willStart`, `didStart`, `didFinish`, `didFail`;
-/// this class owns the pending-navigation-type, the per-`WKNavigation` start time, the gating logic
-/// (`SiteLoadingPixel.shouldFireSiteLoadingPixel`), and the firing of
-/// `SiteLoadingPixel.siteLoadingSuccess` / `.siteLoadingFailure`.
+/// Measures the duration of main-frame navigations and fires `SiteLoadingPixel.siteLoadingSuccess`
+/// or `.siteLoadingFailure` (sampled per `SiteLoadingPixel.samplePercentage`) when each navigation
+/// completes. 
 ///
-/// Error-page state is provided via closures so this class stays decoupled from
-/// `SpecialErrorPageNavigationHandler`.
+/// The lifecycle is exposed as four entry points — `willStart`, `didStart`, `didFinish`, `didFail` —
+/// to be invoked from the corresponding `WKNavigationDelegate` callbacks by the host. Error-page
+/// state ("currently on the error page", "this action is loading the error page") is supplied via
+/// injected closures, so the responder doesn't depend on a specific error-page implementation.
 final class NavigationPixelNavigationResponder {
 
     private var pendingNavigationType: String?

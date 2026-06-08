@@ -216,7 +216,13 @@ extension Pixel {
         case bookmarksButtonPressed
         case tabBarBookmarksLongPressed
         case tabBarTabSwitcherOpened
-        
+
+        case tabBarTabSelected
+        case tabBarTabClosed
+        case tabBarNewTab
+        case tabBarOverflowDaily
+        case tabBarOpenTabCountDaily
+
         case homeScreenShown
         case homeScreenEditFavorite
         case homeScreenDeleteFavorite
@@ -271,6 +277,7 @@ extension Pixel {
         case onboardingDuckAIExperimentFinalDialogShownUnique
         case onboardingChatPathTryVisitSiteUnique
         case onboardingChatPathTrackersBlockedUnique
+        case onboardingSyncAutoRestoreUserFromDuckAiFlow
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -923,6 +930,7 @@ extension Pixel {
 
         case debugTabSwitcherDidChangeInvalidState
         case debugTabsModelCrossModeMismatch
+        case debugTabsBarCellIndexOutOfRange
 
         case debugBookmarksInitialStructureQueryFailed
         case debugBookmarksStructureLost
@@ -1343,6 +1351,16 @@ extension Pixel {
         case subscriptionWinBackOfferSubscriptionSettingsShown
         case subscriptionWinBackOfferSubscriptionSettingsCTAClicked
 
+        // Subscription Funnel Entry Points (App Menu, App Settings)
+        case subscriptionEntryAppMenuImpression
+        case subscriptionEntryAppMenuSubscriptionClick
+        case subscriptionEntrySettingsImpression
+        case subscriptionEntrySettingsSubscriptionClick
+
+        // VPN Access-Revoked Alert (subscription expired)
+        case vpnAccessRevokedAlertShown
+        case vpnAccessRevokedAlertSubscribeButtonClicked
+
         // Free Trial Journey
         case privacyProFreeTrialStart
         case privacyProFreeTrialVPNActivation
@@ -1540,7 +1558,8 @@ extension Pixel {
         case webViewErrorPageShown
 
         // MARK: External Scheme Navigation
-        case webViewExternalSchemeNavigationXSafariHTTPSLoopDetected
+        case webViewExternalSchemeNavigationSafariRedirectLoadURLRequested
+        case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown
 
         // MARK: Browsing
         case stopPageLoad
@@ -1753,6 +1772,7 @@ extension Pixel {
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
         case unifiedToggleInputPromptSubmitted
+        case unifiedToggleInputDuckAIDirectNavigation
 
         // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
         case autocompleteDuckAIClickWebsite
@@ -2149,6 +2169,11 @@ extension Pixel.Event {
         case .bookmarksButtonPressed: return "mt_bm"
         case .tabBarBookmarksLongPressed: return "mt_bl"
         case .tabBarTabSwitcherOpened: return "m_tab_manager_opened"
+        case .tabBarTabSelected: return "m_tab_bar_tab_selected"
+        case .tabBarTabClosed: return "m_tab_bar_tab_closed"
+        case .tabBarNewTab: return "m_tab_bar_new_tab"
+        case .tabBarOverflowDaily: return "m_tab_bar_overflow_daily"
+        case .tabBarOpenTabCountDaily: return "m_tab_bar_open_tab_count_daily"
 
         case .bookmarkLaunchList: return "m_bookmark_launch_list"
         case .bookmarkLaunchScored: return "m_bookmark_launch_scored"
@@ -2211,6 +2236,7 @@ extension Pixel.Event {
         case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
         case .onboardingChatPathTryVisitSiteUnique: return "m_onboarding_chat-path_try-visit-site_unique"
         case .onboardingChatPathTrackersBlockedUnique: return "m_onboarding_chat-path_trackers-blocked_unique"
+        case .onboardingSyncAutoRestoreUserFromDuckAiFlow: return "m_onboarding_duck-ai_sync-auto-restore-user"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -2737,6 +2763,7 @@ extension Pixel.Event {
 
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
         case .debugTabsModelCrossModeMismatch: return "m_debug_tabs-model_cross-mode-mismatch"
+        case .debugTabsBarCellIndexOutOfRange: return "debug_tabs-bar_cell-index-out-of-range"
 
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             
@@ -3169,6 +3196,16 @@ extension Pixel.Event {
         case .subscriptionWinBackOfferSubscriptionSettingsShown: return "m_privacy-pro_winback_subscription_settings_shown"
         case .subscriptionWinBackOfferSubscriptionSettingsCTAClicked: return "m_privacy-pro_winback_subscription_settings_clicked"
 
+        // Subscription Funnel Entry Points (App Menu, App Settings)
+        case .subscriptionEntryAppMenuImpression: return "m_subscription_appmenu_impression"
+        case .subscriptionEntryAppMenuSubscriptionClick: return "m_subscription_appmenu_subscription_click"
+        case .subscriptionEntrySettingsImpression: return "m_subscription_settings_impression"
+        case .subscriptionEntrySettingsSubscriptionClick: return "m_subscription_settings_subscription_click"
+
+        // VPN Access-Revoked Alert
+        case .vpnAccessRevokedAlertShown: return "m_vpn_access_revoked_alert_shown"
+        case .vpnAccessRevokedAlertSubscribeButtonClicked: return "m_vpn_access_revoked_alert_subscribe_button_clicked"
+
         // Free Trial Journey
         case .privacyProFreeTrialStart: return "m_privacy-pro_freetrial_start"
         case .privacyProFreeTrialVPNActivation: return "m_privacy-pro_freetrial_vpn_activation"
@@ -3358,7 +3395,8 @@ extension Pixel.Event {
         case .webViewErrorPageShown: return "m_errorpageshown"
 
         // MARK: - External Scheme Navigation
-        case .webViewExternalSchemeNavigationXSafariHTTPSLoopDetected: return "m_webview_external-scheme-navigation_x-safari-https_loop-detected"
+        case .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested: return "m_webview_external-scheme-navigation_safari-redirect_load-url-requested"
+        case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown"
 
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"
@@ -3565,6 +3603,7 @@ extension Pixel.Event {
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
         case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
+        case .unifiedToggleInputDuckAIDirectNavigation: return "m_aichat_unified_input_duck_ai_direct_navigation"
 
         case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
         case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"

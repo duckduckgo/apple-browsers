@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Indtast et ikke-negativt antal dage. Installationsdatoen vil blive sat til det antal dage siden.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3034,6 +3037,51 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Vælg din browser";
 
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Jeg lægger mig lige ved hånden til alle dine daglige AI-chats og browsing.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Alle chats er anonymiserede";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Ingen konto nødvendig for at få adgang til alle AI-funktioner";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Bruger aldrig dine chats til at træne AI";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Få adgang til ChatGPT, Claude og mere, alt sammen ét sted";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Prøv Duck.ai!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Populære AI'er";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "AI-beskyttelse aktiveret!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Vil du gøre DuckDuckGo til din standardbrowser?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Start en privat AI-chat med Duck.ai, eller vælg Søg efter beskyttet browsing.\n\nDu kan bruge Duck.ai fra alle steder, hvor du ser chatikonet [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Vi tilbyder også et betalt abonnement med avancerede AI-modeller med højere chatgrænser fra GPT, Claude og Llama, en sikker VPN og meget mere.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Prøv nu en privat AI-chat!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Er du klar til at chatte privat med ChatGPT, Claude og andre AI'er gratis i en browser, der aktivt beskytter dig?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Start AI-chat";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Husk: Du kan bruge Duck.ai fra alle steder, hvor du ser chatikonet [[chat_icon]]";
+
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo har også et %1$@, som byder på %2$@ og %3$@.";
 
@@ -3421,26 +3469,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Åbn i en anden app?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Gå tilbage";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Vi prøvede at indlæse den privat, men den vises ikke.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Vil du åbne denne side i Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Åbn i Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Desværre kunne siden ikke indlæses.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Denne side indlæses kun i Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Åbn i Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Dette websted har et ugyldigt sikkerhedscertifikat og er muligvis ikke sikkert at besøge.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Bliv på DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Nogle webstedsfunktioner er måske ikke kompatible med denne browser.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Dette websted vil åbne Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo kan ikke indlæse denne side.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Seneste behandlingslogfiler";

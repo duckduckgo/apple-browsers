@@ -74,18 +74,22 @@ public protocol JobQueueManaging {
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
 
     func startImmediateScanOperationsIfPermitted(showWebView: Bool,
+                                                 isAuthenticatedUser: Bool,
                                                  jobDependencies: BrokerProfileJobDependencyProviding,
                                                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                  completion: (() -> Void)?)
     func startImmediateOptOutOperationsIfPermitted(showWebView: Bool,
+                                                   isAuthenticatedUser: Bool,
                                                    jobDependencies: BrokerProfileJobDependencyProviding,
                                                    errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                    completion: (() -> Void)?)
     func startScheduledAllOperationsIfPermitted(showWebView: Bool,
+                                                isAuthenticatedUser: Bool,
                                                 jobDependencies: BrokerProfileJobDependencyProviding,
                                                 errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                 completion: (() -> Void)?)
     func startScheduledScanOperationsIfPermitted(showWebView: Bool,
+                                                 isAuthenticatedUser: Bool,
                                                  jobDependencies: BrokerProfileJobDependencyProviding,
                                                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                  completion: (() -> Void)?)
@@ -136,6 +140,7 @@ public final class JobQueueManager: JobQueueManaging {
     }
 
     public func startImmediateScanOperationsIfPermitted(showWebView: Bool,
+                                                        isAuthenticatedUser: Bool,
                                                         jobDependencies: BrokerProfileJobDependencyProviding,
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
@@ -144,6 +149,7 @@ public final class JobQueueManager: JobQueueManaging {
         startJobsIfPermitted(forNewMode: newMode,
                              type: .manualScan,
                              showWebView: showWebView,
+                             isAuthenticatedUser: isAuthenticatedUser,
                              jobDependencies: jobDependencies) { [weak self] errors in
             self?.mismatchCalculator.calculateMismatches()
             errorHandler?(errors)
@@ -153,6 +159,7 @@ public final class JobQueueManager: JobQueueManaging {
     }
 
     public func startImmediateOptOutOperationsIfPermitted(showWebView: Bool,
+                                                          isAuthenticatedUser: Bool,
                                                           jobDependencies: BrokerProfileJobDependencyProviding,
                                                           errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                           completion: (() -> Void)?) {
@@ -161,28 +168,33 @@ public final class JobQueueManager: JobQueueManaging {
         addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
         addJobs(for: .optOut,
                 showWebView: showWebView,
+                isAuthenticatedUser: isAuthenticatedUser,
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completion)
     }
 
     public func startScheduledAllOperationsIfPermitted(showWebView: Bool,
+                                                       isAuthenticatedUser: Bool,
                                                        jobDependencies: BrokerProfileJobDependencyProviding,
                                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                        completion: (() -> Void)?) {
         startScheduledJobsIfPermitted(for: .all,
                                       showWebView: showWebView,
+                                      isAuthenticatedUser: isAuthenticatedUser,
                                       jobDependencies: jobDependencies,
                                       errorHandler: errorHandler,
                                       completion: completion)
     }
 
     public func startScheduledScanOperationsIfPermitted(showWebView: Bool,
+                                                        isAuthenticatedUser: Bool,
                                                         jobDependencies: BrokerProfileJobDependencyProviding,
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
         startScheduledJobsIfPermitted(for: .scheduledScan,
                                       showWebView: showWebView,
+                                      isAuthenticatedUser: isAuthenticatedUser,
                                       jobDependencies: jobDependencies,
                                       errorHandler: errorHandler,
                                       completion: completion)
@@ -229,6 +241,7 @@ private extension JobQueueManager {
 
     func startScheduledJobsIfPermitted(for jobType: JobType,
                                        showWebView: Bool,
+                                       isAuthenticatedUser: Bool,
                                        jobDependencies: BrokerProfileJobDependencyProviding,
                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                        completion: (() -> Void)?) {
@@ -236,6 +249,7 @@ private extension JobQueueManager {
         startJobsIfPermitted(forNewMode: newMode,
                              type: jobType,
                              showWebView: showWebView,
+                             isAuthenticatedUser: isAuthenticatedUser,
                              jobDependencies: jobDependencies,
                              errorHandler: errorHandler,
                              completion: completion)
@@ -244,6 +258,7 @@ private extension JobQueueManager {
     func startJobsIfPermitted(forNewMode newMode: BrokerProfileJobQueueMode,
                               type: JobType,
                               showWebView: Bool,
+                              isAuthenticatedUser: Bool,
                               jobDependencies: BrokerProfileJobDependencyProviding,
                               errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                               completion: (() -> Void)?) {
@@ -270,6 +285,7 @@ private extension JobQueueManager {
         addJobs(for: type,
                 priorityDate: mode.priorityDate,
                 showWebView: showWebView,
+                isAuthenticatedUser: isAuthenticatedUser,
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completion)
@@ -296,6 +312,7 @@ private extension JobQueueManager {
     func addJobs(for jobType: JobType,
                  priorityDate: Date? = nil,
                  showWebView: Bool,
+                 isAuthenticatedUser: Bool,
                  jobDependencies: BrokerProfileJobDependencyProviding,
                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                  completion: (() -> Void)?) {
@@ -308,6 +325,7 @@ private extension JobQueueManager {
                                               withPriorityDate: priorityDate,
                                               showWebView: showWebView,
                                               statusReportingDelegate: self,
+                                              isAuthenticatedUser: isAuthenticatedUser,
                                               jobDependencies: jobDependencies)
 
             for job in jobs {

@@ -246,11 +246,18 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214749215529034?focus=true
     case escapeHatchActions
 
+    /// Surfaces the escape-hatch "delete tab" action as a dedicated Fire button on the card and removes it from the menu.
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
+    case escapeHatchFireButton
+
     case crashReportOptInStatusResetting
 
     case screenTimeCleaning
 
     case minimalChromeInLandscape
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
+    case bottomBarViewportFixedElementsWorkaround
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
@@ -287,6 +294,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
+    case floatingUI
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215385432113040?focus=true
+    case removeChatHistory
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -765,6 +778,10 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
+    /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
+    case lightweightReloadOnDataClear
+    /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
+    case protectedDataLoadGate
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

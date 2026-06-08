@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Anna ei-negatiivinen päivien määrä. Asennuspäivämääräksi asetetaan niin monta päivää sitten.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3034,6 +3037,51 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Valitse selaimesi";
 
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Olen helposti käytettävissä kaikkia päivittäisiä tekoälykeskustelujasi ja selailuasi varten.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Kaikki keskustelut ovat anonymisoituja";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Tekoälyominaisuuksien käyttämiseen ei tarvita tiliä";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Keskustelujasi ei koskaan käytetä tekoälyn kouluttamiseen";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Käytä ChatGPT:tä, Claudea ja muita palveluita yhdessä paikassa";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Kokeile Duck.ai:ta!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Suosittuja tekoälypalveluja";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "Tekoälysuojaukset aktivoitu!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Asetetaanko DuckDuckGo oletusselaimeksi?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Aloita yksityinen tekoälykeskustelu Duck.ai:n kanssa tai siirry suojatun selaamisen hakuun.\n\nVoit käyttää Duck.ai:ta mistä tahansa, missä näet chat-kuvakkeen [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Tarjoamme myös maksullisen tilauksen, jossa on edistyneitä tekoälymalleja ja korkeampia chat-rajoituksia GPT:ltä, Claudelta ja Llamalta sekä suojatun VPN:n ja paljon muuta.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Kokeile nyt yksityistä tekoälykeskustelua!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Oletko valmis keskustelemaan yksityisesti ChatGPT:n, Clauden ja muiden tekoälyjen kanssa ilmaiseksi selaimessa, joka suojaa sinua aktiivisesti?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Aloita tekoälykeskustelu";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Muista: voit käyttää Duck.ai:ta mistä tahansa, missä näet keskustelukuvakkeen [[chat_icon]]";
+
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGosta on saatavilla myös %1$@, johon sisältyvät %2$@ ja %3$@.";
 
@@ -3421,26 +3469,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Avataanko toisessa sovelluksessa?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Edellinen";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Yritimme ladata sen yksityisesti, mutta se ei näy.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Haluatko avata tämän sivun Safarissa?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Avaa Safarissa";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Valitettavasti sivu ei latautunut.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Tämä sivu latautuu vain Safarissa";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Avaa Safarissa";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Tällä verkkosivustolla on virheellinen turvasertifikaatti, eikä se ehkä ole turvallinen.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Pysy DuckDuckGossa";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Jotkin verkkosivuston ominaisuudet eivät välttämättä ole yhteensopivia tämän selaimen kanssa.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Tämä sivusto haluaa avata Safarin.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo ei voi ladata tätä sivua.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Viimeaikaiset käsittelylokit";

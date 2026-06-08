@@ -451,7 +451,9 @@ final class MainCoordinator {
         // Reading the extension archive from Application Support while protected data is
         // unavailable (device locked / before first unlock) makes WKWebExtension fail with
         // WKWebExtensionErrorInvalidArchive (domain code 9). Stay pending and retry on unlock.
-        guard UIApplication.shared.isProtectedDataAvailable else {
+        // Failsafe-disableable via .webExtensionProtectedDataLoadGate (off → load immediately).
+        if featureFlagger.isFeatureOn(.webExtensionProtectedDataLoadGate),
+           !UIApplication.shared.isProtectedDataAvailable {
             isWebExtensionLoadPending = true
             deferUntilProtectedDataAvailable { [weak self] in
                 self?.loadWebExtensionsIfPending()
@@ -521,7 +523,9 @@ final class MainCoordinator {
         // Installing copies/loads the extension archive from Application Support; like the load
         // path this fails with WKWebExtensionErrorInvalidArchive (code 9) while protected data is
         // unavailable. Defer the sync until protected data becomes available.
-        guard UIApplication.shared.isProtectedDataAvailable else {
+        // Failsafe-disableable via .webExtensionProtectedDataLoadGate (off → install immediately).
+        if featureFlagger.isFeatureOn(.webExtensionProtectedDataLoadGate),
+           !UIApplication.shared.isProtectedDataAvailable {
             deferUntilProtectedDataAvailable { [weak self] in
                 Task { @MainActor in await self?.syncEmbeddedExtensions() }
             }
@@ -621,12 +625,12 @@ final class MainCoordinator {
 
     // MARK: - Public API
 
-    func segueToDuckDuckGoSubscription() {
-        controller.segueToDuckDuckGoSubscription()
+    func segueToDuckDuckGoSubscription(origin: String?) {
+        controller.segueToDuckDuckGoSubscription(origin: origin)
     }
 
-    func presentNetworkProtectionStatusSettingsModal() {
-        controller.presentNetworkProtectionStatusSettingsModal()
+    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
+        controller.presentNetworkProtectionStatusSettingsModal(origin: origin)
     }
 
     func presentDataBrokerProtectionDashboard() {
@@ -738,7 +742,7 @@ extension MainCoordinator: URLHandling {
         case .newEmail:
             controller.newEmailAddress()
         case .openVPN:
-            presentNetworkProtectionStatusSettingsModal()
+            presentNetworkProtectionStatusSettingsModal(origin: .widgetVPN)
         case .openPasswords:
             handleOpenPasswords(url: url)
         case .openAIChat:
@@ -807,7 +811,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.passwords {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
-            controller.presentNetworkProtectionStatusSettingsModal()
+            controller.presentNetworkProtectionStatusSettingsModal(origin: .shortcutVPN)
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {

@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import Core
+import DesignResourcesKitIcons
 
 protocol ImportPasswordsViaSyncViewModelDelegate: AnyObject {
     func importPasswordsViaSyncViewModelDidRequestOpenSync(_ viewModel: ImportPasswordsViaSyncViewModel)
@@ -82,8 +83,11 @@ final class ImportPasswordsViaSyncViewModel {
     private(set) var buttonWasPressed: Bool = false
 
     func maxButtonWidth() -> CGFloat {
-        let maxWidth = AutofillViews.maxWidthFor(title1: ButtonType.getBrowser.title, title2: ButtonType.sync.title, font: UIFont.boldAppFont(ofSize: 16))
-        return min(maxWidth, 300)
+        let labelFont = AppRebrand.isAppRebranded()
+            ? UIFont.systemFont(ofSize: 17, weight: .medium)
+            : UIFont.boldAppFont(ofSize: 16)
+        let maxWidth = AutofillViews.maxWidthFor(title1: ButtonType.getBrowser.title, title2: ButtonType.sync.title, font: labelFont)
+        return min(maxWidth.rounded(.up), 300)
     }
 
     func buttonPressed(_ type: ButtonType) {

@@ -92,7 +92,11 @@ final class SwipeContainerManager: NSObject {
 
     var fadeOutDelegate: FadeOutContainerViewControllerDelegate? {
         get { fadeOutContainerViewController.delegate }
-        set { fadeOutContainerViewController.delegate = newValue }
+        set {
+            fadeOutContainerViewController.delegate = newValue
+            guard usesFadeOutTransition, newValue != nil else { return }
+            fadeOutContainerViewController.updateTransitionProgress(fadeOutContainerViewController.transitionProgress)
+        }
     }
 
     // MARK: - Initialization

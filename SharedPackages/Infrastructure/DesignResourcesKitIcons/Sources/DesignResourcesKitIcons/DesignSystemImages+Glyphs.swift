@@ -464,6 +464,7 @@ public extension DesignSystemImages {
             public static var checkSolid: DesignSystemImage { .init(resource: .checkSolid24) }
             public static var checkSmall: DesignSystemImage { .init(resource: .checkSmall24) }
             public static var chat: DesignSystemImage { .init(resource: .chat24) }
+            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned24) }
             public static var chats: DesignSystemImage { .init(resource: .chats24) }
             public static var chevronCircleDown: DesignSystemImage { .init(resource: .chevronCircleDown24) }
             public static var chevronDown: DesignSystemImage { .init(resource: .chevronDown24) }
@@ -612,6 +613,7 @@ public extension DesignSystemImages {
             public static var viewList: DesignSystemImage { .init(resource: .viewList24) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid24) }
             public static var voice: DesignSystemImage { .init(resource: .voice24) }
+            public static var voicePinned: DesignSystemImage { .init(resource: .voicePinned24) }
             public static var window: DesignSystemImage { .init(resource: .window24) }
             public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs24) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn24) }

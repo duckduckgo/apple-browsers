@@ -2024,6 +2024,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Įveskite neneigiamą dienų skaičių. Bus nustatyta, kad įdiegta prieš nurodytą dienų skaičių.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3034,6 +3037,51 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Pasirinkite naršyklę";
 
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Įsikursiu lengvai pasiekiamoje vietoje, kad galėtum kasdien bendrauti su dirbtiniu intelektu ir naršyti.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Visi pokalbiai yra anonimizuoti";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Visas DI funkcijas galima pasiekti be paskyros";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Niekada nenaudoja jūsų pokalbių DI apmokymui";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Pasiekite sistemas „ChatGPT“, „Claude“ ir kitas – viskas vienoje vietoje";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Išbandykite „Duck.ai“!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Populiarūs dirbtiniai intelektai";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "DI apsauga įjungta!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Ar norite nustatyti „DuckDuckGo“ kaip savo numatytąją naršyklę?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Pradėkite privatų pokalbį su DI naudodami „Duck.ai“ arba perjunkite į apsaugotą naršymą su paieška.\n\n„Duck.ai“ galite naudoti visur, kur matote pokalbių piktogramą [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Taip pat siūlome mokamą prenumeratą su pažangiais DI modeliais su didesniais pokalbių limitais su GPT, „Claude“ ir „Llama“, saugiu VPN ir kitais privalumais.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Išbandykite privatų pokalbį su DI!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Ar esate pasiruošę nemokamai privačiai bendrauti su „ChatGPT“, „Claude“ ir kitais DI naršyklėje, kuri tave aktyviai saugo?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Pradėti pokalbį su DI";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Atminkite, kad „Duck.ai“ galite naudoti visur, kur matote pokalbių piktogramą [[chat_icon]]";
+
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "„DuckDuckGo“ taip pat turi %1$@, prieinamą su %2$@ ir %3$@.";
 
@@ -3421,26 +3469,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Atidaryti kitoje programoje?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Grįžti atgal";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Bandėme įkelti privačiai, bet nerodo.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Ar nori atverti šį puslapį „Safari“?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Atverti naršyklėje „Safari“";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Deja, puslapio nepavyko įkelti.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Šis puslapis įkeliamas tik naršyklėje „Safari“";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Atverti „Safari“ naršyklėje";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Ši svetainė turi negaliojantį saugumo sertifikatą ir joje lankytis gali būti nesaugu.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Likti DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Kai kurios interneto svetainės funkcijos šioje naršyklėje gali būti nesuderinamos.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Ši svetainė nori atsidaryti naršyklėje „Safari“.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "„DuckDuckGo“ negali įkelti šio puslapio.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Naujausi apdorojimo žurnalai";

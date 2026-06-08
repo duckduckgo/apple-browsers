@@ -145,7 +145,12 @@ private extension NewTabPageView {
     private var logoEmptyView: some View {
         GeometryReader { proxy in
             ZStack {
+                // Anchors the Lottie's geometric center to screen.midY - 55, so the visible duck
+                // lands at screen.midY - 72 — the splash storyboard's resting position. The
+                // dynamic offset compensates for the NTP body's centerY shifting based on top vs
+                // bottom omnibar chrome.
                 NewTabPageDaxLogoView()
+                    .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
                     .opacity(shouldShowLogoInEmptyState ? 1 : 0)
                     .allowsHitTesting(false)
 
@@ -174,7 +179,6 @@ private extension NewTabPageView {
     private var shouldShowLogoInEmptyState: Bool {
         guard !viewModel.isLogoHidden else { return false }
         guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
-        if viewModel.escapeHatch?.tabType == .aiChat { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true

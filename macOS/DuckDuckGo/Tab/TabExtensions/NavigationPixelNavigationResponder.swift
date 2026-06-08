@@ -112,7 +112,9 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
 
         let duration = Date().timeIntervalSince(startTime)
         let navigationType = SiteLoadingPixel.safeNavigationType(for: navigation.navigationAction.navigationType)
-        pixelFiring?.fire(SiteLoadingPixel.siteLoadingSuccess(duration: duration, navigationType: navigationType))
+        pixelFiring?.fire(SiteLoadingPixel.siteLoadingSuccess(duration: duration,
+                                                              navigationType: navigationType),
+                          frequency: .sample(percentage: SiteLoadingPixel.samplePercentage))
     }
 
     func navigation(_ navigation: Navigation, didFailWith error: WKError) {
@@ -123,7 +125,9 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
 
         let duration = Date().timeIntervalSince(startTime)
         let navigationType = SiteLoadingPixel.safeNavigationType(for: navigation.navigationAction.navigationType)
-        pixelFiring?.fire(SiteLoadingPixel.siteLoadingFailure(duration: duration, error: error, navigationType: navigationType))
+        pixelFiring?.fire(SiteLoadingPixel.siteLoadingFailure(duration: duration,
+                                                              error: error, navigationType: navigationType),
+                          frequency: .sample(percentage: SiteLoadingPixel.samplePercentage))
     }
 
     func webContentProcessDidTerminate(with reason: WKProcessTerminationReason?) {

@@ -89,7 +89,9 @@ final class NavigationPixelNavigationResponder {
               let startTime = navigation.siteLoadingStartTime,
               let navigationType = navigation.siteLoadingNavigationType else { return }
         let duration = Date().timeIntervalSince(startTime)
-        PixelKit.fire(SiteLoadingPixel.siteLoadingSuccess(duration: duration, navigationType: navigationType))
+        PixelKit.fire(SiteLoadingPixel.siteLoadingSuccess(duration: duration,
+                                                          navigationType: navigationType),
+                      frequency: .sample(percentage: SiteLoadingPixel.samplePercentage))
         clearState(on: navigation)
     }
 
@@ -101,7 +103,9 @@ final class NavigationPixelNavigationResponder {
               let startTime = navigation.siteLoadingStartTime,
               let navigationType = navigation.siteLoadingNavigationType else { return }
         let duration = Date().timeIntervalSince(startTime)
-        PixelKit.fire(SiteLoadingPixel.siteLoadingFailure(duration: duration, error: error, navigationType: navigationType))
+        PixelKit.fire(SiteLoadingPixel.siteLoadingFailure(duration: duration,
+                                                          error: error, navigationType: navigationType),
+                      frequency: .sample(percentage: SiteLoadingPixel.samplePercentage))
         clearState(on: navigation)
     }
 

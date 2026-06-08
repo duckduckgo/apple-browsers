@@ -28,6 +28,9 @@ import WebKit
 /// is therefore only fired on macOS today; iOS only fires`.siteLoadingSuccess` / `.siteLoadingFailure`.
 public enum SiteLoadingPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
 
+    /// Pixels are not sent on each fire for privacy reasons
+    public static let samplePercentage: Int = 20
+
     /// Whether a site-loading success/failure pixel should fire for the given navigation. Skips JS-driven
     /// redirects (`.developer` / `.client`) and the alternate-HTML loads BSK uses to render the macOS
     /// `duck://error` page; also skips `.other` navigations originating from a visible error page (e.g.

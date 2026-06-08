@@ -200,8 +200,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         return selectedModel.resolvedReasoningEffort(from: persistedReasoningMode)
     }
     private var promptSubmissionModelId: String? {
-        print("🇯🇵🍣 [UTI model submit experiment] resolving promptSubmissionModelId hasSubmittedPrompt=\(hasSubmittedPrompt) persistedModelId=\(persistedModelId ?? "nil")")
-        return hasSubmittedPrompt ? nil : persistedModelId
+        let resolvedModelId = hasSubmittedPrompt ? nil : persistedModelId
+        print("🇯🇵🍣 [UTI model submit] resolving promptSubmissionModelId currentModelId=\(currentModelId ?? "nil") persistedModelId=\(persistedModelId ?? "nil") hasSubmittedPrompt=\(hasSubmittedPrompt) finalModelId=\(resolvedModelId ?? "nil")")
+        return resolvedModelId
     }
     private var promptSubmissionConfiguration: PromptSubmissionConfiguration {
         PromptSubmissionConfiguration(
@@ -1144,6 +1145,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
         let configuration = voicePromptSubmissionConfiguration
+        print("🇯🇵🍣 [UTI submit] path=voice finalModelId=\(configuration.modelId ?? "nil")")
         recordDuckAISubmissionStarted(
             modelId: configuration.modelId,
             reasoningEffort: configuration.reasoningEffort,
@@ -1166,6 +1168,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
         let configuration = promptSubmissionConfiguration
+        print("🇯🇵🍣 [UTI submit] path=externalPrompt finalModelId=\(configuration.modelId ?? "nil")")
         hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -1362,6 +1365,19 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         recordUserChoiceToStore()
     }
 
+    /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
+    /// No-op for a new chat that hasn't submitted yet — there the model rides in the first
+    /// `submitAIChatNativePrompt`.
+    private func notifyFrontendOfActiveChatModelChange(_ modelId: String) {
+        guard hasSubmittedPrompt, let userScript = boundUserScript else {
+            let reason = !hasSubmittedPrompt ? "newChat" : "noBoundScript"
+            print("🇯🇵🍣 [UTI model change] skip submitChangeModelAction reason=\(reason) modelId=\(modelId)")
+            return
+        }
+        print("🇯🇵🍣 [UTI model change] emit submitChangeModelAction modelId=\(modelId)")
+        userScript.submitChangeModel(modelId)
+    }
+
     func handleModelSelection(_ modelId: String) {
         print("🇯🇵 [UTI subscription flow] Native UTI model selected modelId=\(modelId) currentUserTier=\(subscriptionState.userTier.rawValue) hasActiveSubscription=\(subscriptionState.hasActiveSubscription)")
         guard let model = modelStore.models.first(where: { $0.id == modelId }) else {
@@ -1377,6 +1393,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             if isNewSelection {
                 Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
             }
+            notifyFrontendOfActiveChatModelChange(modelId)
         } else {
             if routeGatedModelSelection(model) {
                 pendingGatedModelId = modelId
@@ -1490,6 +1507,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if isNewSelection {
             Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
         }
+        notifyFrontendOfActiveChatModelChange(modelId)
         return true
     }
 

@@ -56,6 +56,11 @@ final class AIChatUserScript: NSObject, Subfeature {
         case toggleSidebarAction
         case syncStatusChanged(AIChatSyncHandler.SyncStatus)
         case customizeResponsesAction
+        case changeModelAction(modelId: String)
+
+        struct ChangeModelActionParams: Encodable {
+            let modelId: String
+        }
 
         var methodName: String {
             switch self {
@@ -75,6 +80,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitSyncStatusChanged"
             case .customizeResponsesAction:
                 return "submitCustomizeResponsesAction"
+            case .changeModelAction:
+                return "submitChangeModelAction"
             }
         }
 
@@ -84,6 +91,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return prompt
             case .syncStatusChanged(let status):
                 return status
+            case .changeModelAction(let modelId):
+                return ChangeModelActionParams(modelId: modelId)
             default:
                 return nil
             }
@@ -337,6 +346,13 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// Submits an open settings action to the web content, opening the AI Chat settings.
     func submitOpenSettingsAction() {
         push(.openSettingsAction)
+    }
+
+    /// Pushes a model-change action to the web content, switching the active chat's model.
+    /// Used when the user picks a supported model in the native picker mid-chat.
+    func submitChangeModel(_ modelId: String) {
+        print("🇯🇵🍣 [AIChat bridge submit] submitChangeModelAction sentModelId=\(modelId)")
+        push(.changeModelAction(modelId: modelId))
     }
 
     /// Submits page context to the frontend (push update).

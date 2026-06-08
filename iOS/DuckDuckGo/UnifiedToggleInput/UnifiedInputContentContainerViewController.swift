@@ -383,7 +383,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             !dependencies.newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
         }
 
-        let inputsPublisher = makeMergedInputsPublisher(hasFavorites: hasFavorites, hasMessages: hasMessages)
+        let searchFactsChanged = dependencies.favoritesViewModel.localUpdates
+            .merge(with: dependencies.favoritesViewModel.externalUpdates)
+            .eraseToAnyPublisher()
+        let inputsPublisher = makeMergedInputsPublisher(hasFavorites: hasFavorites,
+                                                        hasMessages: hasMessages,
+                                                        searchFactsChanged: searchFactsChanged)
 
         let config = UnifiedSuggestionsHostConfig(
             source: source,
@@ -465,13 +470,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// One merged inputs stream feeding the single host: mode + text + search facts (always) +
     /// duck.ai facts (nil while detached). Combines via the pure `UnifiedSuggestionsInputsMerger`.
     private func makeMergedInputsPublisher(hasFavorites: @escaping () -> Bool,
-                                           hasMessages: @escaping () -> Bool) -> AnyPublisher<UnifiedSuggestionsInputs, Never> {
-        Publishers.CombineLatest3(
+                                           hasMessages: @escaping () -> Bool,
+                                           searchFactsChanged: AnyPublisher<Void, Never>) -> AnyPublisher<UnifiedSuggestionsInputs, Never> {
+        // `searchFactsChanged` re-resolves when favorites/messages change without a text/toggle change
+        // (e.g. a just-added favorite that loads a beat after a new tab opens, or deleting the last
+        // one). The model notifies after refreshing its array, so the reads below are fresh.
+        Publishers.CombineLatest4(
             switchBarHandler.toggleStatePublisher,
             switchBarHandler.currentTextPublisher,
-            duckAIFactsSubject
+            duckAIFactsSubject,
+            searchFactsChanged.prepend(())
         )
-        .map { mode, text, duckAIFacts -> UnifiedSuggestionsInputs in
+        .map { mode, text, duckAIFacts, _ -> UnifiedSuggestionsInputs in
             UnifiedSuggestionsInputsMerger.merge(
                 mode: mode,
                 text: text,

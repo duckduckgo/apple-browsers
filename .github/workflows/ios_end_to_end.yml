@@ -269,7 +269,7 @@ jobs:
   notify-failure:
     name: Notify on failure
     if: ${{ always() && contains(join(needs.*.result, ','), 'failure') && github.ref_name == 'main' }}
-    needs: [build-end-to-end-tests, end-to-end-tests]
+    needs: [build-end-to-end-tests, setup-matrix, end-to-end-tests]
     runs-on: ubuntu-latest
 
     steps:
@@ -285,6 +285,11 @@ jobs:
         has_production=false
         has_internal=false
         if [ "${{ needs.build-end-to-end-tests.result }}" = "failure" ]; then
+          has_production=true
+        fi
+        # Treat setup-matrix failure as a production failure: e2e jobs got skipped,
+        # so no markers exist, but the workflow is broken and someone needs to know.
+        if [ "${{ needs.setup-matrix.result }}" = "failure" ]; then
           has_production=true
         fi
         if echo "$artifacts" | grep -E '^failure-marker-e2e-production' >/dev/null; then

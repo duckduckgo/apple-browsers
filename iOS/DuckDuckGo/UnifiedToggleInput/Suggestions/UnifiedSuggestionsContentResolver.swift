@@ -9,14 +9,14 @@
 import Foundation
 
 /// Which list data source is active for a `.list` presentation.
-enum SuggestionsListSourceKind: Equatable {
+enum SuggestionsListSourceKind: Hashable {
     case search
     case duckAI
     case recents
 }
 
 /// The presentation the unified suggestions view should render. Pure value — no view models.
-enum UnifiedSuggestionsContentKind: Equatable {
+enum UnifiedSuggestionsContentKind: Hashable {
     case list(SuggestionsListSourceKind)
     case favorites
     case logo

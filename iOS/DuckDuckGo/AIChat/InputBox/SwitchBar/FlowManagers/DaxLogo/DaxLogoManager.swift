@@ -123,6 +123,13 @@ final class DaxLogoManager {
         logoContainerView.alpha > 0 && !forcedHidden
     }
 
+    /// Whether the logo should be visible for the committed state, independent of its scrubbed
+    /// alpha. The single-active-logo alpha is `currentProgress`-scaled, so a stale progress can
+    /// read alpha 0 even when the logo should show — callers deciding to morph must use this.
+    var isLogoActiveForCurrentState: Bool {
+        !forcedHidden && (isHomeDaxVisible || isAIDaxVisible)
+    }
+
     /// Plays the Lottie transition to the given mode.
     /// Call after `updateVisibility` has set the new state — this method restores
     /// the previous Lottie progress and animates to the target. If the logo was
@@ -137,6 +144,9 @@ final class DaxLogoManager {
 
         guard wasLogoVisible else {
             daxLogoView.updateProgress(targetProgress)
+            // Keep currentProgress aligned with the committed mode even when snapping, or the
+            // single-active-logo alpha (scaled by currentProgress) would read 0 next render.
+            currentProgress = targetProgress
             return
         }
 
@@ -144,6 +154,10 @@ final class DaxLogoManager {
         let token = UUID()
         pendingTransitionToken = token
         daxLogoView.updateProgress(previousProgress)
+        // Hold the container at full alpha for the whole morph; otherwise the single-active-logo
+        // alpha left by `updateVisibility` (scaled by a not-yet-advanced currentProgress) keeps it
+        // hidden until completion — the morph would play invisibly and only "appear at the end".
+        updateState()
         // Token-gated: Lottie reports `finished == false` on interruption, so gating on
         // `finished` alone would leave the flag stuck across UTI sessions.
         daxLogoView.animateProgress(to: targetProgress) { [weak self] _ in

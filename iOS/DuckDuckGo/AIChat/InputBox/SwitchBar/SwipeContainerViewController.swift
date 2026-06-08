@@ -19,6 +19,7 @@
 
 import UIKit
 import Combine
+import os
 
 /// Protocol for handling swipe container events
 protocol SwipeContainerViewControllerDelegate: AnyObject {
@@ -175,6 +176,7 @@ final class SwipeContainerViewController: UIViewController {
         let pageWidth = pageWidth ?? parentView.bounds.width
 
         let targetX: CGFloat = switchBarHandler.currentToggleState == .search ? 0 : pageWidth
+        Logger(subsystem: "com.duckduckgo.mobile.ios", category: "UTITransition").debug("paged.updateScrollViewPosition target=\(targetX, privacy: .public) current=\(self.swipeScrollView.contentOffset.x, privacy: .public) pageW=\(pageWidth, privacy: .public) animated=\(animated, privacy: .public) searchA=\(self.searchPageContainer.alpha, privacy: .public) chatA=\(self.chatPageContainer.alpha, privacy: .public)")
         swipeScrollView.setContentOffset(CGPoint(x: targetX, y: 0), animated: animated)
     }
 

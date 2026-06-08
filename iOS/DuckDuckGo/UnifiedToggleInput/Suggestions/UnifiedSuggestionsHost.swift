@@ -8,6 +8,7 @@
 import Combine
 import SwiftUI
 import UIKit
+import os
 
 /// Hosts the SwiftUI `UnifiedSuggestionsView` for any UTI surface (Duck.ai, Search). Parameterized
 /// by `UnifiedSuggestionsHostConfig` so the host is surface-agnostic. Dax logo stays driven by
@@ -22,9 +23,17 @@ final class UnifiedSuggestionsHost {
     private let viewModel: UnifiedSuggestionsViewModel
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
     private var escapeHatchModel: EscapeHatchModel?
+    private var escapeHatchTopInset: CGFloat = 0
+    private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
     /// Built once on first `.favorites` render; NTP has a heavy init, so don't rebuild per body pass.
     private var cachedFavoritesController: NewTabPageViewController?
+
+    /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
+    /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
+    private var duckAISurface: UnifiedSuggestionsDuckAISurface?
+    /// Captured on `start` so a duck.ai source attached later can drive its own text changes.
+    private var startedTextPublisher: AnyPublisher<String, Never>?
 
     private func memoizedFavoritesController() -> NewTabPageViewController? {
         if let cachedFavoritesController { return cachedFavoritesController }
@@ -52,7 +61,9 @@ final class UnifiedSuggestionsHost {
                              textPublisher: P) where P.Output == String, P.Failure == Never {
         guard hostingController == nil else { return }
 
-        config.source.start(textPublisher: textPublisher.eraseToAnyPublisher())
+        let erasedTextPublisher = textPublisher.eraseToAnyPublisher()
+        startedTextPublisher = erasedTextPublisher
+        config.source.start(textPublisher: erasedTextPublisher)
 
         listViewModel.onSelect = { [weak self] id in self?.config.onSelectRow(id) }
         listViewModel.onTapAhead = { [weak self] id in self?.config.onTapAheadRow(id) }
@@ -61,7 +72,10 @@ final class UnifiedSuggestionsHost {
         viewModel.$content
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.onContentChanged?() }
+            .sink { [weak self] content in
+                Logger(subsystem: "com.duckduckgo.mobile.ios", category: "UTITransition").debug("host.content → \(String(describing: content), privacy: .public)")
+                self?.onContentChanged?()
+            }
             .store(in: &cancellables)
 
         let view = UnifiedSuggestionsView(
@@ -93,16 +107,66 @@ final class UnifiedSuggestionsHost {
     }
 
     func setAdditionalTopInset(_ inset: CGFloat) {
-        hostingController?.additionalSafeAreaInsets.top = inset
+        escapeHatchTopInset = inset
+        applyCombinedInsets()
+    }
+
+    /// Single-host path: the content inset the container would otherwise set on the swipe-container
+    /// parent VC. Combined with the escape-hatch inset since there's no intermediate container here.
+    func setContentInsets(_ insets: UIEdgeInsets) {
+        contentInsets = insets
+        applyCombinedInsets()
+    }
+
+    private func applyCombinedInsets() {
+        hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
+            top: escapeHatchTopInset + contentInsets.top,
+            left: contentInsets.left,
+            bottom: contentInsets.bottom,
+            right: contentInsets.right
+        )
+        // Flush the safe-area change on the controller whose insets changed (mirrors the legacy
+        // container's layoutIfNeeded) so the content glides inside the UTI's height animation.
+        hostingController?.view.layoutIfNeeded()
     }
 
     /// No-op: visibility gating is handled by `DaxLogoManager` + `hasContent`/`hasSettled`.
     func setIsVisibleContent(_ visible: Bool) {}
 
+    // MARK: - Duck.ai surface (single-host path)
+
+    /// Attaches the duck.ai source + its own list VM so `.list(.duckAI|.recents)` rows render
+    /// duck.ai data. Lazy: called when the duck.ai surface becomes available; safe to call once.
+    func attachDuckAISurface(_ surface: UnifiedSuggestionsDuckAISurface) {
+        guard duckAISurface == nil else { return }
+        duckAISurface = surface
+
+        let listVM = SuggestionsListViewModel(source: surface.source)
+        listVM.onSelect = { surface.onSelectRow($0) }
+        listVM.onTapAhead = { surface.onTapAheadRow($0) }
+        listVM.onDelete = { surface.onDeleteRow($0) }
+        viewModel.setDuckAIListViewModel(listVM)
+
+        if let startedTextPublisher {
+            surface.source.start(textPublisher: startedTextPublisher)
+        }
+        rebuildRootView()
+    }
+
+    /// Releases the duck.ai source/VM only (search persists), mirroring today's lazy lifecycle.
+    func detachDuckAISurface() {
+        duckAISurface?.source.tearDown()
+        duckAISurface = nil
+        viewModel.setDuckAIListViewModel(nil)
+        rebuildRootView()
+    }
+
     func tearDown() {
         cancellables.removeAll()
         onContentChanged = nil
         config.source.tearDown()
+        duckAISurface?.source.tearDown()
+        duckAISurface = nil
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()

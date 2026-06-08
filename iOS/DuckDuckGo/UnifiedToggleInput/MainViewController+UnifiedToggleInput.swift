@@ -533,9 +533,12 @@ private extension MainViewController {
 
         updateUnifiedInputContentVisibility(for: coordinator)
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
+        utiTransitionLog.debug("handleOmnibarModeChange \(String(describing: mode), privacy: .public) — adjustUI height anim start (0.2s) editingHeight=\(coordinator.editingHeight(), privacy: .public)")
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
-        let shouldAnimateLogoTransition = coordinator.contentViewController.daxLogoManager.isLogoVisible
+        // Gate on whether the logo is active for the committed state — not its current alpha, which
+        // is `currentProgress`-scrubbed and reads 0 for the AI logo until the morph drives progress.
+        let shouldAnimateLogoTransition = coordinator.contentViewController.daxLogoManager.isLogoActiveForCurrentState
         if !wasSwipeDriven && shouldAnimateLogoTransition {
             coordinator.contentViewController.daxLogoManager.animateLogoTransition(
                 toMode: mode,

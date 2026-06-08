@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import os
 
 /// The single unified suggestions surface for both Search and Duck.ai. Switches on the
 /// resolver's content state: list rows / favorites / logo. One view, model decides the rest.
@@ -19,41 +20,86 @@ struct UnifiedSuggestionsView: View {
     let favoritesProvider: () -> NewTabPageViewController?
 
     var body: some View {
+        // The escape hatch is one persistent element above the content — NOT duplicated inside the
+        // recents List header and the favorites/logo overlay. Re-creating it across those subtrees
+        // on a mode switch made it jump instead of gliding with the input; a single instance rides
+        // the inset animation in both directions.
+        VStack(spacing: 0) {
+            if showsHatch, let header {
+                header
+                    .padding(.horizontal, 16)
+                    .padding(.top, Metrics.hatchTopInset)
+                    .padding(.bottom, Metrics.hatchBottomInset)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .onAppear {
+                                    utiTransitionLog.debug("hatch.minY appear=\(proxy.frame(in: .global).minY, privacy: .public)")
+                                }
+                                .onChange(of: proxy.frame(in: .global).minY) { y in
+                                    utiTransitionLog.debug("hatch.minY=\(y, privacy: .public)")
+                                }
+                        }
+                    )
+            }
+            contentArea
+        }
+    }
+
+    /// The hatch shows in the non-typing states (favorites / logo / recents), mirroring legacy
+    /// `isQueryActive`; the search / duck.ai suggestion lists hide it.
+    private var showsHatch: Bool {
+        guard header != nil else { return false }
         switch viewModel.content {
-        case .list(let kind):
-            // The escape hatch is hidden while typing (search / duck.ai suggestion lists);
-            // it only shows in the non-typing recents list (mirrors legacy `isQueryActive`).
-            SuggestionsListView(viewModel: viewModel.listViewModel,
-                                isAddressBarAtBottom: isAddressBarAtBottom,
-                                header: kind == .recents ? header : nil)
+        case .favorites, .logo: return true
+        case .list(let kind): return kind == .recents
+        }
+    }
+
+    private var contentArea: some View {
+        // The list stays mounted in every state so SwiftUI never recreates it (a fresh `List`
+        // flashes its default background before `.scrollContentBackground(.hidden)` applies).
+        // Favorites renders on top; the list is hidden + non-interactive beneath it.
+        ZStack {
+            listLayer
+            overlayLayer
+        }
+    }
+
+    private var isShowingList: Bool {
+        if case .list = viewModel.content { return true }
+        return false
+    }
+
+    /// The kind the mounted list is currently bound to; defaults to `.search` when idle so the
+    /// list holds a stable (empty) view-model rather than being torn down.
+    private var activeListKind: SuggestionsListSourceKind {
+        if case .list(let kind) = viewModel.content { return kind }
+        return .search
+    }
+
+    private var listLayer: some View {
+        SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
+                            isAddressBarAtBottom: isAddressBarAtBottom)
+            .opacity(isShowingList ? 1 : 0)
+            .allowsHitTesting(isShowingList)
+    }
+
+    @ViewBuilder
+    private var overlayLayer: some View {
+        switch viewModel.content {
         case .favorites:
             if let controller = favoritesProvider() {
-                // The escape hatch is the unified view's chrome (same as logo/recents/duck.ai),
-                // not the NTP's own — so it renders identically across every UTI state.
-                VStack(spacing: 0) {
-                    if let header {
-                        header
-                            .padding(.horizontal, 16)
-                            .padding(.top, 14)
-                    }
-                    SuggestionsFavoritesView(controller: controller)
-                }
-            } else {
-                Color.clear
+                SuggestionsFavoritesView(controller: controller)
             }
-        case .logo:
-            // The logo itself stays drawn by DaxLogoManager (moved into the view in Part 2c).
-            // The escape hatch is chrome and must still show in the empty state, pinned at the top.
-            if let header {
-                VStack(spacing: 0) {
-                    header
-                        .padding(.horizontal, 16)
-                        .padding(.top, 14)
-                    Spacer(minLength: 0)
-                }
-            } else {
-                Color.clear
-            }
+        case .logo, .list:
+            // Logo is drawn by DaxLogoManager; the list fills via listLayer. Nothing to overlay.
+            EmptyView()
         }
+    }
+
+    private enum Metrics {
+        static let hatchTopInset: CGFloat = 14
+        static let hatchBottomInset: CGFloat = 8
     }
 }

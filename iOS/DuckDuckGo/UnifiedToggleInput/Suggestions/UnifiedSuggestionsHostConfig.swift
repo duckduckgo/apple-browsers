@@ -23,3 +23,14 @@ struct UnifiedSuggestionsHostConfig {
     let hasContent: () -> Bool
     let hasSettled: (String) -> Bool
 }
+
+/// The lazily-attached duck.ai surface for the single-host path. Carries its own source +
+/// row handlers; the host builds a dedicated list VM for it so `.list(.duckAI|.recents)` rows
+/// resolve to duck.ai data while `.list(.search)` keeps resolving to the search VM.
+@MainActor
+struct UnifiedSuggestionsDuckAISurface {
+    let source: SuggestionsSource
+    let onSelectRow: (String) -> Void
+    let onDeleteRow: (String) -> Void
+    let onTapAheadRow: (String) -> Void
+}

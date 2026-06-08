@@ -15,31 +15,12 @@ struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
-    let header: AnyView?
 
     var body: some View {
         List {
-            if let header {
-                header
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets())
-            }
-
             ForEach(viewModel.sections) { section in
                 Section {
-                    ForEach(section.rows) { row in
-                        Button {
-                            viewModel.selectRow(id: row.id)
-                        } label: {
-                            SuggestionRowView(
-                                row: row,
-                                isAddressBarAtBottom: isAddressBarAtBottom,
-                                onTapAhead: { viewModel.tapAheadRow(id: row.id) },
-                                onDelete: { viewModel.deleteRow(id: row.id) })
-                        }
-                        .listRowBackground(Color(designSystemColor: .surface))
-                    }
+                    rows(for: section)
                 } header: {
                     sectionHeader(section.title)
                 }
@@ -47,9 +28,28 @@ struct SuggestionsListView: View {
         }
         .listStyle(.insetGrouped)
         .modifier(CompactSectionSpacingModifier())
+        // Trim insetGrouped's variable top margin so the first row sits tight below the input
+        // (the escape hatch, when present, is spaced separately above the list by the parent).
+        .modifier(TightTopContentMarginModifier())
         .modifier(HideScrollContentBackgroundModifier())
         .background(Color(designSystemColor: .background))
         .scrollDismissesKeyboardIfAvailable()
+    }
+
+    @ViewBuilder
+    private func rows(for section: SuggestionSection) -> some View {
+        ForEach(section.rows) { row in
+            Button {
+                viewModel.selectRow(id: row.id)
+            } label: {
+                SuggestionRowView(
+                    row: row,
+                    isAddressBarAtBottom: isAddressBarAtBottom,
+                    onTapAhead: { viewModel.tapAheadRow(id: row.id) },
+                    onDelete: { viewModel.deleteRow(id: row.id) })
+            }
+            .listRowBackground(Color(designSystemColor: .surface))
+        }
     }
 
     @ViewBuilder
@@ -60,6 +60,18 @@ struct SuggestionsListView: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
         } else {
             EmptyView()
+        }
+    }
+}
+
+/// insetGrouped reserves a large top inset above the first section; trim it so the first row sits
+/// just below the input (matching legacy Search) rather than ~40pt down.
+private struct TightTopContentMarginModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *) {
+            content.contentMargins(.top, 0, for: .scrollContent)
+        } else {
+            content
         }
     }
 }

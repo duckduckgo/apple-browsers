@@ -1,0 +1,64 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_unified_input_stop_generating
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+        ff.experimentalAddressBar: "true"
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
+# Focus NTP omnibar and switch to Duck.ai mode
+- tapOn:
+    id: "searchEntry"
+- assertVisible:
+    id: "AddressBar.Button.DuckAI"
+- tapOn: "Duck.ai"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Submit a long-enough prompt that generation will still be running when we tap stop
+- inputText: "Explain the life cycle of a duck in detail."
+- tapOn: "Submit"
+
+# Dismiss the anonymous-chat consent that appears on first send (clearState wipes acceptance)
+- runFlow:
+    when:
+        visible: "Agree"
+    commands:
+        - tapOn: "Agree"
+
+# Submitting from Surface A opens the chat tab; stop button should appear during generation
+- extendedWaitUntil:
+    visible: "Stop generating"
+    timeout: 15000
+- tapOn: "Stop generating"
+
+# After stopping, the stop button disappears and the prompt bubble remains visible
+- assertNotVisible: "Stop generating"
+- assertVisible: "Explain the life cycle of a duck in detail."

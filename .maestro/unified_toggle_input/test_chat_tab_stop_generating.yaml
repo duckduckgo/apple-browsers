@@ -1,0 +1,66 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_chat_tab_stop_generating
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+
+# Open Duck.ai chat tab
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
+- assertVisible: "Close tab"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Submit a prompt long enough to guarantee generation is in-progress when stop is tapped
+- tapOn:
+    id: "searchEntry"
+- inputText: "Explain the life cycle of a duck in detail."
+- tapOn: "Submit"
+
+# Dismiss the anonymous-chat consent that appears on first send (clearState wipes acceptance)
+- runFlow:
+    when:
+        visible: "Agree"
+    commands:
+        - tapOn: "Agree"
+
+# Stop button should appear while the model is generating; tap it
+- extendedWaitUntil:
+    visible: "Stop generating"
+    timeout: 15000
+- tapOn: "Stop generating"
+
+# After stopping, the stop button disappears and the prompt bubble remains visible
+- assertNotVisible: "Stop generating"
+- assertVisible: "Explain the life cycle of a duck in detail."

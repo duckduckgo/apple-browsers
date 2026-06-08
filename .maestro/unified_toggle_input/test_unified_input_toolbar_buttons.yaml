@@ -1,0 +1,51 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_unified_input_toolbar_buttons
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+        ff.experimentalAddressBar: "true"
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
+# Focus NTP omnibar and switch to Duck.ai mode
+- tapOn:
+    id: "searchEntry"
+- assertVisible:
+    id: "AddressBar.Button.DuckAI"
+- tapOn: "Duck.ai"
+
+# Verify all toolbar buttons are present in Surface A Duck.ai mode
+# Note: Tools and Attach use UIMenu (showsMenuAsPrimaryAction); their menu items
+# are not accessible to Maestro's a11y bridge — only the buttons themselves are verified here.
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.Reasoning"
+- assertVisible: "Tools"
+- assertVisible: "Attach"

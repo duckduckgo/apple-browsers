@@ -27,7 +27,7 @@ struct UnifiedSuggestionsView: View {
         VStack(spacing: 0) {
             if showsHatch, let header {
                 header
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Metrics.contentHorizontalMargin)
                     .padding(.top, Metrics.hatchTopInset)
                     .padding(.bottom, Metrics.hatchBottomInset)
                     .background(
@@ -99,7 +99,10 @@ struct UnifiedSuggestionsView: View {
     }
 
     private enum Metrics {
+        /// Matches the NTP's `sectionsViewHorizontalPadding` (regularPadding) so the hatch and the
+        /// suggestion list share the favorites grid's side margins.
+        static let contentHorizontalMargin: CGFloat = 24
         static let hatchTopInset: CGFloat = 14
-        static let hatchBottomInset: CGFloat = 8
+        static let hatchBottomInset: CGFloat = 16
     }
 }

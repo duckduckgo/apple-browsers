@@ -533,7 +533,7 @@ private extension MainViewController {
 
         updateUnifiedInputContentVisibility(for: coordinator)
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
-        utiTransitionLog.debug("handleOmnibarModeChange \(String(describing: mode), privacy: .public) — adjustUI height anim start (0.2s) editingHeight=\(coordinator.editingHeight(), privacy: .public)")
+        utiTransitionLog.debug("handleOmnibarModeChange arg=\(String(describing: mode), privacy: .public) coordInputMode=\(String(describing: coordinator.inputMode), privacy: .public) vcMode=\(String(describing: coordinator.viewController.inputMode), privacy: .public) editingHeight=\(coordinator.editingHeight(), privacy: .public)")
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
         // Gate on whether the logo is active for the committed state — not its current alpha, which

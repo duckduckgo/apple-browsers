@@ -69,7 +69,12 @@ struct SuggestionsListView: View {
 private struct TightTopContentMarginModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
-            content.contentMargins(.top, 0, for: .scrollContent)
+            content
+                .contentMargins(.top, 0, for: .scrollContent)
+                // Pin the cards to the NTP's content margin (regularPadding, 24) so they align with
+                // the escape hatch and the favorites grid in every orientation; insetGrouped otherwise
+                // widens its margins (readable width) in landscape, leaving the rows misaligned.
+                .contentMargins(.horizontal, 24, for: .scrollContent)
         } else {
             content
         }

@@ -111,6 +111,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// `contentContainerView` (not in the swipe container pages).
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
+    /// Single-host path: the suggestions container's top offset (input height + hatch) lives on this
+    /// constraint, not the hosting view's safe-area inset — so the whole content (incl. the escape
+    /// hatch) glides natively with the input instead of SwiftUI snapping the safe-area reposition.
+    private var unifiedSuggestionsTopConstraint: NSLayoutConstraint?
     /// Feeds the merged inputs publisher with the duck.ai facts; nil while the duck.ai surface is
     /// detached (the merger treats absent facts as no recents / nothing pending).
     private let duckAIFactsSubject = CurrentValueSubject<UnifiedSuggestionsInputsMerger.DuckAIFacts?, Never>(nil)
@@ -306,7 +310,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         suggestionTrayManager?.setAdditionalTopInset(inset)
         duckAISuggestionsHost?.setAdditionalTopInset(inset)
         searchSuggestionsHost?.setAdditionalTopInset(inset)
-        unifiedSuggestionsHost?.setAdditionalTopInset(inset)
+        // Single host carries the hatch offset on its container constraint, not the safe-area inset.
+        updateSingleHostTopOffset()
     }
 
     /// Returns the top inset needed so the UTI escape hatch lines up with the NTP
@@ -662,8 +667,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
         contentContainerView.addSubview(containerView)
+        let topConstraint = containerView.topAnchor.constraint(equalTo: contentContainerView.topAnchor)
+        unifiedSuggestionsTopConstraint = topConstraint
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+            topConstraint,
             containerView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor)
@@ -673,9 +680,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.start(in: containerView,
                    parentViewController: self,
                    textPublisher: switchBarHandler.currentTextPublisher)
-        host.setAdditionalTopInset(escapeHatchTopInset)
+        // The top offset rides the container constraint (UIKit glide); the hosting view keeps no
+        // top safe-area inset of its own.
+        host.setAdditionalTopInset(0)
+        updateSingleHostTopOffset()
         host.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
         unifiedSuggestionsHost = host
+    }
+
+    /// Single-host path: the suggestions container aligns with the new-tab page (the favorites
+    /// surface IS the NTP, and the hatch lines up with the NTP hatch), so it rides the requested
+    /// inset directly. The constant animates natively, so the hatch glides with the input.
+    private func updateSingleHostTopOffset() {
+        guard useSingleSuggestionsHost else { return }
+        unifiedSuggestionsTopConstraint?.constant = requestedContentInset.top
     }
 
     /// One merged inputs stream feeding the single host: mode + text + search facts (always) +
@@ -1085,7 +1103,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         insets.top += Metrics.contentTopInset
         daxLogoManager.setFireTabContentInsets(insets)
         if useSingleSuggestionsHost {
-            unifiedSuggestionsHost?.setContentInsets(insets)
+            // Top offset → container constraint (UIKit glide); only the bottom inset stays on the
+            // hosting view. layoutIfNeeded inside the active animation makes the constraint glide.
+            updateSingleHostTopOffset()
+            unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: 0, left: 0, bottom: insets.bottom, right: 0))
+            utiTransitionLog.debug("applyContentInset(single) topConst=\(self.unifiedSuggestionsTopConstraint?.constant ?? -1, privacy: .public) animated=\(UIView.inheritedAnimationDuration > 0, privacy: .public) mode=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public)")
+            contentContainerView.layoutIfNeeded()
             return
         }
         let oldTop = swipeContainerManager?.containerViewController.additionalSafeAreaInsets.top ?? -1

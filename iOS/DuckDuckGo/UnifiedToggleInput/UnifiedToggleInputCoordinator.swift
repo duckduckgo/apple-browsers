@@ -924,6 +924,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let effectiveMode = effectiveInputMode(for: mode)
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
+        utiTransitionLog.debug("updateInputMode req=\(String(describing: mode), privacy: .public) eff=\(String(describing: effectiveMode), privacy: .public) curInputMode=\(String(describing: self.inputMode), privacy: .public) vcMode=\(String(describing: self.viewController.inputMode), privacy: .public) didChange=\(didModeChange, privacy: .public) needsViewSync=\(needsViewSync, privacy: .public) animated=\(animated, privacy: .public)")
         guard didModeChange || needsViewSync else { return }
 
         let isDismissingOmnibarNewPromptToolbar = isOmnibarNewAIChatPrompt && effectiveMode == .search

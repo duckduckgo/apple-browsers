@@ -18,6 +18,7 @@
 //
 
 import DuckUI
+import os
 import RemoteMessaging
 import SwiftUI
 import UIComponents
@@ -117,6 +118,17 @@ private extension NewTabPageView {
 
                     FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
+                        .background(
+                            GeometryReader { fp in
+                                Color.clear
+                                    .onAppear {
+                                        utiTransitionLog.debug("ntp.fav.minY appear=\(fp.frame(in: .global).minY, privacy: .public) focussed=\(self.isFocussedState, privacy: .public) ownHatch=\(self.viewModel.escapeHatch != nil, privacy: .public)")
+                                    }
+                                    .onChange(of: fp.frame(in: .global).minY) { y in
+                                        utiTransitionLog.debug("ntp.fav.minY=\(y, privacy: .public) focussed=\(self.isFocussedState, privacy: .public) ownHatch=\(self.viewModel.escapeHatch != nil, privacy: .public)")
+                                    }
+                            }
+                        )
                 }
                 .padding(.vertical, sectionsViewPadding(in: proxy))
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
@@ -203,6 +215,17 @@ private extension NewTabPageView {
                 .frame(maxWidth: escapeHatchMaxWidth)
                 .padding(.top, Metrics.nonGridSectionTopPadding)
                 .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
+                .background(
+                    GeometryReader { hp in
+                        Color.clear
+                            .onAppear {
+                                utiTransitionLog.debug("ntp.hatch.minY appear=\(hp.frame(in: .global).minY, privacy: .public)")
+                            }
+                            .onChange(of: hp.frame(in: .global).minY) { y in
+                                utiTransitionLog.debug("ntp.hatch.minY=\(y, privacy: .public)")
+                            }
+                    }
+                )
         }
     }
 

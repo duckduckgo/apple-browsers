@@ -217,7 +217,7 @@ final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
     func testWhenDeleteChatThenRecordsLocallyDeletedChatId() throws {
         try handler.deleteChat(chatId: "chat-1")
 
-        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds) as? [String]
+        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
         XCTAssertEqual(recorded, ["chat-1"])
     }
 
@@ -225,7 +225,7 @@ final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
         // The mock data store does not track chats; deleting an absent id must still record it.
         try handler.deleteChat(chatId: "never-existed")
 
-        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds) as? [String]
+        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
         XCTAssertEqual(recorded, ["never-existed"])
     }
 
@@ -233,7 +233,7 @@ final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
         try handler.deleteChat(chatId: "dup")
         try handler.deleteChat(chatId: "dup")
 
-        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds) as? [String]
+        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
         XCTAssertEqual(recorded, ["dup"])
     }
 
@@ -241,7 +241,7 @@ final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
         try handler.deleteChat(chatId: "a")
         try handler.deleteChat(chatId: "b")
 
-        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds) as? [String]
+        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
         XCTAssertEqual(recorded.map { Set($0) }, Set(["a", "b"]))
     }
 
@@ -266,7 +266,7 @@ final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
 
         group.wait()
 
-        let recorded = Set((try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds) as? [String]) ?? [])
+        let recorded = Set((try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]) ?? [])
         XCTAssertEqual(recorded.count, iterations * 2, "Expected \(iterations * 2) ids but got \(recorded.count) — updates were lost")
         for i in 0..<iterations {
             XCTAssertTrue(recorded.contains("a\(i)"), "Missing id a\(i)")

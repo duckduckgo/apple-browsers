@@ -64,7 +64,7 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
 
         try sut.deleteChat(chatId: "chat-1")
 
-        let recorded = try sut.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds) as? [String]
+        let recorded = try sut.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
         XCTAssertEqual(recorded, ["chat-1"])
     }
 

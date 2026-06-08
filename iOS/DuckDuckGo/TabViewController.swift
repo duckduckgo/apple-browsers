@@ -2317,7 +2317,6 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        navigationPixelResponder.didFail(navigation, error: error)
         Logger.general.debug("didFailNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
         adClickExternalOpenDetector.failNavigation(error: error)
@@ -2327,6 +2326,16 @@ extension TabViewController: WKNavigationDelegate {
         scheduleTrackerNetworksAnimation(collapsing: true)
         linkProtection.setMainFrameUrl(nil)
         referrerTrimming.onFailedNavigation()
+
+        // Skip the site-loading failure pixel for download handoffs (WebKit error 102) and user
+        // cancellations (NSURLErrorCancelled) — same exclusions as `didFailProvisionalNavigation`.
+        let nsError = error as NSError
+        let isDownloadHandoff = nsError.code == 102 && nsError.domain == "WebKitErrorDomain"
+        let isCancellation = nsError.code == NSURLErrorCancelled && nsError.domain == NSURLErrorDomain
+        if !isDownloadHandoff && !isCancellation {
+            navigationPixelResponder.didFail(navigation, error: error)
+        }
+
         notifyDelegateIfDuckAINavigationFailed(error: error)
     }
 

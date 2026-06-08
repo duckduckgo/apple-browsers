@@ -2699,7 +2699,6 @@
 		8A96290053C27B6C1245838B /* QuickFeedbackDiagnosticsCollectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD3D561804AB2C73BB789AC /* QuickFeedbackDiagnosticsCollectorTests.swift */; };
 		91A52F01ECBA4869A0042EAA /* AdBlockingAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86EE9A7B2E24D47BACF8241 /* AdBlockingAvailability.swift */; };
 		92351A6719194A9F4DD19D56 /* AIChatSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F72808BE3E5BF485C31627B8 /* AIChatSettingsTests.swift */; };
-		9C685D9290AE488FABE0EDDA /* AIChatSettingsLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE7CA3678B14EDD94FD8D76 /* AIChatSettingsLinkTests.swift */; };
 		9264F7AF4D4841749D18B650 /* RebrandedContextualOnboardingDialogs+TrySearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228E1D6E1E824085A874C175 /* RebrandedContextualOnboardingDialogs+TrySearch.swift */; };
 		93BD7FEAF65A45E5AF6465EE /* TabSuspensionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590E11956C6E4C788AF09F9A /* TabSuspensionServiceTests.swift */; };
 		9812D895276CEDA5004B6181 /* ContentBlockerRulesLists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9812D894276CEDA5004B6181 /* ContentBlockerRulesLists.swift */; };
@@ -6948,7 +6947,6 @@
 		F4A6198B283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopeFeatureFlagging.swift; sourceTree = "<group>"; };
 		F511D9CB8F68D9D9B0341314 /* QuickFeedbackDiagnosticsCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickFeedbackDiagnosticsCollector.swift; sourceTree = "<group>"; };
 		F72808BE3E5BF485C31627B8 /* AIChatSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsTests.swift; sourceTree = "<group>"; };
-		6AE7CA3678B14EDD94FD8D76 /* AIChatSettingsLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsLinkTests.swift; sourceTree = "<group>"; };
 		FAC0C468BD3373676AC82B61 /* DarkReaderFeatureSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkReaderFeatureSettingsTests.swift; sourceTree = "<group>"; };
 		FB1380633D7A4C9CA3AD18CD /* AutoplayPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPreferencesTests.swift; sourceTree = "<group>"; };
 		FB37FB37FB37FB37FB37FB37 /* InternalFeedbackFormTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalFeedbackFormTabExtensionTests.swift; sourceTree = "<group>"; };
@@ -9579,7 +9577,6 @@
 				31DE49202EE2299500F3940A /* AIChatMultilinePasteTests.swift */,
 				31DE49222EE2299500F3940A /* AIChatOmnibarTests.swift */,
 				F72808BE3E5BF485C31627B8 /* AIChatSettingsTests.swift */,
-				6AE7CA3678B14EDD94FD8D76 /* AIChatSettingsLinkTests.swift */,
 				EED735352BB46B6000F173D6 /* AutocompleteTests.swift */,
 				844905442E54ADD40054F4FD /* AutoconsentUITests.swift */,
 				EE54F7B22BBFEA48006218DB /* BookmarksAndFavoritesTests.swift */,
@@ -16964,7 +16961,6 @@
 				31DE49212EE2299500F3940A /* AIChatMultilinePasteTests.swift in Sources */,
 				31DE49232EE2299500F3940A /* AIChatOmnibarTests.swift in Sources */,
 				92351A6719194A9F4DD19D56 /* AIChatSettingsTests.swift in Sources */,
-				9C685D9290AE488FABE0EDDA /* AIChatSettingsLinkTests.swift in Sources */,
 				5680BCA72F17EC6400BD624E /* SSLErrorTests.swift in Sources */,
 				8449054B2E55BBD60054F4FD /* NavigationProtectionUITests.swift in Sources */,
 				EED735362BB46B6000F173D6 /* AutocompleteTests.swift in Sources */,

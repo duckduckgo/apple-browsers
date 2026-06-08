@@ -80,7 +80,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
     private var isUsingTopBarPosition: Bool {
-        didSet { updateSingleHostTopOffset() }
+        didSet {
+            updateSingleHostTopOffset()
+            unifiedSuggestionsHost?.setIsAddressBarAtBottom(!isUsingTopBarPosition)
+        }
     }
     private var isAdjustedForTopBar: Bool
 
@@ -385,7 +388,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let config = UnifiedSuggestionsHostConfig(
             source: source,
             inputsPublisher: inputsPublisher,
-            isAddressBarAtBottom: appSettings.currentAddressBarPosition == .bottom,
+            isAddressBarAtBottom: !isUsingTopBarPosition,
             favoritesProvider: { [weak self] in self?.makeSearchFavoritesController() },
             onSelectRow: { [weak self] id in
                 guard let suggestion = source.suggestion(forRowID: id) else { return }

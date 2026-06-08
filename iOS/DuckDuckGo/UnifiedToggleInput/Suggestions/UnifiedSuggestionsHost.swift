@@ -21,6 +21,9 @@ final class UnifiedSuggestionsHost {
     private let config: UnifiedSuggestionsHostConfig
     private let listViewModel: SuggestionsListViewModel
     private let viewModel: UnifiedSuggestionsViewModel
+    /// Tap-ahead arrow direction follows the UTI's live position, so it's mutable (not just the
+    /// config's install-time value, which is stale once the bar position is finalized).
+    private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
     private var escapeHatchModel: EscapeHatchModel?
     private var escapeHatchTopInset: CGFloat = 0
@@ -43,6 +46,7 @@ final class UnifiedSuggestionsHost {
 
     init(config: UnifiedSuggestionsHostConfig) {
         self.config = config
+        self.isAddressBarAtBottom = config.isAddressBarAtBottom
         self.listViewModel = SuggestionsListViewModel(source: config.source)
         self.viewModel = UnifiedSuggestionsViewModel(
             inputsPublisher: config.inputsPublisher,
@@ -80,7 +84,7 @@ final class UnifiedSuggestionsHost {
 
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
-            isAddressBarAtBottom: config.isAddressBarAtBottom,
+            isAddressBarAtBottom: isAddressBarAtBottom,
             header: makeHeader(),
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
         let hosting = UIHostingController(rootView: view)
@@ -109,6 +113,13 @@ final class UnifiedSuggestionsHost {
     func setAdditionalTopInset(_ inset: CGFloat) {
         escapeHatchTopInset = inset
         applyCombinedInsets()
+    }
+
+    /// Updates the tap-ahead arrow direction to match the UTI's current position.
+    func setIsAddressBarAtBottom(_ value: Bool) {
+        guard isAddressBarAtBottom != value else { return }
+        isAddressBarAtBottom = value
+        rebuildRootView()
     }
 
     /// Single-host path: the content inset the container would otherwise set on the swipe-container
@@ -184,7 +195,7 @@ final class UnifiedSuggestionsHost {
         guard let hosting = hostingController else { return }
         hosting.rootView = UnifiedSuggestionsView(
             viewModel: viewModel,
-            isAddressBarAtBottom: config.isAddressBarAtBottom,
+            isAddressBarAtBottom: isAddressBarAtBottom,
             header: makeHeader(),
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
     }

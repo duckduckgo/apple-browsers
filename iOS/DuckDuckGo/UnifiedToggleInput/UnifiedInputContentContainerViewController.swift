@@ -595,6 +595,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             internalUserCommands: ntpDeps.internalUserCommands
         )
         controller.hideBorderView()
+        // Route favorite taps / edits / tab actions to the host's delegate so they open like the
+        // standalone NTP (the embedded controller has no owner to set this otherwise).
+        controller.delegate = self
         // The escape hatch is rendered by the unified view's chrome (see UnifiedSuggestionsView
         // `.favorites`), not by the NTP — so it's consistent across every UTI state.
         controller.setEscapeHatch(nil)
@@ -959,4 +962,35 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
             break
         }
     }
+}
+
+// MARK: - NewTabPageControllerDelegate
+
+/// Forwards the embedded favorites NTP's actions to the host's delegate so favorites open / edit /
+/// switch-tab exactly like the standalone NTP.
+extension UnifiedInputContentContainerViewController: NewTabPageControllerDelegate {
+
+    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+        delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
+    }
+
+    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+        delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
+    }
+
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+        delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
+    }
+
+    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+        delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
+    }
+
+    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
+        delegate?.unifiedInputEditingStateDidRequestTryFireMode()
+    }
+
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {}
+
+    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {}
 }

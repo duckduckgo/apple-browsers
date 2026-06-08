@@ -1,0 +1,52 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_unified_input_send_prompt
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+        ff.experimentalAddressBar: "true"
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
+# Focus NTP omnibar and switch to Duck.ai mode
+- tapOn:
+    id: "searchEntry"
+- assertVisible:
+    id: "AddressBar.Button.DuckAI"
+- tapOn: "Duck.ai"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Submit a prompt
+- inputText: "What is a duck?"
+- assertVisible: "What is a duck?"
+- tapOn: "Submit"
+
+# Confirm we are now on the Duck.ai chat tab
+- assertVisible: "Close tab"
+- assertVisible: "Free Plan"

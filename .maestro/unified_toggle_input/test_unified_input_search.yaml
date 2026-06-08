@@ -1,0 +1,55 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_unified_input_search
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+        ff.experimentalAddressBar: "true"
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
+# Focus NTP omnibar — segmented toggle appears
+- tapOn:
+    id: "searchEntry"
+- assertVisible:
+    id: "AddressBar.Button.DuckAI"
+
+# Ensure Search mode is active (no AI toolbar)
+- tapOn: "Search"
+- assertNotVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Submit a search query via the unified input
+- inputText: "duckduckgo privacy"
+- pressKey: Enter
+
+# Confirm navigation: toggle gone, browser AI button still present (SERP loaded)
+- assertNotVisible:
+    id: "AddressBar.Button.DuckAI"
+- assertVisible:
+    id: "Browser.OmniBar.Button.AIChat"

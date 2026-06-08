@@ -1,0 +1,47 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_chat_tab_model_picker
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
+- assertVisible: "Close tab"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Tap model chip — picker popover opens showing subscription tiers
+- tapOn:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- assertVisible: "Plus"

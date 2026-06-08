@@ -298,7 +298,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         userScripts.append(identityTheftRestorationPagesUserScript)
 
         let homepageSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor()
-        if let pendingShowSearchModeToggle = homepageSeedPersistor.pendingShowSearchModeToggle {
+        if sourceProvider.featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg),
+           let pendingShowSearchModeToggle = homepageSeedPersistor.pendingShowSearchModeToggle {
             userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: pendingShowSearchModeToggle, onApplied: { applied in
                 if homepageSeedPersistor.pendingShowSearchModeToggle == applied {
                     homepageSeedPersistor.pendingShowSearchModeToggle = nil

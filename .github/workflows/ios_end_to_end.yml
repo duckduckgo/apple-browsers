@@ -186,7 +186,7 @@ jobs:
         echo "Resolved include: $include"
 
   end-to-end-tests:
-    name: End to end Tests (${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && ' / internal' || '' }})
+    name: "E2E: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }}"
     needs: [build-end-to-end-tests, setup-matrix]
     runs-on: macos-26
     timeout-minutes: 300
@@ -217,7 +217,7 @@ jobs:
         name: duckduckgo-ios-app
         path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
-    - name: End to End tests (${{ matrix.device-name }}${{ matrix.user-mode == 'internal' && ' / internal' || '' }})
+    - name: Run Maestro tests (${{ matrix.device-name }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }})
       id: upload
       uses: mobile-dev-inc/action-maestro-cloud@v1.9.8
       with:

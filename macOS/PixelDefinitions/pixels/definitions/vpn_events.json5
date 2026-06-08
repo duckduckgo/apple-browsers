@@ -25,28 +25,28 @@
         "owners": ["diegoreymendez", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource"]
+        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource", "channel"]
     },
     "m_mac_netp_ev_enable_attempt_success": {
         "description": "Fired when a VPN connection attempt succeeds",
         "owners": ["diegoreymendez", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource"]
+        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource", "channel"]
     },
     "m_mac_netp_ev_enable_attempt_failure": {
         "description": "Fired when a VPN connection attempt fails",
         "owners": ["diegoreymendez", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource"]
+        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource", "channel"]
     },
     "m_mac_netp_tunnel_start_attempt_on_demand_without_access_token": {
         "description": "Fired when an on-demand VPN start attempt fails before reaching the actual tunnel start, due to a prerequisite failure such as a missing or unfetchable subscription token, missing settings, or other startup errors. Error parameters identify the underlying cause.",
         "owners": ["diegoreymendez", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211597559231997
     "m_mac_wide_vpn_connection": {

@@ -108,6 +108,24 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, 
 
     public func deleteChat(chatId: String) throws {
         try dataStore.deleteChat(chatId: chatId)
+        try markChatLocallyDeleted(chatId: chatId)
+    }
+
+    /// Atomically inserts `chatId` into the reserved `locallyDeletedChatIds` entry so the
+    /// Duck.ai web app can read it via `getEntry`. The full read-modify-write runs under
+    /// `settingsLock` so concurrent deletes never lose IDs.
+    private func markChatLocallyDeleted(chatId: String) throws {
+        let key = DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds
+
+        try settingsLock.withLock {
+            var settings = try loadSettingsBlob()
+            var deletedIDs = settings[key] as? Set<String> ?? Set()
+
+            deletedIDs.insert(chatId)
+            settings[key] = Array(deletedIDs)
+
+            try saveSettingsBlob(settings)
+        }
     }
 
     public func deleteAllChats() throws {

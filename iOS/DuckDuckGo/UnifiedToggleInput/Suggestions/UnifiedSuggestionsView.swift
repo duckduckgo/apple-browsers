@@ -102,7 +102,8 @@ struct UnifiedSuggestionsView: View {
         /// Matches the NTP's `sectionsViewHorizontalPadding` (regularPadding) so the hatch and the
         /// suggestion list share the favorites grid's side margins.
         static let contentHorizontalMargin: CGFloat = 24
-        static let hatchTopInset: CGFloat = 14
+        /// Matches the NTP's hatch top inset so the chrome hatch lines up with the NTP hatch.
+        static let hatchTopInset: CGFloat = 16
         static let hatchBottomInset: CGFloat = 16
     }
 }

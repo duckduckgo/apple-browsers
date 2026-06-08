@@ -11,12 +11,7 @@
                 "pattern": "^sample(?:100|0?[1-9]|[1-9][0-9])$"
             }
         ],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "duration",
-            "navigation_type"
-        ]
+        "parameters": ["appVersion", "pixelSource", "duration", "navigation_type"]
     },
     "m_site_loading_failure": {
         "description": "Fired when a site loading navigation fails.",

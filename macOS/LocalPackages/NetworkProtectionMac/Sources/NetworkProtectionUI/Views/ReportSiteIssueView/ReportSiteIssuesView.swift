@@ -22,7 +22,7 @@ import SwiftUI
 import SwiftUIExtensions
 import VPNPixels
 
-struct ReportSiteIssuesView: ModalView {
+public struct ReportSiteIssuesView: ModalView {
 
     let domain: String
     @Environment(\.dismiss) private var dismiss

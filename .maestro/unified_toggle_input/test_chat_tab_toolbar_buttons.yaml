@@ -7,42 +7,13 @@ name: test_chat_tab_toolbar_buttons
 
 ---
 
-- launchApp:
-    appId: "com.duckduckgo.mobile.ios"
-    clearState: true
-    clearKeychain: true
-    arguments:
-        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
-        currentAppVariant: ${APP_VARIANT}
-        isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
-
-# Open Duck.ai chat tab
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-
 - runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
+    file: ../shared/open_chat_tab.yaml
 
-- assertVisible: "Close tab"
-
-# Verify all toolbar buttons are present on the chat tab
-# Note: Tools and Attach use UIMenu (showsMenuAsPrimaryAction); their menu items
-# are not accessible to Maestro's a11y bridge — only the buttons themselves are verified here.
+# Verify all toolbar buttons are present on the chat tab.
+# Note: ModelChip, Reasoning, Tools and Attach are UIButton-backed UIMenus
+# (showsMenuAsPrimaryAction); their menu items are not reachable via Maestro's a11y bridge,
+# so only the buttons themselves are verified here.
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
 - assertVisible:

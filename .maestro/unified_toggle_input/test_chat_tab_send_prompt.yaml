@@ -7,39 +7,9 @@ name: test_chat_tab_send_prompt
 
 ---
 
-- launchApp:
-    appId: "com.duckduckgo.mobile.ios"
-    clearState: true
-    clearKeychain: true
-    arguments:
-        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
-        currentAppVariant: ${APP_VARIANT}
-        isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
-
-# Open Duck.ai chat tab
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-
 - runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
+    file: ../shared/open_chat_tab.yaml
 
-# Verify chat tab is open
-- assertVisible: "Close tab"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
 
@@ -49,12 +19,16 @@ name: test_chat_tab_send_prompt
 - inputText: "What is a duck?"
 - tapOn: "Submit"
 
-# Dismiss the anonymous-chat consent that appears on first send (clearState wipes acceptance)
+# First send on a clearState device shows the anonymous-chat consent. Accepting it dispatches
+# the pending prompt (verified on-device: no re-submit needed). On a non-clean device the
+# block is skipped because consent was already accepted.
 - runFlow:
     when:
         visible: "Agree"
     commands:
         - tapOn: "Agree"
 
-# User message appears in conversation (deterministic: text persists as chat bubble)
+# The submitted prompt renders as a user message bubble. The input field clears on send, so
+# this matches the conversation bubble rather than the still-populated input. The AI response
+# is non-deterministic, so we assert only the user's own message.
 - assertVisible: "What is a duck?"

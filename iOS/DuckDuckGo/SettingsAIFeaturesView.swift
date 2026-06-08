@@ -65,7 +65,8 @@ struct SettingsAIFeaturesView: View {
                 SettingsCellView(label: UserText.settingsEnableAiChat,
                                  subtitle: UserText.settingsEnableAiChatSubtitle,
                                  image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
-                                 accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding))
+                                 accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding),
+                                 accessoryAccessibilityIdentifier: "Settings.AIFeatures.Toggle.DuckAI")
             }
 
             if viewModel.isAiChatEnabledBinding.wrappedValue {

@@ -83,7 +83,10 @@ tags:
 # Close tab to prepare for AI Features off test
 - tapOn: "Close tab"
 
-# Turn off AI Features
+# Turn Duck.ai OFF entirely via the master toggle in AI Features.
+# (The "Search Only" picker only hides the unified Search/Duck.ai toggle — it does NOT
+# disable Duck.ai. The master switch on the "Duck.ai" row is the setting that removes
+# Duck.ai access; toggling it off also hides the mode picker below it.)
 - tapOn: "Browsing Menu"
 - tapOn: "Settings"
 - scrollUntilVisible:
@@ -91,8 +94,7 @@ tags:
     direction: DOWN
 - tapOn: "AI Features"
 - tapOn:
-    text: "1"
-    index: 0
+    id: "Settings.AIFeatures.Toggle.DuckAI"
 - tapOn: "Settings"
 - tapOn: "Done"
 
@@ -100,7 +102,7 @@ tags:
 - assertNotVisible:
     id: "Browser.OmniBar.Button.AIChat"
 
-# Verify "New Chat" hidden in Browsing Menu
+# Verify "Duck.ai" entry hidden in Browsing Menu
 - tapOn:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site"

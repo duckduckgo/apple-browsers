@@ -7,38 +7,13 @@ name: test_chat_tab_new_button
 
 ---
 
-- launchApp:
-    appId: "com.duckduckgo.mobile.ios"
-    clearState: true
-    clearKeychain: true
-    arguments:
-        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
-        currentAppVariant: ${APP_VARIANT}
-        isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
-
-# Open Duck.ai chat tab
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-
 - runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
+    file: ../shared/open_chat_tab.yaml
 
-# Verify the chat tab header contains both the close and new-chat controls
+# Verify the chat-tab header exposes the New (plus) and Recent chats controls.
+# Note: the New control is a UIButton-backed UIMenu (showsMenuAsPrimaryAction) whose items
+# (New Chat / New Voice Chat / New Tab / New Search / New Fire Tab) are not reachable via
+# Maestro's a11y bridge, so this asserts the control is present rather than the menu contents.
 - assertVisible: "Close tab"
 - assertVisible: "New"
 - assertVisible: "Recent chats"

@@ -19,43 +19,40 @@ name: test_unified_toggle_input
         ff.unifiedToggleInput: "true"
         ff.experimentalAddressBar: "true"
 
+# Dismiss any launch-time modal BEFORE navigating the Browsing Menu (set_search_and_duckai's
+# first action taps the menu, which a lingering modal would otherwise block).
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
 # Enable "Search & Duck.ai" mode via Settings UI (cannot inject via launch arg — crashes)
 - runFlow:
     file: ../shared/set_search_and_duckai.yaml
-
-- runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
 
 # Focus NTP omnibar — reveals the Search/Duck.ai segmented toggle
 - tapOn:
     id: "searchEntry"
 - assertVisible:
     id: "AddressBar.Button.DuckAI"
-- assertVisible: "Search"
-- assertVisible: "Duck.ai"
+- assertVisible:
+    id: "AddressBar.Button.Search"
 
 # Switch to Duck.ai mode — AI toolbar (ModelChip) appears
-- tapOn: "Duck.ai"
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
 
 # Switch back to Search mode — ModelChip disappears
-- tapOn: "Search"
+- tapOn:
+    id: "AddressBar.Button.Search"
 - assertNotVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
 
 # Typed text is preserved across mode switches
 - inputText: "What is a tokamak?"
 - assertVisible: "What is a tokamak?"
-- tapOn: "Duck.ai"
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
 - assertVisible: "What is a tokamak?"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"

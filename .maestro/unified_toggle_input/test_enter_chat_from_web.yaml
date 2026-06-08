@@ -18,16 +18,9 @@ name: test_enter_chat_from_web
         ff.browsingMenuSheetEnabledByDefault: "true"
         ff.unifiedToggleInput: "true"
 
+# Dismiss any launch-time modals
 - runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
+    file: ../shared/dismiss_chat_open_modals.yaml
 
 # Load a web page
 - tapOn:
@@ -36,22 +29,15 @@ name: test_enter_chat_from_web
 - pressKey: Enter
 - assertVisible: ".*Privacy Test Pages.*"
 
-# Open chat from Browsing Menu while on a web page
+# Open chat from the Browsing Menu while on a web page
 - tapOn: "Browsing Menu"
 - assertVisible: "Duck.ai"
 - tapOn: "Duck.ai"
 
-# Dismiss any modals that appear when chat tab opens for the first time
+# Dismiss any modals that appear when the chat tab opens for the first time
+# (same canonical sequence as every other chat-open flow, so the dismissal count can't drift).
 - runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
+    file: ../shared/dismiss_chat_open_modals.yaml
 
 # Verify Duck.ai chat tab is now open
 - assertVisible: "Close tab"

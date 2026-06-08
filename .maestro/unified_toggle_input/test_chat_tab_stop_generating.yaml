@@ -7,60 +7,36 @@ name: test_chat_tab_stop_generating
 
 ---
 
-- launchApp:
-    appId: "com.duckduckgo.mobile.ios"
-    clearState: true
-    clearKeychain: true
-    arguments:
-        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
-        currentAppVariant: ${APP_VARIANT}
-        isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
-
-# Open Duck.ai chat tab
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-
 - runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
+    file: ../shared/open_chat_tab.yaml
 
-- assertVisible: "Close tab"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"
 
-# Submit a prompt long enough to guarantee generation is in-progress when stop is tapped
+# Submit a prompt long enough that generation is still in progress when we stop it.
 - tapOn:
     id: "searchEntry"
 - inputText: "Explain the life cycle of a duck in detail."
 - tapOn: "Submit"
 
-# Dismiss the anonymous-chat consent that appears on first send (clearState wipes acceptance)
+# First send on a clearState device shows the anonymous-chat consent. Accepting it dispatches
+# the pending prompt (verified on-device: no re-submit needed).
 - runFlow:
     when:
         visible: "Agree"
     commands:
         - tapOn: "Agree"
 
-# Stop button should appear while the model is generating; tap it
+# The Stop button appears while the live model is generating; tap it.
+# NOTE: this races a live backend response and is inherently latency/availability dependent.
+# It is acceptable for the nightly release job but is not a deterministic gate.
 - extendedWaitUntil:
     visible: "Stop generating"
     timeout: 15000
 - tapOn: "Stop generating"
 
-# After stopping, the stop button disappears and the prompt bubble remains visible
-- assertNotVisible: "Stop generating"
+# Generation halts: the Stop control disappears and the user's prompt bubble remains.
+- extendedWaitUntil:
+    notVisible: "Stop generating"
+    timeout: 10000
 - assertVisible: "Explain the life cycle of a duck in detail."

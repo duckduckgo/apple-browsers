@@ -7,45 +7,17 @@ name: test_chat_tab_new_chat
 
 ---
 
-- launchApp:
-    appId: "com.duckduckgo.mobile.ios"
-    clearState: true
-    clearKeychain: true
-    arguments:
-        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
-        currentAppVariant: ${APP_VARIANT}
-        isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
-
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-
 - runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
+    file: ../shared/open_chat_tab.yaml
 
-- assertVisible: "Close tab"
-
-# Tap "Recent chats" — opens the chat history + new chat panel
+# "Recent chats" opens the chat panel, which exposes the new-chat actions
+# (verified on-device: New Chat / New Voice Chat / New Image are all present here).
 - tapOn: "Recent chats"
 - assertVisible: "New Chat"
 - assertVisible: "New Voice Chat"
 - assertVisible: "New Image"
 
-# Tap "New Chat" — starts a new empty chat; panel closes, chat tab remains open
+# Start a new chat — the panel closes and the chat tab remains open.
 - tapOn: "New Chat"
 - assertVisible: "Close tab"
 - assertVisible:

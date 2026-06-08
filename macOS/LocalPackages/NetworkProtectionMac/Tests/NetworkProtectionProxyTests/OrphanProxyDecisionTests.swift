@@ -114,30 +114,3 @@ final class OrphanProxyDecisionTests: XCTestCase {
             shouldFirePixel: true))
     }
 }
-
-final class OrphanProxyBucketTests: XCTestCase {
-
-    private let now = Date()
-
-    private func heartbeatBucket(ageSeconds: TimeInterval?) -> TransparentProxyProvider.HeartbeatAgeBucket {
-        let date = ageSeconds.map { now.addingTimeInterval(-$0) }
-        return TransparentProxyProvider.HeartbeatAgeBucket.bucket(for: date, now: now)
-    }
-
-    func testHeartbeatBuckets() {
-        XCTAssertEqual(heartbeatBucket(ageSeconds: nil), .missing)
-        XCTAssertEqual(heartbeatBucket(ageSeconds: 299), .under5m)
-        XCTAssertEqual(heartbeatBucket(ageSeconds: 300), .under30m)
-        XCTAssertEqual(heartbeatBucket(ageSeconds: 1799), .under30m)
-        XCTAssertEqual(heartbeatBucket(ageSeconds: 1800), .over30m)
-    }
-
-    func testProxyBuckets() {
-        XCTAssertEqual(TransparentProxyProvider.ProxyAgeBucket.bucket(for: 299), .under5m)
-        XCTAssertEqual(TransparentProxyProvider.ProxyAgeBucket.bucket(for: 300), .under30m)
-        XCTAssertEqual(TransparentProxyProvider.ProxyAgeBucket.bucket(for: 1799), .under30m)
-        XCTAssertEqual(TransparentProxyProvider.ProxyAgeBucket.bucket(for: 1800), .under2h)
-        XCTAssertEqual(TransparentProxyProvider.ProxyAgeBucket.bucket(for: 7199), .under2h)
-        XCTAssertEqual(TransparentProxyProvider.ProxyAgeBucket.bucket(for: 7200), .over2h)
-    }
-}

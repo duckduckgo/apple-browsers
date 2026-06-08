@@ -213,6 +213,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.modelPickerMenu = newValue }
     }
 
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        toolsToolbar.presentModelPickerMenu()
+    }
+
     var toolsMenu: UIMenu? {
         get { toolsToolbar.toolsMenu }
         set { toolsToolbar.toolsMenu = newValue }

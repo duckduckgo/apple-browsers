@@ -65,6 +65,11 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// tool state in the Unified Input toolbar.
     case newImageGenerationChatStarted
 
+    /// Posted by the FE when the user taps "Switch Model" on the subscription recovery card
+    /// shown for an unsupported model. Native surfaces its model picker for the active chat
+    /// (expands the input, reveals the model chip).
+    case showModelPicker
+
     // Sync
     case getSyncStatus
     case getScopedSyncAuthToken

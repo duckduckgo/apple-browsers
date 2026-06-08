@@ -625,6 +625,28 @@ private extension MainViewController {
                 self?.handleNewImageGenerationChatStarted(for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatShowModelPicker)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.handleShowModelPicker(for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+    }
+
+    /// Routes the FE's `showModelPicker` to the foreground Duck.ai tab's UTI so the user can pick a
+    /// supported model for the active chat (recovery-card "Switch Model" CTA). No-op when there's no
+    /// foreground Duck.ai UTI.
+    private func handleShowModelPicker(for webView: WKWebView) {
+        let isCurrent = tabManager.controller(forWebView: webView) === currentTab
+        let isAITab = currentTab?.isAITab == true
+        guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
+            print("🇯🇵🍣 [showModelPicker] no-op: no foreground Duck.ai UTI isCurrent=\(isCurrent) isAITab=\(isAITab) hasCoordinator=\(unifiedToggleInputCoordinator != nil)")
+            return
+        }
+        print("🇯🇵🍣 [showModelPicker] routing to foreground UTI coordinator for active Duck.ai chat")
+        coordinator.presentModelPickerForActiveChat()
     }
 
     /// Updates the foreground tab's UTI to reflect an FE-initiated image-generation chat.

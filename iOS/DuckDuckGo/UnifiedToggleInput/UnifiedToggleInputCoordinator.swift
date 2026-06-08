@@ -267,6 +267,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
     private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
+    /// Set when the FE asks (via `showModelPicker`) to surface the model picker on the active
+    /// chat. Additively overrides only the `hasSubmittedPrompt`- driven hide in
+    /// `updateModelChipVisibility`, so the chip becomes tappable mid-chat without touching the
+    /// existing show/hide rule. Cleared once a supported model is applied or the session resets.
+    private var isModelPickerForcedVisible = false
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -762,6 +767,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
+        isModelPickerForcedVisible = false
         syncInputBehaviorToHandler()
         isInputVisibleForKeyboard = true
         // The live state is no longer authoritative for the previous tab; clearing
@@ -1349,6 +1355,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func startNewChat() {
         isNewChatPending = true
         hasSubmittedPrompt = false
+        isModelPickerForcedVisible = false
         resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -1378,6 +1385,27 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         userScript.submitChangeModel(modelId)
     }
 
+    /// Surfaces the native model picker on the **active** chat in response to the FE's
+    /// `showModelPicker` (e.g. the recovery card's "Switch Model" CTA). Expands the input and
+    /// reveals the model chip **without starting a new chat** — the chat stays `hasSubmittedPrompt`,
+    /// so a subsequent supported-model selection still emits `submitChangeModelAction`.
+    func presentModelPickerForActiveChat() {
+        print("🇯🇵🍣 [showModelPicker] coordinator presenting model picker host=\(host) hasSubmittedPrompt=\(hasSubmittedPrompt) displayState=\(displayState)")
+        isModelPickerForcedVisible = true
+        showExpanded(inputMode: .aiChat)
+        // Defer to the next runloop so the toolbar (and the now-revealed chip) is laid out after the
+        // expand animation before we ask the button to open its menu.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let didAutoOpen = self.viewController.presentModelPickerMenu()
+            if didAutoOpen {
+                print("🇯🇵🍣 [showModelPicker] auto-opened model picker menu")
+            } else {
+                print("🇯🇵❗️ [showModelPicker] auto-open API unavailable (<iOS 17.4); model chip revealed for manual tap")
+            }
+        }
+    }
+
     func handleModelSelection(_ modelId: String) {
         print("🇯🇵 [UTI subscription flow] Native UTI model selected modelId=\(modelId) currentUserTier=\(subscriptionState.userTier.rawValue) hasActiveSubscription=\(subscriptionState.hasActiveSubscription)")
         guard let model = modelStore.models.first(where: { $0.id == modelId }) else {
@@ -1389,6 +1417,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             print("🇯🇵 [UTI subscription flow] Native UTI model selection allowed modelId=\(modelId) requiredTier=\(model.lowestPublicAccessTier.map { String(describing: $0) } ?? "nil")")
             let isNewSelection = modelId != modelStore.persistedModelId
             pendingGatedModelId = nil
+            if isModelPickerForcedVisible {
+                print("🇯🇵🍣 [showModelPicker] supported model selected — clearing forced chip visibility modelId=\(modelId)")
+                isModelPickerForcedVisible = false
+            }
             updateSelectedModel(modelId)
             if isNewSelection {
                 Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
@@ -1503,6 +1535,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         let isNewSelection = modelId != modelStore.persistedModelId
         pendingGatedModelId = nil
+        // Mirror the direct-selection path: the gated model the recovery-card flow was waiting on
+        // is now accessible (post-purchase), so drop the forced reveal and let the chip re-hide.
+        if isModelPickerForcedVisible {
+            print("🇯🇵🍣 [showModelPicker] pending gated model became accessible — clearing forced chip visibility modelId=\(modelId)")
+            isModelPickerForcedVisible = false
+        }
         updateSelectedModel(modelId)
         if isNewSelection {
             Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
@@ -2289,8 +2327,10 @@ private extension UnifiedToggleInputCoordinator {
         // Contextual chat picks the model upstream (in the half-sheet); the model chip is permanently hidden here.
         // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
         let isImageGenActive = toolsController.selectedTool == .imageGeneration
-        let shouldHideModelChip = host == .contextualChat || hasSubmittedPrompt || isImageGenActive
-        print("🇯🇵🍣 [UTI model picker experiment] modelChipHidden=\(shouldHideModelChip) host=\(host) hasSubmittedPrompt=\(hasSubmittedPrompt) isImageGenActive=\(isImageGenActive)")
+        // `isModelPickerForcedVisible` only relaxes the `hasSubmittedPrompt` hide reason — contextual
+        // chat and image generation stay hidden regardless.
+        let shouldHideModelChip = host == .contextualChat || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
+        print("🇯🇵🍣 [UTI model picker experiment] modelChipHidden=\(shouldHideModelChip) host=\(host) hasSubmittedPrompt=\(hasSubmittedPrompt) isImageGenActive=\(isImageGenActive) isModelPickerForcedVisible=\(isModelPickerForcedVisible)")
         viewController.isModelChipHidden = shouldHideModelChip
         updateReasoningPicker()
     }
@@ -2312,6 +2352,7 @@ private extension UnifiedToggleInputCoordinator {
         aiChatStatus = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
+        isModelPickerForcedVisible = false
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }

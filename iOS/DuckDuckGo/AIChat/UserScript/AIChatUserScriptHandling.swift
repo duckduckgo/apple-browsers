@@ -176,6 +176,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -563,6 +564,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatNewImageGenerationChatStarted, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Model Picker
+
+    @MainActor
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        print("🇯🇵🍣 [showModelPicker] handler received FE message; posting notification webViewURL=\(message.messageWebView?.url?.absoluteString ?? "nil")")
+        NotificationCenter.default.post(name: .aiChatShowModelPicker, object: message.messageWebView)
         return nil
     }
 

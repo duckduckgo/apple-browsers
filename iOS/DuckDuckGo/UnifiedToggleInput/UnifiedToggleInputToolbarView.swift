@@ -116,6 +116,18 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    /// Programmatically opens the model chip's pull-down menu. Returns `true` when the OS
+    /// exposes an API to trigger it (iOS 17.4+, where `performPrimaryAction()` lands), `false`
+    /// otherwise.
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        if #available(iOS 17.4, *) {
+            modelChipButton.performPrimaryAction()
+            return true
+        }
+        return false
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { reasoningButton.menu }
         set {

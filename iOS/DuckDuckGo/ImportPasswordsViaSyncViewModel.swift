@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import Core
+import DesignResourcesKitIcons
 
 protocol ImportPasswordsViaSyncViewModelDelegate: AnyObject {
     func importPasswordsViaSyncViewModelDidRequestOpenSync(_ viewModel: ImportPasswordsViaSyncViewModel)

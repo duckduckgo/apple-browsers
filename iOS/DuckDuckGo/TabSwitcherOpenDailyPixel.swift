@@ -38,8 +38,10 @@ struct TabSwitcherOpenDailyPixel {
     }
 
     private func tabCountBucket(for tabs: [Tab]) -> String? {
-        let count = tabs.count
+        Self.tabCountBucket(forCount: tabs.count)
+    }
 
+    static func tabCountBucket(forCount count: Int) -> String? {
         switch count {
         case 0: return nil
         case 1...1: return "1"
@@ -51,7 +53,6 @@ struct TabSwitcherOpenDailyPixel {
         case 61...80: return "61-80"
         default: return "81+"
         }
-
     }
 
     private func bucketForInactiveTabs<Range: RangeExpression>(_ tabs: [Tab], within daysInterval: Range, from referenceDate: Date) -> String? where Range.Bound == Int {

@@ -74,6 +74,9 @@ final class EscapeHatchModel: ObservableObject {
     let domain: String?
     let targetTab: Tab
     let isActionsEnabled: Bool
+    /// When on, the destructive "delete tab" action is surfaced as a dedicated Fire button on the card
+    /// instead of (and removed from) the three-dots menu. Gated by the `escapeHatchFireButton` feature flag.
+    let isFireButtonEnabled: Bool
     let onCardTap: () -> Void
     let onTabSwitcherTap: () -> Void
     let onCloseTab: () -> Void
@@ -88,6 +91,7 @@ final class EscapeHatchModel: ObservableObject {
          targetTab: Tab,
          tabsSource: some EscapeHatchTabsSource,
          isActionsEnabled: Bool,
+         isFireButtonEnabled: Bool = false,
          afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
          onCardTap: @escaping () -> Void,
          onTabSwitcherTap: @escaping () -> Void,
@@ -101,6 +105,7 @@ final class EscapeHatchModel: ObservableObject {
         self.domain = domain
         self.targetTab = targetTab
         self.isActionsEnabled = isActionsEnabled
+        self.isFireButtonEnabled = isFireButtonEnabled
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.onCardTap = onCardTap
         self.onTabSwitcherTap = onTabSwitcherTap
@@ -124,6 +129,7 @@ final class EscapeHatchModel: ObservableObject {
             targetTab: targetTab,
             tabsSource: tabsSource,
             isActionsEnabled: featureFlagger.isFeatureOn(.escapeHatchActions),
+            isFireButtonEnabled: featureFlagger.isFeatureOn(.escapeHatchFireButton),
             afterInactivityOptionAdapter: afterInactivityOptionAdapter,
             onCardTap: { [weak router] in
                 router?.escapeHatchDidRequestSwitch(to: targetTab)

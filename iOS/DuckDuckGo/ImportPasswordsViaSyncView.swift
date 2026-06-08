@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import Core
 import DuckUI
 import MetricBuilder
@@ -60,7 +61,7 @@ struct ImportPasswordsViaSyncView: View {
 
         var body: some View {
             VStack(spacing: 8) {
-                Image(.syncDesktopNew128)
+                Image(rebrandable: "Desktop-Sync-Passwords-128")
 
                 VStack(spacing: 4) {
                     Text(UserText.autofillImportPasswordsViaSyncTitle)

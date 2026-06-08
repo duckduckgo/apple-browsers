@@ -164,18 +164,29 @@ struct FireModeEmptyStateView: View {
     @ViewBuilder
     private var newFireTabButton: some View {
         if let onNewFireTab {
-            Button(action: onNewFireTab) {
-                HStack(spacing: Constants.iconTextSpacing) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size16.add)
-                    Text(UserText.fireModeEmptyStateNewFireTab)
-                        .daxButton()
+            if AppRebrand.isAppRebranded() {
+                Button(action: onNewFireTab) {
+                    newFireTabButtonLabel
                 }
-                .foregroundColor(Color(designSystemColor: .accentContentPrimary))
-                .frame(height: Constants.buttonHeight)
-                .padding(.horizontal, Constants.buttonHorizontalPadding)
-                .background(Color(singleUseColor: .fireModeAccent))
-                .clipShape(RoundedRectangle(cornerRadius: Constants.buttonCornerRadius))
+                .buttonStyle(SecondaryFillButtonStyle())
+            } else {
+                Button(action: onNewFireTab) {
+                    newFireTabButtonLabel
+                        .foregroundColor(Color(designSystemColor: .accentContentPrimary))
+                        .frame(height: Constants.buttonHeight)
+                        .padding(.horizontal, Constants.buttonHorizontalPadding)
+                        .background(Color(singleUseColor: .fireModeAccent))
+                        .clipShape(RoundedRectangle(cornerRadius: Constants.buttonCornerRadius))
+                }
             }
+        }
+    }
+
+    private var newFireTabButtonLabel: some View {
+        HStack(spacing: Constants.iconTextSpacing) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.add)
+            Text(UserText.fireModeEmptyStateNewFireTab)
+                .daxButton()
         }
     }
 

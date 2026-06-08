@@ -390,6 +390,7 @@ struct DataImportSummaryView: View {
             VStack(alignment: .center, spacing: 0) {
                 icon
                     .resizable()
+                    .aspectRatio(contentMode: .fit)
                     .frame(width: Metrics.imageSize, height: Metrics.imageSize)
                     .padding(.top, 16)
 

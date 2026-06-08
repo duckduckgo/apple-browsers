@@ -111,26 +111,19 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, 
         try markChatLocallyDeleted(chatId: chatId)
     }
 
-    /// Atomically inserts `chatId` into the reserved `locallyDeletedChatIds` entry so the
-    /// Duck.ai web app can read it via `getEntry`. The full read-modify-write runs under
-    /// `settingsLock` so concurrent deletes never lose IDs.
-    private func markChatLocallyDeleted(chatId: String) throws {
-        let key = DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds
-
-        try settingsLock.withLock {
-            var settings = try loadSettingsBlob()
-            let deletedIDs = settings[key] as? [String] ?? []
-
-            var updatedIDs = Set(deletedIDs)
-            updatedIDs.insert(chatId)
-            settings[key] = Array(updatedIDs)
-
-            try saveSettingsBlob(settings)
-        }
-    }
-
     public func deleteAllChats() throws {
         try dataStore.deleteAllChats()
+    }
+
+    // MARK: - Private Helpers
+    
+    /// Atomically inserts `chatId` into the reserved `locallyDeletedChatIds` entry so the Duck.ai web app can read it via `getEntry`
+    private func markChatLocallyDeleted(chatId: String) throws {
+        try updateEntry(key: .locallyDeletedChatIds) { settings in
+            var deletedIDs = Set(settings as? [String] ?? [])
+            deletedIDs.insert(chatId)
+            return Array(deletedIDs)
+        }
     }
 
     // MARK: - Files (delegation)
@@ -194,6 +187,20 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, 
     // MARK: - Lifecycle
 
     public var setupSucceeded: Bool? { dataStore.setupSucceeded }
+
+    // MARK: - Settings Helpers
+
+    private func updateEntry(key: DuckAiNativeStorageReservedEntryKeys, work: (Any?) -> Any?) throws {
+        try updateEntry(key: key.rawValue, work: work)
+    }
+
+    private func updateEntry(key: String, work: (_ oldValue: Any?) -> Any?) throws {
+        try settingsLock.withLock {
+            var settings = try loadSettingsBlob()
+            settings[key] = work(settings[key])
+            try saveSettingsBlob(settings)
+        }
+    }
 
     // MARK: - Private helpers
 

@@ -31,10 +31,9 @@ public struct DuckAiNativeStorageSettings: StoringKeys {
     public let settings = StorageKey<Data>(DuckAiNativeStorageKeyNames.settings)
 }
 
-/// Well-known entry keys that carry a contract with the Duck.ai web app, which reads
-/// them over the storage userscript bridge via `getEntry`.
-public enum DuckAiNativeStorageReservedEntryKeys {
-    /// Entry holding the JSON array of chat IDs deleted on the native side. The web app
-    /// reads it to reconcile deletions it did not itself initiate. Value: `[String]`.
-    public static let locallyDeletedChatIds = "locallyDeletedChatIds"
+/// Well-known entry keys that carry a contract with the Duck.ai web app, which reads them over the storage userscript bridge via `getEntry`.
+public enum DuckAiNativeStorageReservedEntryKeys: String {
+    /// Entry holding the JSON array of chat IDs deleted on the native side.
+    /// The web app reads it to reconcile deletions it did not itself initiate. Value: `[String]`.
+    case locallyDeletedChatIds = "locallyDeletedChatIds"
 }

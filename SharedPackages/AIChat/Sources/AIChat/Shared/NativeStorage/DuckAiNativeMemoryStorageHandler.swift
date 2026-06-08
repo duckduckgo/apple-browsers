@@ -126,11 +126,17 @@ public final class DuckAiNativeMemoryStorageHandler: DuckAiNativeStorageHandling
     public func deleteChat(chatId: String) throws {
         lock.lock()
         defer { lock.unlock() }
+
         chats.removeValue(forKey: chatId)
-        let key = DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds
-        var set = Set((entries[key] as? [String]) ?? [])
-        set.insert(chatId)
-        entries[key] = Array(set)
+    }
+
+    private func markChatLocallyDeleted(chatId: String) throws {
+        let key = DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue
+        let deletedIDs = entries[key] as? [String] ?? []
+        var updatedIDs = Set(deletedIDs)
+        updatedIDs.insert(chatId)
+
+        entries[key] = Array(updatedIDs)
     }
 
     public func deleteAllChats() throws {

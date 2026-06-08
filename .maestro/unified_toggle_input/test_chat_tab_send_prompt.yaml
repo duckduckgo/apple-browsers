@@ -49,5 +49,12 @@ name: test_chat_tab_send_prompt
 - inputText: "What is a duck?"
 - tapOn: "Submit"
 
+# Dismiss the anonymous-chat consent that appears on first send (clearState wipes acceptance)
+- runFlow:
+    when:
+        visible: "Agree"
+    commands:
+        - tapOn: "Agree"
+
 # User message appears in conversation (deterministic: text persists as chat bubble)
 - assertVisible: "What is a duck?"

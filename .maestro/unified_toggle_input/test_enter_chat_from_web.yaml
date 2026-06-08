@@ -41,6 +41,18 @@ name: test_enter_chat_from_web
 - assertVisible: "Duck.ai"
 - tapOn: "Duck.ai"
 
+# Dismiss any modals that appear when chat tab opens for the first time
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
 # Verify Duck.ai chat tab is now open
 - assertVisible: "Close tab"
 - assertVisible: "Free Plan"

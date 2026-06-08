@@ -47,6 +47,13 @@ name: test_unified_input_send_prompt
 - assertVisible: "What is a duck?"
 - tapOn: "Submit"
 
+# Dismiss the anonymous-chat consent that appears on first send (clearState wipes acceptance)
+- runFlow:
+    when:
+        visible: "Agree"
+    commands:
+        - tapOn: "Agree"
+
 # Confirm we are now on the Duck.ai chat tab
 - assertVisible: "Close tab"
 - assertVisible: "Free Plan"

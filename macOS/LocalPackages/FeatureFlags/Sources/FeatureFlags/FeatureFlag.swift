@@ -48,10 +48,12 @@ public enum FeatureFlag: String, CaseIterable {
     case networkProtectionAppStoreSysexMessage
 
     /// Kill switch: enable remotely to disable orphaned-proxy detection (tunnel heartbeat + proxy detection loop + pixel).
-    case networkProtectionOrphanProxyDetectionKillSwitch
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454304
+    case vpnOrphanProxyDetectionKillSwitch
 
     /// Kill switch: enable remotely to disable the orphaned-proxy full-bypass behavior.
-    case networkProtectionOrphanProxyBypassKillSwitch
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454309
+    case vpnOrphanProxyBypassKillSwitch
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
@@ -442,9 +444,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension)), category: .vpn)
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage)), category: .vpn)
-        case .networkProtectionOrphanProxyDetectionKillSwitch:
+        case .vpnOrphanProxyDetectionKillSwitch:
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.orphanProxyDetectionKillSwitch)), category: .vpn)
-        case .networkProtectionOrphanProxyBypassKillSwitch:
+        case .vpnOrphanProxyBypassKillSwitch:
             Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.orphanProxyBypassKillSwitch)), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)

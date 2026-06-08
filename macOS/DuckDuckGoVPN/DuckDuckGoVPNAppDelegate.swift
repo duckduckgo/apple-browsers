@@ -482,8 +482,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     /// Both flags are kill switches: enabling the remote subfeature *disables* the corresponding behavior,
     /// so each setting is the negation of the flag. They default to enabled when the flags are off.
     private func applyOrphanProxyFeatureFlags() {
-        let detectionEnabled = !featureFlagger.isFeatureOn(.networkProtectionOrphanProxyDetectionKillSwitch)
-        let bypassEnabled = !featureFlagger.isFeatureOn(.networkProtectionOrphanProxyBypassKillSwitch)
+        let detectionEnabled = !featureFlagger.isFeatureOn(.vpnOrphanProxyDetectionKillSwitch)
+        let bypassEnabled = !featureFlagger.isFeatureOn(.vpnOrphanProxyBypassKillSwitch)
 
         tunnelSettings.isOrphanProxyDetectionEnabled = detectionEnabled
         proxySettings.isOrphanProxyDetectionEnabled = detectionEnabled

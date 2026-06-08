@@ -369,12 +369,16 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
-    func testWhenIsInternalUserArgIsFalseThenInternalUserIsNotEnabled() {
+    /// Verifies the one-way semantics of `-isInternalUser`: the arg can only set the flag to `true`.
+    /// Passing `false` (or any non-"true" value) is a no-op. To detect "no-op", the mock starts at `true`
+    /// and the assertion checks it stayed `true`. Off is the default state, set by absence of the arg.
+    func testWhenIsInternalUserArgIsFalseThenInternalUserStoreIsNotModified() {
         // GIVEN
         userDefaults.set("false", forKey: "isInternalUser")
         let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
         let configStore = UserDefaults(suiteName: "testing_configRollout")!
         let mockInternalUserStore = MockInternalUserStore()
+        mockInternalUserStore.isInternalUser = true
         let sut = LaunchOptionsHandler(
             environment: [:],
             userDefaults: userDefaults,
@@ -386,7 +390,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
 
         // THEN
-        XCTAssertFalse(mockInternalUserStore.isInternalUser)
+        XCTAssertTrue(mockInternalUserStore.isInternalUser)
 
         // Cleanup
         featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")

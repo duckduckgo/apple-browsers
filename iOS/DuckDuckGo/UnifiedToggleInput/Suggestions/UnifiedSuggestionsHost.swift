@@ -8,7 +8,6 @@
 import Combine
 import SwiftUI
 import UIKit
-import os
 
 /// Hosts the SwiftUI `UnifiedSuggestionsView` for any UTI surface (Duck.ai, Search). Parameterized
 /// by `UnifiedSuggestionsHostConfig` so the host is surface-agnostic. Dax logo stays driven by
@@ -76,10 +75,7 @@ final class UnifiedSuggestionsHost {
         viewModel.$content
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] content in
-                Logger(subsystem: "com.duckduckgo.mobile.ios", category: "UTITransition").debug("host.content → \(String(describing: content), privacy: .public)")
-                self?.onContentChanged?()
-            }
+            .sink { [weak self] _ in self?.onContentChanged?() }
             .store(in: &cancellables)
 
         let view = UnifiedSuggestionsView(

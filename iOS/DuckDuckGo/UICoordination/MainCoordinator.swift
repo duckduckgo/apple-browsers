@@ -80,9 +80,15 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var webExtensionLifecycleCoordinatorStorage: Any?
+
+    @available(iOS 18.4, *)
+    var webExtensionLifecycleCoordinator: WebExtensionLifecycleCoordinator? {
+        get { webExtensionLifecycleCoordinatorStorage as? WebExtensionLifecycleCoordinator }
+        set { webExtensionLifecycleCoordinatorStorage = newValue }
+    }
     private var dataImportUserActivityHandler: DataImportUserActivityHandling?
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
-    private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
     private var webExtensionLoadTask: Task<Void, Never>?
@@ -420,6 +426,11 @@ final class MainCoordinator {
         )
         self.webExtensionManager = webExtensionManager
 
+        let lifecycleCoordinator = WebExtensionLifecycleCoordinator(manager: webExtensionManager) { [weak self] in
+            self?.enabledEmbeddedExtensionTypes() ?? []
+        }
+        self.webExtensionLifecycleCoordinator = lifecycleCoordinator
+
         self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(
             webExtensionManager: webExtensionManager,
             mainViewController: controller
@@ -428,6 +439,7 @@ final class MainCoordinator {
         tabManager.setWebExtensionManager(webExtensionManager)
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
+        controller.setWebExtensionLifecycleCoordinator(lifecycleCoordinator)
         subscribeToDarkReaderChanges()
 
         // Defer extension loading until onAppReadyForInteractions to ensure
@@ -464,8 +476,8 @@ final class MainCoordinator {
         isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
         webExtensionLoadTask = Task { @MainActor [weak self] in
-            guard let self, let manager = self.webExtensionManager as? WebExtensionManager else { return }
-            await self.loadAndSyncEmbeddedExtensions(manager)
+            guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
+            await coordinator.loadAndSync().value
             guard !Task.isCancelled else { return }
             self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
@@ -517,8 +529,7 @@ final class MainCoordinator {
 
     @available(iOS 18.4, *)
     private func syncEmbeddedExtensions() async {
-        guard !isSyncingEmbeddedExtensions else { return }
-        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+        guard let coordinator = webExtensionLifecycleCoordinator else { return }
 
         // Installing copies/loads the extension archive from Application Support; like the load
         // path this fails with WKWebExtensionErrorInvalidArchive (code 9) while protected data is
@@ -532,16 +543,7 @@ final class MainCoordinator {
             return
         }
 
-        isSyncingEmbeddedExtensions = true
-        defer { isSyncingEmbeddedExtensions = false }
-
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
-    }
-
-    @available(iOS 18.4, *)
-    @MainActor
-    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
-        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+        coordinator.sync()
     }
 
     @available(iOS 18.4, *)
@@ -565,6 +567,11 @@ final class MainCoordinator {
         webExtensionLoadTask = nil
         protectedDataCancellable = nil
         pendingProtectedDataWork.removeAll()
+        if #available(iOS 18.4, *) {
+            webExtensionLifecycleCoordinator?.cancelAll()
+            webExtensionLifecycleCoordinator = nil
+            controller.setWebExtensionLifecycleCoordinator(nil)
+        }
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
         darkReaderCancellables.removeAll()

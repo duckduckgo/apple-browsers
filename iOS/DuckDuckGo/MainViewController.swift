@@ -373,6 +373,17 @@ class MainViewController: UIViewController {
         self.webExtensionManager = manager
     }
 
+    private var webExtensionLifecycleCoordinatorStorage: Any?
+    @available(iOS 18.4, *)
+    var webExtensionLifecycleCoordinator: WebExtensionLifecycleCoordinator? {
+        get { webExtensionLifecycleCoordinatorStorage as? WebExtensionLifecycleCoordinator }
+        set { webExtensionLifecycleCoordinatorStorage = newValue }
+    }
+    @available(iOS 18.4, *)
+    func setWebExtensionLifecycleCoordinator(_ coordinator: WebExtensionLifecycleCoordinator?) {
+        webExtensionLifecycleCoordinator = coordinator
+    }
+
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
     private(set) var fireModePromotionEligibility: FireModePromotionCoordinating?
 
@@ -6183,11 +6194,11 @@ extension MainViewController: FireExecutorDelegate {
         }
         if #available(iOS 18.4, *) {
             Task { @MainActor [weak self] in
-                guard let self else { return }
+                guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
                 if self.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {
-                    await self.webExtensionManager?.reloadInstalledExtensions()
+                    await coordinator.reload().value
                 } else {
-                    await self.webExtensionManager?.loadInstalledExtensions()
+                    await coordinator.load().value
                 }
                 self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }

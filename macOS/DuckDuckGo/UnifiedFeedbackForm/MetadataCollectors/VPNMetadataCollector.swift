@@ -46,6 +46,8 @@ struct VPNMetadata: Encodable {
 
     struct NetworkInfo: Encodable {
         let currentPath: String
+        let deviceAddressCategories: [NetworkProtectionIPAddressCategory]
+        let routerAddressCategories: [NetworkProtectionIPAddressCategory]
     }
 
     struct VPNState: Encodable {
@@ -56,6 +58,18 @@ struct VPNMetadata: Encodable {
         let lastKnownFailureDescription: String
         let connectedServer: String
         let connectedServerIP: String
+    }
+
+    struct DNSSettingsState: Encodable {
+        enum Selection: String, Encodable {
+            case duckDuckGo
+            case custom
+        }
+
+        let selection: Selection
+        let blockRiskyDomainsEnabled: Bool?
+        let customDNSServerCount: Int
+        let customDNSServerAddressCategories: [NetworkProtectionIPAddressCategory]
     }
 
     struct VPNSettingsState: Encodable {
@@ -69,6 +83,7 @@ struct VPNMetadata: Encodable {
         let selectedServer: String
         let selectedEnvironment: String
         let customDNS: Bool
+        let dnsSettings: DNSSettingsState
     }
 
     struct LoginItemState: Encodable {
@@ -83,7 +98,7 @@ struct VPNMetadata: Encodable {
         let isVPNFeatureIncludedInSubscription: Bool?
 
         // nil means unknown
-        let isVPNFeatureEnabled: Bool?
+        let canStartVPN: Bool?
     }
 
     let appInfo: AppInfo
@@ -236,13 +251,21 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
                 let path = monitor.currentPath
                 monitor.cancel()
 
-                return .init(currentPath: path.anonymousDescription)
+                return .init(
+                    currentPath: path.anonymousDescription,
+                    deviceAddressCategories: NetworkProtectionAddressMetadata.deviceAddressCategories(for: path),
+                    routerAddressCategories: NetworkProtectionAddressMetadata.routerAddressCategories(for: path)
+                )
             }
 
             // Wait up to 3 seconds to fetch the path.
             let currentExecutionTime = CFAbsoluteTimeGetCurrent() - startTime
             if currentExecutionTime >= 3.0 {
-                return .init(currentPath: "Timed out fetching path")
+                return .init(
+                    currentPath: "Timed out fetching path",
+                    deviceAddressCategories: [.unknown],
+                    routerAddressCategories: [.unknown]
+                )
             }
         }
     }
@@ -299,18 +322,38 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             showInMenuBarEnabled: settings.showInMenuBar,
             selectedServer: settings.selectedServer.stringValue ?? "automatic",
             selectedEnvironment: settings.selectedEnvironment.rawValue,
-            customDNS: settings.dnsSettings.usesCustomDNS
+            customDNS: settings.dnsSettings.usesCustomDNS,
+            dnsSettings: collectDNSSettingsState()
         )
+    }
+
+    func collectDNSSettingsState() -> VPNMetadata.DNSSettingsState {
+        switch settings.dnsSettings {
+        case .ddg(let blockRiskyDomains):
+            return .init(
+                selection: .duckDuckGo,
+                blockRiskyDomainsEnabled: blockRiskyDomains,
+                customDNSServerCount: 0,
+                customDNSServerAddressCategories: []
+            )
+        case .custom(let servers):
+            return .init(
+                selection: .custom,
+                blockRiskyDomainsEnabled: nil,
+                customDNSServerCount: servers.count,
+                customDNSServerAddressCategories: NetworkProtectionAddressMetadata.categories(for: servers)
+            )
+        }
     }
 
     func collectSubscriptionInfo() async -> VPNMetadata.SubscriptionInfo {
         let isVPNFeatureIncludedInSubscription = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)
-        let isVPNFeatureEnabled = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
+        let canStartVPN = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
 
         return .init(
             hasSubscriptionAccount: subscriptionManager.isUserAuthenticated,
             isVPNFeatureIncludedInSubscription: isVPNFeatureIncludedInSubscription,
-            isVPNFeatureEnabled: isVPNFeatureEnabled)
+            canStartVPN: canStartVPN)
     }
 
 }

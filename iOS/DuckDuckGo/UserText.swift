@@ -766,6 +766,9 @@ public struct UserText {
     static let netPVPNSettingsTitle = NSLocalizedString("network.protection.vpn.settings.title", value: "VPN Settings", comment: "Title for the VPN Settings screen.")
     static let netPVPNSettingsFAQ = NSLocalizedString("network.protection.vpn.settings.faq", value: "FAQs and Support", comment: "Title for the FAQ row in the VPN status screen.")
     static let netPVPNSettingsShareFeedback = NSLocalizedString("network.protection.vpn.settings.share-feedback", value: "Share VPN Feedback", comment: "Title for the feedback row in the VPN status screen.")
+    static let netPVPNSettingsCopySupportInfo = NSLocalizedString("network.protection.vpn.settings.copy-support-info", value: "Copy VPN Support Info", comment: "Title for the row that copies VPN support information to the clipboard.")
+    static let netPVPNSettingsCopySupportInfoCopied = NSLocalizedString("network.protection.vpn.settings.copy-support-info.copied", value: "VPN support info copied", comment: "Toast shown after VPN support information is copied to the clipboard.")
+    static let netPVPNSettingsCopySupportInfoFailed = NSLocalizedString("network.protection.vpn.settings.copy-support-info.failed", value: "Couldn't copy VPN support info", comment: "Toast shown when VPN support information could not be copied to the clipboard.")
     static func netPVPNSettingsLocationSubtitleFormattedCityAndCountry(city: String, country: String) -> String {
         let localized = NSLocalizedString("network.protection.vpn.location.subtitle.formatted.city.and.country", value: "%@, %@", comment: "Subtitle for the preferred location item that formats a city and country. E.g Chicago, United States")
         return localized.format(arguments: city, country)

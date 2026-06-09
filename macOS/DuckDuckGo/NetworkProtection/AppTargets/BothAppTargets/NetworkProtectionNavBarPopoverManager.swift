@@ -157,6 +157,9 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
             }),
             .text(icon: Image(.support16), title: UserText.vpnStatusViewSendFeedbackMenuItemTitle, action: {
                 try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.shareFeedback)
+            }),
+            .text(icon: Image(systemName: "doc.on.doc"), title: UserText.vpnStatusViewCopySupportInfoMenuItemTitle, action: {
+                try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.copySupportInfo)
             })
         ])
 

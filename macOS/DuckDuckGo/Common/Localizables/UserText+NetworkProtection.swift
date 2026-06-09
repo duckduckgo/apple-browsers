@@ -70,6 +70,11 @@ extension UserText {
         value: "Send Feedback",
         comment: "The VPN status view's 'Send Feedback' menu item for our main app")
 
+    static let vpnStatusViewCopySupportInfoMenuItemTitle = NSLocalizedString(
+        "vpn.status-view.copy-support-info.menu-item.title",
+        value: "Copy VPN Support Info",
+        comment: "The VPN status view's menu item that copies VPN support information to the clipboard.")
+
     static let vpnStatusViewFAQMenuItemTitle = NSLocalizedString(
         "vpn.status-view.faq.menu-item.title",
         value: "FAQs and Support",

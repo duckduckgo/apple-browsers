@@ -23,11 +23,13 @@ import Networking
 import SwiftUI
 import TipKit
 import UIComponents
+import UniformTypeIdentifiers
 import VPN
 
 struct NetworkProtectionStatusView: View {
 
     static let defaultImageSize = CGSize(width: 32, height: 32)
+    private static let supportInfoPasteboardExpirationInterval: TimeInterval = 10 * 60
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -316,10 +318,41 @@ struct NetworkProtectionStatusView: View {
                     .foregroundColor(.init(designSystemColor: .textPrimary))
                 }
             }
+
+            Button {
+                Task {
+                    await copyVPNSupportInfo()
+                }
+            } label: {
+                HStack {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.copy)
+                    Text(UserText.netPVPNSettingsCopySupportInfo)
+                    Spacer()
+                }
+                .daxBodyRegular()
+                .foregroundColor(.init(designSystemColor: .textPrimary))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         } header: {
             Text(UserText.vpnAbout).foregroundColor(.init(designSystemColor: .textSecondary))
         }
         .listRowBackground(Color(designSystemColor: .surface))
+    }
+
+    @MainActor
+    private func copyVPNSupportInfo() async {
+        guard let metadata = await DefaultVPNMetadataCollector().collectMetadata(),
+              let supportInfo = metadata.toPrettyPrintedJSON() else {
+            ActionMessageView.present(message: UserText.netPVPNSettingsCopySupportInfoFailed)
+            return
+        }
+
+        UIPasteboard.general.setItems(
+            [[UTType.plainText.identifier: supportInfo]],
+            options: [.expirationDate: Date().addingTimeInterval(Self.supportInfoPasteboardExpirationInterval)]
+        )
+        ActionMessageView.present(message: UserText.netPVPNSettingsCopySupportInfoCopied)
     }
 
     @ViewBuilder

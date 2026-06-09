@@ -403,6 +403,9 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             }),
             .text(icon: Image(.support16), title: UserText.vpnStatusViewSendFeedbackMenuItemTitle, action: { [weak self] in
                 try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.shareFeedback)
+            }),
+            .text(icon: Image(systemName: "doc.on.doc"), title: UserText.vpnStatusViewCopySupportInfoMenuItemTitle, action: { [weak self] in
+                try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.copySupportInfo)
             })
         ])
 

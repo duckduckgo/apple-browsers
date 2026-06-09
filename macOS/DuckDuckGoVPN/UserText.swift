@@ -52,4 +52,9 @@ final class UserText {
         "vpn.status-view.send-feedback.menu-item.title",
         value: "Send Feedback",
         comment: "The VPN status view's 'Send Feedback' menu item for our status menu app")
+
+    static let vpnStatusViewCopySupportInfoMenuItemTitle = NSLocalizedString(
+        "vpn.status-view.copy-support-info.menu-item.title",
+        value: "Copy VPN Support Info",
+        comment: "The VPN status view's menu item that copies VPN support information to the clipboard.")
 }

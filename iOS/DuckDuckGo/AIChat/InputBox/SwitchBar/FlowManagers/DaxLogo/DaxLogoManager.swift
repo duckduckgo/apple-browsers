@@ -356,7 +356,12 @@ final class DaxLogoManager {
             // A programmatic logo transition is in flight — don't stomp the Lottie.
             resolvedAlpha = 1
         } else if isHomeDaxVisible != isAIDaxVisible {
-            daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
+            // Exactly one logo is active with no morph/swipe in flight: align currentProgress with it
+            // so the currentProgress-scaled alpha below shows it at full opacity. Without this, a fresh
+            // open that starts in Duck.ai (last-used mode, no mode-change morph) leaves currentProgress
+            // at 0 and the AI logo invisible.
+            currentProgress = isAIDaxVisible ? 1 : 0
+            daxLogoView.updateProgress(currentProgress)
 
             let homeLogoProgress = 1 - currentProgress
             let aiLogoProgress = currentProgress

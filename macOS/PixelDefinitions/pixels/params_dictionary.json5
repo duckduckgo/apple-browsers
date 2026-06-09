@@ -343,10 +343,17 @@
         "type": "integer",
         "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
     },
-    "daysSinceInstall": {
+    "nextStepsDaysSinceInstall": {
         "key": "daysSinceInstall",
         "type": "integer",
-        "description": "Days since install when the value is between 0 and 28 inclusive"
+        "description": "Days since install, bucketed",
+        "enum": [0, 1, 2, 4]
+    },
+    "nextStepsActiveUsageDays": {
+        "key": "nextStepsActiveUsageDays",
+        "type": "integer",
+        "description": "Number of days the New Tab Page has been opened with Next Steps cards visible",
+        "maximum": 14
     },
     "ntpImpressionCount": {
         "key": "ntpImpressionCount",

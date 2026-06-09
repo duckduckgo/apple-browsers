@@ -115,6 +115,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// Reads the live duck.ai settle/content facts for `updateDaxVisibility` on the single-host path.
     private var duckAIHasContent: (() -> Bool)?
     private var duckAIHasSettled: ((String) -> Bool)?
+    /// Re-reads the duck.ai recent chats from storage. Called on each activation so a chat removed
+    /// elsewhere (e.g. burned) doesn't linger — the surface is built once, so it won't re-read itself.
+    private var refreshDuckAIRecents: (() -> Void)?
     /// Held only while the duck.ai surface is attached on the single host; cleared on detach.
     private var duckAISurfaceCancellables = Set<AnyCancellable>()
     private var isContentActive = false
@@ -238,6 +241,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         guard active != isContentActive else { return }
         isContentActive = active
         markNeedsVisibleRefresh()
+        if active {
+            refreshDuckAIRecents?()
+        }
     }
 
     func refreshVisibleContentIfNeeded() {
@@ -361,7 +367,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     @objc private func handleModeSwitchSwipe(_ gesture: UISwipeGestureRecognizer) {
         let targetMode: TextEntryMode = gesture.direction == .left ? .aiChat : .search
         guard switchBarHandler.currentToggleState != targetMode else { return }
-        switchBarHandler.setToggleState(targetMode)
+        // Route through the coordinator (like a toggle tap) so the toggle UI, content, and the Dax
+        // logo morph all update — a raw `setToggleState` doesn't propagate the switch at all.
+        delegate?.unifiedInputEditingStateDidChangeMode(targetMode)
     }
 
     private func installComponents() {
@@ -587,6 +595,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             chatManager?.lastCompletedFetchQuery == query
                 && urlLoader?.lastCompletedFetchQuery == query
         }
+        refreshDuckAIRecents = { [weak chatManager, weak self] in
+            chatManager?.refreshSuggestions(query: self?.switchBarHandler.currentText ?? "")
+        }
 
         host.attachDuckAISurface(surface)
     }
@@ -600,6 +611,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         duckAIFactsSubject.send(nil)
         duckAIHasContent = nil
         duckAIHasSettled = nil
+        refreshDuckAIRecents = nil
     }
 
     private func makeSearchFavoritesController() -> NewTabPageViewController? {

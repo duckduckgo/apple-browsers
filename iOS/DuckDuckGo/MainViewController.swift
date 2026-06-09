@@ -5575,6 +5575,31 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
             await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
         }
     }
+
+    func viewModelDidRequestDownloadChat(chatId: String) {
+        let downloader = ChatHistoryDownloader(storageHandler: duckAiNativeStorageHandler)
+        do {
+            let url = try downloader.downloadChat(chatId: chatId)
+            let message = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: url.lastPathComponent)
+            let addressBarBottom = appSettings.currentAddressBarPosition.isBottom
+            ActionMessageView.present(
+                message: message,
+                numberOfLines: 2,
+                actionTitle: UserText.actionGenericShow,
+                presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+                onAction: { [weak self] in
+                    // Dismiss the chat-history sheet, then open the in-app Downloads list —
+                    // same destination the in-browser "Download complete" toast routes to.
+                    self?.dismiss(animated: true) { [weak self] in
+                        self?.segueToDownloads()
+                    }
+                }
+            )
+        } catch {
+            Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
+            // Failure-state toast lands with the pixels-pass follow-up (task #28).
+        }
+    }
 }
 
 extension MainViewController: TabSwitcherDelegate {

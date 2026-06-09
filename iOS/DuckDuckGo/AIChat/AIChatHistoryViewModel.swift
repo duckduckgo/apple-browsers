@@ -147,6 +147,10 @@ final class AIChatHistoryViewModel: ObservableObject {
         delegate?.viewModelDidRequestDeleteChat(chatId: chatId)
     }
 
+    func downloadChat(chatId: String) {
+        delegate?.viewModelDidRequestDownloadChat(chatId: chatId)
+    }
+
     func updateQuery(_ newValue: String) {
         query = newValue
     }
@@ -196,4 +200,8 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// Delete `chatId`. The sheet stays open; the observation publisher refreshes the list
     /// once the deletion lands.
     func viewModelDidRequestDeleteChat(chatId: String)
+
+    /// Export `chatId` to the Downloads directory and present the "Download complete" toast.
+    /// The sheet stays open.
+    func viewModelDidRequestDownloadChat(chatId: String)
 }

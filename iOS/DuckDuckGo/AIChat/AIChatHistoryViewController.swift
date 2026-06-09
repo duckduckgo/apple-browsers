@@ -300,8 +300,8 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         delete.image = DesignSystemImages.Glyphs.Size24.fire
         delete.accessibilityLabel = UserText.aiChatHistoryDeleteSwipeAccessibilityLabel
 
-        let download = UIContextualAction(style: .normal, title: nil) { _, _, completion in
-            // Download wiring lands in a follow-up; dismiss the swipe for now.
+        let download = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            self?.viewModel.downloadChat(chatId: chatId)
             completion(true)
         }
         download.image = DesignSystemImages.Glyphs.Size24.downloads

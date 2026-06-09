@@ -146,6 +146,16 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.deletedChatId, "p1")
     }
 
+    func testDownloadChat_notifiesDelegateWithChatId() {
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.downloadChat(chatId: "r1")
+
+        XCTAssertEqual(delegate.downloadedChatId, "r1")
+    }
+
     // MARK: - Search
 
     func testUpdateQuery_filtersChatsByTitleCaseInsensitive() {
@@ -244,9 +254,11 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var didRequestOpenNewChat = false
         private(set) var requestedChatId: String?
         private(set) var deletedChatId: String?
+        private(set) var downloadedChatId: String?
 
         func viewModelDidRequestOpenNewChat() { didRequestOpenNewChat = true }
         func viewModelDidRequestOpenChat(chatId: String) { requestedChatId = chatId }
         func viewModelDidRequestDeleteChat(chatId: String) { deletedChatId = chatId }
+        func viewModelDidRequestDownloadChat(chatId: String) { downloadedChatId = chatId }
     }
 }

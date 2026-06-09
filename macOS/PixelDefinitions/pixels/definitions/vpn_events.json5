@@ -262,5 +262,27 @@
                 "description": "Error code associated with a per-probe error (outer or underlying)"
             }
         ]
+    },
+    "m_mac_vpn_proxy_orphaned": {
+        "description": "Fired once per episode when the transparent proxy detects it is orphaned: it has been running past the age threshold while the tunnel's heartbeat is missing or stale, indicating the tunnel is gone",
+        "owners": ["diegoreymendez"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "heartbeat_age",
+                "type": "string",
+                "description": "Bucketed age of the tunnel's last heartbeat at detection time, or 'missing' if no heartbeat was ever recorded",
+                "enum": ["missing", "under_5m", "under_30m", "over_30m"]
+            },
+            {
+                "key": "proxy_age",
+                "type": "string",
+                "description": "Bucketed time the proxy had been running at detection time",
+                "enum": ["under_5m", "under_30m", "under_2h", "over_2h"]
+            }
+        ]
     }
 }

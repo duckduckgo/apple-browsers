@@ -26,6 +26,9 @@ protocol AIChatDeleting {
     @discardableResult
     @MainActor
     func deleteChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error>
+
+    @MainActor
+    func scheduleSync()
 }
 
 struct AIChatDeleter: AIChatDeleting {
@@ -71,5 +74,10 @@ struct AIChatDeleter: AIChatDeleting {
             }
         }
         return result
+    }
+
+    @MainActor
+    func scheduleSync() {
+        aiChatSyncCleaner.scheduleSync()
     }
 }

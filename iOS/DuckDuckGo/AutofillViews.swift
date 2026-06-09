@@ -250,3 +250,20 @@ private enum Const {
 private extension Image {
     static let close = Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
 }
+
+#Preview {
+    ScrollView {
+        VStack(spacing: 16) {
+            AutofillViews.CloseButtonHeader(action: {})
+            AutofillViews.AppIconHeader()
+            AutofillViews.Headline(title: "Placeholder Title")
+            AutofillViews.Description(text: "Body text goes here describing the autofill feature.")
+            AutofillViews.SecureDescription(text: "Your data is encrypted and stored only on your device.")
+            AutofillViews.PrimaryButton(title: "Primary Button", action: {})
+            AutofillViews.SecondaryButton(title: "Secondary Button", action: {})
+            AutofillViews.TertiaryButton(title: "Tertiary Button", action: {})
+        }
+        .padding()
+    }
+    .background(Color(designSystemColor: .background))
+}

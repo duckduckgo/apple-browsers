@@ -27,6 +27,7 @@ final class MockNewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersi
     var orderedCardIDs: [NewTabPageDataModel.CardID]?
     var firstCardLevel: NewTabPageDataModel.CardLevel = .level1
     var isFirstSession: Bool = true
+    var ntpImpressionCount: Int = 0
 
     func timesShown(for card: NewTabPageDataModel.CardID) -> Int {
         timesShownStorage[card] ?? 0

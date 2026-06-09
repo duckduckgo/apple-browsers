@@ -59,7 +59,7 @@ struct CrashCollectionOnboardingView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 24) {
-                    Image(AppRebrand.isAppRebranded() ? .breakageAlert128 : .breakage128)
+                    Image(rebrandable: "Breakage-Alert-128")
                         .accessibilityHidden(true)
 
                     Text(UserText.crashReportDialogTitle)

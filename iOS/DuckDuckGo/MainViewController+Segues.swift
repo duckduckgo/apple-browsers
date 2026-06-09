@@ -483,6 +483,7 @@ extension MainViewController {
                                                   contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                   idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                   afterInactivityOptionAdapter: afterInactivityOptionAdapter,
+                                                  lastTabShortcutAdapter: lastTabShortcutAdapter,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,

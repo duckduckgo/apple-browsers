@@ -1,0 +1,186 @@
+//
+//  DuckAISurfaceController.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Combine
+import Core
+import PrivacyConfig
+import History
+import Suggestions
+import AIChat
+
+@MainActor
+protocol DuckAISurfaceControllerDelegate: AnyObject {
+    func duckAISurfaceDidSelect(_ selection: DuckAISuggestionsSelection)
+    /// The duck.ai fetchers' content/settle state changed (was `onFetchCompleted`); the owner
+    /// refreshes dax visibility.
+    func duckAISurfaceStateDidChange()
+}
+
+/// Owns the lazily-attached duck.ai suggestions surface: its source, chat/url fetchers, the
+/// content/settle state feed, and the URL-history delete action. Built once per attach and torn
+/// down on detach (search persists; duck.ai is transient). The Lottie dax stays in `DaxLogoManager`.
+@MainActor
+final class DuckAISurfaceController {
+
+    weak var delegate: DuckAISurfaceControllerDelegate?
+
+    /// The duck.ai facts feed for the merged-inputs publisher. nil while detached (the merger
+    /// treats absent state as no recents / nothing pending).
+    var statePublisher: AnyPublisher<UnifiedSuggestionsInputsMerger.DuckAIState?, Never> {
+        stateSubject.eraseToAnyPublisher()
+    }
+
+    var isAttached: Bool { hasContentReader != nil }
+    func hasContent() -> Bool { hasContentReader?() ?? false }
+    func hasSettled(forQuery query: String) -> Bool { hasSettledReader?(query) ?? false }
+    func refreshRecents() { refreshRecentsAction?() }
+
+    private let switchBarHandler: SwitchBarHandling
+    private let dependencies: SuggestionTrayDependencies
+    private let aiChatSettings: AIChatSettingsProvider
+    private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
+    private let stateSubject = CurrentValueSubject<UnifiedSuggestionsInputsMerger.DuckAIState?, Never>(nil)
+    private var cancellables = Set<AnyCancellable>()
+    private var hasContentReader: (() -> Bool)?
+    private var hasSettledReader: ((String) -> Bool)?
+    private var refreshRecentsAction: (() -> Void)?
+
+    init(switchBarHandler: SwitchBarHandling,
+         dependencies: SuggestionTrayDependencies,
+         aiChatSettings: AIChatSettingsProvider,
+         featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling?) {
+        self.switchBarHandler = switchBarHandler
+        self.dependencies = dependencies
+        self.aiChatSettings = aiChatSettings
+        self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+    }
+
+    /// Builds the duck.ai source with its OWN runner/loaders, wires its state into `stateSubject`,
+    /// and attaches it to the single host. No-op if already attached.
+    func attach(to host: UnifiedSuggestionsHost) {
+        guard hasContentReader == nil else { return }
+
+        let chatSuggestionsReader: AIChatSuggestionsReading
+        if switchBarHandler.isFireTab {
+            chatSuggestionsReader = NilSuggestionsReader()
+        } else {
+            let reader = SuggestionsReader(
+                featureFlagger: featureFlagger,
+                privacyConfig: privacyConfigurationManager,
+                nativeStorageHandler: duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            )
+            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+            chatSuggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+        }
+        let chatViewModel = AIChatSuggestionsViewModel(maxSuggestions: chatSuggestionsReader.maxHistoryCount)
+        let chatManager = AIChatHistoryManager(
+            suggestionsReader: chatSuggestionsReader,
+            aiChatSettings: aiChatSettings,
+            viewModel: chatViewModel
+        )
+
+        let requestRunner = AutocompleteRequestRunner()
+        let dataSource = AutocompleteSuggestionsDataSource(
+            historyManager: dependencies.historyManager,
+            bookmarksDatabase: dependencies.bookmarksDatabase,
+            featureFlagger: dependencies.featureFlagger,
+            tabsModel: dependencies.tabsModelProvider()
+        ) { request, completion in
+            requestRunner.run(request, completion: completion)
+        }
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource)
+
+        let source = DuckAISuggestionsSource(
+            chatViewModel: chatViewModel,
+            urlLoader: urlLoader,
+            chatManager: chatManager,
+            query: { [weak self] in self?.switchBarHandler.currentText ?? "" }
+        )
+        chatManager.onFetchCompleted = { [weak self] _, _ in self?.delegate?.duckAISurfaceStateDidChange() }
+
+        Publishers.CombineLatest(
+            chatViewModel.$filteredSuggestions.map { !$0.isEmpty },
+            urlLoader.$topURLs.map { _ in () }.prepend(())
+        )
+        .map { [weak chatManager, weak urlLoader, weak self] hasRecents, _ -> UnifiedSuggestionsInputsMerger.DuckAIState in
+            let query = self?.switchBarHandler.currentText ?? ""
+            let settled = chatManager?.lastCompletedFetchQuery == query
+                && urlLoader?.lastCompletedFetchQuery == query
+            return .init(hasRecents: hasRecents, settled: settled)
+        }
+        .sink { [weak self] state in self?.stateSubject.send(state) }
+        .store(in: &cancellables)
+
+        let surface = UnifiedSuggestionsDuckAISurface(
+            source: source,
+            onSelectRow: { [weak self] id in self?.select(rowID: id, source: source) },
+            onDeleteRow: { [weak self] id in self?.deleteHistory(rowID: id, source: source) },
+            onTapAheadRow: { [weak self] id in self?.select(rowID: id, source: source) }
+        )
+
+        hasContentReader = { [weak chatViewModel, weak urlLoader, weak self] in
+            !(chatViewModel?.filteredSuggestions.isEmpty ?? true)
+                || !(urlLoader?.topURLs.isEmpty ?? true)
+                || !(self?.switchBarHandler.currentText.isEmpty ?? true)
+        }
+        hasSettledReader = { [weak chatManager, weak urlLoader] query in
+            chatManager?.lastCompletedFetchQuery == query
+                && urlLoader?.lastCompletedFetchQuery == query
+        }
+        refreshRecentsAction = { [weak chatManager, weak self] in
+            chatManager?.refreshSuggestions(query: self?.switchBarHandler.currentText ?? "")
+        }
+
+        host.attachDuckAISurface(surface)
+    }
+
+    /// Tears down the source/VM and clears its state so the merger reverts to no-recents/nothing-pending.
+    func detach(from host: UnifiedSuggestionsHost) {
+        guard hasContentReader != nil else { return }
+        cancellables.removeAll()
+        host.detachDuckAISurface()
+        stateSubject.send(nil)
+        hasContentReader = nil
+        hasSettledReader = nil
+        refreshRecentsAction = nil
+    }
+
+    private func select(rowID id: String, source: DuckAISuggestionsSource) {
+        guard let selection = source.selection(forRowID: id) else { return }
+        delegate?.duckAISurfaceDidSelect(selection)
+    }
+
+    private func deleteHistory(rowID id: String, source: DuckAISuggestionsSource) {
+        guard case .url(let suggestion) = source.selection(forRowID: id),
+              case .historyEntry(_, let url, _) = suggestion else { return }
+        Task {
+            await dependencies.historyManager.deleteHistoryForURL(url)
+            source.fetchURLSuggestions(query: switchBarHandler.currentText)
+        }
+    }
+}

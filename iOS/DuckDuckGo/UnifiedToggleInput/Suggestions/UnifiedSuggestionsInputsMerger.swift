@@ -13,12 +13,12 @@ import Foundation
 /// so the single host can drive both surfaces from one inputs publisher.
 enum UnifiedSuggestionsInputsMerger {
 
-    struct SearchFacts: Equatable {
+    struct SearchState: Equatable {
         let hasFavorites: Bool
         let hasMessages: Bool
     }
 
-    struct DuckAIFacts: Equatable {
+    struct DuckAIState: Equatable {
         let hasRecents: Bool
         /// Both duck.ai fetchers (chat + url) have completed for the current query.
         let settled: Bool
@@ -28,8 +28,8 @@ enum UnifiedSuggestionsInputsMerger {
     /// resolver treats as no recents and nothing pending.
     static func merge(mode: TextEntryMode,
                       text: String,
-                      search: SearchFacts,
-                      duckAI: DuckAIFacts?) -> UnifiedSuggestionsInputs {
+                      search: SearchState,
+                      duckAI: DuckAIState?) -> UnifiedSuggestionsInputs {
         let isTyping = !text.isEmpty
         switch mode {
         case .search:

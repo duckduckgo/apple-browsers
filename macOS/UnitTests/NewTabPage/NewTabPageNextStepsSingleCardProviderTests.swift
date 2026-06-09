@@ -327,6 +327,51 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(persistor.timesShown(for: secondCard), 0)
     }
 
+    @MainActor
+    func testWhenNewTabPageWebViewAppearsThenNtpImpressionCountIsIncremented() {
+        // GIVEN
+        persistor.ntpImpressionCount = 0
+        let testProvider = createProvider()
+
+        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                expectation.fulfill()
+            }
+
+        // WHEN - Trigger card list refresh
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
+
+        // THEN
+        XCTAssertEqual(persistor.ntpImpressionCount, 1)
+    }
+
+    @MainActor
+    func testWhenNewTabPageWebViewAppearsThenNtpImpressionCountIsNotIncrementedIfNextStepsCardsComplete() {
+        // GIVEN
+        persistor.ntpImpressionCount = 0
+        appearancePreferences.isContinueSetUpCardsViewOutdated = true
+        let testProvider = createProvider()
+
+        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                expectation.fulfill()
+            }
+
+        // WHEN - Trigger card list refresh
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
+
+        // THEN
+        XCTAssertEqual(persistor.ntpImpressionCount, 0)
+    }
+
     func testWhenNewTabPageWebViewAppearsThenCardListRefreshes() {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         let testProvider = createProvider()

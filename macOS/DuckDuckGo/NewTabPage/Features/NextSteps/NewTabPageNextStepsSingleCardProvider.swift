@@ -135,10 +135,14 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     @Published private var cardList: [NewTabPageDataModel.CardID] = []
 
+    var isNextStepsCardsComplete: Bool {
+        appearancePreferences.isContinueSetUpCardsViewOutdated || appearancePreferences.continueSetUpCardsClosed
+    }
+
     /// Returns the list of cards to be displayed, or an empty list if the continue set up cards view is considered outdated or was previously closed.
     /// The widget only shows the first card in the list, but we provide the full list of available cards so it can show a progress indicator.
     var cards: [NewTabPageDataModel.CardID] {
-        guard !appearancePreferences.isContinueSetUpCardsViewOutdated, !appearancePreferences.continueSetUpCardsClosed else {
+        guard !isNextStepsCardsComplete else {
             return []
         }
         return cardList
@@ -260,7 +264,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
     }
 
     func recordImpression(for card: NewTabPageDataModel.CardID?) {
-        guard let card else { return }
+        guard !isNextStepsCardsComplete, let card else { return }
         persistor.incrementTimesShown(for: card)
     }
 
@@ -404,7 +408,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                recordImpression(for: cards.first)
+                if !isNextStepsCardsComplete {
+                    recordImpression(for: cards.first)
+                    persistor.ntpImpressionCount += 1
+                }
 
                 let buildType = StandardApplicationBuildType()
                 if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {

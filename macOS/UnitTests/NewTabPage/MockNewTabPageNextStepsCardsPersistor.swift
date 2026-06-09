@@ -60,5 +60,6 @@ final class MockNewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersi
         orderedCardIDs = nil
         firstCardLevel = .level1
         isFirstSession = true
+        ntpImpressionCount = 0
     }
 }

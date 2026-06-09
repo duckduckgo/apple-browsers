@@ -28,9 +28,13 @@ public enum ChatType: Equatable {
 
 public extension DuckAiChat {
 
-    /// Derives the chat type from the stored `model` string. Voice and image-generation chats
-    /// are identified by their canonical mode tokens; everything else is a regular discussion.
+    /// Derives the chat type using the same precedence as Android's `ChatType.kt`:
+    /// `isImageGeneration` wins (set at decode time by inspecting messages for the
+    /// `generate-image` tool-call component — chats that produced images via a tool call
+    /// don't always use the image-mode model id, so the model-id check alone would miss
+    /// them). Otherwise fall through to the model-id classifier for voice / discussion.
     var chatType: ChatType {
+        if isImageGeneration { return .imageGeneration }
         switch AIChatSuggestion.kind(forModel: model) {
         case .voice: return .voice
         case .image: return .imageGeneration

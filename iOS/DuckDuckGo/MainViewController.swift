@@ -31,6 +31,7 @@ import DDGSync
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
+import MetricBuilder
 import NetworkExtension
 import Networking
 import Onboarding
@@ -5108,7 +5109,7 @@ extension MainViewController: TabDelegate {
                 }
                 sheet.prefersGrabberVisible = grabberVisible
                 if #unavailable(iOS 26) {
-                    sheet.preferredCornerRadius = 24
+                    sheet.preferredCornerRadius = SheetMetrics.cornerRadius
                 }
             }
         }
@@ -6183,8 +6184,13 @@ extension MainViewController: FireExecutorDelegate {
         }
         if #available(iOS 18.4, *) {
             Task { @MainActor [weak self] in
-                await self?.webExtensionManager?.loadInstalledExtensions()
-                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+                guard let self else { return }
+                if self.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {
+                    await self.webExtensionManager?.reloadInstalledExtensions()
+                } else {
+                    await self.webExtensionManager?.loadInstalledExtensions()
+                }
+                self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
         }
         switch fireRequest.trigger {
@@ -6259,6 +6265,14 @@ extension MainViewController {
         viewCoordinator.toolbarTabSwitcherButton.tintColor = UIColor(singleUseColor: .toolbarButton)
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
+
+        // This may move when the feature is further developed.
+        applyFloatingUIIfNeeded()
+    }
+
+    private func applyFloatingUIIfNeeded() {
+        let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
     }
 
 }

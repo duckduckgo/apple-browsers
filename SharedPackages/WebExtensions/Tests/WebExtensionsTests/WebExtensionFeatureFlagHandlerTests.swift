@@ -612,6 +612,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
 
     func loadInstalledExtensions() async {}
+    func reloadInstalledExtensions() async {}
     func installExtension(from sourceURL: URL) async throws {}
     @MainActor func uninstallExtension(identifier: String) throws {}
 

@@ -15,7 +15,6 @@ name: test_unified_toggle_input
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
         ff.unifiedToggleInput: "true"
 
 # Step 1: Navigate to Duck.ai tab

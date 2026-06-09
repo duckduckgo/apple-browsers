@@ -40,7 +40,7 @@ struct SuggestionsListView: View {
         // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
         // input on the top bar; 0 on the bottom bar, where the input sits below the list).
         .modifier(ListTopContentMarginModifier(top: isAddressBarAtBottom ? 0 : Metrics.listTopInset))
-        .modifier(HideScrollContentBackgroundModifier())
+        .hideScrollContentBackground()
         .background(Color(designSystemColor: .background))
         .scrollDismissesKeyboardIfAvailable()
     }
@@ -94,12 +94,6 @@ private struct ListTopContentMarginModifier: ViewModifier {
         } else {
             content
         }
-    }
-}
-
-private struct HideScrollContentBackgroundModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 16, *) { content.scrollContentBackground(.hidden) } else { content }
     }
 }
 

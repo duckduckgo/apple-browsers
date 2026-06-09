@@ -117,6 +117,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// Duck.ai sync-promo presenter; nil when there's no sync service.
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
         syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
+    /// Built once — its show/hide is driven reactively by `setSyncPromoVisible`, so there's no need
+    /// to reconstruct it on every `updateSyncPromo`.
+    private lazy var syncPromoView = AnyView(AIChatSyncPromoView(
+        onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
+        onCloseTap: { [weak self] in self?.handleSyncPromoClose() }))
     private var isContentActive = false
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
@@ -415,9 +420,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                       let suggestion = source.suggestion(forRowID: id),
                       case .historyEntry(_, let url, _) = suggestion else { return }
                 Task {
-                    await dependencies.historyManager.deleteHistoryForURL(url)
-                    Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
-                    DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
+                    await SuggestionHistoryDeletion.delete(url, using: dependencies.historyManager)
                     loader?.fetch(query: self.switchBarHandler.currentText)
                 }
             },
@@ -722,11 +725,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// the legacy Duck.ai suggestions header. Gated by the sync-promo manager + recents count.
     private func updateSyncPromo() {
         guard let promoViewModel = aiChatSyncPromoViewModel, let host = unifiedSuggestionsHost else { return }
-        // Install the card once (the host guards on presence); its show/hide is then a reactive,
-        // animated view-model change so it fades with the content crossfade instead of snapping.
-        host.setSyncPromo(AnyView(AIChatSyncPromoView(
-            onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
-            onCloseTap: { [weak self] in self?.handleSyncPromoClose() })))
+        // Install the card once (the host guards on presence); its show/hide is then a reactive
+        // view-model change driven by `setSyncPromoVisible`.
+        host.setSyncPromo(syncPromoView)
 
         let isTyping = !switchBarHandler.currentText.isEmpty
         let shouldShow = switchBarHandler.currentToggleState == .aiChat

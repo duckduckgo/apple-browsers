@@ -184,9 +184,7 @@ final class DuckAISurfaceController {
         guard case .url(let suggestion) = source.selection(forRowID: id),
               case .historyEntry(_, let url, _) = suggestion else { return }
         Task {
-            await dependencies.historyManager.deleteHistoryForURL(url)
-            Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
-            DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
+            await SuggestionHistoryDeletion.delete(url, using: dependencies.historyManager)
             source.fetchURLSuggestions(query: switchBarHandler.currentText)
         }
     }

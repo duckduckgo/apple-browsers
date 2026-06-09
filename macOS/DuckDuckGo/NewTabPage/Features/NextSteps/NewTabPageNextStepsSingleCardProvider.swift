@@ -251,7 +251,17 @@ private extension NewTabPageNextStepsSingleCardProvider {
         if cards.isEmpty {
             appearancePreferences.continueSetUpCardsClosed = true
         }
+        // Record a new card impression if the first card in the list has changed:
+        // after a card is dismissed, no longer eligible to be shown, or the cards are shuffled/re-ordered.
+        if let initialVisibleCard = self.cards.first, cards.first != initialVisibleCard {
+            recordImpression(for: cards.first)
+        }
         cardList = cards
+    }
+
+    func recordImpression(for card: NewTabPageDataModel.CardID?) {
+        guard let card else { return }
+        persistor.incrementTimesShown(for: card)
     }
 
     /// If this is not the first session, sorts `standardCards` with the `defaultApp` card first, and the remaining cards in random order.
@@ -394,9 +404,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                if let card = cards.first {
-                    persistor.incrementTimesShown(for: card)
-                }
+                recordImpression(for: cards.first)
 
                 let buildType = StandardApplicationBuildType()
                 if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {

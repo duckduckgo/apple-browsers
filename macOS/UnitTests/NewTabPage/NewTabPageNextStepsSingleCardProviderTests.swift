@@ -873,6 +873,31 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(updatedCards.last, .personalizeBrowser, "Card should move to back of list after multiple of max times shown is reached")
     }
 
+    @MainActor
+    func testWhenCardsAreRefreshedWithNewFirstCardThenTimesShownIsIncrementedForFirstCard() {
+        // GIVEN
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
+        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
+
+        var cardList = [NewTabPageDataModel.CardID]()
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                cardList = cards
+            }
+
+        // Trigger card list refresh by dismissing card
+        testProvider.dismiss(.personalizeBrowser)
+
+        cancellable.cancel()
+
+        // THEN
+        XCTAssertEqual(cardList.first, .sync, "Next card should be first after dismissing the first card")
+        XCTAssertEqual(testPersistor.timesShown(for: .sync), 1)
+    }
+
     // MARK: - Card Ordering Tests (nextStepsListAdvancedCardOrdering disabled)
 
     @MainActor

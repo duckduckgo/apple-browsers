@@ -357,6 +357,7 @@
     "nextStepsCardImpressionCount": {
         "key": "cardImpressionCount",
         "type": "integer",
-        "description": "Number of times a Next Steps card was shown (appeared at the top of the Next Steps card stack)"
+        "description": "Number of times a Next Steps card was shown (appeared at the top of the Next Steps card stack)",
+        "maximum": 10
     }
 }

@@ -64,7 +64,6 @@ final class AIChatHistoryManager {
     private let aiChatSettings: AIChatSettingsProvider
     private let aiChatDeleter: AIChatDeleting
     private let viewModel: AIChatSuggestionsViewModel
-    private let historyCleaner: HistoryCleaning
     private let isIPadExperience: Bool
     private let isFireTab: Bool
 
@@ -89,7 +88,6 @@ final class AIChatHistoryManager {
         self.aiChatSettings = aiChatSettings
         self.aiChatDeleter = aiChatDeleter
         self.viewModel = viewModel
-        self.historyCleaner = historyCleaner
         self.isIPadExperience = isIPadExperience
         self.isFireTab = isFireTab
     }

@@ -133,6 +133,10 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     }
 
     public func scheduleSync() {
+        guard canUseAIChatSyncDelete else {
+            return
+        }
+
         sync.scheduler.notifyDataChanged()
     }
 

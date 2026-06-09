@@ -150,6 +150,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarAIVoiceChatActive = newValue }
     }
 
+    var isSubmitBlockedByRecoveryCard: Bool {
+        get { inputBarView.isToolbarSubmitBlockedByRecoveryCard }
+        set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
+    }
+
     var isGenerating: Bool = false {
         didSet {
             guard isGenerating != oldValue else { return }

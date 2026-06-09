@@ -229,6 +229,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
+    var isSubmitBlockedByRecoveryCard: Bool = false {
+        didSet {
+            guard oldValue != isSubmitBlockedByRecoveryCard else { return }
+            print("🇯🇵🍣🍱 [recovery-card submit block] coordinator state changed blocked=\(isSubmitBlockedByRecoveryCard)")
+            viewController.isSubmitBlockedByRecoveryCard = isSubmitBlockedByRecoveryCard
+        }
+    }
+
     // MARK: - Properties
 
     private(set) var viewController: UnifiedToggleInputViewController
@@ -768,6 +776,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
         isModelPickerForcedVisible = false
+        isSubmitBlockedByRecoveryCard = false
         syncInputBehaviorToHandler()
         isInputVisibleForKeyboard = true
         // The live state is no longer authoritative for the previous tab; clearing
@@ -1356,6 +1365,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isNewChatPending = true
         hasSubmittedPrompt = false
         isModelPickerForcedVisible = false
+        isSubmitBlockedByRecoveryCard = false
         resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -1421,6 +1431,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 print("🇯🇵🍣 [showModelPicker] supported model selected — clearing forced chip visibility modelId=\(modelId)")
                 isModelPickerForcedVisible = false
             }
+            // Supported model picked in the native picker — the recovery card's reason to block
+            // submit is gone, so drop the block (no-op when it wasn't set).
+            isSubmitBlockedByRecoveryCard = false
             updateSelectedModel(modelId)
             if isNewSelection {
                 Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
@@ -1541,6 +1554,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             print("🇯🇵🍣 [showModelPicker] pending gated model became accessible — clearing forced chip visibility modelId=\(modelId)")
             isModelPickerForcedVisible = false
         }
+        // The gated model the recovery flow waited on is now accessible (post-purchase); it
+        // becomes the active supported model, so lift the recovery-card submit block too.
+        isSubmitBlockedByRecoveryCard = false
         updateSelectedModel(modelId)
         if isNewSelection {
             Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
@@ -2353,6 +2369,7 @@ private extension UnifiedToggleInputCoordinator {
         attachmentUsage = nil
         hasSubmittedPrompt = false
         isModelPickerForcedVisible = false
+        isSubmitBlockedByRecoveryCard = false
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }

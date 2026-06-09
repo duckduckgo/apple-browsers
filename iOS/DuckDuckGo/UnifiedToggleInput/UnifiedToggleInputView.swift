@@ -199,6 +199,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
     }
 
+    var isToolbarSubmitBlockedByRecoveryCard: Bool = false {
+        didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
+    }
+
     var isGenerating: Bool = false {
         didSet { toolsToolbar.isGenerating = isGenerating }
     }

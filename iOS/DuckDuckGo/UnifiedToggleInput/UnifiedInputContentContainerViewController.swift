@@ -322,6 +322,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         view.backgroundColor = Metrics.backgroundColor
         setUpContentContainer()
         setUpSwipeDownGesture()
+        setUpModeSwitchSwipeGestures()
     }
 
     private func setUpContentContainer() {
@@ -344,6 +345,23 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         swipeDownGesture.direction = .down
         swipeDownGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(swipeDownGesture)
+    }
+
+    /// Horizontal swipe over the content switches Search↔Duck.ai (Search is the left page), mirroring
+    /// a toggle tap. A quick flick triggers it; slow horizontal drags (e.g. row swipe-to-delete) don't.
+    private func setUpModeSwitchSwipeGestures() {
+        for direction in [UISwipeGestureRecognizer.Direction.left, .right] {
+            let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleModeSwitchSwipe(_:)))
+            swipe.direction = direction
+            swipe.cancelsTouchesInView = false
+            view.addGestureRecognizer(swipe)
+        }
+    }
+
+    @objc private func handleModeSwitchSwipe(_ gesture: UISwipeGestureRecognizer) {
+        let targetMode: TextEntryMode = gesture.direction == .left ? .aiChat : .search
+        guard switchBarHandler.currentToggleState != targetMode else { return }
+        switchBarHandler.setToggleState(targetMode)
     }
 
     private func installComponents() {

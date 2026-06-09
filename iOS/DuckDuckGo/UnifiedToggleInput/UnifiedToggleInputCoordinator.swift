@@ -1878,6 +1878,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         updateInputMode(mode, animated: true)
     }
 
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, isDraggingToggle isDragging: Bool) {
+        // While the toggle pill is in flight, suppress the content swipe-between-modes gesture so the
+        // two animations can't run concurrently and glitch each other. On release, restore swipe to
+        // whatever toggle visibility dictates (the single source of truth for the gesture).
+        contentViewController.isSwipeEnabled = isDragging ? false : isToggleVisible
+    }
+
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
         let previousTool = toolsController.selectedTool
         clearSelectedTool()

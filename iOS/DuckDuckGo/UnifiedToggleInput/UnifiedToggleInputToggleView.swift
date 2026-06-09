@@ -45,6 +45,11 @@ final class UnifiedToggleInputToggleView: UIView {
 
     var onModeChanged: ((TextEntryMode) -> Void)?
 
+    /// Fires `true` when the user starts dragging the pill and `false` when the drag ends
+    /// (released, cancelled or failed). The content container observes this to suppress its own
+    /// swipe-between-modes gesture while the pill is in flight, so the two animations don't fight.
+    var onDragStateChanged: ((Bool) -> Void)?
+
     // MARK: - Drag State
 
     private var dragStartMode: TextEntryMode = .aiChat
@@ -231,10 +236,12 @@ final class UnifiedToggleInputToggleView: UIView {
         switch gesture.state {
         case .began:
             beginDrag()
+            onDragStateChanged?(true)
         case .changed:
             updateDrag(translationX: gesture.translation(in: self).x)
         case .ended, .cancelled, .failed:
             endDrag(velocityX: gesture.velocity(in: self).x)
+            onDragStateChanged?(false)
         default:
             break
         }

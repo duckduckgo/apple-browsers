@@ -22,6 +22,14 @@ on:
         options:
         - dmg
         - appstore
+      user_modes:
+        description: "User mode(s) to run. 'production' = production behaviour (release-gating). 'internal' = isInternalUser=true, runs internally-gated features (advance warning). 'both' = run both legs."
+        type: choice
+        default: production
+        options:
+        - production
+        - internal
+        - both
   workflow_call:
     inputs:
       all_os_versions:
@@ -41,6 +49,11 @@ on:
         type: string
         required: false
         default: dmg
+      user_modes:
+        description: "User mode(s) to run: 'production', 'internal', or 'both'"
+        type: string
+        required: false
+        default: production
   schedule:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   push:
@@ -98,6 +111,7 @@ jobs:
       test: ${{ steps.list-tests.outputs.test }}
       all-os-versions: ${{ steps.define-runners.outputs.all-os-versions }}
       start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+      user-modes: ${{ steps.define-user-modes.outputs.user-modes }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -131,6 +145,29 @@ jobs:
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
           echo "runner=${runner}" >> $GITHUB_OUTPUT
           echo "include=${include}" >> $GITHUB_OUTPUT
+
+      - name: Define user-modes
+        id: define-user-modes
+        run: |
+          event="${{ github.event_name }}"
+          input_modes="${{ inputs.user_modes }}"
+          case "$event" in
+            schedule)
+              user_modes='["production", "internal"]'
+              ;;
+            workflow_dispatch|workflow_call)
+              case "$input_modes" in
+                internal) user_modes='["internal"]' ;;
+                both)     user_modes='["production", "internal"]' ;;
+                *)        user_modes='["production"]' ;;
+              esac
+              ;;
+            *)
+              user_modes='["production"]'
+              ;;
+          esac
+          echo "user-modes=${user_modes}" >> $GITHUB_OUTPUT
+          echo "Resolved user-modes: ${user_modes}"
 
       - name: List tests
         id: list-tests
@@ -173,7 +210,7 @@ jobs:
           echo "test=${test}" >> $GITHUB_OUTPUT
 
   ui-tests:
-    name: ${{ matrix.test }} (macOS ${{ matrix.os-version }})
+    name: ${{ matrix.test }} (macOS ${{ matrix.os-version }}${{ matrix.user-mode == 'internal' && ' / internal' || '' }})
     needs: [create-notarized-app, setup-tests]
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -181,10 +218,13 @@ jobs:
       matrix:
         runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
         test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
+        user-mode: ${{ fromJSON(needs.setup-tests.outputs.user-modes) }}
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
 
+    continue-on-error: ${{ matrix.user-mode == 'internal' }}
+
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}-${{ inputs.build-type }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}-${{ matrix.user-mode }}-${{ inputs.build-type }}
       cancel-in-progress: true
 
     timeout-minutes: 120
@@ -426,6 +466,7 @@ jobs:
           -test-repetition-relaunch-enabled YES \
           '-only-testing:UI Tests/${{ matrix.test }}' \
           ${{ env.extra-xcargs }} \
+          "TEST_RUNNER_INTERNAL_USER_MODE=${{ matrix.user-mode == 'internal' && 'true' || 'false' }}" \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
@@ -454,7 +495,7 @@ jobs:
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
-        test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }})"
+        test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }}${{ matrix.user-mode == 'internal' && ' / internal' || '' }})"
         file="${test_id}.xml"
         echo "file=$file" >> $GITHUB_OUTPUT
         xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
@@ -467,7 +508,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
-        name: "testreport-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        name: "testreport-${{ matrix.test }}-macos${{ matrix.os-version }}-${{ matrix.user-mode }}"
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
 
@@ -475,7 +516,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "xcresult-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        name: "xcresult-${{ matrix.test }}-macos${{ matrix.os-version }}-${{ matrix.user-mode }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
@@ -483,9 +524,23 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "app-console-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        name: "app-console-${{ matrix.test }}-macos${{ matrix.os-version }}-${{ matrix.user-mode }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
+        retention-days: 1
+
+    - name: Mark user-mode failure
+      if: failure() || cancelled()
+      working-directory: ${{ github.workspace }}
+      run: |
+        mkdir -p failure-marker
+        echo "macos-ui:${{ matrix.user-mode }}:${{ matrix.test }}:${{ matrix.os-version }}" > failure-marker/marker.txt
+    - name: Upload failure marker
+      if: failure() || cancelled()
+      uses: actions/upload-artifact@v4
+      with:
+        name: failure-marker-macos-ui-${{ matrix.user-mode }}-${{ matrix.test }}-${{ matrix.os-version }}
+        path: failure-marker/
         retention-days: 1
 
     - name: Organize logs for upload
@@ -496,7 +551,7 @@ jobs:
 
         # Create staging directory with timestamp, OS version and failing test name
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-        archive_name="BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        archive_name="BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }}${{ matrix.user-mode == 'internal' && ' internal' || '' }}) ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
 
@@ -559,7 +614,7 @@ jobs:
 
   notify-failure:
     name: Notify on failure
-    if: ${{ always() && github.event_name == 'schedule' && (needs.ui-tests.result == 'failure' || needs.ui-tests.result == 'cancelled') }}
+    if: ${{ always() && github.event_name == 'schedule' }}
     needs: [ui-tests]
     runs-on: ubuntu-latest
 
@@ -569,11 +624,39 @@ jobs:
       with:
         ref: ${{ inputs.branch || github.sha }}
 
-    - name: Create Asana task when workflow failed
+    - name: Detect failure user-modes
+      id: detect
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        artifacts=$(gh api --paginate "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" --jq '.artifacts[].name' || true)
+        has_production=false
+        has_internal=false
+        if echo "$artifacts" | grep -E '^failure-marker-macos-ui-production' >/dev/null; then
+          has_production=true
+        fi
+        if echo "$artifacts" | grep -E '^failure-marker-macos-ui-internal' >/dev/null; then
+          has_internal=true
+        fi
+        echo "has_production=$has_production" >> "$GITHUB_OUTPUT"
+        echo "has_internal=$has_internal" >> "$GITHUB_OUTPUT"
+
+    - name: Create Asana task for production-mode failure
+      if: steps.detect.outputs.has_production == 'true'
       uses: duckduckgo/native-github-asana-sync@v1.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
         asana-project: ${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
         asana-task-name: GH Workflow Failure - UI Tests
-        asana-task-description: The UI Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        asana-task-description: The UI Tests workflow has failed in production user mode. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    - name: Create Asana task for internal-mode failure
+      if: steps.detect.outputs.has_internal == 'true'
+      uses: duckduckgo/native-github-asana-sync@v1.1
+      with:
+        action: create-asana-task
+        asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        asana-project: ${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
+        asana-task-name: GH Workflow Failure - UI Tests (internal mode, advance warning)
+        asana-task-description: The internal-mode UI Tests leg has failed. Advance warning for a feature still gated to internal users. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

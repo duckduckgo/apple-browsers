@@ -22,6 +22,7 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 @testable import Core
 @testable import BrowserServicesKit
+import PixelKit
 
 class StatisticsLoaderTests: XCTestCase {
 
@@ -31,6 +32,7 @@ class StatisticsLoaderTests: XCTestCase {
     var testee: StatisticsLoader!
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
+    private var firedOSDistributionMetrics: [OSDistributionPixel.Metric] = []
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -44,7 +46,34 @@ class StatisticsLoaderTests: XCTestCase {
                                   usageSegmentation: mockUsageSegmentation,
                                   fireAppRetentionExperimentPixels: { self.fireAppRetentionExperimentPixelsCalled = true },
                                   fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true },
+                                  fireOSDistributionPixel: { self.firedOSDistributionMetrics.append($0) },
                                   pixelFiring: mockPixelFiring)
+    }
+
+    func testRefreshAppRetentionAtbFiresClientOSDistributionPixel() {
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshAppRetentionAtb {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+        XCTAssertTrue(firedOSDistributionMetrics.contains(.client))
+        XCTAssertFalse(firedOSDistributionMetrics.contains(.searches))
+    }
+
+    func testRefreshSearchRetentionAtbFiresSearchesOSDistributionPixel() {
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshSearchRetentionAtb {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+        XCTAssertTrue(firedOSDistributionMetrics.contains(.searches))
+        XCTAssertFalse(firedOSDistributionMetrics.contains(.client))
     }
 
     override func tearDown() {

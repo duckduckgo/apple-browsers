@@ -18,12 +18,14 @@
 //
 
 import UIKit
+import DesignResourcesKitIcons
 
 class FeedbackPickerViewController: UITableViewController {
-    
+
     @IBOutlet weak var headerView: UIView!
     @IBOutlet weak var headerText: UILabel!
     @IBOutlet weak var supplementaryText: UILabel!
+    @IBOutlet weak var headerImage: UIImageView!
 
     private var entries = [FeedbackEntry]()
     private var selectionHandler: (Feedback.Model) -> Void = { _ in }
@@ -134,11 +136,15 @@ extension FeedbackPickerViewController {
         let theme = ThemeManager.shared.currentTheme
         tableView.separatorColor = theme.tableCellSeparatorColor
         tableView.backgroundColor = theme.backgroundColor
-        
+
         headerView.backgroundColor = theme.backgroundColor
         headerText.textColor = theme.feedbackPrimaryTextColor
         supplementaryText.textColor = theme.feedbackSecondaryTextColor
-        
+
+        if AppRebrand.isAppRebranded() {
+            headerImage.image = UIImage(resource: .responseBad56)
+        }
+
         tableView.reloadData()
     }
     

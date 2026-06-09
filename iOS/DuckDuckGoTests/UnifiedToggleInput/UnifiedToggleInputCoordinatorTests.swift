@@ -2457,6 +2457,55 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertTrue(coord.isToggleVisible, "Kill-switch only applies on Duck.ai tabs — non-AI tabs follow the user setting")
     }
 
+    // MARK: - Content swipe suppression while the toggle pill is being dragged
+
+    func test_draggingToggle_disablesContentSwipe_soTheTwoGesturesDoNotGlitchEachOther() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.contentViewController.isSwipeEnabled, "Precondition: content swipe is enabled when the toggle is visible")
+
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: true)
+
+        XCTAssertFalse(coord.contentViewController.isSwipeEnabled, "Content swipe must be suppressed while the toggle pill is being dragged")
+    }
+
+    func test_endingToggleDrag_restoresContentSwipeToToggleVisibility() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: true)
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: false)
+
+        XCTAssertEqual(coord.contentViewController.isSwipeEnabled, coord.isToggleVisible, "Once the drag ends, content swipe must return to following toggle visibility")
+        XCTAssertTrue(coord.contentViewController.isSwipeEnabled)
+    }
+
+    func test_endingToggleDrag_keepsContentSwipeDisabled_whenToggleIsNotVisible() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: false,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertFalse(coord.isToggleVisible)
+
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: true)
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: false)
+
+        XCTAssertFalse(coord.contentViewController.isSwipeEnabled, "Restoring after a drag must not enable swipe when the toggle is hidden")
+    }
+
     /// Mirrors `test_syncInputModeFromExternalSource_toggleDisabled_forcesAIChatInAITabSession`
     /// for the kill-switch path: the toggle row is hidden by the remote flag (not by the user
     /// setting), so the user has no way to flip back — `effectiveInputMode` must clamp.

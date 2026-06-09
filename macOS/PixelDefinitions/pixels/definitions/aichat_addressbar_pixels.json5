@@ -243,21 +243,21 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_recent_chat_delete_confirmed": {
         "description": "Fired when user confirms deletion of a recent chat suggestion in the address bar",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_recent_chat_delete_cancelled": {
         "description": "Fired when user cancels deletion of a recent chat suggestion in the address bar",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_view_all_chats_clicked": {
         "description": "Fired when user taps 'View all chats' from the native address bar omnibar",

@@ -50,6 +50,7 @@ final class AIChatTabChatHeaderView: UIView {
         static let pillButtonSize: CGFloat = 36
         static let paidIconSize: CGFloat = 16
         static let paidIconTitleSpacing: CGFloat = 6
+        static let titleMinimumScaleFactor: CGFloat = 0.7
     }
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
@@ -220,6 +221,8 @@ final class AIChatTabChatHeaderView: UIView {
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
         return label
     }()
 
@@ -239,6 +242,8 @@ final class AIChatTabChatHeaderView: UIView {
         label.textColor = UIColor(designSystemColor: .textSecondary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
         return label
     }()
 
@@ -250,6 +255,8 @@ final class AIChatTabChatHeaderView: UIView {
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
         return label
     }()
 

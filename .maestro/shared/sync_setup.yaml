@@ -17,5 +17,5 @@ appId: com.duckduckgo.mobile.ios
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
+        isInternalUser: ${INTERNAL_USER_MODE}
         experiment.simplifiedSyncSetupExperiment: "control"

@@ -111,6 +111,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
+    private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private var cancellables = Set<AnyCancellable>()
@@ -207,6 +208,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         startupPreferences: StartupPreferences,
         dataImportProvider: DataImportStatusProviding,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     ) {
@@ -217,6 +219,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
     }
@@ -292,6 +295,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func setDuckAiInAddressBar(enabled: Bool) {
         aiChatPreferencesStorage.showSearchAndDuckAIToggle = enabled
+        guard featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg) else { return }
+        aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
+        homepageSearchModeSeedPersistor.pendingShowSearchModeToggle = enabled
     }
 
     private func onMainThreadIfNeeded(_ function: @escaping () -> Void) {

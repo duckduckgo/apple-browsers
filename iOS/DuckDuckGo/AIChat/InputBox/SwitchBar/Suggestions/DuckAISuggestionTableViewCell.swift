@@ -21,7 +21,7 @@ import Foundation
 import UIKit
 import DesignResourcesKitIcons
 
-class DuckAISuggestionTableViewCell: UITableViewCell {
+final class DuckAISuggestionTableViewCell: UITableViewCell {
 
     private enum Metrics {
         static let size: CGSize = CGSize(width: 44, height: 44)

@@ -155,7 +155,20 @@ struct NetworkProtectionStatusView: View {
         HStack {
             Spacer(minLength: 0)
             VStack(alignment: .center, spacing: 8) {
-                if colorScheme == .light {
+                if AppRebrand.isAppRebranded() {
+                    ZStack {
+                        Image(.vpnLock128)
+                            .resizable()
+                            .frame(width: 128, height: 96)
+                            .opacity(statusModel.isNetPEnabled ? 1 : 0)
+                        Image(.vpnDisabled128)
+                            .resizable()
+                            .frame(width: 128, height: 96)
+                            .opacity(statusModel.isNetPEnabled ? 0 : 1)
+                    }
+                    .animation(statusModel.animationsOn ? .easeInOut(duration: 0.3) : nil,
+                               value: statusModel.isNetPEnabled)
+                } else if colorScheme == .light {
                     headerAnimationView("vpn-light-mode")
                 } else {
                     headerAnimationView("vpn-dark-mode")

@@ -427,7 +427,8 @@ extension MainViewController {
 
         let hasExistingChat = resolvedURL?.duckAIChatID != nil
         let isSidebarOpen = resolvedURL?.isDuckAISidebarOpen == true
-        let shouldExpandAfterRefresh = !hasExistingChat && !inputs.coordinatorHasSubmittedPrompt && !isVoiceMode && !isSidebarOpen
+        let isSettingsOpen = resolvedURL?.isDuckAISettingsOpen == true
+        let shouldExpandAfterRefresh = !hasExistingChat && !inputs.coordinatorHasSubmittedPrompt && !isVoiceMode && !isSidebarOpen && !isSettingsOpen
         return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
     }
 }
@@ -1134,7 +1135,22 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
+        fireDirectDuckAINavigationPixelIfNeeded(for: query)
         loadQuery(query)
+    }
+
+    /// Fires when Duck.ai is disabled under AI Features settings yet the user still reaches Duck.ai by
+    /// typing its address into the UTI. Counts those direct navigations to gauge residual Duck.ai
+    /// demand among users who have turned it off. (Disabling Duck.ai also forces the Search↔Duck.ai
+    /// toggle off, so the `isAIChatEnabled` check is sufficient.) Mirrors `loadQuery`'s URL resolution
+    /// so detection matches what actually gets navigated.
+    private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
+        guard !aiChatSettings.isAIChatEnabled,
+              let url = URL.makeSearchURL(query: query,
+                                          useUnifiedLogic: isUnifiedURLPredictionEnabled,
+                                          queryContext: currentTab?.url),
+              url.isDuckAIURL else { return }
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
     }
 
 }

@@ -31,6 +31,7 @@ import DDGSync
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
+import MetricBuilder
 import NetworkExtension
 import Networking
 import Onboarding
@@ -951,7 +952,7 @@ class MainViewController: UIViewController {
         bindAIChatChromeChipToCurrentTab()
     }
 
-    /// Rebinds chip subscriptions to the current tab's URL + contextual sheet publishers.
+    /// Rebinds the chip's contextual-sheet subscription to the current tab.
     /// Called whenever the active tab changes (transitionTo) or the tabs bar is created.
     func bindAIChatChromeChipToCurrentTab() {
         aiChatChromeChipCancellables.removeAll()
@@ -960,11 +961,6 @@ class MainViewController: UIViewController {
             refreshAIChatChromeChip()
             return
         }
-
-        currentTab.urlPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
-            .store(in: &aiChatChromeChipCancellables)
 
         currentTab.aiChatContextualSheetCoordinator.$isSheetPresented
             .receive(on: DispatchQueue.main)
@@ -976,16 +972,8 @@ class MainViewController: UIViewController {
 
     private func refreshAIChatChromeChip() {
         guard let tabsBarController else { return }
-        // Read from the Tab model (always available); the VC may not be instantiated yet.
-        let currentTabModel = tabManager.currentTabsModel.currentTab
-        let isAIChat = currentTabModel?.isAITab ?? false
-        let isHome = currentTabModel?.isHomeTab ?? false
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
-        tabsBarController.updateAIChatChipState(
-            isCurrentTabAIChat: isAIChat,
-            isCurrentTabHome: isHome,
-            isContextualSheetPresented: isSheetPresented
-        )
+        tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
     }
 
     func startAddFavoriteFlow() {
@@ -5121,7 +5109,7 @@ extension MainViewController: TabDelegate {
                 }
                 sheet.prefersGrabberVisible = grabberVisible
                 if #unavailable(iOS 26) {
-                    sheet.preferredCornerRadius = 24
+                    sheet.preferredCornerRadius = SheetMetrics.cornerRadius
                 }
             }
         }
@@ -6221,8 +6209,13 @@ extension MainViewController: FireExecutorDelegate {
         }
         if #available(iOS 18.4, *) {
             Task { @MainActor [weak self] in
-                await self?.webExtensionManager?.loadInstalledExtensions()
-                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+                guard let self else { return }
+                if self.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {
+                    await self.webExtensionManager?.reloadInstalledExtensions()
+                } else {
+                    await self.webExtensionManager?.loadInstalledExtensions()
+                }
+                self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
         }
         switch fireRequest.trigger {
@@ -6297,6 +6290,14 @@ extension MainViewController {
         viewCoordinator.toolbarTabSwitcherButton.tintColor = UIColor(singleUseColor: .toolbarButton)
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
+
+        // This may move when the feature is further developed.
+        applyFloatingUIIfNeeded()
+    }
+
+    private func applyFloatingUIIfNeeded() {
+        let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
     }
 
 }

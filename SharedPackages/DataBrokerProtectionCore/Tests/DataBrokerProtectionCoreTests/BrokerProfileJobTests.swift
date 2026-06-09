@@ -21,6 +21,12 @@ import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
 final class BrokerProfileJobTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
+    }
+
     lazy var mockOptOutQueryData: [BrokerProfileQueryData] = {
         let brokerId: Int64 = 1
 
@@ -373,6 +379,160 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertTrue(delegate.errorIdentifiers.isEmpty)
     }
 
+    // MARK: - Freemium Maintenance Scan Filtering Tests
+
+    func testWhenFreeScheduledScanContainsMaintenanceScan_thenScanIsNotRun() async {
+        await assertFreeMaintenanceScanDoesNotRun(jobType: .scheduledScan)
+    }
+
+    func testWhenFreeManualScanContainsMaintenanceScan_thenScanIsNotRun() async {
+        await assertFreeMaintenanceScanDoesNotRun(jobType: .manualScan)
+    }
+
+    func testWhenFreeScheduledScanContainsNonMaintenanceScans_thenScanJobsRun() async {
+        let delegate = CompletedJobIdentifierCapturingDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.isAuthenticatedUserProvider = { false }
+
+        let now = Date()
+        let brokerId: Int64 = 31
+        let initialProfileQueryId: Int64 = 1
+        let retryProfileQueryId: Int64 = 2
+        let confirmOptOutProfileQueryId: Int64 = 3
+        let otherProfileQueryId: Int64 = 4
+
+        database.brokerProfileQueryDataToReturn = [
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: initialProfileQueryId,
+                scanJobData: makeScanJobData(brokerId: brokerId, profileQueryId: initialProfileQueryId, preferredRunDate: now)
+            ),
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: retryProfileQueryId,
+                scanJobData: makeScanJobData(
+                    brokerId: brokerId,
+                    profileQueryId: retryProfileQueryId,
+                    preferredRunDate: now,
+                    historyEvents: [HistoryEvent.mock(type: .error(error: DataBrokerProtectionError.unknown("Test error")))]
+                )
+            ),
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: confirmOptOutProfileQueryId,
+                scanJobData: makeScanJobData(
+                    brokerId: brokerId,
+                    profileQueryId: confirmOptOutProfileQueryId,
+                    preferredRunDate: now,
+                    historyEvents: [HistoryEvent.mock(type: .optOutRequested)]
+                )
+            ),
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: otherProfileQueryId,
+                scanJobData: makeScanJobData(
+                    brokerId: brokerId,
+                    profileQueryId: otherProfileQueryId,
+                    preferredRunDate: now,
+                    historyEvents: [HistoryEvent.mock(type: .scanStarted)]
+                )
+            )
+        ]
+
+        let job = BrokerProfileJob(dataBrokerID: brokerId,
+                                   jobType: .scheduledScan,
+                                   priorityDate: now,
+                                   showWebView: false,
+                                   statusReportingDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        await run(job)
+
+        XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: initialProfileQueryId))
+        XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: retryProfileQueryId))
+        XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: confirmOptOutProfileQueryId))
+        XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: otherProfileQueryId))
+        XCTAssertEqual(database.scanEvents.filter { $0.type == .scanStarted }.count, 4)
+        XCTAssertEqual(delegate.successIdentifiers.count, 4)
+        XCTAssertFalse(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
+    }
+
+    func testWhenAuthenticatedScheduledScanContainsMaintenanceScan_thenScanJobRuns() async {
+        let delegate = CompletedJobIdentifierCapturingDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.isAuthenticatedUserProvider = { true }
+
+        let now = Date()
+        let brokerId: Int64 = 41
+        let profileQueryId: Int64 = 1
+        database.brokerProfileQueryDataToReturn = [
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: profileQueryId,
+                scanJobData: makeMaintenanceScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: now)
+            )
+        ]
+
+        let job = BrokerProfileJob(dataBrokerID: brokerId,
+                                   jobType: .scheduledScan,
+                                   priorityDate: now,
+                                   showWebView: false,
+                                   statusReportingDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        await run(job)
+
+        XCTAssertTrue(mockDependencies.mockScanRunner.wasScanCalled)
+        XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: profileQueryId))
+        XCTAssertEqual(delegate.successIdentifiers.count, 1)
+        XCTAssertFalse(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
+    }
+
+    func testWhenJobErrors_thenIsFreeScanIsComputedOnceAndForwardedToErrorDelegate() async {
+        let delegate = CompletedJobIdentifierCapturingDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        let authCounter = AuthenticationCallCounter(isAuthenticated: false)
+        mockDependencies.database = database
+        mockDependencies.isAuthenticatedUserProvider = { await authCounter.isAuthenticatedUser() }
+        mockDependencies.mockOptOutRunner.shouldOptOutThrow = { _ in true }
+
+        let now = Date()
+        let brokerId: Int64 = 43
+        let profileQueryId: Int64 = 1
+        let extractedProfileId: Int64 = 2
+        let extractedProfile = ExtractedProfile(id: extractedProfileId, name: "Some name", profileUrl: "abc", identifier: "abc")
+        let optOutData = [OptOutJobData.mock(with: extractedProfile, brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: now)]
+
+        database.brokerProfileQueryDataToReturn = [
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: profileQueryId,
+                scanJobData: makeScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: now),
+                optOutJobData: optOutData
+            )
+        ]
+
+        let job = BrokerProfileJob(dataBrokerID: brokerId,
+                                   jobType: .optOut,
+                                   priorityDate: now,
+                                   showWebView: false,
+                                   statusReportingDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        await run(job)
+
+        let authCallCount = await authCounter.count
+        XCTAssertEqual(authCallCount, 1)
+        XCTAssertEqual(delegate.errorIsFreeScanValues, [true])
+        XCTAssertEqual(delegate.errorIdentifiers.count, 1)
+        XCTAssertEqual(delegate.errorIdentifiers.first?.stepType, .optOut)
+    }
+
     // MARK: - Filtering Tests
 
     func testWhenFilteringOptOutOperationData_thenAllButFuturePreferredRunDateIsReturned() {
@@ -574,6 +734,50 @@ final class BrokerProfileJobTests: XCTestCase {
 }
 
 private extension BrokerProfileJobTests {
+    func assertFreeMaintenanceScanDoesNotRun(jobType: JobType) async {
+        let delegate = CompletedJobIdentifierCapturingDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.isAuthenticatedUserProvider = { false }
+
+        let now = Date()
+        let brokerId: Int64 = 29
+        let profileQueryId: Int64 = 1
+        database.brokerProfileQueryDataToReturn = [
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: profileQueryId,
+                scanJobData: makeMaintenanceScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: now)
+            )
+        ]
+
+        let job = BrokerProfileJob(dataBrokerID: brokerId,
+                                   jobType: jobType,
+                                   priorityDate: now,
+                                   showWebView: false,
+                                   statusReportingDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        await run(job)
+
+        XCTAssertFalse(mockDependencies.mockScanRunner.wasScanCalled)
+        XCTAssertFalse(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: profileQueryId))
+        XCTAssertTrue(delegate.successIdentifiers.isEmpty)
+        XCTAssertTrue(delegate.errorIdentifiers.isEmpty)
+        XCTAssertTrue(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
+    }
+
+    func run(_ job: BrokerProfileJob) async {
+        let expectation = XCTestExpectation(description: "Job should finish")
+        job.completionBlock = {
+            expectation.fulfill()
+        }
+
+        job.start()
+        await fulfillment(of: [expectation], timeout: 15)
+    }
+
     func makeBrokerProfileQueryData(
         brokerId: Int64,
         profileQueryId: Int64,
@@ -582,20 +786,63 @@ private extension BrokerProfileJobTests {
         optOutJobData: [OptOutJobData] = []
     ) -> BrokerProfileQueryData {
         BrokerProfileQueryData(
-            dataBroker: dataBroker ?? .mock(withId: brokerId),
+            dataBroker: dataBroker ?? makeBroker(id: brokerId, scanActionType: .click),
             profileQuery: makeProfileQuery(id: profileQueryId),
             scanJobData: scanJobData,
             optOutJobData: optOutJobData
         )
     }
 
-    func makeSubscriptionRequiredBroker(id: Int64) -> DataBroker {
+    func makeBroker(id: Int64, scanActionType: ActionType) -> DataBroker {
         DataBroker.mockWithDefaults(
             id: id,
             steps: [
-                Step(type: .scan, actions: [MockAction(actionType: .generateEmail)])
+                Step(type: .scan, actions: [MockAction(actionType: scanActionType)])
             ]
         )
+    }
+
+    func makeSubscriptionRequiredBroker(id: Int64) -> DataBroker {
+        makeBroker(id: id, scanActionType: .generateEmail)
+    }
+
+    func makeScanJobData(
+        brokerId: Int64,
+        profileQueryId: Int64,
+        preferredRunDate: Date,
+        historyEvents: [HistoryEvent] = []
+    ) -> ScanJobData {
+        ScanJobData(brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    preferredRunDate: preferredRunDate,
+                    historyEvents: historyEvents)
+    }
+
+    func makeMaintenanceScanJobData(
+        brokerId: Int64,
+        profileQueryId: Int64,
+        preferredRunDate: Date
+    ) -> ScanJobData {
+        makeScanJobData(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            preferredRunDate: preferredRunDate,
+            historyEvents: [HistoryEvent.mock(type: .matchesFound(count: 1))]
+        )
+    }
+
+    func hasScanStarted(in events: [HistoryEvent], brokerId: Int64, profileQueryId: Int64) -> Bool {
+        events.contains {
+            $0.brokerId == brokerId &&
+            $0.profileQueryId == profileQueryId &&
+            $0.type == .scanStarted
+        }
+    }
+
+    func wasPixelFired(_ pixel: DataBrokerProtectionSharedPixels) -> Bool {
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.contains {
+            $0.name == pixel.name
+        }
     }
 
     func makeProfileQuery(id: Int64) -> ProfileQuery {
@@ -616,6 +863,7 @@ private struct MockAction: Action {
 private final class CompletedJobIdentifierCapturingDelegate: BrokerProfileJobStatusReportingDelegate {
     var successIdentifiers: [CompletedJobIdentifier] = []
     var errorIdentifiers: [CompletedJobIdentifier] = []
+    var errorIsFreeScanValues: [Bool?] = []
 
     func dataBrokerOperationDidError(_ error: any Error,
                                      withBrokerURL brokerURL: String?,
@@ -623,6 +871,7 @@ private final class CompletedJobIdentifierCapturingDelegate: BrokerProfileJobSta
                                      identifier: CompletedJobIdentifier?,
                                      dataBrokerParent: String?,
                                      isFreeScan: Bool?) {
+        errorIsFreeScanValues.append(isFreeScan)
         if let identifier {
             errorIdentifiers.append(identifier)
         }
@@ -633,5 +882,20 @@ private final class CompletedJobIdentifierCapturingDelegate: BrokerProfileJobSta
                                                     dataBrokerParent: String?,
                                                     identifier: CompletedJobIdentifier) {
         successIdentifiers.append(identifier)
+    }
+}
+
+private actor AuthenticationCallCounter {
+    private(set) var count = 0
+
+    private let isAuthenticated: Bool
+
+    init(isAuthenticated: Bool) {
+        self.isAuthenticated = isAuthenticated
+    }
+
+    func isAuthenticatedUser() -> Bool {
+        count += 1
+        return isAuthenticated
     }
 }

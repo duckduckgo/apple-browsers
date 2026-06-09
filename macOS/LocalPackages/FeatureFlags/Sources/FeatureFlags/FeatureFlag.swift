@@ -47,6 +47,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
+    /// Kill switch: enable remotely to disable orphaned-proxy detection (tunnel heartbeat + proxy detection loop + pixel).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454304
+    case vpnOrphanProxyDetectionKillSwitch
+
+    /// Kill switch: enable remotely to disable the orphaned-proxy full-bypass behavior.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454309
+    case vpnOrphanProxyBypassKillSwitch
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -58,6 +66,11 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
+
+    /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
+    /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
+    case webExtensionLightweightReload
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
@@ -431,6 +444,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtension), category: .vpn)
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
+        case .vpnOrphanProxyDetectionKillSwitch:
+            Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyDetectionKillSwitch), category: .vpn)
+        case .vpnOrphanProxyBypassKillSwitch:
+            Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyBypassKillSwitch), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)
         case .autoUpdateInREVIEW:
@@ -439,6 +456,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutofillSubfeature.partialFormSaves))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
+        case .webExtensionLightweightReload:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:

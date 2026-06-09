@@ -64,7 +64,7 @@
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_migration_started": {
         "description": "Fires when the web layer calls markMigrationDone (migration was attempted)",
@@ -85,76 +85,76 @@
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_settings-put_error": {
         "description": "Fires when putEntry (Settings) fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_settings-get_error": {
         "description": "Fires when getEntry or getAllEntries (Settings) fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_settings-delete_error": {
         "description": "Fires when deleteEntry, deleteAllEntries, or replaceAllEntries (Settings) fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_chat-put_error": {
         "description": "Fires when putChat or putChats fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_chat-get_error": {
         "description": "Fires when getChat or getAllChats fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_chat-delete_error": {
         "description": "Fires when deleteChat or deleteAllChats fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_file-put_error": {
         "description": "Fires when putFile fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_file-get_error": {
         "description": "Fires when getFile fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_file-list_error": {
         "description": "Fires when listFiles fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     },
     "m_mac_duck-ai_native-storage_file-delete_error": {
         "description": "Fires when deleteFile, deleteFiles (by chatId), or deleteAllFiles fails",
         "owners": ["Bunn", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode", "channel"]
     }
 }

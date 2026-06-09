@@ -216,7 +216,13 @@ extension Pixel {
         case bookmarksButtonPressed
         case tabBarBookmarksLongPressed
         case tabBarTabSwitcherOpened
-        
+
+        case tabBarTabSelected
+        case tabBarTabClosed
+        case tabBarNewTab
+        case tabBarOverflowDaily
+        case tabBarOpenTabCountDaily
+
         case homeScreenShown
         case homeScreenEditFavorite
         case homeScreenDeleteFavorite
@@ -924,6 +930,7 @@ extension Pixel {
 
         case debugTabSwitcherDidChangeInvalidState
         case debugTabsModelCrossModeMismatch
+        case debugTabsBarCellIndexOutOfRange
 
         case debugBookmarksInitialStructureQueryFailed
         case debugBookmarksStructureLost
@@ -1765,6 +1772,7 @@ extension Pixel {
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
         case unifiedToggleInputPromptSubmitted
+        case unifiedToggleInputDuckAIDirectNavigation
 
         // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
         case autocompleteDuckAIClickWebsite
@@ -1900,6 +1908,8 @@ extension Pixel {
         case webExtensionUninstallAllError
         case webExtensionLoaded
         case webExtensionLoadError
+        case webExtensionDeferredProtectedDataUnavailable
+        case webExtensionResumedProtectedDataAvailable
         case webExtensionEmbeddedInstalled
         case webExtensionEmbeddedUpgraded
         case webExtensionEmbeddedInstallError
@@ -2159,6 +2169,11 @@ extension Pixel.Event {
         case .bookmarksButtonPressed: return "mt_bm"
         case .tabBarBookmarksLongPressed: return "mt_bl"
         case .tabBarTabSwitcherOpened: return "m_tab_manager_opened"
+        case .tabBarTabSelected: return "m_tab_bar_tab_selected"
+        case .tabBarTabClosed: return "m_tab_bar_tab_closed"
+        case .tabBarNewTab: return "m_tab_bar_new_tab"
+        case .tabBarOverflowDaily: return "m_tab_bar_overflow_daily"
+        case .tabBarOpenTabCountDaily: return "m_tab_bar_open_tab_count_daily"
 
         case .bookmarkLaunchList: return "m_bookmark_launch_list"
         case .bookmarkLaunchScored: return "m_bookmark_launch_scored"
@@ -2748,6 +2763,7 @@ extension Pixel.Event {
 
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
         case .debugTabsModelCrossModeMismatch: return "m_debug_tabs-model_cross-mode-mismatch"
+        case .debugTabsBarCellIndexOutOfRange: return "debug_tabs-bar_cell-index-out-of-range"
 
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             
@@ -3587,6 +3603,7 @@ extension Pixel.Event {
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
         case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
+        case .unifiedToggleInputDuckAIDirectNavigation: return "m_aichat_unified_input_duck_ai_direct_navigation"
 
         case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
         case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"
@@ -3782,6 +3799,8 @@ extension Pixel.Event {
         case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
         case .webExtensionLoaded: return "m_web_extension_loaded"
         case .webExtensionLoadError: return "m_web_extension_load_error"
+        case .webExtensionDeferredProtectedDataUnavailable: return "m_web_extension_deferred_protected_data_unavailable"
+        case .webExtensionResumedProtectedDataAvailable: return "m_web_extension_resumed_protected_data_available"
         case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
         case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
         case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"

@@ -57,6 +57,7 @@ final class DuckAISuggestionsSurfaceProvider {
     private let switchBarHandler: SwitchBarHandling
     private let dependencies: SuggestionTrayDependencies
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
@@ -71,12 +72,14 @@ final class DuckAISuggestionsSurfaceProvider {
     init(switchBarHandler: SwitchBarHandling,
          dependencies: SuggestionTrayDependencies,
          aiChatSettings: AIChatSettingsProvider,
+         aiChatSyncCleaner: AIChatSyncCleaning?,
          featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling?) {
         self.switchBarHandler = switchBarHandler
         self.dependencies = dependencies
         self.aiChatSettings = aiChatSettings
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
@@ -87,25 +90,14 @@ final class DuckAISuggestionsSurfaceProvider {
     func attach(to host: UnifiedSuggestionsHost) {
         guard hasContentReader == nil else { return }
 
-        let chatSuggestionsReader: AIChatSuggestionsReading
-        if switchBarHandler.isFireTab {
-            chatSuggestionsReader = NilSuggestionsReader()
-        } else {
-            let reader = SuggestionsReader(
-                featureFlagger: featureFlagger,
-                privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: duckAiNativeStorageHandler,
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            )
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            chatSuggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        }
-        let chatViewModel = AIChatSuggestionsViewModel(maxSuggestions: chatSuggestionsReader.maxHistoryCount)
-        let chatManager = AIChatHistoryManager(
-            suggestionsReader: chatSuggestionsReader,
-            aiChatSettings: aiChatSettings,
-            viewModel: chatViewModel
-        )
+        let (chatManager, chatViewModel) = AIChatHistoryManager.makeHistoryManager(
+            isFireTab: switchBarHandler.isFireTab,
+            isIPadExperience: false,
+            featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyConfigurationManager,
+            chatSyncCleaner: aiChatSyncCleaner,
+            chatSettings: aiChatSettings,
+            nativeStorageHandler: duckAiNativeStorageHandler)
 
         let requestRunner = AutocompleteRequestRunner()
         let dataSource = AutocompleteSuggestionsDataSource(

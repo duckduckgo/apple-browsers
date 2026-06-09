@@ -167,6 +167,25 @@ final class StartupProfilerTests: XCTestCase {
         XCTAssertFalse(delegate.didComplete)
     }
 
+    @MainActor
+    func testDelegateNotCalledWhenInvalidatedEvenIfAllStepsRecorded() async {
+        let profiler = StartupProfiler()
+        let delegate = MockStartupProfilerDelegate()
+        profiler.delegate = delegate
+
+        profiler.invalidate()
+
+        for step in StartupStep.allCases {
+            let token = profiler.startMeasuring(step)
+            token.stop()
+        }
+
+        await Task.yield()
+
+        XCTAssertFalse(delegate.didComplete)
+        XCTAssertNil(delegate.receivedMetrics)
+    }
+
     // MARK: - StartupProfilerToken
 
     func testTokenStopOnlyCallsClosureOnce() {

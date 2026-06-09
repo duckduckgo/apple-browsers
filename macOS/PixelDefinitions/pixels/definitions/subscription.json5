@@ -490,8 +490,7 @@
             {
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "The funnel that led to the subscription flow",
-                "pattern": "^funnel_"
+                "description": "The funnel that led to the subscription flow"
             }
         ]
     },
@@ -633,7 +632,8 @@
                 "type": "integer",
                 "description": "Bucketed latency for fetch JWKS step (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_wide_subscription_plan_change": {

@@ -1079,6 +1079,14 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_dbp_freemium_pir_maintenance_scan_skipped": {
+        "description": "Temporary telemetry fired when PIR skips at least one maintenance scan job for an unauthenticated freemium user.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"],
+        "expires": "2026-08-31"
+    },
     "dbp-free_newtab_scan_impression_u": {
         "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, in the pre-scan state (no scan results available yet).",
         "owners": ["hanyutang-sandra"],

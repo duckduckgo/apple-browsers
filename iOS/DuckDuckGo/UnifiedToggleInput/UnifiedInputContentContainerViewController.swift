@@ -92,6 +92,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
     private let syncPromoManager: SyncPromoManaging?
@@ -142,6 +143,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          syncService: DDGSyncing? = nil,
+         aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
@@ -150,6 +152,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.syncService = syncService
         self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
@@ -362,6 +365,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         delegate?.unifiedInputEditingStateDidChangeMode(targetMode)
     }
 
+    /// Suppresses the content mode-switch swipe (e.g. while the toggle pill is being dragged).
+    var isSwipeEnabled: Bool {
+        get { modeSwitchSwipeController.isEnabled }
+        set { modeSwitchSwipeController.isEnabled = newValue }
+    }
+
     private func installComponents() {
         installUnifiedSuggestionsHost()
         installDaxLogoView()
@@ -520,6 +529,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             switchBarHandler: switchBarHandler,
             dependencies: dependencies,
             aiChatSettings: aiChatSettings,
+            aiChatSyncCleaner: aiChatSyncCleaner,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler

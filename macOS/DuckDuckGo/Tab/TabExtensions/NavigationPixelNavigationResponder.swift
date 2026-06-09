@@ -21,6 +21,7 @@ import Foundation
 import Navigation
 import PixelKit
 import PrivacyConfig
+import PrivacyDashboard
 import WebKit
 
 extension Navigation {
@@ -64,74 +65,18 @@ final class NavigationPixelNavigationResponder {
 
 extension NavigationPixelNavigationResponder: NavigationResponder {
 
-    /// Converts NavigationType to a safe string for pixel tracking, avoiding PII in custom types
-    private func safeNavigationTypeString(_ navigationType: NavigationType) -> String {
-        switch navigationType {
-        case .linkActivated:
-            return "linkActivated"
-        case .formSubmitted:
-            return "formSubmitted"
-        case .formResubmitted:
-            return "formResubmitted"
-        case .backForward:
-            return "backForward"
-        case .reload:
-            return "reload"
-        case .redirect:
-            return "redirect"
-        case .sessionRestoration:
-            return "sessionRestoration"
-        case .alternateHtmlLoad:
-            return "alternateHtmlLoad"
-        case .sameDocumentNavigation:
-            return "sameDocumentNavigation"
-        case .other:
-            return "other"
-        case .custom(let customType):
-            // Only include known safe custom types to avoid PII
-            switch customType.rawValue {
-            case "userEnteredUrl":
-                return "custom.userEnteredUrl"
-            case "loadedByStateRestoration":
-                return "custom.loadedByStateRestoration"
-            case "appOpenUrl":
-                return "custom.appOpenUrl"
-            case "historyEntry":
-                return "custom.historyEntry"
-            case "bookmark":
-                return "custom.bookmark"
-            case "ui":
-                return "custom.ui"
-            case "link":
-                return "custom.link"
-            case "webViewUpdated":
-                return "custom.webViewUpdated"
-            case "userRequestedPageDownload":
-                return "custom.userRequestedPageDownload"
-            default:
-                // Unknown custom type - return generic "custom" to avoid PII
-                return "custom.unknown"
-            }
-        }
-    }
-
     func didStart(_ navigation: Navigation) {
         guard navigation.navigationAction.isForMainFrame else {
             return
         }
 
-        /// Fire navigation pixel on all navigations except for JS redirects and loading error pages
-        let shouldFireNavigationPixel: Bool = switch navigation.navigationAction.navigationType {
-        case .redirect(.developer), .redirect(.client), .alternateHtmlLoad:
-            false
-        case .other where navigation.navigationAction.targetFrame?.url == .error:
-            // Sometimes navigation type for an error page is reported as `.other`, so checking also target frame URL
-            // This has a side effect of filtering out also some navigations starting on an error page (e.g. using a reload button,
-            // that is also reported as `.other`).
-            false
-        default:
-            true
-        }
+        // Fire navigation pixel on all navigations except for JS redirects and loading error pages.
+        // Note: `.other where targetFrame?.url == .error` here has the side effect of filtering out some
+        // navigations starting on an error page (e.g. tapping the reload button, which surfaces as `.other`).
+        let shouldFireNavigationPixel = SiteLoadingPixel.shouldFireSiteLoadingPixel(
+            for: navigation.navigationAction.navigationType,
+            isStartingFromErrorPage: navigation.navigationAction.targetFrame?.url == .error
+        )
 
         if shouldFireNavigationPixel {
             pixelFiring?.fire(GeneralPixel.navigation(.regular))
@@ -166,8 +111,10 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
         }
 
         let duration = Date().timeIntervalSince(startTime)
-        let navigationType = safeNavigationTypeString(navigation.navigationAction.navigationType)
-        pixelFiring?.fire(SiteLoadingPixel.siteLoadingSuccess(duration: duration, navigationType: navigationType))
+        let navigationType = SiteLoadingPixel.safeNavigationType(for: navigation.navigationAction.navigationType)
+        pixelFiring?.fire(SiteLoadingPixel.siteLoadingSuccess(duration: duration,
+                                                              navigationType: navigationType),
+                          frequency: .sample(percentage: SiteLoadingPixel.samplePercentage))
     }
 
     func navigation(_ navigation: Navigation, didFailWith error: WKError) {
@@ -177,8 +124,10 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
         }
 
         let duration = Date().timeIntervalSince(startTime)
-        let navigationType = safeNavigationTypeString(navigation.navigationAction.navigationType)
-        pixelFiring?.fire(SiteLoadingPixel.siteLoadingFailure(duration: duration, error: error, navigationType: navigationType))
+        let navigationType = SiteLoadingPixel.safeNavigationType(for: navigation.navigationAction.navigationType)
+        pixelFiring?.fire(SiteLoadingPixel.siteLoadingFailure(duration: duration,
+                                                              error: error, navigationType: navigationType),
+                          frequency: .sample(percentage: SiteLoadingPixel.samplePercentage))
     }
 
     func webContentProcessDidTerminate(with reason: WKProcessTerminationReason?) {

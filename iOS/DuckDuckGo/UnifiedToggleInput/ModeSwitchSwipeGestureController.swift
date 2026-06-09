@@ -29,6 +29,13 @@ import UIKit
 final class ModeSwitchSwipeGestureController: NSObject {
 
     private let onSwitch: (TextEntryMode) -> Void
+    private var recognizers: [UISwipeGestureRecognizer] = []
+
+    /// Suppresses the mode-switch flick (e.g. while the toggle pill is being dragged) without
+    /// uninstalling the recognizers.
+    var isEnabled = true {
+        didSet { recognizers.forEach { $0.isEnabled = isEnabled } }
+    }
 
     init(onSwitch: @escaping (TextEntryMode) -> Void) {
         self.onSwitch = onSwitch
@@ -42,7 +49,9 @@ final class ModeSwitchSwipeGestureController: NSObject {
             // row tap / favorite selection. (A sub-threshold movement never recognizes, so taps and
             // scrolls are unaffected.)
             swipe.cancelsTouchesInView = true
+            swipe.isEnabled = isEnabled
             swipe.delegate = self
+            recognizers.append(swipe)
             view.addGestureRecognizer(swipe)
         }
     }

@@ -71,7 +71,7 @@
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="calibratedRGB"/>
                                         <accessibility key="accessibilityConfiguration" label="Positive"/>
-                                        <state key="normal" image="happyFace"/>
+                                        <state key="normal" image="Response-Good-56-legacy"/>
                                         <connections>
                                             <segue destination="rAY-cv-mjl" kind="show" id="XOZ-B2-qvT"/>
                                         </connections>
@@ -81,7 +81,7 @@
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="calibratedRGB"/>
                                         <accessibility key="accessibilityConfiguration" label="Negative"/>
-                                        <state key="normal" image="sadFace"/>
+                                        <state key="normal" image="Response-Bad-56-legacy"/>
                                         <connections>
                                             <segue destination="lY6-5c-iu4" kind="show" identifier="PresentCategories" id="yA7-Up-C5Y"/>
                                         </connections>
@@ -160,7 +160,7 @@
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="VKd-6G-N6H" userLabel="Header Container">
                                                 <rect key="frame" x="0.0" y="10" width="414" height="190"/>
                                                 <subviews>
-                                                    <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="happyFace" translatesAutoresizingMaskIntoConstraints="NO" id="eqG-8P-M9E">
+                                                    <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Response-Good-56-legacy" translatesAutoresizingMaskIntoConstraints="NO" id="eqG-8P-M9E">
                                                         <rect key="frame" x="157" y="20" width="100" height="60"/>
                                                         <constraints>
                                                             <constraint firstAttribute="width" constant="100" id="aLK-4h-fCG"/>
@@ -291,6 +291,7 @@
                     </navigationItem>
                     <connections>
                         <outlet property="doneButton" destination="A1s-GY-hbq" id="gEy-8P-RRE"/>
+                        <outlet property="headerImage" destination="eqG-8P-M9E" id="Rb1-Gd-h01"/>
                         <outlet property="headerText" destination="m7v-x2-wc1" id="d5s-hc-rqj"/>
                         <outlet property="leaveFeedbackButton" destination="7zN-Xh-yYi" id="w3r-6v-mc6"/>
                     </connections>
@@ -310,7 +311,7 @@
                             <rect key="frame" x="0.0" y="0.0" width="414" height="170"/>
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
-                                <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="sadFace" translatesAutoresizingMaskIntoConstraints="NO" id="1RQ-bi-6hU">
+                                <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Response-Bad-56-legacy" translatesAutoresizingMaskIntoConstraints="NO" id="1RQ-bi-6hU">
                                     <rect key="frame" x="157" y="19" width="100" height="60"/>
                                     <accessibility key="accessibilityConfiguration" label="Negative Feedback">
                                         <accessibilityTraits key="traits" image="YES" header="YES"/>
@@ -409,6 +410,7 @@
                         </barButtonItem>
                     </navigationItem>
                     <connections>
+                        <outlet property="headerImage" destination="1RQ-bi-6hU" id="Rb2-Bd-h02"/>
                         <outlet property="headerText" destination="vDx-jp-OoH" id="oQK-93-4l1"/>
                         <outlet property="headerView" destination="h6D-eT-YCX" id="40i-6z-dYk"/>
                         <outlet property="supplementaryText" destination="1mR-xp-efA" id="rBl-XT-jbS"/>
@@ -435,7 +437,7 @@
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="H8P-lM-IF2" userLabel="Header Container">
                                                 <rect key="frame" x="71" y="10" width="272" height="190"/>
                                                 <subviews>
-                                                    <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="happyFace" translatesAutoresizingMaskIntoConstraints="NO" id="KJu-DM-FUl">
+                                                    <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Response-Good-56-legacy" translatesAutoresizingMaskIntoConstraints="NO" id="KJu-DM-FUl">
                                                         <rect key="frame" x="86" y="20" width="100" height="60"/>
                                                         <accessibility key="accessibilityConfiguration">
                                                             <accessibilityTraits key="traits" image="YES" header="YES"/>
@@ -634,7 +636,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="happyFace" width="48" height="48"/>
-        <image name="sadFace" width="48" height="48"/>
+        <image name="Response-Good-56-legacy" width="48" height="48"/>
+        <image name="Response-Bad-56-legacy" width="48" height="48"/>
     </resources>
 </document>

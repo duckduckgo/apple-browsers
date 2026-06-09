@@ -49,6 +49,13 @@
             }
         ]
     },
+    "debug_tabs-bar_cell-index-out-of-range": {
+        "description": "Fires when the iPad tabs bar collection view requests a cell for an index that no longer exists in the tabs model (a desync between the layout and the model). The view now renders a placeholder instead of crashing. Expecting minimal numbers of these pixels - ideally zero.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_pixel_fire_suppressed_storage_error": {
         "description": "Fired when a daily or unique pixel is suppressed because the storage write for its last-fire date failed. Indicates a broken pixel store that would otherwise cause repeated firing.",
         "owners": ["samsymons"],

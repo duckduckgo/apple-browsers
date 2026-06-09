@@ -37,16 +37,13 @@ final class AIChatHistoryViewModel: ObservableObject {
     @Published private(set) var recent: [DuckAiChat] = []
     @Published private(set) var hasLoaded: Bool = false
 
-    /// `true` when the chats publisher finished with an error (e.g. native storage failed to
-    /// configure). Distinct from `isEmpty` so the UI can show an error state rather than the
-    /// "no chats yet" empty state.
+    /// Distinct from `isEmpty` so the UI can show an error state rather than "no chats yet".
     @Published private(set) var loadFailed: Bool = false
 
     @Published private(set) var query: String = ""
 
-    /// The query that produced the current `pinned`/`recent`. Lags `query` by the debounce
-    /// interval — read this (not `query`) for UI decisions that must stay consistent with
-    /// the rows on screen, e.g. the illustrated empty-state check.
+    /// Lags `query` by the debounce interval. Read this (not `query`) for UI checks that
+    /// must stay consistent with the rows on screen.
     @Published private(set) var effectiveQuery: String = ""
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
@@ -70,16 +67,14 @@ final class AIChatHistoryViewModel: ObservableObject {
         self.downloader = downloader
         self.downloadQueue = downloadQueue
 
-        // Failures become a sentinel `.failure` so the combined publisher stays alive and
-        // we can surface the error via `loadFailed` instead of terminating.
+        // `.failure` as a sentinel keeps the combined publisher alive for `loadFailed`.
         let chats: AnyPublisher<Result<[DuckAiChat], Error>, Never> = reader.chatsPublisher()
             .map(Result.success)
             .catch { Just(.failure($0)) }
             .eraseToAnyPublisher()
 
-        // `dropFirst().debounce(...).prepend("")` seeds the initial empty query into
-        // `CombineLatest` synchronously while still debouncing user typing — without the
-        // prepend, the sheet hides for ~150ms when chats emit synchronously on warm re-open.
+        // `prepend("")` seeds the initial empty query so chats can render immediately on
+        // warm re-open; `dropFirst().debounce(...)` then handles typed values.
         let queryStream = $query
             .dropFirst()
             .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
@@ -108,8 +103,7 @@ final class AIChatHistoryViewModel: ObservableObject {
             pinned = []
             recent = []
         }
-        // Store the trimmed value so whitespace-only queries don't read as "user is
-        // searching" — they aren't (the filter treated the query as empty).
+        // Trimmed so whitespace-only doesn't read as "user is searching" downstream.
         effectiveQuery = trimmed
         hasLoaded = true
     }
@@ -159,8 +153,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     func deleteChat(chatId: String) {
-        // Chat-history sheet only ever surfaces persistent chats, so deletion is never
-        // fire-mode. The reactive observer refreshes the list when the burn completes.
+        // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
         Task { @MainActor in
             await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
@@ -168,8 +161,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     func downloadChat(chatId: String) {
-        // Off-main because image-gen exports do meaningful I/O (storage reads + base64
-        // + zip writing); hop back to signal the delegate to present the toast.
+        // Image-gen exports do enough I/O to freeze the sheet — dispatch off-main.
         guard let downloader else { return }
         downloadQueue.async { [weak self] in
             do {

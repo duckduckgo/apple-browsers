@@ -64,9 +64,7 @@ struct ChatExportWriter: ChatExportWriting {
 
     private func writeText(_ content: String) throws -> URL {
         let url = resolveAvailableFile(extension: Constants.txtExtension)
-        // `Data(content.utf8)` is non-optional and infallible; `data(using:)?.write` would
-        // silently no-op if UTF-8 conversion ever returned nil yet still hand back the URL
-        // as if the write succeeded.
+        // `Data(content.utf8)` is infallible; `data(using:)?.write` could silently no-op.
         try Data(content.utf8).write(to: url, options: .atomic)
         return url
     }

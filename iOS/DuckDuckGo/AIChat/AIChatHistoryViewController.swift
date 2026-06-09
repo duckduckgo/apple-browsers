@@ -58,12 +58,8 @@ final class AIChatHistoryViewController: UIViewController {
         return host
     }()
 
-    /// True when the user is searching AND the filter matched nothing. Drives the table
-    /// view to render a single `AIChatHistoryNoResultsCell` (matching Bookmarks' visual: an
-    /// inset-grouped row with "No matches found"), while preserving the search-bar header so
-    /// the user can edit or clear the query. Gated on `!loadFailed` so a storage failure
-    /// (which also clears `pinned`/`recent`) routes through the load-error alert instead of
-    /// being misread as a no-matches search.
+    /// `!loadFailed` so a storage failure (which also clears the lists) routes through the
+    /// load-error alert instead of being misread as a no-matches search.
     private var isShowingNoSearchResults: Bool {
         viewModel.isEmpty && !viewModel.effectiveQuery.isEmpty && !viewModel.loadFailed
     }

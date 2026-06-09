@@ -148,6 +148,74 @@ final class ChatHistoryDownloaderTests: XCTestCase {
         XCTAssertEqual(images.first?.bytes, imageBytes)
     }
 
+    // MARK: - Model display resolution
+
+    func testDownload_resolvesModelDisplayFromSnapshot_andPassesToExporter() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        let json = """
+            {
+              "chatId":"c1",
+              "model":"gpt-5-mini",
+              "messages":[
+                {"role":"user","createdAt":"2026-05-15T14:00:00.000Z","content":"hi"},
+                {"role":"assistant","content":"hello"}
+              ]
+            }
+            """
+        try storage.putChat(chatId: "c1", data: Data(json.utf8))
+
+        let writer = SpyChatExportWriter()
+        let downloader = ChatHistoryDownloader(
+            storageHandler: storage,
+            writer: writer,
+            modelDisplays: [
+                "gpt-5-mini": ModelDisplay(
+                    fullName: "GPT-5 mini",
+                    shortName: "GPT-5 mini",
+                    providerPossessive: "OpenAI's"
+                )
+            ]
+        )
+
+        _ = try downloader.downloadChat(chatId: "c1")
+
+        guard case .text(let content) = writer.writtenPayloads.first else {
+            XCTFail("Expected `.text` payload"); return
+        }
+        XCTAssertTrue(content.contains("using OpenAI's GPT-5 mini Model"),
+                      "header should render the resolved ModelDisplay, not the raw id")
+        XCTAssertFalse(content.contains("the gpt-5-mini Model"),
+                       "header should NOT fall back to the raw id when a ModelDisplay is supplied")
+    }
+
+    func testDownload_fallsBackToRawId_whenSnapshotHasNoEntryForModel() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        let json = """
+            {
+              "chatId":"c1",
+              "model":"gpt-5-mini",
+              "messages":[
+                {"role":"user","createdAt":"2026-05-15T14:00:00.000Z","content":"hi"},
+                {"role":"assistant","content":"hello"}
+              ]
+            }
+            """
+        try storage.putChat(chatId: "c1", data: Data(json.utf8))
+
+        let writer = SpyChatExportWriter()
+        // Snapshot is empty (e.g. UTI off) — exporter must produce a usable header without
+        // provider attribution.
+        let downloader = ChatHistoryDownloader(storageHandler: storage, writer: writer)
+
+        _ = try downloader.downloadChat(chatId: "c1")
+
+        guard case .text(let content) = writer.writtenPayloads.first else {
+            XCTFail("Expected `.text` payload"); return
+        }
+        XCTAssertTrue(content.contains("using the gpt-5-mini Model"),
+                      "header should fall back to the raw model id when no ModelDisplay is available")
+    }
+
     // MARK: - Fixtures
 
     /// Memory storage validates UUIDs strictly via `UUID(uuidString:)`. Reuse a single

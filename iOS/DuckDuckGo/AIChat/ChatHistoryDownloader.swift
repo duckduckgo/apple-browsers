@@ -40,15 +40,21 @@ struct ChatHistoryDownloader: ChatHistoryDownloading {
     private let storageHandler: DuckAiNativeStorageHandling?
     private let exporter: ChatExporter
     private let writer: ChatExportWriting
+    /// Snapshot lookup taken at construction time. The exporter's `rawIdFallback` kicks in
+    /// for any model id that's not in this dict, so an empty dict still produces a usable
+    /// header — just without provider attribution.
+    private let modelDisplays: [String: ModelDisplay]
 
     init(
         storageHandler: DuckAiNativeStorageHandling?,
         exporter: ChatExporter = ChatExporter(),
-        writer: ChatExportWriting = ChatExportWriter()
+        writer: ChatExportWriting = ChatExportWriter(),
+        modelDisplays: [String: ModelDisplay] = [:]
     ) {
         self.storageHandler = storageHandler
         self.exporter = exporter
         self.writer = writer
+        self.modelDisplays = modelDisplays
     }
 
     func downloadChat(chatId: String) throws -> URL {
@@ -59,14 +65,11 @@ struct ChatHistoryDownloader: ChatHistoryDownloading {
         // We decode to derive metadata (chatType, fileRefs) but hand the raw JSON to the
         // exporter — no double-encoding.
         let chat = try DuckAiChat.decode(from: record.data).chat
-        // `modelDisplay: nil` falls back to the raw model id in the export header. Resolved
-        // attribution ("OpenAI's GPT-4o Model") needs an in-memory model cache iOS doesn't
-        // expose globally yet — follow-up once UTI is the only path.
         let result = try exporter.export(
             rawJson: record.data,
             chatType: chat.chatType,
             fileRefs: chat.fileRefs,
-            modelDisplay: nil
+            modelDisplay: modelDisplays[chat.model]
         )
 
         let payload: ChatExportPayload

@@ -296,6 +296,16 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManager)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
+
+        let homepageSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor()
+        if sourceProvider.featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg),
+           let pendingShowSearchModeToggle = homepageSeedPersistor.pendingShowSearchModeToggle {
+            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: pendingShowSearchModeToggle, onApplied: { applied in
+                if homepageSeedPersistor.pendingShowSearchModeToggle == applied {
+                    homepageSeedPersistor.pendingShowSearchModeToggle = nil
+                }
+            }))
+        }
     }
 
     lazy var userScripts: [UserScript] = [
@@ -321,4 +331,76 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
     }
 
+}
+
+/// Document-start, page-content-world script that mirrors the onboarding search-mode choice onto the
+/// duckduckgo.com homepage by writing `homepageSettings.showSearchModeToggle` in its localStorage,
+/// then reports the applied value so the one-shot marker is cleared and later web changes are kept.
+final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
+    private static let messageName = "homepageSearchModeSeedApplied"
+
+    var messageNames: [String] { [Self.messageName] }
+    let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    let forMainFrameOnly: Bool = true
+    let requiresRunInPageContentWorld: Bool = true
+
+    private let showSearchModeToggle: Bool
+    private let onApplied: (Bool?) -> Void
+
+    var source: String {
+        """
+        const host = (window.location && window.location.hostname) || "";
+        if (host !== "duckduckgo.com" && !host.endsWith(".duckduckgo.com")) { return; }
+        const desired = \(showSearchModeToggle);
+        try {
+            const appliedKey = "__ddgSearchModeSeedApplied";
+            if (window.localStorage.getItem(appliedKey) !== String(desired)) {
+                let settings = {};
+                try { settings = JSON.parse(window.localStorage.getItem("homepageSettings") || "{}") || {}; } catch (e) {}
+                settings.showSearchModeToggle = desired;
+                window.localStorage.setItem("homepageSettings", JSON.stringify(settings));
+                window.localStorage.setItem(appliedKey, String(desired));
+            }
+        } catch (e) {}
+        try { window.webkit.messageHandlers.\(Self.messageName).postMessage({ showSearchModeToggle: desired }); } catch (e) {}
+        """
+    }
+
+    init(showSearchModeToggle: Bool, onApplied: @escaping (Bool?) -> Void) {
+        self.showSearchModeToggle = showSearchModeToggle
+        self.onApplied = onApplied
+        super.init()
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        let value = (message.body as? [String: Any])?["showSearchModeToggle"]
+        onApplied((value as? Bool) ?? (value as? NSNumber)?.boolValue)
+    }
+}
+
+protocol HomepageSearchModeSeedPersistor {
+    var pendingShowSearchModeToggle: Bool? { get nonmutating set }
+}
+
+struct HomepageSearchModeSeedUserDefaultsPersistor: HomepageSearchModeSeedPersistor {
+    enum Key: String {
+        case pendingShowSearchModeToggle = "aichat.homepage-search-mode-seed.pending"
+    }
+
+    private let keyValueStore: KeyValueStoring
+
+    init(keyValueStore: KeyValueStoring = UserDefaults.standard) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var pendingShowSearchModeToggle: Bool? {
+        get { try? keyValueStore.object(forKey: Key.pendingShowSearchModeToggle.rawValue) as? Bool }
+        nonmutating set {
+            if let newValue {
+                try? keyValueStore.set(newValue, forKey: Key.pendingShowSearchModeToggle.rawValue)
+            } else {
+                try? keyValueStore.removeObject(forKey: Key.pendingShowSearchModeToggle.rawValue)
+            }
+        }
+    }
 }

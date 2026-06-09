@@ -15,7 +15,6 @@ name: test_ai_chat_tab_header
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
         ff.unifiedToggleInput: "true"
 
 # Step 1: Navigate to Duck.ai tab

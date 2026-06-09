@@ -555,6 +555,14 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_ios_dbp_freemium_pir_maintenance_scan_skipped": {
+        "description": "Temporary telemetry fired when PIR skips at least one maintenance scan job for an unauthenticated freemium user.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"],
+        "expires": "2026-08-31"
+    },
     "m_ios_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
         "owners": ["quanganhdo"],

@@ -8,6 +8,15 @@ on:
   schedule:
     - cron: '0 4 * * *' # run at 4 AM UTC
   workflow_dispatch:
+    inputs:
+      user_modes:
+        description: "User mode(s) to run. 'production' = production behaviour (release-gating). 'internal' = isInternalUser=true, runs internally-gated features (advance warning). 'both' = run both legs."
+        type: choice
+        default: production
+        options:
+        - production
+        - internal
+        - both
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -134,9 +143,54 @@ jobs:
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
-  end-to-end-tests:
-    name: End to end Tests
+  setup-matrix:
+    name: Resolve test matrix
     needs: build-end-to-end-tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    outputs:
+      include: ${{ steps.define.outputs.include }}
+    steps:
+    - name: Define include
+      id: define
+      run: |
+        event="${{ github.event_name }}"
+        input_modes="${{ inputs.user_modes }}"
+        case "$event" in
+          schedule)
+            modes='["production", "internal"]'
+            ;;
+          workflow_dispatch)
+            case "$input_modes" in
+              internal) modes='["internal"]' ;;
+              both)     modes='["production", "internal"]' ;;
+              *)        modes='["production"]' ;;
+            esac
+            ;;
+          *)
+            modes='["production"]'
+            ;;
+        esac
+        # iPhone tests exclude iPad-tagged tests; iPad tests exclude iPhone-tagged tests.
+        base='[
+          {"test-tag":"release","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
+          {"test-tag":"privacy","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
+          {"test-tag":"securityTest","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
+          {"test-tag":"adClick","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
+          {"test-tag":"duckplayer_native","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
+          {"test-tag":"device_info","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
+          {"test-tag":"device_info","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
+          {"test-tag":"duckplayer_classic","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"}
+        ]'
+        include=$(echo "$base" | jq -c --argjson modes "$modes" '[.[] as $b | $modes[] | $b + {"user-mode": .}]')
+        echo "include=$include" >> $GITHUB_OUTPUT
+        echo "Resolved include: $include"
+
+  end-to-end-tests:
+    name: "E2E: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }}"
+    needs: [build-end-to-end-tests, setup-matrix]
     runs-on: macos-26
     timeout-minutes: 300
 
@@ -145,45 +199,7 @@ jobs:
 
     strategy:
       matrix:
-        include:
-          # iPhone tests - exclude iPad tagged tests
-          - test-tag: release
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-          - test-tag: privacy
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-          - test-tag: securityTest
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-          - test-tag: adClick
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
-            device: iphone
-          - test-tag: duckplayer_native
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device: iphone
-          - test-tag: device_info
-            exclude-tags: ipad
-            device-model: iPhone-16
-            device: iphone
-          # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
-          - test-tag: device_info
-            exclude-tags: iphone
-            device-model: iPad-10th-generation
-            device: ipad
-          - test-tag: duckplayer_classic
-            exclude-tags: iphone
-            device-model: iPad-10th-generation
-            device: ipad
+        include: ${{ fromJSON(needs.setup-matrix.outputs.include) }}
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
 
@@ -204,19 +220,21 @@ jobs:
         name: duckduckgo-ios-app
         path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
-    - name: End to End tests (${{ matrix.device-name }})
+    - name: Run Maestro tests (${{ matrix.device-name }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }})
       id: upload
       uses: mobile-dev-inc/action-maestro-cloud@v1.9.8
       with:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
-        name: ${{ matrix.test-tag }}_${{ matrix.device-name }}_${{ github.sha }}
+        name: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device-name }}_${{ github.sha }}
         timeout: 300
         app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro
         include-tags: ${{ matrix.test-tag }}
         exclude-tags: ${{ matrix.exclude-tags }}
-        env: ONBOARDING_COMPLETED=true
+        env: |
+          ONBOARDING_COMPLETED=true
+          INTERNAL_USER_MODE=${{ matrix.user-mode == 'internal' && 'true' || '' }}
         device-os: iOS-18-2
         device-model: ${{ matrix.device-model }}
         device-name: ${{ matrix.device-name }}
@@ -227,7 +245,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_duration_ios_e2e_tests_${{ matrix.test-tag }}
+        pixel-name: m_ci_apple_duration_ios_e2e_tests_${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
@@ -235,21 +253,73 @@ jobs:
       if: always() && github.ref_name == 'main'
       uses: ./.github/actions/send-pixel
       with:
-        pixel-name: m_ci_apple_status_ios_e2e_${{ matrix.test-tag }}_${{ matrix.device }}_${{ steps.upload.outcome }}
+        pixel-name: m_ci_apple_status_ios_e2e_${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device }}_${{ steps.upload.outcome }}
+
+    - name: Mark user-mode failure (e2e)
+      if: (failure() || cancelled()) && github.ref_name == 'main'
+      working-directory: ${{ github.workspace }}
+      run: |
+        mkdir -p failure-marker
+        echo "e2e:${{ matrix.user-mode }}:${{ matrix.test-tag }}:${{ matrix.device }}" > failure-marker/marker.txt
+    - name: Upload failure marker (e2e)
+      if: (failure() || cancelled()) && github.ref_name == 'main'
+      uses: actions/upload-artifact@v4
+      with:
+        name: failure-marker-e2e-${{ matrix.user-mode }}-${{ matrix.test-tag }}-${{ matrix.device }}
+        path: failure-marker/
+        retention-days: 1
 
   notify-failure:
     name: Notify on failure
     if: ${{ always() && contains(join(needs.*.result, ','), 'failure') && github.ref_name == 'main' }}
-    needs: [build-end-to-end-tests, end-to-end-tests]
+    needs: [build-end-to-end-tests, setup-matrix, end-to-end-tests]
     runs-on: ubuntu-latest
 
     steps:
     - name: Check out the code
       uses: actions/checkout@v6
-    - name: Create Asana task when workflow failed
+
+    - name: Detect failure user-modes
+      id: detect
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        artifacts=$(gh api --paginate "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" --jq '.artifacts[].name' || true)
+        has_production=false
+        has_internal=false
+        if [ "${{ needs.build-end-to-end-tests.result }}" = "failure" ]; then
+          has_production=true
+        fi
+        # Treat setup-matrix failure as a production failure: e2e jobs got skipped,
+        # so no markers exist, but the workflow is broken and someone needs to know.
+        if [ "${{ needs.setup-matrix.result }}" = "failure" ]; then
+          has_production=true
+        fi
+        if echo "$artifacts" | grep -E '^failure-marker-e2e-production' >/dev/null; then
+          has_production=true
+        fi
+        if echo "$artifacts" | grep -E '^failure-marker-e2e-internal' >/dev/null; then
+          has_internal=true
+        fi
+        echo "has_production=$has_production" >> "$GITHUB_OUTPUT"
+        echo "has_internal=$has_internal" >> "$GITHUB_OUTPUT"
+        echo "Detected production failures: $has_production"
+        echo "Detected internal failures: $has_internal"
+
+    - name: Create Asana task for production-mode failures
+      if: steps.detect.outputs.has_production == 'true'
       run: |
         curl -s "https://app.asana.com/api/1.0/tasks" \
           --header "Accept: application/json" \
           --header "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
           --header "Content-Type: application/json" \
-          --data ' { "data": { "name": "GH Workflow Failure - End to end tests", "workspace": "${{ vars.ASANA_WORKSPACE_ID }}", "projects": [ "${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}" ], "notes" : "The end to end workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}. For instructions on how to handle the failure(s), check https://app.asana.com/0/0/1206423571874502/f" } }'
+          --data ' { "data": { "name": "GH Workflow Failure - End to end tests", "workspace": "${{ vars.ASANA_WORKSPACE_ID }}", "projects": [ "${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}" ], "notes" : "The end to end workflow has failed in production user mode. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}. For instructions on how to handle the failure(s), check https://app.asana.com/0/0/1206423571874502/f" } }'
+
+    - name: Create Asana task for internal-mode failures
+      if: steps.detect.outputs.has_internal == 'true'
+      run: |
+        curl -s "https://app.asana.com/api/1.0/tasks" \
+          --header "Accept: application/json" \
+          --header "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
+          --header "Content-Type: application/json" \
+          --data ' { "data": { "name": "GH Workflow Failure - End to end tests (internal mode, advance warning)", "workspace": "${{ vars.ASANA_WORKSPACE_ID }}", "projects": [ "${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}" ], "notes" : "The internal-mode end to end nightly leg has failed. This is an advance warning for a feature still gated to internal users; surface to the feature owner before the production flag flip. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}." } }'

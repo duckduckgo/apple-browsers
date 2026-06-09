@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+import FeatureFlags
 import Onboarding
 import Persistence
 import PersistenceTestingUtils
@@ -574,6 +576,68 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.searchExperience(.clicked(.searchOnly))])
+    }
+
+    // MARK: setDuckAiInAddressBar — NTP + homepage (aiChatOnboardingToggleAffectsNtpAndDdg)
+
+    @MainActor
+    func testSetDuckAiInAddressBar_WhenFlagOnAndSearchOnly_HidesNtpToggleAndArmsHomepageSeedOff() {
+        let storage = MockAIChatPreferencesStorage()
+        let seedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
+        let manager = makeManager(enabledFlags: [.aiChatOnboardingToggleAffectsNtpAndDdg], aiChatPreferencesStorage: storage, homepageSearchModeSeedPersistor: seedPersistor)
+
+        manager.setDuckAiInAddressBar(enabled: false)
+
+        XCTAssertFalse(storage.showSearchAndDuckAIToggle)
+        XCTAssertFalse(storage.showShortcutOnNewTabPage)
+        XCTAssertEqual(seedPersistor.pendingShowSearchModeToggle, false)
+    }
+
+    @MainActor
+    func testSetDuckAiInAddressBar_WhenFlagOnAndSearchAndDuckAi_ShowsNtpToggleAndArmsHomepageSeedOn() {
+        let storage = MockAIChatPreferencesStorage()
+        let seedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
+        let manager = makeManager(enabledFlags: [.aiChatOnboardingToggleAffectsNtpAndDdg], aiChatPreferencesStorage: storage, homepageSearchModeSeedPersistor: seedPersistor)
+
+        manager.setDuckAiInAddressBar(enabled: true)
+
+        XCTAssertTrue(storage.showSearchAndDuckAIToggle)
+        XCTAssertTrue(storage.showShortcutOnNewTabPage)
+        XCTAssertEqual(seedPersistor.pendingShowSearchModeToggle, true)
+    }
+
+    @MainActor
+    func testSetDuckAiInAddressBar_WhenFlagOff_OnlySetsAddressBarToggle() {
+        let storage = MockAIChatPreferencesStorage()
+        storage.showShortcutOnNewTabPage = true
+        let seedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
+        let manager = makeManager(enabledFlags: [], aiChatPreferencesStorage: storage, homepageSearchModeSeedPersistor: seedPersistor)
+
+        manager.setDuckAiInAddressBar(enabled: false)
+
+        XCTAssertFalse(storage.showSearchAndDuckAIToggle)
+        XCTAssertTrue(storage.showShortcutOnNewTabPage)
+        XCTAssertNil(seedPersistor.pendingShowSearchModeToggle)
+    }
+
+    @MainActor
+    private func makeManager(enabledFlags: [FeatureFlag],
+                             aiChatPreferencesStorage: AIChatPreferencesStorage,
+                             homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor) -> OnboardingActionsManager {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = enabledFlags
+        return OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            aiChatPreferencesStorage: aiChatPreferencesStorage,
+            homepageSearchModeSeedPersistor: homepageSearchModeSeedPersistor,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
     }
 
 }

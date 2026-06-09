@@ -54,13 +54,6 @@ public struct PlatformLinksView: View {
         .navigationTitle(UserText.syncGetOtherDevicesScreenTitle)
     }
 
-    private var isiOS26: Bool {
-        if #available(iOS 26, *) {
-            return true
-        }
-        return false
-    }
-
     private var content: some View {
         VStack(alignment: .center, spacing: 0) {
 

@@ -108,7 +108,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// hatch) glides natively with the input instead of SwiftUI snapping the safe-area reposition.
     private var unifiedSuggestionsTopConstraint: NSLayoutConstraint?
     /// The lazily-attached duck.ai surface (source + fetchers + state feed); nil while detached.
-    private var duckAISurface: DuckAISurfaceController?
+    private var duckAISurface: DuckAISuggestionsSurfaceProvider?
     /// Stable merge input for the inputs publisher; the surface's state is relayed into it while
     /// attached, and it reverts to nil on detach (the merger treats nil as no recents / nothing pending).
     private let duckAIStateRelay = CurrentValueSubject<UnifiedSuggestionsInputsMerger.DuckAIState?, Never>(nil)
@@ -507,7 +507,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         .eraseToAnyPublisher()
     }
 
-    /// Lazily builds `DuckAISurfaceController`, relays its state into the merge input, and attaches
+    /// Lazily builds `DuckAISuggestionsSurfaceProvider`, relays its state into the merge input, and attaches
     /// it to the single host. No-op if already attached or duck.ai suggestions are disabled.
     private func attachDuckAISurfaceIfNeeded() {
         guard duckAISurface == nil,
@@ -516,7 +516,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
               aiChatSettings.isChatSuggestionsEnabled,
               let dependencies = suggestionTrayDependencies else { return }
 
-        let surface = DuckAISurfaceController(
+        let surface = DuckAISuggestionsSurfaceProvider(
             switchBarHandler: switchBarHandler,
             dependencies: dependencies,
             aiChatSettings: aiChatSettings,
@@ -823,9 +823,9 @@ private extension UnifiedInputContentContainerViewController {
     }
 }
 
-// MARK: - DuckAISurfaceControllerDelegate
+// MARK: - DuckAISuggestionsSurfaceProviderDelegate
 
-extension UnifiedInputContentContainerViewController: DuckAISurfaceControllerDelegate {
+extension UnifiedInputContentContainerViewController: DuckAISuggestionsSurfaceProviderDelegate {
 
     func duckAISurfaceDidSelect(_ selection: DuckAISuggestionsSelection) {
         switch selection {

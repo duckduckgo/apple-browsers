@@ -1,5 +1,5 @@
 //
-//  DuckAISurfaceController.swift
+//  DuckAISuggestionsSurfaceProvider.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -26,7 +26,7 @@ import Suggestions
 import AIChat
 
 @MainActor
-protocol DuckAISurfaceControllerDelegate: AnyObject {
+protocol DuckAISuggestionsSurfaceProviderDelegate: AnyObject {
     func duckAISurfaceDidSelect(_ selection: DuckAISuggestionsSelection)
     /// The duck.ai fetchers' content/settle state changed (was `onFetchCompleted`); the owner
     /// refreshes dax visibility.
@@ -37,9 +37,9 @@ protocol DuckAISurfaceControllerDelegate: AnyObject {
 /// content/settle state feed, and the URL-history delete action. Built once per attach and torn
 /// down on detach (search persists; duck.ai is transient). The Lottie dax stays in `DaxLogoManager`.
 @MainActor
-final class DuckAISurfaceController {
+final class DuckAISuggestionsSurfaceProvider {
 
-    weak var delegate: DuckAISurfaceControllerDelegate?
+    weak var delegate: DuckAISuggestionsSurfaceProviderDelegate?
 
     /// The duck.ai facts feed for the merged-inputs publisher. nil while detached (the merger
     /// treats absent state as no recents / nothing pending).

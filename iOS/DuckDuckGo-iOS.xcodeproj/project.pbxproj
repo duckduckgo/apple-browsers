@@ -2204,7 +2204,7 @@
 		CBB4A86F2FD35FDE00A65956 /* UnifiedSuggestionsInputsMerger.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A86E2FD35FDE00A65956 /* UnifiedSuggestionsInputsMerger.swift */; };
 		CBB4A8712FD3601400A65956 /* UnifiedSuggestionsInputsMergerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8702FD3601400A65956 /* UnifiedSuggestionsInputsMergerTests.swift */; };
 		CBB4A8732FD83C4100A65956 /* ModeSwitchSwipeGestureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8722FD83C4100A65956 /* ModeSwitchSwipeGestureController.swift */; };
-		CBB4A8752FD83D3A00A65956 /* DuckAISurfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8742FD83D3A00A65956 /* DuckAISurfaceController.swift */; };
+		CBB4A8752FD83D3A00A65956 /* DuckAISuggestionsSurfaceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8742FD83D3A00A65956 /* DuckAISuggestionsSurfaceProvider.swift */; };
 		CBB4A8772FD890E800A65956 /* SuggestionHistoryDeletion.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8762FD890E800A65956 /* SuggestionHistoryDeletion.swift */; };
 		CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */; };
 		CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE22C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift */; };
@@ -4899,7 +4899,7 @@
 		CBB4A86E2FD35FDE00A65956 /* UnifiedSuggestionsInputsMerger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsInputsMerger.swift; sourceTree = "<group>"; };
 		CBB4A8702FD3601400A65956 /* UnifiedSuggestionsInputsMergerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSuggestionsInputsMergerTests.swift; sourceTree = "<group>"; };
 		CBB4A8722FD83C4100A65956 /* ModeSwitchSwipeGestureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeSwitchSwipeGestureController.swift; sourceTree = "<group>"; };
-		CBB4A8742FD83D3A00A65956 /* DuckAISurfaceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISurfaceController.swift; sourceTree = "<group>"; };
+		CBB4A8742FD83D3A00A65956 /* DuckAISuggestionsSurfaceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsSurfaceProvider.swift; sourceTree = "<group>"; };
 		CBB4A8762FD890E800A65956 /* SuggestionHistoryDeletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionHistoryDeletion.swift; sourceTree = "<group>"; };
 		CBB6B2542AF6D543006B777C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC7AB542AF6D583008CB798 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -10127,7 +10127,7 @@
 				CBB4A8682FD31B9600A65956 /* UnifiedSuggestionsHostConfig.swift */,
 				CBB4A86A2FD32B4700A65956 /* AutocompleteRequestRunner.swift */,
 				CBB4A86E2FD35FDE00A65956 /* UnifiedSuggestionsInputsMerger.swift */,
-				CBB4A8742FD83D3A00A65956 /* DuckAISurfaceController.swift */,
+				CBB4A8742FD83D3A00A65956 /* DuckAISuggestionsSurfaceProvider.swift */,
 				CBB4A8762FD890E800A65956 /* SuggestionHistoryDeletion.swift */,
 			);
 			path = Suggestions;
@@ -13555,7 +13555,7 @@
 				6F3537A42C4AC140009F8717 /* NewTabPageDaxLogoView.swift in Sources */,
 				314C92B827C3DD660042EC96 /* QuickLookPreviewView.swift in Sources */,
 				C1B3BF4F2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift in Sources */,
-				CBB4A8752FD83D3A00A65956 /* DuckAISurfaceController.swift in Sources */,
+				CBB4A8752FD83D3A00A65956 /* DuckAISuggestionsSurfaceProvider.swift in Sources */,
 				80483EF62F4F6ECA00563037 /* TabsModelProvider.swift in Sources */,
 				F1AE54E81F0425FC00D9A700 /* AuthenticationViewController.swift in Sources */,
 				CB9C3F6C2D898BE000264725 /* PullToRefreshViewAdapter.swift in Sources */,

@@ -200,9 +200,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         return selectedModel.resolvedReasoningEffort(from: persistedReasoningMode)
     }
     private var promptSubmissionModelId: String? {
-        let resolvedModelId = hasSubmittedPrompt ? nil : persistedModelId
-        print("🇯🇵🍣 [UTI model submit] resolving promptSubmissionModelId currentModelId=\(currentModelId ?? "nil") persistedModelId=\(persistedModelId ?? "nil") hasSubmittedPrompt=\(hasSubmittedPrompt) finalModelId=\(resolvedModelId ?? "nil")")
-        return resolvedModelId
+        hasSubmittedPrompt ? nil : persistedModelId
     }
     private var promptSubmissionConfiguration: PromptSubmissionConfiguration {
         PromptSubmissionConfiguration(
@@ -232,7 +230,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var isSubmitBlockedByRecoveryCard: Bool = false {
         didSet {
             guard oldValue != isSubmitBlockedByRecoveryCard else { return }
-            print("🇯🇵🍣🍱 [recovery-card submit block] coordinator state changed blocked=\(isSubmitBlockedByRecoveryCard)")
             viewController.isSubmitBlockedByRecoveryCard = isSubmitBlockedByRecoveryCard
         }
     }
@@ -531,10 +528,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] updatedChatID in
                 guard let self else { return }
-                print("🇯🇵🍣 [UTI FE model sync] Native observed FE chat storage update chatID=\(updatedChatID)")
                 guard let activeChatID = self.boundUserScript?.webView?.url?.duckAIChatID,
                       activeChatID == updatedChatID else {
-                    print("🇯🇵🍣 [UTI FE model sync] Native ignored FE chat storage update activeChatID=\(self.boundUserScript?.webView?.url?.duckAIChatID ?? "nil") updatedChatID=\(updatedChatID)")
                     return
                 }
                 // Storage changed for this chat; drop the cached model so the next read reflects it.
@@ -564,16 +559,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         guard let modelID else {
             Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: no last-used model recorded")
-            print("🇯🇵🍣 [UTI FE model sync] Native found no FE model for active chat chatID=\(chatID)")
             return
         }
         if modelStore.currentModelId == modelID {
             Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: model '\(modelID, privacy: .public)' already current, skipping")
-            print("🇯🇵🍣 [UTI FE model sync] Native FE model already selected chatID=\(chatID) modelId=\(modelID)")
             return
         }
         Logger.unifiedInputState.debug("restoreLastUsedModel [\(chatID, privacy: .public)]: loaded model '\(modelID, privacy: .public)'")
-        print("🇯🇵🍣 [UTI FE model sync] Native applying FE model chatID=\(chatID) modelId=\(modelID) previousModelId=\(modelStore.currentModelId ?? "nil")")
         modelStore.updateSelectedModel(modelID, isNewChatContext: false)
         handleModelsUpdated()
     }
@@ -1160,7 +1152,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
         let configuration = voicePromptSubmissionConfiguration
-        print("🇯🇵🍣 [UTI submit] path=voice finalModelId=\(configuration.modelId ?? "nil")")
         recordDuckAISubmissionStarted(
             modelId: configuration.modelId,
             reasoningEffort: configuration.reasoningEffort,
@@ -1183,7 +1174,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
         let configuration = promptSubmissionConfiguration
-        print("🇯🇵🍣 [UTI submit] path=externalPrompt finalModelId=\(configuration.modelId ?? "nil")")
         hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -1352,12 +1342,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var selectedTool: AIChatRAGTool? { toolsController.selectedTool }
 
     func fetchModels() {
-        print("🇯🇵 [UTI subscription flow] Native UTI fetchModels called host=\(host) isAITabState=\(isAITabState)")
         modelStore.fetchModels()
     }
 
     func refreshModelsAfterSubscriptionChange() {
-        print("🇯🇵 [UTI subscription flow] Native UTI refreshing models after subscription change host=\(host) previousUserTier=\(subscriptionState.userTier.rawValue) previousHasActiveSubscription=\(subscriptionState.hasActiveSubscription)")
         fetchModels()
     }
 
@@ -1388,10 +1376,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func notifyFrontendOfActiveChatModelChange(_ modelId: String) {
         guard hasSubmittedPrompt, let userScript = boundUserScript else {
             let reason = !hasSubmittedPrompt ? "newChat" : "noBoundScript"
-            print("🇯🇵🍣 [UTI model change] skip submitChangeModelAction reason=\(reason) modelId=\(modelId)")
             return
         }
-        print("🇯🇵🍣 [UTI model change] emit submitChangeModelAction modelId=\(modelId)")
         userScript.submitChangeModel(modelId)
     }
 
@@ -1400,12 +1386,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// reveals the model chip **without starting a new chat** — the chat stays `hasSubmittedPrompt`,
     /// so a subsequent supported-model selection still emits `submitChangeModelAction`.
     func presentModelPickerForActiveChat() {
-        print("🇯🇵🍣 [showModelPicker] coordinator presenting model picker host=\(host) hasSubmittedPrompt=\(hasSubmittedPrompt) displayState=\(displayState)")
         isModelPickerForcedVisible = true
         showExpanded(inputMode: .aiChat)
         // If user open native model picker, but not tap on any model, remove block, as first available model is preselected.
         if isSubmitBlockedByRecoveryCard, let supportedModelId = modelStore.persistedModelId {
-            print("🇯🇵🍣 [recovery-card submit block] reconciling already-selected supported model on Switch Model modelId=\(supportedModelId)")
             isSubmitBlockedByRecoveryCard = false
             notifyFrontendOfActiveChatModelChange(supportedModelId)
         }
@@ -1413,28 +1397,19 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // expand animation before we ask the button to open its menu.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            let didAutoOpen = self.viewController.presentModelPickerMenu()
-            if didAutoOpen {
-                print("🇯🇵🍣 [showModelPicker] auto-opened model picker menu")
-            } else {
-                print("🇯🇵❗️ [showModelPicker] auto-open API unavailable (<iOS 17.4); model chip revealed for manual tap")
-            }
+            self.viewController.presentModelPickerMenu()
         }
     }
 
     func handleModelSelection(_ modelId: String) {
-        print("🇯🇵 [UTI subscription flow] Native UTI model selected modelId=\(modelId) currentUserTier=\(subscriptionState.userTier.rawValue) hasActiveSubscription=\(subscriptionState.hasActiveSubscription)")
         guard let model = modelStore.models.first(where: { $0.id == modelId }) else {
-            print("🇯🇵 [UTI subscription flow] Native UTI model selection rejected reason=modelNotFound modelId=\(modelId)")
             return
         }
 
         if model.entityHasAccess {
-            print("🇯🇵 [UTI subscription flow] Native UTI model selection allowed modelId=\(modelId) requiredTier=\(model.lowestPublicAccessTier.map { String(describing: $0) } ?? "nil")")
             let isNewSelection = modelId != modelStore.persistedModelId
             pendingGatedModelId = nil
             if isModelPickerForcedVisible {
-                print("🇯🇵🍣 [showModelPicker] supported model selected — clearing forced chip visibility modelId=\(modelId)")
                 isModelPickerForcedVisible = false
             }
             // Supported model picked in the native picker — the recovery card's reason to block
@@ -1470,7 +1445,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 flowType: .purchase
             )
             presentPurchaseFlow(source: .modelPicker)
-            print("🇯🇵 [UTI subscription flow] Native UTI gated model routed to purchase modelId=\(model.id) currentUserTier=\(userTier.rawValue) requiredTier=\(requiredPublicTier)")
             return true
         }
 
@@ -1482,17 +1456,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 flowType: .upgrade
             )
             presentUpgradeFlow(source: .modelPicker)
-            print("🇯🇵 [UTI subscription flow] Native UTI gated model routed to upgrade modelId=\(model.id) currentUserTier=\(userTier.rawValue) requiredTier=\(requiredPublicTier)")
             return true
         }
 
-        print("🇯🇵 [UTI subscription flow] Native UTI gated model had no native route modelId=\(model.id) currentUserTier=\(userTier.rawValue) requiredTier=\(requiredPublicTier)")
         Logger.unifiedInputState.debug("No native subscription flow for gated model")
         return false
     }
 
     private func presentPurchaseFlow(source: SubscriptionFlowSource) {
-        print("🇯🇵 [UTI subscription flow] Native UTI presenting purchase flow source=\(source) origin=\(subscriptionOrigin(for: source).rawValue)")
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(
@@ -1502,7 +1473,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func presentUpgradeFlow(source: SubscriptionFlowSource) {
-        print("🇯🇵 [UTI subscription flow] Native UTI presenting upgrade flow source=\(source) origin=\(subscriptionOrigin(for: source).rawValue)")
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(
@@ -1557,7 +1527,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // Mirror the direct-selection path: the gated model the recovery-card flow was waiting on
         // is now accessible (post-purchase), so drop the forced reveal and let the chip re-hide.
         if isModelPickerForcedVisible {
-            print("🇯🇵🍣 [showModelPicker] pending gated model became accessible — clearing forced chip visibility modelId=\(modelId)")
             isModelPickerForcedVisible = false
         }
         // The gated model the recovery flow waited on is now accessible (post-purchase); it
@@ -1639,7 +1608,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @discardableResult
     private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) -> Bool {
         let userTier = subscriptionState.userTier
-        print("🇯🇵 [UTI subscription flow] Native UTI gated reasoning mode selected currentUserTier=\(userTier.rawValue) requiredTier=\(requiredPublicTier) hasActiveSubscription=\(subscriptionState.hasActiveSubscription)")
 
         if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
             UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
@@ -1649,7 +1617,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 flowType: .purchase
             )
             presentPurchaseFlow(source: .reasoningPicker)
-            print("🇯🇵 [UTI subscription flow] Native UTI gated reasoning routed to purchase currentUserTier=\(userTier.rawValue) requiredTier=\(requiredPublicTier)")
             return true
         }
 
@@ -1661,11 +1628,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 flowType: .upgrade
             )
             presentUpgradeFlow(source: .reasoningPicker)
-            print("🇯🇵 [UTI subscription flow] Native UTI gated reasoning routed to upgrade currentUserTier=\(userTier.rawValue) requiredTier=\(requiredPublicTier)")
             return true
         }
 
-        print("🇯🇵 [UTI subscription flow] Native UTI gated reasoning had no native route currentUserTier=\(userTier.rawValue) requiredTier=\(requiredPublicTier)")
         Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
         return false
     }
@@ -1920,7 +1885,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 attachments: viewController.currentAttachments
             )
 
-            let hadSubmittedPromptBeforeSubmit = hasSubmittedPrompt
             let configuration = promptSubmissionConfiguration
             recordDuckAISubmissionStarted(
                 modelId: configuration.modelId,
@@ -1955,7 +1919,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 setText("")
                 showCollapsed()
             }
-            print("🇯🇵🍣 [UTI native submit] sentModelId=\(configuration.modelId ?? "nil") persistedModelId=\(modelStore.persistedModelId ?? "nil") firstPrompt=\(!hadSubmittedPromptBeforeSubmit) deliveryPath=\(userScript != nil ? "userScript" : "urlAutoSubmit")")
             if let userScript {
                 let didSendBridgeMessage = userScript.canDispatchBridgeMessages
                 userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
@@ -2352,7 +2315,6 @@ private extension UnifiedToggleInputCoordinator {
         // `isModelPickerForcedVisible` only relaxes the `hasSubmittedPrompt` hide reason — contextual
         // chat and image generation stay hidden regardless.
         let shouldHideModelChip = host == .contextualChat || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
-        print("🇯🇵🍣 [UTI model picker experiment] modelChipHidden=\(shouldHideModelChip) host=\(host) hasSubmittedPrompt=\(hasSubmittedPrompt) isImageGenActive=\(isImageGenActive) isModelPickerForcedVisible=\(isModelPickerForcedVisible)")
         viewController.isModelChipHidden = shouldHideModelChip
         updateReasoningPicker()
     }
@@ -2543,7 +2505,6 @@ private extension UnifiedToggleInputCoordinator {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                print("🇯🇵 [UTI subscription flow] Native UTI observed subscriptionDidChange host=\(self.host) currentUserTier=\(self.subscriptionState.userTier.rawValue) currentHasActiveSubscription=\(self.subscriptionState.hasActiveSubscription)")
                 self.refreshModelsAfterSubscriptionChange()
             }
             .store(in: &cancellables)

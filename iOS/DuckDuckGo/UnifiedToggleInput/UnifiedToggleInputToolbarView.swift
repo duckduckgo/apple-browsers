@@ -493,8 +493,6 @@ private extension UnifiedToggleInputToolbarView {
         submitButton.setImage(icon, for: .normal)
         let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
         let isActive = submitAllowed || showVoice
-        let disabledReason = isActive ? "none(active)" : (isSubmitEnabled && isSubmitBlockedByRecoveryCard ? "recoveryCard" : "other(noContent)")
-        print("🇯🇵🍣🍱 [recovery-card submit block] submit appearance isSubmitEnabled=\(isSubmitEnabled) recoveryBlock=\(isSubmitBlockedByRecoveryCard) showVoice=\(showVoice) isActive=\(isActive) disabledReason=\(disabledReason)")
         submitButton.isEnabled = isActive
         if showVoice {
             submitButton.applyAIVoiceChatStyle()

@@ -126,10 +126,7 @@ extension TabViewController: AITabController {
     /// Reloads the full mode AI Chat tab if this is an AI tab.
     func reloadFullModeAIChatIfNeeded() {
         if isAITab {
-            Swift.print("🇯🇵 [AIChat subscription refresh] Native reloading full-mode Duck.ai webView urlHost=\(webView.url?.host ?? "nil")")
             webView.reload()
-        } else {
-            Swift.print("🇯🇵 [AIChat subscription refresh] Native skipped full-mode Duck.ai reload; tab isAITab=false")
         }
     }
 }

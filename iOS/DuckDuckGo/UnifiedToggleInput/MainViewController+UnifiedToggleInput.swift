@@ -642,10 +642,8 @@ private extension MainViewController {
         let isCurrent = tabManager.controller(forWebView: webView) === currentTab
         let isAITab = currentTab?.isAITab == true
         guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
-            print("🇯🇵🍣 [showModelPicker] no-op: no foreground Duck.ai UTI isCurrent=\(isCurrent) isAITab=\(isAITab) hasCoordinator=\(unifiedToggleInputCoordinator != nil)")
             return
         }
-        print("🇯🇵🍣 [showModelPicker] routing to foreground UTI coordinator for active Duck.ai chat")
         coordinator.presentModelPickerForActiveChat()
     }
 

@@ -573,7 +573,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
-        print("🇯🇵🍣 [showModelPicker] handler received FE message; posting notification webViewURL=\(message.messageWebView?.url?.absoluteString ?? "nil")")
         NotificationCenter.default.post(name: .aiChatShowModelPicker, object: message.messageWebView)
         return nil
     }
@@ -582,14 +581,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
-        print("🇯🇵🍣🍱 [recovery-card submit block] handler received disableChatInput hasInputBoxHandler=\(inputBoxHandler != nil)")
         inputBoxHandler?.isSubmitBlockedByRecoveryCard = true
         return nil
     }
 
     @MainActor
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
-        print("🇯🇵🍣🍱 [recovery-card submit block] handler received enableChatInput hasInputBoxHandler=\(inputBoxHandler != nil)")
         inputBoxHandler?.isSubmitBlockedByRecoveryCard = false
         return nil
     }

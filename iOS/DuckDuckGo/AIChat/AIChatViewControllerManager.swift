@@ -203,7 +203,6 @@ final class AIChatViewControllerManager {
 
         // Reset the session timer if the subscription state has changed
         if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
-            print("🇯🇵 [AIChat subscription refresh] Native modal Duck.ai detected subscription refresh flag; stopping session timer")
             stopSessionTimer()
         }
 
@@ -216,7 +215,6 @@ final class AIChatViewControllerManager {
 
         // If we have a query or payload, clean the previous session and start fresh
         if query != nil || payload != nil || subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
-            print("🇯🇵 [AIChat subscription refresh] Native modal Duck.ai cleanup/re-setup queryPresent=\(query != nil) payloadPresent=\(payload != nil) forcedBySubscription=\(subscriptionAIChatStateHandler.shouldForceAIChatRefresh)")
             subscriptionAIChatStateHandler.reset()
             Task {
                 await cleanUpSession()

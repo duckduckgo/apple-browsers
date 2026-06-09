@@ -103,14 +103,12 @@ final class UTIModelStore {
     }
 
     func fetchModels() {
-        print("🇯🇵 [UTI subscription flow] Native UTI model fetch requested")
         modelsFetchTask?.cancel()
         modelsFetchTask = Task { [weak self] in
             guard let self else { return }
             let state = await self.resolveSubscriptionState()
             guard !Task.isCancelled else { return }
             self.subscriptionState = state
-            print("🇯🇵 [UTI subscription flow] Native UTI resolved subscription userTier=\(state.userTier.rawValue) hasActiveSubscription=\(state.hasActiveSubscription)")
             do {
                 let response = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
@@ -119,12 +117,10 @@ final class UTIModelStore {
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningModeIfNeeded()
                 let accessibleCount = self.models.filter(\.entityHasAccess).count
-                print("🇯🇵 [UTI subscription flow] Native UTI models fetched total=\(self.models.count) accessible=\(accessibleCount) userTier=\(state.userTier.rawValue) attachmentLimitsPresent=\(self.attachmentLimits != nil)")
                 self.onModelsUpdated?()
             } catch {
                 guard !Task.isCancelled else { return }
                 self.attachmentLimits = nil
-                print("🇯🇵 [UTI subscription flow] Native UTI models fetch failed error=\(error)")
                 self.onModelsUpdated?()
                 os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
             }
@@ -132,7 +128,6 @@ final class UTIModelStore {
     }
 
     func updateSelectedModel(_ modelId: String, isNewChatContext: Bool) {
-        print("🇯🇵🍣 [UTI model store] updateSelectedModel modelId=\(modelId) previousLiveModelId=\(liveModelId ?? "nil") previousPreferenceModelId=\(preferences.selectedModelId ?? "nil") isNewChatContext=\(isNewChatContext)")
         liveModelId = modelId
         if isNewChatContext {
             preferences.selectedModelId = modelId
@@ -184,10 +179,8 @@ final class UTIModelStore {
     nonisolated func resolveSubscriptionState() async -> SubscriptionState {
         do {
             guard let subscription = try await subscriptionManager.getSubscription() else {
-                print("🇯🇵 [UTI subscription flow] Native UTI subscription lookup result=notSubscribed")
                 return .free
             }
-            print("🇯🇵 [UTI subscription flow] Native UTI subscription lookup status=\(subscription.status.rawValue) isActive=\(subscription.isActive) tier=\(subscription.tier.map { String(describing: $0) } ?? "nil")")
             guard subscription.isActive,
                   let tier = subscription.tier else {
                 return .free
@@ -199,7 +192,6 @@ final class UTIModelStore {
             }
             return SubscriptionState(userTier: userTier, hasActiveSubscription: true)
         } catch {
-            print("🇯🇵 [UTI subscription flow] Native UTI subscription lookup failed error=\(error)")
             return .free
         }
     }

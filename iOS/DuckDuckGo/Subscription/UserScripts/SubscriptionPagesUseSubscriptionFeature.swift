@@ -227,7 +227,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         Logger.subscription.debug("WebView handler: \(methodName)")
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native handler method=\(methodName)")
 
         switch methodName {
         case Handlers.setAuthTokens: return setAuthTokens
@@ -270,13 +269,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     private func setTransactionError(_ error: UseSubscriptionError?) {
         transactionError = error
-        print("🇯🇵 [subscriptionPages bridge] Native transactionError=\(error.map(String.init(describing:)) ?? "nil")")
     }
 
     private func setTransactionStatus(_ status: SubscriptionTransactionStatus) {
         if status != transactionStatus {
             Logger.subscription.log("Transaction state updated: \(status.rawValue)")
-            print("🇯🇵 [subscriptionPages bridge] Native transactionStatus \(transactionStatus.rawValue) -> \(status.rawValue)")
             transactionStatus = status
         }
     }
@@ -315,10 +312,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
     
     func setAuthTokens(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native setAuthTokens host=\(original.messageHost)")
 
         guard let subscriptionValues: SubscriptionValuesV2 = CodableHelper.decode(from: params) else {
-            print("🇯🇵 [subscriptionPages bridge] Native setAuthTokens decodeFailed")
             Logger.subscription.fault("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
             setTransactionError(.generalError)
@@ -328,10 +323,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         // Clear subscription Cache
         subscriptionManager.clearSubscriptionCache()
-        print("🇯🇵 [subscriptionPages bridge] Native cleared subscription cache before adopting FE tokens")
 
         guard !subscriptionValues.accessToken.isEmpty, !subscriptionValues.refreshToken.isEmpty else {
-            print("🇯🇵 [subscriptionPages bridge] Native setAuthTokens received emptyToken accessTokenEmpty=\(subscriptionValues.accessToken.isEmpty) refreshTokenEmpty=\(subscriptionValues.refreshToken.isEmpty)")
             Logger.subscription.fault("Empty access token or refresh token provided")
             markEmailAddressRestoreWideEventFlowAsFailed(with: nil)
             return nil
@@ -340,17 +333,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
             guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else {
-                print("🇯🇵 [subscriptionPages bridge] Native setAuthTokens adopted tokens but subscription lookup returned nil")
                 Logger.subscription.error("No subscription found after token adoption")
                 setTransactionError(.failedToSetSubscription)
                 markEmailAddressRestoreWideEventFlowAsFailed(with: UseSubscriptionError.failedToSetSubscription)
                 return nil
             }
             Logger.subscription.log("Subscription retrieved: \(subscription.isActive ? "active" : "inactive", privacy: .public)")
-            print("🇯🇵 [subscriptionPages bridge] Native setAuthTokens subscription status=\(subscription.status.rawValue) isActive=\(subscription.isActive) tier=\(subscription.tier?.rawValue ?? "nil")")
             markEmailAddressRestoreWideEventFlowAsSuccess()
         } catch {
-            print("🇯🇵 [subscriptionPages bridge] Native setAuthTokens failed error=\(error)")
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
             setTransactionError(.failedToSetSubscription)
             markEmailAddressRestoreWideEventFlowAsFailed(with: UseSubscriptionError.failedToSetSubscription)
@@ -359,14 +349,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 
     func getAuthAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native getAuthAccessToken host=\(original.messageHost)")
         guard await requestValidator.canPageRequestToken(original) else {
-            print("🇯🇵 [subscriptionPages bridge] Native getAuthAccessToken rejectedByValidator host=\(original.messageHost)")
             Logger.subscription.error("Unauthorised access to token")
             return nil
         }
         let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .localValid)
-        print("🇯🇵 [subscriptionPages bridge] Native getAuthAccessToken result=\(tokenContainer?.accessToken.isEmpty == false ? "available" : "missing") length=\(tokenContainer?.accessToken.count ?? 0)")
         return AccessTokenValue(accessToken: tokenContainer?.accessToken ?? "")
     }
 
@@ -375,7 +362,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
             useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
         )
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native getFeatureConfig host=\(original.messageHost) usePaidDuckAi=\(response.usePaidDuckAi) alternateStripe=\(response.useAlternateStripePaymentFlow)")
         return response
     }
 
@@ -394,7 +380,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     // MARK: -
 
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native getSubscriptionTierOptions host=\(original.messageHost) includeProTier=\(subscriptionFeatureAvailability.isProTierPurchaseEnabled)")
         tierEventReporter.reportTierOptionsRequested()
 
         let subscriptionTierOptionsResponse = await subscriptionManager.subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
@@ -408,13 +393,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             }
 
             tierEventReporter.reportTierOptionsSuccess()
-            print("🇯🇵 [subscriptionPages bridge] Native -> FE getSubscriptionTierOptions success productCount=\(subscriptionTierOptions.products.count) purchaseAllowed=\(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)")
 
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
 
         case .failure(let error):
-            print("🇯🇵 [subscriptionPages bridge] Native -> FE getSubscriptionTierOptions failure error=\(error)")
             Logger.subscription.error("Failed to obtain subscription tier options")
             setTransactionError(.failedToGetSubscriptionOptions)
 
@@ -426,7 +409,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     // swiftlint:disable:next cyclomatic_complexity
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native subscriptionSelected host=\(original.messageHost)")
 
         DailyPixel.fireDailyAndCount(
             pixel: .subscriptionPurchaseAttempt,
@@ -457,17 +439,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         // 1: Parse subscription selection from message object
         let message = original
         guard let subscriptionSelection: SubscriptionSelection = CodableHelper.decode(from: params) else {
-            print("🇯🇵 [subscriptionPages bridge] Native subscriptionSelected decodeFailed")
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
             Logger.subscription.error("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
             setTransactionStatus(.idle)
             return nil
         }
-        print("🇯🇵 [subscriptionPages bridge] Native subscriptionSelected productId=\(subscriptionSelection.id) experiment=\(subscriptionSelection.experiment?.name ?? "nil")")
 
         // 2: Check for active subscriptions
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
-            print("🇯🇵 [subscriptionPages bridge] Native subscriptionSelected store already has active subscription")
             Logger.subscription.log("Subscription already active")
             setTransactionError(.activeSubscriptionAlreadyPresent)
             Pixel.fire(pixel: .subscriptionRestoreAfterPurchaseAttempt)
@@ -493,20 +472,17 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled) {
         case .success(let result):
             Logger.subscription.log("Subscription purchased successfully")
-            print("🇯🇵 [subscriptionPages bridge] Native StoreKit purchase success transactionJWSLength=\(result.transactionJWS.count)")
             purchaseTransactionJWS = result.transactionJWS
 
             if let accountCreationDuration = result.accountCreationDuration, let purchaseWideEventData {
                 purchaseWideEventData.createAccountDuration = accountCreationDuration
             }
         case .failure(let error):
-            print("🇯🇵 [subscriptionPages bridge] Native StoreKit purchase failure error=\(error)")
             Logger.subscription.error("App store purchase error: \(error.localizedDescription)")
             setTransactionStatus(.idle)
             switch error {
             case .cancelledByUser:
                 setTransactionError(.cancelledByUser)
-                print("🇯🇵 [subscriptionPages bridge] Native -> FE onPurchaseUpdate canceled")
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.canceled)
 
                 if let purchaseWideEventData {
@@ -559,7 +535,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         setTransactionStatus(.polling)
 
         guard purchaseTransactionJWS.isEmpty == false else {
-            print("🇯🇵 [subscriptionPages bridge] Native completePurchase aborted emptyTransactionJWS")
             Logger.subscription.fault("Purchase transaction JWS is empty")
             assertionFailure("Purchase transaction JWS is empty")
             setTransactionStatus(.idle)
@@ -585,7 +560,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                                                                        additionalParams: subscriptionParameters) {
         case .success:
             Logger.subscription.log("Subscription purchase completed successfully")
-            print("🇯🇵 [subscriptionPages bridge] Native completeSubscriptionPurchase success; posting subscriptionDidChange and pushing completed")
             DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccess,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             UniquePixel.fire(pixel: .subscriptionActivated)
@@ -602,7 +576,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             }
 
         case .failure(let error):
-            print("🇯🇵 [subscriptionPages bridge] Native completeSubscriptionPurchase failure error=\(error); signing out and pushing completed")
             Logger.subscription.error("App store complete subscription purchase error: \(error, privacy: .public)")
 
             await subscriptionManager.signOut(notifyUI: true)
@@ -626,7 +599,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     // MARK: - Tier Change
 
     func subscriptionChangeSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native subscriptionChangeSelected host=\(original.messageHost)")
         struct SubscriptionChangeSelection: Decodable {
             let id: String
             let change: String?  // "upgrade" or "downgrade"
@@ -635,12 +607,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         let message = original
 
         guard let subscriptionSelection: SubscriptionChangeSelection = CodableHelper.decode(from: params) else {
-            print("🇯🇵 [subscriptionPages bridge] Native subscriptionChangeSelected decodeFailed")
             Logger.subscription.error("SubscriptionPagesUserScript: expected JSON representation of SubscriptionChangeSelection")
             setTransactionStatus(.idle)
             return nil
         }
-        print("🇯🇵 [subscriptionPages bridge] Native subscriptionChangeSelected productId=\(subscriptionSelection.id) change=\(subscriptionSelection.change ?? "nil")")
 
         Logger.subscription.log("[TierChange] Starting \(subscriptionSelection.change ?? "change", privacy: .public) for: \(subscriptionSelection.id, privacy: .public)")
 
@@ -720,21 +690,17 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func activateSubscription(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Activating Subscription")
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native activateSubscription host=\(original.messageHost)")
         Pixel.fire(pixel: .subscriptionRestorePurchaseOfferPageEntry, debounce: 2)
         onActivateSubscription?()
         return nil
     }
 
     func featureSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native featureSelected host=\(original.messageHost)")
         guard let featureSelection: FeatureSelection = CodableHelper.decode(from: params) else {
-            print("🇯🇵 [subscriptionPages bridge] Native featureSelected decodeFailed")
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of FeatureSelection")
             Logger.subscription.error("SubscriptionPagesUserScript: expected JSON representation of FeatureSelection")
             return nil
         }
-        print("🇯🇵 [subscriptionPages bridge] Native featureSelected productFeature=\(featureSelection.productFeature.rawValue)")
 
         switch featureSelection.productFeature {
         case .networkProtection:
@@ -776,7 +742,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         subscriptionManager.clearSubscriptionCache()
         _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
-        print("🇯🇵 [subscriptionPages bridge] Native completeStripePayment posting subscriptionDidChange isPlanChange=\(isPlanChange)")
         NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
 
         if let data = planChangeWideEventData {
@@ -791,18 +756,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 
     func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        print("🇯🇵 [subscriptionPages bridge] FE -> Native getAccessToken host=\(original.messageHost)")
         guard await requestValidator.canPageRequestToken(original) else {
-            print("🇯🇵 [subscriptionPages bridge] Native getAccessToken rejectedByValidator host=\(original.messageHost)")
             Logger.subscription.error("Unauthorised access to token")
             return nil
         }
         do {
             let accessToken = try await subscriptionManager.getTokenContainer(policy: .localValid).accessToken
-            print("🇯🇵 [subscriptionPages bridge] Native getAccessToken result=available length=\(accessToken.count)")
             return [SubscriptionPagesUseSubscriptionFeatureConstants.token: accessToken]
         } catch {
-            print("🇯🇵 [subscriptionPages bridge] Native getAccessToken result=missing error=\(error)")
             Logger.subscription.debug("No access token available: \(error)")
             return [String: String]()
         }
@@ -855,16 +816,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     @MainActor
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async {
         guard let webView = originalMessage.webView else {
-            print("🇯🇵 [subscriptionPages bridge] Native -> FE onPurchaseUpdate skipped webView=nil update=\(purchaseUpdateDebugSummary(purchaseUpdate))")
             return
         }
 
-        print("🇯🇵 [subscriptionPages bridge] Native -> FE onPurchaseUpdate host=\(webView.url?.host ?? "nil") update=\(purchaseUpdateDebugSummary(purchaseUpdate))")
         pushAction(method: .onPurchaseUpdate, webView: webView, params: purchaseUpdate)
     }
 
     func pushAction(method: SubscribeActionName, webView: WKWebView, params: Encodable) {
-        print("🇯🇵 [subscriptionPages bridge] Native -> FE pushAction method=\(method.rawValue) host=\(webView.url?.host ?? "nil")")
         let broker = UserScriptMessageBroker(context: SubscriptionPagesUserScript.context, requiresRunInPageContentWorld: true)
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
     }

@@ -47,7 +47,6 @@ extension TabViewController {
 
     /// Reloads the contextual AI chat web view if one exists.
     func reloadContextualAIChatIfNeeded() {
-        Swift.print("🇯🇵 [AIChat subscription refresh] Native asking contextual Duck.ai sheet to reload if present")
         aiChatContextualSheetCoordinator.reloadIfNeeded()
     }
 }

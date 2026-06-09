@@ -477,6 +477,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .bringStuff128)
                     : .init(resource: .bringStuff128Legacy)
             }
+            public static var bringStuffDownload: DesignSystemImage { .init(resource: .bringStuffDownload128) }
             public static var fire: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .fire128)

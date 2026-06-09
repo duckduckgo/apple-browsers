@@ -45,7 +45,7 @@ struct DataImportHubView: View {
         VStack(spacing: 0) {
             Group {
                 if AppRebrand.isAppRebranded() {
-                    Image(.bringStuffDownload128)
+                    Image(uiImage: DesignSystemImages.Color.Size128.bringStuffDownload)
                 } else {
                     Image(uiImage: DesignSystemImages.Color.Size128.bringStuff)
                 }

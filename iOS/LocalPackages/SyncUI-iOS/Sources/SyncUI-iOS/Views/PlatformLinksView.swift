@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 public struct PlatformLinksView: View {
 
@@ -117,12 +118,11 @@ public struct PlatformLinksView: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.bottom, 8)
 
         }
         .padding(.vertical, 24)
         .background(
-            RoundedRectangle(cornerRadius: isiOS26 ? 24 : 12)
+            RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                 .fill(Color(designSystemColor: .surface))
         )
         .onAppear {

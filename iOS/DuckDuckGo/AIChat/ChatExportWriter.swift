@@ -20,10 +20,9 @@
 import Foundation
 import ZIPFoundation
 
-/// Writes a chat export to the app's Downloads directory. Filename pattern
-/// `duck.ai_yyyy-MM-dd_HH-mm-ss.<txt|zip>` matches the cross-platform reference; collisions
-/// get a `-1`, `-2`, ... suffix before the extension. The Downloads list view reads files
-/// straight from this directory, so writing here is enough to make the export discoverable.
+/// Writes a chat export to the app's Downloads directory as
+/// `duck.ai_yyyy-MM-dd_HH-mm-ss.<txt|zip>` (Android-parity filename). The Downloads list
+/// view reads files straight from this directory — no separate registration needed.
 protocol ChatExportWriting {
     func write(_ payload: ChatExportPayload) throws -> URL
 }
@@ -75,7 +74,7 @@ struct ChatExportWriter: ChatExportWriting {
         let url = resolveAvailableFile(extension: Constants.zipExtension)
         let archive = try Archive(url: url, accessMode: .create)
 
-        // Reference samples ship chat.txt with a UTF-8 BOM for Notepad-friendliness on Windows.
+        // UTF-8 BOM prefix matches Android — keeps `chat.txt` readable in Windows Notepad.
         let textBytes = Constants.utf8BOM + Data(content.utf8)
         try archive.addEntry(
             with: Constants.zipTextEntryName,
@@ -88,11 +87,9 @@ struct ChatExportWriter: ChatExportWriting {
             }
         )
 
-        // Image bytes go through a temp file + `addEntry(with:fileURL:)` rather than the
-        // closure-based `addEntry(provider:)` path. The provider variant requires honouring
-        // ZIPFoundation's chunking contract precisely — getting the last (short) chunk
-        // right was producing JPEGs that wouldn't decode. The file-URL variant is the
-        // well-trodden path and handles chunking internally.
+        // `addEntry(with:fileURL:)` via a temp file is more reliable than the closure
+        // provider variant for image bytes — getting the last short chunk right in the
+        // provider was producing JPEGs that wouldn't decode.
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("chat-history-export-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)

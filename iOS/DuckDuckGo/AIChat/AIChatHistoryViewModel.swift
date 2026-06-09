@@ -81,9 +81,9 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     private func apply(result: Result<[DuckAiChat], Error>, query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
         switch result {
         case .success(let allChats):
-            let trimmed = query.trimmingCharacters(in: .whitespaces)
             let filtered = trimmed.isEmpty
                 ? allChats
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
@@ -95,7 +95,9 @@ final class AIChatHistoryViewModel: ObservableObject {
             pinned = []
             recent = []
         }
-        effectiveQuery = query
+        // Store the trimmed value so whitespace-only queries don't read as "user is
+        // searching" — they aren't (the filter treated the query as empty).
+        effectiveQuery = trimmed
         hasLoaded = true
     }
 

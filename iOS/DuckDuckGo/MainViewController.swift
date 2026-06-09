@@ -5565,10 +5565,9 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
     }
 
     func viewModelDidRequestDownloadChat(chatId: String) {
-        // The export does meaningful work for image-generation chats — multiple SQLite reads,
-        // base64-decoding each image (~hundreds of KB apiece), zip writing. Running on the
-        // main thread freezes the chat-history sheet for the duration. Dispatch off main,
-        // hop back to present the toast.
+        // Image-gen exports do enough I/O (storage reads + base64 + zip) to freeze the
+        // sheet on the main thread. Run the export on a background queue and hop back
+        // for the toast.
         let storageHandler = duckAiNativeStorageHandler
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let downloader = ChatHistoryDownloader(storageHandler: storageHandler)
@@ -5579,7 +5578,7 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
                 }
             } catch {
                 Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
-                // Failure-state toast lands with the pixels-pass follow-up (task #28).
+                // Failure-state toast pairs with the pixels-pass follow-up (task #28).
             }
         }
     }
@@ -5593,8 +5592,6 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
             actionTitle: UserText.actionGenericShow,
             presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
             onAction: { [weak self] in
-                // Dismiss the chat-history sheet, then open the in-app Downloads list —
-                // same destination the in-browser "Download complete" toast routes to.
                 self?.dismiss(animated: true) { [weak self] in
                     self?.segueToDownloads()
                 }

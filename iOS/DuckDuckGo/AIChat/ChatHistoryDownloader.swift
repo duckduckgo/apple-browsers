@@ -20,33 +20,20 @@
 import AIChat
 import Foundation
 
-/// Orchestrates a chat export: pulls the raw chat record from native storage, runs the
-/// pure `ChatExporter`, gathers any image bytes referenced by image-generation chats, and
-/// hands the resulting payload to the file writer. Mirrors Android's
-/// `ChatHistoryRepository.exportChat` flow.
+/// Mirrors Android's `ChatHistoryRepository.exportChat`. Call off the main thread —
+/// image-generation exports do storage reads, base64 decoding, and zip writing.
 protocol ChatHistoryDownloading {
-    /// Export the chat identified by `chatId` to the Downloads directory. Returns the
-    /// URL of the written file on success; throws on storage / format / I/O failure.
-    ///
-    /// Implementations may do meaningful I/O — native-storage reads, base64 image decoding,
-    /// zip writing. Callers should invoke off the main thread for image-generation chats so
-    /// the UI doesn't freeze during the export.
     func downloadChat(chatId: String) throws -> URL
 }
 
 struct ChatHistoryDownloader: ChatHistoryDownloading {
 
     enum DownloadError: Error, Equatable {
-        /// Native storage failed to configure at launch, so we can't fetch the chat record.
         case storageUnavailable
-        /// The chatId was not present in storage by the time the download fired (deleted
-        /// between gesture start and commit, or a race with a sync wipe).
         case chatNotFound
-        /// An image referenced by an image-generation chat was missing from the file store.
         case fileNotFound(uuid: String)
-        /// The stored file payload couldn't be decoded into raw image bytes (the FE
-        /// wraps each file as a JSON params dict with a base64-encoded `data` field; this
-        /// fires when that shape isn't what we got back).
+        /// FE wraps each file as a JSON params dict with a base64 `data` field; fires when
+        /// that shape isn't what we got back.
         case fileDecodeFailed(uuid: String)
     }
 
@@ -69,12 +56,12 @@ struct ChatHistoryDownloader: ChatHistoryDownloading {
         guard let record = try storageHandler.getChat(chatId: chatId) else {
             throw DownloadError.chatNotFound
         }
-        // Decode to derive model + fileRefs + chatType; the exporter still consumes the
-        // raw JSON for content rendering so we don't double-encode.
+        // We decode to derive metadata (chatType, fileRefs) but hand the raw JSON to the
+        // exporter — no double-encoding.
         let chat = try DuckAiChat.decode(from: record.data).chat
-        // ModelDisplay resolution (model id → "OpenAI's GPT-4o Model" attribution) needs
-        // a network round-trip via `AIChatModelsService`; the exporter's `rawIdFallback`
-        // keeps the export header useful in the meantime. Resolve as a follow-up.
+        // `modelDisplay: nil` falls back to the raw model id in the export header. Resolved
+        // attribution ("OpenAI's GPT-4o Model") needs an in-memory model cache iOS doesn't
+        // expose globally yet — follow-up once UTI is the only path.
         let result = try exporter.export(
             rawJson: record.data,
             chatType: chat.chatType,
@@ -103,10 +90,8 @@ struct ChatHistoryDownloader: ChatHistoryDownloading {
         return try writer.write(payload)
     }
 
-    /// The FE-stored file payload is a JSON params dict (see `DuckAiNativeStorageUserScript`),
-    /// where the actual bytes live in `data` as a base64 string — sometimes prefixed with a
-    /// `data:image/jpeg;base64,` URL header. Strip the header (if present) and base64-decode
-    /// to recover the raw image bytes.
+    /// Unwraps the FE's `{ "data": "<base64>", ... }` storage payload to recover raw image
+    /// bytes. Accepts both bare base64 and `data:image/jpeg;base64,…` URL-prefixed forms.
     private static func decodeImageBytes(from storedData: Data) -> Data? {
         guard let dict = try? JSONSerialization.jsonObject(with: storedData) as? [String: Any],
               let dataString = dict["data"] as? String else {

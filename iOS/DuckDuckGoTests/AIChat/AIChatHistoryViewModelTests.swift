@@ -196,6 +196,17 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(sut.recent.count, 1)
     }
 
+    func testUpdateQuery_whitespaceOnly_leavesEffectiveQueryEmpty() {
+        // The filter trims whitespace; `effectiveQuery` must reflect that, otherwise the
+        // VC's no-results-cell check reads a whitespace-only query as a real search and
+        // shows "No matches found" when the user actually just has no chats.
+        let sut = makeSUT(chats: [])
+        sut.updateQuery("   ")
+        waitForDebounce()
+
+        XCTAssertEqual(sut.effectiveQuery, "")
+    }
+
     func testUpdateQuery_whenNoMatches_isEmpty() {
         let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
 

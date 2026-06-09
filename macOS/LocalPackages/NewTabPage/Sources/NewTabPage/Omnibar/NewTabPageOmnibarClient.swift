@@ -269,7 +269,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func getOpenTabs(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return NewTabPageDataModel.OmnibarGetOpenTabsResponse(tabs: await tabsProvider.openTabs())
+        return NewTabPageDataModel.OmnibarGetOpenTabsResponse(tabs: await tabsProvider.openTabs(requestingWebView: original.webView))
     }
 
     @MainActor
@@ -277,7 +277,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let request: NewTabPageDataModel.OmnibarGetTabContentRequest = DecodableHelper.decode(from: params) else {
             return NewTabPageDataModel.OmnibarGetTabContentResponse(pageContext: nil)
         }
-        return NewTabPageDataModel.OmnibarGetTabContentResponse(pageContext: await tabsProvider.tabContent(tabId: request.tabId))
+        return NewTabPageDataModel.OmnibarGetTabContentResponse(pageContext: await tabsProvider.tabContent(tabId: request.tabId, requestingWebView: original.webView))
     }
 
     /// Returns the reasoning effort to attach to this submission, or `nil` if the feature is

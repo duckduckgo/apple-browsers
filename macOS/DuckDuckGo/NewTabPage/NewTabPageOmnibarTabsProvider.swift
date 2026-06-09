@@ -19,10 +19,11 @@
 import AIChat
 import AppKit
 import NewTabPage
+import WebKit
 
-/// Backs the NTP omnibar's attach-tabs picker. Enumerates open tabs and extracts page content,
-/// reusing the same exclusion rule (`AIChatTabMetadata.shouldExcludeFromTabPicker`) and content
-/// extraction (`AIChatUserScriptHandler.extractPageContext`) as the Duck.ai sidebar's `@` picker.
+/// Backs the NTP omnibar's attach-tabs picker. Sources tabs across windows (excluding Fire Windows)
+/// via the shared `AIChatTabPickerSource` and extracts page content via
+/// `AIChatUserScriptHandler.extractPageContext`, matching the Duck.ai sidebar and address-bar pickers.
 final class NewTabPageOmnibarTabsProvider: NewTabPageOmnibarTabsProviding {
 
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -32,20 +33,15 @@ final class NewTabPageOmnibarTabsProvider: NewTabPageOmnibarTabsProviding {
     }
 
     @MainActor
-    func openTabs() async -> [NewTabPageDataModel.OmnibarTabMetadata] {
-        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
+    func openTabs(requestingWebView: WKWebView?) async -> [NewTabPageDataModel.OmnibarTabMetadata] {
+        guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager) else {
             return []
         }
-
-        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
-        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
-        let allTabs = pinnedTabs + tabCollection.tabs
-        let currentTabId = mainVC.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+        let currentTabId = origin.selectedTabViewModel?.tab.uuid
 
         let faviconManager = NSApp.delegateTyped.faviconManager
-        return allTabs.compactMap { tab in
+        return AIChatTabPickerSource.attachableTabs(forOrigin: origin, in: windowControllersManager).compactMap { tab in
             guard case .url(let url, _, _) = tab.content else { return nil }
-            guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
             guard tab.uuid != currentTabId else { return nil }
 
             let favicon: NewTabPageDataModel.OmnibarTabFavicon?
@@ -66,16 +62,9 @@ final class NewTabPageOmnibarTabsProvider: NewTabPageOmnibarTabsProviding {
     }
 
     @MainActor
-    func tabContent(tabId: String) async -> NewTabPageDataModel.OmnibarPageContext? {
-        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
-            return nil
-        }
-
-        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
-        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.loadedTabs ?? []
-        let allLoadedTabs = pinnedTabs + tabCollection.loadedTabs
-
-        guard let tab = allLoadedTabs.first(where: { $0.uuid == tabId }),
+    func tabContent(tabId: String, requestingWebView: WKWebView?) async -> NewTabPageDataModel.OmnibarPageContext? {
+        guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager),
+              let tab = AIChatTabPickerSource.attachableLoadedTab(withId: tabId, forOrigin: origin, in: windowControllersManager),
               let pageContext = await AIChatUserScriptHandler.extractPageContext(from: tab) else {
             return nil
         }

@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import WebKit
 import XCTest
 @testable import NewTabPage
 
@@ -629,12 +630,12 @@ private final class StubNewTabPageOmnibarTabsProvider: NewTabPageOmnibarTabsProv
     var requestedTabId: String?
 
     @MainActor
-    func openTabs() async -> [NewTabPageDataModel.OmnibarTabMetadata] {
+    func openTabs(requestingWebView: WKWebView?) async -> [NewTabPageDataModel.OmnibarTabMetadata] {
         openTabsResult
     }
 
     @MainActor
-    func tabContent(tabId: String) async -> NewTabPageDataModel.OmnibarPageContext? {
+    func tabContent(tabId: String, requestingWebView: WKWebView?) async -> NewTabPageDataModel.OmnibarPageContext? {
         requestedTabId = tabId
         return tabContentResult
     }

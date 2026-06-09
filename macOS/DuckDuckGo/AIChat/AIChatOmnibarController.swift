@@ -692,33 +692,29 @@ final class AIChatOmnibarController {
         tabCollectionViewModel.selectedTabViewModel?.tab.uuid
     }
 
-    /// Returns the open browser tabs (pinned + regular) in this controller's window as candidate
-    /// attachments, with native `NSImage` favicons resolved from the favicon manager. Used by the
-    /// omnibar attach menu and the `@`-mention picker to populate their tab lists.
+    /// Returns the open browser tabs (pinned + regular) as candidate attachments, with native
+    /// `NSImage` favicons resolved from the favicon manager. Used by the omnibar attach menu and
+    /// the `@`-mention picker to populate their tab lists.
     ///
-    /// - Note: `tabCollectionViewModel` is the window-scoped TCVM injected at init, so the result
-    /// is intentionally restricted to **this window's** tabs — other browser windows aren't
-    /// surfaced. Non-URL tabs (settings, new-tab page, etc.) are filtered out, as are URLs the
-    /// sidebar's shared `AIChatTabMetadata.shouldExcludeFromTabPicker(_:)` rules out
-    /// (DDG homepage, `about:blank`, duck.ai itself). Internal testers who set a custom AI Chat
-    /// URL via Debug → AI Chat → Set custom URL also get tabs at that host filtered out — the
-    /// shared helper only knows about the hardcoded `duck.ai` host, so the omnibar checks the
-    /// debug override here to keep the picker meta-attachment-free for them too.
+    /// - Note: tabs are sourced across windows via the shared `AIChatTabPickerSource`, using this
+    /// controller's `tabCollectionViewModel` as the origin: a regular window surfaces tabs from all
+    /// regular windows, while a Fire Window surfaces only its own tabs (Fire Windows are never
+    /// pulled into a regular picker, and vice versa). Non-URL tabs and URLs ruled out by
+    /// `AIChatTabMetadata.shouldExcludeFromTabPicker(_:)` are already filtered by the source.
+    /// Internal testers who set a custom AI Chat URL via Debug → AI Chat → Set custom URL also get
+    /// tabs at that host filtered out here — the shared helper only knows the hardcoded `duck.ai`
+    /// host, so the omnibar checks the debug override too.
     ///
     /// The current tab (if it survives the filters) is hoisted to the front of the returned list
     /// so menus that pin "Current Tab" at the top get the right ordering for free.
     func openTabsForOmnibarPicker() -> [AIChatTabAttachment] {
-        let pinnedTabs = tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
-        let regularTabs = tabCollectionViewModel.tabCollection.tabs
-        let allTabs = pinnedTabs + regularTabs
         let faviconManager = NSApp.delegateTyped.faviconManager
         // Resolve the custom-URL host once per pick — `keyedStoring` reads from UserDefaults
         // every access, so caching avoids hitting it per-tab.
         let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
         let customAIChatURLHost = debugURLSettings.customURLHostname
-        let candidates = allTabs.compactMap { tab -> AIChatTabAttachment? in
+        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: tabCollectionViewModel, in: Application.appDelegate.windowControllersManager).compactMap { tab -> AIChatTabAttachment? in
             guard case .url(let url, _, _) = tab.content else { return nil }
-            guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
             if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
                 return nil
             }
@@ -1042,15 +1038,12 @@ final class AIChatOmnibarController {
     ) async -> AIChatPageContextPayload? {
         guard !tabAttachments.isEmpty else { return nil }
 
-        // Look up the actual `Tab` objects from this controller's tabCollectionViewModel,
-        // matching the JS-bridge's `getAIChatTabContent` lookup (which only considers loaded
-        // tabs). Unloaded tabs have no `PageContextUserScript` to invoke, so they'd return
-        // `nil` from the extractor anyway — restricting to `loadedTabs` makes that explicit.
-        let pinned: [Tab] = tabCollectionViewModel.pinnedTabsCollection?.loadedTabs ?? []
-        let regular: [Tab] = tabCollectionViewModel.tabCollection.loadedTabs
-        let allTabs: [Tab] = pinned + regular
+        // Look up the actual `Tab` objects via the shared cross-window source (scoped to this
+        // controller's window as origin), matching the picker's `openTabsForOmnibarPicker()` scope
+        // and the JS-bridge's `getAIChatTabContent` lookup (loaded tabs only — unloaded tabs have
+        // no `PageContextUserScript` to invoke, so they'd return `nil` from the extractor anyway).
         var tabsByUUID: [String: Tab] = [:]
-        for tab in allTabs {
+        for tab in AIChatTabPickerSource.attachableLoadedTabs(forOrigin: tabCollectionViewModel, in: Application.appDelegate.windowControllersManager) {
             tabsByUUID[tab.uuid] = tab
         }
 

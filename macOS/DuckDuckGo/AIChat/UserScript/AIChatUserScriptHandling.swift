@@ -398,19 +398,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? {
-        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
+        // Source tabs from all windows (except Fire Windows) relative to the window the picker was
+        // opened in — see `AIChatTabPickerSource`. A Fire Window only sees its own tabs.
+        guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView, in: windowControllersManager) else {
             return AIChatOpenTabsResponse(tabs: [])
         }
-
-        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
-        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
-        let allTabs = pinnedTabs + tabCollection.tabs
-        let currentTabId = mainVC.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+        let currentTabId = origin.selectedTabViewModel?.tab.uuid
 
         let faviconManager = NSApp.delegateTyped.faviconManager
-        let tabMetadata: [AIChatTabMetadata] = allTabs.compactMap { tab in
+        let tabMetadata: [AIChatTabMetadata] = AIChatTabPickerSource.attachableTabs(forOrigin: origin, in: windowControllersManager).compactMap { tab in
             guard case .url(let url, _, _) = tab.content else { return nil }
-            guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
             let favicon: [AIChatPageContextData.PageContextFavicon]
             if let image = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image,
                let base64 = image.base64PNGDataURL {
@@ -436,15 +433,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatTabContentResponse(pageContext: nil)
         }
 
-        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
-            return AIChatTabContentResponse(pageContext: nil)
-        }
-
-        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
-        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.loadedTabs ?? []
-        let allLoadedTabs = pinnedTabs + tabCollection.loadedTabs
-
-        guard let tab = allLoadedTabs.first(where: { $0.uuid == params.tabId }) else {
+        guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView, in: windowControllersManager),
+              let tab = AIChatTabPickerSource.attachableLoadedTab(withId: params.tabId, forOrigin: origin, in: windowControllersManager) else {
             return AIChatTabContentResponse(pageContext: nil)
         }
 

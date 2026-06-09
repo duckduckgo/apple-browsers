@@ -28,21 +28,10 @@ protocol SystemExtensionRequestManaging: AnyObject {
 
 extension OSSystemExtensionManager: SystemExtensionRequestManaging {}
 
-public enum SystemExtensionRequestError: Error, Equatable, LocalizedError {
+public enum SystemExtensionRequestError: Error, Equatable {
     case unknownRequestResult
     case willActivateAfterReboot
     case requestTimedOut
-
-    public var errorDescription: String? {
-        switch self {
-        case .unknownRequestResult:
-            return "System extension request returned an unknown result."
-        case .willActivateAfterReboot:
-            return "System extension request will complete after reboot."
-        case .requestTimedOut:
-            return "System extension request timed out."
-        }
-    }
 }
 
 public enum SystemExtensionActivationState: Equatable {

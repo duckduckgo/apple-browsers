@@ -543,7 +543,7 @@ final class MainCoordinator {
             return
         }
 
-        coordinator.sync()
+        await coordinator.sync().value
     }
 
     @available(iOS 18.4, *)

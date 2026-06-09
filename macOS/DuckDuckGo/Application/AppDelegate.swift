@@ -1993,7 +1993,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func initializeWebExtensions() async {
         guard webExtensionManager == nil else {
-            webExtensionLifecycleCoordinator?.loadAndSync()
+            await webExtensionLifecycleCoordinator?.loadAndSync().value
             return
         }
 
@@ -2009,13 +2009,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.enabledEmbeddedExtensionTypes() ?? []
         }
         self.webExtensionLifecycleCoordinator = coordinator
-        coordinator.loadAndSync()
+        await coordinator.loadAndSync().value
     }
 
     @available(macOS 15.4, *)
     @MainActor
     private func syncEmbeddedExtensions() async {
-        webExtensionLifecycleCoordinator?.sync()
+        await webExtensionLifecycleCoordinator?.sync().value
     }
 
     @available(macOS 15.4, *)

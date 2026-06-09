@@ -212,9 +212,10 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
         Task {
             await historyManager.deleteHistoryForURL(url)
             delegate?.duckAISuggestionsDidDeleteURL(suggestion)
+            urlLoader.refreshSuggestions()
+
             Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
             DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
-            urlLoader.refreshSuggestions()
         }
     }
 

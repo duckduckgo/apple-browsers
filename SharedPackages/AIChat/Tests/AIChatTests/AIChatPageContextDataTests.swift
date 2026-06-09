@@ -113,58 +113,43 @@ final class AIChatPageContextDataTests: XCTestCase {
 
         XCTAssertFalse(fullContext.isEmpty(), "Context should not be empty when all fields are populated")
     }
+}
 
-    // MARK: - contentType encoding (cross-platform FE contract)
+final class AIChatSelectionContextDataTests: XCTestCase {
 
-    func testContentTypeIsOmittedFromJSONWhenNil() throws {
-        let context = AIChatPageContextData(
-            title: "Test Page",
-            favicon: [],
-            url: "https://example.com",
-            content: "content",
-            truncated: false,
-            fullContentLength: 7
-        )
-
-        let data = try JSONEncoder().encode(context)
-        let json = String(decoding: data, as: UTF8.self)
-
-        XCTAssertFalse(json.contains("contentType"), "contentType must be omitted from the wire when nil")
-        XCTAssertNil(context.contentType)
-    }
-
-    func testContentTypeSelectionIsEncodedAndRoundTrips() throws {
-        let context = AIChatPageContextData(
+    func testRoundTripsThroughJSON() throws {
+        let selection = AIChatSelectionContextData(
+            id: "ABC-123",
             title: "Text selection",
-            favicon: [],
             url: "https://example.com",
             content: "selected text",
             truncated: false,
-            fullContentLength: 13,
-            attachable: true,
-            contentType: "selection"
+            fullContentLength: 13
         )
 
-        let data = try JSONEncoder().encode(context)
-        let json = String(decoding: data, as: UTF8.self)
-        XCTAssertTrue(json.contains("\"contentType\":\"selection\""), "contentType must serialize as \"selection\"")
+        let data = try JSONEncoder().encode(selection)
+        let decoded = try JSONDecoder().decode(AIChatSelectionContextData.self, from: data)
 
-        let decoded = try JSONDecoder().decode(AIChatPageContextData.self, from: data)
-        XCTAssertEqual(decoded, context)
-        XCTAssertEqual(decoded.contentType, "selection")
+        XCTAssertEqual(decoded, selection)
     }
 
-    func testWithTabIdPreservesContentType() {
-        let context = AIChatPageContextData(
+    func testEncodesExpectedFields() throws {
+        let selection = AIChatSelectionContextData(
+            id: "ABC-123",
             title: "Text selection",
-            favicon: [],
             url: "https://example.com",
-            content: "selected text",
-            truncated: false,
-            fullContentLength: 13,
-            contentType: "selection"
+            content: "xxx",
+            truncated: true,
+            fullContentLength: 9999
         )
 
-        XCTAssertEqual(context.withTabId("tab-1").contentType, "selection")
+        let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(selection)) as? [String: Any]
+
+        XCTAssertEqual(object?["id"] as? String, "ABC-123")
+        XCTAssertEqual(object?["title"] as? String, "Text selection")
+        XCTAssertEqual(object?["url"] as? String, "https://example.com")
+        XCTAssertEqual(object?["content"] as? String, "xxx")
+        XCTAssertEqual(object?["truncated"] as? Bool, true)
+        XCTAssertEqual(object?["fullContentLength"] as? Int, 9999)
     }
 }

@@ -123,64 +123,46 @@ struct ConsumedFlagResetTests {
 
 struct SelectionContextTests {
 
-    /// Mirrors `PageContextTabExtension.Constants.maxSelectionContextLength`.
+    /// Mirrors `AIChatSelectionContextAttacher.Constants.maxSelectionContextLength`.
     private static let maxSelectionContextLength = 9500
 
-    /// Mirrors `PageContextTabExtension.attachSelectionContext` payload construction.
-    private func buildSelectionContext(text: String, url: String, title: String) -> AIChatPageContextData {
+    /// Mirrors `AIChatSelectionContextAttacher` payload construction.
+    private func buildSelectionItem(text: String, url: String) -> AIChatSelectionContextData {
         let truncated = text.count > Self.maxSelectionContextLength
         let content = truncated ? String(text.prefix(Self.maxSelectionContextLength)) : text
-        return AIChatPageContextData(
-            title: title,
-            favicon: [],
+        return AIChatSelectionContextData(
+            id: UUID().uuidString,
+            title: "Text selection",
             url: url,
             content: content,
             truncated: truncated,
-            fullContentLength: text.count,
-            attachable: true,
-            contentType: "selection"
+            fullContentLength: text.count
         )
     }
 
-    @Test("Short selection is attachable, tagged as selection, and not truncated")
+    @Test("Short selection carries the generic title and is not truncated")
     func shortSelectionIsTaggedAndNotTruncated() {
-        let context = buildSelectionContext(text: "hello world", url: "https://example.com", title: "Text selection")
-        #expect(context.contentType == "selection")
-        #expect(context.content == "hello world")
-        #expect(context.title == "Text selection")
-        #expect(context.url == "https://example.com")
-        #expect(context.attachable == true)
-        #expect(context.truncated == false)
-        #expect(context.fullContentLength == 11)
+        let item = buildSelectionItem(text: "hello world", url: "https://example.com")
+        #expect(item.content == "hello world")
+        #expect(item.title == "Text selection")
+        #expect(item.url == "https://example.com")
+        #expect(item.truncated == false)
+        #expect(item.fullContentLength == 11)
     }
 
     @Test("Long selection is truncated to the max length and reports the original length")
     func longSelectionIsTruncated() {
         let longText = String(repeating: "x", count: Self.maxSelectionContextLength + 500)
-        let context = buildSelectionContext(text: longText, url: "https://example.com", title: "Text selection")
-        #expect(context.content.count == Self.maxSelectionContextLength)
-        #expect(context.truncated == true)
-        #expect(context.fullContentLength == longText.count)
-    }
-}
-
-// MARK: - Selection Override Precedence Tests
-
-struct SelectionOverridePrecedenceTests {
-
-    /// Mirrors the precedence applied across `PageContextTabExtension`: a selection override,
-    /// while set, owns the sidebar context and suppresses auto-collected full-page content.
-    private func shouldSuppressAutoCollect(selectionOverridePresent: Bool) -> Bool {
-        selectionOverridePresent
+        let item = buildSelectionItem(text: longText, url: "https://example.com")
+        #expect(item.content.count == Self.maxSelectionContextLength)
+        #expect(item.truncated == true)
+        #expect(item.fullContentLength == longText.count)
     }
 
-    @Test("Selection override suppresses auto-collected full-page context")
-    func overrideSuppressesAutoCollect() {
-        #expect(shouldSuppressAutoCollect(selectionOverridePresent: true) == true)
-    }
-
-    @Test("No override lets normal auto-collect proceed")
-    func noOverrideAllowsAutoCollect() {
-        #expect(shouldSuppressAutoCollect(selectionOverridePresent: false) == false)
+    @Test("Each attached selection gets a unique id")
+    func eachSelectionHasUniqueID() {
+        let first = buildSelectionItem(text: "a", url: "https://example.com")
+        let second = buildSelectionItem(text: "a", url: "https://example.com")
+        #expect(first.id != second.id)
     }
 }

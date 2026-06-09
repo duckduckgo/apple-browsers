@@ -209,10 +209,14 @@ final class AIChatOmnibarController {
     /// in the same window if one is active; otherwise opens a new selected Duck.ai tab and hands
     /// off `mode: voice-mode` via the prompt handler.
     func openNewVoiceChat() {
-        aiChatTabOpener.openVoiceSession(
-            inSourceCollection: tabCollectionViewModel,
-            behavior: .newTab(selected: true)
-        )
+        // Defer the tab open: synchronously it tears the panel down mid-click, so the click falls through to the bookmarks bar behind.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.aiChatTabOpener.openVoiceSession(
+                inSourceCollection: self.tabCollectionViewModel,
+                behavior: .newTab(selected: true)
+            )
+        }
         PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative, frequency: .dailyAndStandard, includeAppVersionParameter: true)
     }
 

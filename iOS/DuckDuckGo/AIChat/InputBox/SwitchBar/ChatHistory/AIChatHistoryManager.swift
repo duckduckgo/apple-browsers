@@ -172,8 +172,8 @@ final class AIChatHistoryManager {
     func removeChatSuggestion(suggestion: AIChatSuggestion) {
         viewModel.removeSuggestion(suggestion)
 
-        Task { @MainActor [weak self] in
-            await self?.removeChatSuggestionInTask(suggestion: suggestion)
+        Task { @MainActor in
+            await self.removeChatSuggestionInTask(suggestion: suggestion)
         }
     }
 

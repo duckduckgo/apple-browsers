@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 import RemoteMessaging
 import Core
 
@@ -66,7 +67,7 @@ struct HomeMessageView: View {
                     dimension[.top]
                 }
         }
-        .background(RoundedRectangle(cornerRadius: Const.Radius.cornerLarge)
+        .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
             .fill(Color.background)
             .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
             .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
@@ -220,7 +221,6 @@ private enum Const {
     enum Radius {
         static let updatedShadow1: CGFloat = 12
         static let updatedShadow2: CGFloat = 48
-        static let cornerLarge: CGFloat = 16
     }
 
     enum Padding {

@@ -82,6 +82,9 @@ final class StatisticsLoader {
                 }
                 self.fireDockPixel()
             }
+
+            PixelKit.fireOSDistributionPixel(metric: .client)
+
             if !self.statisticsStore.isAppRetentionFiredToday {
                 self.refreshAppRetentionAtb(completion: completion)
                 self.fireAppRetentionExperimentPixels()
@@ -186,6 +189,8 @@ final class StatisticsLoader {
     func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
 
+        PixelKit.fireOSDistributionPixel(metric: .searches)
+
         guard !isSearchRetentionRequestInProgress else {
             completion()
             return
@@ -274,6 +279,8 @@ final class StatisticsLoader {
 
     func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
+
+        PixelKit.fireOSDistributionPixel(metric: .searches)
 
         guard !isDuckAIRetentionRequestInProgress else {
             completion()

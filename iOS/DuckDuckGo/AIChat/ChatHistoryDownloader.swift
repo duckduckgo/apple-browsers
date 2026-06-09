@@ -34,7 +34,7 @@ protocol ChatHistoryDownloading {
 @MainActor
 struct ChatHistoryDownloader: ChatHistoryDownloading {
 
-    enum DownloadError: Error {
+    enum DownloadError: Error, Equatable {
         /// Native storage failed to configure at launch, so we can't fetch the chat record.
         case storageUnavailable
         /// The chatId was not present in storage by the time the download fired (deleted

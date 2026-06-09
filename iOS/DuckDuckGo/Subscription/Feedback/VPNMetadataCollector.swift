@@ -55,6 +55,7 @@ struct VPNMetadata: Encodable {
         let underlyingErrors: [LastDisconnectError]?
         let connectedServer: String
         let connectedServerIP: String
+        let dataVolume: NetworkProtectionDataVolumeBuckets?
     }
 
     struct DNSSettingsState: Encodable {
@@ -127,14 +128,17 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private let subscriptionManager: any SubscriptionManager
     private let settings: VPNSettings
     private let defaults: UserDefaults
+    private let tunnelSessionProvider: TunnelSessionProvider
 
     init(statusObserver: ConnectionStatusObserver,
          serverInfoObserver: ConnectionServerInfoObserver,
+         tunnelSessionProvider: TunnelSessionProvider = VPNMetadataTunnelSessionProvider(),
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          settings: VPNSettings = .init(defaults: .networkProtectionGroupDefaults),
          defaults: UserDefaults = .networkProtectionGroupDefaults) {
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
+        self.tunnelSessionProvider = tunnelSessionProvider
         self.subscriptionManager = subscriptionManager
         self.settings = settings
         self.defaults = defaults
@@ -226,16 +230,37 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
 
     @MainActor
     func collectVPNState() async -> VPNMetadata.VPNState {
-        let connectionState = String(describing: statusObserver.recentValue)
+        let status = statusObserver.recentValue
+        let connectionState = String(describing: status)
         let connectedServer = serverInfoObserver.recentValue.serverLocation?.serverLocation ?? "none"
         let connectedServerIP = serverInfoObserver.recentValue.serverAddress ?? "none"
+        let dataVolume = await collectDataVolumeIfAvailable(for: status)
         let lastDisconnectError = await lastDisconnectError()
 
         return .init(connectionState: connectionState,
                      lastDisconnectError: lastDisconnectError?.error,
                      underlyingErrors: lastDisconnectError?.underlyingErrors,
                      connectedServer: connectedServer,
-                     connectedServerIP: connectedServerIP)
+                     connectedServerIP: connectedServerIP,
+                     dataVolume: dataVolume)
+    }
+
+    private func collectDataVolumeIfAvailable(for status: ConnectionStatus) async -> NetworkProtectionDataVolumeBuckets? {
+        guard status.canReportActiveDataVolume,
+              let activeSession = await tunnelSessionProvider.activeSession(),
+              let data: ExtensionMessageString = try? await activeSession.sendProviderMessage(.getDataVolume) else {
+            return nil
+        }
+
+        let bytes = data.value.components(separatedBy: ",")
+        guard let receivedString = bytes.first,
+              let sentString = bytes.last,
+              let received = Int64(receivedString),
+              let sent = Int64(sentString) else {
+            return nil
+        }
+
+        return NetworkProtectionDataVolumeBuckets(bytesSent: sent, bytesReceived: received)
     }
 
     public func lastDisconnectError() async -> (error: VPNMetadata.LastDisconnectError, underlyingErrors: [VPNMetadata.LastDisconnectError])? {
@@ -296,6 +321,23 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             hasSubscriptionAccount: subscriptionManager.isUserAuthenticated,
             isVPNFeatureIncludedInSubscription: isVPNFeatureIncludedInSubscription,
             canStartVPN: canStartVPN)
+    }
+}
+
+private final class VPNMetadataTunnelSessionProvider: TunnelSessionProvider {
+    func activeSession() async -> NETunnelProviderSession? {
+        await AppDependencyProvider.shared.networkProtectionTunnelController.activeSession()
+    }
+}
+
+private extension ConnectionStatus {
+    var canReportActiveDataVolume: Bool {
+        switch self {
+        case .connected, .reasserting:
+            return true
+        case .notConfigured, .disconnected, .disconnecting, .connecting, .snoozing:
+            return false
+        }
     }
 }
 

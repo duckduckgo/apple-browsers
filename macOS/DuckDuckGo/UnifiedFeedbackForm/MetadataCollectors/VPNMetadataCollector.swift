@@ -58,6 +58,7 @@ struct VPNMetadata: Encodable {
         let lastKnownFailureDescription: String
         let connectedServer: String
         let connectedServerIP: String
+        let dataVolume: NetworkProtectionDataVolumeBuckets?
     }
 
     struct DNSSettingsState: Encodable {
@@ -288,18 +289,36 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
 
         let errorHistory = VPNOperationErrorHistory(ipcClient: ipcClient, defaults: defaults)
 
-        let connectionState = String(describing: statusReporter.statusObserver.recentValue)
+        let status = statusReporter.statusObserver.recentValue
+        let connectionState = String(describing: status)
         let lastTunnelErrorDescription = await errorHistory.lastTunnelErrorDescription
-        let lastKnownFailureDescription = NetworkProtectionKnownFailureStore().lastKnownFailure?.description ?? "none"
+        let lastKnownFailureDescription = Self.knownFailureDescription(NetworkProtectionKnownFailureStore().lastKnownFailure)
         let connectedServer = statusReporter.serverInfoObserver.recentValue.serverLocation?.serverLocation ?? "none"
         let connectedServerIP = statusReporter.serverInfoObserver.recentValue.serverAddress ?? "none"
+        let dataVolume = status.canReportActiveDataVolume
+            ? NetworkProtectionDataVolumeBuckets(dataVolume: statusReporter.dataVolumeObserver.recentValue)
+            : nil
+
         return .init(onboardingState: onboardingState,
                      connectionState: connectionState,
                      lastStartErrorDescription: errorHistory.lastStartErrorDescription,
                      lastTunnelErrorDescription: lastTunnelErrorDescription,
                      lastKnownFailureDescription: lastKnownFailureDescription,
                      connectedServer: connectedServer,
-                     connectedServerIP: connectedServerIP)
+                     connectedServerIP: connectedServerIP,
+                     dataVolume: dataVolume)
+    }
+
+    private static func knownFailureDescription(_ knownFailure: KnownFailure?) -> String {
+        guard let knownFailure else {
+            return "none"
+        }
+
+        if let silentError = KnownFailure.SilentError(rawValue: knownFailure.error) {
+            return "KnownFailure error=\(silentError) code=\(knownFailure.error)"
+        }
+
+        return "KnownFailure code=\(knownFailure.error)"
     }
 
     func collectLoginItemState() -> VPNMetadata.LoginItemState {
@@ -365,5 +384,16 @@ extension VPNMetadata: UnifiedFeedbackMetadata {}
 extension DefaultVPNMetadataCollector: UnifiedMetadataCollector {
     func collectMetadata() async -> VPNMetadata {
         await collectVPNMetadata()
+    }
+}
+
+private extension ConnectionStatus {
+    var canReportActiveDataVolume: Bool {
+        switch self {
+        case .connected, .reasserting:
+            return true
+        case .notConfigured, .disconnected, .disconnecting, .connecting, .snoozing:
+            return false
+        }
     }
 }

@@ -148,13 +148,8 @@ public struct AIChatPageContextData: Codable, Equatable {
     /// marks the current sidebar page. The omnibar strips this for the entry that matches
     /// the active tab so the discriminator's semantics hold end-to-end.
     public let tabId: String?
-    /// Marks the kind of content carried by this context. `"selection"` tells the duck.ai web
-    /// app the content is a user text selection (rendered with a dedicated chip/icon) rather
-    /// than the full page. Absent (`nil`) for the default full-page case. Omitted from the wire
-    /// when nil by the synthesized encoder, matching the cross-platform FE contract.
-    public let contentType: String?
 
-    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil, contentType: String? = nil) {
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil) {
         self.title = title
         self.favicon = favicon
         self.url = url
@@ -163,7 +158,6 @@ public struct AIChatPageContextData: Codable, Equatable {
         self.fullContentLength = fullContentLength
         self.attachable = attachable
         self.tabId = tabId
-        self.contentType = contentType
     }
 
     /// Returns a copy of this page context with the `tabId` field set to the given value.
@@ -178,8 +172,7 @@ public struct AIChatPageContextData: Codable, Equatable {
             truncated: truncated,
             fullContentLength: fullContentLength,
             attachable: attachable,
-            tabId: tabId,
-            contentType: contentType
+            tabId: tabId
         )
     }
 
@@ -200,6 +193,32 @@ public struct AIChatPageContextData: Codable, Equatable {
     /// from this check.
     public func isEmpty() -> Bool {
         return title.isEmpty && favicon.isEmpty && content.isEmpty && fullContentLength == 0
+    }
+}
+
+// MARK: - Selection Context
+
+/// One user text selection attached to Duck.ai via "Attach to Duck.ai".
+///
+/// Selections live on their own dedicated channel (`submitAIChatSelectionContext`), independent of
+/// the single page-context slot: native appends items one at a time and the duck.ai web app owns the
+/// resulting list (chips, removal, max count, inclusion in the next prompt). `id` lets the FE address
+/// individual items.
+public struct AIChatSelectionContextData: Codable, Equatable {
+    public let id: String
+    public let title: String
+    public let url: String
+    public let content: String
+    public let truncated: Bool
+    public let fullContentLength: Int
+
+    public init(id: String, title: String, url: String, content: String, truncated: Bool, fullContentLength: Int) {
+        self.id = id
+        self.title = title
+        self.url = url
+        self.content = content
+        self.truncated = truncated
+        self.fullContentLength = fullContentLength
     }
 }
 

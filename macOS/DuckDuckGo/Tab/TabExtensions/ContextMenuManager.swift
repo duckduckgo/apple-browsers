@@ -516,7 +516,7 @@ private extension ContextMenuManager {
             return
         }
 
-        mainViewController?.aiChatSelectionContextAttacher.attach(text: selectedText, url: webView?.url, title: webView?.title)
+        mainViewController?.aiChatSelectionContextAttacher.attach(text: selectedText, url: webView?.url)
     }
 
     func translate(_ sender: NSMenuItem) {

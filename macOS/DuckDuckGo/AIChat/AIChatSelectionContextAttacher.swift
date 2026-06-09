@@ -20,21 +20,27 @@ import AIChat
 import Foundation
 import PixelKit
 
-/// Handles the "Attach to Duck.ai" context-menu action: attaches the user's text selection as the
-/// AI Chat sidebar's page context (instead of the full page) and reveals the sidebar.
+/// Handles the "Attach to Duck.ai" context-menu action: appends the user's text selection to the
+/// Duck.ai sidebar's selection-context list (independent of the single page-context slot) and
+/// reveals the sidebar.
 ///
-/// Mirrors `AIChatSummarizer`/`AIChatTranslator`: it owns gating + telemetry, then delegates the
-/// actual attachment to the current content tab's `PageContextTabExtension` (the single authority
-/// that drives the sidebar's page-context chip) before revealing the sidebar.
+/// Mirrors `AIChatSummarizer`/`AIChatTranslator`: it owns gating + telemetry and builds the item,
+/// then hands it to the current content tab's `PageContextTabExtension`, which buffers/forwards it
+/// to the sidebar. The duck.ai web app owns the resulting list of selections.
 @MainActor
 protocol AIChatSelectionContextAttaching {
 
-    /// Attaches `text` selected on the page at `url`/`title` as the sidebar's page context.
-    func attach(text: String, url: URL?, title: String?)
+    /// Appends `text` selected on the page at `url` to the Duck.ai selection list and reveals the sidebar.
+    func attach(text: String, url: URL?)
 }
 
 @MainActor
 final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
+
+    private enum Constants {
+        /// Matches `maxContentLength` default in content-scope-scripts (page-context.js).
+        static let maxSelectionContextLength = 9500
+    }
 
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatCoordinator: AIChatCoordinating
@@ -53,7 +59,7 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
         self.currentPageContextProvider = currentPageContextProvider
     }
 
-    func attach(text: String, url: URL?, title: String?) {
+    func attach(text: String, url: URL?) {
         guard aiChatMenuConfig.shouldDisplaySelectionContextMenuItem else {
             return
         }
@@ -71,9 +77,19 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
             )
         }
 
-        // Set the override before revealing so the sidebar's session-creation path delivers the
-        // selection (not the auto-collected full page) as the active context.
-        currentPageContextProvider()?.attachSelectionContext(text: text, url: url, title: title)
+        let truncated = text.count > Constants.maxSelectionContextLength
+        let content = truncated ? String(text.prefix(Constants.maxSelectionContextLength)) : text
+        let selection = AIChatSelectionContextData(
+            id: UUID().uuidString,
+            title: UserText.aiChatTextSelection,
+            url: url?.absoluteString ?? "",
+            content: content,
+            truncated: truncated,
+            fullContentLength: text.count
+        )
+
+        // Append the selection, then reveal the sidebar; the tab extension flushes it once the chat VC is up.
+        currentPageContextProvider()?.appendSelectionContext(selection)
         aiChatCoordinator.revealChat()
     }
 }

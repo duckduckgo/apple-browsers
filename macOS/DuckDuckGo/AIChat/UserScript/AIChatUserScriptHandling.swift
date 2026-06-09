@@ -106,6 +106,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
@@ -118,6 +119,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
 
     @MainActor func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -154,6 +156,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
+    public let selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
     public let pageContextConsumedPublisher: AnyPublisher<Void, Never>
     public let pageContextRemovedPublisher: AnyPublisher<Void, Never>
@@ -162,6 +165,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let pageContextConsumedSubject = PassthroughSubject<Void, Never>()
     private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
@@ -219,6 +223,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         )
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
+        self.selectionContextPublisher = selectionContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         self.pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
         self.pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
@@ -371,6 +376,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         pageContextSubject.send(pageContext)
     }
 
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
+        selectionContextSubject.send(selection)
+    }
+
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard let paramsDict = params as? [String: Any] else {
             aiChatUserScriptErrorEventMapper.fire(.reportMetricDecodingFailed(
@@ -500,8 +509,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 content: ctx.content,
                 truncated: ctx.truncated,
                 fullContentLength: ctx.fullContentLength,
-                attachable: ctx.attachable,
-                contentType: ctx.contentType
+                attachable: ctx.attachable
             )
         }
     }

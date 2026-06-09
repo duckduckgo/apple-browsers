@@ -39,6 +39,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     case getAIChatPageContext
     case submitAIChatPageContext
+    /// Pushed (native→FE) to append one user text selection to the duck.ai selection-context list.
+    /// Independent of the single page-context slot; the FE owns the resulting list of selections.
+    case submitAIChatSelectionContext
     case togglePageContextTelemetry
     case getAIChatOpenTabs
     case getAIChatTabContent

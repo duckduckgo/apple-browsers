@@ -48,6 +48,7 @@ final class DaxLogoManager {
 
     private var isHomeDaxVisible: Bool = false
     private var isAIDaxVisible: Bool = false
+    private var committedMode: TextEntryMode = .search
     private var forcedHidden: Bool = false
 
     private(set) var currentProgress: CGFloat = 0
@@ -97,13 +98,21 @@ final class DaxLogoManager {
         parentView.bringSubviewToFront(logoContainerView)
     }
 
-    func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool) {
+    func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool, committedMode: TextEntryMode) {
         self.isHomeDaxVisible = isHomeDaxVisible
         self.isAIDaxVisible = isAIDaxVisible
+        self.committedMode = committedMode
         self.isSwipeInProgress = false
+        // Settle the morph to the committed mode — the single source of truth for which logo shows.
+        // Skipped mid-morph so an in-flight transition isn't stomped.
+        if !isAnimatingLogoTransition {
+            currentProgress = committedProgress
+        }
 
         updateState()
     }
+
+    private var committedProgress: CGFloat { committedMode == .aiChat ? 1 : 0 }
 
     /// The Lottie animation's current frame progress (0 = search, 1 = duck.ai).
     var lottieProgress: CGFloat {
@@ -127,7 +136,8 @@ final class DaxLogoManager {
     /// alpha. The single-active-logo alpha is `currentProgress`-scaled, so a stale progress can
     /// read alpha 0 even when the logo should show — callers deciding to morph must use this.
     var isLogoActiveForCurrentState: Bool {
-        !forcedHidden && (isHomeDaxVisible || isAIDaxVisible)
+        guard !forcedHidden else { return false }
+        return committedMode == .aiChat ? isAIDaxVisible : isHomeDaxVisible
     }
 
     /// Plays the Lottie transition to the given mode.
@@ -356,23 +366,15 @@ final class DaxLogoManager {
             // A programmatic logo transition is in flight — don't stomp the Lottie.
             resolvedAlpha = 1
         } else if isHomeDaxVisible != isAIDaxVisible {
-            // Exactly one logo is active with no morph/swipe in flight: align currentProgress with it
-            // so the currentProgress-scaled alpha below shows it at full opacity. Without this, a fresh
-            // open that starts in Duck.ai (last-used mode, no mode-change morph) leaves currentProgress
-            // at 0 and the AI logo invisible.
-            currentProgress = isAIDaxVisible ? 1 : 0
-            daxLogoView.updateProgress(currentProgress)
-
-            let homeLogoProgress = 1 - currentProgress
-            let aiLogoProgress = currentProgress
-
-            let homeDaxAlphaCoefficient: CGFloat = isHomeDaxVisible ? 1 : 0
-            let aiDaxAlphaCoefficient: CGFloat = isAIDaxVisible ? 1 : 0
-
-            let daxAlpha = homeDaxAlphaCoefficient * homeLogoProgress
-            let aiAlpha = aiDaxAlphaCoefficient * aiLogoProgress
-
+            // One logo active: visible only when its side matches the committed `currentProgress`.
+            // When hidden, leave the lottie frame so the visible logo fades out instead of snapping.
+            let daxAlpha = (isHomeDaxVisible ? 1 : 0) * (1 - currentProgress)
+            let aiAlpha = (isAIDaxVisible ? 1 : 0) * currentProgress
             resolvedAlpha = max(daxAlpha, aiAlpha)
+
+            if resolvedAlpha > 0 {
+                daxLogoView.updateProgress(currentProgress)
+            }
         } else if isHomeDaxVisible && isAIDaxVisible {
             daxLogoView.updateProgress(currentProgress)
 

@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import os
 
 /// The single unified suggestions surface for both Search and Duck.ai. Switches on the
 /// resolver's content state: list rows / favorites / logo. One view, model decides the rest.
@@ -30,17 +29,6 @@ struct UnifiedSuggestionsView: View {
                     .padding(.horizontal, Metrics.contentHorizontalMargin)
                     .padding(.top, hatchTopInset)
                     .padding(.bottom, Metrics.hatchBottomInset)
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear
-                                .onAppear {
-                                    utiTransitionLog.debug("hatch.minY appear=\(proxy.frame(in: .global).minY, privacy: .public)")
-                                }
-                                .onChange(of: proxy.frame(in: .global).minY) { y in
-                                    utiTransitionLog.debug("hatch.minY=\(y, privacy: .public)")
-                                }
-                        }
-                    )
             }
             contentArea
         }
@@ -97,6 +85,7 @@ struct UnifiedSuggestionsView: View {
         case .favorites:
             if let controller = favoritesProvider() {
                 SuggestionsFavoritesView(controller: controller)
+                    .transition(.opacity)
             }
         case .logo, .list:
             // Logo is drawn by DaxLogoManager; the list fills via listLayer. Nothing to overlay.

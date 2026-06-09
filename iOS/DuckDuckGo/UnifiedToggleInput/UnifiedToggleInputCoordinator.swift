@@ -923,7 +923,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let effectiveMode = effectiveInputMode(for: mode)
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
-        utiTransitionLog.debug("updateInputMode req=\(String(describing: mode), privacy: .public) eff=\(String(describing: effectiveMode), privacy: .public) curInputMode=\(String(describing: self.inputMode), privacy: .public) vcMode=\(String(describing: self.viewController.inputMode), privacy: .public) didChange=\(didModeChange, privacy: .public) needsViewSync=\(needsViewSync, privacy: .public) animated=\(animated, privacy: .public)")
         guard didModeChange || needsViewSync else { return }
 
         let isDismissingOmnibarNewPromptToolbar = isOmnibarNewAIChatPrompt && effectiveMode == .search
@@ -1210,7 +1209,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // constraint) while editing, so the content inset animates in lockstep with the
         // input instead of chasing transient frame values mid-animation.
         let utiHeight = isInputEditing ? editingHeight() : viewController.view.frame.height
-        utiTransitionLog.debug("pushContentInsets utiHeight=\(utiHeight, privacy: .public) mode=\(String(describing: self.inputMode), privacy: .public) editing=\(self.isInputEditing, privacy: .public) frameH=\(self.viewController.view.frame.height, privacy: .public) animDur=\(UIView.inheritedAnimationDuration, privacy: .public)")
         if cardPosition == .top {
             contentViewController.setContentInset(top: utiHeight, bottom: 0)
         } else {

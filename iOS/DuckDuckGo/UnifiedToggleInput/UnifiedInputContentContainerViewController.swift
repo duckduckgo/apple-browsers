@@ -29,9 +29,6 @@ import DDGSync
 import Suggestions
 import AIChat
 import RemoteMessaging
-import os
-
-let utiTransitionLog = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "UTITransition")
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -797,7 +794,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // hosting view. layoutIfNeeded inside the active animation makes the constraint glide.
         updateSingleHostTopOffset()
         unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: 0, left: 0, bottom: insets.bottom, right: 0))
-        utiTransitionLog.debug("applyContentInset(single) topConst=\(self.unifiedSuggestionsTopConstraint?.constant ?? -1, privacy: .public) animated=\(UIView.inheritedAnimationDuration > 0, privacy: .public) mode=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public)")
         contentContainerView.layoutIfNeeded()
     }
 
@@ -869,8 +865,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isHomeDaxVisible = isSearchMode && daxLogoManager.shouldShowHomeDax(homeDaxInputs)
         let isAIDaxVisible = !hasContent && !isShowingDuckAISuggestions && !isDuckAISuggestionsPending
 
-        utiTransitionLog.debug("updateDaxVisibility mode=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public) homeDax=\(isHomeDaxVisible, privacy: .public) aiDax=\(isAIDaxVisible, privacy: .public) duckAttached=\(duckAIIsAttached, privacy: .public) showingDuck=\(isShowingDuckAISuggestions, privacy: .public) duckPending=\(isDuckAISuggestionsPending, privacy: .public) duckSettled=\(isDuckAISettled, privacy: .public) hasContent=\(hasContent, privacy: .public) favsOverlay=\(shouldDisplayFavoritesOverlay, privacy: .public)")
-        daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+        daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible, committedMode: switchBarHandler.currentToggleState)
         daxLogoManager.setEscapeHatchBaseOffset(daxVerticalOffset(hasEscapeHatch: escapeHatchModel != nil))
     }
 

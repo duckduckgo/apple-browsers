@@ -200,4 +200,3 @@ public enum SiteLoadingPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         }
     }
 }
-

@@ -148,6 +148,18 @@ public class DDGSync: DDGSyncing {
         SyncConnectionController(deviceName: deviceName, deviceType: deviceType, delegate: delegate, syncService: self, dependencies: dependencies)
     }
 
+    public func createDebugConnectionController(deviceName: String,
+                                                deviceType: String,
+                                                delegate: SyncConnectionControllerDelegate,
+                                                pairingV2DebugLogHandler: @escaping PairingV2DebugLogHandler) -> SyncConnectionControlling {
+        SyncConnectionController(deviceName: deviceName,
+                                 deviceType: deviceType,
+                                 delegate: delegate,
+                                 syncService: self,
+                                 dependencies: dependencies,
+                                 pairingV2DebugLogHandler: pairingV2DebugLogHandler)
+    }
+
     public func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {
         do {
             return try await dependencies.createExchangePublicKeyTransmitter().sendGeneratedExchangeInfo(exchangeCode, deviceName: deviceName)
@@ -281,13 +293,31 @@ public class DDGSync: DDGSyncing {
     }
 
     public func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
-        guard let account else {
-            throw SyncError.accountNotFound
+        let account: SyncAccount
+        do {
+            guard let storedAccount = try dependencies.secureStore.account() else {
+                throw SyncError.accountNotFound
+            }
+            account = storedAccount
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .accountUnavailableForThirdPartyRecoveryCode,
+                                                           underlyingError: error)
         }
 
         do {
-            let scopedPassword = try await ensureThirdPartyScopedPassword(for: account, purpose: purpose)
-            let code = try makeThirdPartyRecoveryCode(account: account, scopedPassword: scopedPassword)
+            let scopedPassword: Data
+            do {
+                scopedPassword = try await ensureThirdPartyScopedPassword(for: account, purpose: purpose)
+            } catch {
+                throw preparationError(stage: .ensureThirdPartyScopedPasswordForRecoveryCode, underlyingError: error)
+            }
+
+            let code: String
+            do {
+                code = try makeThirdPartyRecoveryCode(account: account, scopedPassword: scopedPassword)
+            } catch {
+                throw ThirdPartyScopedPasswordPreparationError(stage: .makeThirdPartyRecoveryCode, underlyingError: error)
+            }
             cacheScopedPasswordInBackground(scopedPassword)
             return code
         } catch {
@@ -317,6 +347,94 @@ public class DDGSync: DDGSyncing {
                 throw error
             }
             return result.devices
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func fetchProtectedKeys() async throws -> [ProtectedKey] {
+        guard dependencies.syncFeatureFlags.isScopedAccessCredentialsEnabled() else {
+            throw SyncError.failedToEncryptValue("scopedAccessCredentials feature is disabled")
+        }
+        guard let account else {
+            throw SyncError.accountNotFound
+        }
+
+        do {
+            let keys = try await dependencies.scopedAccess.fetchProtectedKeys(account)
+            let payload = debugPayloadDescription(for: keys, unavailableDescription: "<unable to encode protected keys>")
+            Logger.sync.debug("Fetched GET /keys response count: \(keys.count, privacy: .public) payload: \(payload, privacy: .public)")
+            return keys
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func fetchAccessCredentials() async throws -> [AccessCredential] {
+        guard dependencies.syncFeatureFlags.isScopedAccessCredentialsEnabled() else {
+            throw SyncError.failedToEncryptValue("scopedAccessCredentials feature is disabled")
+        }
+        guard let account else {
+            throw SyncError.accountNotFound
+        }
+
+        do {
+            let credentials = try await dependencies.scopedAccess.fetchAccessCredentials(account)
+            let payload = debugPayloadDescription(for: credentials, unavailableDescription: "<unable to encode access credentials>")
+            Logger.sync.debug("Fetched GET /access-credentials response count: \(credentials.count, privacy: .public) payload: \(payload, privacy: .public)")
+            return credentials
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func fetchDevicesRawResponse() async throws -> String {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+        guard let token = account.token else {
+            throw SyncError.noToken
+        }
+
+        do {
+            let url = dependencies.endpoints.syncGet.appendingPathComponent("devices")
+            return try await fetchRawAuthenticatedGETResponse(url: url, token: token)
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func fetchProtectedKeysRawResponse() async throws -> String {
+        guard dependencies.syncFeatureFlags.isScopedAccessCredentialsEnabled() else {
+            throw SyncError.failedToEncryptValue("scopedAccessCredentials feature is disabled")
+        }
+        guard let account else {
+            throw SyncError.accountNotFound
+        }
+        guard let token = account.token else {
+            throw SyncError.noToken
+        }
+
+        do {
+            return try await fetchRawAuthenticatedGETResponse(url: dependencies.endpoints.keys, token: token)
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func fetchAccessCredentialsRawResponse() async throws -> String {
+        guard dependencies.syncFeatureFlags.isScopedAccessCredentialsEnabled() else {
+            throw SyncError.failedToEncryptValue("scopedAccessCredentials feature is disabled")
+        }
+        guard let account else {
+            throw SyncError.accountNotFound
+        }
+        guard let token = account.token else {
+            throw SyncError.noToken
+        }
+
+        do {
+            return try await fetchRawAuthenticatedGETResponse(url: dependencies.endpoints.accessCredentials, token: token)
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }
@@ -353,6 +471,29 @@ public class DDGSync: DDGSyncing {
 
             return try Base64URL.encode(dependencies.crypter.decryptData(encryptedData, using: key))
         }
+    }
+
+    private func debugPayloadDescription<T: Encodable>(for value: T, unavailableDescription: String) -> String {
+        (try? JSONEncoder.snakeCaseKeys.encode(value)).flatMap { String(data: $0, encoding: .utf8) } ?? unavailableDescription
+    }
+
+    private func fetchRawAuthenticatedGETResponse(url: URL, token: String) async throws -> String {
+        let request = dependencies.api.createAuthenticatedGetRequest(url: url, authToken: token)
+        let result = try await request.execute()
+        guard let body = result.data else {
+            throw SyncError.noResponseBody
+        }
+        return Self.prettyJSONString(from: body) ?? String(data: body, encoding: .utf8) ?? "<unable to decode response body>"
+    }
+
+    private static func prettyJSONString(from data: Data) -> String? {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: data),
+            let prettyData = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
+        else {
+            return nil
+        }
+        return String(data: prettyData, encoding: .utf8)
     }
 
     // MARK: -
@@ -679,7 +820,8 @@ public class DDGSync: DDGSyncing {
 
     private func handleUnauthenticatedAndMap(_ error: Error,
                                              policy: UnauthenticatedHandling = .logoutOn401) -> Error {
-        guard let syncError = error as? SyncError,
+        let mappedSyncError = syncError(from: error)
+        guard let syncError = mappedSyncError,
               case .unexpectedStatusCode(let statusCode) = syncError,
               statusCode == 401 else {
             return error
@@ -689,17 +831,40 @@ public class DDGSync: DDGSyncing {
             return error
         }
 
+        let originalError = error
         do {
             try removeAccount(reason: .unauthenticatedRequest)
-            throw SyncError.unauthenticatedWhileLoggedIn
         } catch {
             Logger.sync.error("Failed to delete account upon unauthenticated server response: \(error.localizedDescription, privacy: .public)")
+            if originalError is ThirdPartyScopedPasswordPreparationError {
+                return originalError
+            }
             if error is SyncError {
                 return error
-            } else {
-                return SyncError.failedToRemoveAccount
             }
+            return SyncError.failedToRemoveAccount
         }
+        if originalError is ThirdPartyScopedPasswordPreparationError {
+            return originalError
+        }
+        return SyncError.unauthenticatedWhileLoggedIn
+    }
+
+    private func syncError(from error: Error) -> SyncError? {
+        if let syncError = error as? SyncError {
+            return syncError
+        }
+        if let error = error as? ThirdPartyScopedPasswordPreparationError {
+            return error.underlyingSyncError
+        }
+        return nil
+    }
+
+    private func preparationError(stage: ThirdPartyScopedPasswordPreparationStage, underlyingError: Error) -> Error {
+        if let error = underlyingError as? ThirdPartyScopedPasswordPreparationError {
+            return error
+        }
+        return ThirdPartyScopedPasswordPreparationError(stage: stage, underlyingError: underlyingError)
     }
 
     private var startSyncCancellable: AnyCancellable?

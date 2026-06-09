@@ -19,6 +19,87 @@
 import CryptoKit
 import Foundation
 
+enum ThirdPartyScopedPasswordPreparationStage: String, Equatable {
+    case accountUnavailableForThirdPartyRecoveryCode
+    case ensureThirdPartyScopedPasswordForRecoveryCode
+    case makeThirdPartyRecoveryCode
+    case fetchAccessCredentials
+    case recoverScopedPassword
+    case scopedPasswordForNewThirdPartyCredential
+    case fetchProtectedKeysForThirdPartyCredential
+    case makeDefaultCredentialProtectedKey
+    case missingTokenForThirdPartyAccessCredential
+    case extractLoginInfoForThirdPartyAccessCredential
+    case encryptThirdPartyAccessCredential
+    case prepareAccessCredentialProtectedKeys
+    case postThirdPartyAccessCredential
+    case refetchAccessCredentialsAfterCredentialConflict
+    case recoverScopedPasswordAfterCredentialConflict
+    case scopedPasswordMissingAfterCredentialConflict
+}
+
+struct ThirdPartyScopedPasswordPreparationError: LocalizedError, CustomNSError {
+
+    static var errorDomain: String {
+        "DDGSync.ThirdPartyScopedPasswordPreparation"
+    }
+
+    let stage: ThirdPartyScopedPasswordPreparationStage
+    let underlyingError: Error
+
+    var errorCode: Int {
+        switch stage {
+        case .accountUnavailableForThirdPartyRecoveryCode:
+            return 1
+        case .ensureThirdPartyScopedPasswordForRecoveryCode:
+            return 2
+        case .makeThirdPartyRecoveryCode:
+            return 3
+        case .fetchAccessCredentials:
+            return 4
+        case .recoverScopedPassword:
+            return 5
+        case .scopedPasswordForNewThirdPartyCredential:
+            return 6
+        case .fetchProtectedKeysForThirdPartyCredential:
+            return 7
+        case .makeDefaultCredentialProtectedKey:
+            return 8
+        case .missingTokenForThirdPartyAccessCredential:
+            return 9
+        case .extractLoginInfoForThirdPartyAccessCredential:
+            return 10
+        case .encryptThirdPartyAccessCredential:
+            return 11
+        case .prepareAccessCredentialProtectedKeys:
+            return 12
+        case .postThirdPartyAccessCredential:
+            return 13
+        case .refetchAccessCredentialsAfterCredentialConflict:
+            return 14
+        case .recoverScopedPasswordAfterCredentialConflict:
+            return 15
+        case .scopedPasswordMissingAfterCredentialConflict:
+            return 16
+        }
+    }
+
+    var errorDescription: String? {
+        "Third-party scoped password preparation failed at \(stage.rawValue): \(String(reflecting: underlyingError))"
+    }
+
+    var errorUserInfo: [String: Any] {
+        [
+            NSLocalizedDescriptionKey: errorDescription ?? "",
+            NSUnderlyingErrorKey: underlyingError as NSError
+        ]
+    }
+
+    var underlyingSyncError: SyncError? {
+        underlyingError as? SyncError
+    }
+}
+
 struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
 
     let endpoints: Endpoints
@@ -41,20 +122,46 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
     func ensureThirdPartyScopedPassword(for account: SyncAccount,
                                         purpose: String,
                                         cachedScopedPassword: () throws -> Data?) async throws -> EnsuredThirdPartyCredential {
-        let accessCredentials = try await fetchAccessCredentials(account)
-        if let scopedPassword = try recoverScopedPassword(from: accessCredentials, primaryKey: account.primaryKey, userID: account.userId) {
-            return EnsuredThirdPartyCredential(scopedPassword: scopedPassword, protectedKeysToCache: [])
+        let accessCredentials: [AccessCredential]
+        do {
+            accessCredentials = try await fetchAccessCredentials(account)
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .fetchAccessCredentials, underlyingError: error)
         }
 
-        let scopedPassword = try scopedPasswordForNewThirdPartyCredential(cachedScopedPassword: cachedScopedPassword)
-        let keyPreparation = try await protectedKeysForThirdPartyCredential(purpose: purpose,
-                                                                            account: account)
-        let ensuredScopedPassword = try await ensureThirdPartyAccessCredential(for: account,
-                                                                              scopedPassword: scopedPassword,
-                                                                              keys: keyPreparation.protectedKeys,
-                                                                              shouldUploadDefaultCredentialKeys: keyPreparation.shouldUploadDefaultCredentialKeys)
-        return EnsuredThirdPartyCredential(scopedPassword: ensuredScopedPassword,
-                                           protectedKeysToCache: keyPreparation.protectedKeysToCache)
+        do {
+            if let scopedPassword = try recoverScopedPassword(from: accessCredentials, primaryKey: account.primaryKey, userID: account.userId) {
+                return EnsuredThirdPartyCredential(scopedPassword: scopedPassword, protectedKeysToCache: [])
+            }
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .recoverScopedPassword, underlyingError: error)
+        }
+
+        let scopedPassword: Data
+        do {
+            scopedPassword = try scopedPasswordForNewThirdPartyCredential(cachedScopedPassword: cachedScopedPassword)
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .scopedPasswordForNewThirdPartyCredential, underlyingError: error)
+        }
+
+        let keyPreparation: ProtectedKeysForThirdPartyCredential
+        do {
+            keyPreparation = try await protectedKeysForThirdPartyCredential(purpose: purpose,
+                                                                           account: account)
+        } catch {
+            throw preparationError(stage: .fetchProtectedKeysForThirdPartyCredential, underlyingError: error)
+        }
+
+        do {
+            let ensuredScopedPassword = try await ensureThirdPartyAccessCredential(for: account,
+                                                                                  scopedPassword: scopedPassword,
+                                                                                  keys: keyPreparation.protectedKeys,
+                                                                                  shouldUploadDefaultCredentialKeys: keyPreparation.shouldUploadDefaultCredentialKeys)
+            return EnsuredThirdPartyCredential(scopedPassword: ensuredScopedPassword,
+                                               protectedKeysToCache: keyPreparation.protectedKeysToCache)
+        } catch {
+            throw preparationError(stage: .postThirdPartyAccessCredential, underlyingError: error)
+        }
     }
 
     func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String? {
@@ -76,27 +183,49 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         }
     }
 
+    private func preparationError(stage: ThirdPartyScopedPasswordPreparationStage, underlyingError: Error) -> Error {
+        if let error = underlyingError as? ThirdPartyScopedPasswordPreparationError {
+            return error
+        }
+        return ThirdPartyScopedPasswordPreparationError(stage: stage, underlyingError: underlyingError)
+    }
+
     private func ensureThirdPartyAccessCredential(for account: SyncAccount,
                                                   scopedPassword: Data,
                                                   keys protectedKeys: [ProtectedKey],
                                                   shouldUploadDefaultCredentialKeys: Bool) async throws -> Data {
         guard let token = account.token else {
-            throw SyncError.noToken
+            throw ThirdPartyScopedPasswordPreparationError(stage: .missingTokenForThirdPartyAccessCredential, underlyingError: SyncError.noToken)
         }
 
-        let existingCredentialInfo = try crypter.extractLoginInfo(recoveryKey: SyncCode.RecoveryKey(userId: account.userId, primaryKey: account.primaryKey))
+        let existingCredentialInfo: ExtractedLoginInfo
+        do {
+            existingCredentialInfo = try crypter.extractLoginInfo(recoveryKey: SyncCode.RecoveryKey(userId: account.userId, primaryKey: account.primaryKey))
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .extractLoginInfoForThirdPartyAccessCredential, underlyingError: error)
+        }
         let hashedPassword = existingCredentialInfo.passwordHash.base64EncodedString()
         let credentialHashedPassword = ScopedAccessKeyDerivation.hashedPassword(from: scopedPassword, userID: account.userId)
         let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: account.primaryKey, userID: account.userId)
-        let encryptedThirdPartyCredentialToken = try scopedAccessCredentialEnvelope.encryptScopedPassword(scopedPassword,
+        let encryptedThirdPartyCredentialToken: String
+        do {
+            encryptedThirdPartyCredentialToken = try scopedAccessCredentialEnvelope.encryptScopedPassword(scopedPassword,
                                                                                                           using: defaultCredentialMainKey,
                                                                                                           kid: SyncCredentialID.defaultCredential)
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .encryptThirdPartyAccessCredential, underlyingError: error)
+        }
 
-        let createCredentialKeys = try accessCredentialProtectedKeys(from: protectedKeys,
+        let createCredentialKeys: [ProtectedKey]
+        do {
+            createCredentialKeys = try accessCredentialProtectedKeys(from: protectedKeys,
                                                                      scopedPassword: scopedPassword,
                                                                      account: account,
                                                                      shouldUploadDefaultCredentialKeys: shouldUploadDefaultCredentialKeys)
-            .removingDuplicateWrappingIdentities()
+                .removingDuplicateWrappingIdentities()
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .prepareAccessCredentialProtectedKeys, underlyingError: error)
+        }
 
         do {
             try await postThirdPartyAccessCredential(token: token,
@@ -105,11 +234,23 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
                                                      encryptedThirdPartyCredential: encryptedThirdPartyCredentialToken,
                                                      keys: createCredentialKeys)
         } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 409 {
-            let accessCredentials = try await fetchAccessCredentials(account)
-            if let scopedPassword = try recoverScopedPassword(from: accessCredentials, primaryKey: account.primaryKey, userID: account.userId) {
-                return scopedPassword
+            let accessCredentials: [AccessCredential]
+            do {
+                accessCredentials = try await fetchAccessCredentials(account)
+            } catch {
+                throw ThirdPartyScopedPasswordPreparationError(stage: .refetchAccessCredentialsAfterCredentialConflict, underlyingError: error)
             }
-            throw SyncError.unexpectedStatusCode(statusCode)
+            do {
+                if let scopedPassword = try recoverScopedPassword(from: accessCredentials, primaryKey: account.primaryKey, userID: account.userId) {
+                    return scopedPassword
+                }
+            } catch {
+                throw ThirdPartyScopedPasswordPreparationError(stage: .recoverScopedPasswordAfterCredentialConflict, underlyingError: error)
+            }
+            throw ThirdPartyScopedPasswordPreparationError(stage: .scopedPasswordMissingAfterCredentialConflict,
+                                                          underlyingError: SyncError.unexpectedStatusCode(statusCode))
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .postThirdPartyAccessCredential, underlyingError: error)
         }
         return scopedPassword
     }
@@ -187,7 +328,12 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
 
     private func protectedKeysForThirdPartyCredential(purpose: String,
                                                       account: SyncAccount) async throws -> ProtectedKeysForThirdPartyCredential {
-        let fetchedProtectedKeys = try await fetchProtectedKeys(account)
+        let fetchedProtectedKeys: [ProtectedKey]
+        do {
+            fetchedProtectedKeys = try await fetchProtectedKeys(account)
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .fetchProtectedKeysForThirdPartyCredential, underlyingError: error)
+        }
         let fetchedDefaultCredentialKeys = defaultCredentialKeys(in: fetchedProtectedKeys)
         if fetchedDefaultCredentialKeys.contains(where: { $0.purpose == purpose }) {
             return ProtectedKeysForThirdPartyCredential(protectedKeys: protectedKeys(for: purpose, in: fetchedProtectedKeys),
@@ -195,7 +341,12 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
                                                         protectedKeysToCache: fetchedProtectedKeys)
         }
 
-        let protectedKey = try makeDefaultCredentialProtectedKey(purpose: purpose, account: account)
+        let protectedKey: ProtectedKey
+        do {
+            protectedKey = try makeDefaultCredentialProtectedKey(purpose: purpose, account: account)
+        } catch {
+            throw ThirdPartyScopedPasswordPreparationError(stage: .makeDefaultCredentialProtectedKey, underlyingError: error)
+        }
         return ProtectedKeysForThirdPartyCredential(protectedKeys: [protectedKey],
                                                     shouldUploadDefaultCredentialKeys: true,
                                                     protectedKeysToCache: fetchedProtectedKeys + [protectedKey])

@@ -744,11 +744,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .syncScopedAccessCredentials:
-            Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
         case .syncCanUseV2ConnectFlow:
-            Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
         case .syncCanShowV2ConnectCode:
-            Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         }
     }
 

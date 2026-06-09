@@ -162,6 +162,7 @@ public class SyncConnectionController: SyncConnectionControlling {
     private let deviceType: String
     private let syncService: DDGSyncing
     private let dependencies: SyncDependencies
+    private let pairingV2DebugLogHandler: PairingV2DebugLogHandler?
 
     private weak var delegate: SyncConnectionControllerDelegate?
 
@@ -175,12 +176,18 @@ public class SyncConnectionController: SyncConnectionControlling {
         dependencies.syncFeatureFlags.isPairingV2ScanningEnabled()
     }
 
-    init(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate? = nil, syncService: DDGSyncing, dependencies: SyncDependencies) {
+    init(deviceName: String,
+         deviceType: String,
+         delegate: SyncConnectionControllerDelegate? = nil,
+         syncService: DDGSyncing,
+         dependencies: SyncDependencies,
+         pairingV2DebugLogHandler: PairingV2DebugLogHandler? = nil) {
         self.deviceName = deviceName
         self.deviceType = deviceType
         self.syncService = syncService
         self.delegate = delegate
         self.dependencies = dependencies
+        self.pairingV2DebugLogHandler = pairingV2DebugLogHandler
     }
 
     public func startExchangeMode() async throws -> PairingInfo {
@@ -387,7 +394,9 @@ public class SyncConnectionController: SyncConnectionControlling {
             guard error != .cancelled else {
                 return false
             }
-            await delegate?.controllerDidError(pairingV2ConnectionError(for: error), underlyingError: nil, setupRole: setupRole)
+            await delegate?.controllerDidError(pairingV2ConnectionError(for: error),
+                                               underlyingError: pairingV2DiagnosticUnderlyingError(for: error, coordinator: coordinator),
+                                               setupRole: setupRole)
             await coordinator.cancel()
             return false
         } catch PairingV2MessageCryptoError.unsupportedVersion(let version) {
@@ -444,7 +453,9 @@ public class SyncConnectionController: SyncConnectionControlling {
                 guard error != .cancelled else {
                     return
                 }
-                await delegate?.controllerDidError(pairingV2ConnectionError(for: error), underlyingError: nil, setupRole: setupRole)
+                await delegate?.controllerDidError(pairingV2ConnectionError(for: error),
+                                                   underlyingError: pairingV2DiagnosticUnderlyingError(for: error, coordinator: coordinator) ?? error,
+                                                   setupRole: setupRole)
                 await coordinator.cancel()
             } catch PairingV2MessageCryptoError.unsupportedVersion(let version) {
                 await delegate?.controllerDidError(
@@ -677,6 +688,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             deviceType: deviceType,
             flags: PairingV2RolloutFlags(isV2ScanningEnabled: isPairingV2ScanningEnabled,
                                          isV2CodeEnabled: isPairingV2PresentationEnabled),
+            debugLogHandler: pairingV2DebugLogHandler,
             confirmationDelegate: self
         )
     }
@@ -720,6 +732,14 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
         return .updateRequired
     }
+
+    private func pairingV2DiagnosticUnderlyingError(for error: PairingV2Error, coordinator: PairingV2Coordinator) -> Error? {
+        guard error == .recoveryCodePreparationFailed else {
+            return nil
+        }
+        return coordinator.recoveryCodePreparationFailureError
+    }
+
 }
 
 @MainActor

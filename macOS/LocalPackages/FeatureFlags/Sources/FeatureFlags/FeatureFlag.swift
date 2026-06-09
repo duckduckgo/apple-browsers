@@ -681,11 +681,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSettingsLinkInAiFeatures:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.settingsLinkInAiFeatures), category: .duckAI)
         case .syncScopedAccessCredentials:
-            Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials), category: .sync)
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials), category: .sync)
         case .syncCanUseV2ConnectFlow:
-            Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow), category: .sync)
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow), category: .sync)
         case .syncCanShowV2ConnectCode:
-            Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
         }
     }
 

@@ -277,6 +277,70 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
 public protocol DDGSyncingDebuggingSupport {
     var serverEnvironment: ServerEnvironment { get }
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment)
+    func createDebugConnectionController(deviceName: String,
+                                         deviceType: String,
+                                         delegate: SyncConnectionControllerDelegate,
+                                         pairingV2DebugLogHandler: @escaping PairingV2DebugLogHandler) -> SyncConnectionControlling
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String
+    func fetchProtectedKeys() async throws -> [ProtectedKey]
+    func fetchAccessCredentials() async throws -> [AccessCredential]
+    func fetchDevicesRawResponse() async throws -> String
+    func fetchProtectedKeysRawResponse() async throws -> String
+    func fetchAccessCredentialsRawResponse() async throws -> String
+}
+
+public typealias PairingV2DebugLogHandler = (PairingV2DebugLogEntry) -> Void
+
+public struct PairingV2DebugLogEntry {
+    public enum Kind: Equatable {
+        case summary
+        case raw
+    }
+
+    public let kind: Kind
+    public let message: String
+
+    public init(kind: Kind, message: String) {
+        self.kind = kind
+        self.message = message
+    }
+}
+
+public extension DDGSyncingDebuggingSupport {
+    func createDebugConnectionController(deviceName: String,
+                                         deviceType: String,
+                                         delegate: SyncConnectionControllerDelegate,
+                                         pairingV2DebugLogHandler: @escaping PairingV2DebugLogHandler) -> SyncConnectionControlling {
+        if let syncService = self as? DDGSyncing {
+            return syncService.createConnectionController(deviceName: deviceName, deviceType: deviceType, delegate: delegate)
+        }
+        fatalError("Debug connection controller is not implemented for this sync service")
+    }
+
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
+        _ = purpose
+        throw SyncError.failedToEncryptValue("Debug scoped access credentials are not implemented for this sync service")
+    }
+
+    func fetchProtectedKeys() async throws -> [ProtectedKey] {
+        throw SyncError.failedToEncryptValue("Debug scoped access credentials are not implemented for this sync service")
+    }
+
+    func fetchAccessCredentials() async throws -> [AccessCredential] {
+        throw SyncError.failedToEncryptValue("Debug scoped access credentials are not implemented for this sync service")
+    }
+
+    func fetchDevicesRawResponse() async throws -> String {
+        throw SyncError.failedToEncryptValue("Debug devices response is not implemented for this sync service")
+    }
+
+    func fetchProtectedKeysRawResponse() async throws -> String {
+        throw SyncError.failedToEncryptValue("Debug protected keys response is not implemented for this sync service")
+    }
+
+    func fetchAccessCredentialsRawResponse() async throws -> String {
+        throw SyncError.failedToEncryptValue("Debug access credentials response is not implemented for this sync service")
+    }
 }
 
 public enum ServerEnvironment: LosslessStringConvertible {

@@ -576,6 +576,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         // MARK: -
 
         let loopDetector = ConnectionFailureLoopDetector(store: defaults)
+        let heartbeatStore = TunnelHeartbeatStore(store: defaults)
 
         let tunnelHealthStore = NetworkProtectionTunnelHealthStore(notificationCenter: notificationCenter)
         let notificationsPresenter = NetworkProtectionNotificationsPresenterFactory().make(settings: settings, defaults: defaults)
@@ -593,7 +594,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    defaults: defaults,
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
-                   loopDetector: loopDetector)
+                   loopDetector: loopDetector,
+                   heartbeatStore: heartbeatStore)
 
         setupPixels()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")

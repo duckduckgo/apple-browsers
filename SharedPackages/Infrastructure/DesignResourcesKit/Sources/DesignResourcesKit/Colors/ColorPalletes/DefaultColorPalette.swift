@@ -359,6 +359,8 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.16), darkColor: RebrandingColor.GrayScale.white.opacity(0.09))
         case .backgroundAccent:
             return DynamicColor(lightColor: Color(0x7295F6).opacity(0.20), darkColor: Color(0x8FABF9).opacity(0.20))
+        case .alertGreen:
+            return DynamicColor(staticColor: RebrandingColor.Green.green40)
         }
     }
 

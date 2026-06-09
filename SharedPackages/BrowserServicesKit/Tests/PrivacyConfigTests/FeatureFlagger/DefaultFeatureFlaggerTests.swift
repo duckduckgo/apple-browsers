@@ -475,6 +475,17 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         XCTAssertTrue(overrides.overrideCalls.isEmpty)
     }
 
+    func testWhenAllowOverridesClosureReturnsTrueAndUserIsNotInternalThenLocalOverrideIsRespected() throws {
+        internalUserDeciderStore.isInternalUser = false
+        let featureFlagger = createFeatureFlaggerWithLocalOverrides(allowOverrides: { true })
+
+        overrides.override = { _ in return true }
+
+        XCTAssertTrue(featureFlagger.isFeatureOn(for: TestFeatureFlag.overridableFlagDisabledByDefault))
+        XCTAssertEqual(overrides.overrideCalls.count, 1)
+        XCTAssertEqual(try XCTUnwrap(overrides.overrideCalls.first as? TestFeatureFlag), .overridableFlagDisabledByDefault)
+    }
+
     // MARK: - Helpers
 
     private func createFeatureFlagger(withMockedConfigData data: Data = DefaultFeatureFlaggerTests.embeddedConfig()) -> DefaultFeatureFlagger {
@@ -488,7 +499,8 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         return DefaultFeatureFlagger(internalUserDecider: internalUserDecider, privacyConfigManager: manager, experimentManager: experimentManager)
     }
 
-    private func createFeatureFlaggerWithLocalOverrides(withMockedConfigData data: Data = DefaultFeatureFlaggerTests.embeddedConfig()) -> DefaultFeatureFlagger {
+    private func createFeatureFlaggerWithLocalOverrides(withMockedConfigData data: Data = DefaultFeatureFlaggerTests.embeddedConfig(),
+                                                        allowOverrides: (() -> Bool)? = nil) -> DefaultFeatureFlagger {
         let mockEmbeddedData = MockEmbeddedDataProvider(data: data, etag: "embeddedConfigETag")
         let manager = PrivacyConfigurationManager(fetchedETag: nil,
                                                   fetchedData: nil,
@@ -501,6 +513,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         return DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
                                      privacyConfigManager: manager,
                                      localOverrides: overrides,
+                                     allowOverrides: allowOverrides,
                                      experimentManager: nil,
                                      for: TestFeatureFlag.self)
     }

@@ -74,7 +74,7 @@ final class UnifiedToggleInputView: UIView {
         // `.collapsed` layout — UTI mimics the regular omnibar pill so the snap between the two
         // surfaces reads as one continuous element.
         static let collapsedCardHeight: CGFloat = 44
-        static let cardCornerRadiusCollapsed: CGFloat = 16
+        static var cardCornerRadiusCollapsed: CGFloat { OmniBarMetrics.cornerRadius }
         static let collapsedCardTopMargin: CGFloat = 10
         static let collapsedCardBottomMargin: CGFloat = 6
         // `.flanked` layout — 48pt capsule sized to match the fire/voice accessory height.

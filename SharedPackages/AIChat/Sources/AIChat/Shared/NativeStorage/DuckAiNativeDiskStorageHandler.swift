@@ -116,7 +116,7 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, 
     }
 
     // MARK: - Private Helpers
-    
+
     /// Atomically inserts `chatId` into the reserved `locallyDeletedChatIds` entry so the Duck.ai web app can read it via `getEntry`
     private func markChatLocallyDeleted(chatId: String) throws {
         try updateEntry(key: .locallyDeletedChatIds) { settings in

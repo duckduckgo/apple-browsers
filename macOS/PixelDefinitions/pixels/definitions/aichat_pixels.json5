@@ -12,7 +12,7 @@
                 "key": "source",
                 "description": "What triggered the sidebar to open",
                 "type": "string",
-                "enum": ["address-bar-button", "summarization", "serp", "context-menu", "translation", "tabbar-button"]
+                "enum": ["address-bar-button", "summarization", "serp", "context-menu", "translation", "attach-selection", "tabbar-button"]
             },
             {
                 "key": "automaticPageContext",
@@ -38,6 +38,13 @@
     "m_mac_aichat_translation_source_link_clicked": {
         "description": "Fired when user clicks the website link on a translation prompt in Duck.ai tab or sidebar",
         "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_attach_selection": {
+        "description": "Fired when the user attaches a text selection to Duck.ai via the 'Attach to Duck.ai' context-menu action",
+        "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]

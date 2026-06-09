@@ -125,8 +125,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
     case aiChatOmnibarOnboarding
 
-    /// macOS only, on by default. Gates whether the onboarding Search/Duck.ai toggle choice also
-    /// affects the New Tab Page search-mode toggle and the duckduckgo.com homepage.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215385527516382?focus=true
     case aiChatOnboardingToggleAffectsNtpAndDdg
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134

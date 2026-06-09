@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import SwiftUI
 import DesignResourcesKit
 import Combine
 import PrivacyConfig
@@ -113,6 +114,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let duckAIStateRelay = CurrentValueSubject<UnifiedSuggestionsInputsMerger.DuckAIState?, Never>(nil)
     /// Bridges `duckAISurface.statePublisher → duckAIStateRelay`; cleared on detach.
     private var duckAIRelayCancellables = Set<AnyCancellable>()
+    /// Duck.ai sync-promo presenter; nil when there's no sync service.
+    private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
+        syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
     private var isContentActive = false
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
@@ -709,6 +713,39 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible, committedMode: switchBarHandler.currentToggleState)
         daxLogoManager.setEscapeHatchBaseOffset(daxVerticalOffset(hasEscapeHatch: escapeHatchModel != nil))
+        updateSyncPromo()
+    }
+
+    /// Shows the Duck.ai sync-promo card below the escape hatch in the not-typing state, mirroring
+    /// the legacy Duck.ai suggestions header. Gated by the sync-promo manager + recents count.
+    private func updateSyncPromo() {
+        guard let promoViewModel = aiChatSyncPromoViewModel, let host = unifiedSuggestionsHost else { return }
+        // Install the card once (the host guards on presence); its show/hide is then a reactive,
+        // animated view-model change so it fades with the content crossfade instead of snapping.
+        host.setSyncPromo(AnyView(AIChatSyncPromoView(
+            onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
+            onCloseTap: { [weak self] in self?.handleSyncPromoClose() })))
+
+        let isTyping = !switchBarHandler.currentText.isEmpty
+        let shouldShow = switchBarHandler.currentToggleState == .aiChat
+            && !switchBarHandler.isFireTab
+            && (duckAISurface?.isAttached ?? false)
+            && promoViewModel.shouldShowPromo(isQueryActive: isTyping, chatCount: duckAISurface?.recentsCount ?? 0)
+
+        host.setSyncPromoVisible(shouldShow)
+        promoViewModel.recordImpressionIfNeeded(isVisibleContent: isContentActive, isPromoVisible: shouldShow)
+    }
+
+    private func handleSyncPromoCTATap() {
+        if aiChatSyncPromoViewModel?.handleCTATap() == .requestSyncSetup {
+            duckAISuggestionsDidRequestSyncSetup()
+        }
+        updateSyncPromo()
+    }
+
+    private func handleSyncPromoClose() {
+        aiChatSyncPromoViewModel?.handleCloseTap()
+        updateSyncPromo()
     }
 
     /// `toolbarCompensationOffset` shifts the dax down because the toolbar still sits under the

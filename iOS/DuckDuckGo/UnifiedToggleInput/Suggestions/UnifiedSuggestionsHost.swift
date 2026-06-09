@@ -25,6 +25,8 @@ final class UnifiedSuggestionsHost {
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
     private var escapeHatchModel: EscapeHatchModel?
+    /// Duck.ai sync-promo card shown below the escape hatch in non-typing states; nil when hidden.
+    private var syncPromo: AnyView?
     private var escapeHatchTopInset: CGFloat = 0
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
@@ -82,6 +84,7 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             header: makeHeader(),
+            syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
         let hosting = UIHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
@@ -104,6 +107,20 @@ final class UnifiedSuggestionsHost {
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         escapeHatchModel = model
         rebuildRootView()
+    }
+
+    /// Installs (or clears) the sync-promo card view. Set once when the surface is available; its
+    /// show/hide is then driven reactively by `setSyncPromoVisible` so it animates with the content.
+    func setSyncPromo(_ view: AnyView?) {
+        guard (syncPromo == nil) != (view == nil) else { return }
+        syncPromo = view
+        rebuildRootView()
+    }
+
+    /// Toggles the sync-promo's visibility. Snaps (no animation) to match the content, which also
+    /// snaps while the promo is shown.
+    func setSyncPromoVisible(_ visible: Bool) {
+        viewModel.showsSyncPromo = visible
     }
 
     func setAdditionalTopInset(_ inset: CGFloat) {
@@ -193,6 +210,7 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             header: makeHeader(),
+            syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
     }
 }

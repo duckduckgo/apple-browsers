@@ -9,8 +9,8 @@
 import DesignResourcesKit
 import SwiftUI
 
-/// The suggestions rows surface: an optional escape-hatch + sync-promo header
-/// followed by the data-driven sections. Replaces `DuckAISuggestionsViewController`'s table.
+/// The data-driven suggestion sections (the scrolling rows). The escape hatch + sync promo are
+/// chrome rendered above this by `UnifiedSuggestionsView`. Replaces `DuckAISuggestionsViewController`'s table.
 struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel

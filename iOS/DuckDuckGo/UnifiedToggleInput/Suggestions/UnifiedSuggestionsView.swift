@@ -15,6 +15,8 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let header: AnyView?
+    /// Duck.ai sync-promo card; shown below the hatch in non-typing states. nil when hidden.
+    let syncPromo: AnyView?
     /// Built lazily by the host for the `.favorites` state; nil when favorites aren't supported (Duck.ai).
     let favoritesProvider: () -> NewTabPageViewController?
 
@@ -30,18 +32,28 @@ struct UnifiedSuggestionsView: View {
                     .padding(.top, hatchTopInset)
                     .padding(.bottom, Metrics.hatchBottomInset)
             }
+            if isNonTypingState, viewModel.showsSyncPromo, let syncPromo {
+                syncPromo
+                    .padding(.horizontal, Metrics.contentHorizontalMargin)
+                    .padding(.top, showsHatch ? Metrics.syncPromoInterCardSpacing : hatchTopInset)
+                    .padding(.bottom, Metrics.hatchBottomInset)
+            }
             contentArea
         }
     }
 
-    /// The hatch shows in the non-typing states (favorites / logo / recents), mirroring legacy
-    /// `isQueryActive`; the search / duck.ai suggestion lists hide it.
-    private var showsHatch: Bool {
-        guard header != nil else { return false }
+    /// The non-typing states (favorites / logo / recents), mirroring legacy `isQueryActive`; the
+    /// search / duck.ai suggestion lists are the typing states.
+    private var isNonTypingState: Bool {
         switch viewModel.content {
         case .favorites, .logo: return true
         case .list(let kind): return kind == .recents
         }
+    }
+
+    /// The hatch additionally requires a header model.
+    private var showsHatch: Bool {
+        header != nil && isNonTypingState
     }
 
     /// Top bar: the hatch sits 6pt below the input's bottom margin (Figma). Bottom bar: it keeps the
@@ -101,5 +113,7 @@ struct UnifiedSuggestionsView: View {
         static let hatchTopInsetTopBar: CGFloat = 6
         static let hatchTopInsetBottomBar: CGFloat = 16
         static let hatchBottomInset: CGFloat = 16
+        /// Gap between the escape hatch and the sync-promo card (mirrors legacy 20pt inter-card spacing).
+        static let syncPromoInterCardSpacing: CGFloat = 20
     }
 }

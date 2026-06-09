@@ -16,6 +16,9 @@ import SwiftUI
 final class UnifiedSuggestionsViewModel: ObservableObject {
 
     @Published private(set) var content: UnifiedSuggestionsContentKind = .logo
+    /// Reactive sync-promo visibility (driven by the container) so show/hide animates with the
+    /// content crossfade instead of snapping via a root-view rebuild.
+    @Published var showsSyncPromo = false
     /// The search-surface list VM. On the single-host path the duck.ai surface adds its own
     /// (see `duckAIListViewModel`); the view picks between them by content kind.
     let listViewModel: SuggestionsListViewModel
@@ -42,10 +45,11 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
 
     /// Crossfades only when a mode switch changes the content *type* (e.g. favorites↔recents,
     /// list↔logo). List↔list keeps the mounted list, and same-mode changes (typing, deletions)
-    /// stay snappy.
+    /// stay snappy. When the sync promo is showing, snap instead — crossfading the recents under the
+    /// collapsing promo card makes them flash over its space.
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool) {
         guard newContent != content else { return }
-        if modeChanged && !Self.sameCategory(content, newContent) {
+        if modeChanged && !Self.sameCategory(content, newContent) && !showsSyncPromo {
             withAnimation(.easeInOut(duration: 0.2)) { content = newContent }
         } else {
             content = newContent

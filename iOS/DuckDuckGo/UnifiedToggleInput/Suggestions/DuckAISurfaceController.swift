@@ -51,6 +51,8 @@ final class DuckAISurfaceController {
     func hasContent() -> Bool { hasContentReader?() ?? false }
     func hasSettled(forQuery query: String) -> Bool { hasSettledReader?(query) ?? false }
     func refreshRecents() { refreshRecentsAction?() }
+    /// Recent-chat count for the sync-promo gating; 0 while detached.
+    var recentsCount: Int { recentsCountReader?() ?? 0 }
 
     private let switchBarHandler: SwitchBarHandling
     private let dependencies: SuggestionTrayDependencies
@@ -64,6 +66,7 @@ final class DuckAISurfaceController {
     private var hasContentReader: (() -> Bool)?
     private var hasSettledReader: ((String) -> Bool)?
     private var refreshRecentsAction: (() -> Void)?
+    private var recentsCountReader: (() -> Int)?
 
     init(switchBarHandler: SwitchBarHandling,
          dependencies: SuggestionTrayDependencies,
@@ -155,6 +158,7 @@ final class DuckAISurfaceController {
         refreshRecentsAction = { [weak chatManager, weak self] in
             chatManager?.refreshSuggestions(query: self?.switchBarHandler.currentText ?? "")
         }
+        recentsCountReader = { [weak chatViewModel] in chatViewModel?.filteredSuggestions.count ?? 0 }
 
         host.attachDuckAISurface(surface)
     }
@@ -168,6 +172,7 @@ final class DuckAISurfaceController {
         hasContentReader = nil
         hasSettledReader = nil
         refreshRecentsAction = nil
+        recentsCountReader = nil
     }
 
     private func select(rowID id: String, source: DuckAISuggestionsSource) {

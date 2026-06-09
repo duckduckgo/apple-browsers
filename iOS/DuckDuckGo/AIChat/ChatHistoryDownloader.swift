@@ -24,14 +24,16 @@ import Foundation
 /// pure `ChatExporter`, gathers any image bytes referenced by image-generation chats, and
 /// hands the resulting payload to the file writer. Mirrors Android's
 /// `ChatHistoryRepository.exportChat` flow.
-@MainActor
 protocol ChatHistoryDownloading {
     /// Export the chat identified by `chatId` to the Downloads directory. Returns the
     /// URL of the written file on success; throws on storage / format / I/O failure.
+    ///
+    /// Implementations may do meaningful I/O — native-storage reads, base64 image decoding,
+    /// zip writing. Callers should invoke off the main thread for image-generation chats so
+    /// the UI doesn't freeze during the export.
     func downloadChat(chatId: String) throws -> URL
 }
 
-@MainActor
 struct ChatHistoryDownloader: ChatHistoryDownloading {
 
     enum DownloadError: Error, Equatable {

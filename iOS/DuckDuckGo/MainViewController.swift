@@ -5565,28 +5565,41 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
     }
 
     func viewModelDidRequestDownloadChat(chatId: String) {
-        let downloader = ChatHistoryDownloader(storageHandler: duckAiNativeStorageHandler)
-        do {
-            let url = try downloader.downloadChat(chatId: chatId)
-            let message = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: url.lastPathComponent)
-            let addressBarBottom = appSettings.currentAddressBarPosition.isBottom
-            ActionMessageView.present(
-                message: message,
-                numberOfLines: 2,
-                actionTitle: UserText.actionGenericShow,
-                presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
-                onAction: { [weak self] in
-                    // Dismiss the chat-history sheet, then open the in-app Downloads list —
-                    // same destination the in-browser "Download complete" toast routes to.
-                    self?.dismiss(animated: true) { [weak self] in
-                        self?.segueToDownloads()
-                    }
+        // The export does meaningful work for image-generation chats — multiple SQLite reads,
+        // base64-decoding each image (~hundreds of KB apiece), zip writing. Running on the
+        // main thread freezes the chat-history sheet for the duration. Dispatch off main,
+        // hop back to present the toast.
+        let storageHandler = duckAiNativeStorageHandler
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let downloader = ChatHistoryDownloader(storageHandler: storageHandler)
+            do {
+                let url = try downloader.downloadChat(chatId: chatId)
+                DispatchQueue.main.async { [weak self] in
+                    self?.presentChatDownloadCompleteToast(filename: url.lastPathComponent)
                 }
-            )
-        } catch {
-            Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
-            // Failure-state toast lands with the pixels-pass follow-up (task #28).
+            } catch {
+                Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
+                // Failure-state toast lands with the pixels-pass follow-up (task #28).
+            }
         }
+    }
+
+    private func presentChatDownloadCompleteToast(filename: String) {
+        let message = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: filename)
+        let addressBarBottom = appSettings.currentAddressBarPosition.isBottom
+        ActionMessageView.present(
+            message: message,
+            numberOfLines: 2,
+            actionTitle: UserText.actionGenericShow,
+            presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+            onAction: { [weak self] in
+                // Dismiss the chat-history sheet, then open the in-app Downloads list —
+                // same destination the in-browser "Download complete" toast routes to.
+                self?.dismiss(animated: true) { [weak self] in
+                    self?.segueToDownloads()
+                }
+            }
+        )
     }
 }
 

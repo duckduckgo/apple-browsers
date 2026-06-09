@@ -8,6 +8,8 @@
 
 import BrowserServicesKit
 import Combine
+import Common
+import Foundation
 import Suggestions
 
 /// Drives `SuggestionLoader` for the Search surface and publishes the latest result.
@@ -19,14 +21,29 @@ final class SearchSuggestionsLoader {
     private(set) var lastCompletedFetchQuery: String?
 
     private let dataSource: SuggestionLoadingDataSource
+    private let useUnifiedURLPrediction: Bool
     private var loader: SuggestionLoader?
     private var latestDispatchedQuery: String?
     private var cancellables = Set<AnyCancellable>()
 
     private static let debounceMilliseconds = 100
 
-    init(dataSource: SuggestionLoadingDataSource) {
+    init(dataSource: SuggestionLoadingDataSource, useUnifiedURLPrediction: Bool) {
         self.dataSource = dataSource
+        self.useUnifiedURLPrediction = useUnifiedURLPrediction
+    }
+
+    /// Mirrors legacy `AutocompleteViewController`: always load suggestions, except when the user has
+    /// typed a "complete" root URL (http[s], no path, trailing "/") — then keep the typed URL as-is.
+    private func shouldLoadSuggestions(for phrase: String) -> Bool {
+        guard let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: useUnifiedURLPrediction),
+              url.isValid(usingUnifiedLogic: useUnifiedURLPrediction) else {
+            return true
+        }
+        if let scheme = url.scheme, scheme.description.hasPrefix("http"), url.isRoot, phrase.last == "/" {
+            return false
+        }
+        return true
     }
 
     func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
@@ -45,7 +62,9 @@ final class SearchSuggestionsLoader {
             lastCompletedFetchQuery = query
             return
         }
-        loader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { _ in true }, isUrlIgnored: { _ in false })
+        loader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { [weak self] phrase in
+            self?.shouldLoadSuggestions(for: phrase) ?? true
+        }, isUrlIgnored: { _ in false })
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, _ in
             guard let self, self.latestDispatchedQuery == query else { return }
             self.lastCompletedFetchQuery = query

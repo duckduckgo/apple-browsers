@@ -22,6 +22,9 @@ import UIKit
 /// Installs left/right flick recognizers that switch Search↔Duck.ai (Search is the left page),
 /// mirroring a toggle tap. A quick flick triggers it; slow horizontal drags (e.g. row
 /// swipe-to-delete) don't. The recognizers don't retain this controller — the owner must.
+///
+/// Recognizes simultaneously with descendant scroll views (favorites collection view, suggestion
+/// list) so a horizontal flick still switches mode even when it lands on scrollable content.
 @MainActor
 final class ModeSwitchSwipeGestureController: NSObject {
 
@@ -35,12 +38,25 @@ final class ModeSwitchSwipeGestureController: NSObject {
         for direction in [UISwipeGestureRecognizer.Direction.left, .right] {
             let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:)))
             swipe.direction = direction
-            swipe.cancelsTouchesInView = false
+            // Cancel the underlying touch once the swipe is recognized so a flick doesn't also fire a
+            // row tap / favorite selection. (A sub-threshold movement never recognizes, so taps and
+            // scrolls are unaffected.)
+            swipe.cancelsTouchesInView = true
+            swipe.delegate = self
             view.addGestureRecognizer(swipe)
         }
     }
 
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
         onSwitch(gesture.direction == .left ? .aiChat : .search)
+    }
+}
+
+extension ModeSwitchSwipeGestureController: UIGestureRecognizerDelegate {
+    /// Coexist with every other recognizer (scroll pans AND the SwiftUI/favorites content gesture)
+    /// so a horizontal flick is always recognized; `cancelsTouchesInView` then stops it co-firing a tap.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        true
     }
 }

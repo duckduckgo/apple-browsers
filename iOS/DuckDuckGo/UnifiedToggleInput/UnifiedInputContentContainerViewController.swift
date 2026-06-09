@@ -375,7 +375,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         ) { request, completion in
             requestRunner.run(request, completion: completion)
         }
-        let loader = SearchSuggestionsLoader(dataSource: dataSource)
+        let loader = SearchSuggestionsLoader(dataSource: dataSource, useUnifiedURLPrediction: featureFlagger.isFeatureOn(.unifiedURLPredictor))
 
         let source = SearchSuggestionsSource(
             loader: loader,

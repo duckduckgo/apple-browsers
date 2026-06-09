@@ -19,6 +19,10 @@ struct SuggestionsListView: View {
     private enum Metrics {
         /// Per Figma: the list table sits 6pt below the top-positioned input's bottom margin.
         static let listTopInset: CGFloat = 6
+        /// Per Figma: single-line rows use 15pt top/bottom padding; rows with a subtitle use 14pt
+        static let rowVerticalPaddingSingleLine: CGFloat = 15
+        static let rowVerticalPaddingWithSubtitle: CGFloat = 14
+        static let rowHorizontalInset: CGFloat = 12
     }
 
     var body: some View {
@@ -53,8 +57,16 @@ struct SuggestionsListView: View {
                     onTapAhead: { viewModel.tapAheadRow(id: row.id) },
                     onDelete: { viewModel.deleteRow(id: row.id) })
             }
+            .listRowInsets(rowInsets(for: row))
             .listRowBackground(Color(designSystemColor: .surface))
         }
+    }
+
+    /// Vertical padding per Figma; horizontal inset (on top of the list's 24pt content margin) keeps
+    /// the rows aligned with the input's text + X clear button.
+    private func rowInsets(for row: SuggestionRow) -> EdgeInsets {
+        let vertical = row.subtitle == nil ? Metrics.rowVerticalPaddingSingleLine : Metrics.rowVerticalPaddingWithSubtitle
+        return EdgeInsets(top: vertical, leading: Metrics.rowHorizontalInset, bottom: vertical, trailing: Metrics.rowHorizontalInset)
     }
 
     @ViewBuilder

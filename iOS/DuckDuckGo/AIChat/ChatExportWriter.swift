@@ -88,18 +88,20 @@ struct ChatExportWriter: ChatExportWriting {
             }
         )
 
+        // Image bytes go through a temp file + `addEntry(with:fileURL:)` rather than the
+        // closure-based `addEntry(provider:)` path. The provider variant requires honouring
+        // ZIPFoundation's chunking contract precisely — getting the last (short) chunk
+        // right was producing JPEGs that wouldn't decode. The file-URL variant is the
+        // well-trodden path and handles chunking internally.
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("chat-history-export-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
         for image in images {
-            let imageBytes = image.bytes
-            try archive.addEntry(
-                with: image.name,
-                type: .file,
-                uncompressedSize: Int64(imageBytes.count),
-                provider: { position, size in
-                    let start = Int(position)
-                    let end = min(start + size, imageBytes.count)
-                    return imageBytes.subdata(in: start..<end)
-                }
-            )
+            let tempURL = tempDir.appendingPathComponent(image.name)
+            try image.bytes.write(to: tempURL, options: .atomic)
+            try archive.addEntry(with: image.name, fileURL: tempURL)
         }
 
         return url

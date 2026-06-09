@@ -42,6 +42,10 @@ struct ChatHistoryDownloader: ChatHistoryDownloading {
         case chatNotFound
         /// An image referenced by an image-generation chat was missing from the file store.
         case fileNotFound(uuid: String)
+        /// The stored file payload couldn't be decoded into raw image bytes (the FE
+        /// wraps each file as a JSON params dict with a base64-encoded `data` field; this
+        /// fires when that shape isn't what we got back).
+        case fileDecodeFailed(uuid: String)
     }
 
     private let storageHandler: DuckAiNativeStorageHandling?
@@ -86,11 +90,27 @@ struct ChatHistoryDownloader: ChatHistoryDownloading {
                 guard let file = try storageHandler.getFile(uuid: uuid) else {
                     throw DownloadError.fileNotFound(uuid: uuid)
                 }
-                images.append(.init(name: "image-\(index + 1).jpeg", bytes: file.data))
+                guard let bytes = Self.decodeImageBytes(from: file.data) else {
+                    throw DownloadError.fileDecodeFailed(uuid: uuid)
+                }
+                images.append(.init(name: "image-\(index + 1).jpeg", bytes: bytes))
             }
             payload = .zip(content: content, images: images)
         }
 
         return try writer.write(payload)
+    }
+
+    /// The FE-stored file payload is a JSON params dict (see `DuckAiNativeStorageUserScript`),
+    /// where the actual bytes live in `data` as a base64 string — sometimes prefixed with a
+    /// `data:image/jpeg;base64,` URL header. Strip the header (if present) and base64-decode
+    /// to recover the raw image bytes.
+    private static func decodeImageBytes(from storedData: Data) -> Data? {
+        guard let dict = try? JSONSerialization.jsonObject(with: storedData) as? [String: Any],
+              let dataString = dict["data"] as? String else {
+            return nil
+        }
+        let base64 = dataString.split(separator: ",", maxSplits: 1).last.map(String.init) ?? dataString
+        return Data(base64Encoded: base64)
     }
 }

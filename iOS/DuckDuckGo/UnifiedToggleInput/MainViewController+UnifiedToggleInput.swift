@@ -513,6 +513,11 @@ private extension MainViewController {
     func handleModeChange(_ mode: TextEntryMode) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        postIdleSessionInstrumentation.toggleUsed()
+
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
         } else if coordinator.isAITabExpanded {
@@ -912,6 +917,10 @@ extension MainViewController {
         contentVC.onDismissRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
+                if let tab = self.tabManager.currentTabsModel.currentTab, tab.link == nil {
+                    self.ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
+                }
+                self.postIdleSessionInstrumentation.backPressed()
                 self.dismissUnifiedToggleInputOmnibarSession(coordinator: coordinator)
             } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
@@ -1136,6 +1145,10 @@ extension MainViewController {
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
         fireDirectDuckAINavigationPixelIfNeeded(for: query)
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         loadQuery(query)
     }
 

@@ -543,6 +543,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
     case nativeStoragePathMigration
+
+    /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
+    /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
+    case onboardingToggleAffectsNtpAndDdg
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

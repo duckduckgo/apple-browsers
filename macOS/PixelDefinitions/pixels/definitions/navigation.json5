@@ -46,12 +46,24 @@
         "description": "Fired when a site loading navigation completes successfully.",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
+        "suffixes": [
+            {
+                "description": "Sampling percentage (between 1 and 100 inclusive)",
+                "pattern": "^sample(?:100|0?[1-9]|[1-9][0-9])$"
+            }
+        ],
         "parameters": ["appVersion", "pixelSource", "duration", "navigation_type", "channel"]
     },
     "m_mac_site_loading_failure": {
         "description": "Fired when a site loading navigation fails.",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
+        "suffixes": [
+            {
+                "description": "Sampling percentage (between 1 and 100 inclusive)",
+                "pattern": "^sample(?:100|0?[1-9]|[1-9][0-9])$"
+            }
+        ],
         "parameters": [
             "appVersion",
             "pixelSource",

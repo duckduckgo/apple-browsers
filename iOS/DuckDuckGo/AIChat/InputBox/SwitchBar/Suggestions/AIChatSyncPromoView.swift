@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 import SwiftUI
 
 struct AIChatSyncPromoView: View {
@@ -59,7 +60,7 @@ struct AIChatSyncPromoView: View {
             .accessibilityLabel(UserText.aiChatSyncPromoCloseAccessibilityLabel)
         }
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                 .fill(Color(designSystemColor: .surface))
         )
     }

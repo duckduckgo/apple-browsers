@@ -31,6 +31,7 @@ import DDGSync
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
+import MetricBuilder
 import NetworkExtension
 import Networking
 import Onboarding
@@ -5108,7 +5109,7 @@ extension MainViewController: TabDelegate {
                 }
                 sheet.prefersGrabberVisible = grabberVisible
                 if #unavailable(iOS 26) {
-                    sheet.preferredCornerRadius = 24
+                    sheet.preferredCornerRadius = SheetMetrics.cornerRadius
                 }
             }
         }

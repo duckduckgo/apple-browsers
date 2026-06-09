@@ -21,6 +21,7 @@ import SwiftUI
 import DuckUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import MetricBuilder
 
 struct CrashCollectionOnboardingView: View {
 
@@ -58,7 +59,7 @@ struct CrashCollectionOnboardingView: View {
     var contents: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: SheetMetrics.contentSpacing) {
                     Image(rebrandable: "Breakage-Alert-128")
                         .accessibilityHidden(true)
 
@@ -94,7 +95,7 @@ struct CrashCollectionOnboardingView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
                 .padding(.vertical, 20)
             }
             .modifier(ScrollDisabledIfAvailable(isDisabled: !model.isReportVisible))

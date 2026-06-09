@@ -404,6 +404,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let providerEvents: EventMapping<Event>
     public let entitlementCheck: (() async -> Result<Bool, Error>)?
     public let loopDetector: ConnectionFailureLoopDetector
+    private let heartbeatStore: TunnelHeartbeatStore?
+    private var heartbeatTask: Task<Never, Error>? {
+        willSet { heartbeatTask?.cancel() }
+    }
+    private static let heartbeatInterval: TimeInterval = 15
 
     @MainActor
     public init(notificationsPresenter: VPNNotificationsPresenting,
@@ -432,7 +437,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 tunnelFailureMonitor: TunnelFailureMonitoring? = nil,
                 failureRecoveryHandler: FailureRecoveryHandling? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?,
-                loopDetector: ConnectionFailureLoopDetector) {
+                loopDetector: ConnectionFailureLoopDetector,
+                heartbeatStore: TunnelHeartbeatStore? = nil) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
         self.notificationsPresenter = notificationsPresenter
@@ -452,6 +458,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck
         self.loopDetector = loopDetector
+        self.heartbeatStore = heartbeatStore
 
         self.wideEvent = wideEvent ?? WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
@@ -849,6 +856,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             providerEvents.fire(.tunnelStartAttempt(.success))
             providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: .start))
             loopDetector.connectionSucceeded()
+            startHeartbeat()
             completeAndCleanupConnectionWideEvent()
         } catch {
             if loopDetector.connectionFailed(isOnDemand: startupOptions.startupMethod == .automaticOnDemand) {
@@ -965,6 +973,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     open override func stopTunnel(with reason: NEProviderStopReason) async {
         providerEvents.fire(.tunnelStopAttempt(.begin))
+        stopHeartbeat()
 
         Logger.networkProtection.log("🛑 Stopping tunnel with reason \(String(describing: reason), privacy: .public)")
 
@@ -996,6 +1005,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     func cancelTunnel(with stopError: Error) async {
         providerEvents.fire(.tunnelStopAttempt(.begin))
+        stopHeartbeat()
 
         Logger.networkProtection.error("Stopping tunnel with error \(stopError.localizedDescription, privacy: .public)")
 
@@ -1483,6 +1493,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     public override func sleep() async {
         Logger.networkProtectionSleep.log("Sleep")
+        stopHeartbeat()
         await stopMonitors()
     }
 
@@ -1505,11 +1516,26 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 try await handleAdapterStarted(startReason: .wake)
                 Logger.networkProtectionConnectionTester.log("🟢 Wake success")
                 providerEvents.fire(.tunnelWakeAttempt(.success))
+                startHeartbeat()
             } catch {
                 Logger.networkProtection.error("🔴 Wake error: \(error.localizedDescription, privacy: .public)")
                 providerEvents.fire(.tunnelWakeAttempt(.failure(error)))
             }
         }
+    }
+
+    // MARK: - Tunnel heartbeat
+
+    private func startHeartbeat() {
+        guard settings.isOrphanProxyDetectionEnabled else { return }
+        guard let heartbeatStore else { return }
+        heartbeatTask = Task.periodic(interval: Self.heartbeatInterval) { [weak heartbeatStore] in
+            heartbeatStore?.recordHeartbeat()
+        }
+    }
+
+    private func stopHeartbeat() {
+        heartbeatTask = nil
     }
 
     // MARK: - Snooze

@@ -76,10 +76,14 @@ public final class ReportSiteIssuesPresenter {
     ///
     /// - Parameters:
     ///     - domain: the domain to show in the view
-    ///     - parentWindow: the parent window to show the view in (as a sheet).  If no parent window is provided the view
-    ///         will be presented as a stand-alone modal.
+    ///     - parentWindow: the parent window to show the view in (as a sheet).
+    ///     - present: closure that presents the configured view. The caller owns how the view is
+    ///         hosted (e.g. via the app's modal-sheet presenter) and returns once it's dismissed.
     ///
-    public func show(withDomain domain: String, in parentWindow: NSWindow?) async {
+    @MainActor
+    public func show(withDomain domain: String,
+                     in parentWindow: NSWindow?,
+                     present: @MainActor (ReportSiteIssuesView, NSWindow?) async -> Void) async {
 
         guard !dontAskAgain else {
             return
@@ -101,6 +105,6 @@ public final class ReportSiteIssuesPresenter {
             dismiss()
         }
 
-        await reportIssuesView.show(in: parentWindow)
+        await present(reportIssuesView, parentWindow)
     }
 }

@@ -94,3 +94,7 @@ struct DataImportHubView: View {
     }
 
 }
+
+#Preview {
+    DataImportHubView(viewModel: DataImportHubViewModel())
+}

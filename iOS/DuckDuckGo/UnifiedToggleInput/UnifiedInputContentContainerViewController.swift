@@ -416,6 +416,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                       case .historyEntry(_, let url, _) = suggestion else { return }
                 Task {
                     await dependencies.historyManager.deleteHistoryForURL(url)
+                    Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
+                    DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
                     loader?.fetch(query: self.switchBarHandler.currentText)
                 }
             },

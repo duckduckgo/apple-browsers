@@ -33,6 +33,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
+    func unifiedToggleInputView(_ view: UnifiedToggleInputView, isDraggingToggle isDragging: Bool)
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView)
@@ -1250,6 +1251,10 @@ private extension UnifiedToggleInputView {
             if self.isExpanded {
                 self.textEntryView.becomeFirstResponder()
             }
+        }
+        toggleView.onDragStateChanged = { [weak self] isDragging in
+            guard let self else { return }
+            self.delegate?.unifiedToggleInputView(self, isDraggingToggle: isDragging)
         }
         addSubview(toggleView)
 

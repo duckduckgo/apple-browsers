@@ -21,7 +21,9 @@ import Combine
 import Foundation
 import UIKit
 import AIChat
+import Core
 import DesignResourcesKitIcons
+import os.log
 
 @MainActor
 final class AIChatHistoryViewModel: ObservableObject {
@@ -50,12 +52,23 @@ final class AIChatHistoryViewModel: ObservableObject {
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
     private let reader: ChatHistoryReading
+    private let fireExecutor: FireExecuting?
+    private let downloader: ChatHistoryDownloading?
+    private let downloadQueue: DispatchQueue
     private var cancellables: Set<AnyCancellable> = []
 
     weak var delegate: AIChatHistoryViewModelDelegate?
 
-    init(reader: ChatHistoryReading) {
+    init(
+        reader: ChatHistoryReading,
+        fireExecutor: FireExecuting? = nil,
+        downloader: ChatHistoryDownloading? = nil,
+        downloadQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated)
+    ) {
         self.reader = reader
+        self.fireExecutor = fireExecutor
+        self.downloader = downloader
+        self.downloadQueue = downloadQueue
 
         // Failures become a sentinel `.failure` so the combined publisher stays alive and
         // we can surface the error via `loadFailed` instead of terminating.
@@ -146,11 +159,29 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     func deleteChat(chatId: String) {
-        delegate?.viewModelDidRequestDeleteChat(chatId: chatId)
+        // Chat-history sheet only ever surfaces persistent chats, so deletion is never
+        // fire-mode. The reactive observer refreshes the list when the burn completes.
+        guard let fireExecutor else { return }
+        Task { @MainActor in
+            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+        }
     }
 
     func downloadChat(chatId: String) {
-        delegate?.viewModelDidRequestDownloadChat(chatId: chatId)
+        // Off-main because image-gen exports do meaningful I/O (storage reads + base64
+        // + zip writing); hop back to signal the delegate to present the toast.
+        guard let downloader else { return }
+        downloadQueue.async { [weak self] in
+            do {
+                let url = try downloader.downloadChat(chatId: chatId)
+                DispatchQueue.main.async { [weak self] in
+                    self?.delegate?.viewModelDidExportChat(filename: url.lastPathComponent)
+                }
+            } catch {
+                Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
+                // Failure-state toast pairs with the pixels-pass follow-up (task #28).
+            }
+        }
     }
 
     func updateQuery(_ newValue: String) {
@@ -201,11 +232,8 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// Dismiss the sheet and open `chatId` in Duck.ai.
     func viewModelDidRequestOpenChat(chatId: String)
 
-    /// Delete `chatId`. The sheet stays open; the observation publisher refreshes the list
-    /// once the deletion lands.
-    func viewModelDidRequestDeleteChat(chatId: String)
-
-    /// Export `chatId` to the Downloads directory and present the "Download complete" toast.
-    /// The sheet stays open.
-    func viewModelDidRequestDownloadChat(chatId: String)
+    /// A chat export finished writing to disk. Present the "Download complete" toast for
+    /// `filename` with a "Show" action that dismisses the sheet and opens the in-app
+    /// Downloads list.
+    func viewModelDidExportChat(filename: String)
 }

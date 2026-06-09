@@ -5349,7 +5349,12 @@ extension MainViewController: TabDelegate {
         // `.storageUnavailable` failure so the screen shows an error rather than a
         // misleading empty list.
         let reader = ChatHistoryReader(observer: duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)
-        let viewModel = AIChatHistoryViewModel(reader: reader)
+        let downloader = ChatHistoryDownloader(storageHandler: duckAiNativeStorageHandler)
+        let viewModel = AIChatHistoryViewModel(
+            reader: reader,
+            fireExecutor: fireExecutor,
+            downloader: downloader
+        )
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel)
         let navigationController = UINavigationController(rootViewController: content)
@@ -5557,33 +5562,7 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
-    func viewModelDidRequestDeleteChat(chatId: String) {
-        // The chat-history sheet shows persistent chats, so this is never a fire-mode burn.
-        Task { @MainActor in
-            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
-        }
-    }
-
-    func viewModelDidRequestDownloadChat(chatId: String) {
-        // Image-gen exports do enough I/O (storage reads + base64 + zip) to freeze the
-        // sheet on the main thread. Run the export on a background queue and hop back
-        // for the toast.
-        let storageHandler = duckAiNativeStorageHandler
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let downloader = ChatHistoryDownloader(storageHandler: storageHandler)
-            do {
-                let url = try downloader.downloadChat(chatId: chatId)
-                DispatchQueue.main.async { [weak self] in
-                    self?.presentChatDownloadCompleteToast(filename: url.lastPathComponent)
-                }
-            } catch {
-                Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
-                // Failure-state toast pairs with the pixels-pass follow-up (task #28).
-            }
-        }
-    }
-
-    private func presentChatDownloadCompleteToast(filename: String) {
+    func viewModelDidExportChat(filename: String) {
         let message = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: filename)
         let addressBarBottom = appSettings.currentAddressBarPosition.isBottom
         ActionMessageView.present(

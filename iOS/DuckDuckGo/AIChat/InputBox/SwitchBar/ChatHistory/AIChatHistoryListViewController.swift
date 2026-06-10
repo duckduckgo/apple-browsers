@@ -160,6 +160,13 @@ final class AIChatHistoryListViewController: UIViewController {
         subscribeToViewModel()
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        /// Dismiss FireConfirmation if present. On iPad this ViewController is dismissed upon rotation
+        presentedViewController?.dismiss(animated: true)
+    }
+
     // MARK: - Private Methods
 
     private func setupView() {
@@ -334,15 +341,22 @@ private extension AIChatHistoryListViewController {
             return
         }
 
-        cell.displaysDeleteButton = featureFlagger.isFeatureOn(.removeChatHistory)
-        cell.onDeletePressed = { [weak self] in
-            self?.presentChatDeletionConfirmation(chat: chat)
+        cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.fire
+        cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onAccessoryButtonPressed = { [weak self] source in
+            self?.presentChatDeletionConfirmation(chat: chat, source: source)
         }
     }
 
-    func presentChatDeletionConfirmation(chat: AIChatSuggestion) {
-        RecentChatDeletionAlert.show(for: chat, presenter: self) { [weak self] in
+    func presentChatDeletionConfirmation(chat: AIChatSuggestion, source: UIView) {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
+
+        FireConfirmationPresenter.presentFireConfirmation(suggestion: chat, presenter: self, source: source) {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
+
+        } onConfirm: { [weak self] in
             self?.onChatDeleted(chat)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteConfirmed)
         }
     }
 }

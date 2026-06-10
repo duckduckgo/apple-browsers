@@ -61,7 +61,8 @@ tags:
 
 - assertNotVisible: "https://example.com/"
 - assertVisible: "Search or enter address"
-- tapOn: "Cancel"
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 - tapOn: "Tab Switcher"
 - assertNotVisible: "Example Domain"
 - assertVisible: "1 Private Tab"
@@ -94,7 +95,8 @@ tags:
 
 - assertNotVisible: "https://privacy-test-pages.site/features/local-storage.html"
 - assertVisible: "Search or enter address"
-- tapOn: "Cancel"
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 - tapOn: "Tab Switcher"
 - assertNotVisible: "Example Domain"
 - assertVisible: "1 Private Tab"

@@ -331,7 +331,6 @@ final class SuggestionContainerViewModel {
                 do {
                     try validateShouldSelectTopSuggestion(from: result)
                 } catch {
-                    Logger.general.debug("SuggestionContainerViewModel: ignoring top suggestion from \( result.map(String.init(describing:)) ?? "<nil>"): \(error)")
                     self.hasAutoSelectedSuggestion = false
                     return
                 }

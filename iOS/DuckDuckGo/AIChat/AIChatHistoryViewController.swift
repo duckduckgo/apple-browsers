@@ -307,6 +307,12 @@ extension AIChatHistoryViewController: UITableViewDelegate {
                 completion(false); return
             }
             self.isApplyingLocalUpdate = true
+            // `moveRow` keeps the same cell instance, so its icon would still reflect the
+            // pre-toggle pinned state. Refresh the icon while the cell is still at its
+            // source position so the slide animates with the new icon already visible.
+            if let cell = tableView.cellForRow(at: move.source) as? AIChatHistoryCell {
+                cell.iconImageView.image = self.viewModel.icon(forRowAt: move.destination)
+            }
             tableView.performBatchUpdates({
                 tableView.moveRow(at: move.source, to: move.destination)
             }, completion: { [weak self] _ in

@@ -73,7 +73,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
     func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error>
 
-    @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
+    @available(iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
 
     /// Subscription feature related URL that matches current environment
     func url(for type: SubscriptionURL) -> URL
@@ -266,11 +266,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         if initForPurchase {
             switch currentEnvironment.purchasePlatform {
             case .appStore:
-                if #available(macOS 12.0, iOS 15.0, *) {
-                    setupForAppStore()
-                } else {
-                    assertionFailure("Trying to setup AppStore where not supported")
-                }
+                setupForAppStore()
             case .stripe:
                 break
             }
@@ -288,7 +284,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
     }
 
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     public func storePurchaseManager() -> StorePurchaseManager {
         return _storePurchaseManager!
     }
@@ -315,7 +311,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     // MARK: - Environment
 
-    @available(macOS 12.0, iOS 15.0, *) private func setupForAppStore() {
+    @available(iOS 15.0, *) private func setupForAppStore() {
         storePurchaseManager().areProductsAvailablePublisher
             .sink { [weak self] value in
                 self?.hasAppStoreProductsAvailableSubject.send(value)
@@ -352,7 +348,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         guard let cached = await subscriptionCachingService.get() else {
             throw fallbackError
         }
-        if cached.isActive { pixelHandler.handle(pixel: .subscriptionIsActive) }
+        if cached.isActive {
+            pixelHandler.handle(pixel: .subscriptionIsActive)
+            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
+        }
         return cached
     }
 
@@ -423,7 +422,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             subscription = finalSubscription
         }
 
-        if subscription.isActive { pixelHandler.handle(pixel: .subscriptionIsActive) }
+        if subscription.isActive {
+            pixelHandler.handle(pixel: .subscriptionIsActive)
+            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
+        }
         return subscription
     }
 
@@ -724,11 +726,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public var currentStorefrontRegion: SubscriptionRegion {
         switch currentEnvironment.purchasePlatform {
         case .appStore:
-            if #available(macOS 12.0, iOS 15.0, *) {
-                return storePurchaseManager().currentStorefrontRegion
-            } else {
-                return .usa
-            }
+            return storePurchaseManager().currentStorefrontRegion
         case .stripe:
             return .usa
         }
@@ -772,18 +770,16 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     /// Checks if the user is eligible for a free trial.
     ///
-    /// Returns `true` for Stripe-based purchases (on all macOS versions)
-    /// or delegates to the store purchase manager for App Store purchases (requires macOS 12.0+).
+    /// Returns `true` for Stripe-based purchases
+    /// or delegates to the store purchase manager for App Store purchases.
     ///
     /// - Returns:
-    ///   - `true` for Stripe platform regardless of macOS version
-    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store on macOS 12.0+
-    ///   - `false` for App Store on macOS < 12.0
+    ///   - `true` for Stripe platform
+    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store.
     public func isUserEligibleForFreeTrial() -> Bool {
         if currentEnvironment.purchasePlatform == .stripe {
             return true
         }
-        guard #available(macOS 12.0, iOS 15.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 

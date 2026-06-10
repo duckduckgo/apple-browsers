@@ -1,0 +1,43 @@
+# duckai_chrome_shortcut_settings_toggle.yaml
+#
+# Scenario 5: Toggling Settings -> AI Features -> Manage Duck.ai Shortcuts ->
+# Tab Bar off/on updates the chrome shortcut live.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - duckai_chrome_shortcut
+
+---
+
+- runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
+
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip"
+
+# Turn the Tab Bar shortcut OFF.
+- runFlow: ../shared/open_manage_duckai_shortcuts.yaml
+- tapOn:
+    id: "Settings.AIChat.TabBarToggle"
+- tapOn: "AI Features"
+- tapOn: "Settings"
+- tapOn: "Done"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Back in the browser, the chrome shortcut is hidden.
+- assertNotVisible:
+    id: "Browser.TabsBar.AIChatChip"
+
+# Turn the Tab Bar shortcut back ON.
+- runFlow: ../shared/open_manage_duckai_shortcuts.yaml
+- tapOn:
+    id: "Settings.AIChat.TabBarToggle"
+- tapOn: "AI Features"
+- tapOn: "Settings"
+- tapOn: "Done"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# The chrome shortcut reappears.
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip"

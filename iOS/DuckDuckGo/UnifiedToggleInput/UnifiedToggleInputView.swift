@@ -33,9 +33,11 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
+    func unifiedToggleInputView(_ view: UnifiedToggleInputView, isDraggingToggle isDragging: Bool)
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -73,7 +75,7 @@ final class UnifiedToggleInputView: UIView {
         // `.collapsed` layout — UTI mimics the regular omnibar pill so the snap between the two
         // surfaces reads as one continuous element.
         static let collapsedCardHeight: CGFloat = 44
-        static let cardCornerRadiusCollapsed: CGFloat = 16
+        static var cardCornerRadiusCollapsed: CGFloat { OmniBarMetrics.cornerRadius }
         static let collapsedCardTopMargin: CGFloat = 10
         static let collapsedCardBottomMargin: CGFloat = 6
         // `.flanked` layout — 48pt capsule sized to match the fire/voice accessory height.
@@ -198,6 +200,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
     }
 
+    var isToolbarSubmitBlockedByRecoveryCard: Bool = false {
+        didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
+    }
+
     var isGenerating: Bool = false {
         didSet { toolsToolbar.isGenerating = isGenerating }
     }
@@ -210,6 +216,11 @@ final class UnifiedToggleInputView: UIView {
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
         set { toolsToolbar.modelPickerMenu = newValue }
+    }
+
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        toolsToolbar.presentModelPickerMenu()
     }
 
     var toolsMenu: UIMenu? {
@@ -250,6 +261,25 @@ final class UnifiedToggleInputView: UIView {
     var isReasoningButtonHidden: Bool {
         get { toolsToolbar.isReasoningButtonHidden }
         set { toolsToolbar.isReasoningButtonHidden = newValue }
+    }
+
+    var isToolbarReturnKeyHidden: Bool {
+        get { toolsToolbar.isReturnKeyHidden }
+        set { toolsToolbar.isReturnKeyHidden = newValue }
+    }
+
+    /// Caps the text field so the whole card fits within `available` height (the gap above the
+    /// keyboard in landscape); nil lifts the cap. Chrome is constant, so the field's ceiling is
+    /// the budget minus chrome, and it scrolls beyond that.
+    func setAvailableExpandedHeight(_ available: CGFloat?) {
+        guard let available else {
+            textEntryView.externalMaxHeightCap = nil
+            return
+        }
+        layoutIfNeeded()
+        guard bounds.height > 0 else { return }
+        let chrome = bounds.height - textEntryView.bounds.height
+        textEntryView.externalMaxHeightCap = available - chrome
     }
 
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
@@ -538,6 +568,10 @@ final class UnifiedToggleInputView: UIView {
         aiTabCollapsedMenuButton.isEnabled = !dimmed
         // Block the text view from directly becoming first responder when the user taps the pill.
         textEntryView.isUserInteractionEnabled = !dimmed
+        // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
+        handler.isOnboardingLocked = dimmed
+        let shadowOpacity: Float = dimmed ? 0.04 : 0.16
+        Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
     }
 
     // MARK: - Fire Mode
@@ -939,6 +973,8 @@ final class UnifiedToggleInputView: UIView {
         toolbarBottomConstraint.constant = 0
         toolbarHeightConstraint.constant = 0
         toolsToolbar.alpha = 0
+        attachmentsStripHeightConstraint.constant = 0
+        attachmentsStrip.alpha = 0
         textEntryView.isExpandable = false
     }
 
@@ -1155,7 +1191,7 @@ private extension UnifiedToggleInputView {
     /// Mirrors `AIChatTabChatHeaderView`'s glass-pill style swap: regular glass in light mode
     /// (visible material on white chrome), clear glass in dark mode (lighter, refractive).
     @available(iOS 26, *)
-    fileprivate static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
+    static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
         traitCollection.userInterfaceStyle == .dark ? .clearGlass() : .glass()
     }
 
@@ -1174,9 +1210,9 @@ private extension UnifiedToggleInputView {
         button.clipsToBounds = false
     }
 
-    private static func applyAITabAccessoryShadow(to button: UIButton) {
+    private static func applyAITabAccessoryShadow(to button: UIButton, opacity: Float = 0.16) {
         button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOpacity = 0.16
+        button.layer.shadowOpacity = opacity
         button.layer.shadowOffset = CGSize(width: 0, height: 8)
         button.layer.shadowRadius = 16
     }
@@ -1225,6 +1261,10 @@ private extension UnifiedToggleInputView {
                 self.textEntryView.becomeFirstResponder()
             }
         }
+        toggleView.onDragStateChanged = { [weak self] isDragging in
+            guard let self else { return }
+            self.delegate?.unifiedToggleInputView(self, isDraggingToggle: isDragging)
+        }
         addSubview(toggleView)
 
         inlineDismissButton.addTarget(self, action: #selector(handleInlineDismissTap), for: .primaryActionTriggered)
@@ -1271,6 +1311,10 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onSelectedToolClearTapped = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputViewDidClearSelectedTool(self)
+        }
+        toolsToolbar.onReturnKeyTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidTapReturnKey(self)
         }
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)

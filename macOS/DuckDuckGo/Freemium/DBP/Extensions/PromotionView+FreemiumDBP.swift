@@ -23,11 +23,7 @@ extension PromotionViewModel {
                                      closeAction: @escaping () -> Void) -> PromotionViewModel {
 
         let title = UserText.homePagePromotionFreemiumDBPTitle
-        var description = UserText.homePagePromotionFreemiumDBPDescription
-
-        if #available(macOS 12.0, *) {
-            description = UserText.homePagePromotionFreemiumDBPDescriptionMarkdown
-        }
+        var description = UserText.homePagePromotionFreemiumDBPDescriptionMarkdown
 
         let actionButtonText = UserText.homePagePromotionFreemiumDBPButtonTitle
 

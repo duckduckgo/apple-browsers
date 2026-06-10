@@ -82,7 +82,7 @@ final class EarliestBeginDateForBackgroundTaskCalculationTests: XCTestCase {
                                 optOutDates: Array(repeating: now, count: 3))
 
         let expectedDate = now
-        let actualDate = try database.fetchFirstEligibleJobDate()
+        let actualDate = try database.fetchFirstEligibleJobDate(isAuthenticatedUser: true)
 
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: expectedDate, date2: actualDate))
     }
@@ -94,7 +94,7 @@ final class EarliestBeginDateForBackgroundTaskCalculationTests: XCTestCase {
                                 optOutDates: Array(repeating: .monthAgo, count: 3))
 
         let expectedDate = weekAgo
-        let actualDate = try database.fetchFirstEligibleJobDate()
+        let actualDate = try database.fetchFirstEligibleJobDate(isAuthenticatedUser: true)
 
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: expectedDate, date2: actualDate))
     }
@@ -106,7 +106,7 @@ final class EarliestBeginDateForBackgroundTaskCalculationTests: XCTestCase {
                                 removedDates: [Date(), nil, Date()])
 
         let expectedDate = nextWeek
-        let actualDate = try database.fetchFirstEligibleJobDate()
+        let actualDate = try database.fetchFirstEligibleJobDate(isAuthenticatedUser: true)
 
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: expectedDate, date2: actualDate))
     }
@@ -117,12 +117,75 @@ final class EarliestBeginDateForBackgroundTaskCalculationTests: XCTestCase {
                                 optOutDates: [.daysAgo(5), monthAgo, .nowMinus(hours: 20)])
 
         let expectedDate = monthAgo
-        let actualDate = try database.fetchFirstEligibleJobDate()
+        let actualDate = try database.fetchFirstEligibleJobDate(isAuthenticatedUser: true)
 
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: expectedDate, date2: actualDate))
     }
 
+    func testWhenFreemiumUserHasGatedBroker_thenFirstEligibleJobDateIgnoresGatedBroker() async throws {
+        try await saveProfile()
+
+        let gatedBrokerDate = Date.monthAgo
+        let eligibleBrokerDate = Date.daysAgo(3)
+        try saveBrokerScan(fixture: "valid-broker-with-token-gated-scan-action",
+                           lastRunDate: nil,
+                           preferredRunDate: gatedBrokerDate)
+        try saveBrokerScan(fixture: "valid-broker",
+                           lastRunDate: nil,
+                           preferredRunDate: eligibleBrokerDate)
+
+        let freemiumDate = try database.fetchFirstEligibleJobDate(isAuthenticatedUser: false)
+        let authenticatedDate = try database.fetchFirstEligibleJobDate(isAuthenticatedUser: true)
+
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: eligibleBrokerDate, date2: freemiumDate))
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: gatedBrokerDate, date2: authenticatedDate))
+    }
+
+    func testWhenFreemiumUserHasEarlierOptOut_thenFirstEligibleJobDateIgnoresOptOut() async throws {
+        let optOutDate = Date.monthAgo
+        let scanDate = Date.daysAgo(3)
+        try await setUpTestData(scanDates: Array(repeating: scanDate, count: 3),
+                                optOutDates: Array(repeating: optOutDate, count: 3))
+
+        let freemiumDate = try database.fetchFirstEligibleJobDate(isAuthenticatedUser: false)
+        let authenticatedDate = try database.fetchFirstEligibleJobDate(isAuthenticatedUser: true)
+
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: scanDate, date2: freemiumDate))
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: optOutDate, date2: authenticatedDate))
+    }
+
+    func testWhenFreemiumUserHasGatedBroker_thenInitialScanCompletionIgnoresGatedBroker() async throws {
+        try await saveProfile()
+
+        try saveBrokerScan(fixture: "valid-broker-with-token-gated-scan-action",
+                           lastRunDate: nil,
+                           preferredRunDate: .now)
+        try saveBrokerScan(fixture: "valid-broker",
+                           lastRunDate: .now,
+                           preferredRunDate: .now)
+
+        XCTAssertTrue(try database.haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: false))
+        XCTAssertFalse(try database.haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: true))
+    }
+
     // MARK: - Utils
+
+    private func saveProfile() async throws {
+        try await database.save(DataBrokerProtectionProfile(names: [.init(firstName: "John", lastName: "Doe")],
+                                                            addresses: [.init(city: "New York", state: "NY")],
+                                                            phones: [],
+                                                            birthYear: 1970))
+    }
+
+    @discardableResult
+    private func saveBrokerScan(fixture: String, lastRunDate: Date?, preferredRunDate: Date) throws -> Int64 {
+        let brokerResource = try loadBroker(fixture: fixture)
+        let brokerId = try database.saveBroker(brokerResource: brokerResource)
+        let profileQuery = ProfileQuery(firstName: "John", lastName: "Doe", city: "New York", state: "NY", birthYear: 1970)
+        let profileQueryId = try database.saveProfileQuery(profileQuery: profileQuery, profileId: Int64(1))
+        try database.saveScanJob(brokerId: brokerId, profileQueryId: profileQueryId, lastRunDate: lastRunDate, preferredRunDate: preferredRunDate)
+        return brokerId
+    }
 
     private func setUpTestData(usesChildBroker: Bool = false,
                                scanDates: [Date],
@@ -138,8 +201,7 @@ final class EarliestBeginDateForBackgroundTaskCalculationTests: XCTestCase {
                                                             birthYear: 1970))
 
         /// Add brokers
-        let jsonURL = Bundle.module.url(forResource: usesChildBroker ? "valid-child-broker" : "valid-broker", withExtension: "json", subdirectory: "BundleResources")!
-        let brokerResource = try DataBroker.initFromResource(jsonURL)
+        let brokerResource = try loadBroker(fixture: usesChildBroker ? "valid-child-broker" : "valid-broker")
         let brokerId = try database.saveBroker(brokerResource: brokerResource)
 
         /// Add profile queries + scans
@@ -172,5 +234,10 @@ final class EarliestBeginDateForBackgroundTaskCalculationTests: XCTestCase {
         for (index, extractedProfile) in extractedProfiles.enumerated() {
             try database.updateRemovedDate(removedDates?[index], on: extractedProfile.id!)
         }
+    }
+
+    private func loadBroker(fixture: String) throws -> BrokerResource {
+        let jsonURL = Bundle.module.url(forResource: fixture, withExtension: "json", subdirectory: "BundleResources")!
+        return try DataBroker.initFromResource(jsonURL)
     }
 }

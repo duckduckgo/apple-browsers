@@ -96,12 +96,13 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var daxDialogsManager: DaxDialogsManaging?
     var fireModeCapability: FireModeCapable? {
         didSet {
+            configureTabSwitcherLongPressMenu()
             configureAddTabButtonLongPressMenu()
         }
     }
     private weak var tabsModel: TabsModelManaging?
 
-    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton()
+    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
     private var cancellables = Set<AnyCancellable>()
@@ -213,26 +214,27 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     private func updateAIChatButtonVisibility() {
-        let isVisible: Bool
-        if let featureFlagger, let aiChatSettings {
-            isVisible = DuckAIChromeShortcutVisibility.isChromeButtonVisible(
-                featureFlagger: featureFlagger,
-                isAIChatNavigationBarUserSettingsEnabled: aiChatSettings.isAIChatNavigationBarUserSettingsEnabled
-            )
-        } else {
-            isVisible = false
+        guard let featureFlagger, let aiChatSettings else {
+            aiChatChip.isHidden = true
+            return
         }
-        aiChatChip.isHidden = !isVisible
+        let shortcutEnabled = aiChatSettings.isAIChatTabBarUserSettingsEnabled
+        let showDuckAIButton = aiChatSettings.isAIChatTabBarDuckAIButtonVisible
+        let showContextualSheetButton = aiChatSettings.isAIChatTabBarContextualSheetButtonVisible
+        aiChatChip.isHidden = !DuckAIChromeShortcutVisibility.isChromeButtonVisible(
+            featureFlagger: featureFlagger,
+            isTabBarShortcutEnabled: shortcutEnabled,
+            isDuckAIButtonVisible: showDuckAIButton,
+            isContextualSheetButtonVisible: showContextualSheetButton
+        )
+        aiChatChip.setTextVisible(showDuckAIButton)
+        aiChatChip.setIconVisible(showContextualSheetButton)
     }
 
     /// Pushes per-tab state into the chip. Called by `MainViewController` when the
-    /// current tab changes, its URL changes (Duck.ai vs not), or its contextual sheet
-    /// is presented/dismissed.
-    func updateAIChatChipState(isCurrentTabAIChat: Bool, isCurrentTabHome: Bool, isContextualSheetPresented: Bool) {
+    /// current tab changes or its contextual sheet is presented/dismissed.
+    func updateAIChatChipState(isContextualSheetPresented: Bool) {
         aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
-        // The icon half toggles the page-context sheet; hide it where there's no page to attach
-        // — Duck.ai tabs and the New Tab Page.
-        aiChatChip.setIconVisible(!isCurrentTabAIChat && !isCurrentTabHome)
     }
 
     @IBAction func onFireButtonPressed() {
@@ -265,14 +267,19 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     @IBAction func onNewTabPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .tabBarNewTab)
         requestNewTab(type: .currentMode)
     }
 
     @objc private func onAIChatPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .openAIChatFromNavigationBarShortcut)
         delegate?.tabsBarDidRequestAIChat(self)
     }
 
     @objc private func onAIChatContextualSheetIconPressed() {
+        if aiChatChip.sheetState == .closed {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarContextualSheetOpened)
+        }
         delegate?.tabsBarDidRequestToggleAIChatContextualSheet(self)
     }
 
@@ -285,6 +292,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
         recomputeItemSize()
         reloadData()
+        fireUsageDailyPixels()
 
         if scrollToSelected {
             DispatchQueue.main.async {
@@ -307,6 +315,22 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
             flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
+        }
+    }
+
+    /// Once-per-day baseline snapshots: open-tab count (bucketed) and whether the strip overflows
+    /// (scroll required). DailyPixel dedupes per day, so these capture the first qualifying state of the day.
+    private func fireUsageDailyPixels() {
+        guard tabsCount > 0 else { return }
+
+        if let tabCountBucket = TabSwitcherOpenDailyPixel.tabCountBucket(forCount: tabsCount) {
+            DailyPixel.fire(pixel: .tabBarOpenTabCountDaily, withAdditionalParameters: ["tab_count": tabCountBucket])
+        }
+
+        let availableWidth = collectionView.frame.size.width
+        let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
+        if availableWidth > 0, itemWidth > 0, CGFloat(tabsCount) * itemWidth > availableWidth {
+            DailyPixel.fire(pixel: .tabBarOverflowDaily)
         }
     }
 
@@ -408,6 +432,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
 
+    private func configureTabSwitcherLongPressMenu() {
+        tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
+    }
+
     private func configureAddTabButtonLongPressMenu() {
         guard fireModeCapability?.isFireModeEnabled ?? false else {
             addTabButton.menu = nil
@@ -454,12 +482,25 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private func makeAIChatChipMenu() -> UIMenu {
         UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
+                DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpened)
+                let duckAIVisible = self?.aiChatSettings?.isAIChatTabBarDuckAIButtonVisible ?? true
+                let sheetVisible = self?.aiChatSettings?.isAIChatTabBarContextualSheetButtonVisible ?? true
                 completion([
-                    UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
-                        self?.aiChatSettings?.enableAIChatNavigationBarUserSettings(enable: false)
+                    UIAction(title: duckAIVisible ? UserText.actionHideAIChatDuckAIButton : UserText.actionShowAIChatDuckAIButton) { [weak self] _ in
+                        if duckAIVisible {
+                            DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
+                        }
+                        self?.aiChatSettings?.setAIChatTabBarDuckAIButtonVisible(!duckAIVisible)
+                    },
+                    UIAction(title: sheetVisible ? UserText.actionHideAIChatContextualSheetButton : UserText.actionShowAIChatContextualSheetButton) { [weak self] _ in
+                        if sheetVisible {
+                            DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
+                        }
+                        self?.aiChatSettings?.setAIChatTabBarContextualSheetButtonVisible(!sheetVisible)
                     },
                     UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
                         guard let self else { return }
+                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpenSettingsTapped)
                         self.delegate?.tabsBarDidRequestOpenAISettings(self)
                     }
                 ])
@@ -499,11 +540,20 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
     func launchNewTabWithCurrentMode(_ button: any TabSwitcherButton) {
         requestNewTab(type: .currentMode)
     }
+    
+    func launchNewNormalTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .normal)
+    }
+
+    func launchNewFireTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .fire)
+    }
 }
 
 extension TabsBarViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        DailyPixel.fireDailyAndCount(pixel: .tabBarTabSelected)
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
 
@@ -538,7 +588,10 @@ extension TabsBarViewController: UICollectionViewDataSource {
         }
         
         guard let model = tabsModel?.get(tabAt: indexPath.row) else {
-            fatalError("Failed to load tab at \(indexPath.row)")
+            assertionFailure("TabsBarViewController: failed to load tab at \(indexPath.row) of \(tabsCount)")
+            DailyPixel.fireDailyAndCount(pixel: .debugTabsBarCellIndexOutOfRange)
+            cell.configurePlaceholder(withTheme: ThemeManager.shared.currentTheme)
+            return cell
         }
         let isCurrent = indexPath.row == currentIndex
         let isNextCurrent = indexPath.row + 1 == currentIndex
@@ -548,6 +601,8 @@ extension TabsBarViewController: UICollectionViewDataSource {
             guard let self = self, let model = model,
                 let tabIndex = self.tabsModel?.indexOf(tab: model)
                 else { return }
+            let tabState = tabIndex == self.currentIndex ? "active" : "inactive"
+            DailyPixel.fireDailyAndCount(pixel: .tabBarTabClosed, withAdditionalParameters: [PixelParameters.tabState: tabState])
             self.delegate?.tabsBar(self, didRemoveTabAtIndex: tabIndex)
         }
         return cell

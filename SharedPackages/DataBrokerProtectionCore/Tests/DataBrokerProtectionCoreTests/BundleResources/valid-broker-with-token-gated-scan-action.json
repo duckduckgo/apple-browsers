@@ -1,0 +1,49 @@
+{
+    "name": "DDG Fake Broker With Token-Gated Scan Action",
+    "url": "fakebroker-token-gated-scan.com",
+    "steps": [
+    {
+        "stepType": "scan",
+        "scanType": "templatedUrl",
+        "actions": [
+        {
+            "actionType": "navigate",
+            "url": "http://localhost:3000/profiles/search?fname=${firstName}&lname=${lastName}",
+            "id": "tgs-nav"
+        },
+        {
+            "actionType": "generateEmail",
+            "id": "tgs-ge"
+        },
+        {
+            "actionType": "extract",
+            "selector": ".profile-card",
+            "profile": {
+                "name": { "selector": ".profile-card__name" }
+            },
+            "id": "tgs-extract"
+        }
+        ]
+    },
+    {
+        "stepType": "optOut",
+        "optOutType": "formOptOut",
+        "actions": [
+        {
+            "actionType": "navigate",
+            "url": "http://localhost:3000/opt-out",
+            "id": "tgs-opt-nav"
+        }
+        ]
+    }
+    ],
+    "schedulingConfig": {
+        "retryError": 48,
+        "confirmOptOutScan": 0,
+        "maintenanceScan": 120,
+        "maxAttempts": -1
+    },
+    "addedDatetime": 1725632531153,
+    "removedAt": null,
+    "version": "0.1.0"
+}

@@ -47,6 +47,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
+    /// Kill switch: enable remotely to disable orphaned-proxy detection (tunnel heartbeat + proxy detection loop + pixel).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454304
+    case vpnOrphanProxyDetectionKillSwitch
+
+    /// Kill switch: enable remotely to disable the orphaned-proxy full-bypass behavior.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454309
+    case vpnOrphanProxyBypassKillSwitch
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -58,6 +66,11 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
+
+    /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
+    /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
+    case webExtensionLightweightReload
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
@@ -125,8 +138,16 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
     case aiChatOmnibarOnboarding
 
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215385527516382?focus=true
+    case aiChatOnboardingToggleAffectsNtpAndDdg
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
     case osSupportForceUnsupportedMessage
+
+    /// Remote kill switch for native unsupported-OS messaging. Enabled by default; disable via
+    /// privacy config (`macOSBrowserConfig.osSupportWarning`) to suppress the messaging.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215330116840129?focus=true
+    case osSupportWarning
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
@@ -150,9 +171,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
-    case appStoreUpdateFlow
 
     /// Hide manual update option — always use automatic updates
     case automaticUpdatesOnly
@@ -178,9 +196,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620653515
-    case storeSerpSettings
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141
     case blurryAddressBarTahoeFix
@@ -328,10 +343,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
     case lazyMenuRebuild
 
-    /// Enables the "Add to dock" onboarding step and setting for App Store builds
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725466401987?focus=true
-    case addToDockAppStore
-
     /// Enables removing individual AI chat suggestions from the omnibar
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
     case aiChatRemoveSuggestion
@@ -361,10 +372,6 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatViewAllChatsNativeOmnibar
 
     case aiChatNativeStorage
-
-    /// Enables the VPN subscription promo card on the Fire Window home page
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213996219850960?focus=true
-    case subscriptionPromoFireWindow
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
@@ -440,6 +447,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtension), category: .vpn)
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
+        case .vpnOrphanProxyDetectionKillSwitch:
+            Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyDetectionKillSwitch), category: .vpn)
+        case .vpnOrphanProxyBypassKillSwitch:
+            Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyBypassKillSwitch), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)
         case .autoUpdateInREVIEW:
@@ -448,6 +459,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutofillSubfeature.partialFormSaves))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
+        case .webExtensionLightweightReload:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:
@@ -492,8 +505,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarTools), category: .duckAI)
         case .aiChatOmnibarOnboarding:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarOnboarding), category: .duckAI)
+        case .aiChatOnboardingToggleAffectsNtpAndDdg:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.onboardingToggleAffectsNtpAndDdg), category: .duckAI)
         case .osSupportForceUnsupportedMessage:
             Config(source: .disabled, category: .osSupportWarnings)
+        case .osSupportWarning:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.osSupportWarning), category: .osSupportWarnings)
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:
@@ -508,8 +525,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
             Config(source: .remoteReleasable(SyncSubfeature.level3AllowCreateAccount))
-        case .appStoreUpdateFlow:
-            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreUpdateFlow), category: .updates)
         case .automaticUpdatesOnly:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.automaticUpdatesOnly), category: .updates)
         case .unifiedURLPredictor:
@@ -526,8 +541,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncIdentities))
         case .dataImportNewSafariFilePicker:
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newSafariFilePicker))
-        case .storeSerpSettings:
-            Config(source: .remoteReleasable(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:
@@ -612,8 +625,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.tabAnimations))
         case .lazyMenuRebuild:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
-        case .addToDockAppStore:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addToDockAppStore))
         case .aiChatRemoveSuggestion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.removeSuggestion), category: .duckAI)
         case .screenTimeCleaning:
@@ -634,8 +645,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .duckAI)
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage), category: .duckAI)
-        case .subscriptionPromoFireWindow:
-            Config(defaultValue: .disabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoFireWindow), supportsLocalOverriding: true, category: .subscription)
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:

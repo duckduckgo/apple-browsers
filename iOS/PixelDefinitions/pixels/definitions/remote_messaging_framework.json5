@@ -272,7 +272,7 @@
         "description": "Triggered when a remote message image is successfully loaded and displayed",
         "owners": ["edulpn"],
         "triggers": ["other"],
-        "suffixes": ["form_factor"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -286,7 +286,7 @@
         "description": "Triggered when a remote message image fails to load",
         "owners": ["edulpn"],
         "triggers": ["other"],
-        "suffixes": ["form_factor"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -300,7 +300,7 @@
         "description": "Triggered when a per-card remote message image is successfully loaded and displayed within a card-style remote message",
         "owners": ["samsymons"],
         "triggers": ["other"],
-        "suffixes": ["form_factor"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -319,7 +319,7 @@
         "description": "Triggered when a per-card remote message image fails to load within a card-style remote message",
         "owners": ["samsymons"],
         "triggers": ["other"],
-        "suffixes": ["form_factor"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {

@@ -36,7 +36,6 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
 class AddressBarTests: XCTestCase {
 
     var window: NSWindow!
@@ -73,6 +72,22 @@ class AddressBarTests: XCTestCase {
 
     var schemeHandler: TestSchemeHandler!
     static let testHtml = "<html><head><title>Title</title></head><body>test</body></html>"
+
+    @MainActor
+    private func navigationFinishedPromiseIfNeeded(for tab: Tab) -> Future<Void, Error>? {
+        guard tab.webView.url == nil,
+              tab.content.urlForWebView?.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) == true else {
+            return nil
+        }
+
+        return tab.webViewDidFinishNavigationPublisher.timeout(10).first().promise()
+    }
+
+    @MainActor
+    private func navigationFinishedPromiseIfNeeded(for tab: AnyTab) -> Future<Void, Error>? {
+        guard case .loaded(let tab) = tab else { return nil }
+        return navigationFinishedPromiseIfNeeded(for: tab)
+    }
 
     @MainActor
     override func setUp() {
@@ -284,7 +299,11 @@ class AddressBarTests: XCTestCase {
 
         // Switch between loaded tabs and home tab/settings/bookmarks, validate the Address Bar gets activated on the New Tab; Validate privacy entry button/icon is correct
         for (idx, tab) in viewModel.tabs.enumerated() {
+            let navigationFinished = navigationFinishedPromiseIfNeeded(for: tab)
             viewModel.select(at: .unpinned(idx))
+            if let navigationFinished {
+                try await navigationFinished.value
+            }
             try await Task.sleep(interval: 0.01)
             if tab.content == .newtab {
                 XCTAssertTrue(isAddressBarFirstResponder, "\(idx)")
@@ -458,7 +477,7 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSwitchingBetweenTabsWithTypedValue_typedValueIsPreserved() throws {
+    func testWhenSwitchingBetweenTabsWithTypedValue_typedValueIsPreserved() async throws {
         throw XCTSkip("Flaky test")
 
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
@@ -476,7 +495,11 @@ class AddressBarTests: XCTestCase {
         window = WindowsManager.openNewWindow(with: viewModel)!
         // Enter something, switch to another tab, enter something, return back, validate the input is preserved, return to tab 2, validate its input is preserved
         for (idx, tab) in viewModel.tabs.enumerated() {
+            let navigationFinished = navigationFinishedPromiseIfNeeded(for: tab)
             viewModel.select(at: .unpinned(idx))
+            if let navigationFinished {
+                try await navigationFinished.value
+            }
             let expectation = self.expectation(description: "Wait 1")
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) {
                 expectation.fulfill()
@@ -513,14 +536,22 @@ class AddressBarTests: XCTestCase {
         let tab0 = Tab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let tab1 = Tab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab0, tab1]))
+        let tab0NavigationFinished = navigationFinishedPromiseIfNeeded(for: tab0)
         window = WindowsManager.openNewWindow(with: viewModel)!
+        if let tab0NavigationFinished {
+            try await tab0NavigationFinished.value
+        }
 
         // open 2 tabs, navigate both somewhere, activate the address bar, switch to another tab - validate the address bar is deactivated
         XCTAssertEqual(window.firstResponder, tab0.webView)
         _=window.makeFirstResponder(addressBarTextField)
 
+        let tab1NavigationFinished = navigationFinishedPromiseIfNeeded(for: tab1)
         let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: tab1.webView)
         viewModel.select(at: .unpinned(1))
+        if let tab1NavigationFinished {
+            try await tab1NavigationFinished.value
+        }
         await fulfillment(of: [firstResponderChangeExpectation], timeout: 5)
         XCTAssertEqual(window.firstResponder, tab1.webView)
 

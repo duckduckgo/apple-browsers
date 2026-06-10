@@ -19,10 +19,8 @@
 import ContentScopeScripts
 import Foundation
 import PixelKit
-import PrivacyConfig
 
 final class DockPreferencesModel: ObservableObject {
-    private let featureFlagger: FeatureFlagger
     private let dockCustomizer: DockCustomization
     private let pixelFiring: PixelFiring?
 
@@ -37,11 +35,6 @@ final class DockPreferencesModel: ObservableObject {
         dockCustomizer.supportsAddingToDock
     }
 
-    /// Whether instructions can be shown for how to add the app to the dock manually.
-    var canShowDockInstructions: Bool {
-        featureFlagger.isFeatureOn(.addToDockAppStore)
-    }
-
     /// Whether the app is being added to the dock.
     /// Used to optimistically update settings when adding the app to the dock.
     @Published private var isBeingAddedToDock = false
@@ -50,10 +43,8 @@ final class DockPreferencesModel: ObservableObject {
         isBeingAddedToDock || dockCustomizer.isAddedToDock
     }
 
-    init(featureFlagger: FeatureFlagger,
-         dockCustomizer: DockCustomization,
+    init(dockCustomizer: DockCustomization,
          pixelFiring: PixelFiring?) {
-        self.featureFlagger = featureFlagger
         self.dockCustomizer = dockCustomizer
         self.pixelFiring = pixelFiring
     }

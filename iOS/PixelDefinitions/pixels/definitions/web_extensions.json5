@@ -69,6 +69,28 @@
         ],
         "parameters": ["appVersion"]
     },
+    "m_web_extension_deferred_protected_data_unavailable": {
+        "description": "Fires when web extension loading or embedded install is deferred because protected data is unavailable (e.g. device locked before first unlock).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-15"
+    },
+    "m_web_extension_resumed_protected_data_available": {
+        "description": "Fires when protected data becomes available and previously deferred web extension load/install work is executed.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-15"
+    },
     "m_web_extension_load_error": {
         "description": "Fires during app startup when loading installed web extensions fails (at least one extension failed to load).",
         "owners": ["tomasstrba"],

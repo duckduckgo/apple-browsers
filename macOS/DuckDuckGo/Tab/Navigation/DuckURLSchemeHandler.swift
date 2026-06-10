@@ -133,28 +133,14 @@ private extension DuckURLSchemeHandler {
         let youtubeHandler = YoutubePlayerNavigationHandler()
         let html = youtubeHandler.makeHTMLFromTemplate()
 
-        if #available(macOS 12.0, *) {
-            // For macOS 12+, apply the fast redirection workaround from PR #1331
-            webView.stopLoading()
-            let newRequest = youtubeHandler.makeDuckPlayerRequest(from: URLRequest(url: requestURL))
-            // Workaround for https://app.asana.com/1/137249556945/project/1204099484721401/task/1209931387442142
-            // On fast redirections, the webview maybe still loading the old page, when simulated request is sent
-            // A more robust KVO fix did not work as observation misses events in fast redirections
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                webView.loadSimulatedRequest(newRequest, responseHTML: html)
-            }
-        } else {
-            // For macOS 11 and earlier, use the original method without stopLoading or delay
-            let data = html.utf8data
-
-            let response = URLResponse(url: requestURL,
-                                       mimeType: "text/html",
-                                       expectedContentLength: data.count,
-                                       textEncodingName: nil)
-
-            urlSchemeTask.didReceive(response)
-            urlSchemeTask.didReceive(data)
-            urlSchemeTask.didFinish()
+        // Apply the fast redirection workaround from PR #1331
+        webView.stopLoading()
+        let newRequest = youtubeHandler.makeDuckPlayerRequest(from: URLRequest(url: requestURL))
+        // Workaround for https://app.asana.com/1/137249556945/project/1204099484721401/task/1209931387442142
+        // On fast redirections, the webview maybe still loading the old page, when simulated request is sent
+        // A more robust KVO fix did not work as observation misses events in fast redirections
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            webView.loadSimulatedRequest(newRequest, responseHTML: html)
         }
     }
 }

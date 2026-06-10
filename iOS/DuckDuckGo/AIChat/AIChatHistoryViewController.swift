@@ -292,11 +292,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         let wasPinned = viewModel.isPinned(chatId: chatId)
 
         let action = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
-            guard let self else { completion(false); return }
-            // Path B: VM mutates `pinned`/`recent` optimistically and returns source +
-            // destination index paths; we drive the cross-section animation locally and
-            // the reactive storage observer converges shortly after the off-main write.
-            guard let move = self.viewModel.togglePin(chatId: chatId) else {
+            guard let self, let move = self.viewModel.togglePin(chatId: chatId) else {
                 completion(false); return
             }
             tableView.performBatchUpdates({
@@ -304,8 +300,6 @@ extension AIChatHistoryViewController: UITableViewDelegate {
                 tableView.insertRows(at: [move.destination], with: .automatic)
             }, completion: { _ in completion(true) })
         }
-        // Same pin glyph for both states — matches existing Size24 trailing-swipe icons
-        // and Android's PR #8604 (label-driven differentiation).
         action.image = DesignSystemImages.Glyphs.Size24.pin
         action.accessibilityLabel = wasPinned
             ? UserText.aiChatHistoryUnpinSwipeAccessibilityLabel

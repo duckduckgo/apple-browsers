@@ -70,9 +70,7 @@ public struct DuckAiChat: Equatable {
 // MARK: - Mutation helpers
 
 public extension DuckAiChat {
-    /// Returns a copy with `pinned` set to the supplied value. The stored type is fully
-    /// immutable so callers can't mutate a row in place — use this when applying an
-    /// optimistic UI update before a persistent write lands.
+    /// Returns a copy with `pinned` set to the supplied value.
     func withPinned(_ newValue: Bool) -> DuckAiChat {
         DuckAiChat(
             chatId: chatId,

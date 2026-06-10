@@ -206,7 +206,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
         let move = sut.togglePin(chatId: "r1")
 
-        XCTAssertNil(move, "no-pinner case must short-circuit without touching the arrays")
+        XCTAssertNil(move)
         XCTAssertEqual(sut.recent.map(\.chatId), ["r1"])
         XCTAssertEqual(sut.pinned, [])
     }
@@ -222,10 +222,10 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
         XCTAssertEqual(move?.source, IndexPath(row: 0, section: AIChatHistoryViewModel.Section.recent.rawValue))
         XCTAssertEqual(move?.destination, IndexPath(row: 0, section: AIChatHistoryViewModel.Section.pinned.rawValue))
-        XCTAssertEqual(sut.pinned.map(\.chatId), ["r1"], "optimistically moved into pinned")
-        XCTAssertEqual(sut.recent.map(\.chatId), ["r2"], "removed from recent")
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["r1"])
+        XCTAssertEqual(sut.recent.map(\.chatId), ["r2"])
         processMainQueue()
-        XCTAssertEqual(pinner.requestedChatIds, ["r1"], "storage write dispatched off-main")
+        XCTAssertEqual(pinner.requestedChatIds, ["r1"])
     }
 
     func testTogglePin_unpinningPinnedChat_movesItToRecentSection() {
@@ -248,7 +248,6 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         let sut = makeSUT(chats: [
             chat(id: "p_old", lastEdit: "2026-01-01T00:00:00.000Z", pinned: true),
             chat(id: "p_new", lastEdit: "2026-05-01T00:00:00.000Z", pinned: true),
-            // Pinning this should land at index 1 of pinned (between newer & older).
             chat(id: "r_mid", lastEdit: "2026-03-01T00:00:00.000Z", pinned: false)
         ], pinner: pinner)
 
@@ -266,14 +265,10 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
         XCTAssertNil(move)
         processMainQueue()
-        XCTAssertEqual(pinner.requestedChatIds, [], "no storage write when the chat isn't in either section")
+        XCTAssertEqual(pinner.requestedChatIds, [])
     }
 
     func testTogglePin_pinnerThrows_doesNotRevertOptimisticState() {
-        // We swallow the failure (a pixel will land in the follow-up pixels-pass PR). The
-        // reactive observer is the authority on long-term state — on next emission the
-        // arrays will reflect whatever the storage actually shows. Local optimistic state
-        // sticks until then.
         let pinner = StubPinner()
         pinner.throwsError = .someError
         let queue = DispatchQueue(label: "test.pin")
@@ -283,9 +278,9 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         queue.sync { }
         processMainQueue()
 
-        XCTAssertNotNil(move, "optimistic move still computed")
-        XCTAssertEqual(sut.pinned.map(\.chatId), ["r1"], "optimistic UI state remains until reactive observer corrects it")
-        XCTAssertEqual(pinner.requestedChatIds, ["r1"], "storage write still attempted")
+        XCTAssertNotNil(move)
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["r1"])
+        XCTAssertEqual(pinner.requestedChatIds, ["r1"])
     }
 
     // MARK: - Search

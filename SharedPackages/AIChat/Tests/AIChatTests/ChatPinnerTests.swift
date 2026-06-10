@@ -61,7 +61,6 @@ final class ChatPinnerTests: XCTestCase {
 
     func testToggle_treatsMissingPinnedKeyAsFalse_andFlipsToTrue() throws {
         let storage = DuckAiNativeMemoryStorageHandler()
-        // No `pinned` key — the FE may emit blobs without it for older chats.
         let json = #"{"chatId":"c1","title":"x","model":"gpt-4o-mini","lastEdit":"2026-05-01T00:00:00.000Z"}"#
         try storage.putChat(chatId: "c1", data: Data(json.utf8))
         let pinner = ChatPinner(storageHandler: storage)
@@ -75,8 +74,6 @@ final class ChatPinnerTests: XCTestCase {
 
     func testToggle_preservesAllOtherBlobFields() throws {
         let storage = DuckAiNativeMemoryStorageHandler()
-        // Include fields `DuckAiChat.ChatBlob` doesn't model (`extras`, nested `messages[].parts`)
-        // to prove we don't lose data on the round-trip.
         let json = #"""
         {
           "chatId": "c1",
@@ -107,8 +104,7 @@ final class ChatPinnerTests: XCTestCase {
         XCTAssertEqual(dict["reasoningMode"] as? String, "off")
         XCTAssertEqual(dict["fileRefs"] as? [String], ["11111111-2222-3333-4444-555555555555"])
         let extras = try XCTUnwrap(dict["extras"] as? [String: Any])
-        XCTAssertEqual(extras["futureField"] as? String, "keep me",
-                       "fields not modeled in ChatBlob still survive the round-trip")
+        XCTAssertEqual(extras["futureField"] as? String, "keep me")
         let messages = try XCTUnwrap(dict["messages"] as? [[String: Any]])
         XCTAssertEqual(messages.count, 2)
         let assistantParts = try XCTUnwrap(messages[1]["parts"] as? [[String: Any]])

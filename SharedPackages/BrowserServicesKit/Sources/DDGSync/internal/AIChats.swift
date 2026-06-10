@@ -24,9 +24,6 @@ public protocol AIChatsHandling {
     func patch(updates: [AIChatUpdate], token: String) async throws
 }
 
-/// A single chat-attribute change submitted to the AI chat sync patch endpoint. Today only
-/// the `pinned` flag rides through this path; rename is intentionally excluded until
-/// titles can be JWE-encrypted on native (Android did the same in PR #8640).
 public struct AIChatUpdate: Equatable {
     public let chatId: String
     public let pinned: Bool
@@ -100,9 +97,6 @@ public final class AIChats: AIChatsHandling {
         guard !updates.isEmpty else { return }
 
         let now = dateFormatter.string(from: Date())
-        // `pinned` is encoded as "pinned" / NSNull to match the server contract Android
-        // shipped in PR #8640. `client_last_modified` and `edit_timestamp` are both set to
-        // the patch time — the server uses them for conflict resolution.
         let payload: [[String: Any]] = updates.map { update in
             [
                 "id": update.chatId,

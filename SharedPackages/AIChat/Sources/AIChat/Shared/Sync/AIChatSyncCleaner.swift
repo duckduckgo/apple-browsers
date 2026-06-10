@@ -29,15 +29,7 @@ public protocol AIChatSyncCleaning: AnyObject {
     func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async
     func recordChatDeletion(chatID: String) async
     func deleteIfNeeded() async
-
-    /// Enqueues `chatID` for the next sync push of per-chat attribute updates (currently
-    /// pinned state only) and asks the sync scheduler to run ASAP — pin/unpin should
-    /// reach other devices in seconds, not on the next natural cycle.
     func recordChatUpdate(chatID: String) async
-
-    /// Drains pending updates: reads each chat's current pinned state from native storage,
-    /// posts a single patch, removes successfully-sent IDs from the queue. Called by
-    /// `AIChatUpdateOperation` on every sync cycle.
     func updateIfNeeded() async
 }
 
@@ -74,11 +66,6 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
         return isChatHistoryEnabled
     }
 
-    /// No per-feature kill switch (cf. `supportsSyncChatsDeletion` for delete): the only
-    /// caller today is `ChatPinner`, which is constructed when the chat-history sheet
-    /// opens — that's already gated by `aiChatNativeChatHistory`. The master
-    /// `isAIChatSyncEnabled` flag still acts as a global rollback. Revisit if a non-sheet
-    /// pin entry point (e.g. omnibar, rename) lands.
     private var canUseAIChatSyncUpdate: Bool {
         guard featureFlagProvider.isAIChatSyncEnabled() else { return false }
         guard sync.authState != .inactive else { return false }
@@ -198,25 +185,15 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     public func recordChatUpdate(chatID: String) async {
         guard canUseAIChatSyncUpdate else { return }
         await state.addChatToBeUpdated(chatID: chatID)
-        // Eager trigger so a pin/unpin reaches other devices within seconds rather than
-        // waiting for the next natural sync cycle. Matches Android's PR #8640.
         sync.scheduler.notifyDataChanged()
     }
 
     public func updateIfNeeded() async {
-        guard canUseAIChatSyncUpdate else { return }
-        guard let storageHandler else {
-            Logger.aiChat.debug("AIChat sync updates: no storage handler wired; skipping")
-            return
-        }
+        guard canUseAIChatSyncUpdate, let storageHandler else { return }
         let pending = await state.readChatIDsToBeUpdated() ?? []
-        guard !pending.isEmpty else {
-            Logger.aiChat.debug("No chat IDs pending update")
-            return
-        }
-        // Delete-wins arbitration: if a chatId is also queued for deletion, skip the
-        // update — the deletion will land on the server first and updating a deleted row
-        // is wasted work (and may resurface a tombstoned chat).
+        guard !pending.isEmpty else { return }
+
+        // Delete-wins: skip ids that are also queued for deletion.
         let pendingDeletes = Set((await state.readChatIDsToBeDeleted()) ?? [])
         let candidates = Array(Set(pending).subtracting(pendingDeletes))
         guard !candidates.isEmpty else { return }
@@ -230,8 +207,6 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
             return AIChatUpdate(chatId: chatId, pinned: pinned)
         }
         guard !updates.isEmpty else {
-            // Storage couldn't resolve any of them (deleted out from under us, decode
-            // failure) — drop the pending entries so we don't retry forever.
             await state.removeChatsFromPendingUpdates(chatIDs: Set(candidates))
             return
         }

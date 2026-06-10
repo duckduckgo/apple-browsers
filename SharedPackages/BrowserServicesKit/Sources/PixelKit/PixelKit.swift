@@ -161,9 +161,10 @@ public final class PixelKit {
 
     private static let weeksToCoalesceCohort = 6
 
-    private static func retryQueueFileName(forSource source: String?) -> String {
-        let sanitizedSource = (source ?? "default").replacingOccurrences(of: "/", with: "-")
-        return "pixelkit-retry-queue-\(sanitizedSource).json"
+    /// Per-`source` suffix so each process (browser, VPN agent, packet tunnel, …) gets its own retry-queue
+    /// file and its own throttle key, even when they share a `defaults` suite (e.g. `UserDefaults.netP`).
+    private static func retryQueueSourceSuffix(forSource source: String?) -> String {
+        (source ?? "default").replacingOccurrences(of: "/", with: "-")
     }
     private let dateGenerator: () -> Date
     public private(set) static var shared: PixelKit?
@@ -235,10 +236,12 @@ public final class PixelKit {
             // Wrap the network fire-request with a retry queue so failed pixels are persisted and re-sent
             // at launch and after subsequent successful fires (28-day expiry). Reuses the same `defaults`
             // for throttling state. This is internal to PixelKit and hidden from its consumers.
+            let sourceSuffix = Self.retryQueueSourceSuffix(forSource: source)
             let retryQueue = PixelRetryQueue(
                 fireRequest: fireRequest,
-                store: PixelRetryQueueFileStore(fileName: Self.retryQueueFileName(forSource: source)),
+                store: PixelRetryQueueFileStore(fileName: "pixelkit-retry-queue-\(sourceSuffix).json"),
                 lastProcessingDateStorage: defaults,
+                lastProcessingDateKey: "com.duckduckgo.pixelkit.retry-queue.last-processing-timestamp.\(sourceSuffix)",
                 calendar: self.pixelCalendar,
                 dateGenerator: dateGenerator
             )

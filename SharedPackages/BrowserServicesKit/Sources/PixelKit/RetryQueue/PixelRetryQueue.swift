@@ -53,6 +53,7 @@ final class PixelRetryQueue {
     private let underlyingFireRequest: PixelKit.FireRequest
     private let store: PixelRetryQueueStoring
     private let lastProcessingDateStorage: ThrowingKeyValueStoring
+    private let lastProcessingDateKey: String
     private let calendar: Calendar
     private let dateGenerator: () -> Date
 
@@ -68,11 +69,13 @@ final class PixelRetryQueue {
     init(fireRequest: @escaping PixelKit.FireRequest,
          store: PixelRetryQueueStoring = PixelRetryQueueFileStore(),
          lastProcessingDateStorage: ThrowingKeyValueStoring = UserDefaults.standard,
+         lastProcessingDateKey: String = Constants.lastProcessingDateKey,
          calendar: Calendar = .current,
          dateGenerator: @escaping () -> Date = Date.init) {
         self.underlyingFireRequest = fireRequest
         self.store = store
         self.lastProcessingDateStorage = lastProcessingDateStorage
+        self.lastProcessingDateKey = lastProcessingDateKey
         self.calendar = calendar
         self.dateGenerator = dateGenerator
     }
@@ -122,7 +125,7 @@ final class PixelRetryQueue {
     /// expired items, and removes anything successfully sent. Throttled to `minimumProcessingInterval`.
     func sendQueuedPixels(completion: @escaping (PixelRetryQueueStorageError?) -> Void = { _ in }) {
         workQueue.async {
-            let storedProcessingDate = (try? self.lastProcessingDateStorage.object(forKey: Constants.lastProcessingDateKey)) ?? nil
+            let storedProcessingDate = (try? self.lastProcessingDateStorage.object(forKey: self.lastProcessingDateKey)) ?? nil
             if let lastProcessingDate = storedProcessingDate as? Date {
                 let threshold = self.dateGenerator().addingTimeInterval(-Constants.minimumProcessingInterval)
                 if threshold <= lastProcessingDate {
@@ -131,7 +134,7 @@ final class PixelRetryQueue {
                 }
             }
 
-            try? self.lastProcessingDateStorage.set(self.dateGenerator(), forKey: Constants.lastProcessingDateKey)
+            try? self.lastProcessingDateStorage.set(self.dateGenerator(), forKey: self.lastProcessingDateKey)
 
             let queuedItems: [PixelRetryQueueItem]
             do {

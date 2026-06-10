@@ -31,6 +31,8 @@ struct SuggestionRow: Identifiable, Equatable {
         case none
         case tapAhead
         case delete
+        /// 🔥 button on a recent-chat row that opens the delete-confirmation sheet.
+        case fire
     }
 
     let id: String

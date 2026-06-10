@@ -21,6 +21,7 @@ final class SuggestionsListViewModel: ObservableObject {
     var onSelect: ((String) -> Void)?
     var onTapAhead: ((String) -> Void)?
     var onDelete: ((String) -> Void)?
+    var onFireDelete: ((String) -> Void)?
 
     private var cancellable: AnyCancellable?
 
@@ -34,4 +35,5 @@ final class SuggestionsListViewModel: ObservableObject {
     func selectRow(id: String) { onSelect?(id) }
     func tapAheadRow(id: String) { onTapAhead?(id) }
     func deleteRow(id: String) { onDelete?(id) }
+    func fireDeleteRow(id: String) { onFireDelete?(id) }
 }

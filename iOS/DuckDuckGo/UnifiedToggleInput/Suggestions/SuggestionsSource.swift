@@ -33,7 +33,8 @@ final class DuckAISuggestionsSource: SuggestionsSource {
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
          chatManager: AIChatHistoryManager,
-         query: @escaping () -> String) {
+         query: @escaping () -> String,
+         deleteEnabled: Bool = false) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.chatManager = chatManager
@@ -47,7 +48,7 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         )
 
         sectionsPublisher = pipeline.snapshotPublisher
-            .map { snapshot in Self.sections(from: snapshot, query: query()) }
+            .map { snapshot in Self.sections(from: snapshot, query: query(), deleteEnabled: deleteEnabled) }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
@@ -65,17 +66,17 @@ final class DuckAISuggestionsSource: SuggestionsSource {
 
     // MARK: - Section mapping
 
-    static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String) -> [SuggestionSection] {
+    static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String, deleteEnabled: Bool = false) -> [SuggestionSection] {
         var sections: [SuggestionSection] = []
         if !snapshot.chats.isEmpty {
             sections.append(SuggestionSection(
                 id: "chats",
-                rows: snapshot.chats.map { SuggestionRowMapper.row(for: $0) }))
+                rows: snapshot.chats.map { SuggestionRowMapper.row(for: $0, includesFireDelete: deleteEnabled) }))
         }
         if !snapshot.urls.isEmpty {
             sections.append(SuggestionSection(
                 id: "urls",
-                rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: "urls", includesDeleteAccessory: true) }))
+                rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: "urls", includesDeleteAccessory: deleteEnabled) }))
         }
         if !query.isEmpty {
             sections.append(SuggestionSection(

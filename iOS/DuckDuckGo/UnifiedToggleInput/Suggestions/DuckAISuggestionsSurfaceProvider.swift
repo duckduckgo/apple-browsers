@@ -31,6 +31,10 @@ protocol DuckAISuggestionsSurfaceProviderDelegate: AnyObject {
     /// The duck.ai fetchers' content/settle state changed (was `onFetchCompleted`); the owner
     /// refreshes dax visibility.
     func duckAISurfaceStateDidChange()
+    /// Present the fire/delete confirmation for a recent-chat suggestion (the owner is the host VC).
+    func duckAISurfaceRequestsChatDeletionConfirmation(for chat: AIChatSuggestion,
+                                                       onConfirm: @escaping () -> Void,
+                                                       onCancel: @escaping () -> Void)
 }
 
 /// Owns the lazily-attached duck.ai suggestions surface: its source, chat/url fetchers, the
@@ -71,6 +75,8 @@ final class DuckAISuggestionsSurfaceProvider {
     /// In-flight history-delete task; cancelled on detach so its post-delete refetch can't run
     /// against a torn-down source.
     private var deleteTask: Task<Void, Never>?
+    /// Deletes a recent-chat suggestion via the attached chat manager; nil while detached.
+    private var chatDeleteAction: ((AIChatSuggestion) -> Void)?
 
     init(switchBarHandler: SwitchBarHandling,
          dependencies: SuggestionTrayDependencies,
@@ -117,7 +123,8 @@ final class DuckAISuggestionsSurfaceProvider {
             chatViewModel: chatViewModel,
             urlLoader: urlLoader,
             chatManager: chatManager,
-            query: { [weak self] in self?.switchBarHandler.currentText ?? "" }
+            query: { [weak self] in self?.switchBarHandler.currentText ?? "" },
+            deleteEnabled: featureFlagger.isFeatureOn(.removeChatHistory)
         )
         chatManager.onFetchCompleted = { [weak self] _, _ in self?.delegate?.duckAISurfaceStateDidChange() }
 
@@ -138,8 +145,11 @@ final class DuckAISuggestionsSurfaceProvider {
             source: source,
             onSelectRow: { [weak self] id in self?.select(rowID: id, source: source) },
             onDeleteRow: { [weak self] id in self?.deleteHistory(rowID: id, source: source) },
-            onTapAheadRow: { [weak self] id in self?.select(rowID: id, source: source) }
+            onTapAheadRow: { [weak self] id in self?.select(rowID: id, source: source) },
+            onFireDeleteRow: { [weak self] id in self?.requestChatDeletion(rowID: id, source: source) }
         )
+
+        chatDeleteAction = { [weak chatManager] chat in chatManager?.deleteChatSuggestion(suggestion: chat) }
 
         hasContentReader = { [weak chatViewModel, weak urlLoader, weak self] in
             !(chatViewModel?.filteredSuggestions.isEmpty ?? true)
@@ -169,6 +179,7 @@ final class DuckAISuggestionsSurfaceProvider {
         hasSettledReader = nil
         refreshRecentsAction = nil
         recentsCountReader = nil
+        chatDeleteAction = nil
     }
 
     private func select(rowID id: String, source: DuckAISuggestionsSource) {
@@ -185,5 +196,21 @@ final class DuckAISuggestionsSurfaceProvider {
             guard !Task.isCancelled else { return }
             source.fetchURLSuggestions(query: self.switchBarHandler.currentText)
         }
+    }
+
+    /// Recent-chat 🔥 delete: fires the tapped pixel, asks the host to present the confirmation, and
+    /// on confirm deletes the chat + fires the confirmed/cancelled pixels (mirrors the legacy coordinator).
+    private func requestChatDeletion(rowID id: String, source: DuckAISuggestionsSource) {
+        guard case .chat(let chat) = source.selection(forRowID: id) else { return }
+        DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
+        delegate?.duckAISurfaceRequestsChatDeletionConfirmation(
+            for: chat,
+            onConfirm: { [weak self] in
+                self?.chatDeleteAction?(chat)
+                DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteConfirmed)
+            },
+            onCancel: {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
+            })
     }
 }

@@ -33,4 +33,5 @@ struct UnifiedSuggestionsDuckAISurface {
     let onSelectRow: (String) -> Void
     let onDeleteRow: (String) -> Void
     let onTapAheadRow: (String) -> Void
+    let onFireDeleteRow: (String) -> Void
 }

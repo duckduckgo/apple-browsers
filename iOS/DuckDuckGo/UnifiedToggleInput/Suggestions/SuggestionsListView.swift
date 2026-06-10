@@ -55,7 +55,8 @@ struct SuggestionsListView: View {
                     row: row,
                     isAddressBarAtBottom: isAddressBarAtBottom,
                     onTapAhead: { viewModel.tapAheadRow(id: row.id) },
-                    onDelete: { viewModel.deleteRow(id: row.id) })
+                    onDelete: { viewModel.deleteRow(id: row.id) },
+                    onFire: { viewModel.fireDeleteRow(id: row.id) })
             }
             .listRowInsets(rowInsets(for: row))
             .listRowBackground(Color(designSystemColor: .surface))

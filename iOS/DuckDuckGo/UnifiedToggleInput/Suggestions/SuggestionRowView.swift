@@ -18,6 +18,7 @@ struct SuggestionRowView: View {
     let isAddressBarAtBottom: Bool
     let onTapAhead: () -> Void
     let onDelete: () -> Void
+    let onFire: () -> Void
 
     private enum Metrics {
         static let iconSize: CGFloat = 24
@@ -83,13 +84,23 @@ struct SuggestionRowView: View {
                 .tintIfAvailable(Color(designSystemColor: .iconsSecondary))
                 .highPriorityGesture(TapGesture().onEnded { onTapAhead() })
         case .delete:
-            Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
-                .tintIfAvailable(Color(designSystemColor: .iconsSecondary))
-                .highPriorityGesture(TapGesture().onEnded { onDelete() })
-                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.DeleteButton")
-                .accessibilityLabel(UserText.actionDelete)
+            deletionButton(glyph: DesignSystemImages.Glyphs.Size16.clear,
+                           accessibilityID: "Autocomplete.Suggestions.ListItem.DeleteButton",
+                           action: onDelete)
+        case .fire:
+            deletionButton(glyph: DesignSystemImages.Glyphs.Size16.fire,
+                           accessibilityID: "Autocomplete.Suggestions.ListItem.FireDeleteButton",
+                           action: onFire)
         case .none:
             EmptyView()
         }
+    }
+
+    private func deletionButton(glyph: UIImage, accessibilityID: String, action: @escaping () -> Void) -> some View {
+        Image(uiImage: glyph)
+            .tintIfAvailable(Color(designSystemColor: .iconsSecondary))
+            .highPriorityGesture(TapGesture().onEnded { action() })
+            .accessibilityIdentifier(accessibilityID)
+            .accessibilityLabel(UserText.actionDelete)
     }
 }

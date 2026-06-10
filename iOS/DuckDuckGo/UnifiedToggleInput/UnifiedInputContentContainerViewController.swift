@@ -871,6 +871,17 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsSurfacePr
     func duckAISurfaceStateDidChange() {
         updateDaxVisibility()
     }
+
+    func duckAISurfaceRequestsChatDeletionConfirmation(for chat: AIChatSuggestion,
+                                                       onConfirm: @escaping () -> Void,
+                                                       onCancel: @escaping () -> Void) {
+        guard let source = unifiedSuggestionsContainerView ?? view else { return }
+        FireConfirmationPresenter.presentFireConfirmation(suggestion: chat,
+                                                          presenter: self,
+                                                          source: source,
+                                                          onCancel: onCancel,
+                                                          onConfirm: onConfirm)
+    }
 }
 
 // MARK: - Duck.ai suggestion selection handling

@@ -22,7 +22,8 @@ struct SuggestionsListView: View {
         /// Per Figma: single-line rows use 15pt top/bottom padding; rows with a subtitle use 14pt
         static let rowVerticalPaddingSingleLine: CGFloat = 15
         static let rowVerticalPaddingWithSubtitle: CGFloat = 14
-        static let rowHorizontalInset: CGFloat = 12
+        static let rowLeftInset: CGFloat = 12
+        static let rowRightInset: CGFloat = 13
     }
 
     var body: some View {
@@ -60,6 +61,7 @@ struct SuggestionsListView: View {
             }
             .listRowInsets(rowInsets(for: row))
             .listRowBackground(Color(designSystemColor: .surface))
+            .modifier(SeparatorTrailingToContentModifier())
         }
     }
 
@@ -67,7 +69,7 @@ struct SuggestionsListView: View {
     /// the rows aligned with the input's text + X clear button.
     private func rowInsets(for row: SuggestionRow) -> EdgeInsets {
         let vertical = row.subtitle == nil ? Metrics.rowVerticalPaddingSingleLine : Metrics.rowVerticalPaddingWithSubtitle
-        return EdgeInsets(top: vertical, leading: Metrics.rowHorizontalInset, bottom: vertical, trailing: Metrics.rowHorizontalInset)
+        return EdgeInsets(top: vertical, leading: Metrics.rowLeftInset, bottom: vertical, trailing: Metrics.rowRightInset)
     }
 
     @ViewBuilder
@@ -101,6 +103,18 @@ private struct ListTopContentMarginModifier: ViewModifier {
 private struct CompactSectionSpacingModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 17, *) { content.listSectionSpacing(.compact) } else { content }
+    }
+}
+
+/// Pins the row separator's trailing end to the row content's trailing edge (the `rowRightInset`),
+/// so the hairline ends the same distance from the cell's right edge as the content.
+private struct SeparatorTrailingToContentModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16, *) {
+            content.alignmentGuide(.listRowSeparatorTrailing) { $0[.trailing] }
+        } else {
+            content
+        }
     }
 }
 

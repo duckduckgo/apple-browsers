@@ -174,6 +174,26 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenReasoningEffortDisabledThenSupportedFileTypesPreservedInGetConfig() async throws {
+        // Stripping reasoning effort must not also drop supportedFileTypes, or PDF attachment
+        // would be hidden for capable models whenever reasoning effort is off.
+        configProvider.isReasoningEffortEnabled = false
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "model", name: "Model", shortName: "M",
+                                                 isEnabled: true, supportsImageUpload: false,
+                                                 supportedReasoningEffort: ["none", "low"],
+                                                 supportedFileTypes: ["application/pdf"])
+            ])
+        ]
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.supportedFileTypes, ["application/pdf"])
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.supportedReasoningEffort, [])
+    }
+
+    @MainActor
     func testWhenReasoningEffortEnabledThenSupportedReasoningEffortPreservedInGetConfig() async throws {
         configProvider.isReasoningEffortEnabled = true
         modelsProvider.lastFetchedSections = [

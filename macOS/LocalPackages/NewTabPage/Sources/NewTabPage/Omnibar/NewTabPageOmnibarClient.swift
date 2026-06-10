@@ -219,7 +219,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
                         isEnabled: item.isEnabled,
                         supportsImageUpload: item.supportsImageUpload,
                         supportedTools: item.supportedTools,
-                        supportedReasoningEffort: []
+                        supportedReasoningEffort: [],
+                        supportedFileTypes: item.supportedFileTypes
                     )
                 }
             )

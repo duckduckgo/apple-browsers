@@ -66,6 +66,11 @@ struct AutocompleteView: View {
         .padding(.top, model.isPad ? 10 : 0)
         .modifier(HideScrollContentBackground())
         .background(Color(designSystemColor: .background))
+        .onHover { isHovering in
+            if !isHovering {
+                model.clearSelection()
+            }
+        }
         .modifier(CompactSectionSpacing())
         .modifier(DisableSelection())
         .modifier(DismissKeyboardOnSwipe())
@@ -159,8 +164,6 @@ private struct SuggestionsSection: View {
                  .onHover { isHovering in
                      if isHovering {
                          autocompleteViewModel.selection = suggestions[index]
-                     } else if autocompleteViewModel.selection == suggestions[index] {
-                         autocompleteViewModel.clearSelection()
                      }
                  }
             }

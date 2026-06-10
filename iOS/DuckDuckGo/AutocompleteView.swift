@@ -134,10 +134,11 @@ private struct SuggestionsSection: View {
 
     let unselectedColor = Color(designSystemColor: .surface)
 
-    @State private var hoveredIndex: Int?
-
     private struct Metrics {
-        static let rowInsets = EdgeInsets(top: 10, leading: 10, bottom: 8, trailing: 14)
+        // Horizontal insets stay on the row so the separator keeps its leading inset; vertical
+        // insets move inside the row content so the hover/tap area spans the full row height.
+        static let horizontalRowInsets = EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 14)
+        static let verticalRowInsets = EdgeInsets(top: 10, leading: 0, bottom: 8, trailing: 0)
     }
 
     var body: some View {
@@ -149,23 +150,23 @@ private struct SuggestionsSection: View {
                     SuggestionView(model: suggestions[index],
                                    query: query,
                                    onDelete: { onSuggestionDeleted(suggestions[index]) })
+                        .padding(Metrics.verticalRowInsets)
+                        .contentShape(Rectangle())
                  }
-                 .listRowBackground((autocompleteViewModel.selection == suggestions[index] || hoveredIndex == index) ? selectedColor : unselectedColor)
-                 .listRowInsets(Metrics.rowInsets)
+                 .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
+                 .listRowInsets(Metrics.horizontalRowInsets)
                  .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
+                 // Pointer hover drives the same selection as keyboard navigation, so the hovered
+                 // row is the single highlighted, active suggestion (no separate hover-only state).
+                 // Leaving the row deselects (matches macOS), reverting the omnibar to the typed query.
                  .onHover { isHovering in
                      if isHovering {
-                         hoveredIndex = index
-                     } else if hoveredIndex == index {
-                         hoveredIndex = nil
+                         autocompleteViewModel.selection = suggestions[index]
+                     } else if autocompleteViewModel.selection == suggestions[index] {
+                         autocompleteViewModel.clearSelection()
                      }
                  }
             }
-        }
-        // A suggestions refresh can reshuffle rows without firing a hover exit, leaving a stale
-        // positional index. Clear it on change so it matches how keyboard selection resets.
-        .onChange(of: suggestions) { _ in
-            hoveredIndex = nil
         }
     }
 

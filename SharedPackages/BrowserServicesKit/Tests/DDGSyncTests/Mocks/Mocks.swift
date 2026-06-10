@@ -320,6 +320,7 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
 
 final class PairingV2MessageExchangingMock: PairingV2MessageExchanging {
     var openChannelCalls: [String] = []
+    var openChannelHandler: ((String) async throws -> Void)?
     var sendCalls: [(messages: [PairingV2EncryptedMessage], channelID: String)] = []
     var sendHandler: (([PairingV2EncryptedMessage], String) async throws -> Void)?
     var sendError: Error?
@@ -332,6 +333,7 @@ final class PairingV2MessageExchangingMock: PairingV2MessageExchanging {
 
     func openChannel(_ channelID: String) async throws {
         openChannelCalls.append(channelID)
+        try await openChannelHandler?(channelID)
     }
 
     func send(_ messages: [PairingV2EncryptedMessage], to channelID: String) async throws {

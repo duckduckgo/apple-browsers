@@ -162,6 +162,8 @@ public class SyncConnectionController: SyncConnectionControlling {
     private let deviceType: String
     private let syncService: DDGSyncing
     private let dependencies: SyncDependencies
+    private let pairingV2PollingTimeout: TimeInterval
+    private let pairingV2PollIntervalNanoseconds: UInt64
 
     private weak var delegate: SyncConnectionControllerDelegate?
 
@@ -175,12 +177,20 @@ public class SyncConnectionController: SyncConnectionControlling {
         dependencies.syncFeatureFlags.isPairingV2ScanningEnabled()
     }
 
-    init(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate? = nil, syncService: DDGSyncing, dependencies: SyncDependencies) {
+    init(deviceName: String,
+         deviceType: String,
+         delegate: SyncConnectionControllerDelegate? = nil,
+         syncService: DDGSyncing,
+         dependencies: SyncDependencies,
+         pairingV2PollingTimeout: TimeInterval = PairingV2PollingDefaults.sessionTimeout,
+         pairingV2PollIntervalNanoseconds: UInt64 = PairingV2PollingDefaults.pollIntervalNanoseconds) {
         self.deviceName = deviceName
         self.deviceType = deviceType
         self.syncService = syncService
         self.delegate = delegate
         self.dependencies = dependencies
+        self.pairingV2PollingTimeout = pairingV2PollingTimeout
+        self.pairingV2PollIntervalNanoseconds = pairingV2PollIntervalNanoseconds
     }
 
     public func startExchangeMode() async throws -> PairingInfo {
@@ -365,7 +375,7 @@ public class SyncConnectionController: SyncConnectionControlling {
 
         do {
             try await coordinator.startScanning(qrPayload: qrPayload)
-            let completion = try await coordinator.pollUntilFinished()
+            let completion = try await pollPairingV2UntilFinished(coordinator)
             await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             return true
         } catch SyncError.pollingDidTimeOut {
@@ -419,13 +429,13 @@ public class SyncConnectionController: SyncConnectionControlling {
             let setupRole = SyncSetupRole.sharer
             var didNotifyPeerConnected = false
             do {
-                let completion = try await coordinator.pollUntilFinished(onStateUpdate: { state in
+                let completion = try await pollPairingV2UntilFinished(coordinator) { state in
                     guard !didNotifyPeerConnected && self.shouldDismissPairingV2PresenterCode(for: state) else {
                         return
                     }
                     didNotifyPeerConnected = true
                     await self.delegate?.controllerWillBeginTransmittingRecoveryKey()
-                })
+                }
                 await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             } catch SyncError.pollingDidTimeOut {
                 await delegate?.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: setupRole)
@@ -460,6 +470,14 @@ public class SyncConnectionController: SyncConnectionControlling {
                 await coordinator.cancel()
             }
         }
+    }
+
+    private func pollPairingV2UntilFinished(_ coordinator: PairingV2Coordinator,
+                                            onStateUpdate: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
+        try await coordinator.pollUntilFinished(
+            timeout: pairingV2PollingTimeout,
+            pollInterval: pairingV2PollIntervalNanoseconds,
+            onStateUpdate: onStateUpdate)
     }
 
     private func handlePairingV2Completion(_ completion: PairingV2State.Completion,

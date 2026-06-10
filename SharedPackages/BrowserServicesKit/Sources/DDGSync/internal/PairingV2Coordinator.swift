@@ -109,8 +109,8 @@ final class PairingV2Coordinator {
         try await execute(commands)
     }
 
-    /// Kept internal for focused state-machine/transport tests; production polling goes through `pollUntilFinished`.
-    /// Performs one poll of this device's channel and handles any new messages. Only called by `pollUntilFinished`; non-private for unit testing.
+    /// Performs one poll of this device's channel and handles any new messages.
+    /// Production polling goes through `pollUntilFinished`; this is internal for unit testing.
     func pollOnce() async throws {
         guard let channelID = localKeyPair?.channelID else {
             throw PairingV2Error.pairingSessionNotReady(.localKeyPair)
@@ -172,6 +172,20 @@ final class PairingV2Coordinator {
         }
         hasClosedLocalChannel = true
         try? await messageExchanger.closeChannel(channelID)
+    }
+
+    private func closeLocalChannelBestEffort() {
+        guard !hasClosedLocalChannel else {
+            return
+        }
+        guard let channelID = localKeyPair?.channelID else {
+            return
+        }
+
+        hasClosedLocalChannel = true
+        Task { [messageExchanger] in
+            try? await messageExchanger.closeChannel(channelID)
+        }
     }
 
     private func handle(_ encryptedMessage: PairingV2EncryptedMessage) async throws {
@@ -341,7 +355,8 @@ final class PairingV2Coordinator {
             try await execute(stateMachine.handle(.loginSucceeded))
 
         case .stopPolling:
-            await closeLocalChannel()
+            // Do not block successful pairing on relay channel cleanup.
+            closeLocalChannelBestEffort()
 
         case .abort:
             await closeLocalChannel()

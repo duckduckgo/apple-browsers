@@ -135,7 +135,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenFinalNativeLoginFailsTransientlyThenRetriesAndReturnsNativeAccount() async throws {
-        let setup = try makeSUT()
+        let setup = try makeSUT(finalNativeLoginRetryDelays: [0, 0])
         setup.api.fakeRequests[setup.endpoints.login] = SequencedThrowingHTTPRequestingMock(results: [
             .success(.init(data: Data(thirdPartyLoginBody().utf8), response: makeHTTPURLResponse(statusCode: 200))),
             .failure(SyncError.unexpectedStatusCode(500)),
@@ -154,7 +154,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenFinalNativeLoginKeepsFailingThenRetriesAndLogsOutTemporaryThirdPartyDevice() async throws {
-        let setup = try makeSUT()
+        let setup = try makeSUT(finalNativeLoginRetryDelays: [0, 0])
         setup.api.fakeRequests[setup.endpoints.login] = SequencedThrowingHTTPRequestingMock(results: [
             .success(.init(data: Data(thirdPartyLoginBody().utf8), response: makeHTTPURLResponse(statusCode: 200))),
             .failure(SyncError.unexpectedStatusCode(500)),
@@ -179,11 +179,10 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     func testWhenFinalNativeLoginReturnsUnauthorizedThenDoesNotRetryAndLogsOutTemporaryThirdPartyDevice() async throws {
-        let setup = try makeSUT()
+        let setup = try makeSUT(finalNativeLoginRetryDelays: [0, 0])
         setup.api.fakeRequests[setup.endpoints.login] = SequencedThrowingHTTPRequestingMock(results: [
             .success(.init(data: Data(thirdPartyLoginBody().utf8), response: makeHTTPURLResponse(statusCode: 200))),
-            .failure(SyncError.unexpectedStatusCode(401)),
-            .success(.init(data: Data(finalNativeLoginBody().utf8), response: makeHTTPURLResponse(statusCode: 200)))
+            .failure(SyncError.unexpectedStatusCode(401))
         ])
 
         do {
@@ -311,10 +310,11 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     private func makeSUT(accessCredentials: [AccessCredential] = [],
-                         protectedKeys: [ProtectedKey]? = nil) throws -> (coordinator: ThirdPartyAccountUpgradeCoordinator,
-                                                                           api: RemoteAPIRequestCreatingMock,
-                                                                           account: AccountManagingMock,
-                                                                           endpoints: Endpoints) {
+                         protectedKeys: [ProtectedKey]? = nil,
+                         finalNativeLoginRetryDelays: [UInt64] = []) throws -> (coordinator: ThirdPartyAccountUpgradeCoordinator,
+                                                                                 api: RemoteAPIRequestCreatingMock,
+                                                                                 account: AccountManagingMock,
+                                                                                 endpoints: Endpoints) {
         let api = RemoteAPIRequestCreatingMock()
         let account = AccountManagingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
@@ -346,7 +346,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
                                                               crypter: crypter,
                                                               scopedAccess: manager,
                                                               account: account,
-                                                              retrySleep: { _ in })
+                                                              finalNativeLoginRetryDelays: finalNativeLoginRetryDelays)
         let keys = try protectedKeys ?? [thirdPartyProtectedKey()]
 
         api.fakeRequests[endpoints.login] = SequencedHTTPRequestingMock(results: [
@@ -426,7 +426,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     private func accessCredentialsBody(_ accessCredentials: [AccessCredential]) throws -> String {
-        let data = try JSONEncoder.snakeCaseKeys.encode(FetchAccessCredentialsBody(accessCredentials: accessCredentials))
+        let data = try JSONEncoder.snakeCaseKeys.encode(FetchAccessCredentialsBody(accessCredentials: accessCredentials.map(AccessCredentialResponse.init)))
         return try XCTUnwrap(String(data: data, encoding: .utf8))
     }
 
@@ -449,7 +449,25 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
     }
 
     private struct FetchAccessCredentialsBody: Encodable {
-        let accessCredentials: [AccessCredential]
+        let accessCredentials: [AccessCredentialResponse]
+    }
+
+    private struct AccessCredentialResponse: Encodable {
+        let id: String
+        let scope: String?
+        let encrypted3PartyCredential: String?
+
+        init(_ accessCredential: AccessCredential) {
+            id = accessCredential.id
+            scope = accessCredential.scope
+            encrypted3PartyCredential = accessCredential.encrypted3PartyCredential
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case scope
+            case encrypted3PartyCredential = "encrypted_3party_credential"
+        }
     }
 
     private struct FetchProtectedKeysBody: Encodable {

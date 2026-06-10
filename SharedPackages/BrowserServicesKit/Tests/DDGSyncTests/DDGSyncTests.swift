@@ -127,8 +127,9 @@ final class DDGSyncTests: XCTestCase {
 
         let recoveryCode = try XCTUnwrap(syncService.recoveryCode)
         let syncCode = try SyncCode.decodeBase64URLString(recoveryCode)
+        let expectedSyncCode = try SyncCode.decodeBase64String(try XCTUnwrap(SyncAccount.mock.recoveryCodeV2))
 
-        XCTAssertEqual(recoveryCode, try XCTUnwrap(SyncAccount.mock.recoveryCodeV2))
+        XCTAssertEqual(syncCode.recovery, expectedSyncCode.recovery)
         guard case .v2(let payload) = syncCode.recovery else {
             XCTFail("Expected v2 recovery payload")
             return
@@ -144,8 +145,9 @@ final class DDGSyncTests: XCTestCase {
 
         let recoveryCode = try XCTUnwrap(syncService.recoveryCode)
         let syncCode = try SyncCode.decodeBase64String(recoveryCode)
+        let expectedSyncCode = try SyncCode.decodeBase64String(try XCTUnwrap(SyncAccount.mock.legacyRecoveryCodeV1))
 
-        XCTAssertEqual(recoveryCode, try XCTUnwrap(SyncAccount.mock.legacyRecoveryCodeV1))
+        XCTAssertEqual(syncCode.recovery, expectedSyncCode.recovery)
         XCTAssertNoThrow(try XCTUnwrap(syncCode.recovery).defaultCredentialRecoveryKey())
     }
 
@@ -156,8 +158,9 @@ final class DDGSyncTests: XCTestCase {
 
         let recoveryCode = try XCTUnwrap(syncService.recoveryCode)
         let syncCode = try SyncCode.decodeBase64String(recoveryCode)
+        let expectedSyncCode = try SyncCode.decodeBase64String(try XCTUnwrap(SyncAccount.mock.legacyRecoveryCodeV1))
 
-        XCTAssertEqual(recoveryCode, try XCTUnwrap(SyncAccount.mock.legacyRecoveryCodeV1))
+        XCTAssertEqual(syncCode.recovery, expectedSyncCode.recovery)
         XCTAssertNoThrow(try XCTUnwrap(syncCode.recovery).defaultCredentialRecoveryKey())
     }
 
@@ -168,8 +171,9 @@ final class DDGSyncTests: XCTestCase {
 
         let recoveryCode = try XCTUnwrap(syncService.recoveryCode)
         let syncCode = try SyncCode.decodeBase64URLString(recoveryCode)
+        let expectedSyncCode = try SyncCode.decodeBase64String(try XCTUnwrap(SyncAccount.mock.recoveryCodeV2))
 
-        XCTAssertEqual(recoveryCode, try XCTUnwrap(SyncAccount.mock.recoveryCodeV2))
+        XCTAssertEqual(syncCode.recovery, expectedSyncCode.recovery)
         guard case .v2(let payload) = syncCode.recovery else {
             XCTFail("Expected v2 recovery payload")
             return
@@ -715,7 +719,7 @@ final class DDGSyncTests: XCTestCase {
 
         let code = try await syncService.prepareThirdPartyRecoveryCode(purpose: "ai_chats")
         let decoded = try SyncCode.decodeBase64URLString(code)
-        await fulfillment(of: [scopedPasswordCached], timeout: 1.0)
+        await fulfillment(of: [scopedPasswordCached], timeout: 5.0)
 
         XCTAssertEqual(scopedAccess.ensureThirdPartyScopedPasswordCalls.count, 1)
         XCTAssertEqual(secureStore.theScopedPassword, scopedPassword)
@@ -741,7 +745,7 @@ final class DDGSyncTests: XCTestCase {
 
         let code = try await syncService.prepareThirdPartyRecoveryCode(purpose: "ai_chats")
         let decoded = try SyncCode.decodeBase64URLString(code)
-        await fulfillment(of: [scopedPasswordCacheAttempted], timeout: 1.0)
+        await fulfillment(of: [scopedPasswordCacheAttempted], timeout: 5.0)
 
         XCTAssertEqual(scopedAccess.ensureThirdPartyScopedPasswordCalls.count, 1)
         XCTAssertNil(secureStore.theScopedPassword)

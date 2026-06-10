@@ -51,20 +51,29 @@ private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDele
 
 private actor PairingV2CoordinatorTestGate {
     private var continuation: CheckedContinuation<Void, Never>?
+    private var isOpen = false
 
     func wait() async {
+        guard !isOpen else {
+            return
+        }
         await withCheckedContinuation { continuation in
             self.continuation = continuation
         }
     }
 
     func open() {
+        isOpen = true
         continuation?.resume()
         continuation = nil
     }
 }
 
 final class PairingV2CoordinatorTests: XCTestCase {
+
+    private static let cachedPeerKeyPair: Result<PairingV2KeyPair, Error> = Result {
+        try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+    }
 
     func testWhenStartPresentingThenOpensLocalChannelAndReturnsQRCodePayload() async throws {
         let dependencies = MockSyncDependencies()
@@ -89,7 +98,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let coordinator = makeCoordinator(syncService: syncService, messageExchanger: messageExchanger, messageCrypto: messageCrypto)
 
         let payload = try await coordinator.startPresenting()
@@ -121,7 +130,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let coordinator = makeCoordinator(syncService: syncService, messageExchanger: messageExchanger, messageCrypto: messageCrypto)
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
@@ -142,6 +151,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
             .waitingForPeerStatus(
                 .init(localClient: .init(name: "Mac", kind: .ddg, hasAccount: false, isPresenter: false),
                       peerChannelID: peerKeyPair.channelID,
+                      localChannelID: hello.channelId,
                       hasReceivedHello: true)
             )
         )
@@ -153,7 +163,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let coordinator = makeCoordinator(syncService: syncService, messageExchanger: messageExchanger, messageCrypto: messageCrypto)
         let error = PairingV2Error.secondHello
 
@@ -205,7 +215,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let coordinator = makeCoordinator(syncService: syncService, messageExchanger: messageExchanger, messageCrypto: messageCrypto)
 
         let payload = try await coordinator.startPresenting()
@@ -234,7 +244,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
@@ -282,9 +292,9 @@ final class PairingV2CoordinatorTests: XCTestCase {
             try decryptSentMessage(at: 2, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
             .recoveryCodeConfirmed(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeConfirmed))
         )
-        XCTAssertEqual(
+        try assertRecoveryCodeResponse(
             try decryptSentMessage(at: 3, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
-            .recoveryCodeResponse(.init(recoveryCode: recoveryCode))
+            matches: recoveryCode
         )
         XCTAssertEqual(coordinator.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
     }
@@ -296,7 +306,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
@@ -335,9 +345,9 @@ final class PairingV2CoordinatorTests: XCTestCase {
             try decryptSentMessage(at: 2, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
             .recoveryCodeConfirmed(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeConfirmed))
         )
-        XCTAssertEqual(
+        try assertRecoveryCodeResponse(
             try decryptSentMessage(at: 3, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
-            .recoveryCodeResponse(.init(recoveryCode: recoveryCode))
+            matches: recoveryCode
         )
         XCTAssertEqual(coordinator.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
     }
@@ -349,7 +359,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
@@ -392,7 +402,59 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
     }
 
-    func testWhenPresenterCannotPrepareThirdPartyRecoveryCodeThenSendsRecoveryCodeUnavailableAndStops() async throws {
+    func testWhenNoAccountPresenterCannotCreateAccountThenFailsWithAccountCreationError() async throws {
+        let dependencies = MockSyncDependencies()
+        let accountManager = AccountManagingMock()
+        accountManager.createAccountError = SyncError.failedToPrepareForConnect("test failure")
+        dependencies.account = accountManager
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let messageCrypto = PairingV2MessageCrypto()
+        let peerKeyPair = try makePeerKeyPair()
+        let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: messageExchanger,
+                                          messageCrypto: messageCrypto,
+                                          confirmationDelegate: confirmationDelegate)
+
+        let payload = try await coordinator.startPresenting()
+        messageExchanger.fetchMessagesStub = try encryptedPeerMessages(
+            [
+                .hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)),
+                .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                                           name: "Peer",
+                                           kind: .ddg))
+            ],
+            recipientPublicKey: payload.publicKey,
+            peerKeyPair: peerKeyPair,
+            messageCrypto: messageCrypto
+        )
+
+        do {
+            try await coordinator.pollOnce()
+            XCTFail("Expected PairingV2Error.recoveryCodePreparationFailed")
+        } catch PairingV2Error.recoveryCodePreparationFailed {
+        } catch {
+            XCTFail("Expected PairingV2Error.recoveryCodePreparationFailed, got \(error)")
+        }
+
+        XCTAssertEqual(coordinator.state, .failed(.recoveryCodePreparationFailed))
+        XCTAssertEqual(accountManager.createAccountCalls.map(\.deviceName), ["Mac"])
+        XCTAssertNil(syncService.account)
+        XCTAssertTrue(confirmationDelegate.didCreateSyncAccountCalls.isEmpty)
+        XCTAssertEqual(messageExchanger.closeChannelCalls, [payload.channelId])
+        XCTAssertEqual(messageExchanger.sendCalls.count, 4)
+        XCTAssertEqual(
+            try decryptSentMessage(at: 2, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
+            .recoveryCodeConfirmed(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeConfirmed))
+        )
+        XCTAssertEqual(
+            try decryptSentMessage(at: 3, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
+            .recoveryCodeUnavailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeUnavailable))
+        )
+    }
+
+    func testWhenPresenterCannotPrepareThirdPartyRecoveryCodeThenFailsWithThirdPartyPreparationError() async throws {
         let dependencies = MockSyncDependencies()
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
@@ -400,7 +462,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
@@ -430,6 +492,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         XCTAssertEqual(coordinator.state, .failed(.recoveryCodePreparationFailed))
         XCTAssertEqual(messageExchanger.closeChannelCalls, [payload.channelId])
+        XCTAssertEqual(messageExchanger.sendCalls.count, 4)
         XCTAssertEqual(
             try decryptSentMessage(at: 2, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
             .recoveryCodeConfirmed(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeConfirmed))
@@ -446,7 +509,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         confirmationDelegate.shouldAllowPeerToJoin = false
         let coordinator = makeCoordinator(syncService: syncService,
@@ -488,7 +551,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
@@ -554,7 +617,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
@@ -602,8 +665,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
             pollCompleted.fulfill()
         }
 
-        await fulfillment(of: [pollCompleted], timeout: 1)
         await fulfillment(of: [closeStarted], timeout: 1)
+        await fulfillment(of: [pollCompleted], timeout: 1)
         await closeGate.open()
         try await completionTask.value
         XCTAssertEqual(messageExchanger.closeChannelCalls.count, 1)
@@ -618,7 +681,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = PairingV2Coordinator(syncService: syncService,
                                                messageExchanger: messageExchanger,
@@ -650,6 +713,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
             .joinerWaitingForRecoveryCode(
                 .init(localClient: .init(name: "Mac", kind: .ddg, hasAccount: false, isPresenter: false),
                       peerChannelID: peerKeyPair.channelID,
+                      localChannelID: hello.channelId,
                       peerStatus: .recoveryCodeAvailable(name: "Peer", kind: .thirdParty, userId: "third-party-user"))
             )
         )
@@ -715,7 +779,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         confirmationDelegate.shouldJoinPeer = false
         let coordinator = PairingV2Coordinator(syncService: syncService,
@@ -770,7 +834,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
-        let peerKeyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "peer-channel")
+        let peerKeyPair = try makePeerKeyPair()
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = PairingV2Coordinator(syncService: syncService,
                                                messageExchanger: messageExchanger,
@@ -821,6 +885,11 @@ final class PairingV2CoordinatorTests: XCTestCase {
                              confirmationDelegate: confirmationDelegate)
     }
 
+    private func makePeerKeyPair(channelID: String = "peer-channel") throws -> PairingV2KeyPair {
+        let cached = try Self.cachedPeerKeyPair.get()
+        return PairingV2KeyPair(channelID: channelID, publicKey: cached.publicKey, privateKey: cached.privateKey)
+    }
+
     private static func makeRecoveryCodeV2(userId: String,
                                            secret: String,
                                            credentialId: String) throws -> String {
@@ -858,6 +927,20 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let sendCall = try XCTUnwrap(optionalSendCall, file: file, line: line)
         let encryptedMessage = try XCTUnwrap(sendCall.messages.first, file: file, line: line)
         return try XCTUnwrap(try messageCrypto.decrypt(encryptedMessage, privateKey: peerPrivateKey), file: file, line: line)
+    }
+
+    private func assertRecoveryCodeResponse(_ message: PairingV2ApplicationMessage,
+                                            matches expectedRecoveryCode: String,
+                                            file: StaticString = #filePath,
+                                            line: UInt = #line) throws {
+        guard case .recoveryCodeResponse(let response) = message else {
+            XCTFail("Expected recovery code response, got \(message)", file: file, line: line)
+            return
+        }
+
+        let actual = try SyncCode.decodeBase64String(response.recoveryCode)
+        let expected = try SyncCode.decodeBase64String(expectedRecoveryCode)
+        XCTAssertEqual(actual.recovery, expected.recovery, file: file, line: line)
     }
 
     private func localHello(from messageExchanger: PairingV2MessageExchangingMock,

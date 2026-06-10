@@ -144,7 +144,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
     }
 
     private func makeExchanger() -> PairingV2MessageExchanger {
-        PairingV2MessageExchanger(endpoints: endpoints, api: api, firstMessagePost404RetryDelays: [0, 0])
+        PairingV2MessageExchanger(endpoints: endpoints, api: api, firstMessagePostChannelUnavailableRetryDelays: [0, 0])
     }
 
     private func makeRequest(statusCode: Int, body: String? = nil) -> HTTPRequestingMock {

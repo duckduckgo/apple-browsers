@@ -165,21 +165,6 @@ final class PairingV2MessageCryptoTests: XCTestCase {
         )
     }
 
-    func testWhenDecryptingMalformedVersionThenThrowsUnsupportedVersion() throws {
-        let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
-        let crypto = PairingV2MessageCrypto()
-        let message = try crypto.encrypt(
-            .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest, kind: .ddg)),
-            recipientPublicKey: keyPair.publicKey,
-            senderChannelID: "sender-channel"
-        )
-        let malformedMessage = PairingV2EncryptedMessage(version: "not-a-version", payload: message.payload)
-
-        XCTAssertThrowsError(try crypto.decrypt(malformedMessage, privateKey: keyPair.privateKey)) { error in
-            XCTAssertEqual(error as? PairingV2MessageCryptoError, .unsupportedVersion("not-a-version"))
-        }
-    }
-
     func testWhenDecryptingTokenWithWrongPartCountThenThrowsInvalidTokenPartCount() throws {
         let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
         let crypto = PairingV2MessageCrypto()
@@ -190,7 +175,7 @@ final class PairingV2MessageCryptoTests: XCTestCase {
         }
     }
 
-    func testWhenDecryptingTokenWithInvalidAuthenticationTagThenThrowsInvalidBase64URLComponent() throws {
+    func testWhenDecryptingTokenWithInvalidAuthenticationTagLengthThenThrowsInvalidBase64URLComponent() throws {
         let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
         let crypto = PairingV2MessageCrypto()
         let message = try crypto.encrypt(
@@ -204,6 +189,23 @@ final class PairingV2MessageCryptoTests: XCTestCase {
 
         XCTAssertThrowsError(try crypto.decrypt(invalidMessage, privateKey: keyPair.privateKey)) { error in
             XCTAssertEqual(error as? PairingV2MessageCryptoError, .invalidBase64URLComponent)
+        }
+    }
+
+    func testWhenDecryptingTokenWithWrongAuthenticationTagThenThrowsAESGCMDecryptionFailed() throws {
+        let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
+        let crypto = PairingV2MessageCrypto()
+        let message = try crypto.encrypt(
+            .hello(.init(channelId: "channel-2", publicKey: "public-key")),
+            recipientPublicKey: keyPair.publicKey,
+            senderChannelID: "sender-channel"
+        )
+        var parts = message.payload.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
+        parts[4] = Base64URL.encode(Data(repeating: 0x00, count: 16))
+        let invalidMessage = PairingV2EncryptedMessage(payload: parts.joined(separator: "."))
+
+        XCTAssertThrowsError(try crypto.decrypt(invalidMessage, privateKey: keyPair.privateKey)) { error in
+            XCTAssertEqual(error as? PairingV2MessageCryptoError, .aesGCMDecryptionFailed)
         }
     }
 

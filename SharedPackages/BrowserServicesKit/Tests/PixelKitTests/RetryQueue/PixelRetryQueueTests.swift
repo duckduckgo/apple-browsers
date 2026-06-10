@@ -154,6 +154,25 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertTrue(fireMock.calls.isEmpty)
     }
 
+    func testWhenQueueIsEmpty_ThenThrottleIsNotAdvanced_AndLaterItemIsStillDrained() {
+        let queue = makeQueue()
+
+        // An empty drain must not advance the throttle...
+        let emptyDrain = expectation(description: "empty drain")
+        queue.sendQueuedPixels { _ in emptyDrain.fulfill() }
+        wait(for: [emptyDrain], timeout: 2.0)
+        XCTAssertNil(lastProcessingStorage.object(forKey: PixelRetryQueue.Constants.lastProcessingDateKey))
+
+        // ...so a failure queued immediately afterwards is still replayed on the next drain.
+        try? store.append([makeItem(name: "m_queued")])
+        let secondDrain = expectation(description: "second drain")
+        queue.sendQueuedPixels { _ in secondDrain.fulfill() }
+        wait(for: [secondDrain], timeout: 2.0)
+
+        XCTAssertTrue(store.items.isEmpty)
+        XCTAssertTrue(fireMock.calls.contains { $0.pixelName == "m_queued" })
+    }
+
     func testWhenReplayedItemHasCharacterSet_ThenItIsSentUnchanged() {
         let item = PixelRetryQueueItem(pixelName: "m_chars",
                                        headers: [:],

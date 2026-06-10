@@ -134,8 +134,6 @@ final class PixelRetryQueue {
                 }
             }
 
-            try? self.lastProcessingDateStorage.set(self.dateGenerator(), forKey: self.lastProcessingDateKey)
-
             let queuedItems: [PixelRetryQueueItem]
             do {
                 queuedItems = try self.store.storedItems()
@@ -148,6 +146,10 @@ final class PixelRetryQueue {
                 completion(nil)
                 return
             }
+
+            // Advance the throttle only once there's work to process, so empty drains (the common case
+            // after a successful send) don't block replay of failures queued shortly afterwards.
+            try? self.lastProcessingDateStorage.set(self.dateGenerator(), forKey: self.lastProcessingDateKey)
 
             self.fire(queuedItems: queuedItems) { idsToRemove in
                 do {

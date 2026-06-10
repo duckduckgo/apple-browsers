@@ -225,22 +225,6 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
         }
     }
 
-    func duckAISuggestionsDidRequestURLDeletion(_ suggestion: Suggestion) {
-        guard case .historyEntry(_, let url, _) = suggestion else {
-            assertionFailure("Only history suggestions can be deleted")
-            return
-        }
-
-        Task {
-            await historyManager.deleteHistoryForURL(url)
-            delegate?.duckAISuggestionsDidDeleteURL(suggestion)
-            urlLoader.refreshSuggestions()
-
-            Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
-            DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
-        }
-    }
-
     func duckAISuggestionsDidRequestSyncSetup() {
         delegate?.duckAISuggestionsDidRequestSyncSetup()
     }

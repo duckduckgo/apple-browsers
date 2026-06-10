@@ -30,6 +30,7 @@ final class WebExtensionManagerTests: XCTestCase {
     var eventsListenerMock: WebExtensionEventsListenerMock!
     var lifecycleDelegateMock: WebExtensionLifecycleDelegateMock!
     var configurationMock: WebExtensionConfigurationProvidingMock!
+    private var createdTestExtensionDirs: [URL] = []
 
     @MainActor
     override func setUp() {
@@ -46,6 +47,10 @@ final class WebExtensionManagerTests: XCTestCase {
 
     override func tearDown() {
         webExtensionLoadingMock?.cleanupTestExtensions()
+        for dir in createdTestExtensionDirs {
+            try? FileManager.default.removeItem(at: dir)
+        }
+        createdTestExtensionDirs.removeAll()
         installedExtensionStoringMock = nil
         storageProvidingMock = nil
         webExtensionLoadingMock = nil
@@ -82,6 +87,35 @@ final class WebExtensionManagerTests: XCTestCase {
             name: name,
             version: version
         )
+    }
+
+    /// Loads a real (backgroundless) extension context into the controller so that
+    /// `unloadAllExtensions()` has something to capture for the lightweight reload tests.
+    @MainActor
+    @discardableResult
+    private func loadRealContext(identifier: String, into controller: WKWebExtensionController) async throws -> WKWebExtensionContext {
+        let dir = try makeTestExtensionDirectory()
+        let webExtension = try await WKWebExtension(resourceBaseURL: dir)
+        let context = WKWebExtensionContext(for: webExtension)
+        context.uniqueIdentifier = identifier
+        try controller.load(context)
+        return context
+    }
+
+    private func makeTestExtensionDirectory() throws -> URL {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ReloadTestExtension-\(UUID().uuidString)")
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Reload Test Extension",
+            "version": "1.0.0",
+            "description": "Minimal backgroundless test extension for reload unit tests"
+        }
+        """
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try manifest.write(to: dir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        createdTestExtensionDirs.append(dir)
+        return dir
     }
 
     // MARK: - Install Extension Tests
@@ -284,6 +318,62 @@ final class WebExtensionManagerTests: XCTestCase {
 
         XCTAssertTrue(storageProvidingMock.cleanupOrphanedExtensionsCalled)
         XCTAssertEqual(storageProvidingMock.cleanupOrphanedExtensionsKnownIdentifiers, Set(["extension1", "extension2"]))
+    }
+
+    // MARK: - Reload Installed Extensions Tests
+
+    @MainActor
+    func testWhenReloadInstalledExtensionsCalledWithEmptyCache_ThenFallsBackToFullLoad() async {
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1")
+        ]
+        webExtensionLoadingMock.mockLoadResults = [
+            .success(WebExtensionLoadResult(identifier: "extension1", filename: "extension.zip", displayName: "Extension 1", version: "1.0"))
+        ]
+        let manager = makeManager()
+
+        await manager.reloadInstalledExtensions()
+
+        // With nothing captured by a prior unload, reload must fall back to the full load path.
+        XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionsCalled)
+        XCTAssertFalse(webExtensionLoadingMock.reloadWebExtensionCalled)
+    }
+
+    @MainActor
+    func testWhenReloadInstalledExtensionsCalledAfterUnload_ThenUsesLightweightReloadAndSkipsFullLoad() async throws {
+        let manager = makeManager()
+        try await loadRealContext(identifier: "extension1", into: manager.controller)
+
+        manager.unloadAllExtensions()
+        await manager.reloadInstalledExtensions()
+
+        // The cached extension is re-created via the lightweight path, not re-parsed from disk.
+        XCTAssertTrue(webExtensionLoadingMock.reloadWebExtensionCalled)
+        XCTAssertTrue(webExtensionLoadingMock.loadedIdentifiers.contains("extension1"))
+        XCTAssertFalse(webExtensionLoadingMock.loadWebExtensionsCalled)
+        // The heavy install-store reconciliation / orphan cleanup is skipped on the lightweight path.
+        XCTAssertFalse(storageProvidingMock.cleanupOrphanedExtensionsCalled)
+    }
+
+    @MainActor
+    func testWhenLightweightReloadFails_ThenFallsBackToFullLoad() async throws {
+        let manager = makeManager()
+        try await loadRealContext(identifier: "extension1", into: manager.controller)
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1")
+        ]
+        webExtensionLoadingMock.mockLoadResults = [
+            .success(WebExtensionLoadResult(identifier: "extension1", filename: "extension.zip", displayName: "Extension 1", version: "1.0"))
+        ]
+
+        manager.unloadAllExtensions()
+        webExtensionLoadingMock.mockError = NSError(domain: "test", code: 1)
+
+        await manager.reloadInstalledExtensions()
+
+        // The lightweight reload was attempted, failed, and recovery used the full load path.
+        XCTAssertTrue(webExtensionLoadingMock.reloadWebExtensionCalled)
+        XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionsCalled)
     }
 
     // MARK: - Computed Properties Tests

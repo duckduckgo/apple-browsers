@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+@MainActor
 public protocol NewTabPageOmnibarModelsProviding {
     var lastFetchedSections: [NewTabPageDataModel.AIModelSection]? { get }
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection]

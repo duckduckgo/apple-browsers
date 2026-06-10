@@ -20,6 +20,7 @@
 import AIChat
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import MetricBuilder
 import UIKit
 
 // MARK: - AIChatRecentChatsPopupViewController
@@ -29,7 +30,6 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
     // MARK: - Constants
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 32
         static let shadowOffsetY: CGFloat = 8
         static let shadowRadius: CGFloat = 20
         static let shadowOpacity: Float = 1.0
@@ -70,7 +70,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
     private lazy var contentView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.layer.cornerRadius = Constants.cornerRadius
+        view.layer.cornerRadius = ContainerMetrics.cornerRadius
         view.layer.masksToBounds = true
         return view
     }()
@@ -112,7 +112,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         super.viewDidLayoutSubviews()
         shadowContainer.layer.shadowPath = UIBezierPath(
             roundedRect: shadowContainer.bounds,
-            cornerRadius: Constants.cornerRadius
+            cornerRadius: ContainerMetrics.cornerRadius
         ).cgPath
     }
 
@@ -120,7 +120,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
 
     /// Anchors the popup card overlapping the header pill using screen coordinates.
     func anchorContentView(pillFrame: CGRect) {
-        let cardTop = pillFrame.minY - Constants.cornerRadius
+        let cardTop = pillFrame.minY - ContainerMetrics.cornerRadius
         let cardLeading = pillFrame.minX + Constants.popupLeadingOffset
 
         let desiredTop = shadowContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: cardTop)

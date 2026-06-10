@@ -357,6 +357,16 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
     case webExtensions
 
+    /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
+    /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617265
+    case webExtensionLightweightReload
+
+    /// Failsafe kill switch for deferring web-extension load/install until protected data is
+    /// available. On by default; disable remotely to load/install immediately (previous flow).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617267
+    case webExtensionProtectedDataLoadGate
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
     case embeddedExtension
 
@@ -709,6 +719,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled))
+        case .webExtensionLightweightReload:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear))
+        case .webExtensionProtectedDataLoadGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.protectedDataLoadGate))
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:

@@ -234,10 +234,11 @@ public final class PixelKit {
             self.retryQueue = nil
         } else {
             // Wrap the network fire-request with a retry queue so failed pixels are persisted and re-sent
-            // at launch and after subsequent successful fires (28-day expiry). Reuses the same `defaults`
-            // for throttling state. This is internal to PixelKit and hidden from its consumers.
+            // after the next successful fire (28-day expiry) — which, for a launching app, happens as soon
+            // as it fires its first pixel. Reuses the same `defaults` for throttling state. This is internal
+            // to PixelKit and hidden from its consumers; creating the queue performs no I/O.
             let sourceSuffix = Self.retryQueueSourceSuffix(forSource: source)
-            let retryQueue = PixelRetryQueue(
+            self.retryQueue = PixelRetryQueue(
                 fireRequest: fireRequest,
                 store: PixelRetryQueueFileStore(fileName: "pixelkit-retry-queue-\(sourceSuffix).json"),
                 lastProcessingDateStorage: defaults,
@@ -245,8 +246,6 @@ public final class PixelKit {
                 calendar: self.pixelCalendar,
                 dateGenerator: dateGenerator
             )
-            self.retryQueue = retryQueue
-            retryQueue.sendQueuedPixels()
         }
 
         logger.debug("👾 PixelKit initialised: dryRun: \(self.dryRun, privacy: .public) appVersion: \(self.appVersion, privacy: .public) source: \(self.source ?? "-", privacy: .public) channel: \(self.channel ?? "-", privacy: .public) defaultHeaders: \(self.defaultHeaders, privacy: .public) pixelCalendar: \(self.pixelCalendar, privacy: .public)")

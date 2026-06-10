@@ -39,6 +39,14 @@ final class DuckAIChromeChipView: UIView {
         static let dividerVerticalPadding: CGFloat = 6
     }
 
+    // Stable identifiers for UI tests (see .maestro/browser_features/duckai_chrome_shortcut_*).
+    enum AccessibilityIdentifiers {
+        static let chip = "Browser.TabsBar.AIChatChip"
+        static let openButton = "Browser.TabsBar.AIChatChip.OpenButton"
+        static let sheetToggleButton = "Browser.TabsBar.AIChatChip.SheetToggleButton"
+        static let divider = "Browser.TabsBar.AIChatChip.Divider"
+    }
+
     private(set) lazy var textButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.title = UserText.actionOpenAIChat
@@ -53,6 +61,7 @@ final class DuckAIChromeChipView: UIView {
         let button = UIButton(configuration: config)
         button.isPointerInteractionEnabled = true
         button.accessibilityLabel = UserText.accessibilityLabelOpenAIChat
+        button.accessibilityIdentifier = AccessibilityIdentifiers.openButton
         return button
     }()
 
@@ -63,6 +72,7 @@ final class DuckAIChromeChipView: UIView {
         let button = UIButton(configuration: config)
         button.isPointerInteractionEnabled = true
         button.accessibilityLabel = UserText.actionToggleAIChatContextualSheet
+        button.accessibilityIdentifier = AccessibilityIdentifiers.sheetToggleButton
         return button
     }()
 
@@ -70,6 +80,7 @@ final class DuckAIChromeChipView: UIView {
         let view = UIView()
         view.backgroundColor = UIColor(designSystemColor: .decorationSecondary)
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.accessibilityIdentifier = AccessibilityIdentifiers.divider
         return view
     }()
 
@@ -100,6 +111,7 @@ final class DuckAIChromeChipView: UIView {
     }
 
     private func configure() {
+        accessibilityIdentifier = AccessibilityIdentifiers.chip
         backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         layer.cornerRadius = Constants.cornerRadius
         layer.masksToBounds = true

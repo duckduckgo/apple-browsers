@@ -1385,10 +1385,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func presentModelPickerForActiveChat() {
         isModelPickerForcedVisible = true
         showExpanded(inputMode: .aiChat)
-        // If user open native model picker, but not tap on any model, remove block, as first available model is preselected.
-        if isSubmitBlockedByRecoveryCard, let supportedModelId = modelStore.persistedModelId {
+        if isSubmitBlockedByRecoveryCard,
+           let supportedModel = modelStore.selectedModel,
+           supportedModel.entityHasAccess {
             isSubmitBlockedByRecoveryCard = false
-            notifyFrontendOfActiveChatModelChange(supportedModelId)
+            notifyFrontendOfActiveChatModelChange(supportedModel.id)
         }
         // Defer to the next runloop so the toolbar (and the now-revealed chip) is laid out after the
         // expand animation before we ask the button to open its menu.

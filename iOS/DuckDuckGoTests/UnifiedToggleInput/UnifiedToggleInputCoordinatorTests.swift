@@ -209,6 +209,17 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
                       "With no accessible model there is nothing to adopt — the block (and recovery card) must remain")
     }
 
+    func test_presentModelPickerForActiveChat_withEmptyModelList_keepsRecoveryBlock() {
+        sut.modelStore.updateSelectedModel("gated", isNewChatContext: false)
+        sut.modelStore.models = []
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.presentModelPickerForActiveChat()
+
+        XCTAssertTrue(sut.isSubmitBlockedByRecoveryCard,
+                      "Empty model list ⇒ no access-checked selectedModel ⇒ block must remain")
+    }
+
     func test_hide_clearsRecoveryBlock() {
         sut.isSubmitBlockedByRecoveryCard = true
         sut.hide()

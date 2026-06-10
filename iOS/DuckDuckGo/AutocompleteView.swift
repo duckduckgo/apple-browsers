@@ -135,8 +135,8 @@ private struct SuggestionsSection: View {
     let unselectedColor = Color(designSystemColor: .surface)
 
     private struct Metrics {
-        // Horizontal insets stay on the row so the separator keeps its leading inset; vertical
-        // insets move inside the row content so the hover/tap area spans the full row height.
+        // Horizontal insets stay on the row to keep the separator's leading inset. Vertical insets
+        // move inside the row content (below) so the hover/tap area covers the full row height.
         static let horizontalRowInsets = EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 14)
         static let verticalRowInsets = EdgeInsets(top: 10, leading: 0, bottom: 8, trailing: 0)
     }
@@ -156,9 +156,6 @@ private struct SuggestionsSection: View {
                  .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
                  .listRowInsets(Metrics.horizontalRowInsets)
                  .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
-                 // Pointer hover drives the same selection as keyboard navigation, so the hovered
-                 // row is the single highlighted, active suggestion (no separate hover-only state).
-                 // Leaving the row deselects (matches macOS), reverting the omnibar to the typed query.
                  .onHover { isHovering in
                      if isHovering {
                          autocompleteViewModel.selection = suggestions[index]

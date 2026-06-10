@@ -148,6 +148,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
+    private let fireWindowOpenPixelReporter: FireWindowOpenPixelReporter
     let tabSuspensionService: TabSuspensionService
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
@@ -819,6 +820,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         autoplayPreferences = AutoplayPreferences()
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
+        self.fireWindowOpenPixelReporter = FireWindowOpenPixelReporter(
+            didRegisterWindowController: windowControllersManager.didRegisterWindowController.eraseToAnyPublisher()
+        )
 
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager

@@ -2893,6 +2893,8 @@
 		9FE239BC2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */; };
 		9FE239C12FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */; };
 		9FE239C22FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */; };
+		9FE239C72FD909E4007135F2 /* FireWindowOpenPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C62FD909E4007135F2 /* FireWindowOpenPixelReporter.swift */; };
+		9FE239C82FD909E4007135F2 /* FireWindowOpenPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C62FD909E4007135F2 /* FireWindowOpenPixelReporter.swift */; };
 		9FEE98652B846870002E44E8 /* AddEditBookmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */; };
 		9FEE98662B846870002E44E8 /* AddEditBookmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */; };
 		9FEE98692B85B869002E44E8 /* BookmarksDialogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98682B85B869002E44E8 /* BookmarksDialogViewModel.swift */; };
@@ -6027,6 +6029,7 @@
 		9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkFavoriteView.swift; sourceTree = "<group>"; };
 		9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowOpenTrigger.swift; sourceTree = "<group>"; };
 		9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowsManagerFireWindowOpenTriggerTests.swift; sourceTree = "<group>"; };
+		9FE239C62FD909E4007135F2 /* FireWindowOpenPixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowOpenPixelReporter.swift; sourceTree = "<group>"; };
 		9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkView.swift; sourceTree = "<group>"; };
 		9FEE98682B85B869002E44E8 /* BookmarksDialogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksDialogViewModel.swift; sourceTree = "<group>"; };
 		9FEE986C2B85BA17002E44E8 /* AddEditBookmarkDialogCoordinatorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkDialogCoordinatorViewModel.swift; sourceTree = "<group>"; };
@@ -12077,6 +12080,7 @@
 		B6A9E44E26142AF90067D1B9 /* Statistics */ = {
 			isa = PBXGroup;
 			children = (
+				9FE239C62FD909E4007135F2 /* FireWindowOpenPixelReporter.swift */,
 				7B7821BB2E84440A00E0359A /* ErrorPagePixel.swift */,
 				7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */,
 				37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */,
@@ -15740,6 +15744,7 @@
 				3706FC10293F65D500E42796 /* DictionaryExtension.swift in Sources */,
 				3706FC11293F65D500E42796 /* Publishers.NestedObjectChanges.swift in Sources */,
 				3706FC12293F65D500E42796 /* MenuItemSelectors.swift in Sources */,
+				9FE239C82FD909E4007135F2 /* FireWindowOpenPixelReporter.swift in Sources */,
 				3706FC13293F65D500E42796 /* FaviconView.swift in Sources */,
 				B69A14F72B4D701F00B9417D /* AddBookmarkPopoverViewModel.swift in Sources */,
 				F14890972ECDD24400B5239E /* AttributedMetricDebugMenu.swift in Sources */,
@@ -17932,6 +17937,7 @@
 				37EE55F02D5F197300D53C7C /* AddressBarButton.swift in Sources */,
 				37EE55F12D5F197300D53C7C /* AddressBarButtonsViewController.swift in Sources */,
 				B5FBAFCF2F87049400CE51F3 /* AutoplayPermissionSeeder.swift in Sources */,
+				9FE239C72FD909E4007135F2 /* FireWindowOpenPixelReporter.swift in Sources */,
 				37EE55F22D5F197300D53C7C /* AddressBarTextEditor.swift in Sources */,
 				37EE55F32D5F197300D53C7C /* AddressBarTextField.swift in Sources */,
 				37EE55F42D5F197300D53C7C /* AddressBarTextSelectionNavigation.swift in Sources */,

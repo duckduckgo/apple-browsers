@@ -71,6 +71,9 @@ public extension SingleUseColor {
         case textLink
 
         case accentPrimary
+        case accentPrimaryPressed
+        case accentPrimaryText
+        case accentGlowPrimary
 
         case accentAltPrimary
         case accentAltGlowPrimary
@@ -88,10 +91,17 @@ public extension SingleUseColor {
         case buttonsSecondaryText
         case backgroundAccent // This in Figma is accentAltGlowPrimary but in the components screen default value is different than onboarding value
 
+        case destructivePrimary
+        case destructivePrimaryPressed
+        case destructivePrimaryText
+        case destructiveGlowPrimary
+
         case controlsFillPrimary
 
         case decorationPrimary
         case decorationSecondary
+
+        case alertGreen
     }
 
 }

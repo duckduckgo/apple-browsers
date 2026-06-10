@@ -18,7 +18,6 @@
 
 import Crashes
 
-@available(macOS 12.0, *)
 public extension CrashCollection {
     static func removeBuildNumber(from appVersion: String?) -> String? {
         guard let appVersion else {

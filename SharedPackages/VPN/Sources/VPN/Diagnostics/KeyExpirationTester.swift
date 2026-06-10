@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
+import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import Network
 import NetworkExtension
-import Common
 import os.log
 
 /// Rekey timer for the VPN
@@ -32,21 +34,37 @@ final actor KeyExpirationTester: KeyExpirationTesting {
     ///
     private let intervalBetweenTests: TimeInterval = .seconds(15)
 
+    private let rekeyFailureBackoffIntervals: [TimeInterval] = [
+        .seconds(15),
+        .seconds(30),
+        .seconds(60),
+        .seconds(120),
+        .seconds(300)
+    ]
+
     /// Provides a simple mechanism to synchronize an `isRunning` flag for the tester to know if it needs to interrupt its operation.
     /// The reason why this is necessary is that the tester may be stopped while the connection tests are already executing, in a bit
     /// of a race condition which could result in the tester returning results when it's already stopped.
     ///
     private(set) var isRunning = false
     private var isTestingExpiration = false
+    private var consecutiveFailedRekeyCount = 0
+    private var nextRekeyAttemptDate: Date?
+
+    /// Bumped on every `stop()`. A rekey attempt captures this before it suspends so it can tell,
+    /// once it resumes, whether a `stop()` interleaved while it was awaiting.
+    private var stopGeneration = 0
     private let keyStore: NetworkProtectionKeyStore
     private let rekey: @MainActor () async throws -> Void
     private let settings: VPNSettings
     private var task: Task<Never, Error>?
+    private let currentDate: @Sendable () -> Date
 
     // MARK: - Init & deinit
 
     init(keyStore: NetworkProtectionKeyStore,
          settings: VPNSettings,
+         currentDate: @escaping @Sendable () -> Date = { Date() },
          canRekey: @escaping @MainActor () async -> Bool,
          rekey: @escaping @MainActor () async throws -> Void) {
 
@@ -54,6 +72,7 @@ final actor KeyExpirationTester: KeyExpirationTesting {
         self.rekey = rekey
         self.canRekey = canRekey
         self.settings = settings
+        self.currentDate = currentDate
 
         Logger.networkProtectionMemory.debug("[+] \(String(describing: self), privacy: .public)")
     }
@@ -80,6 +99,8 @@ final actor KeyExpirationTester: KeyExpirationTesting {
     func stop() {
         Logger.networkProtectionKeyManagement.log("🔴 Stopping rekey timer")
         stopScheduledTimer()
+        resetRekeyFailureBackoff()
+        stopGeneration &+= 1
         isRunning = false
     }
 
@@ -109,7 +130,7 @@ final actor KeyExpirationTester: KeyExpirationTesting {
             return true
         }
 
-        return currentExpirationDate <= Date()
+        return currentExpirationDate <= currentDate()
     }
 
     // MARK: - Expiration check
@@ -126,6 +147,12 @@ final actor KeyExpirationTester: KeyExpirationTesting {
             isTestingExpiration = false
         }
 
+        // Remember the stop generation before we start awaiting. `rekeyIfExpired()` suspends at the
+        // `await`s below, during which `stop()` can run on the actor and clear the failure backoff.
+        // If that happens, recording a failure afterwards would restore the very backoff `stop()`
+        // just cleared, causing a fresh `start()` to honor a stale delay.
+        let stopGenerationAtStart = stopGeneration
+
         guard await canRekey() else {
             Logger.networkProtectionKeyManagement.log("Can't rekey right now as some preconditions aren't met.")
             return
@@ -135,16 +162,40 @@ final actor KeyExpirationTester: KeyExpirationTesting {
 
         guard isKeyExpired else {
             Logger.networkProtectionKeyManagement.log("The key is not expired")
+            resetRekeyFailureBackoff()
+            return
+        }
+
+        if let nextRekeyAttemptDate, currentDate() < nextRekeyAttemptDate {
+            Logger.networkProtectionKeyManagement.log("Rekeying is delayed after a previous failure.")
             return
         }
 
         Logger.networkProtectionKeyManagement.log("Rekeying now.")
         do {
             try await rekey()
+            resetRekeyFailureBackoff()
             Logger.networkProtectionKeyManagement.log("Rekeying completed.")
         } catch {
+            guard stopGenerationAtStart == stopGeneration else {
+                Logger.networkProtectionKeyManagement.log("Rekey failed after the tester was stopped; not recording a failure backoff.")
+                return
+            }
+
+            recordRekeyFailure()
             Logger.networkProtectionKeyManagement.error("Rekeying failed with error: \(error, privacy: .public).")
         }
+    }
+
+    private func recordRekeyFailure() {
+        consecutiveFailedRekeyCount += 1
+        let backoffIndex = min(consecutiveFailedRekeyCount - 1, rekeyFailureBackoffIntervals.count - 1)
+        nextRekeyAttemptDate = currentDate().addingTimeInterval(rekeyFailureBackoffIntervals[backoffIndex])
+    }
+
+    private func resetRekeyFailureBackoff() {
+        consecutiveFailedRekeyCount = 0
+        nextRekeyAttemptDate = nil
     }
 
     // MARK: - Key Validity

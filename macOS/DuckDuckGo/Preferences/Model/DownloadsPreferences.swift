@@ -19,6 +19,7 @@
 import AppKit
 import AppKitExtensions
 import Common
+import FoundationExtensions
 import Foundation
 
 protocol DownloadsPreferencesPersistor {

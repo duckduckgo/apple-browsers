@@ -685,9 +685,11 @@ final class MockAIChatRequestAuthHandler: AIChatRequestAuthorizationHandling {
 
 final class MockUnifiedToggleInputFeatureProvider: UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool
+    var isToggleHiddenOnDuckAITab: Bool
 
-    init(isAvailable: Bool = false) {
+    init(isAvailable: Bool = false, isToggleHiddenOnDuckAITab: Bool = false) {
         self.isAvailable = isAvailable
+        self.isToggleHiddenOnDuckAITab = isToggleHiddenOnDuckAITab
     }
 }
 
@@ -803,6 +805,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func responseReceived(params: Any, message: any UserScriptMessage) async -> (any Encodable)? { nil }
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
 }
 // swiftlint:enable inclusive_language
 

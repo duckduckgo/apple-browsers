@@ -83,7 +83,6 @@ public final class VPNStartupMonitor {
     /// - Parameters:
     ///   - tunnelManager: The tunnel manager to monitor
     ///   - timeout: Maximum time to wait (default 10 seconds)
-    @available(macOS 12, *)
     public func waitForStartSuccess(
         _ tunnelManager: NETunnelProviderManager,
         timeout: TimeInterval = 10

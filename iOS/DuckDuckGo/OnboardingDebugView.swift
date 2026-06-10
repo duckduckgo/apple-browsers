@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Core
+import Onboarding
 import Persistence
 
 struct OnboardingDebugView: View {
@@ -104,6 +105,24 @@ struct OnboardingDebugView: View {
 
             Section {
                 Picker(
+                    selection: $viewModel.forcedOnboardingFlowType,
+                    content: {
+                        Text(verbatim: "Auto-detect (URL evaluator)").tag(Optional<OnboardingFlowType>.none)
+                        Text(verbatim: "Default").tag(OnboardingFlowType.default)
+                        Text(verbatim: "Duck.ai Tailored").tag(OnboardingFlowType.duckAI)
+                    },
+                    label: {
+                        Text(verbatim: "Flow Type:")
+                    }
+                )
+            } header: {
+                Text(verbatim: "Force Onboarding Flow Type")
+            } footer: {
+                Text(verbatim: "Honoured on next launch by OnboardingManager.configureOnboardingFlow when no flow is already configured. Reset Onboarding above and kill+relaunch the app to apply.")
+            }
+
+            Section {
+                Picker(
                     selection: $selectedFlow,
                     content: {
                         ForEach(OnboardingDebugFlow.allCases) { flow in
@@ -146,6 +165,15 @@ final class OnboardingDebugViewModel: ObservableObject {
         }
     }
 
+    /// Debug override for the resolved onboarding flow type on next launch.
+    /// `nil` means "no override — use the real evaluator (URL-based)."
+    /// Honoured by `OnboardingManager.configureOnboardingFlow(from:)` only in DEBUG/ALPHA builds.
+    @Published var forcedOnboardingFlowType: OnboardingFlowType? {
+        didSet {
+            appSettings.onboardingFlowType = forcedOnboardingFlowType
+        }
+    }
+
     private let manager: OnboardingNewUserProviderDebugging
     private var settings: DaxDialogsSettings
     private let tutorialSettings: TutorialSettings
@@ -177,6 +205,7 @@ final class OnboardingDebugViewModel: ObservableObject {
         self.appSettings = appSettings
         onboardingUserType = manager.onboardingUserTypeDebugValue
         forceRestorePromptEligible = appSettings.onboardingForceRestorePromptEligible
+        forcedOnboardingFlowType = appSettings.onboardingFlowType
     }
 
     func resetAllOnboarding() {

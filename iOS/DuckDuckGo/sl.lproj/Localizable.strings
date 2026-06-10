@@ -123,6 +123,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Odpri v zavihku Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Nov zavihek";
 
@@ -219,10 +220,53 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Lastnosti UI";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "V enem pogovoru lahko priložite največ toliko datotek: %d.";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Priloženih datotek ne moremo prebrati, ker je vsaj ena od njih šifrirana.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Priložene datoteke presegajo skupno omejitev velikosti %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Ta datoteka je prevelika. Največja velikost datoteke je %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Ena od priloženih datotek ima več strani, kot jih podpiramo. Naložite datoteke z največ toliko stranmi: %d.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Ene od priloženih datotek ne moremo prebrati. Preverite, ali je poškodovana, in poskusite znova.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "V enem pogovoru lahko priložite največ toliko slik: %d.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Naenkrat lahko priložite samo toliko slik: %d.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Dodaj datoteko";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Dodaj sliko";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Posnemite fotografijo";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "To sporočilo je predolgo za pošiljanje s prilogami.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Priloge trenutno niso na voljo. Poskusite znova pozneje.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Ta vrsta datoteke ni podprta.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Ta vrsta datoteke ni podprta, priložite datoteko %1$@ ali %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Ta vrsta datoteke ni podprta, priložite %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Za analitične naloge";
@@ -241,6 +285,27 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Razmišljanje";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Poiščite kodo QR v aplikaciji DuckDuckGo v drugi napravi tako, da odprete **Nastavitve** › **Sync & Backup** › **Sinhronizacija z drugo napravo**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Ne zdaj";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Skeniranje kode QR";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Sinhronizirajte svoje klepete med napravami!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Sinhronizacija z drugo napravo";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Zavrzi promocijo sinhronizacije";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Do klepetov lahko dostopate v vseh napravah z uporabo funkcije Sync & Backup.";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odzive";
@@ -1532,9 +1597,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Odpravljanje napak";
 
-/* No comment provided by engineer. */
-"Delete" = "Izbriši";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "naprava";
 
@@ -1646,17 +1708,26 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcije umetne inteligence DuckDuckGo so zasebne in neobvezne. Vaši podatki se ne uporabljajo za usposabljanje umetne inteligence.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Priloži vsebino strani";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Vprašajte o strani";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Priloži vsebino strani";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Povzemi to stran";
 
 /* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
 "duckai.quick.action.summarize.page" = "Povzetek strani";
+
+/* Destructive button confirming deletion of a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.button" = "Izbriši";
+
+/* Message of the confirmation alert shown before deleting a recent Duck.ai chat. %@ is the chat title. */
+"duckai.recent.chat.remove.confirmation.message" = "Datoteka »%@« bo trajno izbrisana povsod.";
+
+/* Title of the confirmation alert shown before deleting a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.title" = "Želite izbrisati ta klepet?";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Dodajte Duck.ai v nadzorno središče";
@@ -1715,11 +1786,8 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Pogovarjajte se z Duck.ai s pomočjo Siri!";
 
-/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Vsi klepeti so %@ zasebni";
-
-/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "zasebni";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo za iOS";
@@ -1756,6 +1824,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikoli";
+
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Odpri v aplikaciji YouTube";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -1962,6 +2033,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Vnesite nenegativno število dni. Datum namestitve bo nastavljen pred toliko dnevi.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -2003,11 +2077,11 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Zadnja uporaba zavihka Fire";
 
-/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
-"escapeHatch.menu.burnTab" = "Zavihek za izbris";
-
 /* Menu item that closes the open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeTab" = "Zapri zavihek";
+
+/* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.deleteTab" = "Izbriši zavihek";
 
 /* Menu item that returns the user to the open tab from the escape hatch card */
 "escapeHatch.menu.returnToTab" = "Nazaj na zavihek";
@@ -2368,6 +2442,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Zavihek Fire";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračni tok";
 
@@ -2415,6 +2490,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Domov";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Več dogodkov ni podprtih. Poskusite raje odpreti preneseno datoteko.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Te datoteke ni mogoče obdelati. Poskusite raje odpreti preneseno datoteko.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Nepodprt časovni pas. Poskusite raje odpreti preneseno datoteko.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Dogodek je bil dodan v Apple Koledar";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
@@ -2959,6 +3046,51 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Izberite brskalnik";
 
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Čakal bom skrit na dosegu roke, če boste želeli klepetati in brskati z umetno inteligenco.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Vsi klepeti so anonimizirani";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Za dostop do vseh funkcij umetne inteligence ne potrebujete računa";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Nikoli ne uporablja vaših klepetov za učenje umetne inteligence";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Dostopajte do orodja ChatGPT, Claude in drugih na enem mestu";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Preizkusite Duck.ai!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Priljubljena orodja umetne inteligence";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "Zaščite UI aktivirane!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Želite DuckDuckGo nastaviti kot privzeti brskalnik?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Začni zasebni klepet z umetno inteligenco z Duck.ai ali preklopi na iskanje za zaščiteno brskanje.\n\nDuck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Ponujamo tudi plačljivo naročnino z naprednimi modeli umetne inteligence z višjimi omejitvami klepeta GPT, Claude in Llama, varnim VPN in še več.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Zdaj pa preizkusite zasebni klepet z umetno inteligenco!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Ste pripravljeni na brezplačen zasebni klepet z orodjem umetne inteligence ChatGPT, Claude in drugimi v brskalniku, ki vas aktivno ščiti?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Začni klepet z umetno inteligenco";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Ne pozabite: Duck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
+
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo je na voljo tudi z %1$@, ki vključuje omrežje %2$@ in %3$@.";
 
@@ -3346,26 +3478,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Odpri v drugi aplikaciji?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Pojdi nazaj";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Poskušali smo jo zasebno naložiti, vendar se ne prikaže.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Želite to stran odpreti v Safariju?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Odpri v Safariju";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Žal se stran ni mogla naložiti.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Ta stran se naloži samo v brskalniku Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Odpri v Safariju";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "To spletno mesto ima neveljavno varnostno potrdilo in obisk morda ni varen.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Ostani v DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Nekatere funkcije spletnega mesta morda niso združljive s tem brskalnikom.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "To spletno mesto se želi odpreti v brskalniku Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo ne more naložiti te strani.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedavni dnevniki obdelave";
@@ -3535,14 +3661,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Časovnik neaktivnosti";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Začetni zaslon";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Nazadnje uporabljeni zavihek";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nov zavihek";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Po neaktivnosti";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Preizkusite novo možnost preklopa med iskanjem in Duck.ai v naslovni vrstici.";
@@ -4497,6 +4623,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Zapri zavihek";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Zapri zavihek Domov";
 
@@ -4508,6 +4635,7 @@
 
 /* New tab title */
 "tab.new.title" = "Nov zavihek";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Odpri zavihek Domov";
 
@@ -4516,6 +4644,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Odpri zavihek Fire";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Odpri \"%1$@\" ob %2$@";
 
@@ -4999,8 +5128,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
-/* Top-level attachment menu option to add a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Dodaj datoteko";
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Klepeti";
 
-/* Top-level attachment menu option to add an image to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Dodaj sliko";
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Zgodovina klepeta";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Nastavitve klepeta";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Nov";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Nov zavihek Fire";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Novo iskanje";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Nov zavihek";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Nov glasovni klepet";

@@ -19,6 +19,7 @@
 
 import Lottie
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct ImportPasswordsPromptView: View {
     @State var frame: CGSize = .zero
@@ -91,13 +92,20 @@ struct ImportPasswordsPromptView: View {
         @Binding var isAnimating: Bool
 
         var body: some View {
-            LottieView(
-                lottieFile: "password-keys",
-                loopMode: .mode(.repeat(2.0)),
-                isAnimating: $isAnimating
-            )
-            .frame(width: 128, height: 96)
-            .aspectRatio(contentMode: .fit)
+            if AppRebrand.isAppRebranded() {
+                Image(.passwordsKeychain128)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 128, height: 96)
+            } else {
+                LottieView(
+                    lottieFile: "password-keys",
+                    loopMode: .mode(.repeat(2.0)),
+                    isAnimating: $isAnimating
+                )
+                .frame(width: 128, height: 96)
+                .aspectRatio(contentMode: .fit)
+            }
         }
     }
 

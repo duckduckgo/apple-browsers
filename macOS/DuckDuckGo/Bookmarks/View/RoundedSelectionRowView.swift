@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 
 final class RoundedSelectionRowView: NSTableRowView {
 

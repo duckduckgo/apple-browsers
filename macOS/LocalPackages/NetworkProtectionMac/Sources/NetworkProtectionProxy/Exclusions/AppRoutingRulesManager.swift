@@ -19,6 +19,7 @@
 import AppInfoRetriever
 import Foundation
 import Combine
+import CombineExtensions
 
 /// Manages App routing rules.
 ///

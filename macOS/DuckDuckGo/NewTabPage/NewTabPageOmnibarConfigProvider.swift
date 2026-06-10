@@ -26,6 +26,7 @@ import os.log
 import Persistence
 import PixelKit
 import Common
+import FoundationExtensions
 
 protocol NewTabPageAIChatShortcutSettingProviding: AnyObject {
     var isAIChatShortcutEnabled: Bool { get set }

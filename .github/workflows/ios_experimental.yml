@@ -25,8 +25,10 @@ jobs:
     timeout-minutes: 30
     
     concurrency:
+      # Let a build that has started finish, while GitHub Actions keeps only
+      # the newest pending build for this ref.
       group: ios-experimental-build-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: false
     
     outputs:
       cache_key_hash: ${{ steps.cache-key.outputs.cache_key_hash }}
@@ -34,7 +36,6 @@ jobs:
       build_version: ${{ steps.build-experimental.outputs.build_version }}
       ipa_path: ${{ steps.build-experimental.outputs.ipa_path }}
       dsyms_path: ${{ steps.build-experimental.outputs.dsyms_path }}
-      should_skip: ${{ steps.check-upload.outputs.should_skip }}
 
     steps:
     - name: Check out the code
@@ -49,47 +50,7 @@ jobs:
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
           ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
-    - name: Check for active upload job
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |        
-        # Check for any in-progress upload jobs - if one is found then we can
-        # skip doing this build, since the workflow will check at the end of the
-        # upload whether a re-build needs to happen.
-
-        echo " Checking for active upload jobs..."
-        
-        # Get all in-progress runs for this workflow
-        runs=$(gh run list \
-          --workflow="ios_experimental.yml" \
-          --json="status,databaseId" \
-          --jq='.[] | select(.status == "in_progress" or .status == "queued") | .databaseId')
-
-        upload_in_progress=false
-        for run_id in $runs; do
-          # Check if this run has an upload job in progress
-          upload_job="$(gh run view "$run_id" \
-            --json="jobs" \
-            --jq='.jobs[] | select(.name == "Upload to TestFlight" and (.status == "in_progress" or .status == "queued")) | .name' \
-            2>/dev/null || echo "")"
-          if [ -n "$upload_job" ]; then
-            upload_in_progress=true
-            echo "⚠️ Found active upload job in run #$run_id"
-            break
-          fi
-        done
-        
-        if [ "$upload_in_progress" = true ]; then
-          echo "🚫 Skipping this workflow - the rerun logic will handle this commit once upload completes."
-          echo "should_skip=true" >> $GITHUB_OUTPUT
-        else
-          echo "✅ No active upload jobs found. Proceeding with build..."
-          echo "should_skip=false" >> $GITHUB_OUTPUT
-        fi
-      id: check-upload
-
     - name: Set cache key hash
-      if: steps.check-upload.outputs.should_skip != 'true'
       id: cache-key
       run: |
          has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
@@ -102,7 +63,7 @@ jobs:
          fi
 
     - name: Cache SPM
-      if: env.cache_key_hash && steps.check-upload.outputs.should_skip != 'true'
+      if: env.cache_key_hash
       uses: actions/cache@v4
       with:
         path: iOS/DerivedData/SourcePackages
@@ -111,18 +72,15 @@ jobs:
           ${{ runner.os }}-ios-
 
     - name: Select Xcode
-      if: steps.check-upload.outputs.should_skip != 'true'
       uses: ./.github/actions/select-xcode-version
 
     - name: Setup Ruby and dependencies
-      if: steps.check-upload.outputs.should_skip != 'true'
       uses: ./.github/actions/setup-ruby
       with:
         working-directory: iOS
         cache-key-prefix: ios-ruby
 
     - name: Add commit SHA to plist
-      if: steps.check-upload.outputs.should_skip != 'true'
       run: |
         echo "Setting DDG_COMMIT_SHA to ${{ github.sha }}"
         plist_path="DuckDuckGo/Info-Experimental.plist"
@@ -130,7 +88,6 @@ jobs:
           || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${plist_path}"
 
     - name: Archive the app
-      if: steps.check-upload.outputs.should_skip != 'true'
       env:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -150,7 +107,6 @@ jobs:
       id: build-experimental
 
     - name: Upload build artifacts
-      if: steps.check-upload.outputs.should_skip != 'true'
       uses: actions/upload-artifact@v4
       with:
         name: experimental-build-${{ steps.build-experimental.outputs.app_version }}-${{ steps.build-experimental.outputs.build_version }}
@@ -161,7 +117,6 @@ jobs:
 
   upload:
     needs: build-experimental
-    if: needs.build-experimental.outputs.should_skip != 'true'
     runs-on: macos-26
     name: Upload to TestFlight
     timeout-minutes: 15
@@ -214,44 +169,3 @@ jobs:
         curl -s "https://app.asana.com/api/1.0/tasks/1212780270859101/attachments" \
           -H "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
           --form "file=@${asana_dsyms_path};type=application/zip"
-
-  rerun-check:
-    needs: upload
-    runs-on: ubuntu-latest
-    name: Post-Upload Checks
-    if: github.event_name == 'push'
-
-    steps:
-    - name: Check out the code
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 10
-
-    - name: Check for newer commits and rerun if needed
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        current_commit="${{ github.sha }}"
-        branch_name="main"
-        
-        echo "Fetching latest changes from origin/${branch_name}..."
-        if ! git fetch origin "${branch_name}"; then
-          echo "❌ Failed to fetch latest changes from origin/${branch_name}"
-          exit 1
-        fi
-        
-        latest_commit=$(git rev-parse "origin/${branch_name}")
-        
-        echo "Current workflow commit: $current_commit"
-        echo "Latest commit on ${branch_name}: $latest_commit"
-        
-        if [ "$current_commit" != "$latest_commit" ]; then
-          echo "Newer commit detected. Triggering new workflow run..."
-          curl -X POST \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/ios_experimental.yml/dispatches" \
-            -d "{\"ref\":\"${branch_name}\"}"
-        else
-          echo "No newer commits. Workflow complete."
-        fi

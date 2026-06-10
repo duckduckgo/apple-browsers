@@ -91,6 +91,21 @@
                 "type": "string",
                 "description": "Temporary field to prove wide-event consistency validation fails on CI.",
                 "enum": ["intentional_failure"]
+            },
+            {
+                "key": "feature.data.ext.opening_screen_changed",
+                "type": "boolean",
+                "description": "Whether the user changed the Opening Screen option from the escape hatch's settings menu during the session."
+            },
+            {
+                "key": "feature.data.ext.close_tab_tapped",
+                "type": "boolean",
+                "description": "Whether the user closed the open tab from the escape hatch's menu during the session."
+            },
+            {
+                "key": "feature.data.ext.burn_tab_tapped",
+                "type": "boolean",
+                "description": "Whether the user burned the open tab from the escape hatch's menu during the session."
             }
         ]
     }

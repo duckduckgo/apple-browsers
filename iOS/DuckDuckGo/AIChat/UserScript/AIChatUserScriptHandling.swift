@@ -26,6 +26,7 @@ import AIChat
 import OSLog
 import WebKit
 import Common
+import FoundationExtensions
 import DDGSync
 import Core
 import Persistence
@@ -174,6 +175,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -205,6 +207,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let keyValueStore: KeyValueStoring
     private let isNativeStorageBridgeAvailable: Bool
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
+    private let installDateProvider: () -> Date?
+    private let installTypeProvider: () -> AIChatInstallType
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -226,7 +230,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> = AIChatUserScriptErrorEventMapper(),
-         isNativeStorageBridgeAvailable: Bool = false) {
+         isNativeStorageBridgeAvailable: Bool = false,
+         installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
+         installTypeProvider: @escaping () -> AIChatInstallType = {
+             StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
+         }) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
@@ -237,6 +245,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
+        self.installDateProvider = installDateProvider
+        self.installTypeProvider = installTypeProvider
         setUpSyncStatusObserver()
     }
 
@@ -386,7 +396,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
             supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
-            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
+            installType: installTypeProvider(),
+            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
         )
     }
 
@@ -553,6 +565,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Image Generation Chat
+
+    @MainActor
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatNewImageGenerationChatStarted, object: message.messageWebView)
         return nil
     }
 

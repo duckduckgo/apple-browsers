@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
+import UniformTypeIdentifiers
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-import BrowserServicesKit
-import UniformTypeIdentifiers
 
 final class LegacyDataImportViewModelTests: XCTestCase {
 

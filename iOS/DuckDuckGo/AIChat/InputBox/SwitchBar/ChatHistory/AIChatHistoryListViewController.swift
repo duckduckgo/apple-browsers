@@ -24,6 +24,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 import UIKit
+import PrivacyConfig
 
 /// A view controller displaying the list of recent AI chats
 final class AIChatHistoryListViewController: UIViewController {
@@ -80,8 +81,10 @@ final class AIChatHistoryListViewController: UIViewController {
         }
     }
 
+    private let featureFlagger: FeatureFlagger
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
+    private let onChatDeleted: (AIChatSuggestion) -> Void
     private let isIPadExperience: Bool
     private var cancellables = Set<AnyCancellable>()
 
@@ -92,7 +95,7 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.dataSource = self
         tableView.alwaysBounceVertical = true
         tableView.keyboardDismissMode = .onDrag
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
+        tableView.register(DuckAISuggestionTableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionFooterHeight = 0
@@ -133,10 +136,15 @@ final class AIChatHistoryListViewController: UIViewController {
 
     init(viewModel: AIChatSuggestionsViewModel,
          isIPadExperience: Bool,
-         onChatSelected: @escaping (AIChatSuggestion) -> Void) {
+         onChatSelected: @escaping (AIChatSuggestion) -> Void,
+         onChatDeleted: @escaping (AIChatSuggestion) -> Void,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger)
+    {
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
+        self.onChatDeleted = onChatDeleted
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -312,6 +320,30 @@ final class AIChatHistoryListViewController: UIViewController {
 
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor(designSystemColor: .surface)
+
+        configureDeleteActionIfNeeded(cell: cell, chat: chat)
+    }
+}
+
+// MARK: - Chat Deletion
+
+private extension AIChatHistoryListViewController {
+
+    func configureDeleteActionIfNeeded(cell: UITableViewCell, chat: AIChatSuggestion) {
+        guard let cell = cell as? DuckAISuggestionTableViewCell else {
+            return
+        }
+
+        cell.displaysDeleteButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onDeletePressed = { [weak self] in
+            self?.presentChatDeletionConfirmation(chat: chat)
+        }
+    }
+
+    func presentChatDeletionConfirmation(chat: AIChatSuggestion) {
+        RecentChatDeletionAlert.show(for: chat, presenter: self) { [weak self] in
+            self?.onChatDeleted(chat)
+        }
     }
 }
 

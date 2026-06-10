@@ -22,6 +22,7 @@ import Combine
 import DDGSync
 import Suggestions
 import UIKit
+import PrivacyConfig
 
 protocol DuckAISuggestionsCoordinatorDelegate: AnyObject {
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion)
@@ -113,6 +114,11 @@ final class DuckAISuggestionsCoordinator {
         )
         vc.delegate = self
 
+        vc.onBecameVisible = { [weak self] in
+            guard let self else { return }
+            self.chatManager.refreshSuggestions(query: self.queryProvider())
+        }
+
         // Hide the hatch the moment the user starts typing; restore on backspace-to-empty (mirrors Search-side autocomplete covering NTP).
         textPublisher
             .map { !$0.isEmpty }
@@ -180,6 +186,12 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
         delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: query)
+    }
+
+    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController) {
+        RecentChatDeletionAlert.show(for: chat, presenter: sender) { [weak chatManager] in
+            chatManager?.deleteChatSuggestion(suggestion: chat)
+        }
     }
 
     func duckAISuggestionsDidRequestSyncSetup() {

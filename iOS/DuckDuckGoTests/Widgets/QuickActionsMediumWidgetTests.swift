@@ -17,6 +17,8 @@
 //  limitations under the License.
 //
 
+// TODO: This file was removed from the UnitTests target to address an issue described on https://app.asana.com/1/137249556945/task/1215403063518217/comment/1215400792772993?focus=true
+/*
 import Testing
 import Foundation
 @testable import Core
@@ -65,3 +67,4 @@ struct QuickActionsMediumWidgetTests {
         #expect(shortcutValues.allSatisfy { $0 != nil })
     }
 }
+*/

@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import os.log
 import DataBrokerProtectionCore

@@ -20,6 +20,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import XCTest
@@ -72,7 +73,9 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     }
 
     private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false,
-                                             aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil) -> AIChatUserScriptHandler {
+                                             aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
+                                             installDateProvider: @escaping () -> Date? = { nil },
+                                             installTypeProvider: @escaping () -> AIChatInstallType = { .new }) -> AIChatUserScriptHandler {
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
         return AIChatUserScriptHandler(
             experimentalAIChatManager: experimentalAIChatManager,
@@ -82,8 +85,44 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             aichatFullModeFeature: mockAIChatFullModeFeature,
             aichatContextualModeFeature: mockAIChatContextualModeFeature,
             aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
-            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            installDateProvider: installDateProvider,
+            installTypeProvider: installTypeProvider
         )
+    }
+
+    func testWhenReturningUserThenInstallTypeIsReturning() {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(installTypeProvider: { .returning })
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.installType, .returning)
+    }
+
+    func testWhenNewUserThenInstallTypeIsNew() {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(installTypeProvider: { .new })
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.installType, .new)
+    }
+
+    func testInstallAgeIsBucketedFromInstallDate() {
+        // Installed 10 days ago -> bucket 2 (8–14).
+        let tenDaysAgo = Calendar.current.date(byAdding: .day, value: -10, to: Date())
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(installDateProvider: { tenDaysAgo })
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.installAge, 2)
+    }
+
+    func testWhenInstallDateIsNilThenInstallAgeIsZero() {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(installDateProvider: { nil })
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.installAge, 0)
     }
 
     func testGetAIChatNativeConfigValues() {
@@ -376,6 +415,27 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         // When
         let result = await aiChatUserScriptHandler.responseReceived(params: [:], message: message)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [expectation])
+    }
+
+    @MainActor
+    func testNewImageGenerationChatStartedPostsNotificationCarryingSourceWebView() async {
+        // Given
+        let webView = WKWebView()
+        let expectation = expectation(forNotification: .aiChatNewImageGenerationChatStarted, object: webView)
+        let message = MockUserScriptMessage(
+            messageName: "test",
+            messageBody: [:],
+            messageHost: "duck.ai",
+            isMainFrame: true,
+            messageWebView: webView
+        )
+
+        // When
+        let result = await aiChatUserScriptHandler.newImageGenerationChatStarted(params: [:], message: message)
 
         // Then
         XCTAssertNil(result)

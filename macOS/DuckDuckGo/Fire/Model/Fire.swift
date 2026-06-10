@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import DDGSync
 import FeatureFlags
 import Foundation
@@ -775,7 +776,11 @@ final class Fire: FireProtocol {
     @MainActor
     private func reloadWebExtensions() async {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            await webExtensionManager.loadInstalledExtensions()
+            if NSApp.delegateTyped.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {
+                await webExtensionManager.reloadInstalledExtensions()
+            } else {
+                await webExtensionManager.loadInstalledExtensions()
+            }
         }
     }
 

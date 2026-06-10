@@ -20,7 +20,7 @@ import Foundation
 import StoreKit
 
 /// A protocol that defines the core functionality and properties of a subscription product.
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public protocol SubscriptionProduct {
     /// The unique identifier of the product.
     var id: String { get }
@@ -72,7 +72,7 @@ public protocol SubscriptionProduct {
     /// - Throws: An error if the purchase fails.
     func purchase(options: Set<Product.PurchaseOption>) async throws -> Product.PurchaseResult
 }
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public struct AppStoreSubscriptionProduct: SubscriptionProduct {
     /// The underlying StoreKit Product
     private let product: any StoreProduct
@@ -151,7 +151,7 @@ public struct AppStoreSubscriptionProduct: SubscriptionProduct {
 }
 
 /// Protocol that captures the Product interface required by AppStoreSubscriptionProduct
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public protocol StoreProduct {
     /// The unique identifier of the store product.
     var id: String { get }
@@ -179,7 +179,7 @@ public protocol StoreProduct {
 }
 
 /// Extends StoreKit's Product to conform to StoreProduct.
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 extension Product: StoreProduct {
     /// Determines if this is a monthly subscription by checking if the subscription period
     /// is exactly one month.

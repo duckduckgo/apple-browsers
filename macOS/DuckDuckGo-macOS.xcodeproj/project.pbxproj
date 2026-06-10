@@ -2889,6 +2889,8 @@
 		9FCB946C2DE05AC800BC662B /* MockTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCB946A2DE05AC600BC662B /* MockTimer.swift */; };
 		9FDA6C212B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */; };
 		9FDA6C222B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */; };
+		9FE239BB2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */; };
+		9FE239BC2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */; };
 		9FEE98652B846870002E44E8 /* AddEditBookmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */; };
 		9FEE98662B846870002E44E8 /* AddEditBookmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */; };
 		9FEE98692B85B869002E44E8 /* BookmarksDialogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98682B85B869002E44E8 /* BookmarksDialogViewModel.swift */; };
@@ -6021,6 +6023,7 @@
 		9FCB94672DE05A4400BC662B /* TimerInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerInterface.swift; sourceTree = "<group>"; };
 		9FCB946A2DE05AC600BC662B /* MockTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTimer.swift; sourceTree = "<group>"; };
 		9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkFavoriteView.swift; sourceTree = "<group>"; };
+		9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowOpenTrigger.swift; sourceTree = "<group>"; };
 		9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkView.swift; sourceTree = "<group>"; };
 		9FEE98682B85B869002E44E8 /* BookmarksDialogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksDialogViewModel.swift; sourceTree = "<group>"; };
 		9FEE986C2B85BA17002E44E8 /* AddEditBookmarkDialogCoordinatorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkDialogCoordinatorViewModel.swift; sourceTree = "<group>"; };
@@ -10837,6 +10840,7 @@
 			isa = PBXGroup;
 			children = (
 				84537A022C998C24008723BC /* FireWindowSession.swift */,
+				9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */,
 				1D39F7242DCA299D00F258F0 /* InitialWindowFrameProvider.swift */,
 				AA7412BC24D2BEEE00D22FE0 /* MainWindow.swift */,
 				AA7412B424D1536B00D22FE0 /* MainWindowController.swift */,
@@ -16052,6 +16056,7 @@
 				7BAB1A0100000000A0000062 /* AIChatMentionPickerViewController.swift in Sources */,
 				7BAB1A0100000000A0000072 /* AIChatMentionPickerCoordinator.swift in Sources */,
 				7BAB1A0100000000A0000082 /* AIChatMentionPickerFilter.swift in Sources */,
+				9FE239BB2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */,
 				7BAB1A0100000000A0000092 /* AIChatMentionPickerEmptyRowView.swift in Sources */,
 				7BAB1A0100000000A00000C2 /* PointingHandButton.swift in Sources */,
 				B541E9582EF5AB8C002A633E /* ThemePixels.swift in Sources */,
@@ -17986,6 +17991,7 @@
 				37E794932EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityProvider.swift in Sources */,
 				37E794942EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityManager.swift in Sources */,
 				1D2EE7062E26626000F51C57 /* Logger+NewTabPage.swift in Sources */,
+				9FE239BC2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */,
 				4B37EE5F2B4CFC3C00A89A61 /* HomePageRemoteMessagingStorage.swift in Sources */,
 				31F28C5128C8EEC500119F70 /* YoutubeOverlayUserScript.swift in Sources */,
 				BBB891E72DAEC1C1001A42DF /* MoreOptionsMenuIconsProviding.swift in Sources */,

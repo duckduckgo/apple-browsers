@@ -597,6 +597,9 @@ enum GeneralPixel: PixelKitEvent {
     case autoplaySettingBlockAudio
     case autoplaySettingBlockAll
 
+    // Fire Window
+    case fireWindowOpened(trigger: FireWindowOpenTrigger)
+
     var name: String {
         switch self {
         case .crash(let appIdentifier):
@@ -1366,7 +1369,12 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_autoplay_setting_block-audio"
         case .autoplaySettingBlockAll:
             return "m_mac_autoplay_setting_block-all"
+
+            // Fire Window
+        case .fireWindowOpened(trigger: let trigger):
+            return "m_mac_firewindow_opened_\(trigger)"
         }
+        
     }
 
     var parameters: [String: String]? {
@@ -1555,6 +1563,7 @@ enum GeneralPixel: PixelKitEvent {
                 .dailyFireWindowConfigurationStartupFireWindowEnabled,
                 .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled,
                 .dailyFireWindowConfigurationFireAnimationEnabled,
+                .fireWindowOpened,
                 .navigation,
                 .navigationToExternalURL,
                 .serp,

@@ -23,6 +23,7 @@ import WebKit
 import UIKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import os.log
 import DataBrokerProtectionCore
 import PrivacyConfig
@@ -112,7 +113,7 @@ public final class DBPUIViewModel {
 
 extension DBPUIViewModel: DBPUICommunicationDelegate {
     public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
-        let isUserAuthenticated = (await authenticationDelegate?.isUserAuthenticated()) ?? false
+        let isUserAuthenticated = (await authenticationDelegate?.isUserAuthenticated()) ?? true
         return DBPUIHandshakeUserData(isAuthenticatedUser: isUserAuthenticated)
     }
     
@@ -180,7 +181,9 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     public func getInitialScanState() async -> DBPUIInitialScanState {
         do {
             let allQueryData = try databaseDelegate?.getAllBrokerProfileQueryData() ?? []
-            return DBPUIInitialScanState(from: allQueryData)
+            let isAuthenticatedUser = (await authenticationDelegate?.isUserAuthenticated()) ?? true
+            let eligibleQueryData = allQueryData.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
+            return DBPUIInitialScanState(from: eligibleQueryData)
         } catch {
             assertionFailure("Failed to fetch broker profile query data")
             return DBPUIInitialScanState.emptyInitialScanState()
@@ -190,7 +193,9 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         do {
             let allQueryData = try databaseDelegate?.getAllBrokerProfileQueryData() ?? []
-            return DBPUIScanAndOptOutMaintenanceState(from: allQueryData)
+            let isAuthenticatedUser = (await authenticationDelegate?.isUserAuthenticated()) ?? true
+            let eligibleQueryData = allQueryData.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
+            return DBPUIScanAndOptOutMaintenanceState(from: eligibleQueryData)
         } catch {
             assertionFailure("Failed to fetch broker profile query data")
             return DBPUIScanAndOptOutMaintenanceState.emptyMaintenanceState()

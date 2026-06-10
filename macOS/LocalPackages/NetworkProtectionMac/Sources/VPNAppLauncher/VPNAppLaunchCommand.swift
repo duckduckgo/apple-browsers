@@ -29,7 +29,14 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
     case showSettings
     case showVPNLocations
     case moveAppToApplications
-    case showSubscription
+    case showSubscription(origin: String?)
+
+    /// Query-item name used to carry the subscription-funnel origin across the launch-URL IPC.
+    public static let showSubscriptionOriginQueryItem = "origin"
+
+    /// Bare path used to identify the show-subscription launch URL when matching at the receiver
+    /// (query items are stripped before matching, then read separately to extract `origin`).
+    public static let showSubscriptionPath = "networkprotection://show-privacy-pro"
 
     var commandURL: String? {
         switch self {
@@ -51,8 +58,13 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
             return "networkprotection://show-settings/locations"
         case .moveAppToApplications:
             return "networkprotection://move-app-to-applications"
-        case .showSubscription:
-            return "networkprotection://show-privacy-pro"
+        case .showSubscription(let origin):
+            guard let origin,
+                  var components = URLComponents(string: Self.showSubscriptionPath) else {
+                return Self.showSubscriptionPath
+            }
+            components.queryItems = [URLQueryItem(name: Self.showSubscriptionOriginQueryItem, value: origin)]
+            return components.string ?? Self.showSubscriptionPath
         }
     }
 

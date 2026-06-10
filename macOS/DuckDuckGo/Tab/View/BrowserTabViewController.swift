@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import FeatureFlags
 import Freemium
@@ -1255,7 +1256,6 @@ final class BrowserTabViewController: NSViewController {
             }
             let burnerHomePageViewController = BurnerHomePageViewController(
                 subscriptionManager: subscriptionManager,
-                featureFlagger: featureFlagger,
                 promoDelegate: subscriptionPromoDelegate,
                 dateProvider: dateProvider
             )

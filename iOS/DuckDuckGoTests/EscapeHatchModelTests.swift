@@ -20,6 +20,8 @@
 import Foundation
 import CoreGraphics
 import Testing
+import Core
+import PrivacyConfig
 import PersistenceTestingUtils
 @testable import DuckDuckGo
 
@@ -30,6 +32,7 @@ struct EscapeHatchModelTests {
     private final class SpyRouter: EscapeHatchActionRouter {
         private(set) var burnImmediatelyCalls: [Tab] = []
         private(set) var closeCalls: [Tab] = []
+        private(set) var openingScreenOptionChanges: [AfterInactivityOption] = []
 
         func escapeHatchDidRequestSwitch(to tab: Tab) {}
         func escapeHatchDidRequestClose(_ tab: Tab) { closeCalls.append(tab) }
@@ -39,9 +42,13 @@ struct EscapeHatchModelTests {
         func escapeHatchDidRequestBurnImmediately(_ tab: Tab) {
             burnImmediatelyCalls.append(tab)
         }
+
+        func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption) {
+            openingScreenOptionChanges.append(option)
+        }
     }
 
-    private func makeSUT(targetTab: Tab, router: EscapeHatchActionRouter) -> EscapeHatchModel {
+    private func makeSUT(targetTab: Tab, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger = MockFeatureFlagger()) -> EscapeHatchModel {
         EscapeHatchModel(
             title: "title",
             subtitle: "subtitle",
@@ -50,7 +57,7 @@ struct EscapeHatchModelTests {
             targetTab: targetTab,
             tabsSource: StaticEscapeHatchTabsSource(tabs: [targetTab]),
             router: router,
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             afterInactivityOptionAdapter: AfterInactivityOptionAdapter(
                 initialOption: .lastUsedTab,
                 keyValueStore: MockKeyValueFileStore()
@@ -80,7 +87,7 @@ struct EscapeHatchModelTests {
 
         sut.primarySwipeAction.perform()
 
-        #expect(sut.primarySwipeAction.label == UserText.escapeHatchMenuBurnTab)
+        #expect(sut.primarySwipeAction.label == UserText.escapeHatchMenuDeleteTab)
         #expect(router.burnImmediatelyCalls.count == 1)
         #expect(router.burnImmediatelyCalls.first === targetTab)
         #expect(router.closeCalls.isEmpty)
@@ -99,5 +106,26 @@ struct EscapeHatchModelTests {
         #expect(router.closeCalls.count == 1)
         #expect(router.closeCalls.first === targetTab)
         #expect(router.burnImmediatelyCalls.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("isFireButtonEnabled is false when the escapeHatchFireButton flag is off", .timeLimit(.minutes(1)))
+    func fireButtonDisabledWhenFlagOff() {
+        let sut = makeSUT(targetTab: Tab(uid: "tab"),
+                          router: SpyRouter(),
+                          featureFlagger: MockFeatureFlagger())
+
+        #expect(sut.isFireButtonEnabled == false)
+    }
+
+    @available(iOS 16, *)
+    @Test("isFireButtonEnabled is true when the escapeHatchFireButton flag is on", .timeLimit(.minutes(1)))
+    func fireButtonEnabledWhenFlagOn() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.escapeHatchFireButton])
+        let sut = makeSUT(targetTab: Tab(uid: "tab"),
+                          router: SpyRouter(),
+                          featureFlagger: flagger)
+
+        #expect(sut.isFireButtonEnabled == true)
     }
 }

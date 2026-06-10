@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import UIKit
 import Core
 import DesignResourcesKit
@@ -157,6 +158,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         cancelInFlightRequests()
         self.query = query
         model.query = query
+    }
+
+    func refreshSuggestions() {
+        requestSuggestions(query: self.query)
     }
 
     func setSectionTitle(_ title: String?) {
@@ -352,14 +357,20 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         switch suggestion {
         case .historyEntry(_, let url, _):
             Task {
-                await historyManager.deleteHistoryForURL(url)
-                Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
-                DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
-                requestSuggestions(query: self.query)
+                await deleteURLSuggestion(suggestion, url: url)
             }
         default:
             assertionFailure("Only history items can be deleted")
         }
+    }
+
+    private func deleteURLSuggestion(_ suggestion: Suggestion, url: URL) async {
+        await historyManager.deleteHistoryForURL(url)
+        requestSuggestions(query: self.query)
+        delegate?.autocomplete(deletedSuggestion: suggestion)
+
+        Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
+        DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
     }
 
     private func createPixelIndexParam(for index: Int?) -> [String: String] {

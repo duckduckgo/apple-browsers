@@ -44,6 +44,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         case duckAIOnboarding
         /// New-tab-page escape hatch single-tab burn: one "Delete Tab" button scoped to the target tab.
         case singleTab
+        /// Search Suggestions allow deleting History Entries
+        case custom(title: String, subtitle: String, action: String)
     }
 
     // MARK: - Constants
@@ -130,8 +132,10 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         switch fireContext {
         case .contextualChat:
             return true
+        case .custom:
+            return true
         case .singleTab:
-            return false
+            return tabViewModel?.tab.isAITab == true
         case .duckAIOnboarding, .default:
             return isRefinementsEnabled && tabViewModel?.tab.isAITab == true
         }
@@ -167,12 +171,18 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                    accessibilityIdentifier: AccessibilityIdentifiers.thisTab)]
             }
             return []
+        case .custom(_, _, let action):
+            return [FireConfirmationButton(title: action,
+                               style: .primary,
+                               action: { performCustomRequest(source: source, onConfirm: onConfirm) },
+                               accessibilityIdentifier: AccessibilityIdentifiers.thisTab)]
+
         case .singleTab:
             // Single "Delete Tab" button burning only the target tab
-            let isDuckAI = tabViewModel?.tab.isAITab == true
-            let options: FireRequest.Options = isDuckAI ? [.aiChats, .tabs] : [.all]
+            let title = isSingleChatConfirmation ? UserText.scopedFireConfirmationDeleteThisChatButton : UserText.scopedFireConfirmationDeleteTabButton
+            let options: FireRequest.Options = isSingleChatConfirmation ? [.aiChats, .tabs] : [.all]
 
-            return [FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteTabButton,
+            return [FireConfirmationButton(title: title,
                                style: .primary,
                                action: { burnTab(tabViewModel: tabViewModel, options: options, source: source, onConfirm: onConfirm) },
                                accessibilityIdentifier: AccessibilityIdentifiers.thisTab)]
@@ -225,6 +235,11 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         onConfirm(request)
     }
 
+    private static func performCustomRequest(source: FireRequest.Source, onConfirm: (FireRequest) -> Void) {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: source)
+        onConfirm(request)
+    }
+
     private static func burnTab(tabViewModel: TabViewModel?,
                                 options: FireRequest.Options = .all,
                                 source: FireRequest.Source,
@@ -246,7 +261,12 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         case .contextualChat, .duckAIOnboarding:
             return UserText.contextualChatDeleteConfirmationTitle
         case .singleTab:
-            return UserText.scopedFireConfirmationAlertSingleTabTitle
+            return isSingleChatConfirmation
+                ? UserText.contextualChatDeleteConfirmationTitle
+                : UserText.scopedFireConfirmationAlertSingleTabTitle
+        case .custom(let title, _, _):
+            return title
+
         case .default:
             if isSingleChatConfirmation {
                 return UserText.contextualChatDeleteConfirmationTitle
@@ -286,6 +306,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         case .default(let daxDialogsManager) where daxDialogsManager.isShowingFireDialog:
             // Skip all subtitles if in onboarding
             return nil
+        case .custom(_, let subtitle, _):
+            return subtitle
         case .default:
             break
         }

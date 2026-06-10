@@ -19,6 +19,8 @@
 import Cocoa
 import Combine
 import Common
+import DesignResourcesKitIcons
+import FoundationExtensions
 import FeatureFlags
 import History
 import os.log
@@ -31,7 +33,9 @@ final class HistoryMenu: NSMenu {
     }
 
     let backMenuItem = NSMenuItem(title: UserText.navigateBack, action: #selector(MainViewController.back), keyEquivalent: "[")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowLeft)
     let forwardMenuItem = NSMenuItem(title: UserText.navigateForward, action: #selector(MainViewController.forward), keyEquivalent: "]")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowRight)
 
     private let recentlyClosedMenuItem = NSMenuItem(title: UserText.mainMenuHistoryRecentlyClosed)
     private let reopenLastClosedMenuItem = NSMenuItem(title: UserText.reopenLastClosedTab, action: #selector(AppDelegate.reopenLastClosedTab))
@@ -43,11 +47,13 @@ final class HistoryMenu: NSMenu {
         keyEquivalent: "y",
         representedObject: location
     )
+        .withImage(DesignSystemImages.Glyphs.Size12.history)
     private let showHistorySeparator = NSMenuItem.separator()
     private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryDeleteAllHistory,
                                                      action: #selector(AppDelegate.clearAllHistory),
                                                      keyEquivalent: [.command, .shift, .backspace])
         .withAccessibilityIdentifier("HistoryMenu.clearAllHistory")
+        .withImage(DesignSystemImages.Glyphs.Size12.trash)
     private let clearAllHistorySeparator = NSMenuItem.separator()
 
     private let historyGroupingProvider: HistoryGroupingProvider
@@ -119,6 +125,8 @@ final class HistoryMenu: NSMenu {
         clearOldVariableMenuItems()
         addRecentlyVisited()
         addClearAllAndShowHistoryOnTheBottom()
+
+        alignItemTextWithIcons()
     }
 
     private func clearOldVariableMenuItems() {

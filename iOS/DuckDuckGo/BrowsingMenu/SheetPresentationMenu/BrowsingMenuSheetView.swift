@@ -440,6 +440,10 @@ private struct BrowsingMenuHeaderView: View {
                 Image(uiImage: DesignSystemImages.Color.Size24.aiChatGradient)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+            case .duckAILogo:
+                Image(uiImage: DesignSystemImages.Color.Size24.duckAI)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
             case .easterEgg(let url):
                 KFImage(url)
                     .resizable()

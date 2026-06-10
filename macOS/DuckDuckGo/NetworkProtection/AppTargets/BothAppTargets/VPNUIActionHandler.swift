@@ -18,6 +18,7 @@
 
 import AppLauncher
 import Common
+import FoundationExtensions
 import Foundation
 import NetworkProtectionIPC
 import NetworkProtectionProxy
@@ -56,7 +57,9 @@ final class VPNUIActionHandler {
 
     func askUserToReportIssues(withDomain domain: String) async {
         let parentWindow = await windowControllersManager.lastKeyMainWindowController?.window
-        await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow)
+        await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow) { view, window in
+            await presentAsAppModal(view, in: window)
+        }
     }
 
     @MainActor
@@ -93,8 +96,8 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         await vpnURLEventHandler.showLocations()
     }
 
-    func showSubscription() async {
-        await vpnURLEventHandler.showSubscription()
+    func showSubscription(origin: String?) async {
+        await vpnURLEventHandler.showSubscription(origin: origin)
     }
 
     @MainActor
@@ -119,7 +122,7 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         }
 
         let modalAlert = VPNExclusionSuggestionAlert(userAction: binding, dontAskAgain: dontAskAgainBinding)
-        await modalAlert.show(in: parentWindow)
+        await presentAsAppModal(modalAlert, in: parentWindow)
 
         if dontAskAgain {
             vpnAppState.dontAskAgainExclusionSuggestion = true
@@ -141,4 +144,21 @@ extension VPNUIActionHandler: VPNUIActionHandling {
     func didStartVPN() {
         freeTrialConversionService.markVPNActivated()
     }
+}
+
+/// Presents a SwiftUI view defined in a feature package through the app's standard modal-sheet
+/// presenter (`SheetHostingWindow`) — the same path used by Fire, bookmarks, etc. — so its
+/// `@Environment(\.dismiss)` works on all supported macOS versions. Returns once dismissed.
+@MainActor
+func presentAsAppModal(_ view: some View, in window: NSWindow?) async {
+    await withCheckedContinuation { continuation in
+        ModalSheetWrapper(content: view).show(in: window) {
+            continuation.resume()
+        }
+    }
+}
+
+private struct ModalSheetWrapper<Content: View>: ModalView {
+    let content: Content
+    var body: some View { content }
 }

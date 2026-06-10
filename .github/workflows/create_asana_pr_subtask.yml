@@ -14,20 +14,16 @@ jobs:
         steps:
         - name: Get Task ID
           id: get-task-id
-          env:
-            BODY: ${{ github.event.pull_request.body }}
-          run: |
-            task_id=$(grep -i "task/issue url.*https://app.asana.com/" <<< "$BODY" \
-              | perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
-                s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
-                s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)(?:\?focus=true)?|\1|'
-            )
-            echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
+          uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
+          with:
+            text: ${{ github.event.pull_request.body }}
 
         - name: Create or Update PR Subtask
           uses: duckduckgo/apple-toolbox/actions/asana-create-pr-subtask@main
           with:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
-            asana-task-id: ${{ steps.get-task-id.outputs.task_id }}
+            asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
             github-reviewer-user: ${{ github.event.requested_reviewer.login }}
+            github-pr-author-user: ${{ github.event.pull_request.user.login }}
+            github-pr-author-type: ${{ github.event.pull_request.user.type }}
             github-token: ${{ secrets.APPLE_GH_RO_PAT }}

@@ -67,12 +67,18 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
                 case let .titledSection(titleText, _):
                     return RemoteMessagingUI.CardsListDisplayModel.Item.section(title: titleText)
                     // Map Featured Two Lines Card Item
-                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, primaryActionText, primaryAction):
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, imageUrl, primaryActionText, primaryAction):
+                    let imageLoading = makeCardImageLoading(itemId: remoteListItem.id, imageUrl: imageUrl, message: message)
                     let featuredTwoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.FeaturedTwoLinesCard(
                         icon: placeholderImage.rawValue,
                         title: titleText,
                         description: descriptionText,
                         actionButtonTitle: primaryActionText,
+                        cachedImage: imageLoading.cachedImage,
+                        imageUrl: imageUrl,
+                        loadImage: imageLoading.loadImage,
+                        onImageLoadSuccess: imageLoading.onLoadSuccess,
+                        onImageLoadFailed: imageLoading.onLoadFailed,
                         onAppear: {
                             onItemAppear(remoteListItem.id)
                         },
@@ -82,13 +88,19 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
                     )
                     return RemoteMessagingUI.CardsListDisplayModel.Item.featuredTwoLinesCard(featuredTwoLinesCard)
                     // Map Two Lines Card Item
-                case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
+                case let .twoLinesItem(titleText, descriptionText, placeholderImage, imageUrl, action):
                     let disclosureIcon = action != nil ? Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall) : nil
+                    let imageLoading = makeCardImageLoading(itemId: remoteListItem.id, imageUrl: imageUrl, message: message)
                     let twoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.TwoLinesCard(
                         icon: placeholderImage.rawValue,
                         title: titleText,
                         description: descriptionText,
                         disclosureIcon: disclosureIcon,
+                        cachedImage: imageLoading.cachedImage,
+                        imageUrl: imageUrl,
+                        loadImage: imageLoading.loadImage,
+                        onImageLoadSuccess: imageLoading.onLoadSuccess,
+                        onImageLoadFailed: imageLoading.onLoadFailed,
                         onAppear: {
                             onItemAppear(remoteListItem.id)
                         },
@@ -146,6 +158,50 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
     }
 
     // MARK: - Private
+
+    private struct CardImageLoading {
+        let cachedImage: (() -> UIImage?)?
+        let loadImage: ((URL) async throws -> UIImage)?
+        let onLoadSuccess: (() -> Void)?
+        let onLoadFailed: (() -> Void)?
+    }
+
+    private final class ImageLoadReportGuard {
+        private var hasReported = false
+
+        func markReportedIfNeeded() -> Bool {
+            guard !hasReported else { return false }
+            hasReported = true
+            return true
+        }
+    }
+
+    private func makeCardImageLoading(itemId: String, imageUrl: URL?, message: RemoteMessageModel) -> CardImageLoading {
+        guard let imageUrl, let imageLoader else {
+            return CardImageLoading(cachedImage: nil, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
+        }
+
+        // Always pass a closure so the View can re-check the cache after LazyVStack
+        // recycling, instead of receiving a single value snapshotted here.
+        let cachedImage: () -> UIImage? = { [imageLoader] in imageLoader.cachedImage(for: imageUrl) }
+        let loadImage: (URL) async throws -> UIImage = { [imageLoader] url in
+            try await imageLoader.loadImage(from: url)
+        }
+
+        let reportGuard = ImageLoadReportGuard()
+        return CardImageLoading(
+            cachedImage: cachedImage,
+            loadImage: loadImage,
+            onLoadSuccess: { [pixelReporter, message] in
+                guard reportGuard.markReportedIfNeeded() else { return }
+                pixelReporter?.measureRemoteMessageCardImageLoadSuccess(message, cardId: itemId)
+            },
+            onLoadFailed: { [pixelReporter, message] in
+                guard reportGuard.markReportedIfNeeded() else { return }
+                pixelReporter?.measureRemoteMessageCardImageLoadFailed(message, cardId: itemId)
+            }
+        )
+    }
 
     // For actions without ID (primary action)
     private func makeAction(

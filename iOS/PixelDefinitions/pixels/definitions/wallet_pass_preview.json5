@@ -1,0 +1,25 @@
+{
+    "wallet_pass_preview_requested": {
+        "description": "Fired when the navigation policy routes an Apple Wallet pass (.pkpass or .pkpasses) into the auto-preview path. Counted on both the legacy URLSession path and the modern WKDownload-continuation path so the success rate can be derived against wallet_pass_preview_failed.",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "wallet_pass_preview_failed": {
+        "description": "Fired when PassKit rejects the downloaded pass bytes before the system Add to Wallet UI can present. The reason parameter captures the categorised failure mode.",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "Categorised failure mode reported by PassKit when reading the pass bytes.",
+                "enum": ["signature_invalid", "no_data_supplied", "parse_error"]
+            }
+        ]
+    }
+}

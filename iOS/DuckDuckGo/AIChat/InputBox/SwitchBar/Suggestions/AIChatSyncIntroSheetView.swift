@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 import SwiftUI
 
 struct AIChatSyncIntroSheetView: View {
@@ -28,23 +29,24 @@ struct AIChatSyncIntroSheetView: View {
     let onNotNowTap: () -> Void
 
     var body: some View {
-        VStack {
-            VStack(spacing: 24) {
-                Image(.syncDesktopMobilePairFeature128)
+        VStack(spacing: SheetMetrics.contentSpacing) {
+            VStack(spacing: SheetMetrics.contentSpacing) {
+                Image(rebrandable: "Sync-Desktop-Mobile-Pair-Feature-128")
 
                 Text(UserText.aiChatSyncIntroSheetTitle)
                     .daxTitle1()
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                Text(UserText.aiChatSyncIntroSheetBody)
+                Text(LocalizedStringKey(UserText.aiChatSyncIntroSheetBody))
                     .daxBodyRegular()
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.vertical, 20)
             .foregroundStyle(Color(designSystemColor: .textPrimary))
 
-            Spacer()
-
-            VStack {
+            VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
                 Button(action: onScanTap) {
                     HStack {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
@@ -59,8 +61,10 @@ struct AIChatSyncIntroSheetView: View {
                 .buttonStyle(GhostButtonStyle())
             }
         }
-        .padding([.horizontal, .top], 20)
-        .background(Color(designSystemColor: .backgroundSheets))
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, ButtonStackMetrics.containerPadding)
+        .padding(.top, 20)
+        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
 

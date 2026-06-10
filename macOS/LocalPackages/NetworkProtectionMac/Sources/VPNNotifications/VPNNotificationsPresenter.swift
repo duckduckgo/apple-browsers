@@ -94,10 +94,8 @@ public final class VPNNotificationsPresenter: NSObject, VPNNotificationsPresenti
             content.subtitle += "\n\n\n"
         }
 
-        if #available(macOS 12, *) {
-            content.interruptionLevel = .timeSensitive
-            content.relevanceScore = 0
-        }
+        content.interruptionLevel = .timeSensitive
+        content.relevanceScore = 0
 
         return content
     }

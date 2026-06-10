@@ -39,7 +39,7 @@ private enum Constants {
     static let actionButtonsTopPadding: CGFloat = 12
     static let topPadding: CGFloat = 28
     static let horizontalPadding: CGFloat = 16
-    static let bottomPadding: CGFloat = 24
+    static let bottomPadding: CGFloat = 20
     static let sparkleSize: CGSize = CGSize(width: 250, height: 100)
     static let subscriptionSize: CGSize = CGSize(width: 256, height: 96)
     static let plusRowHorizontalSpacing: CGFloat = 12
@@ -142,7 +142,7 @@ struct VPNUpsellPopoverView: View {
                 Text(UserText.vpnUpsellPopoverNoThanksButton)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .buttonStyle(StandardButtonStyle())
+            .buttonStyle(StandardButtonStyle(pillShape: true))
 
             Button {
                 viewModel.showSubscriptionLandingPage()
@@ -150,7 +150,7 @@ struct VPNUpsellPopoverView: View {
                 Text(viewModel.featureSet.mainCTATitle.capitalized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false, pillShape: true))
         }
         .frame(height: Constants.actionButtonHeight)
     }

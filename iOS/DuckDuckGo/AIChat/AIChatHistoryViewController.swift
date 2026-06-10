@@ -299,9 +299,11 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             guard let self, let move = self.viewModel.togglePin(chatId: chatId) else {
                 completion(false); return
             }
+            // `moveRow` keeps the same cell instance throughout the slide so the row glides
+            // between sections instead of fading out + reappearing (the delete/insert pair
+            // visually disconnects the row from its destination and exposes cell reuse).
             tableView.performBatchUpdates({
-                tableView.deleteRows(at: [move.source], with: .automatic)
-                tableView.insertRows(at: [move.destination], with: .automatic)
+                tableView.moveRow(at: move.source, to: move.destination)
             }, completion: { _ in completion(true) })
         }
         action.image = DesignSystemImages.Glyphs.Size24.pin

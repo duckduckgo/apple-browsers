@@ -26,7 +26,7 @@ enum SuggestionRowMapper {
                 id: "\(idPrefix)-website-\(url.absoluteString)",
                 icon: .globe,
                 title: url.formattedForSuggestion(),
-                query: query,
+                query: nil,
                 accessibilityID: "Autocomplete.Suggestions.ListItem.Website-\(url.formattedForSuggestion())")
 
         case .bookmark(let title, let url, let isFavorite, _):
@@ -34,7 +34,7 @@ enum SuggestionRowMapper {
                 id: "\(idPrefix)-bookmark-\(url.absoluteString)",
                 icon: isFavorite ? .favorite : .bookmark,
                 title: title,
-                query: query,
+                query: nil,
                 subtitle: url.formattedForSuggestion(),
                 accessibilityID: "Autocomplete.Suggestions.ListItem.Bookmark-\(url.formattedForSuggestion())")
 
@@ -43,7 +43,7 @@ enum SuggestionRowMapper {
                 id: "\(idPrefix)-serp-\(url.absoluteString)",
                 icon: .history,
                 title: url.searchQuery ?? "",
-                query: query,
+                query: nil,
                 subtitle: UserText.autocompleteSearchDuckDuckGo,
                 accessory: includesDeleteAccessory ? .delete : .none,
                 accessibilityID: "Autocomplete.Suggestions.ListItem.SERPHistory-\(url.searchQuery ?? "")")
@@ -53,7 +53,7 @@ enum SuggestionRowMapper {
                 id: "\(idPrefix)-history-\(url.absoluteString)",
                 icon: .history,
                 title: title ?? url.formattedForSuggestion(),
-                query: query,
+                query: nil,
                 subtitle: title == nil ? nil : url.formattedForSuggestion(),
                 accessory: includesDeleteAccessory ? .delete : .none,
                 accessibilityID: "Autocomplete.Suggestions.ListItem.History-\(url.formattedForSuggestion())")
@@ -63,7 +63,7 @@ enum SuggestionRowMapper {
                 id: "\(idPrefix)-openTab-\(url.absoluteString)",
                 icon: .openTab,
                 title: title,
-                query: query,
+                query: nil,
                 subtitle: "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())",
                 accessibilityID: "Autocomplete.Suggestions.ListItem.OpenTab-\(url.formattedForSuggestion())")
 
@@ -81,7 +81,7 @@ enum SuggestionRowMapper {
                 id: "\(idPrefix)-askAIChat-\(value)",
                 icon: .aiChat,
                 title: value,
-                query: query,
+                query: nil,
                 subtitle: UserText.autocompleteAskAIChat,
                 accessibilityID: "Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
 

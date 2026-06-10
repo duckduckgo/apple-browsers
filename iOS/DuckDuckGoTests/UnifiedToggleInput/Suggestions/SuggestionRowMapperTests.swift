@@ -20,6 +20,8 @@ final class SuggestionRowMapperTests: XCTestCase {
         XCTAssertNil(row.subtitle)
         XCTAssertEqual(row.accessory, .none)
         XCTAssertEqual(row.icon, .globe)
+        // Websites render plain (no bold-completion) like legacy — only `.phrase` passes `query`.
+        XCTAssertNil(row.query)
     }
 
     func test_bookmark_mapsTitleAndURLSubtitle() {

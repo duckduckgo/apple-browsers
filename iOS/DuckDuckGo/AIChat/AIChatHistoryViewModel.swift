@@ -51,7 +51,8 @@ final class AIChatHistoryViewModel: ObservableObject {
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
-    private let downloadQueue: DispatchQueue
+    private let pinner: ChatPinning?
+    private let mutationQueue: DispatchQueue
     private var cancellables: Set<AnyCancellable> = []
 
     weak var delegate: AIChatHistoryViewModelDelegate?
@@ -60,12 +61,14 @@ final class AIChatHistoryViewModel: ObservableObject {
         reader: ChatHistoryReading,
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
-        downloadQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated)
+        pinner: ChatPinning? = nil,
+        mutationQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated)
     ) {
         self.reader = reader
         self.fireExecutor = fireExecutor
         self.downloader = downloader
-        self.downloadQueue = downloadQueue
+        self.pinner = pinner
+        self.mutationQueue = mutationQueue
 
         // `.failure` as a sentinel keeps the combined publisher alive for `loadFailed`.
         let chats: AnyPublisher<Result<[DuckAiChat], Error>, Never> = reader.chatsPublisher()
@@ -163,7 +166,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     func downloadChat(chatId: String) {
         // Image-gen exports do enough I/O to freeze the sheet — dispatch off-main.
         guard let downloader else { return }
-        downloadQueue.async { [weak self] in
+        mutationQueue.async { [weak self] in
             do {
                 let url = try downloader.downloadChat(chatId: chatId)
                 DispatchQueue.main.async { [weak self] in
@@ -174,6 +177,57 @@ final class AIChatHistoryViewModel: ObservableObject {
                 // Failure-state toast pairs with the pixels-pass follow-up (task #28).
             }
         }
+    }
+
+    /// Whether the chat is currently in the Pinned section. Used by the leading-swipe to
+    /// pick the accessibility label.
+    func isPinned(chatId: String) -> Bool {
+        pinned.contains(where: { $0.chatId == chatId })
+    }
+
+    /// Optimistically toggles the chat between Pinned and Recent and dispatches the storage
+    /// write off-main. Returns the source + destination index paths so the VC can drive
+    /// `beginUpdates / deleteRows / insertRows / endUpdates` for the cross-section animation.
+    /// Returns `nil` when the chat isn't in either section (already deleted) or the pinner
+    /// isn't wired (e.g. in unit tests not exercising pin).
+    @discardableResult
+    func togglePin(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
+        guard let pinner else { return nil }
+        guard let move = applyOptimisticPinToggle(chatId: chatId) else { return nil }
+        mutationQueue.async { [weak self] in
+            do {
+                try pinner.togglePin(chatId: chatId)
+                // Storage observer re-emits → `apply(...)` runs → arrays converge to the
+                // optimistic state we already applied locally. No further UI change.
+            } catch {
+                Logger.aiChat.debug("Pin toggle failed: \(error.localizedDescription)")
+                // Failure-state pixel pairs with the pixels-pass follow-up (task #28).
+            }
+        }
+        return move
+    }
+
+    /// Mutates `pinned`/`recent` in place to mirror the eventual post-write state. Returns
+    /// the source/destination index paths describing where the chat moved from and to.
+    /// Preserves the same lastEdit-desc ordering `ChatHistoryReader` uses.
+    private func applyOptimisticPinToggle(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
+        if let row = pinned.firstIndex(where: { $0.chatId == chatId }) {
+            let chat = pinned.remove(at: row)
+            let toggled = chat.withPinned(false)
+            let insertIndex = recent.firstIndex(where: { $0.lastEdit < toggled.lastEdit }) ?? recent.count
+            recent.insert(toggled, at: insertIndex)
+            return (IndexPath(row: row, section: Section.pinned.rawValue),
+                    IndexPath(row: insertIndex, section: Section.recent.rawValue))
+        }
+        if let row = recent.firstIndex(where: { $0.chatId == chatId }) {
+            let chat = recent.remove(at: row)
+            let toggled = chat.withPinned(true)
+            let insertIndex = pinned.firstIndex(where: { $0.lastEdit < toggled.lastEdit }) ?? pinned.count
+            pinned.insert(toggled, at: insertIndex)
+            return (IndexPath(row: row, section: Section.recent.rawValue),
+                    IndexPath(row: insertIndex, section: Section.pinned.rawValue))
+        }
+        return nil
     }
 
     func updateQuery(_ newValue: String) {

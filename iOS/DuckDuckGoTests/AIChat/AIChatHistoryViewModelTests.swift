@@ -161,7 +161,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         let downloader = StubDownloader()
         downloader.stubbedResult = .success(URL(fileURLWithPath: "/tmp/duck.ai_2026-01-01_00-00-00.txt"))
         let queue = DispatchQueue(label: "test.download")
-        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, downloadQueue: queue)
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, mutationQueue: queue)
         let delegate = MockDelegate()
         sut.delegate = delegate
 
@@ -177,7 +177,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         let downloader = StubDownloader()
         downloader.stubbedResult = .failure(ChatHistoryDownloader.DownloadError.chatNotFound)
         let queue = DispatchQueue(label: "test.download")
-        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, downloadQueue: queue)
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, mutationQueue: queue)
         let delegate = MockDelegate()
         sut.delegate = delegate
 
@@ -186,6 +186,106 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         processMainQueue()
 
         XCTAssertEqual(delegate.exportedFilenames, [])
+    }
+
+    // MARK: - Pin
+
+    func testIsPinned_returnsTrueForChatsInPinnedSection_falseOtherwise() {
+        let sut = makeSUT(chats: [
+            chat(id: "p1", pinned: true),
+            chat(id: "r1", pinned: false)
+        ])
+
+        XCTAssertTrue(sut.isPinned(chatId: "p1"))
+        XCTAssertFalse(sut.isPinned(chatId: "r1"))
+        XCTAssertFalse(sut.isPinned(chatId: "missing"))
+    }
+
+    func testTogglePin_noPinner_returnsNilAndIsNoOp() {
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], pinner: nil)
+
+        let move = sut.togglePin(chatId: "r1")
+
+        XCTAssertNil(move, "no-pinner case must short-circuit without touching the arrays")
+        XCTAssertEqual(sut.recent.map(\.chatId), ["r1"])
+        XCTAssertEqual(sut.pinned, [])
+    }
+
+    func testTogglePin_pinningRecentChat_movesItToPinnedSectionAndReturnsIndexPaths() {
+        let pinner = StubPinner()
+        let sut = makeSUT(
+            chats: [chat(id: "r1", pinned: false), chat(id: "r2", pinned: false)],
+            pinner: pinner
+        )
+
+        let move = sut.togglePin(chatId: "r1")
+
+        XCTAssertEqual(move?.source, IndexPath(row: 0, section: AIChatHistoryViewModel.Section.recent.rawValue))
+        XCTAssertEqual(move?.destination, IndexPath(row: 0, section: AIChatHistoryViewModel.Section.pinned.rawValue))
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["r1"], "optimistically moved into pinned")
+        XCTAssertEqual(sut.recent.map(\.chatId), ["r2"], "removed from recent")
+        processMainQueue()
+        XCTAssertEqual(pinner.requestedChatIds, ["r1"], "storage write dispatched off-main")
+    }
+
+    func testTogglePin_unpinningPinnedChat_movesItToRecentSection() {
+        let pinner = StubPinner()
+        let sut = makeSUT(
+            chats: [chat(id: "p1", pinned: true), chat(id: "r1", pinned: false)],
+            pinner: pinner
+        )
+
+        let move = sut.togglePin(chatId: "p1")
+
+        XCTAssertEqual(move?.source, IndexPath(row: 0, section: AIChatHistoryViewModel.Section.pinned.rawValue))
+        XCTAssertEqual(move?.destination.section, AIChatHistoryViewModel.Section.recent.rawValue)
+        XCTAssertEqual(sut.pinned, [])
+        XCTAssertEqual(sut.recent.map(\.chatId).sorted(), ["p1", "r1"])
+    }
+
+    func testTogglePin_insertsAtCorrectPositionByLastEditDescending() {
+        let pinner = StubPinner()
+        let sut = makeSUT(chats: [
+            chat(id: "p_old", lastEdit: "2026-01-01T00:00:00.000Z", pinned: true),
+            chat(id: "p_new", lastEdit: "2026-05-01T00:00:00.000Z", pinned: true),
+            // Pinning this should land at index 1 of pinned (between newer & older).
+            chat(id: "r_mid", lastEdit: "2026-03-01T00:00:00.000Z", pinned: false)
+        ], pinner: pinner)
+
+        let move = sut.togglePin(chatId: "r_mid")
+
+        XCTAssertEqual(move?.destination, IndexPath(row: 1, section: AIChatHistoryViewModel.Section.pinned.rawValue))
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["p_new", "r_mid", "p_old"])
+    }
+
+    func testTogglePin_chatNotFound_returnsNilAndDoesNotCallPinner() {
+        let pinner = StubPinner()
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], pinner: pinner)
+
+        let move = sut.togglePin(chatId: "missing")
+
+        XCTAssertNil(move)
+        processMainQueue()
+        XCTAssertEqual(pinner.requestedChatIds, [], "no storage write when the chat isn't in either section")
+    }
+
+    func testTogglePin_pinnerThrows_doesNotRevertOptimisticState() {
+        // We swallow the failure (a pixel will land in the follow-up pixels-pass PR). The
+        // reactive observer is the authority on long-term state — on next emission the
+        // arrays will reflect whatever the storage actually shows. Local optimistic state
+        // sticks until then.
+        let pinner = StubPinner()
+        pinner.throwsError = .someError
+        let queue = DispatchQueue(label: "test.pin")
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], pinner: pinner, mutationQueue: queue)
+
+        let move = sut.togglePin(chatId: "r1")
+        queue.sync { }
+        processMainQueue()
+
+        XCTAssertNotNil(move, "optimistic move still computed")
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["r1"], "optimistic UI state remains until reactive observer corrects it")
+        XCTAssertEqual(pinner.requestedChatIds, ["r1"], "storage write still attempted")
     }
 
     // MARK: - Search
@@ -268,13 +368,15 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         chats: [DuckAiChat],
         fireExecutor: FireExecuting? = MockChatHistoryFireExecutor(),
         downloader: ChatHistoryDownloading? = nil,
-        downloadQueue: DispatchQueue = .main
+        pinner: ChatPinning? = nil,
+        mutationQueue: DispatchQueue = .main
     ) -> AIChatHistoryViewModel {
         let sut = AIChatHistoryViewModel(
             reader: MockChatHistoryReader(chats: chats),
             fireExecutor: fireExecutor,
             downloader: downloader,
-            downloadQueue: downloadQueue
+            pinner: pinner,
+            mutationQueue: mutationQueue
         )
         processMainQueue() // reader delivers on the main queue; let it drain before asserting
         return sut
@@ -336,6 +438,17 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func downloadChat(chatId: String) throws -> URL {
             requestedChatIds.append(chatId)
             return try stubbedResult.get()
+        }
+    }
+
+    private final class StubPinner: ChatPinning {
+        enum StubError: Error { case someError }
+        var throwsError: StubError?
+        private(set) var requestedChatIds: [String] = []
+
+        func togglePin(chatId: String) throws {
+            requestedChatIds.append(chatId)
+            if let throwsError { throw throwsError }
         }
     }
 }

@@ -358,11 +358,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        let response = GetFeatureConfigurationResponse(
+        return GetFeatureConfigurationResponse(
             usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
             useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
         )
-        return response
     }
 
     // Auth V1 unused methods
@@ -825,17 +824,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     func pushAction(method: SubscribeActionName, webView: WKWebView, params: Encodable) {
         let broker = UserScriptMessageBroker(context: SubscriptionPagesUserScript.context, requiresRunInPageContentWorld: true)
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
-    }
-
-    private func purchaseUpdateDebugSummary(_ purchaseUpdate: PurchaseUpdate) -> String {
-        guard let data = try? JSONEncoder().encode(purchaseUpdate),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return "unavailable"
-        }
-
-        let type = json["type"] as? String ?? "unknown"
-        let token = json["token"] as? String
-        return "type=\(type) tokenPresent=\(token?.isEmpty == false) tokenLength=\(token?.count ?? 0)"
     }
 
     // MARK: Native methods - Called from ViewModels

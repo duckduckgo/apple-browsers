@@ -116,7 +116,6 @@ final class UTIModelStore {
                 self.attachmentLimits = response.attachmentLimits?.limits(for: state.userTier)
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningModeIfNeeded()
-                let accessibleCount = self.models.filter(\.entityHasAccess).count
                 self.onModelsUpdated?()
             } catch {
                 guard !Task.isCancelled else { return }

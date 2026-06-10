@@ -272,10 +272,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
     private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
-    /// Set when the FE asks (via `showModelPicker`) to surface the model picker on the active
-    /// chat. Additively overrides only the `hasSubmittedPrompt`- driven hide in
-    /// `updateModelChipVisibility`, so the chip becomes tappable mid-chat without touching the
-    /// existing show/hide rule. Cleared once a supported model is applied or the session resets.
+    /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared once a
+    /// supported model is applied or the session resets.
     private var isModelPickerForcedVisible = false
 
     private(set) var currentText: String = ""
@@ -1375,7 +1373,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// `submitAIChatNativePrompt`.
     private func notifyFrontendOfActiveChatModelChange(_ modelId: String) {
         guard hasSubmittedPrompt, let userScript = boundUserScript else {
-            let reason = !hasSubmittedPrompt ? "newChat" : "noBoundScript"
             return
         }
         userScript.submitChangeModel(modelId)

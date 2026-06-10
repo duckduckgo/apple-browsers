@@ -52,6 +52,12 @@ final class AIChatHistoryCell: UITableViewCell {
         fatalError("init(coder:) is not supported.")
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        titleLabel.text = nil
+        iconImageView.image = nil
+    }
+
     private func setupViews() {
         // Explicit `backgroundColor` keeps the `.insetGrouped` rounded-corner mask
         // attached through swipe gestures (without it the last row's bottom corner

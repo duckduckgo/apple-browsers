@@ -396,11 +396,13 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1214533186882448
     case aiChatSettingsLinkInAiFeatures
 
-    // https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114757?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114757?focus=true
     case syncScopedAccessCredentials
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114763?focus=true
     case syncCanUseV2ConnectFlow
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114765?focus=true
     case syncCanShowV2ConnectCode
 
 }

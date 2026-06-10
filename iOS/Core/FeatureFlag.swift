@@ -455,10 +455,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114749?focus=true
     case syncScopedAccessCredentials
 
-    /// TODO: Add Asana task URL once final naming decided
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114760?focus=true
     case syncCanUseV2ConnectFlow
 
-    /// TODO: Add Asana task URL once final naming decided
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114767?focus=true
     case syncCanShowV2ConnectCode
 }
 

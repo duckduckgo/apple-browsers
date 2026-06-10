@@ -20,6 +20,7 @@
 import AIChat
 import AIChatTestingUtilities
 import Combine
+import Core
 import Suggestions
 import UIKit
 import XCTest
@@ -32,6 +33,7 @@ final class DuckAISuggestionsCoordinatorTests: XCTestCase {
         let coordinator: DuckAISuggestionsCoordinator
         let chatViewModel: AIChatSuggestionsViewModel
         let urlLoader: DuckAIURLSuggestionsLoader
+        let historyManager: SpyHistoryManager
         let textSubject = PassthroughSubject<String, Never>()
         let containerView = UIView()
         let parentViewController = UIViewController()
@@ -51,6 +53,7 @@ final class DuckAISuggestionsCoordinatorTests: XCTestCase {
         let queryBox = QueryBox(query)
         let viewModel = AIChatSuggestionsViewModel()
         let urlLoader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
+        let historyManager = SpyHistoryManager()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: MockAIChatSuggestionsReader(),
             aiChatSettings: MockAIChatSettingsProvider(),
@@ -65,11 +68,12 @@ final class DuckAISuggestionsCoordinatorTests: XCTestCase {
             chatManager: chatManager,
             urlLoader: urlLoader,
             chatViewModel: viewModel,
+            historyManager: historyManager,
             queryProvider: { queryBox.value },
             syncPromoManager: syncPromoManager,
             syncService: nil
         )
-        return Harness(coordinator: coordinator, chatViewModel: viewModel, urlLoader: urlLoader, queryBox: queryBox)
+        return Harness(coordinator: coordinator, chatViewModel: viewModel, urlLoader: urlLoader, historyManager: historyManager, queryBox: queryBox)
     }
 
     private func makeCoordinator() -> DuckAISuggestionsCoordinator {
@@ -250,6 +254,17 @@ final class DuckAISuggestionsCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(delegate.syncSetupRequestCount, 1)
     }
+
+    func test_duckAISuggestionsDidRequestURLDeletion_deletesHistoryForURL() async throws {
+        let harness = makeHarness()
+        let url = try XCTUnwrap(URL(string: "https://example.com/page"))
+        harness.historyManager.deleteExpectation = expectation(description: "deleteHistoryForURL called")
+
+        harness.coordinator.duckAISuggestionsDidRequestURLDeletion(.historyEntry(title: "Example", url: url, score: 1))
+
+        await fulfillment(of: [harness.historyManager.deleteExpectation!], timeout: 1)
+        XCTAssertEqual(harness.historyManager.deletedURLs, [url])
+    }
 }
 
 @MainActor
@@ -271,6 +286,8 @@ private final class MockDuckAISuggestionsCoordinatorDelegate: DuckAISuggestionsC
         selectedSearchQuery = query
     }
 
+    func duckAISuggestionsDidDeleteURL(_ suggestion: Suggestion) {}
+
     func duckAISuggestionsDidRequestSyncSetup() {
         syncSetupRequestCount += 1
     }
@@ -290,6 +307,16 @@ private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
 private final class MockHistoryCleaner: HistoryCleaning {
     func cleanAIChatHistory() async -> Result<Void, Error> { .success(()) }
     func deleteAIChat(chatID: String) async -> Result<Void, Error> { .success(()) }
+}
+
+private final class SpyHistoryManager: MockHistoryManager {
+    var deletedURLs: [URL] = []
+    var deleteExpectation: XCTestExpectation?
+
+    override func deleteHistoryForURL(_ url: URL) async {
+        deletedURLs.append(url)
+        deleteExpectation?.fulfill()
+    }
 }
 
 @MainActor

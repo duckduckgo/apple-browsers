@@ -60,6 +60,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonState() }
     }
 
+    var isSubmitBlockedByRecoveryCard: Bool = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
+
     var usesNewPromptSubmitStyle: Bool = false {
         didSet { updateSubmitButtonAppearance() }
     }
@@ -114,6 +118,18 @@ final class UnifiedToggleInputToolbarView: UIView {
             modelChipButton.menu = newValue
             modelChipButton.showsMenuAsPrimaryAction = (newValue != nil)
         }
+    }
+
+    /// Programmatically opens the model chip's pull-down menu. Returns `true` when the OS
+    /// exposes an API to trigger it (iOS 17.4+, where `performPrimaryAction()` lands), `false`
+    /// otherwise.
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        if #available(iOS 17.4, *) {
+            modelChipButton.performPrimaryAction()
+            return true
+        }
+        return false
     }
 
     var reasoningPickerMenu: UIMenu? {
@@ -475,7 +491,8 @@ private extension UnifiedToggleInputToolbarView {
             }
         }()
         submitButton.setImage(icon, for: .normal)
-        let isActive = isSubmitEnabled || showVoice
+        let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
+        let isActive = submitAllowed || showVoice
         submitButton.isEnabled = isActive
         if showVoice {
             submitButton.applyAIVoiceChatStyle()

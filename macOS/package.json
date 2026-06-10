@@ -4,8 +4,8 @@
   "scripts": {
     "test": "echo 'no test required'",
     "rebuild-autoconsent": "rollup -c",
-    "validate-defs-without-formatting": "validate-ddg-pixel-defs ./PixelDefinitions && node scripts/check_wide_event_consistency.mjs ./PixelDefinitions && node scripts/check_wide_event_schema_immutability.mjs ./PixelDefinitions",
-    "validate-pixel-defs": "validate-ddg-pixel-defs ./PixelDefinitions && node scripts/check_wide_event_consistency.mjs ./PixelDefinitions && node scripts/check_wide_event_schema_immutability.mjs ./PixelDefinitions && prettier ./PixelDefinitions --check",
+    "validate-defs-without-formatting": "validate-ddg-pixel-defs ./PixelDefinitions && node ../scripts/check_wide_event_consistency.mjs ./PixelDefinitions && node ../scripts/check_wide_event_schema_immutability.mjs ./PixelDefinitions",
+    "validate-pixel-defs": "validate-ddg-pixel-defs ./PixelDefinitions && node ../scripts/check_wide_event_consistency.mjs ./PixelDefinitions && node ../scripts/check_wide_event_schema_immutability.mjs ./PixelDefinitions && prettier ./PixelDefinitions --check",
     "validate-pixel-debug-logs": "validate-ddg-pixel-logs",
     "validate-wide-event-debug-logs": "validate-ddg-wide-event-logs",
     "pixel-lint": "prettier ./PixelDefinitions --check",

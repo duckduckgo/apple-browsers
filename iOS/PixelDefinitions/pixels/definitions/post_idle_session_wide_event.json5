@@ -87,12 +87,6 @@
                 "description": "Whether the user pressed back/cancel during the session."
             },
             {
-                "key": "feature.data.ext.ci_validation_probe",
-                "type": "string",
-                "description": "Temporary field to prove wide-event consistency validation fails on CI.",
-                "enum": ["intentional_failure"]
-            },
-            {
                 "key": "feature.data.ext.opening_screen_changed",
                 "type": "boolean",
                 "description": "Whether the user changed the Opening Screen option from the escape hatch's settings menu during the session."

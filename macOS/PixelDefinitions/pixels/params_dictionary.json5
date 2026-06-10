@@ -353,7 +353,7 @@
         "key": "nextStepsActiveUsageDays",
         "type": "integer",
         "description": "Number of days the New Tab Page has been opened with Next Steps cards visible",
-        "maximum": 14
+        "enum": [0, 1, 2, 3, 4, 6, 9, 14]
     },
     "ntpImpressionCount": {
         "key": "ntpImpressionCount",

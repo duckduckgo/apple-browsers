@@ -28,10 +28,8 @@ final class AIChatHistoryViewController: UIViewController {
     private let viewModel: AIChatHistoryViewModel
     private var cancellables: Set<AnyCancellable> = []
 
-    /// True while a swipe-driven `performBatchUpdates` is in flight. The VM mutation that
-    /// drives that animation fires `@Published` events synchronously and they arrive on the
-    /// main queue mid-animation; skipping `refreshContent` while this is set prevents the
-    /// async-delivered `reloadData` from cancelling the slide.
+    /// Set while a swipe-driven animation is in flight to suppress reactive reloads that
+    /// would otherwise cancel the slide.
     private var isApplyingLocalUpdate = false
 
     private lazy var tableView: UITableView = {
@@ -155,9 +153,6 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     private func bindViewModel() {
-        // `removeDuplicates` swallows the reactive emission that follows an optimistic VM
-        // mutation when its result equals the local state we already applied — without it,
-        // `refreshContent`'s `reloadData` would interrupt the swipe-pin animation.
         Publishers.CombineLatest3(viewModel.$pinned, viewModel.$recent, viewModel.$hasLoaded)
             .removeDuplicates { lhs, rhs in lhs.0 == rhs.0 && lhs.1 == rhs.1 && lhs.2 == rhs.2 }
             .receive(on: DispatchQueue.main)
@@ -307,9 +302,8 @@ extension AIChatHistoryViewController: UITableViewDelegate {
                 completion(false); return
             }
             self.isApplyingLocalUpdate = true
-            // `moveRow` keeps the same cell instance, so its icon would still reflect the
-            // pre-toggle pinned state. Refresh the icon while the cell is still at its
-            // source position so the slide animates with the new icon already visible.
+            // Refresh the icon while the cell is still at its source position — `moveRow`
+            // keeps the same instance, so it'd otherwise carry the pre-toggle icon.
             if let cell = tableView.cellForRow(at: move.source) as? AIChatHistoryCell {
                 cell.iconImageView.image = self.viewModel.icon(forRowAt: move.destination)
             }

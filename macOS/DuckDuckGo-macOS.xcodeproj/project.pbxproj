@@ -2891,6 +2891,8 @@
 		9FDA6C222B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */; };
 		9FE239BB2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */; };
 		9FE239BC2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */; };
+		9FE239C12FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */; };
+		9FE239C22FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */; };
 		9FEE98652B846870002E44E8 /* AddEditBookmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */; };
 		9FEE98662B846870002E44E8 /* AddEditBookmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */; };
 		9FEE98692B85B869002E44E8 /* BookmarksDialogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98682B85B869002E44E8 /* BookmarksDialogViewModel.swift */; };
@@ -6024,6 +6026,7 @@
 		9FCB946A2DE05AC600BC662B /* MockTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTimer.swift; sourceTree = "<group>"; };
 		9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkFavoriteView.swift; sourceTree = "<group>"; };
 		9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowOpenTrigger.swift; sourceTree = "<group>"; };
+		9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowsManagerFireWindowOpenTriggerTests.swift; sourceTree = "<group>"; };
 		9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkView.swift; sourceTree = "<group>"; };
 		9FEE98682B85B869002E44E8 /* BookmarksDialogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksDialogViewModel.swift; sourceTree = "<group>"; };
 		9FEE986C2B85BA17002E44E8 /* AddEditBookmarkDialogCoordinatorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkDialogCoordinatorViewModel.swift; sourceTree = "<group>"; };
@@ -7584,6 +7587,7 @@
 				1D39F7272DCA2C9200F258F0 /* InitialWindowFrameProviderTests.swift */,
 				84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */,
 				842303DD2ED075340025F26B /* WindowsManagerPopupTests.swift */,
+				9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */,
 			);
 			path = MainWindow;
 			sourceTree = "<group>";
@@ -16257,6 +16261,7 @@
 				3706FE1E293F661700E42796 /* GeolocationProviderTests.swift in Sources */,
 				9FFBEE832DE016E70058B11A /* MockDefaultBrowserAndDockPromptStatusUpdateNotifier.swift in Sources */,
 				567A23CE2C80CF3D0010F66C /* SpecialErrorPageUserScriptTests.swift in Sources */,
+				9FE239C12FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */,
 				9F39106A2B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */,
 				B5F31F4C2F50E2B90060E5C1 /* PerformanceMetricsReporterTests.swift in Sources */,
 				C149975B2DE762B600FF8F0F /* SubscriptionPagesUseSubscriptionFeatureTests.swift in Sources */,
@@ -18823,6 +18828,7 @@
 				CCB2EBDF2F62001600C65813 /* MockExternalPromoDelegate.swift in Sources */,
 				CCB2EBE02F62001600C65813 /* MockPromoHistoryStore.swift in Sources */,
 				CCB2EBE12F62001600C65813 /* MockPromoDelegate.swift in Sources */,
+				9FE239C22FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */,
 				311309792ECE77BC00FCD220 /* AddressBarSharedTextStateTests.swift in Sources */,
 				56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */,
 				36763A062FBB930600383BAE /* URL+SubscriptionAttributionTests.swift in Sources */,

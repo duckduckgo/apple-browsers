@@ -68,6 +68,9 @@ final class DuckAISuggestionsSurfaceProvider {
     private var hasSettledReader: ((String) -> Bool)?
     private var refreshRecentsAction: (() -> Void)?
     private var recentsCountReader: (() -> Int)?
+    /// In-flight history-delete task; cancelled on detach so its post-delete refetch can't run
+    /// against a torn-down source.
+    private var deleteTask: Task<Void, Never>?
 
     init(switchBarHandler: SwitchBarHandling,
          dependencies: SuggestionTrayDependencies,
@@ -158,6 +161,7 @@ final class DuckAISuggestionsSurfaceProvider {
     /// Tears down the source/VM and clears its state so the merger reverts to no-recents/nothing-pending.
     func detach(from host: UnifiedSuggestionsHost) {
         guard hasContentReader != nil else { return }
+        deleteTask?.cancel()
         cancellables.removeAll()
         host.detachDuckAISurface()
         stateSubject.send(nil)
@@ -175,9 +179,11 @@ final class DuckAISuggestionsSurfaceProvider {
     private func deleteHistory(rowID id: String, source: DuckAISuggestionsSource) {
         guard case .url(let suggestion) = source.selection(forRowID: id),
               case .historyEntry(_, let url, _) = suggestion else { return }
-        Task {
-            await SuggestionHistoryDeletion.delete(url, using: dependencies.historyManager)
-            source.fetchURLSuggestions(query: switchBarHandler.currentText)
+        deleteTask = Task { [weak self] in
+            guard let self else { return }
+            await SuggestionHistoryDeletion.delete(url, using: self.dependencies.historyManager)
+            guard !Task.isCancelled else { return }
+            source.fetchURLSuggestions(query: self.switchBarHandler.currentText)
         }
     }
 }

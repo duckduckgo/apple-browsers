@@ -115,6 +115,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let duckAIStateRelay = CurrentValueSubject<UnifiedSuggestionsInputsMerger.DuckAIState?, Never>(nil)
     /// Bridges `duckAISurface.statePublisher → duckAIStateRelay`; cleared on detach.
     private var duckAIRelayCancellables = Set<AnyCancellable>()
+    /// In-flight search history-delete task; cancelled on deinit so its post-delete refetch can't
+    /// run against a torn-down loader (parity with the duck.ai surface's `deleteTask`).
+    private var searchDeleteTask: Task<Void, Never>?
     /// Duck.ai sync-promo presenter; nil when there's no sync service.
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
         syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
@@ -168,6 +171,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        searchDeleteTask?.cancel()
     }
 
     // MARK: - Lifecycle
@@ -410,6 +417,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let searchStateChanged = dependencies.favoritesViewModel.localUpdates
             .merge(with: dependencies.favoritesViewModel.externalUpdates)
+            // Favorites changes fire on the Core Data context queue; marshal here so the merged
+            // inputs (and the view model's `@Published content` mutation) stay on main.
+            .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
         let inputsPublisher = makeMergedInputsPublisher(hasFavorites: hasFavorites,
                                                         hasMessages: hasMessages,
@@ -428,8 +438,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 guard let self,
                       let suggestion = source.suggestion(forRowID: id),
                       case .historyEntry(_, let url, _) = suggestion else { return }
-                Task {
+                self.searchDeleteTask = Task { [weak self] in
                     await SuggestionHistoryDeletion.delete(url, using: dependencies.historyManager)
+                    guard let self, !Task.isCancelled else { return }
                     loader?.fetch(query: self.switchBarHandler.currentText)
                 }
             },

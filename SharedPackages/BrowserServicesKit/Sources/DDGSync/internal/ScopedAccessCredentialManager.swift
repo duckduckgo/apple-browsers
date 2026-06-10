@@ -19,6 +19,7 @@
 import CryptoKit
 import Foundation
 
+/// Creates and recovers the scoped ("3party") access credential and its protected keys that let a limited client share a sync account.
 struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
 
     let endpoints: Endpoints
@@ -32,7 +33,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
             return nil
         }
         guard let encryptedCredential = thirdPartyCredential.encrypted3PartyCredential, !encryptedCredential.isEmpty else {
-            throw SyncError.invalidDataInResponse("3P access credential missing encrypted3_party_credential")
+            throw SyncError.invalidDataInResponse("3P access credential missing encrypted_3party_credential")
         }
         let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: primaryKey, userID: userID)
         return try scopedAccessCredentialEnvelope.decryptScopedPassword(from: encryptedCredential, using: defaultCredentialMainKey)
@@ -402,9 +403,12 @@ struct EnsuredThirdPartyCredential {
     let protectedKeysToCache: [ProtectedKey]
 }
 
+/// Derives the scoped credential's hashed password and main key from a secret via HKDF-SHA256, salted by user ID.
 enum ScopedAccessKeyDerivation {
 
+    /// HKDF `info` label distinguishing the password-hash derivation.
     private static let passwordInfo = "Password"
+    /// HKDF `info` label distinguishing the main-key derivation.
     private static let mainKeyInfo = "Main Key"
 
     static func hashedPassword(from secret: Data, userID: String) -> String {

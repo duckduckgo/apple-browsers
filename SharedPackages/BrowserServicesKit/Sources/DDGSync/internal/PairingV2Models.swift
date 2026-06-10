@@ -29,8 +29,10 @@ enum PairingV2ApplicationMessage: Equatable {
     case recoveryCodeResponse(PairingV2RecoveryCodeResponseMessage)
 }
 
+/// The Pairing V2 protocol version this client emits and the peer major version it accepts.
 enum PairingV2ProtocolVersion {
     static let current = "2"
+    /// Only peers whose major version equals this are supported.
     static let supportedMajor = 2
 
     static func supports(_ version: String) -> Bool {
@@ -38,8 +40,10 @@ enum PairingV2ProtocolVersion {
     }
 }
 
+/// The payload encoded in a Pairing V2 QR code / pairing URL: protocol version, presenter's relay channel, and its public key.
 struct PairingV2QRCodePayload: Codable, Equatable {
     let version: String
+    /// Presenter's relay channel the scanner sends its first message to.
     let channelId: String
     let publicKey: String
 
@@ -125,6 +129,7 @@ struct PairingV2EncryptedMessage: Codable, Equatable {
     }
 }
 
+/// An encrypted message fetched from the relay, tagged with its server-assigned sequence number for ordering and de-duplication.
 struct PairingV2SequencedMessage: Codable, Equatable {
     let seq: Int
     let version: String
@@ -135,6 +140,7 @@ struct PairingV2SequencedMessage: Codable, Equatable {
     }
 }
 
+/// First message a peer sends after opening its channel, announcing its channel ID and public key so the other side can reply.
 struct PairingV2HelloMessage: Codable, Equatable {
     static let messageType = "hello"
 
@@ -151,10 +157,12 @@ struct PairingV2HelloMessage: Codable, Equatable {
     }
 }
 
+/// Announces whether a peer already has an account (`recovery_code_available`) or needs one (`recovery_code_request`); drives role election.
 struct PairingV2RecoveryCodeStatusMessage: Codable, Equatable {
     let type: String
     let name: String?
     let kind: PairingV2DeviceKind
+    /// Account user ID, present only when the peer already has an account; used to detect same-account pairing.
     let userId: String?
 
     init(type: String, name: String? = nil, kind: PairingV2DeviceKind, userId: String? = nil) {

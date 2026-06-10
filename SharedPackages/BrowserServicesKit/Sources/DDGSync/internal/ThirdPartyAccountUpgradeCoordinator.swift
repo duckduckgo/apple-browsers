@@ -20,6 +20,7 @@ import DDGSyncCrypto
 import Foundation
 import os.log
 
+/// Promotes a third-party (scoped) account into a full native ("default credential") account during pairing.
 protocol ThirdPartyAccountUpgradeCoordinating {
     func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> UpgradedThirdPartyAccount
 }
@@ -31,6 +32,7 @@ struct UpgradedThirdPartyAccount {
     let protectedKeys: [ProtectedKey]
 }
 
+/// Failure points in the third-party-to-native upgrade flow, kept distinct so callers can map them to pairing errors.
 enum ThirdPartyAccountUpgradeError: Error, Equatable {
     case invalidRecoveryCode
     case temporaryThirdPartyLoginFailed
@@ -48,8 +50,10 @@ enum ThirdPartyAccountUpgradeError: Error, Equatable {
     case invalidFinalNativeLoginResponse
 }
 
+/// Performs the third-party-to-native account upgrade: temporary 3party login, native credential creation, then final native login.
 struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating {
 
+    /// Auth scopes requested at login: full sync for the native credential, AI Chats only for the temporary 3party session.
     private enum LoginScope {
         static let defaultCredential = "sync"
         static let thirdPartyAccountManagement = "ai_chats"
@@ -61,16 +65,34 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
     let scopedAccess: ScopedAccessCredentialManaging
     let account: AccountManaging
 
-    private static let finalNativeLoginRetryDelays: [UInt64] = [500_000_000, 1_000_000_000]
+    /// Back-off delays for retrying the final native login on transient failures after the credential
+    /// is created. Nanoseconds; default is 0.5s then 1s — two retries.
+    private let finalNativeLoginRetryDelays: [UInt64]
 
-    private(set) var retrySleep: @Sendable (UInt64) async throws -> Void = {
-        try await Task.sleep(nanoseconds: $0)
-    }
+    private let retrySleep: @Sendable (UInt64) async throws -> Void
 
     private let jweCompactCodec = JWECompactCodec()
     private let scopedAccessCredentialEnvelope = ScopedAccessCredentialEnvelope()
 
+    init(endpoints: Endpoints,
+         api: RemoteAPIRequestCreating,
+         crypter: CryptingInternal,
+         scopedAccess: ScopedAccessCredentialManaging,
+         account: AccountManaging,
+         finalNativeLoginRetryDelays: [UInt64] = [500_000_000, 1_000_000_000],
+         retrySleep: @escaping @Sendable (UInt64) async throws -> Void = { try await Task.sleep(nanoseconds: $0) }) {
+        self.endpoints = endpoints
+        self.api = api
+        self.crypter = crypter
+        self.scopedAccess = scopedAccess
+        self.account = account
+        self.finalNativeLoginRetryDelays = finalNativeLoginRetryDelays
+        self.retrySleep = retrySleep
+    }
+
+    /// Upgrades a 3party account to a native (default) credential: temporary scoped login → create the native credential (rewrapping 3party keys) → drop the temp device → log in as the new native device.
     func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> UpgradedThirdPartyAccount {
+        // Decode the 3party recovery code and use it for a temporary scoped login.
         let recoveryKey = try decodeThirdPartyRecoveryKey(from: recoveryCode)
         let scopedPassword = try decodeScopedPassword(from: recoveryKey)
 
@@ -94,11 +116,13 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
 
         var didLogoutTemporaryThirdPartyDevice = false
         do {
+            // Confirm the account has not already been upgraded before creating native credentials.
             let accessCredentials = try await fetchAccessCredentials(for: thirdPartyAccount)
             guard !accessCredentials.contains(where: { $0.id == SyncCredentialID.defaultCredential }) else {
                 throw ThirdPartyAccountUpgradeError.nativeCredentialAlreadyPresent
             }
 
+            // Rewrap 3party-protected keys to the new native secret key and store the old scoped password as a protected credential.
             let thirdPartyProtectedKeys = try await fetchUsableThirdPartyProtectedKeys(for: thirdPartyAccount)
             let accountKeys = try generateDefaultCredentialMaterial(userId: recoveryKey.userId)
             let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: accountKeys.primaryKey, userID: recoveryKey.userId)
@@ -111,6 +135,7 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
                                                  encryptedThirdPartyCredential: encryptedThirdPartyCredential,
                                                  keys: rewrappedProtectedKeys)
 
+            // Remove the temporary 3party device before logging in as the newly-created native device.
             await logoutTemporaryThirdPartyDevice(thirdPartyLogin)
             didLogoutTemporaryThirdPartyDevice = true
 
@@ -238,7 +263,7 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
     }
 
     private func loginDefaultCredentialWithRetry(userId: String, accountKeys: AccountCreationKeys, deviceName: String, deviceType: String) async throws -> LoginResult {
-        var retryDelays = Self.finalNativeLoginRetryDelays
+        var retryDelays = finalNativeLoginRetryDelays
 
         while true {
             do {

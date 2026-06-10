@@ -36,14 +36,17 @@ enum PairingV2MessageCryptoError: Error, Equatable {
     case aesGCMDecryptionFailed
 }
 
+/// This device's pairing identity: its relay channel ID plus the RSA key pair peers use to encrypt messages to it.
 struct PairingV2KeyPair {
     let channelID: String
+    /// SPKI-DER public key, Base64URL-encoded, shared with the peer.
     let publicKey: String
     let privateKey: SecKey
 }
 
 enum PairingV2KeyPairFactory {
 
+    /// RSA key size (bits) for the per-session pairing key pair (RSA-2048-OAEP-SHA256).
     private static let rsaKeySizeInBits = 2048
 
     static func makeKeyPair(channelID: String = UUID().uuidString) throws -> PairingV2KeyPair {
@@ -73,6 +76,7 @@ enum PairingV2KeyPairFactory {
     }
 }
 
+/// Encrypts/decrypts Pairing V2 application messages as RSA-OAEP-256 compact JWEs, using `kid` to carry and verify the sender channel ID.
 final class PairingV2MessageCrypto {
 
     private let jweCompactCodec: JWECompactCodec
@@ -81,6 +85,7 @@ final class PairingV2MessageCrypto {
         self.jweCompactCodec = jweCompactCodec
     }
 
+    /// Encrypts a message to the recipient's public key, tagging it with the sender's channel ID as the JWE `kid`.
     func encrypt(_ message: PairingV2ApplicationMessage,
                  recipientPublicKey: String,
                  senderChannelID: String) throws -> PairingV2EncryptedMessage {
@@ -90,6 +95,7 @@ final class PairingV2MessageCrypto {
         return PairingV2EncryptedMessage(payload: compactJWE)
     }
 
+    /// Decrypts a message with this device's private key, verifying the sender channel ID when given; returns nil for unrecognized message types.
     func decrypt(_ message: PairingV2EncryptedMessage,
                  privateKey: SecKey,
                  expectedSenderChannelID: String? = nil) throws -> PairingV2ApplicationMessage? {

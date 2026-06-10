@@ -19,7 +19,6 @@
 import PrivacyConfig
 import Combine
 import Common
-import FoundationExtensions
 import Foundation
 import Persistence
 import Networking
@@ -70,16 +69,23 @@ protocol AccountManaging {
     func fetchDevicesForAccount(_ account: SyncAccount) async throws -> [RegisteredDevice]
 }
 
+/// Manages the scoped ("3party") access credential: recovering, creating, and fetching its password and protected keys.
 protocol ScopedAccessCredentialManaging {
+    /// Decrypts the existing scoped password from the account's 3party access credential, or nil if there isn't one yet.
     func recoverScopedPassword(from accessCredentials: [AccessCredential]?,
                                primaryKey: Data,
                                userID: String) throws -> Data?
+    /// Returns the account's scoped password, creating and uploading the 3party credential (and its protected keys) if absent; reuses `cachedScopedPassword` when creating.
     func ensureThirdPartyScopedPassword(for account: SyncAccount,
                                         purpose: String,
                                         cachedScopedPassword: () throws -> Data?) async throws -> EnsuredThirdPartyCredential
+    /// Builds the Base64URL recovery code that shares the account via the scoped password, or nil if the password is empty.
     func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String?
+    /// Fetches the account's access credentials (empty if none exist).
     func fetchAccessCredentials(_ account: SyncAccount) async throws -> [AccessCredential]
+    /// Fetches the account's protected keys (empty if none exist).
     func fetchProtectedKeys(_ account: SyncAccount) async throws -> [ProtectedKey]
+    /// Uploads a protected key for the given purpose only if one isn't already stored, returning the stored key (existing or new).
     func setKeyIfAbsent(purpose: String, key: ProtectedKey, for account: SyncAccount) async throws -> ProtectedKey?
 }
 

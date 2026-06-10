@@ -18,10 +18,16 @@
 
 import Foundation
 
+/// Relay transport for Pairing V2: a device fetches from its own channel and sends to the peer's,
+/// so one connect flow addresses two channel IDs.
 protocol PairingV2MessageExchanging {
+    /// Creates this device's own channel (its inbox) so the peer can write to it.
     func openChannel(_ channelID: String) async throws
+    /// Sends encrypted messages to the peer's channel.
     func send(_ messages: [PairingV2EncryptedMessage], to channelID: String) async throws
+    /// Fetches new messages from this device's own channel, after the given sequence number.
     func fetchMessages(from channelID: String, after sequence: Int) async throws -> [PairingV2SequencedMessage]
+    /// Deletes this device's own channel once it stops polling.
     func closeChannel(_ channelID: String) async throws
 }
 
@@ -29,15 +35,17 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
 
     let endpoints: Endpoints
     let api: RemoteAPIRequestCreating
-    private let firstMessagePost404RetryDelays: [UInt64]
+    /// Retry delays for a first message POST when the peer channel isn't available yet (gives channel
+    /// creation time to propagate). Nanoseconds; default is 0.2s then 0.5s — two retries.
+    private let firstMessagePostChannelUnavailableRetryDelays: [UInt64]
     private var channelsWithCompletedFirstMessagePost: Set<String> = []
 
     init(endpoints: Endpoints,
          api: RemoteAPIRequestCreating,
-         firstMessagePost404RetryDelays: [UInt64] = [200_000_000, 500_000_000]) {
+         firstMessagePostChannelUnavailableRetryDelays: [UInt64] = [200_000_000, 500_000_000]) {
         self.endpoints = endpoints
         self.api = api
-        self.firstMessagePost404RetryDelays = firstMessagePost404RetryDelays
+        self.firstMessagePostChannelUnavailableRetryDelays = firstMessagePostChannelUnavailableRetryDelays
     }
 
     func openChannel(_ channelID: String) async throws {
@@ -107,6 +115,8 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
             try validateStatusCode(result.response.statusCode)
             return result
         } catch SyncError.unexpectedStatusCode(let statusCode) {
+            // Some request implementations throw status-code errors instead of returning a response.
+            // Re-run the injected validator so endpoint-specific status mapping still applies.
             try validateStatusCode(statusCode)
             throw SyncError.unexpectedStatusCode(statusCode)
         }
@@ -117,12 +127,14 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
             let result = try await request.execute()
             try validateStatusCode(result.response.statusCode)
         } catch SyncError.unexpectedStatusCode(let statusCode) {
+            // Some request implementations throw status-code errors instead of returning a response.
+            // Re-run the injected validator so endpoint-specific status mapping still applies.
             try validateStatusCode(statusCode)
         }
     }
 
     private func executeMessagePost(_ request: HTTPRequesting, to channelID: String) async throws {
-        var retryDelays = channelsWithCompletedFirstMessagePost.contains(channelID) ? [] : firstMessagePost404RetryDelays
+        var retryDelays = channelsWithCompletedFirstMessagePost.contains(channelID) ? [] : firstMessagePostChannelUnavailableRetryDelays
 
         while true {
             do {

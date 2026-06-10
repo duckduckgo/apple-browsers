@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+/// Whether a pairing participant is a native DuckDuckGo client or a third-party (scoped) client.
 public enum PairingV2DeviceKind: String, Codable, Equatable {
     case ddg
     case thirdParty = "3party"
@@ -217,6 +218,7 @@ enum PairingV2RoleDecision: Equatable {
     case joiner(hostKind: PairingV2DeviceKind)
 }
 
+/// Decides host vs. joiner from both sides' account status, kind, presenter flag, and channel IDs (see numbered rules below).
 enum PairingV2RoleElection {
 
     static func decideRole(localClient: PairingV2LocalClient,
@@ -412,6 +414,14 @@ struct PairingV2StateMachine {
             }
             state = .waitingForPeerStatus(session.withReceivedHello())
             return []
+
+        case .hostWaitingForConfirmation,
+                .hostPreparingRecoveryCode,
+                .hostSendingRecoveryCode,
+                .joinerWaitingForConfirmation,
+                .joinerWaitingForRecoveryCode,
+                .joinerLoggingIn:
+            return fail(with: .unexpectedEvent(.helloAfterPeerStatus))
 
         default:
             return fail(with: .unexpectedEvent(.helloBeforeChannelHierarchyReady))

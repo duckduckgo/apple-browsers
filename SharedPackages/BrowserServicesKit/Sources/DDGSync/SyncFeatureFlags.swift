@@ -100,9 +100,13 @@ public struct SyncFeatureFlags: OptionSet {
     }
 }
 
+/// Supplies externally-owned rollout gates used by Sync internals.
 public protocol SyncFeatureFlagProviding {
+    /// Allows creation and recovery of scoped access credentials for third-party clients.
     func isScopedAccessCredentialsEnabled() -> Bool
+    /// Allows this client to scan and consume Pairing V2 codes.
     func isPairingV2ScanningEnabled() -> Bool
+    /// Allows this client to present Pairing V2 codes to peers.
     func isPairingV2CodeEnabled() -> Bool
 }
 

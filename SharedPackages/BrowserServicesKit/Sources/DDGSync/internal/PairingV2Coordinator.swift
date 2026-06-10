@@ -19,14 +19,21 @@
 import Foundation
 import os.log
 
+/// UI-facing confirmation decisions and account notifications needed by the Pairing V2 coordinator.
 protocol PairingV2ConfirmationDelegate: AnyObject {
+    /// Asks the local host whether the peer may join and receive this device's recovery code.
     func pairingV2CoordinatorShouldAllowPeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
+    /// Asks the local joiner whether to continue with the host that offered a recovery code.
     func pairingV2CoordinatorShouldJoinPeer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
+    /// Notifies the app that Pairing V2 created a local account before preparing a recovery code.
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async
 }
 
+/// Default timing for the polling loop in `pollUntilFinished`.
 enum PairingV2PollingDefaults {
+    /// Give up on the pairing session after this many seconds (5 minutes).
     static let sessionTimeout: TimeInterval = 300
+    /// Wait this long between relay polls (1 second, in nanoseconds).
     static let pollIntervalNanoseconds: UInt64 = 1_000_000_000
 }
 
@@ -102,6 +109,8 @@ final class PairingV2Coordinator {
         try await execute(commands)
     }
 
+    /// Kept internal for focused state-machine/transport tests; production polling goes through `pollUntilFinished`.
+    /// Performs one poll of this device's channel and handles any new messages. Only called by `pollUntilFinished`; non-private for unit testing.
     func pollOnce() async throws {
         guard let channelID = localKeyPair?.channelID else {
             throw PairingV2Error.pairingSessionNotReady(.localKeyPair)

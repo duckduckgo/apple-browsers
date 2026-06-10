@@ -26,11 +26,13 @@ import DesignResourcesKitIcons
 import Suggestions
 import SwiftUI
 import UIKit
+import PrivacyConfig
 
 protocol DuckAISuggestionsViewControllerDelegate: AnyObject {
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion)
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion)
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String)
+    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController)
     func duckAISuggestionsDidRequestSyncSetup()
 }
 
@@ -86,6 +88,7 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     weak var delegate: DuckAISuggestionsViewControllerDelegate?
 
+    private let featureFlagger: FeatureFlagger
     private let chatViewModel: AIChatSuggestionsViewModel
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let queryProvider: () -> String
@@ -105,7 +108,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         tableView.dataSource = self
         tableView.alwaysBounceVertical = true
         tableView.keyboardDismissMode = .onDrag
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
+        tableView.register(DuckAISuggestionTableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         // Without this, iPad readable-width pulls cells narrower than the UTI input above.
@@ -149,7 +152,8 @@ final class DuckAISuggestionsViewController: UIViewController {
          layoutConfiguration: LayoutConfiguration = .standard,
          syncPromoManager: SyncPromoManaging? = nil,
          syncService: DDGSyncing? = nil,
-         syncPromoViewModel: AIChatSyncPromoViewModel? = nil) {
+         syncPromoViewModel: AIChatSyncPromoViewModel? = nil,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.queryProvider = queryProvider
@@ -157,6 +161,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         self.syncService = syncService
         self.syncPromoViewModel = syncPromoViewModel
             ?? syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -423,7 +428,9 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private func configureChatCell(_ cell: UITableViewCell, with chat: AIChatSuggestion) {
         let icon = chat.isPinned ? DesignSystemImages.Glyphs.Size24.pin : DesignSystemImages.Glyphs.Size24.aiChat
+
         applyConfiguration(to: cell, title: chat.title, subtitle: nil, icon: icon)
+        configureDeleteActionIfNeeded(to: cell, chat: chat)
     }
 
     private func configureURLCell(_ cell: UITableViewCell, with suggestion: Suggestion) {
@@ -496,6 +503,25 @@ final class DuckAISuggestionsViewController: UIViewController {
         config.imageToTextPadding = Constants.iconTextSpacing
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.accessoryView = nil
+    }
+}
+
+private extension DuckAISuggestionsViewController {
+
+    func configureDeleteActionIfNeeded(to cell: UITableViewCell, chat: AIChatSuggestion) {
+        guard let cell = cell as? DuckAISuggestionTableViewCell else {
+            return
+        }
+
+        cell.displaysDeleteButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onDeletePressed = { [weak self] in
+            self?.requestChatDeletion(chat: chat)
+        }
+    }
+
+    func requestChatDeletion(chat: AIChatSuggestion) {
+        delegate?.duckAISuggestionsDidRequestChatDeletion(chat, sender: self)
     }
 }
 

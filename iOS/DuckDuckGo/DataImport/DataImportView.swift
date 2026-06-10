@@ -108,7 +108,7 @@ struct DataImportView: View {
         }
     }
 
-    private struct PasswordFooterView: View {
+    fileprivate struct PasswordFooterView: View {
         var body: some View {
             (Text(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)).baselineOffset(-1.0) + Text(verbatim: " ") + Text(UserText.autofillLoginListSettingsFooter))
                 .daxFootnoteRegular()
@@ -221,7 +221,7 @@ struct DataImportView: View {
         }
     }
 
-    private struct Instruction: View {
+    fileprivate struct Instruction: View {
         var step: Int
         var instructionText: Text
 
@@ -238,4 +238,15 @@ struct DataImportView: View {
         }
     }
 
+}
+
+#Preview("Password Footer") {
+    DataImportView.PasswordFooterView()
+}
+
+#Preview("Instruction") {
+    DataImportView.Instruction(
+        step: 1,
+        instructionText: Text("Open Settings, then tap Passwords and export your data.")
+    )
 }

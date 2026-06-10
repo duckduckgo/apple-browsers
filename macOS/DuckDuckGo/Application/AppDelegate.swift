@@ -503,6 +503,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
+        if LaunchOptionsHandler().isInternalUserRequested {
+            internalUserDeciderStore.isInternalUser = true
+        }
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         if AppVersion.runType.requiresEnvironment {

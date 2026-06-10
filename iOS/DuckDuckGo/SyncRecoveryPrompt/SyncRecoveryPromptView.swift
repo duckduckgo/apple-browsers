@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DuckUI
+import MetricBuilder
 
 struct SyncRecoveryPromptView: View {
     let onSyncWithAnotherDevice: () -> Void
@@ -43,19 +44,19 @@ struct SyncRecoveryPromptView: View {
                     Text(UserText.syncRecoveryPromptTitle(deviceName: deviceDisplayName))
                         .daxTitle1()
                         .multilineTextAlignment(.center)
-                        .padding(.bottom, 24)
+                        .padding(.bottom, SheetMetrics.contentSpacing)
 
                     Text(UserText.syncRecoveryPromptMessage)
                         .daxBodyRegular()
                         .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
                 .foregroundStyle(Color(designSystemColor: .textPrimary))
             }
 
             Spacer()
 
-            VStack(spacing: 8) {
+            VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
                 Button(action: onSyncWithAnotherDevice) {
                     Text(UserText.syncRecoveryPromptSyncButton)
                 }
@@ -67,7 +68,7 @@ struct SyncRecoveryPromptView: View {
                 .buttonStyle(GhostButtonStyle())
             }
             .frame(maxWidth: 360)
-            .padding(.horizontal, 30)
+            .padding(.horizontal, ButtonStackMetrics.containerPadding)
         }
         .padding(.bottom)
         .background(Color(designSystemColor: .backgroundSheets))

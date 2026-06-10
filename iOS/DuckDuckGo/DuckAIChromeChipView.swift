@@ -22,8 +22,7 @@ import DesignResourcesKitIcons
 import DesignResourcesKit
 
 /// iPad Duck.ai chrome split-button. Left half opens a new Duck.ai tab (text);
-/// right half toggles the current tab's contextual sheet (icon). On Duck.ai
-/// pages the icon half (and divider) collapse, leaving the text-only chip.
+/// right half toggles the current tab's contextual sheet (icon).
 final class DuckAIChromeChipView: UIView {
 
     enum SheetState {
@@ -147,7 +146,7 @@ final class DuckAIChromeChipView: UIView {
         iconButton.accessibilityTraits = state == .open ? [.button, .selected] : [.button]
     }
 
-    /// Hides only the icon half + divider when the current tab is Duck.ai. The text half stays.
+    /// Shows or hides the icon half (contextual-sheet toggle) and its divider.
     func setIconVisible(_ visible: Bool) {
         iconContainer.isHidden = !visible
     }

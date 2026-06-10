@@ -136,13 +136,6 @@ final class AppDependencyProvider: DependencyProvider {
         }
 
         let featureFlagOverrideStore = UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!
-
-        // Apply UI test overrides
-        LaunchOptionsHandler().applyUITestOverrides(
-            featureFlagOverrideStore: featureFlagOverrideStore,
-            configRolloutStore: .standard
-        )
-
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: featureFlagOverrideStore,
                                                                 actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
         )
@@ -159,11 +152,21 @@ final class AppDependencyProvider: DependencyProvider {
             let defaultFeatureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
                                                               privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                                               localOverrides: featureFlaggerOverrides,
+                                                              allowOverrides: { [internalUserDecider, isUITesting=LaunchOptionsHandler().isUITesting] in
+                                                                  internalUserDecider.isInternalUser || isUITesting
+                                                              },
                                                               experimentManager: experimentManager,
                                                               for: FeatureFlag.self)
             self.featureFlagger = defaultFeatureFlagger
             self.contentScopeExperimentsManager = defaultFeatureFlagger
             featureFlagger = defaultFeatureFlagger
+
+            // Applied after DefaultFeatureFlagger.init, which clears local overrides for non-internal users.
+            // Writing overrides afterwards keeps them intact for UI test mode where allowOverrides also returns true.
+            LaunchOptionsHandler().applyUITestOverrides(
+                featureFlagOverrideStore: featureFlagOverrideStore,
+                configRolloutStore: .standard
+            )
         }
 
         // Configure PixelKit Experiments

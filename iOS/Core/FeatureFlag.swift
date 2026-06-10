@@ -330,6 +330,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213821747548995?focus=true
     case escapeHatchActions
 
+    /// Surfaces the escape-hatch "delete tab" action as a dedicated Fire button on the card and removes it from the menu.
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
+    case escapeHatchFireButton
+
     /// Test-only feature flag for verifying UI test override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestFeatureFlag
@@ -352,6 +356,16 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
     case webExtensions
+
+    /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
+    /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617265
+    case webExtensionLightweightReload
+
+    /// Failsafe kill switch for deferring web-extension load/install until protected data is
+    /// available. On by default; disable remotely to load/install immediately (previous flow).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617267
+    case webExtensionProtectedDataLoadGate
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
     case embeddedExtension
@@ -395,6 +409,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213809475913723?focus=true
     case minimalChromeInLandscape
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
+    case bottomBarViewportFixedElementsWorkaround
+
     case aiChatNativeStorage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215106459483563?focus=true
@@ -428,6 +445,12 @@ public enum FeatureFlag: String {
     /// Gates the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
     case aiChatChromeShortcutIPad
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
+    case floatingUI
+
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
+    case removeChatHistory
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -623,7 +646,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment),
                    cohortType: DuckAIQueryExperimentCohort.self)
         case .onboardingDuckAIFlow:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiOnboardingFlow))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiOnboardingFlow))
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration))
         case .allowProTierPurchase:
@@ -680,6 +703,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
         case .escapeHatchActions:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchActions))
+        case .escapeHatchFireButton:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchFireButton))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:
@@ -694,6 +719,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled))
+        case .webExtensionLightweightReload:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear))
+        case .webExtensionProtectedDataLoadGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.protectedDataLoadGate))
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:
@@ -722,6 +751,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.contextualFireButton))
         case .minimalChromeInLandscape:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.minimalChromeInLandscape))
+        case .bottomBarViewportFixedElementsWorkaround:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.bottomBarViewportFixedElementsWorkaround))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage))
         case .duckAINativeStoragePathMigration:
@@ -742,6 +773,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
+        case .floatingUI:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUI))
+        case .removeChatHistory:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
         }
     }
 

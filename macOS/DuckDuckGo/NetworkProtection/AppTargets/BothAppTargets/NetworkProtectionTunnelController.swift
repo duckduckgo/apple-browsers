@@ -549,11 +549,15 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess,
                 frequency: .dailyAndCount,
                 includeAppVersionParameter: true)
+        } catch is CancellationError {
+            throw StartError.cancelled
         } catch {
             switch error {
             case OSSystemExtensionError.requestSuperseded:
                 // Even if the installation request is superseded we want to show the message that tells the user
                 // to go to System Settings to allow the extension
+                controllerErrorStore.lastErrorMessage = UserText.networkProtectionSystemSettings
+            case SystemExtensionRequestError.requestTimedOut:
                 controllerErrorStore.lastErrorMessage = UserText.networkProtectionSystemSettings
             case SystemExtensionRequestError.unknownRequestResult:
                 controllerErrorStore.lastErrorMessage = UserText.networkProtectionUnknownActivationError
@@ -686,18 +690,21 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             VPNOperationErrorRecorder().recordControllerStartFailure(error)
             knownFailureStore.lastKnownFailure = KnownFailure(error)
 
+            let isCancelled: Bool
             if case StartError.cancelled = error {
+                isCancelled = true
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionControllerStartCancelled, frequency: .legacyDailyAndCount, includeAppVersionParameter: true
                 )
             } else {
+                isCancelled = false
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionControllerStartFailure(error), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
                 )
             }
 
             // Always keep the first error message shown, as it's the more actionable one.
-            if controllerErrorStore.lastErrorMessage == nil {
+            if controllerErrorStore.lastErrorMessage == nil && !isCancelled {
                 controllerErrorStore.lastErrorMessage = error.localizedDescription
             }
 
@@ -807,7 +814,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             frequency: .uniqueByName,
             includeAppVersionParameter: true) { [weak self] fired, error in
                 guard let self, error == nil, fired else { return }
-                self.defaults.vpnFirstEnabled = try? PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser)
+                self.defaults.vpnFirstEnabled = try? PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser, frequency: .uniqueByName)
             }
     }
 

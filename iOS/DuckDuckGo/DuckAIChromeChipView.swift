@@ -22,8 +22,8 @@ import DesignResourcesKitIcons
 import DesignResourcesKit
 
 /// iPad Duck.ai chrome split-button. Left half opens a new Duck.ai tab (text);
-/// right half toggles the current tab's contextual sheet (icon). On Duck.ai
-/// pages the icon half (and divider) collapse, leaving the text-only chip.
+/// right half toggles the current tab's contextual sheet (icon). Either half can
+/// be shown or hidden independently from the chip's long-press menu.
 final class DuckAIChromeChipView: UIView {
 
     enum SheetState {
@@ -46,11 +46,13 @@ final class DuckAIChromeChipView: UIView {
         config.contentInsets = Constants.textPadding
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
-            outgoing.font = UIFont.daxBodyRegular()
+            outgoing.font = UIFont.preferredFont(forTextStyle: .body,
+                                                 compatibleWith: UITraitCollection(preferredContentSizeCategory: .large))
             return outgoing
         }
         let button = UIButton(configuration: config)
         button.isPointerInteractionEnabled = true
+        button.accessibilityLabel = UserText.accessibilityLabelOpenAIChat
         return button
     }()
 
@@ -84,16 +86,9 @@ final class DuckAIChromeChipView: UIView {
         return container
     }()
 
-    private lazy var iconContainer: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [dividerContainer, iconButton])
-        stack.axis = .horizontal
-        stack.alignment = .fill
-        stack.distribution = .fill
-        stack.spacing = 0
-        return stack
-    }()
-
     private(set) var sheetState: SheetState = .closed
+    private var isTextVisible = true
+    private var isIconVisible = true
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -109,7 +104,7 @@ final class DuckAIChromeChipView: UIView {
         layer.cornerRadius = Constants.cornerRadius
         layer.masksToBounds = true
 
-        let stack = UIStackView(arrangedSubviews: [textButton, iconContainer])
+        let stack = UIStackView(arrangedSubviews: [textButton, dividerContainer, iconButton])
         stack.axis = .horizontal
         stack.alignment = .fill
         stack.distribution = .fill
@@ -145,9 +140,23 @@ final class DuckAIChromeChipView: UIView {
         iconButton.accessibilityTraits = state == .open ? [.button, .selected] : [.button]
     }
 
-    /// Hides only the icon half + divider when the current tab is Duck.ai. The text half stays.
+    /// Shows or hides the text half (opens a new Duck.ai tab).
+    func setTextVisible(_ visible: Bool) {
+        isTextVisible = visible
+        textButton.isHidden = !visible
+        updateDividerVisibility()
+    }
+
+    /// Shows or hides the icon half (contextual-sheet toggle).
     func setIconVisible(_ visible: Bool) {
-        iconContainer.isHidden = !visible
+        isIconVisible = visible
+        iconButton.isHidden = !visible
+        updateDividerVisibility()
+    }
+
+    /// The divider only makes sense when both halves are present.
+    private func updateDividerVisibility() {
+        dividerContainer.isHidden = !(isTextVisible && isIconVisible)
     }
 
 }

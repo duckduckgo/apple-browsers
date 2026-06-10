@@ -825,6 +825,16 @@ extension TabSwitcherViewController {
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 
+        // This may move when the feature is further developed
+        applyFloatingUIIfNeeded()
+    }
+
+    private func applyFloatingUIIfNeeded() {
+        let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        FloatingUIChromeStyler().decorateTabSwitcherIfNeeded(
+            manager: floatingUIManager,
+            view: view
+        )
     }
 
 }

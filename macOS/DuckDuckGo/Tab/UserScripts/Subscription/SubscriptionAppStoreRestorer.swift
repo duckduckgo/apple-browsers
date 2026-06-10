@@ -23,13 +23,11 @@ import enum StoreKit.StoreKitError
 import PixelKit
 import PrivacyConfig
 
-@available(macOS 12.0, *)
 protocol SubscriptionAppStoreRestorer {
     var uiHandler: SubscriptionUIHandling { get }
     func restoreAppStoreSubscription() async
 }
 
-@available(macOS 12.0, *)
 struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     private let subscriptionManager: SubscriptionManager
     private let subscriptionErrorReporter: SubscriptionEventReporter
@@ -129,21 +127,20 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     }
 
     private func showSubscriptionNotFoundAlert() async {
-        switch await uiHandler.show(alertType: .subscriptionNotFound) {
-        case .alertFirstButtonReturn:
-            let url = subscriptionManager.url(for: .purchase)
-            await uiHandler.showTab(with: .subscription(url))
-            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
-        default: return
-        }
+        await showOfferTabAfterRestoreFailureAlert(.subscriptionNotFound)
     }
 
     private func showSubscriptionInactiveAlert() async {
-        switch await uiHandler.show(alertType: .subscriptionInactive) {
+        await showOfferTabAfterRestoreFailureAlert(.subscriptionInactive)
+    }
+
+    private func showOfferTabAfterRestoreFailureAlert(_ alertType: SubscriptionAlertType) async {
+        switch await uiHandler.show(alertType: alertType) {
         case .alertFirstButtonReturn:
-            let url = subscriptionManager.url(for: .purchase)
+            let origin = subscriptionRestoreWideEventData?.funnelName
+            let url = subscriptionManager.url(for: .purchase).appendingOriginParameterIfPresent(origin)
             await uiHandler.showTab(with: .subscription(url))
-            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
+            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: origin))
         default: return
         }
     }

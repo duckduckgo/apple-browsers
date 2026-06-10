@@ -113,7 +113,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         let activationDecision = unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
             currentText: extractCurrentTextForEditing(textField),
-            tapped: textFieldTapped)
+            tapped: textFieldTapped,
+            textEntryMode: textEntryMode)
 
         if activationDecision == .intercept {
             return false
@@ -346,6 +347,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         pendingHideEditingStateLogo = false
         let editingStateViewController = OmniBarEditingStateViewController(
             switchBarHandler: switchBarHandler,
+            aiChatSyncCleaner: dependencies.aiChatSyncCleaner,
             duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
             escapeHatchModel: escapeHatchModel,
             initialLogoHidden: initialLogoHidden

@@ -72,7 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if DEBUG
     let disableCVDisplayLinkLogs: Void = {
-        // Disable CVDisplayLink logs
+        // Disable noisy CVDisplayLink logs
         CFPreferencesSetValue("cv_note" as CFString,
                               0 as CFPropertyList,
                               "com.apple.corevideo" as CFString,
@@ -415,7 +415,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
-    private var isSyncingEmbeddedExtensions = false
+    private var webExtensionLifecycleCoordinatorStorage: Any?
+
+    @available(macOS 15.4, *)
+    var webExtensionLifecycleCoordinator: WebExtensionLifecycleCoordinator? {
+        get { webExtensionLifecycleCoordinatorStorage as? WebExtensionLifecycleCoordinator }
+        set { webExtensionLifecycleCoordinatorStorage = newValue }
+    }
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings?
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
@@ -503,6 +509,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
+        if LaunchOptionsHandler().isInternalUserRequested {
+            internalUserDeciderStore.isInternalUser = true
+        }
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         if AppVersion.runType.requiresEnvironment {
@@ -613,7 +622,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 internalUserDecider: internalUserDecider,
                 privacyConfigManager: privacyConfigurationManager,
                 localOverrides: featureFlagOverrides,
-                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
+                allowOverrides: { [internalUserDecider, isRunningUITests=[.uiTests, .uiTestsOnboarding].contains(AppVersion.runType)] in
                     internalUserDecider.isInternalUser || isRunningUITests
                 },
                 experimentManager: ExperimentCohortsManager(
@@ -763,9 +772,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let isInternalUserEnabled = { featureFlagger.internalUserDecider.isInternalUser }
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: pixelHandler)
-        let defaultSubscriptionManager: DefaultSubscriptionManager
-        if #available(macOS 12.0, *) {
-            defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
+        let defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                                                                       subscriptionFeatureFlagger: subscriptionFeatureFlagger,
                                                                                                                       pendingTransactionHandler: pendingTransactionHandler),
                                                                     oAuthClient: authClient,
@@ -774,23 +781,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     subscriptionEnvironment: subscriptionEnvironment,
                                                                     pixelHandler: pixelHandler,
                                                                     isInternalUserEnabled: isInternalUserEnabled)
-        } else {
-            defaultSubscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
-                                                                    userDefaults: subscriptionUserDefaults,
-                                                                    subscriptionEndpointService: subscriptionEndpointService,
-                                                                    subscriptionEnvironment: subscriptionEnvironment,
-                                                                    pixelHandler: pixelHandler,
-                                                                    isInternalUserEnabled: isInternalUserEnabled)
-        }
 
         // Expired refresh token recovery
-        if #available(iOS 15.0, macOS 12.0, *) {
-            let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
-                                                         storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
-                                                         pendingTransactionHandler: pendingTransactionHandler)
-            defaultSubscriptionManager.tokenRecoveryHandler = {
-                try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
-            }
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
+                                                     storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
+                                                     pendingTransactionHandler: pendingTransactionHandler)
+        defaultSubscriptionManager.tokenRecoveryHandler = {
+            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
         }
 
         subscriptionManager = defaultSubscriptionManager
@@ -922,7 +919,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: UserDefaults.standard
         )
         dockPreferences = DockPreferencesModel(
-            featureFlagger: featureFlagger,
             dockCustomizer: dockCustomization,
             pixelFiring: PixelKit.shared
         )
@@ -1472,6 +1468,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
+        if SupportedOSChecker().showsSupportWarning {
+            BigSurEndOfSupportNoticePresenter(keyValueStore: keyValueStore).showIfNeeded()
+        }
+
         // This messaging system has been replaced by RMF, but we need to clean up the message manifest for any users who had it stored.
         let deprecatedRemoteMessagingStorage = DefaultSurveyRemoteMessagingStorage.surveys()
         deprecatedRemoteMessagingStorage.removeStoredMessagesIfNecessary()
@@ -1659,7 +1659,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             self.updateController = appStoreFactory.instantiate(
                 internalUserDecider: internalUserDecider,
-                featureFlagger: featureFlagger,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
@@ -1955,6 +1954,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await self?.initializeWebExtensions()
             },
             onFeatureFlagDisabled: { [weak self] in
+                self?.webExtensionLifecycleCoordinator?.cancelAll()
+                self?.webExtensionLifecycleCoordinator = nil
                 self?.webExtensionManager = nil
             },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
@@ -1979,10 +1980,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
             self.webExtensionManager = webExtensionManager
 
-            // Load extensions asynchronously - the controller is already attached to tabs
-            Task {
-                await self.loadAndSyncEmbeddedExtensions(webExtensionManager)
+            let coordinator = WebExtensionLifecycleCoordinator(manager: webExtensionManager) { [weak self] in
+                self?.enabledEmbeddedExtensionTypes() ?? []
             }
+            self.webExtensionLifecycleCoordinator = coordinator
+
+            // Load extensions asynchronously - the controller is already attached to tabs
+            coordinator.loadAndSync()
         } else {
             webExtensionManager = nil
         }
@@ -1992,9 +1996,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func initializeWebExtensions() async {
         guard webExtensionManager == nil else {
-            if let manager = webExtensionManager as? WebExtensionManager {
-                await loadAndSyncEmbeddedExtensions(manager)
-            }
+            await webExtensionLifecycleCoordinator?.loadAndSync().value
             return
         }
 
@@ -2006,25 +2008,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.webExtensionManager = webExtensionManager
 
-        await loadAndSyncEmbeddedExtensions(webExtensionManager)
+        let coordinator = WebExtensionLifecycleCoordinator(manager: webExtensionManager) { [weak self] in
+            self?.enabledEmbeddedExtensionTypes() ?? []
+        }
+        self.webExtensionLifecycleCoordinator = coordinator
+        await coordinator.loadAndSync().value
     }
 
     @available(macOS 15.4, *)
     @MainActor
     private func syncEmbeddedExtensions() async {
-        guard !isSyncingEmbeddedExtensions else { return }
-        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
-
-        isSyncingEmbeddedExtensions = true
-        defer { isSyncingEmbeddedExtensions = false }
-
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
-    }
-
-    @available(macOS 15.4, *)
-    @MainActor
-    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
-        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+        await webExtensionLifecycleCoordinator?.sync().value
     }
 
     @available(macOS 15.4, *)
@@ -2390,7 +2384,7 @@ extension AppDelegate: UserScriptDependenciesProviding {}
 private extension FeatureFlagLocalOverrides {
 
     func applyUITestsFeatureFlagsIfNeeded() {
-        guard AppVersion.runType == .uiTests else { return }
+        guard [.uiTests, .uiTestsOnboarding].contains(AppVersion.runType) else { return }
 
         for item in ProcessInfo().environment["FEATURE_FLAGS", default: ""].split(separator: " ") {
             let keyValue = item.split(separator: "=")

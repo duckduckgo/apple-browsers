@@ -26,13 +26,6 @@ import WebKit
 
 extension WKWebView {
 
-    static var canMuteCameraAndMicrophoneSeparately: Bool {
-        if #available(macOS 12.0, *) {
-            return true
-        }
-        return false
-    }
-
     enum AudioState {
         case muted(isPlayingAudio: Bool)
         case unmuted(isPlayingAudio: Bool)
@@ -67,7 +60,6 @@ extension WKWebView {
         case active
         case muted
 
-        @available(macOS 12.0, *)
         init(_ state: WKMediaCaptureState) {
             switch state {
             case .none: self = .none
@@ -76,56 +68,14 @@ extension WKWebView {
             @unknown default: self = .none
             }
         }
-
-        init(permissionType: PermissionType, mediaCaptureState: _WKMediaCaptureStateDeprecated) {
-            switch permissionType {
-            case .microphone:
-                if mediaCaptureState.contains(.activeMicrophone) {
-                    self = .active
-                } else if mediaCaptureState.contains(.mutedMicrophone) {
-                    self = .muted
-                } else {
-                    self = .none
-                }
-            case .camera:
-                if mediaCaptureState.contains(.activeCamera) {
-                    self = .active
-                } else if mediaCaptureState.contains(.mutedCamera) {
-                    self = .muted
-                } else {
-                    self = .none
-                }
-            default:
-                fatalError("Not implemented")
-            }
-        }
-    }
-
-    @nonobjc private var mediaCaptureState: _WKMediaCaptureStateDeprecated {
-        guard self.responds(to: Selector.mediaCaptureState),
-              let method = class_getInstanceMethod(object_getClass(self), Selector.mediaCaptureState) else {
-            assertionFailure("WKWebView does not respond to selector _mediaCaptureState")
-            return .none
-        }
-        let imp = method_getImplementation(method)
-        typealias MediaCaptureStateType = @convention(c) (WKWebView, ObjectiveC.Selector) -> UInt
-        let mediaCaptureStateGetter = unsafeBitCast(imp, to: MediaCaptureStateType.self)
-        let mediaCaptureState = mediaCaptureStateGetter(self, Selector.mediaCaptureState)
-        return _WKMediaCaptureStateDeprecated(rawValue: mediaCaptureState)
     }
 
     var microphoneState: CaptureState {
-        guard #available(macOS 12.0, *) else {
-            return CaptureState(permissionType: .microphone, mediaCaptureState: self.mediaCaptureState)
-        }
-        return CaptureState(self.microphoneCaptureState)
+        CaptureState(self.microphoneCaptureState)
     }
 
     var cameraState: CaptureState {
-        guard #available(macOS 12.0, *) else {
-            return CaptureState(permissionType: .camera, mediaCaptureState: self.mediaCaptureState)
-        }
-        return CaptureState(self.cameraCaptureState)
+        CaptureState(self.cameraCaptureState)
     }
 
     var geolocationState: CaptureState {
@@ -213,28 +163,11 @@ extension WKWebView {
     }
 
     func stopMediaCapture() {
-        guard #available(macOS 12.0, *) else {
-            guard self.responds(to: Selector.stopMediaCapture) else {
-                assertionFailure("WKWebView does not respond to _stopMediaCapture")
-                return
-            }
-            self.perform(Selector.stopMediaCapture)
-            return
-        }
-
         setCameraCaptureState(.none)
         setMicrophoneCaptureState(.none)
     }
 
     func stopAllMediaPlayback() {
-        guard #available(macOS 12.0, *) else {
-            guard self.responds(to: Selector.stopAllMediaPlayback) else {
-                assertionFailure("WKWebView does not respond to _stopAllMediaPlayback")
-                return
-            }
-            self.perform(Selector.stopAllMediaPlayback)
-            return
-        }
         pauseAllMediaPlayback()
     }
 
@@ -242,27 +175,9 @@ extension WKWebView {
         for permission in permissions {
             switch permission {
             case .camera:
-                guard #available(macOS 12.0, *) else {
-                    if muted {
-                        self.typedMediaMutedState.insert(.captureDevicesMuted)
-                    } else {
-                        self.typedMediaMutedState.remove(.captureDevicesMuted)
-                    }
-                    return
-                }
-
                 self.setCameraCaptureState(muted ? .muted : .active, completionHandler: {})
 
             case .microphone:
-                guard #available(macOS 12.0, *) else {
-                    if muted {
-                        self.typedMediaMutedState.insert(.captureDevicesMuted)
-                    } else {
-                        self.typedMediaMutedState.remove(.captureDevicesMuted)
-                    }
-                    return
-                }
-
                 self.setMicrophoneCaptureState(muted ? .muted : .active, completionHandler: {})
             case .geolocation:
                 self.configuration.processPool.geolocationProvider?.isPaused = muted
@@ -276,17 +191,9 @@ extension WKWebView {
         for permission in permissions {
             switch permission {
             case .camera:
-                if #available(macOS 12.0, *) {
-                    self.setCameraCaptureState(.none, completionHandler: {})
-                } else {
-                    self.stopMediaCapture()
-                }
+                setCameraCaptureState(.none, completionHandler: {})
             case .microphone:
-                if #available(macOS 12.0, *) {
-                    self.setMicrophoneCaptureState(.none, completionHandler: {})
-                } else {
-                    self.stopMediaCapture()
-                }
+                setMicrophoneCaptureState(.none, completionHandler: {})
             case .geolocation:
                 self.configuration.processPool.geolocationProvider?.revoke()
             case .popups, .externalScheme, .notification, .autoplayPolicy:
@@ -307,10 +214,10 @@ extension WKWebView {
     func loadAlternateHTML(_ html: String, baseURL: URL, forUnreachableURL failingURL: URL) {
         guard responds(to: Selector.loadAlternateHTMLString),
               let method = class_getInstanceMethod(object_getClass(self), Selector.loadAlternateHTMLString) else {
-            if #available(macOS 12.0, *) {
-                Logger.navigation.error("WKWebView._loadAlternateHTMLString not available")
-                loadSimulatedRequest(URLRequest(url: failingURL), responseHTML: html)
-            }
+
+            Logger.navigation.error("WKWebView._loadAlternateHTMLString not available")
+            loadSimulatedRequest(URLRequest(url: failingURL), responseHTML: html)
+
             return
         }
 
@@ -490,13 +397,6 @@ extension WKWebView {
         static let addsVisitedLinks = NSSelectorFromString("_addsVisitedLinks")
         static let isPlayingAudio = "_isPlayingAudio"
         static let webProcessIdentifier = NSSelectorFromString("_webProcessIdentifier")
-
-        @available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
-        static let mediaCaptureState = NSSelectorFromString("_mediaCaptureState")
-        @available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
-        static let stopMediaCapture = NSSelectorFromString("_stopMediaCapture")
-        @available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
-        static let stopAllMediaPlayback = NSSelectorFromString("_stopAllMediaPlayback")
     }
 
     // prevent exception if private API keys go missing
@@ -508,16 +408,6 @@ extension WKWebView {
         return nil
     }
 
-}
-
-struct _WKMediaCaptureStateDeprecated: OptionSet {
-    let rawValue: UInt
-
-    static let none = Self([])
-    static let activeMicrophone = Self(rawValue: (1 << 0))
-    static let activeCamera = Self(rawValue: 1 << 1)
-    static let mutedMicrophone = Self(rawValue: 1 << 2)
-    static let mutedCamera = Self(rawValue: 1 << 3)
 }
 
 struct _WKMediaMutedState: OptionSet {

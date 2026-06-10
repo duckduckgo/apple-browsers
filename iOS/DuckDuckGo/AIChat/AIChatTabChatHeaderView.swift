@@ -23,18 +23,21 @@ import UIKit
 
 protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapChatList()
-    func aiChatTabChatHeaderDidTapNewChat()
     func aiChatTabChatHeaderDidTapUpgrade()
-    func aiChatTabChatHeaderDidTapAppMenu()
-    func aiChatTabChatHeaderDidTapBack()
-    func aiChatTabChatHeaderDidTapForward()
+    func aiChatTabChatHeaderDidTapClose()
+    func aiChatTabChatHeaderDidTapNewChat()
+    func aiChatTabChatHeaderDidTapNewVoiceChat()
+    func aiChatTabChatHeaderDidTapNewTab()
+    func aiChatTabChatHeaderDidTapNewSearch()
+    func aiChatTabChatHeaderDidTapNewFireTab()
+    func aiChatTabChatHeaderDidTapTabSwitcher()
 }
 
 final class AIChatTabChatHeaderView: UIView {
 
     private enum Constants {
         static let headerHeight: CGFloat = 60
-        static let buttonSize: CGFloat = 48
+        static let buttonSize: CGFloat = 44
         static let horizontalPadding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let titleEdgeSpacing: CGFloat = 12
@@ -42,30 +45,23 @@ final class AIChatTabChatHeaderView: UIView {
         static let titleVerticalPadding: CGFloat = 2
         static let chevronSize: CGFloat = 12
         static let chevronSpacing: CGFloat = 4
-        static let pillInnerHorizontalPadding: CGFloat = 6
-        static let pillInnerIconSpacing: CGFloat = 20
-        static let pillButtonSize: CGFloat = 36
+        /// Gap between the two icons in the shared right pill: two `buttonSize` targets + this = the 104pt group.
+        static let pillInnerIconSpacing: CGFloat = 16
+        static let tabBadgeSize: CGFloat = 36
         static let paidIconSize: CGFloat = 16
         static let paidIconTitleSpacing: CGFloat = 6
+        static let titleMinimumScaleFactor: CGFloat = 0.7
     }
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
+
+    private let isFireModeEnabled: Bool
 
     private struct ViewState: Equatable {
         /// `nil` until the first subscription-state check resolves, so we can render a blank
         /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
         var isSubscriptionActive: Bool?
         var isVoiceSessionActive: Bool = false
-        var canGoBack: Bool = false
-        var canGoForward: Bool = false
-        /// Renders the back arrow even when there's no web history, so the user always has an exit.
-        var forceBackButtonVisible: Bool = false
-
-        var effectiveCanGoBack: Bool { canGoBack || forceBackButtonVisible }
-        var showsNavPair: Bool { effectiveCanGoBack && canGoForward }
-        var showsStandaloneBack: Bool { effectiveCanGoBack && !canGoForward }
-        var showsStandaloneForward: Bool { canGoForward && !effectiveCanGoBack }
-        var isNavigationVisible: Bool { effectiveCanGoBack || canGoForward }
     }
 
     private var state = ViewState() {
@@ -75,31 +71,10 @@ final class AIChatTabChatHeaderView: UIView {
         }
     }
 
-    private lazy var backButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.arrowLeft,
-        accessibilityLabel: UserText.keyCommandBrowserBack,
-        action: #selector(backTapped),
-        includeChrome: false
-    )
-
-    private lazy var forwardButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.arrowRight,
-        accessibilityLabel: UserText.keyCommandBrowserForward,
-        action: #selector(forwardTapped),
-        includeChrome: false
-    )
-
-    private lazy var navBackButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.arrowLeft,
-        accessibilityLabel: UserText.keyCommandBrowserBack,
-        action: #selector(backTapped),
-        includeChrome: false
-    )
-
-    private lazy var navForwardButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.arrowRight,
-        accessibilityLabel: UserText.keyCommandBrowserForward,
-        action: #selector(forwardTapped),
+    private lazy var closeButton: UIButton = makeIconButton(
+        image: DesignSystemImages.Glyphs.Size24.close,
+        accessibilityLabel: UserText.aiChatHeaderCloseTabAccessibilityLabel,
+        action: #selector(closeTapped),
         includeChrome: false
     )
 
@@ -110,48 +85,16 @@ final class AIChatTabChatHeaderView: UIView {
         includeChrome: false
     )
 
-    private lazy var newChatButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.compose,
-        accessibilityLabel: UserText.aiChatHeaderNewChatAccessibilityLabel,
-        action: #selector(newChatTapped),
-        includeChrome: false
-    )
-
-    private lazy var appMenuButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.menuHamburger,
-        accessibilityLabel: UserText.menuButtonHint,
-        action: #selector(appMenuTapped),
-        includeChrome: false
-    )
-
-    private lazy var leftPairPill: UIView = makePillContainer()
-    private lazy var backPill: UIView = makePillContainer()
-    private lazy var forwardPill: UIView = makePillContainer()
-    private lazy var navPairPill: UIView = makePillContainer()
+    lazy var closeButtonPill: UIView = makePillContainer()
+    lazy var chatListButtonPill: UIView = makePillContainer()
     private lazy var rightPairPill: UIView = makePillContainer()
+
+    private var isOnboardingLocked = false
 
     private var titleSpacingConstraints: [NSLayoutConstraint] = []
 
-    private lazy var leftPairStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [chatListButton, newChatButton])
-        stack.axis = .horizontal
-        stack.alignment = .center
-        stack.spacing = Constants.pillInnerIconSpacing
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
-
-    private lazy var navPairStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [navBackButton, navForwardButton])
-        stack.axis = .horizontal
-        stack.alignment = .center
-        stack.spacing = Constants.pillInnerIconSpacing
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
-
     private lazy var rightPairStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [tabSwitcherButton, appMenuButton])
+        let stack = UIStackView(arrangedSubviews: [newChatButton, tabSwitcherButton])
         stack.axis = .horizontal
         stack.alignment = .center
         stack.spacing = Constants.pillInnerIconSpacing
@@ -159,18 +102,99 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
-    let tabSwitcherButton: TabSwitcherStaticButton = {
-        let button = TabSwitcherStaticButton()
+    /// Reuses the toolbar's tab-switcher renderer so count formatting (incl. the ∞ overflow
+    /// threshold), unread-dot, and fire-mode tint stay defined in a single place.
+    lazy var tabSwitcherView: TabSwitcherStaticView = {
+        let view = TabSwitcherStaticView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+
+    private lazy var tabSwitcherButton: UIButton = {
+        let button = UIButton(type: .custom)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.tintColor = UIColor(designSystemColor: .icons)
-        // The default `tabSwitcherDefault()` config uses `UIButton.Configuration.gray()` which
-        // paints an always-visible gray pill behind the inner `TabSwitcherStaticView`. Inside
-        // our grouped glass pill we want a transparent button so it matches the other plain icons.
-        button.automaticallyUpdatesConfiguration = false
-        button.configurationUpdateHandler = nil
-        button.configuration = .plain()
+        button.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
+        button.addTarget(self, action: #selector(tabSwitcherTapped), for: .touchUpInside)
+        button.addSubview(tabSwitcherView)
+        // Pin the badge to its own footprint, centred, so the bigger tap target doesn't stretch it.
+        NSLayoutConstraint.activate([
+            tabSwitcherView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+            tabSwitcherView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            tabSwitcherView.widthAnchor.constraint(equalToConstant: Constants.tabBadgeSize),
+            tabSwitcherView.heightAnchor.constraint(equalToConstant: Constants.tabBadgeSize),
+        ])
+        // Capsule-clip the button so the adjacent Plus menu dismissal can't flash a rectangle highlight.
+        button.layer.cornerRadius = Constants.buttonSize / 2
+        button.clipsToBounds = true
         return button
     }()
+
+    /// Pushes the tab-icon state from `refreshTabIcon` into the header's renderer in one call,
+    /// keeping the count, unread-dot, and fire-mode tint in lock-step with the toolbar button.
+    func setTabIconState(count: Int, hasUnread: Bool, isFireMode: Bool) {
+        tabSwitcherView.updateCount(count)
+        tabSwitcherView.hasUnread = hasUnread
+        tabSwitcherView.isFireMode = isFireMode
+    }
+
+    private lazy var newChatButton: UIButton = {
+        // Selector only satisfies `makeIconButton`'s non-optional `action:` — `showsMenuAsPrimaryAction = true` means the menu opens on tap and the selector never fires.
+        let button = makeIconButton(
+            image: DesignSystemImages.Glyphs.Size24.add,
+            accessibilityLabel: UserText.aiChatHeaderPlusMenuAccessibilityLabel,
+            action: #selector(newChatTapped),
+            includeChrome: false
+        )
+        button.menu = makeNewChatPlusMenu()
+        button.showsMenuAsPrimaryAction = true
+        // Clip the button itself to the pill shape — without this, UIKit's transient
+        // highlight on menu dismiss renders as a rectangle against the surrounding pill.
+        button.layer.cornerRadius = Constants.buttonSize / 2
+        button.clipsToBounds = true
+        return button
+    }()
+
+    private func makeNewChatPlusMenu() -> UIMenu {
+        let newChat = UIAction(
+            title: UserText.actionNewAIChat,
+            image: DesignSystemImages.Glyphs.Size24.compose
+        ) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewChat()
+        }
+        let newVoiceChat = UIAction(
+            title: UserText.aiChatHeaderNewVoiceChatTitle,
+            image: DesignSystemImages.Glyphs.Size24.voice
+        ) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewVoiceChat()
+        }
+        let newTab = UIAction(
+            title: UserText.aiChatHeaderNewTabTitle,
+            image: DesignSystemImages.Glyphs.Size24.tabNew
+        ) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewTab()
+        }
+        let newSearch = UIAction(
+            title: UserText.aiChatHeaderNewSearchTitle,
+            image: DesignSystemImages.Glyphs.Size24.findSearchSmall
+        ) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewSearch()
+        }
+        let inTabGroup = UIMenu(options: .displayInline, children: [newChat, newVoiceChat])
+        var newTabActions: [UIAction] = [newTab, newSearch]
+        if isFireModeEnabled {
+            let newFireTab = UIAction(
+                title: UserText.aiChatHeaderNewFireTabTitle,
+                image: DesignSystemImages.Glyphs.Size24.fireTabs
+            ) { [weak self] _ in
+                self?.delegate?.aiChatTabChatHeaderDidTapNewFireTab()
+            }
+            newTabActions.append(newFireTab)
+        }
+        let newTabGroup = UIMenu(options: .displayInline, children: newTabActions)
+        return UIMenu(children: [inTabGroup, newTabGroup])
+    }
 
     private lazy var titleContainer: HighlightableContainerView = {
         let container = HighlightableContainerView()
@@ -183,11 +207,8 @@ final class AIChatTabChatHeaderView: UIView {
         return container
     }()
 
-    /// Wraps both `titleContainer` (free upgrade plate) and `paidTitleStack` (paid icon + title)
-    /// so the "row crowded by back+forward arrows" rule can hide the title slot via a single
-    /// `isHidden` toggle on this wrapper, leaving `configure(isSubscriptionActive:)` to swap
-    /// just the two children inside.
-    private lazy var titleHolder: UIView = {
+    /// Wraps `titleContainer` (free upgrade plate) and `paidTitleStack` (paid icon + title) so the slot can be hidden via one `isHidden` toggle (voice mode).
+    lazy var titleHolder: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
@@ -201,6 +222,8 @@ final class AIChatTabChatHeaderView: UIView {
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
         return label
     }()
 
@@ -220,6 +243,8 @@ final class AIChatTabChatHeaderView: UIView {
         label.textColor = UIColor(designSystemColor: .textSecondary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
         return label
     }()
 
@@ -231,6 +256,8 @@ final class AIChatTabChatHeaderView: UIView {
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
         return label
     }()
 
@@ -298,7 +325,14 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
+    init(isFireModeEnabled: Bool) {
+        self.isFireModeEnabled = isFireModeEnabled
+        super.init(frame: .zero)
+        setupUI()
+    }
+
     override init(frame: CGRect) {
+        self.isFireModeEnabled = false
         super.init(frame: frame)
         setupUI()
     }
@@ -319,54 +353,40 @@ final class AIChatTabChatHeaderView: UIView {
         state.isSubscriptionActive = isSubscriptionActive
     }
 
-    func setNavAvailable(canGoBack: Bool, canGoForward: Bool) {
-        var newState = state
-        newState.canGoBack = canGoBack
-        newState.canGoForward = canGoForward
-        state = newState
-    }
-
-    func setForceBackButtonVisible(_ visible: Bool) {
-        state.forceBackButtonVisible = visible
-    }
-
-    /// Hides the chats / new-chat pill while a voice session is in progress for this tab.
-    /// Back/forward arrows remain so the user can exit.
+    /// Hide title, chat-list pill, and close button during voice — voice owns its own dismiss UI.
     func setVoiceSessionActive(_ active: Bool) {
         state.isVoiceSessionActive = active
     }
 
-    /// Locks or unlocks the header controls during the Duck.ai onboarding experiment path.
-    /// When locked, the settings, new-chat, upgrade, chats-list, and tab-switcher buttons are
-    /// disabled until the fire step passes.
+    /// Lock/unlock header controls during onboarding (close included — would otherwise let users escape via the NTP).
+    /// Dimming is applied to the enclosing pills so the glass background and tab-count label fade uniformly with the icons.
     func setOnboardingLocked(_ locked: Bool) {
-        appMenuButton.isEnabled = !locked
+        isOnboardingLocked = locked
+        closeButton.isEnabled = !locked
         newChatButton.isEnabled = !locked
         chatListButton.isEnabled = !locked
-        chatListButton.alpha = locked ? 0.5 : 1
         tabSwitcherButton.isEnabled = !locked
-        // TabSwitcherStaticButton doesn't auto-dim when disabled; set alpha explicitly.
-        tabSwitcherButton.alpha = locked ? 0.5 : 1
         titleContainer.isUserInteractionEnabled = !locked
-        titleContainer.alpha = locked ? 0.5 : 1
+
+        let dimmedAlpha: CGFloat = locked ? 0.5 : 1
+        closeButtonPill.alpha = dimmedAlpha
+        chatListButtonPill.alpha = dimmedAlpha
+        rightPairPill.alpha = dimmedAlpha
+        titleContainer.alpha = dimmedAlpha
+        updateButtonShadows()
     }
 
     private func applyState() {
         titleContainer.isHidden = state.isSubscriptionActive != false
         paidTitleStack.isHidden = state.isSubscriptionActive != true
-        // Voice session locks the user in — hide every left-side pill so they can only exit via
-        // the in-page mic dismiss (which triggers FE → voiceSessionEnded → chrome restores).
-        let hideLeft = state.isVoiceSessionActive
-        // Both arrows crowd the row — drop the title slot. Hidden wrapper hides both children.
-        titleHolder.isHidden = state.showsNavPair || hideLeft
-        backPill.isHidden = hideLeft || !state.showsStandaloneBack
-        forwardPill.isHidden = hideLeft || !state.showsStandaloneForward
-        navPairPill.isHidden = hideLeft || !state.showsNavPair
-        leftPairPill.isHidden = hideLeft
-        // Compose suppressed when nav arrows are visible — the row gets cluttered.
-        newChatButton.isHidden = state.isNavigationVisible
-        // When the title slot is hidden the left stack needs the freed width — otherwise the
-        // greater/less-than inequalities keep reserving the center and squeeze the nav-pair pill.
+        let voiceActive = state.isVoiceSessionActive
+        titleHolder.isHidden = voiceActive
+        // Hide each pill (and its button inside it) together so the surrounding glass pill
+        // background also disappears during voice sessions. Voice mode owns its own dismiss UI.
+        chatListButtonPill.isHidden = voiceActive
+        chatListButton.isHidden = voiceActive
+        closeButtonPill.isHidden = voiceActive
+        closeButton.isHidden = voiceActive
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }
 
@@ -386,19 +406,16 @@ final class AIChatTabChatHeaderView: UIView {
         titleHolder.addSubview(titleContainer)
         addSubview(bottomSeparator)
 
-        leftStack.addArrangedSubview(backPill)
-        leftStack.addArrangedSubview(forwardPill)
-        leftStack.addArrangedSubview(navPairPill)
-        leftStack.addArrangedSubview(leftPairPill)
-        pillContentSuperview(for: backPill).addSubview(backButton)
-        pillContentSuperview(for: forwardPill).addSubview(forwardButton)
-        pillContentSuperview(for: navPairPill).addSubview(navPairStack)
-        pillContentSuperview(for: leftPairPill).addSubview(leftPairStack)
+        leftStack.addArrangedSubview(closeButtonPill)
+        leftStack.addArrangedSubview(chatListButtonPill)
+        pillContentSuperview(for: closeButtonPill).addSubview(closeButton)
+        pillContentSuperview(for: chatListButtonPill).addSubview(chatListButton)
         rightStack.addArrangedSubview(rightPairPill)
         pillContentSuperview(for: rightPairPill).addSubview(rightPairStack)
 
-        for control in [backButton, forwardButton, chatListButton, newChatButton, navBackButton, navForwardButton, tabSwitcherButton, appMenuButton] as [UIControl] {
-            control.addGestureRecognizer(StrictBoundsTouchObserver())
+        // Only the shared right-pair pill can cross-fire between icons, so only those two are guarded.
+        for control in [newChatButton, tabSwitcherButton] as [UIControl] {
+            control.addGestureRecognizer(SiblingTouchGuard())
         }
 
         titleContainer.addSubview(freeTitleStack)
@@ -420,55 +437,31 @@ final class AIChatTabChatHeaderView: UIView {
             titleContainer.trailingAnchor.constraint(equalTo: titleHolder.trailingAnchor),
             titleContainer.bottomAnchor.constraint(equalTo: titleHolder.bottomAnchor),
 
-            backPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            backPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            closeButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            closeButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            backButton.centerXAnchor.constraint(equalTo: backPill.centerXAnchor),
-            backButton.centerYAnchor.constraint(equalTo: backPill.centerYAnchor),
-            backButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            backButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            chatListButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            chatListButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            forwardPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            forwardPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            newChatButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            newChatButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            forwardButton.centerXAnchor.constraint(equalTo: forwardPill.centerXAnchor),
-            forwardButton.centerYAnchor.constraint(equalTo: forwardPill.centerYAnchor),
-            forwardButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            forwardButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            tabSwitcherButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            tabSwitcherButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            navBackButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            navBackButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            closeButtonPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            closeButtonPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            closeButton.centerXAnchor.constraint(equalTo: closeButtonPill.centerXAnchor),
+            closeButton.centerYAnchor.constraint(equalTo: closeButtonPill.centerYAnchor),
 
-            navForwardButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            navForwardButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-
-            chatListButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            chatListButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-
-            newChatButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            newChatButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-
-            appMenuButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            appMenuButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-
-            tabSwitcherButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            tabSwitcherButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-
-            leftPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-            leftPairStack.leadingAnchor.constraint(equalTo: leftPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
-            leftPairStack.trailingAnchor.constraint(equalTo: leftPairPill.trailingAnchor, constant: -Constants.pillInnerHorizontalPadding),
-            leftPairStack.topAnchor.constraint(equalTo: leftPairPill.topAnchor),
-            leftPairStack.bottomAnchor.constraint(equalTo: leftPairPill.bottomAnchor),
-
-            navPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-            navPairStack.leadingAnchor.constraint(equalTo: navPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
-            navPairStack.trailingAnchor.constraint(equalTo: navPairPill.trailingAnchor, constant: -Constants.pillInnerHorizontalPadding),
-            navPairStack.topAnchor.constraint(equalTo: navPairPill.topAnchor),
-            navPairStack.bottomAnchor.constraint(equalTo: navPairPill.bottomAnchor),
+            chatListButtonPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            chatListButtonPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            chatListButton.centerXAnchor.constraint(equalTo: chatListButtonPill.centerXAnchor),
+            chatListButton.centerYAnchor.constraint(equalTo: chatListButtonPill.centerYAnchor),
 
             rightPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-            rightPairStack.leadingAnchor.constraint(equalTo: rightPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
-            rightPairStack.trailingAnchor.constraint(equalTo: rightPairPill.trailingAnchor, constant: -Constants.pillInnerHorizontalPadding),
+            rightPairStack.leadingAnchor.constraint(equalTo: rightPairPill.leadingAnchor),
+            rightPairStack.trailingAnchor.constraint(equalTo: rightPairPill.trailingAnchor),
             rightPairStack.topAnchor.constraint(equalTo: rightPairPill.topAnchor),
             rightPairStack.bottomAnchor.constraint(equalTo: rightPairPill.bottomAnchor),
 
@@ -546,31 +539,55 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func pillContentSuperview(for pill: UIView) -> UIView {
+        // Pill is the shadow host; first subview is the clip host that holds the visual chrome.
+        let clipHost = pill.subviews.first(where: { $0.accessibilityIdentifier == Self.pillClipHostIdentifier }) ?? pill
         if #available(iOS 26, *),
-           let effectView = pill.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView {
+           let effectView = clipHost.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView {
             return effectView.contentView
         }
-        return pill
+        return clipHost
     }
 
+    private static let pillClipHostIdentifier = "aiChatHeader.pillClipHost"
+
+    /// Two-view pill: outer `shadowHost` (drop shadow, no clip) wrapping inner `clipHost` (rounded, clipped).
+    /// The split contains menu-dismiss rendering inside the clip host while letting the shadow render outside — one layer can't do both.
     private func makePillContainer() -> UIView {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.layer.cornerRadius = Constants.buttonSize / 2
+        let shadowHost = UIView()
+        shadowHost.translatesAutoresizingMaskIntoConstraints = false
+
+        let clipHost = UIView()
+        clipHost.translatesAutoresizingMaskIntoConstraints = false
+        clipHost.accessibilityIdentifier = Self.pillClipHostIdentifier
+        clipHost.layer.cornerRadius = Constants.buttonSize / 2
+        clipHost.clipsToBounds = true
+
+        shadowHost.addSubview(clipHost)
+        NSLayoutConstraint.activate([
+            clipHost.topAnchor.constraint(equalTo: shadowHost.topAnchor),
+            clipHost.leadingAnchor.constraint(equalTo: shadowHost.leadingAnchor),
+            clipHost.trailingAnchor.constraint(equalTo: shadowHost.trailingAnchor),
+            clipHost.bottomAnchor.constraint(equalTo: shadowHost.bottomAnchor),
+        ])
+
         if #available(iOS 26, *) {
             let effectView = makeGlassPillEffectView()
-            view.addSubview(effectView)
+            clipHost.addSubview(effectView)
             NSLayoutConstraint.activate([
-                effectView.topAnchor.constraint(equalTo: view.topAnchor),
-                effectView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                effectView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                effectView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                effectView.topAnchor.constraint(equalTo: clipHost.topAnchor),
+                effectView.leadingAnchor.constraint(equalTo: clipHost.leadingAnchor),
+                effectView.trailingAnchor.constraint(equalTo: clipHost.trailingAnchor),
+                effectView.bottomAnchor.constraint(equalTo: clipHost.bottomAnchor),
             ])
         } else {
-            view.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+            clipHost.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
         }
-        applyGlassChromeShadow(to: view)
-        return view
+
+        // Shadow on the outer host so it renders outside the capsule bounds. Corner radius is
+        // mirrored here too so the shadow itself follows the capsule shape.
+        shadowHost.layer.cornerRadius = Constants.buttonSize / 2
+        applyGlassChromeShadow(to: shadowHost)
+        return shadowHost
     }
 
     @available(iOS 26, *)
@@ -593,14 +610,17 @@ final class AIChatTabChatHeaderView: UIView {
     private func updateGlassPillEffects() {
         guard #available(iOS 26, *) else { return }
 
-        for pill in [backPill, forwardPill, navPairPill, leftPairPill, rightPairPill] {
-            guard let effectView = pill.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView else { continue }
+        for pill in [closeButtonPill, chatListButtonPill, rightPairPill] {
+            // Pill is the shadow host; the effect view lives inside the clip host one level in.
+            let clipHost = pill.subviews.first(where: { $0.accessibilityIdentifier == Self.pillClipHostIdentifier })
+            let searchRoot = clipHost ?? pill
+            guard let effectView = searchRoot.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView else { continue }
             effectView.effect = makeGlassPillEffect()
         }
     }
 
     private func updateButtonShadows() {
-        let chromedViews: [UIView] = [backPill, forwardPill, navPairPill, leftPairPill, rightPairPill]
+        let chromedViews: [UIView] = [closeButtonPill, chatListButtonPill, rightPairPill]
         for view in chromedViews {
             applyGlassChromeShadow(to: view)
         }
@@ -608,7 +628,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     private func applyGlassChromeShadow(to view: UIView) {
         view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = 0.16
+        view.layer.shadowOpacity = isOnboardingLocked ? 0.04 : 0.16
         view.layer.shadowOffset = CGSize(width: 0, height: 8)
         view.layer.shadowRadius = 16
         view.layer.borderWidth = 0
@@ -616,11 +636,10 @@ final class AIChatTabChatHeaderView: UIView {
         view.clipsToBounds = false
     }
 
-    @objc private func backTapped() { delegate?.aiChatTabChatHeaderDidTapBack() }
-    @objc private func forwardTapped() { delegate?.aiChatTabChatHeaderDidTapForward() }
+    @objc private func closeTapped() { delegate?.aiChatTabChatHeaderDidTapClose() }
     @objc private func chatListTapped() { delegate?.aiChatTabChatHeaderDidTapChatList() }
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
-    @objc private func appMenuTapped() { delegate?.aiChatTabChatHeaderDidTapAppMenu() }
+    @objc private func tabSwitcherTapped() { delegate?.aiChatTabChatHeaderDidTapTabSwitcher() }
     @objc private func upgradeTapped() {
         if state.isSubscriptionActive == false {
             delegate?.aiChatTabChatHeaderDidTapUpgrade()
@@ -639,12 +658,10 @@ private final class HighlightableContainerView: UIControl {
     }
 }
 
-/// Cancels the host UIControl's touch follow-through the moment the touch leaves the visible
-/// bounds. UIControl tolerates ~70pt of slack by default — fine for an isolated button, but
-/// inside our shared glass pill it lets the originally-tapped icon fire when the finger is
-/// released over a sibling icon. The flags below keep the recognizer purely observational so
-/// the control's own taps, long-press, and menus still flow normally.
-private final class StrictBoundsTouchObserver: UIGestureRecognizer {
+/// Cancels the host control's tracking once the finger moves onto a sibling control, so a tap on one
+/// icon in the shared pill can't fire when released over its neighbour. Observational only; with no
+/// siblings it never cancels, leaving the control's taps, long-press, and menus normal.
+private final class SiblingTouchGuard: UIGestureRecognizer {
     override init(target: Any?, action: Selector?) {
         super.init(target: target, action: action)
         delaysTouchesBegan = false
@@ -654,9 +671,14 @@ private final class StrictBoundsTouchObserver: UIGestureRecognizer {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesMoved(touches, with: event)
-        guard let control = view as? UIControl, let touch = touches.first else { return }
-        if !control.bounds.contains(touch.location(in: control)) {
+        guard let control = view as? UIControl,
+              let touch = touches.first,
+              let container = control.superview else { return }
+        let location = touch.location(in: container)
+        for case let sibling as UIControl in container.subviews
+        where sibling !== control && sibling.isUserInteractionEnabled && sibling.isEnabled && !sibling.isHidden && sibling.frame.contains(location) {
             control.cancelTracking(with: event)
+            return
         }
     }
 }

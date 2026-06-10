@@ -87,6 +87,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
     private let syncPromoManager: SyncPromoManaging?
@@ -118,6 +119,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          syncService: DDGSyncing? = nil,
+         aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
@@ -128,6 +130,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.syncService = syncService
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
                                                                   featureFlagger: featureFlagger,
                                                                   privacyConfigurationManager: privacyConfigurationManager) }
@@ -252,6 +255,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
+        let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
         // The model self-updates `openTabCount` from `TabManaging.tabsModel(for:).tabsPublisher`, so SwiftUI consumers redraw reactively.
         suggestionTrayManager?.setEscapeHatch(model)
@@ -259,6 +263,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let duckAIHatchModel = switchBarHandler.isFireTab ? nil : model
         duckAISuggestionsCoordinator?.setEscapeHatch(duckAIHatchModel)
         updateEscapeHatchTopInset()
+        // The dax offset depends on hatch presence (`hatchClearance` is added when present),
+        // so refresh visibility when the hatch is added or removed mid-session.
+        if hatchPresenceChanged {
+            updateDaxVisibility()
+        }
     }
 
     private var escapeHatchTopInset: CGFloat {
@@ -415,7 +424,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installSwipeContainer() {
-        let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
+        let manager = SwipeContainerManager(switchBarHandler: switchBarHandler, contentTransition: .crossfade)
         let containerVC = manager.containerViewController
         addChild(containerVC)
         contentContainerView.addSubview(containerVC.view)
@@ -438,10 +447,16 @@ final class UnifiedInputContentContainerViewController: UIViewController {
               let containerViewController = swipeContainerManager?.containerViewController,
               let searchContainer = swipeContainerManager?.searchPageContainer else { return }
 
-        let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
+        let manager = SuggestionTrayManager(
+            switchBarHandler: switchBarHandler,
+            dependencies: dependencies,
+            autocompleteHorizontalInset: Metrics.suggestionsHorizontalInset)
         manager.delegate = self
         let trayEscapeHatchModel = switchBarHandler.isFireTab ? nil : escapeHatchModel
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatchModel: trayEscapeHatchModel)
+        manager.installInContainerView(searchContainer,
+                                       parentViewController: containerViewController,
+                                       escapeHatchModel: trayEscapeHatchModel,
+                                       deferAutocompleteReveal: true)
         suggestionTrayManager = manager
     }
 
@@ -464,27 +479,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
               let dependencies = suggestionTrayDependencies else { return }
 
         // Build the chat-side fetcher (existing infrastructure, fire-tab uses no-op reader).
-        let chatViewModel: AIChatSuggestionsViewModel
-        let chatManager: AIChatHistoryManager
-        let chatSuggestionsReader: AIChatSuggestionsReading
-        if switchBarHandler.isFireTab {
-            chatSuggestionsReader = NilSuggestionsReader()
-        } else {
-            let reader = SuggestionsReader(
-                featureFlagger: featureFlagger,
-                privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: duckAiNativeStorageHandler,
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            )
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            chatSuggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        }
-        chatViewModel = AIChatSuggestionsViewModel(maxSuggestions: chatSuggestionsReader.maxHistoryCount)
-        chatManager = AIChatHistoryManager(
-            suggestionsReader: chatSuggestionsReader,
-            aiChatSettings: aiChatSettings,
-            viewModel: chatViewModel
-        )
+        let (chatManager, chatViewModel) = AIChatHistoryManager.makeHistoryManager(isFireTab: switchBarHandler.isFireTab,
+                                                                                   isIPadExperience: false,
+                                                                                   featureFlagger: featureFlagger,
+                                                                                   privacyConfigurationManager: privacyConfigurationManager,
+                                                                                   chatSyncCleaner: aiChatSyncCleaner,
+                                                                                   chatSettings: aiChatSettings,
+                                                                                   nativeStorageHandler: duckAiNativeStorageHandler)
 
         // Build the URL-side fetcher reusing the Search-side suggestion stream + ranking.
         let dataSource = AutocompleteSuggestionsDataSource(
@@ -505,6 +506,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             chatManager: chatManager,
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
+            historyManager: dependencies.historyManager,
             queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
             layoutConfiguration: .unifiedToggleInput,
             syncPromoManager: switchBarHandler.isFireTab ? nil : syncPromoManager,
@@ -691,11 +693,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isAIDaxVisible = !hasContent && !isShowingDuckAISuggestions && !isDuckAISuggestionsPending
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
-        // The toolbar is still in the hierarchy under the unified input, so the keyboard-relative
-        // centering sits visually too high — shift the dax down by this constant to compensate.
-        // The escape hatch sits in the suggestion tray above the logo and doesn't push it down.
-        daxLogoManager.setEscapeHatchBaseOffset(Metrics.toolbarCompensationOffset)
+        daxLogoManager.setEscapeHatchBaseOffset(daxVerticalOffset(hasEscapeHatch: escapeHatchModel != nil))
         updateSectionTitle()
+    }
+
+    /// `toolbarCompensationOffset` shifts the dax down because the toolbar still sits under the
+    /// unified input — without it, the keyboard-relative centering reads visually too high.
+    /// `hatchClearance` adds extra padding when the escape hatch is present so the two don't crowd.
+    private func daxVerticalOffset(hasEscapeHatch: Bool) -> CGFloat {
+        Metrics.toolbarCompensationOffset + (hasEscapeHatch ? Metrics.hatchClearance : 0)
     }
 
     private enum Metrics {
@@ -707,6 +713,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // chain positions the UTI hatch ~10pt below the NTP equivalent.
         static let escapeHatchTrayPullUp: CGFloat = -10
         static let toolbarCompensationOffset: CGFloat = 80
+        static let hatchClearance: CGFloat = 50
+        static let suggestionsHorizontalInset: CGFloat = 8
     }
 }
 
@@ -834,6 +842,11 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
     }
 
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didDeleteSuggestion suggestion: Suggestion) {
+        // The duck.ai URL list shares the same history store. Refresh it so the deleted entry disappears there too.
+        duckAISuggestionsCoordinator?.refreshURLSuggestions()
+    }
+
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
     }
@@ -898,6 +911,11 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion) {
         fireDuckAISuggestionClickPixel(for: suggestion)
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
+    }
+
+    func duckAISuggestionsDidDeleteURL(_ suggestion: Suggestion) {
+        // The search tray reads the same history store. Re-fetch so the deleted entry disappears there too.
+        suggestionTrayManager?.refreshCurrentSuggestions()
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {

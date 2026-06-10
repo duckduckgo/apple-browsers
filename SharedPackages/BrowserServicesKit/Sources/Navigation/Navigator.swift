@@ -100,7 +100,7 @@ public struct Navigator {
             .appending(to: expectedNavigations)
     }
 
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     @discardableResult
     public func loadFileRequest(_ request: URLRequest, allowingReadAccessTo readAccessURL: URL, withExpectedNavigationType expectedNavigationType: NavigationType? = .redirect(.developer)) -> ExpectedNavigation {
         webView.loadFileRequest(request, allowingReadAccessTo: readAccessURL)
@@ -108,7 +108,7 @@ public struct Navigator {
             .appending(to: expectedNavigations)
     }
 
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     @discardableResult
     public func loadSimulatedRequest(_ request: URLRequest, response: URLResponse, responseData data: Data, withExpectedNavigationType expectedNavigationType: NavigationType? = .redirect(.developer)) -> ExpectedNavigation {
         webView.loadSimulatedRequest(request, response: response, responseData: data)
@@ -116,7 +116,7 @@ public struct Navigator {
             .appending(to: expectedNavigations)
     }
 
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     @discardableResult
     public func loadSimulatedRequest(_ request: URLRequest, responseHTML string: String, withExpectedNavigationType expectedNavigationType: NavigationType? = .redirect(.developer)) -> ExpectedNavigation {
         webView.loadSimulatedRequest(request, responseHTML: string)

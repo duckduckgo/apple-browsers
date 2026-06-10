@@ -158,10 +158,8 @@ extension OnboardingStep {
         case .userNeedsToAllowExtension:
             if #available(macOS 15, *) {
                 return .enableSysexImage
-            } else if #available(macOS 12, *) {
-                return .allowSysexScreenshot
             } else {
-                return .allowSysexScreenshotBigSur
+                return .allowSysexScreenshot
             }
         case .userNeedsToAllowVPNConfiguration:
             return nil

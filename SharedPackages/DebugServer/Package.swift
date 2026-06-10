@@ -22,7 +22,7 @@ import PackageDescription
 let package = Package(
     name: "DebugServer",
     platforms: [
-        .macOS("11.4"),
+        .macOS("12.3"),
         .iOS(.v15)
     ],
     products: [

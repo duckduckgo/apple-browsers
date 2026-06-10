@@ -22,6 +22,7 @@ import UIKit
 
 enum HeaderIconType: Equatable {
     case aiChat
+    case duckAILogo
     case easterEgg(URL)
     case favicon(UIImage)
     case globe
@@ -36,11 +37,11 @@ final class BrowsingMenuHeaderDataSource: ObservableObject {
     /// Tracks the current URL to detect changes for favicon clearing
     private var currentURL: URL?
 
-    func update(forAITab title: String) {
+    func update(forAITab title: String, usesDuckAILogo: Bool) {
         self.isHeaderVisible = true
         self.title = title
         self.displayURL = nil
-        self.iconType = .aiChat
+        self.iconType = usesDuckAILogo ? .duckAILogo : .aiChat
         self.currentURL = nil
     }
 

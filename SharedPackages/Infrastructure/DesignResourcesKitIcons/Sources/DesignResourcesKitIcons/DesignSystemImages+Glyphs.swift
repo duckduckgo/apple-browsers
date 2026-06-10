@@ -429,6 +429,7 @@ public extension DesignSystemImages {
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd24) }
             public static var aiChatAddSolid: DesignSystemImage { .init(resource: .aiChatAddSolid24) }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory24) }
+            public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }
             public static var arrowDown: DesignSystemImage { .init(resource: .arrowDown24) }
@@ -463,6 +464,7 @@ public extension DesignSystemImages {
             public static var checkSolid: DesignSystemImage { .init(resource: .checkSolid24) }
             public static var checkSmall: DesignSystemImage { .init(resource: .checkSmall24) }
             public static var chat: DesignSystemImage { .init(resource: .chat24) }
+            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned24) }
             public static var chats: DesignSystemImage { .init(resource: .chats24) }
             public static var chevronCircleDown: DesignSystemImage { .init(resource: .chevronCircleDown24) }
             public static var chevronDown: DesignSystemImage { .init(resource: .chevronDown24) }
@@ -490,6 +492,7 @@ public extension DesignSystemImages {
             public static var documentNew: DesignSystemImage { .init(resource: .documentNew24) }
             public static var documentReplace: DesignSystemImage { .init(resource: .documentReplace24) }
             public static var downloads: DesignSystemImage { .init(resource: .downloads24) }
+            public static var duckAi: DesignSystemImage { .init(resource: .duckAi24) }
             public static var duckDuckGoDaxColor: DesignSystemImage { .init(resource: .duckDuckGoDaxColor24) }
             public static var duckDuckGoDaxGreyscale: DesignSystemImage { .init(resource: .duckDuckGoDaxGreyscale24) }
             public static var edit: DesignSystemImage { .init(resource: .edit24) }
@@ -554,6 +557,7 @@ public extension DesignSystemImages {
             public static var news: DesignSystemImage { .init(resource: .news24) }
             public static var note: DesignSystemImage { .init(resource: .note24) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn24) }
+            public static var openInSmall: DesignSystemImage { .init(resource: .openIn24Small) }
             public static var options: DesignSystemImage { .init(resource: .options24) }
             public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach24) }
             public static var paste: DesignSystemImage { .init(resource: .paste24) }
@@ -571,6 +575,7 @@ public extension DesignSystemImages {
             public static var reset: DesignSystemImage { .init(resource: .reset24) }
             public static var resetSites: DesignSystemImage { .init(resource: .resetSites24) }
             public static var settings: DesignSystemImage { .init(resource: .settings24) }
+            public static var settingsAiChat: DesignSystemImage { .init(resource: .settingsAiChat24) }
             public static var shapeCircle: DesignSystemImage { .init(resource: .shapeCircle24) }
             public static var shield: DesignSystemImage { .init(resource: .shield24) }
             public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked24) }
@@ -610,6 +615,7 @@ public extension DesignSystemImages {
             public static var viewList: DesignSystemImage { .init(resource: .viewList24) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid24) }
             public static var voice: DesignSystemImage { .init(resource: .voice24) }
+            public static var voicePinned: DesignSystemImage { .init(resource: .voicePinned24) }
             public static var window: DesignSystemImage { .init(resource: .window24) }
             public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs24) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn24) }

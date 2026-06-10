@@ -204,18 +204,14 @@ struct SyncWithAnotherDeviceView: View {
         HStack(alignment: .center, spacing: 14) {
             NumberBadge(number: number)
 
-            if #available(macOS 12.0, *) {
-                HStack(spacing: 4) {
-                    Text(parseBoldMarkdown(markdown))
-                        .fixedSize(horizontal: false, vertical: true)
-                    if showAppIcon {
-                        Image(.duckDuckGo24)
-                            .resizable()
-                            .frame(width: Metrics.appIconSize, height: Metrics.appIconSize)
-                    }
+            HStack(spacing: 4) {
+                Text(parseBoldMarkdown(markdown))
+                    .fixedSize(horizontal: false, vertical: true)
+                if showAppIcon {
+                    Image(.duckDuckGo24)
+                        .resizable()
+                        .frame(width: Metrics.appIconSize, height: Metrics.appIconSize)
                 }
-            } else {
-                fallbackInstructionStepText(markdown, showAppIcon: showAppIcon)
             }
         }
     }
@@ -237,7 +233,6 @@ struct SyncWithAnotherDeviceView: View {
 
     /// Parses bold markdown text and replaces bold styling with primary color.
     ///
-    @available(macOS 12.0, *)
     fileprivate func parseBoldMarkdown(_ string: String) -> AttributedString {
         guard var result = try? AttributedString(markdown: string) else {
             var plain = AttributedString(string.replacingOccurrences(of: "**", with: ""))

@@ -58,7 +58,10 @@ struct EmailProtectionView: View {
         }
         .onFirstAppear {
             Pixel.fire(pixel: .settingsEmailProtectionOpen,
-                       withAdditionalParameters: ["is_signed_in": viewModel.emailManager.isSignedIn ? "1" : "0"])
+                       withAdditionalParameters: [
+                        "is_signed_in": viewModel.emailManager.isSignedIn ? "1" : "0",
+                        "subscribed": String(viewModel.subscriptionManager.isUserAuthenticated)
+                       ])
         }
     }
 }

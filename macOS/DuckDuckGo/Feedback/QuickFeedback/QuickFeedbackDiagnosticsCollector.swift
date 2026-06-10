@@ -80,12 +80,7 @@ final class QuickFeedbackDiagnosticsCollector {
         var iterator: io_iterator_t = 0
         let matchingDict = IOServiceMatching("IOPCIDevice")
 
-        let mainPort: mach_port_t
-        if #available(macOS 12.0, *) {
-            mainPort = kIOMainPortDefault
-        } else {
-            mainPort = kIOMasterPortDefault
-        }
+        let mainPort: mach_port_t = kIOMainPortDefault
 
         guard IOServiceGetMatchingServices(mainPort, matchingDict, &iterator) == KERN_SUCCESS else {
             return "unknown"

@@ -120,11 +120,7 @@ final class DuckPlayerTests: XCTestCase {
     }
 
     private func duckPlayerURL() -> URL {
-        if #available(macOS 12.0, *) {
-            return .youtubeNoCookie("12345678")
-        } else {
-            return .duckPlayer("12345678")
-        }
+        return .youtubeNoCookie("12345678")
     }
 }
 

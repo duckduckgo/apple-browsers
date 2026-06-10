@@ -97,12 +97,13 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                     onSizeUpdate: onSizeUpdate
                 )
             )
-        case .fire:
+        case .fire(let fireVariant):
             rootView = AnyView(
                 fireDialog(
                     title: spec.title,
                     message: spec.message,
                     delegate: delegate,
+                    fireVariant: fireVariant,
                     pixelName: spec.pixelName,
                     allowsManualDismiss: spec.allowsManualDismiss
                 )
@@ -273,6 +274,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         title: String?,
         message: String,
         delegate: ContextualOnboardingDelegate,
+        fireVariant: DaxDialogs.BrowsingSpec.SpecType.FireVariant,
         pixelName: Pixel.Event,
         allowsManualDismiss: Bool
     ) -> some View {
@@ -283,8 +285,16 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
         return OnboardingFireDialog(title: title, message: message, onManualDismiss: onManualDismiss)
             .onFirstAppear { [weak self] in
-                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
-                self?.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
+                guard let self else { return }
+                switch fireVariant {
+                case .standard:
+                    self.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+                case .duckAIOnboarding:
+                    if self.onboardingManager.currentOnboardingFlow == .default {
+                        self.contextualOnboardingPixelReporter.measureDuckAIExperimentFireDialogImpression()
+                    }
+                }
+                self.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
             }
     }
 

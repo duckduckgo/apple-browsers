@@ -148,7 +148,8 @@ final class SettingsViewModel: ObservableObject {
     private var aiChatSettingsObserver: Any?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let keyValueStore: ThrowingKeyValueStoring
+    let keyValueStore: ThrowingKeyValueStoring
+    let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     // Closures to interact with legacy view controllers through the container
@@ -156,6 +157,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
+    var onRequestOpenDuckAIChat: (() -> Void)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
@@ -949,6 +951,7 @@ final class SettingsViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
+         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
@@ -989,6 +992,7 @@ final class SettingsViewModel: ObservableObject {
         self.urlOpener = urlOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
@@ -1458,6 +1462,10 @@ extension SettingsViewModel {
     @MainActor func dismissSettings() {
         onRequestDismissSettings?()
     }
+
+    @MainActor func openDuckAIChat() {
+        onRequestOpenDuckAIChat?()
+    }
 }
 
 // MARK: Legacy View Presentation
@@ -1874,11 +1882,12 @@ extension SettingsViewModel {
         )
     }
 
-    var aiChatNavigationBarEnabledBinding: Binding<Bool> {
+    var aiChatTabBarEnabledBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatNavigationBarUserSettingsEnabled },
+            get: { self.aiChatSettings.isAIChatTabBarUserSettingsEnabled },
             set: { newValue in
-                self.aiChatSettings.enableAIChatNavigationBarUserSettings(enable: newValue)
+                self.aiChatSettings.enableAIChatTabBarUserSettings(enable: newValue)
+                DailyPixel.fireDailyAndCount(pixel: newValue ? .aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff)
             }
         )
     }

@@ -14,6 +14,7 @@ jobs:
         with:
           repository: duckduckgo/apple-browsers
           path: apple-monorepo/
+          persist-credentials: false
       - name: Execute Update Script
         run: |
           cd ./apple-monorepo/macOS
@@ -30,8 +31,29 @@ jobs:
         with:
           path: apple-monorepo/
           add-paths: |
-            ./macOS/DuckDuckGo/PhishingDetection/
+            ./macOS/DuckDuckGo/MaliciousSiteProtection/
           commit-message: Update phishing detection data to revision ${{ env.REVISION }}
           branch: update-phishing-protection-${{ env.REVISION }}
           title: Update phishing protection datasets to ${{ env.REVISION }}
           body: "${{ env.PR_BODY_MACOS }}"
+          reviewers: alessandroboron,mallexxx,sabrinatardio
+      # Only notify for scheduled (cron) runs; manual dispatches are ignored.
+      - name: Resolve Asana assignee
+        id: asana-assignee
+        if: failure() && github.event_name == 'schedule'
+        continue-on-error: true  # Fall back to an unassigned task if the lookup fails.
+        uses: duckduckgo/native-github-asana-sync@v1.9
+        with:
+          action: get-asana-user-id
+          github-username: alessandroboron
+          github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
+      - name: Create Asana task on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: duckduckgo/native-github-asana-sync@v1.9
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: "1203301625297703"
+          asana-task-name: Malicious Sites Protection update failed
+          asana-task-description: The macOS - Update Phishing Detection Datasets workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          asana-task-assignee: ${{ steps.asana-assignee.outputs.asanaUserId }}

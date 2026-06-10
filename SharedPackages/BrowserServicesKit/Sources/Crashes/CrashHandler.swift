@@ -20,7 +20,7 @@ import Foundation
 import MetricKit
 
 @available(iOSApplicationExtension, unavailable)
-@available(iOS 13, macOS 12, *)
+@available(iOS 13, *)
 final class CrashHandler: NSObject, MXMetricManagerSubscriber {
 
     var crashDiagnosticsPayloadHandler: ([MXDiagnosticPayload]) -> Void = { _ in }

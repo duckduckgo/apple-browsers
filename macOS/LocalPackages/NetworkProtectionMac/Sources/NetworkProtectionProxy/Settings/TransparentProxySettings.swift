@@ -107,6 +107,33 @@ public final class TransparentProxySettings: TransparentProxySettingsProviding {
         defaults.vpnProxyExcludedDomainsPublisher
     }
 
+    // MARK: - Orphan proxy detection
+
+    /// When `false`, the proxy skips its orphan-detection loop entirely. Resolved from a remote kill
+    /// switch by the app and delivered via the settings snapshot. Defaults to `true`.
+    public var isOrphanProxyDetectionEnabled: Bool {
+        get {
+            defaults.vpnProxyOrphanDetectionEnabled
+        }
+
+        set {
+            defaults.vpnProxyOrphanDetectionEnabled = newValue
+        }
+    }
+
+    /// When `false`, the proxy still detects (and reports) the orphaned state but never engages the
+    /// full-bypass mode. Resolved from a remote kill switch by the app and delivered via the settings
+    /// snapshot. Defaults to `true`.
+    public var isOrphanProxyBypassEnabled: Bool {
+        get {
+            defaults.vpnProxyOrphanBypassEnabled
+        }
+
+        set {
+            defaults.vpnProxyOrphanBypassEnabled = newValue
+        }
+    }
+
     // MARK: - Reset to factory defaults
 
     public func resetAll() {
@@ -173,12 +200,17 @@ public final class TransparentProxySettings: TransparentProxySettingsProviding {
     // MARK: - Snapshot support
 
     public func snapshot() -> TransparentProxySettingsSnapshot {
-        .init(appRoutingRules: appRoutingRules, excludedDomains: excludedDomains)
+        .init(appRoutingRules: appRoutingRules,
+              excludedDomains: excludedDomains,
+              isOrphanProxyDetectionEnabled: isOrphanProxyDetectionEnabled,
+              isOrphanProxyBypassEnabled: isOrphanProxyBypassEnabled)
     }
 
     public func apply(_ snapshot: TransparentProxySettingsSnapshot) {
         appRoutingRules = snapshot.appRoutingRules
         excludedDomains = snapshot.excludedDomains
+        isOrphanProxyDetectionEnabled = snapshot.isOrphanProxyDetectionEnabled
+        isOrphanProxyBypassEnabled = snapshot.isOrphanProxyBypassEnabled
     }
 }
 
@@ -198,4 +230,28 @@ public struct TransparentProxySettingsSnapshot: Codable {
 
     public let appRoutingRules: VPNAppRoutingRules
     public let excludedDomains: [String]
+    public let isOrphanProxyDetectionEnabled: Bool
+    public let isOrphanProxyBypassEnabled: Bool
+
+    public init(appRoutingRules: VPNAppRoutingRules,
+                excludedDomains: [String],
+                isOrphanProxyDetectionEnabled: Bool = UserDefaults.orphanProxyDetectionEnabledDefaultValue,
+                isOrphanProxyBypassEnabled: Bool = UserDefaults.orphanProxyBypassEnabledDefaultValue) {
+        self.appRoutingRules = appRoutingRules
+        self.excludedDomains = excludedDomains
+        self.isOrphanProxyDetectionEnabled = isOrphanProxyDetectionEnabled
+        self.isOrphanProxyBypassEnabled = isOrphanProxyBypassEnabled
+    }
+
+    /// Custom decoding so snapshots persisted by older versions (which lack the orphan-proxy flags) still
+    /// decode, falling back to the pre-kill-switch behavior rather than failing the whole snapshot.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        appRoutingRules = try container.decode(VPNAppRoutingRules.self, forKey: .appRoutingRules)
+        excludedDomains = try container.decode([String].self, forKey: .excludedDomains)
+        isOrphanProxyDetectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyDetectionEnabled)
+            ?? UserDefaults.orphanProxyDetectionEnabledDefaultValue
+        isOrphanProxyBypassEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyBypassEnabled)
+            ?? UserDefaults.orphanProxyBypassEnabledDefaultValue
+    }
 }

@@ -20,7 +20,6 @@ import XCTest
 import NetworkExtension
 @testable import VPN
 
-@available(macOS 12, *)
 final class VPNStartupMonitorTests: XCTestCase {
 
     private var notificationCenter: NotificationCenter!

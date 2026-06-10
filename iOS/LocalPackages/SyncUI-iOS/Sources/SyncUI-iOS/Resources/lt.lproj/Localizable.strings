@@ -395,7 +395,7 @@
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Įveskite kodą ranka";
 
 /* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
-"sync.simplified.scan-or-view-code.paste.code.instructions" = "Eik į „Nuostatos > Sinchronizavimas ir atsarginis kopijavimas > Sinchronizuoti su kitu įrenginiu“, kitame sinchronizuotame įrenginyje „DuckDuckGo“ programėlėje pasirink Rodyti tekstinį kodą ir įklijuok jį čia įrenginiui sinchronizuoti.";
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Eik į „**Nuostatos > Sinchronizavimas ir atsarginis kopijavimas > Sinchronizuoti su kitu įrenginiu**“, kitame sinchronizuotame įrenginyje „DuckDuckGo“ programėlėje pasirink **Rodyti tekstinį kodą** ir įklijuok jį čia įrenginiui sinchronizuoti.";
 
 /* Status text while verifying a pasted sync code */
 "sync.simplified.scan-or-view-code.paste.code.verifying" = "Tikrinamas kodas";

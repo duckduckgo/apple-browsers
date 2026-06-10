@@ -171,6 +171,7 @@ extension MainViewController {
         swipeTabsCoordinator?.isEnabled = !locked
         viewCoordinator.omniBar.barView.isUserInteractionEnabled = !locked
         viewCoordinator.omniBar.barView.menuButton.isUserInteractionEnabled = !locked
+        viewCoordinator.omniBar.barView.alpha = locked ? 0.5 : 1
 
         // Lock Duck.ai unified input controls during the fire onboarding step.
         aiChatTabChatHeaderView?.setOnboardingLocked(locked)

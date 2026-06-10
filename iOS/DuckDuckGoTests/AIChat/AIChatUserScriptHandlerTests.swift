@@ -73,7 +73,9 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     }
 
     private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false,
-                                             aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil) -> AIChatUserScriptHandler {
+                                             aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
+                                             installDateProvider: @escaping () -> Date? = { nil },
+                                             installTypeProvider: @escaping () -> AIChatInstallType = { .new }) -> AIChatUserScriptHandler {
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
         return AIChatUserScriptHandler(
             experimentalAIChatManager: experimentalAIChatManager,
@@ -83,8 +85,44 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             aichatFullModeFeature: mockAIChatFullModeFeature,
             aichatContextualModeFeature: mockAIChatContextualModeFeature,
             aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
-            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            installDateProvider: installDateProvider,
+            installTypeProvider: installTypeProvider
         )
+    }
+
+    func testWhenReturningUserThenInstallTypeIsReturning() {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(installTypeProvider: { .returning })
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.installType, .returning)
+    }
+
+    func testWhenNewUserThenInstallTypeIsNew() {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(installTypeProvider: { .new })
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.installType, .new)
+    }
+
+    func testInstallAgeIsBucketedFromInstallDate() {
+        // Installed 10 days ago -> bucket 2 (8–14).
+        let tenDaysAgo = Calendar.current.date(byAdding: .day, value: -10, to: Date())
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(installDateProvider: { tenDaysAgo })
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.installAge, 2)
+    }
+
+    func testWhenInstallDateIsNilThenInstallAgeIsZero() {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(installDateProvider: { nil })
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.installAge, 0)
     }
 
     func testGetAIChatNativeConfigValues() {
@@ -705,6 +743,26 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNil(response)
         XCTAssertEqual(mockAIChatSyncHandler.setAIChatHistoryEnabledCalls, [true])
+    }
+
+    // MARK: - Push Message: submitChangeModelAction (native → FE active-chat model change)
+
+    func testChangeModelActionPushMessageUsesSubmitChangeModelActionMethodName() {
+        let message = AIChatUserScript.AIChatPushMessage.changeModelAction(modelId: "claude-haiku-4-5")
+        XCTAssertEqual(message.methodName, "submitChangeModelAction")
+    }
+
+    func testChangeModelActionPushMessageEncodesModelIdAsObject() throws {
+        let message = AIChatUserScript.AIChatPushMessage.changeModelAction(modelId: "claude-haiku-4-5")
+
+        let params = try XCTUnwrap(
+            message.params as? AIChatUserScript.AIChatPushMessage.ChangeModelActionParams,
+            "changeModelAction must carry a ChangeModelActionParams object, not a bare string"
+        )
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(params)) as? [String: String]
+        )
+        XCTAssertEqual(json, ["modelId": "claude-haiku-4-5"])
     }
 }
 

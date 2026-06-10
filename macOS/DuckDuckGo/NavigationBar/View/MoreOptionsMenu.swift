@@ -108,6 +108,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     private weak var updateMenuItem: NSMenuItem?
 
+    private var subscriptionAppMenuStatus: SubscriptionAppMenuEntryStatus?
+
     required init(coder: NSCoder) {
         fatalError("MoreOptionsMenu: Bad initializer")
     }
@@ -251,6 +253,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withImage(moreOptionsMenuIconsProvider.emailProtectionIcon)
             .withSubmenu(EmailOptionsButtonSubMenu(tabCollectionViewModel: tabCollectionViewModel,
                                                    emailManager: emailManager,
+                                                   subscriptionManager: subscriptionManager,
                                                    moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider))
 
         addItem(NSMenuItem.separator())
@@ -263,15 +266,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withImage(moreOptionsMenuIconsProvider.helpIcon)
         helpItem.submenu = HelpSubMenu(targetting: self, featureFlagger: featureFlagger)
         addItem(helpItem)
-
-        if StandardApplicationBuildType().isAppStoreBuild && !featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
-            let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
-                                                     action: #selector(checkForUpdates(_:)),
-                                                     keyEquivalent: "")
-                .withImage(DesignSystemImages.Glyphs.Size16.update)
-                .targetting(self)
-            addItem(checkForAppStoreUpdates)
-        }
 
         let preferencesItem = NSMenuItem(title: UserText.settings, action: #selector(openPreferences(_:)), keyEquivalent: "")
             .targetting(self)
@@ -342,11 +336,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         PixelKit.fire(MoreOptionsMenuPixel.fireproofSiteActionClicked, frequency: .daily)
         selectedTabViewModel.tab.requestFireproofToggle()
-    }
-
-    @objc func checkForUpdates(_ sender: NSMenuItem) {
-        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .moreOptionsMenu))
-        NSWorkspace.shared.open(.appStore)
     }
 
     @objc func bookmarkPage(_ sender: NSMenuItem) {
@@ -430,11 +419,17 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @objc func openSubscriptionPurchasePage(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.subscriptionActionClicked, frequency: .daily)
+        if let status = subscriptionAppMenuStatus {
+            PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuSubscriptionClick(status: status))
+        }
         actionDelegate?.optionsButtonMenuRequestedSubscriptionPurchasePage(self)
     }
 
     @objc func openWinBackOfferPurchasePage(_ sender: NSMenuItem) {
         PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuClicked)
+        if let status = subscriptionAppMenuStatus {
+            PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuSubscriptionClick(status: status))
+        }
         actionDelegate?.optionsButtonMenuRequestedWinBackOfferPurchasePage(self)
     }
 
@@ -452,11 +447,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func openFreemiumDBP(_ sender: NSMenuItem) {
-        PixelKit.fire(MoreOptionsMenuPixel.dataBrokerProtectionActionClicked, frequency: .daily)
+        PixelKit.fire(MoreOptionsMenuPixel.dataBrokerProtectionActionClicked, frequency: .dailyAndStandard)
 
         if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResultsCount)
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResults)
         } else {
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanCount)
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScan)
         }
 
@@ -645,6 +642,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         // Check if user is eligible for Win-back Offer
         if winBackOfferVisibilityManager.isOfferAvailable {
             addItem(makeWinBackOfferMenuItem())
+            subscriptionAppMenuStatus = .churned
+            PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuShown)
+            if let status = subscriptionAppMenuStatus {
+                PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuImpression(status: status))
+            }
             return
         }
 
@@ -663,14 +665,19 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                     image: moreOptionsMenuIconsProvider.subscriptionIcon,
                     menu: self
                 )
+                subscriptionAppMenuStatus = .freeEligible
             } else {
                 subscriptionItem.target = self
                 subscriptionItem.action = #selector(openSubscriptionPurchasePage(_:))
+                subscriptionAppMenuStatus = .freeIneligible
             }
 
             // Do not add for App Store when purchase not available in the region
             if !shouldHideDueToNoProduct() {
                 addItem(subscriptionItem)
+                if let status = subscriptionAppMenuStatus {
+                    PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuImpression(status: status))
+                }
             }
         } else {
             let subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
@@ -689,8 +696,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     private func makeWinBackOfferMenuItem() -> NSMenuItem {
-        PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuShown)
-
         return NSMenuItem.createMenuItemWithBadge(
             title: UserText.subscriptionOptionsMenuItem,
             badgeText: UserText.winBackCampaignMenuBadgeText,
@@ -802,13 +807,16 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let emailManager: EmailManager
+    private let subscriptionManager: any SubscriptionManager
     private var emailProtectionDidChangeCancellable: AnyCancellable?
 
     init(tabCollectionViewModel: TabCollectionViewModel,
          emailManager: EmailManager,
+         subscriptionManager: any SubscriptionManager,
          moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.emailManager = emailManager
+        self.subscriptionManager = subscriptionManager
         super.init(title: UserText.emailOptionsMenuItem)
 
         updateMenuItems(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
@@ -853,7 +861,11 @@ final class EmailOptionsButtonSubMenu: NSMenu {
     }
 
     override func performActionForItem(at index: Int) {
-        PixelKit.fire(MoreOptionsMenuPixel.emailProtectionActionClicked, frequency: .daily)
+        PixelKit.fire(
+            MoreOptionsMenuPixel.emailProtectionActionClicked,
+            frequency: .dailyAndStandard,
+            withAdditionalParameters: ["subscribed": String(subscriptionManager.isUserAuthenticated)]
+        )
         super.performActionForItem(at: index)
     }
 

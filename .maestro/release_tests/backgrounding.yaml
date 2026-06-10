@@ -56,7 +56,8 @@ tags:
 - tapOn: "DuckDuckGo"
 
 # Check menus
-- tapOn: "Cancel"
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 - tapOn: "Browsing menu"
 - tapOn: "Settings"
 - assertVisible:

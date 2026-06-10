@@ -37,7 +37,6 @@ import FoundationExtensions
 /// - **AI Chat Integration**: Query the state of AI features from native settings
 /// - **Thread Safety**: All storage operations are serialized through a dedicated queue
 /// - **Error Reporting**: Failures are reported through EventMapping for analytics
-/// - **Feature Flagging**: Settings sync can be controlled via feature flags
 ///
 /// ## Implementation Notes
 ///
@@ -56,14 +55,6 @@ public protocol SERPSettingsProviding {
     ///
     /// - Returns: An array of hostname matching rules, typically including duckduckgo.com
     func buildMessageOriginRules() -> [HostnameMatchingRule]
-
-    /// Determines if SERP settings synchronization is enabled.
-    ///
-    /// This allows runtime control over the feature, typically through a feature flag
-    /// or privacy configuration setting.
-    ///
-    /// - Returns: `true` if settings should be synchronized, `false` otherwise
-    func isSERPSettingsFeatureOn() -> Bool
 
     /// Retrieves stored SERP settings.
     ///

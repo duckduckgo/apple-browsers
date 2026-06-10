@@ -189,9 +189,10 @@ final class AIChatHistoryViewModel: ObservableObject {
     @discardableResult
     func togglePin(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
         guard let pinner, let move = applyOptimisticPinToggle(chatId: chatId) else { return nil }
+        let newPinned = move.destination.section == Section.pinned.rawValue
         mutationQueue.async {
             do {
-                try pinner.togglePin(chatId: chatId)
+                try pinner.setPinned(chatId: chatId, pinned: newPinned)
             } catch {
                 Logger.aiChat.debug("Pin toggle failed: \(error.localizedDescription)")
             }

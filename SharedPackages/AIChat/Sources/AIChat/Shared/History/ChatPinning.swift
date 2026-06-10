@@ -19,8 +19,8 @@
 import Foundation
 
 public protocol ChatPinning {
-    /// Reads the chat's stored JSON blob, flips its `pinned` boolean, and writes it back.
-    func togglePin(chatId: String) throws
+    /// Writes the supplied `pinned` value into the chat's stored JSON blob.
+    func setPinned(chatId: String, pinned: Bool) throws
 }
 
 public enum ChatPinningError: Error, Equatable {
@@ -36,22 +36,15 @@ public struct ChatPinner: ChatPinning {
         self.storageHandler = storageHandler
     }
 
-    public func togglePin(chatId: String) throws {
+    public func setPinned(chatId: String, pinned: Bool) throws {
         guard let record = try storageHandler.getChat(chatId: chatId) else {
             throw ChatPinningError.chatNotFound
         }
-        let mutated = try Self.flipPinnedField(in: record.data)
-        try storageHandler.putChat(chatId: chatId, data: mutated)
-    }
-
-    /// Flips the top-level `pinned` boolean while preserving every other field in the blob.
-    /// Missing `pinned` key is treated as `false`.
-    static func flipPinnedField(in data: Data) throws -> Data {
-        guard var json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+        guard var json = try JSONSerialization.jsonObject(with: record.data, options: []) as? [String: Any] else {
             throw ChatPinningError.invalidChatBlob
         }
-        let current = json["pinned"] as? Bool ?? false
-        json["pinned"] = !current
-        return try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
+        json["pinned"] = pinned
+        let mutated = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
+        try storageHandler.putChat(chatId: chatId, data: mutated)
     }
 }

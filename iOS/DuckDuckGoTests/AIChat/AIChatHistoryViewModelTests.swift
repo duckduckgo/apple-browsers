@@ -225,7 +225,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(sut.pinned.map(\.chatId), ["r1"])
         XCTAssertEqual(sut.recent.map(\.chatId), ["r2"])
         processMainQueue()
-        XCTAssertEqual(pinner.requestedChatIds, ["r1"])
+        XCTAssertEqual(pinner.calls.map(\.chatId), ["r1"])
+        XCTAssertEqual(pinner.calls.map(\.pinned), [true])
     }
 
     func testTogglePin_unpinningPinnedChat_movesItToRecentSection() {
@@ -241,6 +242,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(move?.destination.section, AIChatHistoryViewModel.Section.recent.rawValue)
         XCTAssertEqual(sut.pinned, [])
         XCTAssertEqual(sut.recent.map(\.chatId).sorted(), ["p1", "r1"])
+        processMainQueue()
+        XCTAssertEqual(pinner.calls.map(\.pinned), [false])
     }
 
     func testTogglePin_insertsAtCorrectPositionByLastEditDescending() {
@@ -439,10 +442,11 @@ final class AIChatHistoryViewModelTests: XCTestCase {
     private final class StubPinner: ChatPinning {
         enum StubError: Error { case someError }
         var throwsError: StubError?
-        private(set) var requestedChatIds: [String] = []
+        private(set) var calls: [(chatId: String, pinned: Bool)] = []
+        var requestedChatIds: [String] { calls.map(\.chatId) }
 
-        func togglePin(chatId: String) throws {
-            requestedChatIds.append(chatId)
+        func setPinned(chatId: String, pinned: Bool) throws {
+            calls.append((chatId, pinned))
             if let throwsError { throw throwsError }
         }
     }

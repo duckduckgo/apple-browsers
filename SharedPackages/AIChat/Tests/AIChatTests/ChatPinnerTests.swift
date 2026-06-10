@@ -21,58 +21,48 @@ import XCTest
 
 final class ChatPinnerTests: XCTestCase {
 
-    func testToggle_flipsFalseToTrue_andPersistsViaPutChat() throws {
-        let storage = DuckAiNativeMemoryStorageHandler()
-        let original = Self.chatJSON(chatId: "c1", pinned: false)
-        try storage.putChat(chatId: "c1", data: original)
-        let pinner = ChatPinner(storageHandler: storage)
-
-        try pinner.togglePin(chatId: "c1")
-
-        let after = try XCTUnwrap(storage.getChat(chatId: "c1"))
-        let dict = try XCTUnwrap(JSONSerialization.jsonObject(with: after.data) as? [String: Any])
-        XCTAssertEqual(dict["pinned"] as? Bool, true)
-    }
-
-    func testToggle_flipsTrueToFalse() throws {
-        let storage = DuckAiNativeMemoryStorageHandler()
-        try storage.putChat(chatId: "c1", data: Self.chatJSON(chatId: "c1", pinned: true))
-        let pinner = ChatPinner(storageHandler: storage)
-
-        try pinner.togglePin(chatId: "c1")
-
-        let after = try XCTUnwrap(storage.getChat(chatId: "c1"))
-        let dict = try XCTUnwrap(JSONSerialization.jsonObject(with: after.data) as? [String: Any])
-        XCTAssertEqual(dict["pinned"] as? Bool, false)
-    }
-
-    func testToggle_twiceReturnsToOriginalState() throws {
+    func testSetPinnedTrue_persistsPinnedTrue() throws {
         let storage = DuckAiNativeMemoryStorageHandler()
         try storage.putChat(chatId: "c1", data: Self.chatJSON(chatId: "c1", pinned: false))
         let pinner = ChatPinner(storageHandler: storage)
 
-        try pinner.togglePin(chatId: "c1")
-        try pinner.togglePin(chatId: "c1")
+        try pinner.setPinned(chatId: "c1", pinned: true)
 
-        let after = try XCTUnwrap(storage.getChat(chatId: "c1"))
-        let dict = try XCTUnwrap(JSONSerialization.jsonObject(with: after.data) as? [String: Any])
-        XCTAssertEqual(dict["pinned"] as? Bool, false)
+        XCTAssertEqual(try Self.readPinned(from: storage, chatId: "c1"), true)
     }
 
-    func testToggle_treatsMissingPinnedKeyAsFalse_andFlipsToTrue() throws {
+    func testSetPinnedFalse_persistsPinnedFalse() throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putChat(chatId: "c1", data: Self.chatJSON(chatId: "c1", pinned: true))
+        let pinner = ChatPinner(storageHandler: storage)
+
+        try pinner.setPinned(chatId: "c1", pinned: false)
+
+        XCTAssertEqual(try Self.readPinned(from: storage, chatId: "c1"), false)
+    }
+
+    func testSetPinned_isIdempotentWhenValueAlreadyMatches() throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putChat(chatId: "c1", data: Self.chatJSON(chatId: "c1", pinned: true))
+        let pinner = ChatPinner(storageHandler: storage)
+
+        try pinner.setPinned(chatId: "c1", pinned: true)
+
+        XCTAssertEqual(try Self.readPinned(from: storage, chatId: "c1"), true)
+    }
+
+    func testSetPinned_addsPinnedKey_whenBlobIsMissingIt() throws {
         let storage = DuckAiNativeMemoryStorageHandler()
         let json = #"{"chatId":"c1","title":"x","model":"gpt-4o-mini","lastEdit":"2026-05-01T00:00:00.000Z"}"#
         try storage.putChat(chatId: "c1", data: Data(json.utf8))
         let pinner = ChatPinner(storageHandler: storage)
 
-        try pinner.togglePin(chatId: "c1")
+        try pinner.setPinned(chatId: "c1", pinned: true)
 
-        let after = try XCTUnwrap(storage.getChat(chatId: "c1"))
-        let dict = try XCTUnwrap(JSONSerialization.jsonObject(with: after.data) as? [String: Any])
-        XCTAssertEqual(dict["pinned"] as? Bool, true)
+        XCTAssertEqual(try Self.readPinned(from: storage, chatId: "c1"), true)
     }
 
-    func testToggle_preservesAllOtherBlobFields() throws {
+    func testSetPinned_preservesAllOtherBlobFields() throws {
         let storage = DuckAiNativeMemoryStorageHandler()
         let json = #"""
         {
@@ -93,14 +83,15 @@ final class ChatPinnerTests: XCTestCase {
         try storage.putChat(chatId: "c1", data: Data(json.utf8))
         let pinner = ChatPinner(storageHandler: storage)
 
-        try pinner.togglePin(chatId: "c1")
+        try pinner.setPinned(chatId: "c1", pinned: true)
 
         let after = try XCTUnwrap(storage.getChat(chatId: "c1"))
         let dict = try XCTUnwrap(JSONSerialization.jsonObject(with: after.data) as? [String: Any])
-        XCTAssertEqual(dict["pinned"] as? Bool, true, "pin flipped")
+        XCTAssertEqual(dict["pinned"] as? Bool, true)
         XCTAssertEqual(dict["title"] as? String, "Hello")
         XCTAssertEqual(dict["model"] as? String, "gpt-4o-mini")
-        XCTAssertEqual(dict["lastEdit"] as? String, "2026-05-01T00:00:00.000Z")
+        XCTAssertEqual(dict["lastEdit"] as? String, "2026-05-01T00:00:00.000Z",
+                       "lastEdit is not bumped on pin (matches Android)")
         XCTAssertEqual(dict["reasoningMode"] as? String, "off")
         XCTAssertEqual(dict["fileRefs"] as? [String], ["11111111-2222-3333-4444-555555555555"])
         let extras = try XCTUnwrap(dict["extras"] as? [String: Any])
@@ -112,21 +103,21 @@ final class ChatPinnerTests: XCTestCase {
         XCTAssertEqual(assistantParts.first?["name"] as? String, "generate-image")
     }
 
-    func testToggle_throwsChatNotFound_whenChatIdIsAbsent() {
+    func testSetPinned_throwsChatNotFound_whenChatIdIsAbsent() {
         let storage = DuckAiNativeMemoryStorageHandler()
         let pinner = ChatPinner(storageHandler: storage)
 
-        XCTAssertThrowsError(try pinner.togglePin(chatId: "missing")) { error in
+        XCTAssertThrowsError(try pinner.setPinned(chatId: "missing", pinned: true)) { error in
             XCTAssertEqual(error as? ChatPinningError, .chatNotFound)
         }
     }
 
-    func testToggle_throwsInvalidChatBlob_whenStoredDataIsNotJSONObject() throws {
+    func testSetPinned_throwsInvalidChatBlob_whenStoredDataIsNotJSONObject() throws {
         let storage = DuckAiNativeMemoryStorageHandler()
         try storage.putChat(chatId: "c1", data: Data("not even json".utf8))
         let pinner = ChatPinner(storageHandler: storage)
 
-        XCTAssertThrowsError(try pinner.togglePin(chatId: "c1")) { error in
+        XCTAssertThrowsError(try pinner.setPinned(chatId: "c1", pinned: true)) { error in
             XCTAssertEqual(error as? ChatPinningError, .invalidChatBlob)
         }
     }
@@ -138,5 +129,11 @@ final class ChatPinnerTests: XCTestCase {
         {"chatId":"\(chatId)","title":"x","model":"gpt-4o-mini","lastEdit":"2026-05-01T00:00:00.000Z","pinned":\(pinned)}
         """
         return Data(json.utf8)
+    }
+
+    private static func readPinned(from storage: DuckAiNativeMemoryStorageHandler, chatId: String) throws -> Bool? {
+        let record = try XCTUnwrap(storage.getChat(chatId: chatId))
+        let dict = try XCTUnwrap(JSONSerialization.jsonObject(with: record.data) as? [String: Any])
+        return dict["pinned"] as? Bool
     }
 }

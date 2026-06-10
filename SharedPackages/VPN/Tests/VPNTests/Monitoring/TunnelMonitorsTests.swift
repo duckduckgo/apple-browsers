@@ -283,6 +283,29 @@ final class TunnelMonitorsTests: XCTestCase {
         XCTAssertEqual(failureRecoveryHandler.stopCount, 1)
     }
 
+    func testStop_excludingFailureRecovery_stopsOtherMonitorsButLeavesRecoveryRunning() async {
+        await monitors.stop(includingFailureRecovery: false)
+
+        let failureStop = await tunnelFailureMonitor.stopCount
+        let latencyStop = await latencyMonitor.stopCount
+        let entitlementStop = await entitlementMonitor.stopCount
+        let serverStatusStop = await serverStatusMonitor.stopCount
+        let keyExpStop = await keyExpirationTester.stopCount
+        let connectionStop = connectionTester.stopCount
+
+        XCTAssertEqual(failureStop, 1)
+        XCTAssertEqual(latencyStop, 1)
+        XCTAssertEqual(entitlementStop, 1)
+        XCTAssertEqual(serverStatusStop, 1)
+        XCTAssertEqual(keyExpStop, 1)
+        XCTAssertEqual(connectionStop, 1)
+
+        // A reasserting config update is driven *by* failure recovery, so the
+        // reconfiguration stop must leave the in-flight recovery task alone;
+        // cancelling it here would truncate the recovery's retry loop.
+        XCTAssertEqual(failureRecoveryHandler.stopCount, 0)
+    }
+
     // MARK: - Tunnel-failure callback
 
     func testTunnelFailureCallback_firesReportTunnelFailureEvent() async throws {

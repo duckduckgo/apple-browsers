@@ -1102,7 +1102,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 }
             },
             stopMonitors: { [weak self] in
-                await self?.stopMonitors()
+                await self?.stopMonitorsForReconfiguration()
             },
             updateAdapterConfiguration: { [weak self] tunnelConfiguration in
                 guard let self else { throw CancellationError() }
@@ -1463,6 +1463,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     public func stopMonitors() async {
         await tunnelMonitors.stop()
+    }
+
+    /// Stops the monitors during a reasserting config update without cancelling
+    /// an in-flight failure recovery, which is what drives the update. A full
+    /// `stopMonitors()` here would cancel the recovery task mid-apply.
+    @MainActor
+    private func stopMonitorsForReconfiguration() async {
+        await tunnelMonitors.stop(includingFailureRecovery: false)
     }
 
     // MARK: - Connection Tester

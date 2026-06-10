@@ -28,7 +28,7 @@ import os.log
 @MainActor
 protocol TunnelMonitoring: AnyObject {
     func start(testImmediately: Bool) async throws
-    func stop() async
+    func stop(includingFailureRecovery: Bool) async
 }
 
 @MainActor
@@ -111,11 +111,16 @@ final class TunnelMonitors: TunnelMonitoring {
         }
     }
 
-    func stop() async {
+    /// Stops the monitors. Pass `includingFailureRecovery: false` for a transient
+    /// reconfiguration (a reasserting config update): recovery is what *drives*
+    /// those updates, so cancelling it mid-apply would truncate its retry loop.
+    func stop(includingFailureRecovery: Bool = true) async {
         connectionTester.stop()
         await keyExpirationTester.stop()
         await tunnelFailureMonitor.stop()
-        await failureRecoveryHandler.stop()
+        if includingFailureRecovery {
+            await failureRecoveryHandler.stop()
+        }
         await latencyMonitor.stop()
         await entitlementMonitor.stop()
         await serverStatusMonitor.stop()

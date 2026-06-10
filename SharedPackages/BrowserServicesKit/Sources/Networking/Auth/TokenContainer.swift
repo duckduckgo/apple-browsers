@@ -19,6 +19,7 @@
 import Foundation
 import JWTKit
 import Common
+import FoundationExtensions
 
 /// Container for both access and refresh tokens
 ///

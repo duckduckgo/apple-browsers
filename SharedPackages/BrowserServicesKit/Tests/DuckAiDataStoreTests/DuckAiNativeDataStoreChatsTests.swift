@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import CryptoKit
 import Foundation
 import XCTest
@@ -25,6 +26,7 @@ final class DuckAiNativeDataStoreChatsTests: XCTestCase {
 
     private var tempDirectory: URL!
     private var sut: DuckAiNativeDataStore!
+    private var cancellables: Set<AnyCancellable> = []
 
     override func setUp() {
         super.setUp()
@@ -36,6 +38,7 @@ final class DuckAiNativeDataStoreChatsTests: XCTestCase {
     }
 
     override func tearDown() {
+        cancellables.removeAll()
         sut = nil
         if let tempDirectory {
             try? FileManager.default.removeItem(at: tempDirectory)
@@ -113,5 +116,53 @@ final class DuckAiNativeDataStoreChatsTests: XCTestCase {
         let record = try sut.getChat(chatId: "chat-missing")
 
         XCTAssertNil(record)
+    }
+
+    // MARK: - Observation
+
+    func testChatsPublisher_emitsCurrentChatsOnSubscribe() throws {
+        try sut.putChat(chatId: "chat-1", data: Data("hello".utf8))
+
+        var received: [DuckAiChatRecord] = []
+        let emitted = expectation(description: "emits current chats on subscribe")
+        sut.chatsPublisher()
+            .sink(
+                receiveCompletion: { _ in },
+                receiveValue: { records in
+                    received = records
+                    emitted.fulfill()
+                }
+            )
+            .store(in: &cancellables)
+
+        wait(for: [emitted], timeout: 2)
+        XCTAssertEqual(received, [DuckAiChatRecord(chatId: "chat-1", data: Data("hello".utf8))])
+    }
+
+    func testChatsPublisher_reEmitsWhenAChatIsAdded() throws {
+        let initial = expectation(description: "initial emission")
+        let afterWrite = expectation(description: "emission after write")
+        var latest: [DuckAiChatRecord] = []
+        var emissionCount = 0
+
+        sut.chatsPublisher()
+            .sink(
+                receiveCompletion: { _ in },
+                receiveValue: { records in
+                    latest = records
+                    emissionCount += 1
+                    if emissionCount == 1 {
+                        initial.fulfill()
+                    } else if records.contains(where: { $0.chatId == "chat-1" }) {
+                        afterWrite.fulfill()
+                    }
+                }
+            )
+            .store(in: &cancellables)
+
+        wait(for: [initial], timeout: 2)
+        try sut.putChat(chatId: "chat-1", data: Data("hello".utf8))
+        wait(for: [afterWrite], timeout: 2)
+        XCTAssertTrue(latest.contains(where: { $0.chatId == "chat-1" }))
     }
 }

@@ -18,7 +18,9 @@
 
 import AppKitExtensions
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import Foundation
 import NewTabPage
 import os.log

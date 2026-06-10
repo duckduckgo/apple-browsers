@@ -23,6 +23,7 @@ import Combine
 import SyncUI_iOS
 import DDGSync
 import Common
+import FoundationExtensions
 import os.log
 import PrivacyConfig
 import AttributedMetric

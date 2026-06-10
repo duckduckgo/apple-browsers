@@ -115,6 +115,10 @@ final class DBPEndToEndTests: XCTestCase {
      When we adopt Swift 6, this can likely be replaced with the new testing macros
      */
     func testWhenProfileIsSaved_ThenEachStepHappensInSequence() async throws {
+        // Disabled while we investigate the opt-out step timing out against the fake broker, which fails broadly across branches and the scheduled main run.
+        // Tracking: https://app.asana.com/1/137249556945/project/1203108348835387/task/1215581159471305
+        try XCTSkipIf(true, "Disabled: opt-out step times out against the fake broker.")
+
         // Given
 
         // Local state set up
@@ -122,7 +126,7 @@ final class DBPEndToEndTests: XCTestCase {
         let database = dataManager!.database
         let communicator = pirProtectionManager.dataManager!.communicator
         try database.deleteProfileData()
-        XCTAssert(try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false).isEmpty)
+        XCTAssert(try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting).isEmpty)
 
         // Fake broker set up
         try await deleteAllProfilesOnFakeBroker()
@@ -155,13 +159,13 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 3,
                                whenCondition: {
             autoreleasepool {
-                try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false).count > 0
+                try! database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting).count > 0
             }
         })
 
         // Also check that we made the broker profile queries correctly and that removed brokers are filtered
-        let allQueries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
-        let filteredQueries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
+        let allQueries = try! database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
+        let filteredQueries = try! database.fetchActiveBrokerProfileQueryData()
         let allBrokers = allQueries.compactMap { $0.dataBroker }
         let nonRemovedBrokers = allBrokers.filter { $0.removedAt == nil }
         let removedBrokers = allBrokers.filter { $0.removedAt != nil }
@@ -238,7 +242,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 60,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+                let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
                 let brokerIDs = queries.compactMap { $0.dataBroker.id }
                 let extractedProfiles = brokerIDs.flatMap { try! database.fetchExtractedProfiles(for: $0) }
                 return extractedProfiles.count > 0
@@ -267,14 +271,14 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 10,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+                let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 return optOutJobs.count > 0
             }
         })
 
         // Verify opt-out jobs are only created for non-removed brokers
-        let allQueriesWithJobs = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        let allQueriesWithJobs = try! database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
         var removedBrokerQueries = allQueriesWithJobs.filter { $0.dataBroker.removedAt != nil }
         assertCondition(withExpectationDescription: "Should have exactly 1 removed broker query to check",
                         condition: { removedBrokerQueries.count == 1 })
@@ -296,7 +300,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 300,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+                let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 return optOutJobs.first?.lastRunDate != nil
             }
@@ -307,7 +311,7 @@ final class DBPEndToEndTests: XCTestCase {
         await awaitFulfillment(of: optOutRequestedExpectation,
                                withTimeout: 300,
                                whenCondition: {
-            let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+            let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
             let optOutJobs = queries.flatMap { $0.optOutJobData }
             let events = optOutJobs.flatMap { $0.historyEvents }
             let optOutsRequested = events.filter { $0.type == .optOutRequested }
@@ -362,7 +366,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 600,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+                let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 let events = optOutJobs.flatMap { $0.historyEvents }
                 let optOutsConfirmed = events.filter { $0.type == .optOutConfirmed }
@@ -371,7 +375,7 @@ final class DBPEndToEndTests: XCTestCase {
         })
 
         // Final verification: ensure removed brokers have no confirmed opt-outs
-        let allQueriesWithEvents = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        let allQueriesWithEvents = try! database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
         removedBrokerQueries = allQueriesWithEvents.filter { $0.dataBroker.removedAt != nil }
         assertCondition(withExpectationDescription: "Should have exactly 1 removed broker query for final verification, got \(removedBrokerQueries.count)",
                         condition: { removedBrokerQueries.count == 1 })

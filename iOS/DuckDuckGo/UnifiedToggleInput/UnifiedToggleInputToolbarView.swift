@@ -48,6 +48,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onSubmitTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
+    var onReturnKeyTapped: (() -> Void)?
 
     // MARK: - State
 
@@ -57,6 +58,10 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     var isSubmitEnabled: Bool = false {
         didSet { updateSubmitButtonState() }
+    }
+
+    var isSubmitBlockedByRecoveryCard: Bool = false {
+        didSet { updateSubmitButtonAppearance() }
     }
 
     var usesNewPromptSubmitStyle: Bool = false {
@@ -115,6 +120,18 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    /// Programmatically opens the model chip's pull-down menu. Returns `true` when the OS
+    /// exposes an API to trigger it (iOS 17.4+, where `performPrimaryAction()` lands), `false`
+    /// otherwise.
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        if #available(iOS 17.4, *) {
+            modelChipButton.performPrimaryAction()
+            return true
+        }
+        return false
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { reasoningButton.menu }
         set {
@@ -168,6 +185,11 @@ final class UnifiedToggleInputToolbarView: UIView {
             isImageButtonAvailable = newValue
             updateToolbarControlsEnabledState()
         }
+    }
+
+    var isReturnKeyHidden: Bool {
+        get { returnKeyButton.isHidden }
+        set { returnKeyButton.isHidden = newValue }
     }
 
     private var modelChipExplicitlyHidden = false
@@ -290,6 +312,28 @@ final class UnifiedToggleInputToolbarView: UIView {
         return view
     }()
 
+    private lazy var returnKeyButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
+        button.setImage(DesignSystemImages.Glyphs.Size24.enter, for: .normal)
+        button.applyReturnKeyStyle()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isHidden = true
+        // Priorities collapse(required) > width > hugging so the button is 40pt when shown yet
+        // collapses to zero when hidden, instead of keeping a frame that overlaps submit.
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        button.accessibilityLabel = UserText.aiChatToolbarReturnKeyButtonAccessibilityLabel
+        button.addTarget(self, action: #selector(returnKeyTapped), for: .touchUpInside)
+        let width = button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize)
+        width.priority = .required - 1
+        NSLayoutConstraint.activate([
+            width,
+            button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+        ])
+        return button
+    }()
+
     private lazy var submitButton: CircularButton = {
         let button = CircularButton()
         button.isShadowHidden = true
@@ -355,7 +399,7 @@ private extension UnifiedToggleInputToolbarView {
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, submitButton, stopButton])
+        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, returnKeyButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -447,7 +491,8 @@ private extension UnifiedToggleInputToolbarView {
             }
         }()
         submitButton.setImage(icon, for: .normal)
-        let isActive = isSubmitEnabled || showVoice
+        let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
+        let isActive = submitAllowed || showVoice
         submitButton.isEnabled = isActive
         if showVoice {
             submitButton.applyAIVoiceChatStyle()
@@ -478,6 +523,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }
+    @objc private func returnKeyTapped() { onReturnKeyTapped?() }
     @objc private func submitTapped() {
         if isAIVoiceChatActive && !isSubmitEnabled {
             onVoiceTapped?()

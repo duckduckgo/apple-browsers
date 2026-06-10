@@ -28,12 +28,7 @@ final class WKWebsiteDataStoreExtensionTests: XCTestCase {
         let removableTypes = WKWebsiteDataStore.safelyRemovableWebsiteDataTypes
 
         XCTAssertFalse(removableTypes.contains(WKWebsiteDataTypeLocalStorage))
-
-        if #available(macOS 12.2, *) {
-            XCTAssertFalse(removableTypes.contains(WKWebsiteDataTypeIndexedDBDatabases))
-        } else {
-            XCTAssertTrue(removableTypes.contains(WKWebsiteDataTypeIndexedDBDatabases))
-        }
+        XCTAssertFalse(removableTypes.contains(WKWebsiteDataTypeIndexedDBDatabases))
     }
 
     func testWhenGettingAllWebsiteDataTypesExceptCookies_ThenLocalStorageAndIndexedDBAreIncluded() {

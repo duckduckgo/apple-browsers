@@ -153,25 +153,6 @@ extension NSAlert {
         return alert
     }
 
-    static func osNotSupported(_ supportWarning: OSSupportWarning) -> NSAlert {
-        let alert = NSAlert()
-
-        switch supportWarning {
-        case .unsupported(let minVersion):
-            alert.messageText = UserText.aboutUnsupportedDeviceInfo1
-            alert.informativeText = UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
-        case .willDropSupportSoon(let upcomingMinVersion):
-            alert.messageText = UserText.aboutWillSoonBeUnsupportedDeviceInfo1
-            alert.informativeText = UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
-        }
-
-        alert.alertStyle = .warning
-
-        alert.addButton(withTitle: UserText.checkForUpdate)
-        alert.addButton(withTitle: UserText.ok)
-        return alert
-    }
-
     static func syncPaused(title: String, informative: String) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = title

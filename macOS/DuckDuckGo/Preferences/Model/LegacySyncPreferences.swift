@@ -20,7 +20,9 @@ import AppKit
 import Foundation
 import DDGSync
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI

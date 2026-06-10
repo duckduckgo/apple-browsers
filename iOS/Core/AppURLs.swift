@@ -30,6 +30,7 @@ public extension URL {
 
     static let ddg = URL(string: URL.base)!
     static let duckAi = URL(string: URL.duckAiBase)!
+    static let duckAiSettings = URL(string: "\(URL.duckAiBase)/?settings=open")!
 
     static let autocomplete = URL(string: "\(base)/ac/")!
     static let emailProtection = URL(string: "\(base)/email")!
@@ -44,7 +45,7 @@ public extension URL {
     static let settingsPath = "/settings"
     static let embeddedGeneralSERPSettings = URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1#general")!
     static let embeddedSearchAssistSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&hideduckai=1&highlight=kbe#aifeatures")!
-    static let embeddedHideAIGeneratedImagesSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&hideduckai=1&highlight=kbe#aifeatures")!
+    static let embeddedHideAIGeneratedImagesSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&hideduckai=1&highlight=kbj#aifeatures")!
 
     static let searchSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)"))!
     static let assistSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)#aifeatures"))!

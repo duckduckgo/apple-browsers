@@ -19,6 +19,7 @@
 
 import UIKit
 import Common
+import FoundationExtensions
 import DesignResourcesKit
 
 final class NetworkProtectionLogViewerViewController: UITableViewController {

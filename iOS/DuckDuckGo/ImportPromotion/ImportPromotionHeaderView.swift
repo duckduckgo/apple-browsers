@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import Lottie
+import MetricBuilder
 
 struct ImportPromotionHeaderView: View {
     var primaryButtonAction: (() -> Void)?
@@ -86,7 +87,7 @@ struct ImportPromotionHeaderView: View {
                 dimension[.top]
             }
         }
-        .background(RoundedRectangle(cornerRadius: 8.0)
+        .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
             .foregroundColor(Color(designSystemColor: .surface))
         )
         .onAppear {
@@ -100,14 +101,22 @@ struct ImportPromotionHeaderView: View {
         @Binding var isAnimating: Bool
         
         var body: some View {
-            LottieView(
-                lottieFile: "password-keys",
-                loopMode: .mode(.repeat(2.0)),
-                isAnimating: $isAnimating
-            )
-            .frame(width: 128, height: 96)
-            .aspectRatio(contentMode: .fit)
-            .padding(.top, 8)
+            if AppRebrand.isAppRebranded() {
+                Image(.passwordsKeychain128)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 128, height: 96)
+                    .padding(.top, 8)
+            } else {
+                LottieView(
+                    lottieFile: "password-keys",
+                    loopMode: .mode(.repeat(2.0)),
+                    isAnimating: $isAnimating
+                )
+                .frame(width: 128, height: 96)
+                .aspectRatio(contentMode: .fit)
+                .padding(.top, 8)
+            }
         }
     }
 }

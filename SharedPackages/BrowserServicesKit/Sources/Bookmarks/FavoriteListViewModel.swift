@@ -21,6 +21,7 @@ import Combine
 import CoreData
 import Persistence
 import Common
+import FoundationExtensions
 
 public class FavoritesListViewModel: FavoritesListInteracting, ObservableObject {
 

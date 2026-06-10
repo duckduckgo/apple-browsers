@@ -25,6 +25,15 @@
 /* No comment provided by engineer. */
 "%@s" = "%@s";
 
+/* Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\". */
+"accessibility.label.aiChat.openDuckAI" = "Avaa Duck.ai";
+
+/* Accessibility value when the Duck.ai contextual sheet is closed. */
+"accessibility.value.aiChat.contextualSheet.closed" = "Suljettu";
+
+/* Accessibility value when the Duck.ai contextual sheet is open. */
+"accessibility.value.aiChat.contextualSheet.open" = "Auki";
+
 /* No comment provided by engineer. */
 "Account" = "tiliäsi";
 
@@ -55,14 +64,32 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Lisää";
 
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
+"action.title.aiChat.hideContextualSheetButton" = "Piilota alapaneelin pikavalinta";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the Duck.ai (open) button half. */
+"action.title.aiChat.hideDuckAIButton" = "Piilota Duck.ai-pikavalinta";
+
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.ai-keskustelut";
 
 /* Start new AI Chat action in the menu list */
 "action.title.aiChat.new" = "Uusi keskustelu";
 
+/* Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. */
+"action.title.aiChat.openSettings" = "Avaa tekoälyasetukset";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai-asetukset";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the bottom-sheet button half. */
+"action.title.aiChat.showContextualSheetButton" = "Näytä alapaneelin pikavalinta";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
+"action.title.aiChat.showDuckAIButton" = "Näytä Duck.ai-pikavalinta";
+
+/* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
+"action.title.aiChat.toggleContextualSheet" = "Vaihda Duck.ai-paneeli";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Salasanat";
@@ -123,6 +150,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Avaa Fire-välilehdessä";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Uusi välilehti";
 
@@ -219,10 +247,77 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Tekoälyominaisuudet";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Keskustelut";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Ota kuva";
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Keskusteluhistoria";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Keskusteluasetukset";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Voit liittää vain %d tiedostoa keskustelua kohden.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Emme voi lukea liitettyjä tiedostoja, koska ainakin yksi niistä on salattu.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Liitetyt tiedostot ylittävät %d Mt:n kokonaisrajan.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Tämä tiedosto on liian suuri. Tiedoston suurin sallittu koko on %d Mt.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Yhdessä liitetiedostossa on enemmän sivuja kuin järjestelmämme tukee. Lataa tiedostoja, joissa on enintään %d sivua.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Emme voi lukea yhtä liitetyistä tiedostoista. Tarkista, ettei se ole vioittunut, ja yritä uudelleen.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Voit liittää vain %d kuvaa keskustelua kohden.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Voit liittää vain %d kuvaa kerrallaan.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Lisää tiedosto";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Lisää kuva";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Ota valokuva";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Viesti on liian pitkä lähetettäväksi liitteiden kanssa.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Liitteet eivät ole tilapäisesti käytettävissä. Yritä myöhemmin uudelleen.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Tätä tiedostotyyppiä ei tueta.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Tätä tiedostotyyppiä ei tueta, liitä %1$@ tai %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Tätä tiedostotyyppiä ei tueta, liitä %@.";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Uusi";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Uusi Fire-välilehti";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Uusi haku";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Uusi välilehti";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Uusi äänikeskustelu";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analyyttisiä tehtäviä varten";
@@ -241,6 +336,27 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Perustelut";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Etsi QR-koodi toisen laitteen DuckDuckGo-sovelluksesta valitsemalla **Asetukset** › **Synkronointi ja varmuuskopiointi** › **Synkronoi toisen laitteen kanssa**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Ei nyt";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Skannaa QR-koodi";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Synkronoidaanpa keskustelusi laitteidesi välillä!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Synkronoi toisen laitteen kanssa";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Hylkää synkronointitarjous";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Pääset käsiksi keskusteluihisi kaikilla laitteillasi Synkronointi ja varmuuskopiointi -toiminnon avulla.";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Mukauta vastauksia";
@@ -1532,9 +1648,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Virheenkorjaus";
 
-/* No comment provided by engineer. */
-"Delete" = "Poista";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "laitteelle";
 
@@ -1646,17 +1759,26 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Liitä sivun sisältö";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Kysy sivusta";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Liitä sivun sisältö";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Yhteenveto tästä sivusta";
 
 /* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
 "duckai.quick.action.summarize.page" = "Yhteenveto sivusta";
+
+/* Destructive button confirming deletion of a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.button" = "Poista";
+
+/* Message of the confirmation alert shown before deleting a recent Duck.ai chat. %@ is the chat title. */
+"duckai.recent.chat.remove.confirmation.message" = "\"%@\" poistetaan pysyvästi kaikkialta.";
+
+/* Title of the confirmation alert shown before deleting a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.title" = "Poistetaanko tämä keskustelu?";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Lisää Duck.ai valvontakeskukseen";
@@ -1685,8 +1807,14 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Selainvalikko";
 
+/* Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings */
+"duckai.settings.enable.tab-bar-subtitle" = "Näytä selaimen välilehtipalkissa tai osoiterivillä ikkunan koosta riippuen.";
+
+/* Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar) */
+"duckai.settings.enable.tab-bar-toggle" = "Välilehtipalkki";
+
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Välilehdet-näyttö";
+"duckai.settings.enable.tab-switcher-toggle" = "Välilehtien hallinnointinäyttö";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Äänihaku";
@@ -1715,11 +1843,8 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Keskustele Duck.ai:n kanssa Sirin avulla!";
 
-/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Kaikki keskustelut ovat %@ yksityisiä";
-
-/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "yksityisiä";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS:lle";
@@ -1756,6 +1881,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Ei koskaan";
+
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Avaa YouTube-sovelluksessa";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -1962,6 +2090,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Anna ei-negatiivinen päivien määrä. Asennuspäivämääräksi asetetaan niin monta päivää sitten.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -2003,11 +2134,11 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Viimeksi käytetty Fire-välilehti";
 
-/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
-"escapeHatch.menu.burnTab" = "Polta välilehti";
-
 /* Menu item that closes the open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeTab" = "Sulje välilehti";
+
+/* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.deleteTab" = "Poista välilehti";
 
 /* Menu item that returns the user to the open tab from the escape hatch card */
 "escapeHatch.menu.returnToTab" = "Palaa välilehteen";
@@ -2368,6 +2499,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-välilehti";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ilmavirta";
 
@@ -2415,6 +2547,18 @@
 
 /* Home tab title */
 "homeTab.title" = "Koti";
+
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Useita tapahtumia ei tueta. Kokeile sen sijaan avata ladattu tiedosto.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Tätä tiedostoa ei voida käsitellä. Kokeile sen sijaan avata ladattu tiedosto.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Aikavyöhykettä ei tueta. Kokeile sen sijaan avata ladattu tiedosto.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Tapahtuma lisätty Apple-kalenteriin";
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Tunnus: %1$@ | %2$@ | %3$@";
@@ -2959,6 +3103,51 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Valitse selaimesi";
 
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Olen helposti käytettävissä kaikkia päivittäisiä tekoälykeskustelujasi ja selailuasi varten.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Kaikki keskustelut ovat anonymisoituja";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Tekoälyominaisuuksien käyttämiseen ei tarvita tiliä";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Keskustelujasi ei koskaan käytetä tekoälyn kouluttamiseen";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Käytä ChatGPT:tä, Claudea ja muita palveluita yhdessä paikassa";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Kokeile Duck.ai:ta!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Suosittuja tekoälypalveluja";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "Tekoälysuojaukset aktivoitu!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Asetetaanko DuckDuckGo oletusselaimeksi?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Aloita yksityinen tekoälykeskustelu Duck.ai:n kanssa tai siirry suojatun selaamisen hakuun.\n\nVoit käyttää Duck.ai:ta mistä tahansa, missä näet chat-kuvakkeen [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Tarjoamme myös maksullisen tilauksen, jossa on edistyneitä tekoälymalleja ja korkeampia chat-rajoituksia GPT:ltä, Claudelta ja Llamalta sekä suojatun VPN:n ja paljon muuta.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Kokeile nyt yksityistä tekoälykeskustelua!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Oletko valmis keskustelemaan yksityisesti ChatGPT:n, Clauden ja muiden tekoälyjen kanssa ilmaiseksi selaimessa, joka suojaa sinua aktiivisesti?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Aloita tekoälykeskustelu";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Muista: voit käyttää Duck.ai:ta mistä tahansa, missä näet keskustelukuvakkeen [[chat_icon]]";
+
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGosta on saatavilla myös %1$@, johon sisältyvät %2$@ ja %3$@.";
 
@@ -3346,26 +3535,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Avataanko toisessa sovelluksessa?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Edellinen";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Yritimme ladata sen yksityisesti, mutta se ei näy.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Haluatko avata tämän sivun Safarissa?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Avaa Safarissa";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Valitettavasti sivu ei latautunut.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Tämä sivu latautuu vain Safarissa";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Avaa Safarissa";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Tällä verkkosivustolla on virheellinen turvasertifikaatti, eikä se ehkä ole turvallinen.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Pysy DuckDuckGossa";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Jotkin verkkosivuston ominaisuudet eivät välttämättä ole yhteensopivia tämän selaimen kanssa.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Tämä sivusto haluaa avata Safarin.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo ei voi ladata tätä sivua.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Viimeaikaiset käsittelylokit";
@@ -3535,17 +3718,20 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Passiivisuusajastin";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Aloitusnäyttö";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Viimeksi käytetty välilehti";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Uusi välilehti";
 
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Käyttämättömyyden jälkeen";
+
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Kokeile uutta vaihtoehtoa vaihtaa haun ja Duck.ai:n välillä osoitekentällä.";
+
+/* Settings row that opens Duck.ai in a new tab */
+"settings.aichat.duckai.settings" = "Duck.ai-asetukset";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Hallitse Duck.ai:n pikakuvakkeita";
@@ -4497,6 +4683,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Sulje välilehti";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulje koti-välilehti";
 
@@ -4508,6 +4695,7 @@
 
 /* New tab title */
 "tab.new.title" = "Uusi välilehti";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Avaa koti-välilehti";
 
@@ -4516,6 +4704,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Avaa Fire-välilehti";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Avaa \"%1$@\" osoitteessa %2$@";
 
@@ -4999,8 +5188,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
-/* Top-level attachment menu option to add a file to an AI chat message */
-"aichat.attachment.option.attach.file" = "Lisää tiedosto";
-
-/* Top-level attachment menu option to add an image to an AI chat message */
-"aichat.attachment.option.attach.photo" = "Lisää kuva";

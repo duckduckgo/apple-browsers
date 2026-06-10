@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import ConcurrencyExtensions
 import PrivacyConfig
 import Persistence
 import WebExtensions

@@ -22,6 +22,7 @@ import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
+import FoundationExtensions
 import History
 import NetworkProtectionIPC
 import NetworkQualityMonitor
@@ -596,10 +597,6 @@ final class MainViewController: NSViewController {
             ? .currentTab
             : .newTab(selected: true)
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
-    }
-
-    func toggleDuckAISidebar() {
-        aiChatCoordinator.toggleSidebar()
     }
 
     private func wireToggleReferenceToAIChatTextContainer() {

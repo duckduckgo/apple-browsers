@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import Onboarding
 import os.log
@@ -110,8 +111,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
+    private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
-    private let applicationBuildType: ApplicationBuildType
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private var cancellables = Set<AnyCancellable>()
 
@@ -122,15 +123,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         let systemSettings: SystemSettings
         let order = featureFlagger.isFeatureOn(.onboardingRebranding) ? "v4" : "v3"
         let platform = OnboardingPlatform(name: "macos")
-        if applicationBuildType.isAppStoreBuild {
-            let rows = [
-                featureFlagger.isFeatureOn(.addToDockAppStore) ? OnboardingRow.dockInstructions.rawValue : nil,
-                OnboardingRow.dataImport.rawValue,
-            ].compactMap { $0 }
-            systemSettings = SystemSettings(rows: rows)
-        } else {
+        if dockCustomization.supportsAddingToDock {
             systemSettings = SystemSettings(rows: [
                 OnboardingRow.dock.rawValue,
+                OnboardingRow.dataImport.rawValue,
+            ])
+        } else {
+            systemSettings = SystemSettings(rows: [
+                OnboardingRow.dockInstructions.rawValue,
                 OnboardingRow.dataImport.rawValue
             ])
         }
@@ -208,8 +208,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         startupPreferences: StartupPreferences,
         dataImportProvider: DataImportStatusProviding,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
-        applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     ) {
         self.navigation = navigationDelegate
@@ -219,8 +219,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
-        self.applicationBuildType = applicationBuildType
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
     }
 
@@ -295,6 +295,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func setDuckAiInAddressBar(enabled: Bool) {
         aiChatPreferencesStorage.showSearchAndDuckAIToggle = enabled
+        guard featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg) else { return }
+        aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
+        homepageSearchModeSeedPersistor.pendingShowSearchModeToggle = enabled
     }
 
     private func onMainThreadIfNeeded(_ function: @escaping () -> Void) {

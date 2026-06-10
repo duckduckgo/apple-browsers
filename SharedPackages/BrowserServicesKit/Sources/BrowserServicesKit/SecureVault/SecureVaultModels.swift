@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 /// The models used by the secure vault.
 ///

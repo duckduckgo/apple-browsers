@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 import SwiftUI
 
 struct AIChatSyncPromoView: View {
@@ -29,8 +30,10 @@ struct AIChatSyncPromoView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            VStack {
-                Image(.syncAIFeature96)
+            VStack(spacing: 16) {
+                Image(rebrandable: "Sync-AI-Feature-96")
+                    .resizable()
+                    .frame(width: 72, height: 72)
 
                 Text(UserText.aiChatSyncPromoTitle)
                     .daxHeadline()
@@ -43,10 +46,10 @@ struct AIChatSyncPromoView: View {
                     Text(UserText.aiChatSyncPromoButton)
                 }
                 .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: false))
-                .padding(8)
             }
             .frame(maxWidth: .infinity)
-            .padding(8)
+            .padding(.vertical, 20)
+            .padding(.horizontal, 8)
 
             Button(action: onCloseTap) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
@@ -57,7 +60,7 @@ struct AIChatSyncPromoView: View {
             .accessibilityLabel(UserText.aiChatSyncPromoCloseAccessibilityLabel)
         }
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                 .fill(Color(designSystemColor: .surface))
         )
     }

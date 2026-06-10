@@ -16,19 +16,21 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
+import NetworkingTestingUtils
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
+import PreferencesUI_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-import SubscriptionUI
 import SubscriptionTestingUtilities
-import PreferencesUI_macOS
+import SubscriptionUI
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
-import NetworkingTestingUtils
 
 @MainActor
 final class PreferencesSidebarModelTests: XCTestCase {
@@ -117,8 +119,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: {
@@ -160,8 +161,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: {
@@ -214,8 +214,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: {

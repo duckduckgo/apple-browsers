@@ -23,7 +23,7 @@ import PackageDescription
 let package = Package(
     name: "TestUtilities",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "NoARCObjCTestUtilities", targets: ["NoARCObjCTestUtilities"]),
@@ -34,6 +34,7 @@ let package = Package(
         .package(path: "../Utilities"),
         .package(path: "../AppKitExtensions"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../CommonObjCExtensions"),
     ],
     targets: [
@@ -55,6 +56,9 @@ let package = Package(
                 .product(name: "AppKitExtensions", package: "AppKitExtensions"),
                 .product(name: "CommonObjCExtensions", package: "CommonObjCExtensions"),
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Navigation", package: "BrowserServicesKit"),
                 .product(name: "Suggestions", package: "BrowserServicesKit"),
                 .product(name: "SharedObjCTestsUtils", package: "BrowserServicesKit"),

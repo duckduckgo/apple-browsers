@@ -18,7 +18,9 @@
 
 import AppKit
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import DesignResourcesKitIcons
 import FeatureFlags
 import PrivacyConfig
@@ -97,7 +99,6 @@ protocol TabBarViewItemDelegate: AnyObject {
 
     @MainActor func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseAction(_: TabBarViewItem)
-    @MainActor func tabBarViewItemTogglePermissionAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseOtherAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseToTheLeftAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseToTheRightAction(_: TabBarViewItem)
@@ -155,14 +156,12 @@ final class TabBarItemCellView: NSView {
         static let width: CGFloat = 32
         static let trailingSpace: CGFloat = 0
         static let trailingSpaceWithButton: CGFloat = 20
-        static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
     private enum Metrics {
         static let audioAndCrashButtonSide: CGFloat = 16
         static let closeButtonDimension: CGFloat = 20
         static let faviconImageSide: CGFloat = 20
-        static let permissionButtonSideMin: CGFloat = 16
         static let titleHeight: CGFloat = 16
         static let titlePaddingOnCompact: CGFloat = 16
     }
@@ -201,17 +200,6 @@ final class TabBarItemCellView: NSView {
         return audioButton
     }()
 
-    fileprivate lazy var permissionButton = {
-        let permissionButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.permissionButtonAction))
-        permissionButton.bezelStyle = .shadowlessSquare
-        permissionButton.normalTintColor = .button
-        permissionButton.mouseDownColor = .buttonMouseDown
-        permissionButton.mouseOverColor = .buttonMouseOver
-        permissionButton.imagePosition = .imageOnly
-        permissionButton.imageScaling = .scaleNone
-        return permissionButton
-    }()
-
     fileprivate lazy var closeButton = {
         let closeButton = MouseOverButton(image: .close, target: nil, action: #selector(TabBarViewItem.closeButtonAction))
         closeButton.frame.size = NSSize(width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
@@ -233,7 +221,6 @@ final class TabBarItemCellView: NSView {
             closeButton.target = newValue
             audioButton.target = newValue
             crashIndicatorButton.target = newValue
-            permissionButton.target = newValue
         }
     }
 
@@ -341,10 +328,6 @@ final class TabBarItemCellView: NSView {
         closeButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
         closeButton.mustAnimateOnMouseOver = displaysTabsAnimations
 
-        permissionButton.setAccessibilityIdentifier("TabBarViewItem.permissionButton")
-        // Accessibility label and toolTip are updated in `updateUsedPermissions`
-        permissionButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
-
         audioButton.setAccessibilityIdentifier("TabBarViewItem.muteButton")
         // Accessibility Title and toolTip are updated in `updateAudioPlayState`
         audioButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
@@ -359,7 +342,6 @@ final class TabBarItemCellView: NSView {
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
         addSubview(titleView)
-        addSubview(permissionButton)
         addSubview(closeButton)
 
         if theme.tabStyleProvider.shouldShowTabSeparators {
@@ -459,9 +441,6 @@ final class TabBarItemCellView: NSView {
         } else {
             maxX = max(maxX - 1 /* 28 title offset with favicon */, 12 /* without favicon */)
         }
-        if permissionButton.isShown {
-            permissionButton.frame = NSRect(x: maxX - 20, y: bounds.midY - 12, width: 24, height: 24)
-        }
 
         minX += theme.tabStyleProvider.tabSpacing
         titleView.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
@@ -470,15 +449,9 @@ final class TabBarItemCellView: NSView {
     }
 
     private func updateTitleTextFieldMask() {
-        let gradientPadding: CGFloat
-        switch (closeButton.isHidden, permissionButton.isHidden) {
-        case (true, true):
-            gradientPadding = TextFieldMaskGradientSize.trailingSpace
-        case (false, true), (true, false):
-            gradientPadding = TextFieldMaskGradientSize.trailingSpaceWithButton
-        case (false, false):
-            gradientPadding = TextFieldMaskGradientSize.trailingSpaceWithPermissionAndButton
-        }
+        let gradientPadding = closeButton.isHidden
+            ? TextFieldMaskGradientSize.trailingSpace
+            : TextFieldMaskGradientSize.trailingSpaceWithButton
 
         titleView.gradient(width: TextFieldMaskGradientSize.width, trailingPadding: gradientPadding)
     }
@@ -488,13 +461,11 @@ final class TabBarItemCellView: NSView {
         let numberOfElements: CGFloat =
             (faviconView.isShown        ? 1 : 0) +
             (isAudioOrCrashShown        ? 1 : 0) +
-            (permissionButton.isShown   ? 1 : 0) +
             (closeButton.isShown        ? 1 : 0)
 
         var totalWidth =
             (faviconView.isShown        ? Metrics.faviconImageSide : 0) +
             (isAudioOrCrashShown        ? Metrics.audioAndCrashButtonSide : 0) +
-            (permissionButton.isShown   ? Metrics.permissionButtonSideMin : 0) +
             (closeButton.isShown        ? Metrics.closeButtonDimension : 0)
 
         // tighten elements to fit all
@@ -521,11 +492,6 @@ final class TabBarItemCellView: NSView {
             audioButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: Metrics.audioAndCrashButtonSide, height: Metrics.audioAndCrashButtonSide)
             x = audioButton.frame.maxX + spacing
         }
-        if permissionButton.isShown {
-            // make permission button from 16 to 24pt wide depending of available space
-            permissionButton.frame = NSRect(x: x.rounded() - spacing.rounded(), y: bounds.midY - 12, width: Metrics.permissionButtonSideMin + spacing.rounded() * 2, height: 24)
-            x = permissionButton.frame.maxX
-        }
         if closeButton.isShown {
             // close button appears in place of favicon in compact mode
             closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - Metrics.closeButtonDimension * 0.5, width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
@@ -535,7 +501,6 @@ final class TabBarItemCellView: NSView {
 
     private func layoutForPinnedMode() {
         assert(closeButton.isHidden)
-        assert(permissionButton.isHidden)
         assert(titleView.isHidden)
 
         let elementWidth: CGFloat = 20
@@ -865,7 +830,6 @@ final class TabBarViewItem: NSCollectionViewItem {
             updateSubviews()
 
             cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
-            updateUsedPermissions()
         }
     }
 
@@ -953,10 +917,6 @@ final class TabBarViewItem: NSCollectionViewItem {
     @objc fileprivate func crashButtonAction(_ sender: NSButton) {
         // toggle, because when the popover is displayed, clicking the button should hide it
         tabViewModel?.crashIndicatorModel.isShowingPopover.toggle()
-    }
-
-    @objc fileprivate func permissionButtonAction(_ sender: NSButton) {
-        delegate?.tabBarViewItemTogglePermissionAction(self)
     }
 
     @objc private func closeOtherAction(_ sender: NSMenuItem) {
@@ -1146,45 +1106,8 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     private var usedPermissions = Permissions() {
         didSet {
-            updateUsedPermissions()
             updateActivePermissionIcons()
         }
-    }
-    private func updateUsedPermissions() {
-        cell.needsLayout = true
-        let permission: PermissionType
-        let isActive: Bool
-        if usedPermissions.camera.isActive {
-            cell.permissionButton.image = .cameraTabActive
-            permission = .camera
-            isActive = true
-        } else if usedPermissions.microphone.isActive {
-            cell.permissionButton.image = .microphoneActive
-            permission = .microphone
-            isActive = true
-        } else if usedPermissions.camera.isPaused {
-            cell.permissionButton.image = .cameraTabBlocked
-            permission = .camera
-            isActive = false
-        } else if usedPermissions.microphone.isPaused {
-            cell.permissionButton.image = .microphoneIcon
-            permission = .microphone
-            isActive = false
-        } else {
-            cell.permissionButton.isHidden = true
-            return
-        }
-
-        guard isPinned else {
-            cell.permissionButton.isHidden = true
-            return
-        }
-
-        let toolTip = String(format: isActive ? UserText.permissionMuteFormat : UserText.permissionUnmuteFormat, permission.localizedDescription.lowercased(), currentURL?.host ?? "")
-        cell.permissionButton.toolTip = toolTip
-        cell.permissionButton.setAccessibilityTitle(toolTip)
-
-        cell.permissionButton.isHidden = false
     }
 
     // MARK: - Active Permission Icons in Favicon
@@ -1407,6 +1330,8 @@ extension TabBarViewItem: NSMenuDelegate {
             addCrashMenuItem(to: menu)
             addCrashMultipleTimesMenuItem(to: menu)
         }
+
+        menu.alignItemTextWithIconsRecursively()
     }
 
     private func addCrashMenuItem(to menu: NSMenu) {
@@ -1423,12 +1348,14 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addNewToTheRightMenuItem(to menu: NSMenu) {
         let newTabMenuItem = NSMenuItem(title: UserText.newTabToTheRight, action: #selector(newToTheRightAction(_:)), keyEquivalent: "")
+        newTabMenuItem.image = DesignSystemImages.Glyphs.Size12.tabNew
         newTabMenuItem.target = self
         menu.addItem(newTabMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
         let duplicateMenuItem = NSMenuItem(title: UserText.duplicateTab, action: #selector(duplicateAction(_:)), keyEquivalent: "")
+        duplicateMenuItem.image = DesignSystemImages.Glyphs.Size12.windowDuplicate
         duplicateMenuItem.target = self
         duplicateMenuItem.isEnabled = delegate?.tabBarViewItemCanBeDuplicated(self) ?? false
         menu.addItem(duplicateMenuItem)
@@ -1444,6 +1371,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addPinMenuItem(to menu: NSMenu) {
         let pinMenuItem = NSMenuItem(title: isPinned ? UserText.unpinTab : UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
+        pinMenuItem.image = isPinned ? DesignSystemImages.Glyphs.Size12.pinRemove : DesignSystemImages.Glyphs.Size12.pin
         pinMenuItem.target = self
         if !isPinned {
             pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false
@@ -1453,6 +1381,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addBookmarkMenuItem(to menu: NSMenu) {
         let bookmarkMenuItem = NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(bookmarkThisPageAction(_:)), keyEquivalent: "")
+        bookmarkMenuItem.image = DesignSystemImages.Glyphs.Size12.bookmarkAdd
         bookmarkMenuItem.target = self
         bookmarkMenuItem.isEnabled = delegate?.tabBarViewItemCanBeBookmarked(self) ?? false
         menu.addItem(bookmarkMenuItem)
@@ -1485,6 +1414,7 @@ extension TabBarViewItem: NSMenuDelegate {
             }
             menuItem.isEnabled = true
         }
+        menuItem.image = DesignSystemImages.Glyphs.Size12.fireproof
         menuItem.target = self
         menu.addItem(menuItem)
     }
@@ -1494,6 +1424,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
         let menuItemTitle = audioState.isMuted ? UserText.unmuteTab : UserText.muteTab
         let muteUnmuteMenuItem = NSMenuItem(title: menuItemTitle, action: #selector(muteUnmuteSiteAction(_:)), keyEquivalent: "")
+        muteUnmuteMenuItem.image = audioState.isMuted ? DesignSystemImages.Glyphs.Size12.audio : DesignSystemImages.Glyphs.Size12.audioMute
         muteUnmuteMenuItem.target = self
         menu.addItem(muteUnmuteMenuItem)
     }
@@ -1535,6 +1466,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addCloseMenuItem(to menu: NSMenu) {
         let closeMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(closeButtonAction(_:)), keyEquivalent: "")
+        closeMenuItem.image = DesignSystemImages.Glyphs.Size12.close
         closeMenuItem.target = self
         menu.addItem(closeMenuItem)
     }
@@ -1914,23 +1846,6 @@ extension TabBarViewItem {
         func tabBarViewItemShouldHideSeparator(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem) {}
         func tabBarViewItemCloseAction(_: TabBarViewItem) {}
-        func tabBarViewItemTogglePermissionAction(_ item: TabBarViewItem) {
-            // swiftlint:disable:next force_cast
-            let item = item.representedObject as! TabBarViewModelMock
-            for (key, value) in item.usedPermissions {
-                switch value {
-                case .disabled(systemWide: false): item.usedPermissions[key] = .disabled(systemWide: true)
-                case .disabled(systemWide: true): item.usedPermissions[key] = .requested(.init(.init(url: nil, domain: "", permissions: [])) { _ in })
-                case .requested: item.usedPermissions[key] = .inactive
-                case .inactive: item.usedPermissions[key] = .active
-                case .active: item.usedPermissions[key] = .paused
-                case .paused: item.usedPermissions[key] = .revoking
-                case .revoking: item.usedPermissions[key] = .denied
-                case .denied: item.usedPermissions[key] = .revoking
-                case .reloading: item.usedPermissions[key] = .denied
-                }
-            }
-        }
         func tabBarViewItemCloseOtherAction(_: TabBarViewItem) {}
         func tabBarViewItemCloseToTheLeftAction(_: TabBarViewItem) {}
         func tabBarViewItemCloseToTheRightAction(_: TabBarViewItem) {}

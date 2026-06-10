@@ -19,6 +19,7 @@
 import Foundation
 import DataBrokerProtection_macOS
 import Common
+import FoundationExtensions
 
 public extension Notification.Name {
     static let dbpLoginItemEnabled = Notification.Name("com.duckduckgo.DBP.LoginItemEnabled")

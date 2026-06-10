@@ -54,6 +54,24 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
+    func test_dismissPoseFadesAttachmentsStripOutSoItAnimatesWithTheCollapse() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        sut.addAttachment(makeFileAttachment())
+        flushMainQueue()
+
+        let strip = try XCTUnwrap(firstDescendant(of: UnifiedToggleInputAttachmentsStripView.self, in: sut))
+        XCTAssertEqual(strip.alpha, 1, accuracy: 0.001)
+
+        // The top + toggle-on dismiss pose. Without fading the strip here it stays fully opaque
+        // through the collapse and then blinks out when the container is hidden.
+        sut.applyToggleHideChanges()
+
+        XCTAssertEqual(strip.alpha, 0, accuracy: 0.001)
+    }
+
     func test_attachmentStripScrollsToTrailingEdgeAfterAttachmentLayoutChange() throws {
         let sut = UnifiedToggleInputAttachmentsStripView()
         sut.frame = .zero
@@ -209,6 +227,55 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.arrowUp)
     }
 
+    // MARK: - Recovery-Card Submit Block
+
+    func test_recoveryCardBlock_disablesSubmit_whenContentPresent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertFalse(submitButton.isEnabled,
+                       "Recovery card must block submit while there is submittable content")
+    }
+
+    func test_recoveryCardBlock_leavesVoiceButtonUntouched_whenNoContent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isAIVoiceChatActive = true
+        sut.isSubmitEnabled = false
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertTrue(submitButton.isEnabled,
+                      "With no text the Voice affordance must stay active — the block only suppresses submit")
+        XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.voice)
+    }
+
+    func test_clearingRecoveryCardBlock_reenablesSubmit_whenContentPresent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        sut.isSubmitBlockedByRecoveryCard = true
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertFalse(submitButton.isEnabled)
+
+        sut.isSubmitBlockedByRecoveryCard = false
+
+        XCTAssertTrue(submitButton.isEnabled,
+                      "Clearing the recovery block re-enables submit when content is present")
+    }
+
+    func test_clearingRecoveryCardBlock_doesNotForceEnableSubmit_whenNoContent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = false
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.isSubmitBlockedByRecoveryCard = false
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertFalse(submitButton.isEnabled,
+                       "enableChatInput must not force-enable submit when another reason (no content) still blocks it")
+    }
+
     func test_insertNewlineAtCursor_whenTextIsEmpty() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = SwitchBarTextEntryView(handler: handler)
@@ -337,6 +404,27 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(height, 44, accuracy: 1)
         XCTAssertFalse(placeholderLabel.isHidden)
         XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
+    }
+
+    func test_legacyExpandedAIChatLayoutTopPlaceholderAlignsWithTextContainerTopInset() throws {
+        let handler = LegacyTextEntryMockHandler(
+            currentToggleState: .aiChat,
+            isTopBarPosition: true,
+            isUsingFadeOutAnimation: true,
+            usesExpandedAIChatTextEntryLayout: true
+        )
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        let height = applyFittingHeight(to: sut)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        let expectedPlaceholderMinY = textView.convert(CGPoint(x: 0, y: textView.textContainerInset.top), to: sut).y
+
+        XCTAssertEqual(height, 68, accuracy: 1)
+        XCTAssertFalse(placeholderLabel.isHidden)
+        XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
     }
 
     func test_barPositionChangeRefreshesExpandedAIChatPose() {
@@ -591,6 +679,7 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isFireTab: Bool = false
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool
+    var usesExpandedAIChatTextEntryLayout: Bool
     var shouldDisableAutocorrectOnEmpty: Bool = false
     var hidesVoiceButton: Bool = false
     var hasSubmittedPrompt: Bool = false
@@ -606,10 +695,14 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
 
-    init(currentToggleState: TextEntryMode, isTopBarPosition: Bool, isUsingFadeOutAnimation: Bool) {
+    init(currentToggleState: TextEntryMode,
+         isTopBarPosition: Bool,
+         isUsingFadeOutAnimation: Bool,
+         usesExpandedAIChatTextEntryLayout: Bool = false) {
         self.currentToggleState = currentToggleState
         self.isTopBarPosition = isTopBarPosition
         self.isUsingFadeOutAnimation = isUsingFadeOutAnimation
+        self.usesExpandedAIChatTextEntryLayout = usesExpandedAIChatTextEntryLayout
     }
 
     func updateCurrentText(_ text: String) {

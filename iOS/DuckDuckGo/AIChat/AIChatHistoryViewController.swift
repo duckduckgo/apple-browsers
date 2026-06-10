@@ -28,6 +28,12 @@ final class AIChatHistoryViewController: UIViewController {
     private let viewModel: AIChatHistoryViewModel
     private var cancellables: Set<AnyCancellable> = []
 
+    /// True while a swipe-driven `performBatchUpdates` is in flight. The VM mutation that
+    /// drives that animation fires `@Published` events synchronously and they arrive on the
+    /// main queue mid-animation; skipping `refreshContent` while this is set prevents the
+    /// async-delivered `reloadData` from cancelling the slide.
+    private var isApplyingLocalUpdate = false
+
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .insetGrouped)
         table.dataSource = self
@@ -156,7 +162,8 @@ final class AIChatHistoryViewController: UIViewController {
             .removeDuplicates { lhs, rhs in lhs.0 == rhs.0 && lhs.1 == rhs.1 && lhs.2 == rhs.2 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _, _, _ in
-                self?.refreshContent()
+                guard let self, !self.isApplyingLocalUpdate else { return }
+                self.refreshContent()
             }
             .store(in: &cancellables)
 
@@ -299,12 +306,13 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             guard let self, let move = self.viewModel.togglePin(chatId: chatId) else {
                 completion(false); return
             }
-            // `moveRow` keeps the same cell instance throughout the slide so the row glides
-            // between sections instead of fading out + reappearing (the delete/insert pair
-            // visually disconnects the row from its destination and exposes cell reuse).
+            self.isApplyingLocalUpdate = true
             tableView.performBatchUpdates({
                 tableView.moveRow(at: move.source, to: move.destination)
-            }, completion: { _ in completion(true) })
+            }, completion: { [weak self] _ in
+                self?.isApplyingLocalUpdate = false
+                completion(true)
+            })
         }
         action.image = DesignSystemImages.Glyphs.Size24.pin
         action.accessibilityLabel = wasPinned

@@ -109,6 +109,7 @@ final class SettingsViewModel: ObservableObject {
 
     private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     private let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
+    private let lastTabShortcutAdapter: LastTabShortcutAdapter
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -392,6 +393,22 @@ final class SettingsViewModel: ObservableObject {
 
     var shouldShowNTPAfterIdleSetting: Bool {
         featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
+
+    var shouldShowLastTabShortcutSetting: Bool {
+        featureFlagger.isFeatureOn(.escapeHatchHideShortcut)
+    }
+
+    var lastTabShortcutEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.lastTabShortcutAdapter.isEnabled },
+            set: { newValue in
+                self.lastTabShortcutAdapter.setEnabled(newValue)
+                DailyPixel.fireDailyAndCount(
+                    pixel: newValue ? .ntpAfterIdleLastTabShortcutSettingEnabled : .ntpAfterIdleLastTabShortcutSettingDisabled
+                )
+            }
+        )
     }
 
     var idleTimeInterval: String {
@@ -954,6 +971,7 @@ final class SettingsViewModel: ObservableObject {
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
+         lastTabShortcutAdapter: LastTabShortcutAdapter,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
@@ -995,6 +1013,7 @@ final class SettingsViewModel: ObservableObject {
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
+        self.lastTabShortcutAdapter = lastTabShortcutAdapter
         self.afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
@@ -1012,6 +1031,7 @@ final class SettingsViewModel: ObservableObject {
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
         startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
+        startForwardingAdapterWillChangeEvents(lastTabShortcutAdapter)
     }
 
     deinit {
@@ -1153,10 +1173,9 @@ extension SettingsViewModel {
         Task { await setupSubscriptionEnvironment() }
     }
 
-    /// Forward `AfterInactivityOptionAdapter.objectWillChange` Events:
-    /// This causes `model.afterInactivityOption` to react to `AfterInactivityOptionAdapter` changes
-    ///
-    private func startForwardingAdapterWillChangeEvents(_ adapter: AfterInactivityOptionAdapter) {
+    /// Forward an adapter's `objectWillChange` events so derived values (e.g. `afterInactivityOption`,
+    /// `lastTabShortcutEnabledBinding`) react to changes the adapter makes to the shared settings storage.
+    private func startForwardingAdapterWillChangeEvents(_ adapter: some ObservableObject) {
         adapter.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()

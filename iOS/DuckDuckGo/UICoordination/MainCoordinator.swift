@@ -253,6 +253,7 @@ final class MainCoordinator {
             keyValueStore: keyValueStore,
             idleReturnEligibilityManager: idleReturnEligibilityManager
         )
+        let lastTabShortcutAdapter = LastTabShortcutAdapter(keyValueStore: keyValueStore)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -275,6 +276,7 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         idleReturnEligibilityManager: idleReturnEligibilityManager,
                                         afterInactivityOptionAdapter: afterInactivityOptionAdapter,
+                                        lastTabShortcutAdapter: lastTabShortcutAdapter,
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,

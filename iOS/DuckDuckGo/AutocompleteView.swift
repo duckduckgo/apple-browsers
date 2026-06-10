@@ -162,6 +162,11 @@ private struct SuggestionsSection: View {
                  }
             }
         }
+        // A suggestions refresh can reshuffle rows without firing a hover exit, leaving a stale
+        // positional index. Clear it on change so it matches how keyboard selection resets.
+        .onChange(of: suggestions) { _ in
+            hoveredIndex = nil
+        }
     }
 
 }

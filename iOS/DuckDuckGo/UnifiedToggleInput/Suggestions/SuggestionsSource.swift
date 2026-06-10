@@ -133,3 +133,12 @@ final class RecentsSuggestionsSource: SuggestionsSource {
     func start(textPublisher: AnyPublisher<String, Never>) {}
     func tearDown() {}
 }
+
+/// Empty placeholder for a `.list` presentation that has no backing data (e.g. Duck.ai suggestions
+/// disabled or not yet attached) — keeps the list mounted without borrowing another mode's rows.
+@MainActor
+final class EmptySuggestionsSource: SuggestionsSource {
+    let sectionsPublisher: AnyPublisher<[SuggestionSection], Never> = Just([]).eraseToAnyPublisher()
+    func start(textPublisher: AnyPublisher<String, Never>) {}
+    func tearDown() {}
+}

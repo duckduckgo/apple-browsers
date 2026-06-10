@@ -87,7 +87,7 @@ final class DuckAISuggestionsSurfaceProvider {
 
     /// Builds the duck.ai source with its OWN runner/loaders, wires its state into `stateSubject`,
     /// and attaches it to the single host. No-op if already attached.
-    func attach(to host: UnifiedSuggestionsHost) {
+    func attach(to host: UnifiedSuggestionsHost, textPublisher: AnyPublisher<String, Never>) {
         guard hasContentReader == nil else { return }
 
         let (chatManager, chatViewModel) = AIChatHistoryManager.makeHistoryManager(
@@ -152,7 +152,7 @@ final class DuckAISuggestionsSurfaceProvider {
         }
         recentsCountReader = { [weak chatViewModel] in chatViewModel?.filteredSuggestions.count ?? 0 }
 
-        host.attachDuckAISurface(surface)
+        host.attachDuckAISurface(surface, textPublisher: textPublisher)
     }
 
     /// Tears down the source/VM and clears its state so the merger reverts to no-recents/nothing-pending.

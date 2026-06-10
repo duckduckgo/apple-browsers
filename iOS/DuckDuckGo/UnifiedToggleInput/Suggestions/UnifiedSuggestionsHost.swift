@@ -36,8 +36,6 @@ final class UnifiedSuggestionsHost {
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
-    /// Captured on `start` so a duck.ai source attached later can drive its own text changes.
-    private var startedTextPublisher: AnyPublisher<String, Never>?
 
     private func memoizedFavoritesController() -> NewTabPageViewController? {
         if let cachedFavoritesController { return cachedFavoritesController }
@@ -66,9 +64,7 @@ final class UnifiedSuggestionsHost {
                              textPublisher: P) where P.Output == String, P.Failure == Never {
         guard hostingController == nil else { return }
 
-        let erasedTextPublisher = textPublisher.eraseToAnyPublisher()
-        startedTextPublisher = erasedTextPublisher
-        config.source.start(textPublisher: erasedTextPublisher)
+        config.source.start(textPublisher: textPublisher.eraseToAnyPublisher())
 
         listViewModel.onSelect = { [weak self] id in self?.config.onSelectRow(id) }
         listViewModel.onTapAhead = { [weak self] id in self?.config.onTapAheadRow(id) }
@@ -161,7 +157,8 @@ final class UnifiedSuggestionsHost {
 
     /// Attaches the duck.ai source + its own list VM so `.list(.duckAI|.recents)` rows render
     /// duck.ai data. Lazy: called when the duck.ai surface becomes available; safe to call once.
-    func attachDuckAISurface(_ surface: UnifiedSuggestionsDuckAISurface) {
+    func attachDuckAISurface(_ surface: UnifiedSuggestionsDuckAISurface,
+                             textPublisher: AnyPublisher<String, Never>) {
         guard duckAISurface == nil else { return }
         duckAISurface = surface
 
@@ -171,9 +168,7 @@ final class UnifiedSuggestionsHost {
         listVM.onDelete = { surface.onDeleteRow($0) }
         viewModel.setDuckAIListViewModel(listVM)
 
-        if let startedTextPublisher {
-            surface.source.start(textPublisher: startedTextPublisher)
-        }
+        surface.source.start(textPublisher: textPublisher)
         rebuildRootView()
     }
 

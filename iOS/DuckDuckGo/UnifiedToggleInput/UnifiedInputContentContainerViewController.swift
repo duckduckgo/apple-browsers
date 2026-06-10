@@ -467,9 +467,19 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         ])
         unifiedSuggestionsContainerView = containerView
 
+        // Search only fetches in `.search` mode — in Duck.ai mode the typed prompt must not hit the
+        // search autocomplete endpoint (legacy parity; the Duck.ai surface runs its own URL loader).
+        // Emitting "" off-mode resets the loader to empty and stops requests.
+        let searchTextPublisher = Publishers.CombineLatest(
+            switchBarHandler.toggleStatePublisher,
+            switchBarHandler.currentTextPublisher)
+            .map { mode, text in mode == .search ? text : "" }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
         host.start(in: containerView,
                    parentViewController: self,
-                   textPublisher: switchBarHandler.currentTextPublisher)
+                   textPublisher: searchTextPublisher)
         // The top offset rides the container constraint (UIKit glide); the hosting view keeps no
         // top safe-area inset of its own.
         host.setAdditionalTopInset(0)
@@ -538,7 +548,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         surface.statePublisher
             .sink { [weak self] in self?.duckAIStateRelay.send($0) }
             .store(in: &duckAIRelayCancellables)
-        surface.attach(to: host)
+        surface.attach(to: host, textPublisher: switchBarHandler.currentTextPublisher.eraseToAnyPublisher())
         duckAISurface = surface
     }
 

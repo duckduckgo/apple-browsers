@@ -25,6 +25,9 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// Present only on the single-host path once the duck.ai surface is attached. `.list(.duckAI)`
     /// and `.list(.recents)` render this; `.list(.search)` renders `listViewModel`.
     private(set) var duckAIListViewModel: SuggestionsListViewModel?
+    /// Stable empty list for `.list(.duckAI|.recents)` when no duck.ai surface is attached
+    /// (suggestions disabled / pre-attach) — keeps the list mounted without showing Search rows.
+    private let emptyListViewModel = SuggestionsListViewModel(source: EmptySuggestionsSource())
 
     private var cancellable: AnyCancellable?
     private var previousMode: TextEntryMode?
@@ -67,14 +70,15 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         duckAIListViewModel = viewModel
     }
 
-    /// Resolves the list VM for a `.list` content kind. Falls back to the search VM so the
-    /// single-VM (old) path keeps working before any duck.ai surface is attached.
+    /// Resolves the list VM for a `.list` content kind. Duck.ai kinds fall back to a stable empty
+    /// list (never the Search VM) when no duck.ai surface is attached, so Search rows never render
+    /// in Duck.ai mode.
     func listViewModel(for kind: SuggestionsListSourceKind) -> SuggestionsListViewModel {
         switch kind {
         case .search:
             return listViewModel
         case .duckAI, .recents:
-            return duckAIListViewModel ?? listViewModel
+            return duckAIListViewModel ?? emptyListViewModel
         }
     }
 }

@@ -214,16 +214,21 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     private func updateAIChatButtonVisibility() {
-        let isVisible: Bool
-        if let featureFlagger, let aiChatSettings {
-            isVisible = DuckAIChromeShortcutVisibility.isChromeButtonVisible(
-                featureFlagger: featureFlagger,
-                isAIChatTabBarUserSettingsEnabled: aiChatSettings.isAIChatTabBarUserSettingsEnabled
-            )
-        } else {
-            isVisible = false
+        guard let featureFlagger, let aiChatSettings else {
+            aiChatChip.isHidden = true
+            return
         }
-        aiChatChip.isHidden = !isVisible
+        let shortcutEnabled = aiChatSettings.isAIChatTabBarUserSettingsEnabled
+        let showDuckAIButton = aiChatSettings.isAIChatTabBarDuckAIButtonVisible
+        let showContextualSheetButton = aiChatSettings.isAIChatTabBarContextualSheetButtonVisible
+        aiChatChip.isHidden = !DuckAIChromeShortcutVisibility.isChromeButtonVisible(
+            featureFlagger: featureFlagger,
+            isTabBarShortcutEnabled: shortcutEnabled,
+            isDuckAIButtonVisible: showDuckAIButton,
+            isContextualSheetButtonVisible: showContextualSheetButton
+        )
+        aiChatChip.setTextVisible(showDuckAIButton)
+        aiChatChip.setIconVisible(showContextualSheetButton)
     }
 
     /// Pushes per-tab state into the chip. Called by `MainViewController` when the
@@ -478,10 +483,20 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
                 DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuOpened)
+                let duckAIVisible = self?.aiChatSettings?.isAIChatTabBarDuckAIButtonVisible ?? true
+                let sheetVisible = self?.aiChatSettings?.isAIChatTabBarContextualSheetButtonVisible ?? true
                 completion([
-                    UIAction(title: UserText.actionHideAIChatChromeShortcut) { [weak self] _ in
-                        DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
-                        self?.aiChatSettings?.enableAIChatTabBarUserSettings(enable: false)
+                    UIAction(title: duckAIVisible ? UserText.actionHideAIChatDuckAIButton : UserText.actionShowAIChatDuckAIButton) { [weak self] _ in
+                        if duckAIVisible {
+                            DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
+                        }
+                        self?.aiChatSettings?.setAIChatTabBarDuckAIButtonVisible(!duckAIVisible)
+                    },
+                    UIAction(title: sheetVisible ? UserText.actionHideAIChatContextualSheetButton : UserText.actionShowAIChatContextualSheetButton) { [weak self] _ in
+                        if sheetVisible {
+                            DailyPixel.fireDailyAndCount(pixel: .aiChatNavigationBarShortcutMenuHideTapped)
+                        }
+                        self?.aiChatSettings?.setAIChatTabBarContextualSheetButtonVisible(!sheetVisible)
                     },
                     UIAction(title: UserText.actionOpenAISettings) { [weak self] _ in
                         guard let self else { return }

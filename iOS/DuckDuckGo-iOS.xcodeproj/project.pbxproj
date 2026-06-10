@@ -1699,7 +1699,7 @@
 		9FFDA83D2DFA8F6F007923F7 /* MockAudioSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFDA83C2DFA8F6A007923F7 /* MockAudioSessionManager.swift */; };
 		9FFDA83F2DFA907A007923F7 /* MockPictureInPictureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFDA83E2DFA9073007923F7 /* MockPictureInPictureController.swift */; };
 		A06E1D600618608596891F29 /* AIChatRecentChatsPopupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0B70EF2418A35A5D863506 /* AIChatRecentChatsPopupViewController.swift */; };
-		A14E0FE9F5A5E908BBD19F4E /* RecentChatDeletionAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA52D94898B2BADA9904EE1 /* RecentChatDeletionAlert.swift */; };
+		A14E0FE9F5A5E908BBD19F4E /* FireConfirmationPresenter+Suggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA52D94898B2BADA9904EE1 /* FireConfirmationPresenter+Suggestions.swift */; };
 		A1B2C3D4E5F60001AABB0001 /* NTPAfterIdleInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001AABB0002 /* NTPAfterIdleInstrumentationTests.swift */; };
 		A1B2C3D4E5F60002A1B2C3D4 /* UnifiedInputContentContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001A1B2C3D4 /* UnifiedInputContentContainerViewController.swift */; };
 		A1B2C3D4E5F60002AABBA001 /* IdleReturnTabCountInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002AABBA002 /* IdleReturnTabCountInstrumentationTests.swift */; };
@@ -5083,7 +5083,7 @@
 		EE9D68D72AE15AD600B55EF4 /* UIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIApplicationExtension.swift; sourceTree = "<group>"; };
 		EE9D68DB2AE16AE100B55EF4 /* NotificationsAuthorizationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsAuthorizationController.swift; sourceTree = "<group>"; };
 		EE9D68DD2AE2A65600B55EF4 /* UserDefaults+NetworkProtection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+NetworkProtection.swift"; sourceTree = "<group>"; };
-		EEA52D94898B2BADA9904EE1 /* RecentChatDeletionAlert.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecentChatDeletionAlert.swift; sourceTree = "<group>"; };
+		EEA52D94898B2BADA9904EE1 /* FireConfirmationPresenter+Suggestions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "FireConfirmationPresenter+Suggestions.swift"; sourceTree = "<group>"; };
 		EEB8FDB92A990AEE00EBEDCF /* Configuration-Alpha.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Configuration-Alpha.xcconfig"; path = "Configuration/Configuration-Alpha.xcconfig"; sourceTree = "<group>"; };
 		EEC02C132B0519DE0045CE11 /* NetworkProtectionVPNLocationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionVPNLocationViewModel.swift; sourceTree = "<group>"; };
 		EEC02C152B065BE00045CE11 /* NetworkProtectionVPNLocationViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionVPNLocationViewModelTests.swift; sourceTree = "<group>"; };
@@ -6124,7 +6124,7 @@
 				319F68752F27F96200EEBC3D /* AIChatHistoryManager.swift */,
 				B56C4E0A2FD0E40B006569D4 /* AIChatHistoryManager+Helpers.swift */,
 				319F68762F27F96200EEBC3D /* AIChatSuggestionsReader.swift */,
-				EEA52D94898B2BADA9904EE1 /* RecentChatDeletionAlert.swift */,
+				EEA52D94898B2BADA9904EE1 /* FireConfirmationPresenter+Suggestions.swift */,
 			);
 			path = ChatHistory;
 			sourceTree = "<group>";
@@ -13678,7 +13678,7 @@
 				BBAFF0312F6A940A00029537 /* SubscriptionPromoModalPromptProvider.swift in Sources */,
 				DA9073A7F6F11BD081C2FA27 /* RebrandedOnboardingSearchExperiencePicker.swift in Sources */,
 				AAE51CD3558F68CEF6919A73 /* DBPIOSContentBlocking.swift in Sources */,
-				A14E0FE9F5A5E908BBD19F4E /* RecentChatDeletionAlert.swift in Sources */,
+				A14E0FE9F5A5E908BBD19F4E /* FireConfirmationPresenter+Suggestions.swift in Sources */,
 				0928A567CE4F37AC8E19B215 /* NavigationPixelNavigationResponder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

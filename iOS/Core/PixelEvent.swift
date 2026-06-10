@@ -1726,6 +1726,9 @@ extension Pixel {
         // MARK: AI Chat Recent Chats
         case aiChatRecentChatSelectedPinned
         case aiChatRecentChatSelected
+        case aiChatRecentChatDeleteButtonTapped
+        case aiChatRecentChatDeleteConfirmed
+        case aiChatRecentChatDeleteCancelled
 
         // MARK: AI Chat Contextual Mode
         case aiChatContextualSheetOpened
@@ -3557,6 +3560,9 @@ extension Pixel.Event {
         // MARK: AI Chat Recent Chats
         case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
         case .aiChatRecentChatSelected: return "m_aichat_recent_chat_selected"
+        case .aiChatRecentChatDeleteButtonTapped: return "m_aichat_recent_chat_delete_button_tapped"
+        case .aiChatRecentChatDeleteConfirmed: return "m_aichat_recent_chat_delete_confirmed"
+        case .aiChatRecentChatDeleteCancelled: return "m_aichat_recent_chat_delete_cancelled"
 
         // MARK: AI Chat Contextual Mode
         case .aiChatContextualSheetOpened: return "m_aichat_contextual_sheet_opened"

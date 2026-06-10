@@ -29,7 +29,8 @@ final class DuckAISuggestionTableViewCell: UITableViewCell {
 
     private lazy var accessoryButton: UIButton = {
         let action = UIAction { [weak self] _ in
-            self?.onAccessoryButtonPressed?()
+            guard let self else { return }
+            self.onAccessoryButtonPressed?(self)
         }
 
         let button = UIButton(type: .system)
@@ -55,7 +56,7 @@ final class DuckAISuggestionTableViewCell: UITableViewCell {
         }
     }
 
-    var onAccessoryButtonPressed: (() -> Void)?
+    var onAccessoryButtonPressed: ((UIView) -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)

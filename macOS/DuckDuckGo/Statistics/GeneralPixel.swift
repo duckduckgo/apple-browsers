@@ -598,6 +598,13 @@ enum GeneralPixel: PixelKitEvent {
     case autoplaySettingBlockAll
 
     // Fire Window
+
+    /// Aggregate Fire-Window-open pixel — fires once per user per day on any Fire Window open
+    /// (manual or automatic). Answers "% DAU opened any Fire Window today".
+    case fireWindowOpenedAny
+
+    /// Fires every time a Fire Window is opened, sliced by how the open happened (manual vs.
+    /// automatic). Used to measure per-trigger DAU and per-trigger counts.
     case fireWindowOpened(trigger: FireWindowOpenTrigger)
 
     var name: String {
@@ -1371,6 +1378,8 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_autoplay_setting_block-all"
 
             // Fire Window
+        case .fireWindowOpenedAny:
+            return "m_mac_firewindow_opened"
         case .fireWindowOpened(trigger: let trigger):
             return "m_mac_firewindow_opened_\(trigger)"
         }
@@ -1563,6 +1572,7 @@ enum GeneralPixel: PixelKitEvent {
                 .dailyFireWindowConfigurationStartupFireWindowEnabled,
                 .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled,
                 .dailyFireWindowConfigurationFireAnimationEnabled,
+                .fireWindowOpenedAny,
                 .fireWindowOpened,
                 .navigation,
                 .navigationToExternalURL,

@@ -30,6 +30,7 @@ final class FireWindowOpenPixelReporter {
         cancellable = didRegisterWindowController
             .compactMap { $0.fireWindowOpenTrigger }
             .sink { trigger in
+                PixelKit.fire(GeneralPixel.fireWindowOpenedAny, frequency: .daily)
                 PixelKit.fire(GeneralPixel.fireWindowOpened(trigger: trigger), frequency: .dailyAndStandard)
             }
     }

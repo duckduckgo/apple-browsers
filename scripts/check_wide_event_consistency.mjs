@@ -8,9 +8,11 @@
 // source declares it at the top level.
 //
 // The two files must change together. This check does NOT inspect field
-// contents or report what differs - it only verifies that when a paired
-// wide-event pixel definition file changed on this branch, its source file
-// changed too. We trust the developer to make the correct edit.
+// contents or report what differs - it only verifies that when one side of a
+// pair changed on this branch, the other side did too: a changed pixel
+// definition requires its source to change, and a changed source requires at
+// least one of its paired pixel definitions to change. We trust the developer
+// to make the correct edit.
 //
 // "Changed" is measured against the merge-base with the PR base branch
 // (origin/$GITHUB_BASE_REF, else origin/main), so only this branch's changes
@@ -110,11 +112,19 @@ for (const [metaType, sourceFile] of sourceFileByType) {
     const pixelFiles = pixelFilesByType.get(metaType);
     if (!pixelFiles) continue; // no paired pixel def yet (gradual adoption) - nothing to enforce
     const sourceChanged = changed.has(sourceFile);
-    for (const pixelFile of pixelFiles) {
-        const pixelChanged = changed.has(pixelFile);
-        if (pixelChanged && !sourceChanged) {
+    const changedPixelFiles = [...pixelFiles].filter((f) => changed.has(f));
+
+    // A pixel definition changed but its paired source did not.
+    if (!sourceChanged) {
+        for (const pixelFile of changedPixelFiles) {
             errors.push(`${pixelFile} changed but its paired wide-event source ${sourceFile} (meta.type "${metaType}") did not.`);
         }
+    }
+
+    // The source changed but none of its paired pixel definitions did.
+    if (sourceChanged && changedPixelFiles.length === 0) {
+        const pixelList = [...pixelFiles].join(', ');
+        errors.push(`wide-event source ${sourceFile} (meta.type "${metaType}") changed but its paired pixel definition(s) ${pixelList} did not.`);
     }
 }
 

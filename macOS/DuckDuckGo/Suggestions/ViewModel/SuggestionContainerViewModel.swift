@@ -363,6 +363,12 @@ final class SuggestionContainerViewModel {
         suggestionContainer.getSuggestions(for: userStringValue)
     }
 
+    @MainActor
+    func prewarmRemoteSuggestionsConnection() {
+        guard searchPreferences.showAutocompleteSuggestions else { return }
+        suggestionContainer.prewarmRemoteSuggestionsConnection()
+    }
+
     func clearUserStringValue() {
         self.userStringValue = nil
         hasAutoSelectedSuggestion = false

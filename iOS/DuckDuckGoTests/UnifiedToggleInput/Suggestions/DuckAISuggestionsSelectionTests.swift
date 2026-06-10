@@ -33,7 +33,9 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
             aiChatSettings: MockAIChatSettingsProvider(),
-            viewModel: chatViewModel
+            aiChatDeleter: StubAIChatDeleter(),
+            viewModel: chatViewModel,
+            isFireTab: false
         )
 
         let source = DuckAISuggestionsSource(
@@ -85,4 +87,10 @@ private final class StubSuggestionLoadingDataSource: SuggestionLoadingDataSource
                            suggestionDataFromUrl url: URL,
                            withParameters parameters: [String: String],
                            completion: @escaping (Data?, Error?) -> Void) {}
+}
+
+@MainActor
+private struct StubAIChatDeleter: AIChatDeleting {
+    func deleteChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> { .success(()) }
+    func scheduleSync() {}
 }

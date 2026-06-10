@@ -227,6 +227,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
+    var isSubmitBlockedByRecoveryCard: Bool = false {
+        didSet {
+            guard oldValue != isSubmitBlockedByRecoveryCard else { return }
+            viewController.isSubmitBlockedByRecoveryCard = isSubmitBlockedByRecoveryCard
+        }
+    }
+
     // MARK: - Properties
 
     private(set) var viewController: UnifiedToggleInputViewController
@@ -265,6 +272,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
     private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
+    /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared once a
+    /// supported model is applied or the session resets.
+    private var isModelPickerForcedVisible = false
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -757,6 +767,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
+        isModelPickerForcedVisible = false
+        isSubmitBlockedByRecoveryCard = false
         syncInputBehaviorToHandler()
         isInputVisibleForKeyboard = true
         // The live state is no longer authoritative for the previous tab; clearing
@@ -1340,6 +1352,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func startNewChat() {
         isNewChatPending = true
         hasSubmittedPrompt = false
+        isModelPickerForcedVisible = false
+        isSubmitBlockedByRecoveryCard = false
         resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -1356,16 +1370,56 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         recordUserChoiceToStore()
     }
 
+    /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
+    /// No-op for a new chat that hasn't submitted yet — there the model rides in the first
+    /// `submitAIChatNativePrompt`.
+    private func notifyFrontendOfActiveChatModelChange(_ modelId: String) {
+        guard hasSubmittedPrompt, let userScript = boundUserScript else {
+            return
+        }
+        userScript.submitChangeModel(modelId)
+    }
+
+    /// Surfaces the native model picker on the **active** chat in response to the FE's
+    /// `showModelPicker` (e.g. the recovery card's "Switch Model" CTA). Expands the input and
+    /// reveals the model chip **without starting a new chat** — the chat stays `hasSubmittedPrompt`,
+    /// so a subsequent supported-model selection still emits `submitChangeModelAction`.
+    func presentModelPickerForActiveChat() {
+        isModelPickerForcedVisible = true
+        showExpanded(inputMode: .aiChat)
+        if isSubmitBlockedByRecoveryCard,
+           let supportedModel = modelStore.selectedModel,
+           supportedModel.entityHasAccess {
+            isSubmitBlockedByRecoveryCard = false
+            notifyFrontendOfActiveChatModelChange(supportedModel.id)
+        }
+        // Defer to the next runloop so the toolbar (and the now-revealed chip) is laid out after the
+        // expand animation before we ask the button to open its menu.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.viewController.presentModelPickerMenu()
+        }
+    }
+
     func handleModelSelection(_ modelId: String) {
-        guard let model = modelStore.models.first(where: { $0.id == modelId }) else { return }
+        guard let model = modelStore.models.first(where: { $0.id == modelId }) else {
+            return
+        }
 
         if model.entityHasAccess {
             let isNewSelection = modelId != modelStore.persistedModelId
             pendingGatedModelId = nil
+            if isModelPickerForcedVisible {
+                isModelPickerForcedVisible = false
+            }
+            // Supported model picked in the native picker — the recovery card's reason to block
+            // submit is gone, so drop the block (no-op when it wasn't set).
+            isSubmitBlockedByRecoveryCard = false
             updateSelectedModel(modelId)
             if isNewSelection {
                 Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
             }
+            notifyFrontendOfActiveChatModelChange(modelId)
         } else {
             if routeGatedModelSelection(model) {
                 pendingGatedModelId = modelId
@@ -1470,10 +1524,19 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         let isNewSelection = modelId != modelStore.persistedModelId
         pendingGatedModelId = nil
+        // Mirror the direct-selection path: the gated model the recovery-card flow was waiting on
+        // is now accessible (post-purchase), so drop the forced reveal and let the chip re-hide.
+        if isModelPickerForcedVisible {
+            isModelPickerForcedVisible = false
+        }
+        // The gated model the recovery flow waited on is now accessible (post-purchase); it
+        // becomes the active supported model, so lift the recovery-card submit block too.
+        isSubmitBlockedByRecoveryCard = false
         updateSelectedModel(modelId)
         if isNewSelection {
             Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
         }
+        notifyFrontendOfActiveChatModelChange(modelId)
         return true
     }
 
@@ -2256,7 +2319,10 @@ private extension UnifiedToggleInputCoordinator {
         // Contextual chat picks the model upstream (in the half-sheet); the model chip is permanently hidden here.
         // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
         let isImageGenActive = toolsController.selectedTool == .imageGeneration
-        viewController.isModelChipHidden = host == .contextualChat || hasSubmittedPrompt || isImageGenActive
+        // `isModelPickerForcedVisible` only relaxes the `hasSubmittedPrompt` hide reason — contextual
+        // chat and image generation stay hidden regardless.
+        let shouldHideModelChip = host == .contextualChat || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
+        viewController.isModelChipHidden = shouldHideModelChip
         updateReasoningPicker()
     }
 
@@ -2277,6 +2343,8 @@ private extension UnifiedToggleInputCoordinator {
         aiChatStatus = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
+        isModelPickerForcedVisible = false
+        isSubmitBlockedByRecoveryCard = false
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }
@@ -2443,7 +2511,8 @@ private extension UnifiedToggleInputCoordinator {
         NotificationCenter.default.publisher(for: .subscriptionDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshModelsAfterSubscriptionChange()
+                guard let self else { return }
+                self.refreshModelsAfterSubscriptionChange()
             }
             .store(in: &cancellables)
     }

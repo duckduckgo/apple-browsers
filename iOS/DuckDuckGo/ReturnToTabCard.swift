@@ -173,50 +173,73 @@ struct ReturnToTabCard: View {
                 role: .none,
                 action: model.onCardTap
             )
-            if model.isFireTab {
-                // When the Fire button is enabled, deleting a fire tab is handled by that button instead.
-                if !model.isFireButtonEnabled {
-                    MenuActionButton(
-                        text: UserText.escapeHatchMenuDeleteTab,
-                        icon: DesignSystemImages.Glyphs.Size16.fire,
-                        role: .destructive,
-                        action: model.onBurnTabImmediately
-                    )
-                }
-            } else {
+            destructiveActionButtons
+            if model.isHideShortcutEnabled {
                 MenuActionButton(
-                    text: UserText.escapeHatchMenuCloseTab,
-                    icon: DesignSystemImages.Glyphs.Size16.closeOutline,
-                    role: .destructive,
-                    action: model.onCloseTab
+                    text: UserText.escapeHatchMenuDontShowThis,
+                    icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
+                    role: .none,
+                    action: model.hideShortcut
                 )
-                // When the Fire button is enabled, deleting the tab is handled by that button instead.
-                if !model.isFireButtonEnabled {
-                    MenuActionButton(
-                        text: UserText.escapeHatchMenuDeleteTab,
-                        icon: DesignSystemImages.Glyphs.Size16.fire,
-                        role: .destructive,
-                        action: { model.onBurnTabWithConfirmation(menuFrameInWindow) }
-                    )
-                }
+            } else {
+                afterInactivityPicker
             }
-            Picker(selection: model.afterInactivityOptionBinding) {
-                ForEach(AfterInactivityOption.allCases, id: \.self) { option in
-                    Text(option.description)
-                        .tag(option)
-                }
-            } label: {
-                Text(UserText.settingsAfterInactivityLabel)
-                Text(model.afterInactivityOptionBinding.wrappedValue.description)
-                    .foregroundColor(.secondary)
-                    .font(.subheadline)
-
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
-                    .foregroundColor(Color(designSystemColor: .icons))
-
-            }
-            .pickerStyle(.menu)
         }
+
+        // With the hide shortcut, the After Inactivity option moves to its own section, below a divider.
+        if model.isHideShortcutEnabled {
+            Section {
+                afterInactivityPicker
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var destructiveActionButtons: some View {
+        if model.isFireTab {
+            // When the Fire button is enabled, deleting is handled by that button instead of the menu.
+            if !model.isFireButtonEnabled {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuDeleteTab,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
+                    role: .destructive,
+                    action: model.onBurnTabImmediately
+                )
+            }
+        } else {
+            MenuActionButton(
+                text: UserText.escapeHatchMenuCloseTab,
+                icon: DesignSystemImages.Glyphs.Size16.closeOutline,
+                role: .destructive,
+                action: model.onCloseTab
+            )
+            if !model.isFireButtonEnabled {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuDeleteTab,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
+                    role: .destructive,
+                    action: { model.onBurnTabWithConfirmation(menuFrameInWindow) }
+                )
+            }
+        }
+    }
+
+    private var afterInactivityPicker: some View {
+        Picker(selection: model.afterInactivityOptionBinding) {
+            ForEach(AfterInactivityOption.allCases, id: \.self) { option in
+                Text(option.description)
+                    .tag(option)
+            }
+        } label: {
+            Text(UserText.settingsAfterInactivityLabel)
+            Text(model.afterInactivityOptionBinding.wrappedValue.description)
+                .foregroundColor(.secondary)
+                .font(.subheadline)
+
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
+                .foregroundColor(Color(designSystemColor: .icons))
+        }
+        .pickerStyle(.menu)
     }
 
     private var swipeableActionsView: some View {

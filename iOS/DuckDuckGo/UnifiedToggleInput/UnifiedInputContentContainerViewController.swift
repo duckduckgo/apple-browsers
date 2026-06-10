@@ -506,6 +506,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             chatManager: chatManager,
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
+            historyManager: dependencies.historyManager,
             queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
             layoutConfiguration: .unifiedToggleInput,
             syncPromoManager: switchBarHandler.isFireTab ? nil : syncPromoManager,
@@ -841,6 +842,11 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
     }
 
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didDeleteSuggestion suggestion: Suggestion) {
+        // The duck.ai URL list shares the same history store. Refresh it so the deleted entry disappears there too.
+        duckAISuggestionsCoordinator?.refreshURLSuggestions()
+    }
+
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
     }
@@ -905,6 +911,11 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion) {
         fireDuckAISuggestionClickPixel(for: suggestion)
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
+    }
+
+    func duckAISuggestionsDidDeleteURL(_ suggestion: Suggestion) {
+        // The search tray reads the same history store. Re-fetch so the deleted entry disappears there too.
+        suggestionTrayManager?.refreshCurrentSuggestions()
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {

@@ -32,7 +32,8 @@ protocol DuckAISuggestionsViewControllerDelegate: AnyObject {
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion)
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion)
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String)
-    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController)
+    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController, source: UIView)
+    func duckAISuggestionsDidRequestURLDeletion(_ suggestion: Suggestion)
     func duckAISuggestionsDidRequestSyncSetup()
 }
 
@@ -430,7 +431,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         let icon = chat.isPinned ? DesignSystemImages.Glyphs.Size24.pin : DesignSystemImages.Glyphs.Size24.aiChat
 
         applyConfiguration(to: cell, title: chat.title, subtitle: nil, icon: icon)
-        configureDeleteActionIfNeeded(to: cell, chat: chat)
+        configureChatDeleteActionIfNeeded(to: cell, chat: chat)
     }
 
     private func configureURLCell(_ cell: UITableViewCell, with suggestion: Suggestion) {
@@ -463,6 +464,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             return
         }
         applyConfiguration(to: cell, title: title, subtitle: subtitle, icon: icon)
+        configureURLDeleteActionIfNeeded(to: cell, suggestion: suggestion)
     }
 
     private func configureSearchCell(_ cell: UITableViewCell, query: String) {
@@ -509,19 +511,36 @@ final class DuckAISuggestionsViewController: UIViewController {
 
 private extension DuckAISuggestionsViewController {
 
-    func configureDeleteActionIfNeeded(to cell: UITableViewCell, chat: AIChatSuggestion) {
+    func configureChatDeleteActionIfNeeded(to cell: UITableViewCell, chat: AIChatSuggestion) {
         guard let cell = cell as? DuckAISuggestionTableViewCell else {
             return
         }
 
-        cell.displaysDeleteButton = featureFlagger.isFeatureOn(.removeChatHistory)
-        cell.onDeletePressed = { [weak self] in
-            self?.requestChatDeletion(chat: chat)
+        cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.fire
+        cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onAccessoryButtonPressed = { [weak self] source in
+            self?.requestChatDeletion(chat: chat, source: source)
         }
     }
 
-    func requestChatDeletion(chat: AIChatSuggestion) {
-        delegate?.duckAISuggestionsDidRequestChatDeletion(chat, sender: self)
+    func configureURLDeleteActionIfNeeded(to cell: UITableViewCell, suggestion: Suggestion) {
+        guard let cell = cell as? DuckAISuggestionTableViewCell, case .historyEntry = suggestion else {
+            return
+        }
+
+        cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.clear
+        cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onAccessoryButtonPressed = { [weak self] _ in
+            self?.requestURLDeletion(suggestion: suggestion)
+        }
+    }
+
+    func requestChatDeletion(chat: AIChatSuggestion, source: UIView) {
+        delegate?.duckAISuggestionsDidRequestChatDeletion(chat, sender: self, source: source)
+    }
+
+    func requestURLDeletion(suggestion: Suggestion) {
+        delegate?.duckAISuggestionsDidRequestURLDeletion(suggestion)
     }
 }
 

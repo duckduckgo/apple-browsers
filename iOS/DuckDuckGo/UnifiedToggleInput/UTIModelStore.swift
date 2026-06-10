@@ -177,8 +177,10 @@ final class UTIModelStore {
 
     nonisolated func resolveSubscriptionState() async -> SubscriptionState {
         do {
-            guard let subscription = try await subscriptionManager.getSubscription(),
-                  subscription.isActive,
+            guard let subscription = try await subscriptionManager.getSubscription() else {
+                return .free
+            }
+            guard subscription.isActive,
                   let tier = subscription.tier else {
                 return .free
             }

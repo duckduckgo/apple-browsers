@@ -19,7 +19,7 @@
 import Foundation
 
 /// Converts `Data` to/from Base64URL (RFC 4648 §5): the URL-safe Base64 variant with `+`/`/` swapped
-// for `-`/`_` and `=` padding stripped, so values are safe in URLs and JWE compact tokens.
+/// for `-`/`_` and `=` padding stripped, so values are safe in URLs and JWE compact tokens.
 enum Base64URL {
     static func encode(_ data: Data) -> String {
         data.base64EncodedString()

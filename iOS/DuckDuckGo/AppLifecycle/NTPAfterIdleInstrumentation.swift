@@ -60,6 +60,9 @@ protocol NTPAfterIdleInstrumentation: AnyObject {
 
     /// The user changed the Opening Screen option from the escape hatch's settings menu.
     func escapeHatchOptionChanged(to option: AfterInactivityOption)
+
+    /// The user hid the "Return to tab" shortcut via the card's "Don't Show This" menu item.
+    func escapeHatchHiddenFromMenu()
 }
 
 final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
@@ -123,5 +126,9 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
 
     func escapeHatchOptionChanged(to option: AfterInactivityOption) {
         firePixel(option == .newTab ? .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab : .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab)
+    }
+
+    func escapeHatchHiddenFromMenu() {
+        firePixel(.ntpAfterIdleEscapeHatchHiddenFromMenu)
     }
 }

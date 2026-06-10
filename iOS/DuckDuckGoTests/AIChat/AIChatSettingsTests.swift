@@ -236,6 +236,40 @@ class AIChatSettingsTests: XCTestCase {
         mockNotificationCenter.removeObserver(observer)
     }
 
+    func testHidingBothTabBarHalves_turnsTabBarToggleOff() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter,
+                                      featureFlagger: mockFeatureFlagger)
+        settings.enableAIChat(enable: true)
+
+        // Hiding one half leaves the master toggle on.
+        settings.setAIChatTabBarDuckAIButtonVisible(false)
+        XCTAssertTrue(settings.isAIChatTabBarUserSettingsEnabled)
+
+        // Hiding the second half (both now hidden) turns the master toggle off.
+        settings.setAIChatTabBarContextualSheetButtonVisible(false)
+        XCTAssertFalse(settings.isAIChatTabBarUserSettingsEnabled)
+    }
+
+    func testReEnablingTabBarShortcut_restoresBothHalves() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter,
+                                      featureFlagger: mockFeatureFlagger)
+        settings.enableAIChat(enable: true)
+        settings.setAIChatTabBarDuckAIButtonVisible(false)
+        settings.setAIChatTabBarContextualSheetButtonVisible(false)
+        XCTAssertFalse(settings.isAIChatTabBarUserSettingsEnabled)
+
+        settings.enableAIChatTabBarUserSettings(enable: true)
+        XCTAssertTrue(settings.isAIChatTabBarUserSettingsEnabled)
+        XCTAssertTrue(settings.isAIChatTabBarDuckAIButtonVisible)
+        XCTAssertTrue(settings.isAIChatTabBarContextualSheetButtonVisible)
+    }
+
     // MARK: - DuckAIChromeShortcutVisibility
 
     func testDuckAIChromeShortcutVisibility_settingsRowVisible_onIPad_whenFlagOn() {
@@ -262,7 +296,9 @@ class AIChatSettingsTests: XCTestCase {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
         XCTAssertTrue(DuckAIChromeShortcutVisibility.isChromeButtonVisible(
             featureFlagger: flagger,
-            isAIChatTabBarUserSettingsEnabled: true
+            isTabBarShortcutEnabled: true,
+            isDuckAIButtonVisible: true,
+            isContextualSheetButtonVisible: true
         ))
     }
 
@@ -270,7 +306,9 @@ class AIChatSettingsTests: XCTestCase {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
         XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeButtonVisible(
             featureFlagger: flagger,
-            isAIChatTabBarUserSettingsEnabled: true
+            isTabBarShortcutEnabled: true,
+            isDuckAIButtonVisible: true,
+            isContextualSheetButtonVisible: true
         ))
     }
 
@@ -278,7 +316,9 @@ class AIChatSettingsTests: XCTestCase {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
         XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeButtonVisible(
             featureFlagger: flagger,
-            isAIChatTabBarUserSettingsEnabled: false
+            isTabBarShortcutEnabled: false,
+            isDuckAIButtonVisible: true,
+            isContextualSheetButtonVisible: true
         ))
     }
 
@@ -302,21 +342,21 @@ class AIChatSettingsTests: XCTestCase {
     func testDuckAIChromeShortcutVisibility_addressBarButtonHidden_onIPad_atLargeWidth() {
         XCTAssertFalse(DuckAIChromeShortcutVisibility.isAddressBarButtonVisibleOnIPad(
             isLargeWidth: true,
-            isAIChatTabBarUserSettingsEnabled: true
+            isTabBarShortcutEnabled: true
         ))
     }
 
     func testDuckAIChromeShortcutVisibility_addressBarButtonVisible_onIPad_atNarrowWidth_whenSettingOn() {
         XCTAssertTrue(DuckAIChromeShortcutVisibility.isAddressBarButtonVisibleOnIPad(
             isLargeWidth: false,
-            isAIChatTabBarUserSettingsEnabled: true
+            isTabBarShortcutEnabled: true
         ))
     }
 
     func testDuckAIChromeShortcutVisibility_addressBarButtonHidden_onIPad_atNarrowWidth_whenSettingOff() {
         XCTAssertFalse(DuckAIChromeShortcutVisibility.isAddressBarButtonVisibleOnIPad(
             isLargeWidth: false,
-            isAIChatTabBarUserSettingsEnabled: false
+            isTabBarShortcutEnabled: false
         ))
     }
 

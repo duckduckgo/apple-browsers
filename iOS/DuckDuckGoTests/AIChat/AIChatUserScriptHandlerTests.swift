@@ -744,6 +744,26 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertNil(response)
         XCTAssertEqual(mockAIChatSyncHandler.setAIChatHistoryEnabledCalls, [true])
     }
+
+    // MARK: - Push Message: submitChangeModelAction (native → FE active-chat model change)
+
+    func testChangeModelActionPushMessageUsesSubmitChangeModelActionMethodName() {
+        let message = AIChatUserScript.AIChatPushMessage.changeModelAction(modelId: "claude-haiku-4-5")
+        XCTAssertEqual(message.methodName, "submitChangeModelAction")
+    }
+
+    func testChangeModelActionPushMessageEncodesModelIdAsObject() throws {
+        let message = AIChatUserScript.AIChatPushMessage.changeModelAction(modelId: "claude-haiku-4-5")
+
+        let params = try XCTUnwrap(
+            message.params as? AIChatUserScript.AIChatPushMessage.ChangeModelActionParams,
+            "changeModelAction must carry a ChangeModelActionParams object, not a bare string"
+        )
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(params)) as? [String: String]
+        )
+        XCTAssertEqual(json, ["modelId": "claude-haiku-4-5"])
+    }
 }
 
 private final class CapturingAIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> {

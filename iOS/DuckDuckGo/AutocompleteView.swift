@@ -134,6 +134,8 @@ private struct SuggestionsSection: View {
 
     let unselectedColor = Color(designSystemColor: .surface)
 
+    @State private var hoveredIndex: Int?
+
     private struct Metrics {
         static let rowInsets = EdgeInsets(top: 10, leading: 10, bottom: 8, trailing: 14)
     }
@@ -148,9 +150,12 @@ private struct SuggestionsSection: View {
                                    query: query,
                                    onDelete: { onSuggestionDeleted(suggestions[index]) })
                  }
-                 .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
+                 .listRowBackground((autocompleteViewModel.selection == suggestions[index] || hoveredIndex == index) ? selectedColor : unselectedColor)
                  .listRowInsets(Metrics.rowInsets)
                  .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
+                 .onHover { isHovering in
+                     hoveredIndex = isHovering ? index : nil
+                 }
             }
         }
     }

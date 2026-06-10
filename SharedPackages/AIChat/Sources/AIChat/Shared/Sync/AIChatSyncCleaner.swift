@@ -74,9 +74,13 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
         return isChatHistoryEnabled
     }
 
+    /// No per-feature kill switch (cf. `supportsSyncChatsDeletion` for delete): the only
+    /// caller today is `ChatPinner`, which is constructed when the chat-history sheet
+    /// opens — that's already gated by `aiChatNativeChatHistory`. The master
+    /// `isAIChatSyncEnabled` flag still acts as a global rollback. Revisit if a non-sheet
+    /// pin entry point (e.g. omnibar, rename) lands.
     private var canUseAIChatSyncUpdate: Bool {
         guard featureFlagProvider.isAIChatSyncEnabled() else { return false }
-        guard featureFlagProvider.supportsSyncChatsUpdate() else { return false }
         guard sync.authState != .inactive else { return false }
         return isChatHistoryEnabled
     }

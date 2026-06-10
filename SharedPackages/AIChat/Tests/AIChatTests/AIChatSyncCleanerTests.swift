@@ -541,7 +541,6 @@ final class AIChatSyncCleanerTests: XCTestCase {
 
     func testGivenFeatureFlagDisabled_WhenRecordChatUpdate_ThenNothingIsStored() async {
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = false
-        mockFeatureFlagProvider.supportsSyncChatsUpdateResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         sut = makeSUT()
@@ -553,22 +552,8 @@ final class AIChatSyncCleanerTests: XCTestCase {
         XCTAssertEqual(mockSync.mockScheduler.notifyDataChangedCallCount, 0)
     }
 
-    func testGivenSupportsSyncChatsUpdateDisabled_WhenRecordChatUpdate_ThenNothingIsStored() async {
-        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
-        mockFeatureFlagProvider.supportsSyncChatsUpdateResult = false
-        mockSync.authState = .active
-        mockSync.isAIChatHistoryEnabled = true
-        sut = makeSUT()
-
-        await sut.recordChatUpdate(chatID: "chat-1")
-
-        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
-        XCTAssertNil(stored)
-    }
-
     func testGivenAllConditionsMet_WhenRecordChatUpdate_ThenChatIDIsStoredAndSyncIsTriggered() async {
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
-        mockFeatureFlagProvider.supportsSyncChatsUpdateResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         sut = makeSUT()

@@ -21,14 +21,7 @@ import Foundation
 public protocol AIChatFeatureFlagProviding {
     func isAIChatSyncEnabled() -> Bool
     func supportsSyncChatsDeletion() -> Bool
-    /// Gates the native pin-update sync push (`AIChatSyncCleaner.recordChatUpdate`).
-    /// Falls back to `false` by default so existing conformances aren't a compile error.
-    func supportsSyncChatsUpdate() -> Bool
     func isNativeDataAccessEnabled() -> Bool
     func isNativeDataStorageEnabled() -> Bool
 
-}
-
-public extension AIChatFeatureFlagProviding {
-    func supportsSyncChatsUpdate() -> Bool { false }
 }

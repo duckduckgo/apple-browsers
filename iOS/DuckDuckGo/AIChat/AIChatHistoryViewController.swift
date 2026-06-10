@@ -149,7 +149,11 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     private func bindViewModel() {
+        // `removeDuplicates` swallows the reactive emission that follows an optimistic VM
+        // mutation when its result equals the local state we already applied — without it,
+        // `refreshContent`'s `reloadData` would interrupt the swipe-pin animation.
         Publishers.CombineLatest3(viewModel.$pinned, viewModel.$recent, viewModel.$hasLoaded)
+            .removeDuplicates { lhs, rhs in lhs.0 == rhs.0 && lhs.1 == rhs.1 && lhs.2 == rhs.2 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _, _, _ in
                 self?.refreshContent()

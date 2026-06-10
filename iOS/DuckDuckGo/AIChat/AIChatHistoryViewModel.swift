@@ -62,7 +62,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
         pinner: ChatPinning? = nil,
-        mutationQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated)
+        mutationQueue: DispatchQueue = DispatchQueue(label: "chat-history.mutation", qos: .userInitiated)
     ) {
         self.reader = reader
         self.fireExecutor = fireExecutor

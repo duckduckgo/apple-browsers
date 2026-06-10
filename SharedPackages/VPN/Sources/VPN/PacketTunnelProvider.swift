@@ -307,7 +307,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     @MainActor
-    private(set) var tunnelPathGeneration: UInt64 = 0
+    private var tunnelPathGeneration: UInt64 = 0
 
     @MainActor
     public var lastSelectedServerInfo: NetworkProtectionServerInfo? {
@@ -1744,7 +1744,6 @@ extension PacketTunnelProvider: TunnelStateProviding {
     // currentServerSelectionMethod — already internal var @MainActor
     // lastSelectedServer — already internal var @MainActor
     // lastSelectedServerInfo — already public var @MainActor
-    // tunnelPathGeneration — already internal get/private set var @MainActor
 
     var tunnelInterfaceName: String? {
         adapter.interfaceName

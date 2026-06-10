@@ -306,7 +306,7 @@ final class TunnelMonitorsTests: XCTestCase {
         XCTAssertEqual(failureRecoveryHandler.lastExcludeLocalNetworks, false)
     }
 
-    func testTunnelFailureCallback_failureDetected_whenRecoveryGenerationIsCurrent_appliesRecoveryConfig() async throws {
+    func testTunnelFailureCallback_failureDetected_appliesRecoveryConfig() async throws {
         let configResult = makeFailureRecoveryConfigResult()
         failureRecoveryHandler.configResultToUpdate = configResult
 
@@ -332,19 +332,6 @@ final class TunnelMonitorsTests: XCTestCase {
             return false
         }.count
         XCTAssertEqual(unhealthyCompletionCount, 1)
-    }
-
-    func testTunnelFailureCallback_failureDetected_whenGenerationChangesBeforeRecoveryUpdate_skipsRecoveryConfigUpdate() async throws {
-        failureRecoveryHandler.configResultToUpdate = makeFailureRecoveryConfigResult()
-        failureRecoveryHandler.beforeUpdateConfig = { [weak tunnelState] in
-            tunnelState?.tunnelPathGeneration += 1
-        }
-
-        try await monitors.start(testImmediately: false)
-        await tunnelFailureMonitor.fire(.failureDetected)
-        await waitForSpawnedTasks()
-
-        XCTAssertNil(hooks.lastFailureRecoveryConfigUpdate)
     }
 
     func testTunnelFailureCallback_failureRecovered_stopsFailureRecovery() async throws {
@@ -661,7 +648,6 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
     var lastExcludeLocalNetworks: Bool?
     var lastDNSSettings: NetworkProtectionDNSSettings?
     var configResultToUpdate: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult?
-    var beforeUpdateConfig: (@MainActor () -> Void)?
     var afterSuccessfulConfigUpdate: (@MainActor () -> Void)?
 
     func attemptRecovery(
@@ -676,12 +662,11 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
         lastDNSSettings = dnsSettings
 
         if let configResultToUpdate {
-            await beforeUpdateConfig?()
             do {
                 try await updateConfig(configResultToUpdate)
                 await afterSuccessfulConfigUpdate?()
             } catch {
-                // Expected in stale-generation cancellation tests.
+                // updateConfig is not expected to throw in these tests.
             }
         }
     }

@@ -152,19 +152,12 @@ final class TunnelMonitors: TunnelMonitoring {
                   let server = tunnelState.lastSelectedServer else {
                 return
             }
-            let tunnelPathGeneration = tunnelState.tunnelPathGeneration
             let excludeLocalNetworks = tunnelState.excludeLocalNetworks
             await self.failureRecoveryHandler.attemptRecovery(
                 to: server,
                 excludeLocalNetworks: excludeLocalNetworks,
                 dnsSettings: self.settings.dnsSettings) { [weak self] generateConfigResult in
-
-                guard let self,
-                      self.tunnelState?.tunnelPathGeneration == tunnelPathGeneration else {
-                    throw CancellationError()
-                }
-
-                try await self.onFailureRecoveryConfigUpdate(generateConfigResult)
+                try await self?.onFailureRecoveryConfigUpdate(generateConfigResult)
             }
         }
     }

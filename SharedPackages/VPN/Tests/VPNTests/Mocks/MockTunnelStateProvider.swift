@@ -25,7 +25,6 @@ final class MockTunnelStateProvider: TunnelStateProviding {
     var currentServerSelectionMethod: NetworkProtectionServerSelectionMethod = .automatic
     var lastSelectedServer: NetworkProtectionServer?
     var lastSelectedServerInfo: NetworkProtectionServerInfo?
-    var tunnelPathGeneration: UInt64 = 0
     var tunnelInterfaceName: String?
     var excludeLocalNetworks: Bool = false
 }

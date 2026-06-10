@@ -21,6 +21,20 @@ import Foundation
 public protocol AIChatsHandling {
     func delete(until: Date, token: String) async throws
     func delete(chatIds: [String], token: String) async throws
+    func patch(updates: [AIChatUpdate], token: String) async throws
+}
+
+/// A single chat-attribute change submitted to the AI chat sync patch endpoint. Today only
+/// the `pinned` flag rides through this path; rename is intentionally excluded until
+/// titles can be JWE-encrypted on native (Android did the same in PR #8640).
+public struct AIChatUpdate: Equatable {
+    public let chatId: String
+    public let pinned: Bool
+
+    public init(chatId: String, pinned: Bool) {
+        self.chatId = chatId
+        self.pinned = pinned
+    }
 }
 
 public final class AIChats: AIChatsHandling {
@@ -33,6 +47,7 @@ public final class AIChats: AIChatsHandling {
         self.api = api
         self.endpoints = endpoints
         self.dateFormatter = ISO8601DateFormatter()
+        self.dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     }
 
     public func delete(until: Date, token: String) async throws {
@@ -81,4 +96,38 @@ public final class AIChats: AIChatsHandling {
         }
     }
 
+    public func patch(updates: [AIChatUpdate], token: String) async throws {
+        guard !updates.isEmpty else { return }
+
+        let now = dateFormatter.string(from: Date())
+        // `pinned` is encoded as "pinned" / NSNull to match the server contract Android
+        // shipped in PR #8640. `client_last_modified` and `edit_timestamp` are both set to
+        // the patch time — the server uses them for conflict resolution.
+        let payload: [[String: Any]] = updates.map { update in
+            [
+                "id": update.chatId,
+                "client_last_modified": now,
+                "edit_timestamp": now,
+                "pinned": update.pinned ? "pinned" : NSNull()
+            ]
+        }
+
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+
+        let request = api.createAuthenticatedJSONRequest(
+            url: endpoints.aiChats,
+            method: .patch,
+            authToken: token,
+            json: jsonData,
+            headers: [:],
+            parameters: [:]
+        )
+
+        let result = try await request.execute()
+        let statusCode = result.response.statusCode
+
+        guard statusCode == 204 else {
+            throw SyncError.unexpectedStatusCode(statusCode)
+        }
+    }
 }

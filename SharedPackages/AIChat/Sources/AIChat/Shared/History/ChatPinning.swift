@@ -31,9 +31,12 @@ public enum ChatPinningError: Error, Equatable {
 public struct ChatPinner: ChatPinning {
 
     private let storageHandler: DuckAiNativeStorageHandling
+    private let syncCleaner: AIChatSyncCleaning?
 
-    public init(storageHandler: DuckAiNativeStorageHandling) {
+    public init(storageHandler: DuckAiNativeStorageHandling,
+                syncCleaner: AIChatSyncCleaning? = nil) {
         self.storageHandler = storageHandler
+        self.syncCleaner = syncCleaner
     }
 
     public func setPinned(chatId: String, pinned: Bool) throws {
@@ -47,5 +50,11 @@ public struct ChatPinner: ChatPinning {
         json["pinned"] = pinned
         let mutated = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
         try storageHandler.putChat(chatId: chatId, data: mutated)
+        // Fire-and-forget the sync record + eager trigger. Setting setPinned `async throws`
+        // would ripple into the VM's serial mutation queue; the recordChatUpdate call is
+        // idempotent and self-healing on the next sync cycle if the Task gets dropped.
+        if let syncCleaner {
+            Task { await syncCleaner.recordChatUpdate(chatID: chatId) }
+        }
     }
 }

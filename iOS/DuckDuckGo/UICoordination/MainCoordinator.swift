@@ -257,6 +257,7 @@ final class MainCoordinator {
                                         contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,

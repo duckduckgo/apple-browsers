@@ -1,5 +1,6 @@
 //
-//  AIChatFeatureFlag.swift
+//  AIChatUpdateOperation.swift
+//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,18 +18,19 @@
 //
 
 import Foundation
+import DDGSync
+import AIChat
 
-public protocol AIChatFeatureFlagProviding {
-    func isAIChatSyncEnabled() -> Bool
-    func supportsSyncChatsDeletion() -> Bool
-    /// Gates the native pin-update sync push (`AIChatSyncCleaner.recordChatUpdate`).
-    /// Falls back to `false` by default so existing conformances aren't a compile error.
-    func supportsSyncChatsUpdate() -> Bool
-    func isNativeDataAccessEnabled() -> Bool
-    func isNativeDataStorageEnabled() -> Bool
+/// Drains the pending chat-update queue on every sync cycle. Sibling of `AIChatDeleteOperation`.
+final class AIChatUpdateOperation: SyncCustomOperation {
 
-}
+    private weak var cleaner: (any AIChatSyncCleaning)?
 
-public extension AIChatFeatureFlagProviding {
-    func supportsSyncChatsUpdate() -> Bool { false }
+    init(cleaner: any AIChatSyncCleaning) {
+        self.cleaner = cleaner
+    }
+
+    func run() async throws {
+        await cleaner?.updateIfNeeded()
+    }
 }

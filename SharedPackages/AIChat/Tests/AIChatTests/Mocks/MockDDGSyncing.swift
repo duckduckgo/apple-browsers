@@ -60,6 +60,22 @@ final class MockDDGSyncing: DDGSyncing {
         }
     }
 
+    // MARK: - Patch AI Chats
+
+    var patchAIChatsCallCount = 0
+    var patchAIChatsUpdates: [AIChatUpdate]?
+    var patchAIChatsError: Error?
+    var onPatchAIChats: (() -> Void)?
+
+    func patchAIChats(updates: [AIChatUpdate]) async throws {
+        patchAIChatsCallCount += 1
+        patchAIChatsUpdates = updates
+        onPatchAIChats?()
+        if let error = patchAIChatsError {
+            throw error
+        }
+    }
+
     // MARK: - Token Rescope
 
     var mainTokenRescopeResult: String?

@@ -154,7 +154,11 @@ private struct SuggestionsSection: View {
                  .listRowInsets(Metrics.rowInsets)
                  .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
                  .onHover { isHovering in
-                     hoveredIndex = isHovering ? index : nil
+                     if isHovering {
+                         hoveredIndex = index
+                     } else if hoveredIndex == index {
+                         hoveredIndex = nil
+                     }
                  }
             }
         }

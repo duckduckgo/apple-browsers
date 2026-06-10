@@ -32,6 +32,7 @@ final class MainWindowController: NSWindowController {
     private var cancellables: Set<AnyCancellable> = []
     private static var knownFullScreenMouseDetectionWindows = Set<NSValue>()
     let fireWindowSession: FireWindowSession?
+    let fireWindowOpenTrigger: FireWindowOpenTrigger?
     private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
 
@@ -52,6 +53,7 @@ final class MainWindowController: NSWindowController {
     init(window: NSWindow? = nil,
          mainViewController: MainViewController,
          fireWindowSession: FireWindowSession? = nil,
+         fireWindowOpenTrigger: FireWindowOpenTrigger? = nil,
          fireViewModel: FireViewModel,
          themeManager: ThemeManaging,
          featureFlagger: FeatureFlagger? = nil) {
@@ -71,6 +73,7 @@ final class MainWindowController: NSWindowController {
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
         self.fireWindowSession = fireWindowSession
+        self.fireWindowOpenTrigger = fireWindowOpenTrigger
         fireWindowSession?.addWindow(window)
 
         self.themeManager = themeManager

@@ -24,9 +24,9 @@ enum FireWindowOpenTrigger: String, CustomStringConvertible {
 
     /// User explicitly chose to open a Fire Window — e.g. overflow menu,
     /// main menu, dock menu, context menu, Fire popover, history view.
-    case user
+    case manual
 
-    /// Fire Window opened automatically by a preference — "Open Fire Window
-    /// by default" or the startup window type set to Fire Window.
-    case preference
+    /// Fire Window opened without an explicit "Open Fire Window" choice —
+    /// "Open Fire Window by default" preference or the startup window type set to Fire Window.
+    case automatic
 }

@@ -163,7 +163,7 @@ final class AccountManagerTests: XCTestCase {
         {
             "id": "credential-1",
             "scope": "sync",
-            "encrypted3_party_credential": "encrypted-credential"
+            "encrypted_3party_credential": "encrypted-credential"
         }
         """
 
@@ -204,7 +204,7 @@ final class AccountManagerTests: XCTestCase {
                 {
                     "id": "3party",
                     "scope": "sync",
-                    "encrypted3_party_credential": "encrypted"
+                    "encrypted_3party_credential": "encrypted"
                 }
             ]
         }

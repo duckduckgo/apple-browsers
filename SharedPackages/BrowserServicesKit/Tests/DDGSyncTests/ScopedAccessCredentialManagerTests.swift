@@ -573,7 +573,7 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     }
 
     private func accessCredentialsBody(_ accessCredentials: [AccessCredential]) throws -> String {
-        let body = FetchAccessCredentialsBody(accessCredentials: accessCredentials)
+        let body = FetchAccessCredentialsBody(accessCredentials: accessCredentials.map(AccessCredentialResponse.init))
         let data = try JSONEncoder.snakeCaseKeys.encode(body)
         return try XCTUnwrap(String(data: data, encoding: .utf8))
     }
@@ -593,7 +593,25 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     }
 
     private struct FetchAccessCredentialsBody: Encodable {
-        let accessCredentials: [AccessCredential]
+        let accessCredentials: [AccessCredentialResponse]
+    }
+
+    private struct AccessCredentialResponse: Encodable {
+        let id: String
+        let scope: String?
+        let encrypted3PartyCredential: String?
+
+        init(_ accessCredential: AccessCredential) {
+            id = accessCredential.id
+            scope = accessCredential.scope
+            encrypted3PartyCredential = accessCredential.encrypted3PartyCredential
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case scope
+            case encrypted3PartyCredential = "encrypted_3party_credential"
+        }
     }
 
     private struct FetchProtectedKeysBody: Encodable {

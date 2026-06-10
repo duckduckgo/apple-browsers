@@ -91,4 +91,3 @@ final class ScopedAccessCredentialEnvelopeTests: XCTestCase {
         Data((0..<32).map { startByte &+ UInt8($0) })
     }
 }
-

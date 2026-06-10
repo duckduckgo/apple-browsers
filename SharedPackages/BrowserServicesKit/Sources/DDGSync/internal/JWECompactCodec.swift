@@ -174,4 +174,3 @@ private struct DirectProtectedHeader: Decodable {
     let enc: String
     let kid: String
 }
-

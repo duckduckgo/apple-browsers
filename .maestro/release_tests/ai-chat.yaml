@@ -94,7 +94,7 @@ tags:
     direction: DOWN
 - tapOn: "AI Features"
 - tapOn:
-    id: "Settings.AIFeatures.Toggle.DuckAI"
+    id: "Settings.AIFeatures.EnableToggle"
 - tapOn: "Settings"
 - tapOn: "Done"
 

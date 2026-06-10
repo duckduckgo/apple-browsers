@@ -157,6 +157,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
+    var onRequestOpenDuckAIChat: (() -> Void)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
@@ -1460,6 +1461,10 @@ extension SettingsViewModel {
     
     @MainActor func dismissSettings() {
         onRequestDismissSettings?()
+    }
+
+    @MainActor func openDuckAIChat() {
+        onRequestOpenDuckAIChat?()
     }
 }
 

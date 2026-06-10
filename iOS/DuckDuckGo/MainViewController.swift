@@ -5360,10 +5360,15 @@ extension MainViewController: TabDelegate {
             storageHandler: duckAiNativeStorageHandler,
             modelDisplays: modelDisplays
         )
+        // Pinner writes the toggled `pinned` flag straight to the native chat blob; the
+        // GRDB `ValueObservation` then re-emits and the sheet refreshes. Sync's outbound
+        // path picks the change up via its existing `ai_chats` observer.
+        let pinner: ChatPinning? = duckAiNativeStorageHandler.map(ChatPinner.init(storageHandler:))
         let viewModel = AIChatHistoryViewModel(
             reader: reader,
             fireExecutor: fireExecutor,
-            downloader: downloader
+            downloader: downloader,
+            pinner: pinner
         )
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel)

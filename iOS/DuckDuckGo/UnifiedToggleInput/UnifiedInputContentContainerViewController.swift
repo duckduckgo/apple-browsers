@@ -860,9 +860,9 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsSurfacePr
     }
 }
 
-// MARK: - DuckAISuggestionsCoordinatorDelegate
+// MARK: - Duck.ai suggestion selection handling
 
-extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinatorDelegate {
+extension UnifiedInputContentContainerViewController {
 
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected

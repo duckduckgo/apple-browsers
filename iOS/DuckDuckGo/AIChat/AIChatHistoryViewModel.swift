@@ -183,9 +183,9 @@ final class AIChatHistoryViewModel: ObservableObject {
         pinned.contains(where: { $0.chatId == chatId })
     }
 
-    /// Optimistically moves the chat between sections and dispatches the storage write
-    /// off-main. Returns the source + destination index paths for the table view animation,
-    /// or `nil` when the chat isn't in either section or the pinner isn't wired.
+    /// Optimistically moves the chat between sections and dispatches the storage write.
+    /// Returns the source + destination index paths for the table animation, or `nil` when
+    /// no move is possible (chat absent or pinner not wired).
     @discardableResult
     func togglePin(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
         guard let pinner, let move = applyOptimisticPinToggle(chatId: chatId) else { return nil }

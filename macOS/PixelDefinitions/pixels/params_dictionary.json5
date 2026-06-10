@@ -48,6 +48,11 @@
         "type": "number",
         "description": "NSError code"
     },
+    "keychainErrorCode": {
+        "key": "keychain_error_code",
+        "type": "string",
+        "description": "OSStatus code returned by the Keychain when reading or writing the encryption key failed"
+    },
     "fromExtension": {
         "key": "fromExtension",
         "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",

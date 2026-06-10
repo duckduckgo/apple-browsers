@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import Lottie
+import MetricBuilder
 
 struct ImportPromotionHeaderView: View {
     var primaryButtonAction: (() -> Void)?
@@ -86,7 +87,7 @@ struct ImportPromotionHeaderView: View {
                 dimension[.top]
             }
         }
-        .background(RoundedRectangle(cornerRadius: 8.0)
+        .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
             .foregroundColor(Color(designSystemColor: .surface))
         )
         .onAppear {

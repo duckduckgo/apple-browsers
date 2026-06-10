@@ -31,6 +31,7 @@ import DDGSync
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
+import MetricBuilder
 import NetworkExtension
 import Networking
 import Onboarding
@@ -169,6 +170,7 @@ class MainViewController: UIViewController {
     let bookmarksDatabase: CoreDataDatabase
     private var favoritesViewModel: FavoritesListInteracting
     let syncService: DDGSyncing
+    let aiChatSyncCleaner: AIChatSyncCleaning?
     let syncDataProviders: SyncDataProviders
     let syncPausedStateManager: any SyncPausedStateManaging
 
@@ -356,6 +358,7 @@ class MainViewController: UIViewController {
         featureFlagger: featureFlagger,
         privacyConfigurationManager: privacyConfigurationManager,
         aiChatSettings: aiChatSettings,
+        aiChatSyncCleaner: aiChatSyncCleaner,
         iPadTabFeature: aichatIPadTabFeature,
         duckAiNativeStorageHandler: duckAiNativeStorageHandler
     )
@@ -413,6 +416,7 @@ class MainViewController: UIViewController {
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
         aiChatSettings: AIChatSettingsProvider,
+        aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
@@ -457,6 +461,7 @@ class MainViewController: UIViewController {
         self.historyManager = historyManager
         self.homePageConfiguration = homePageConfiguration
         self.syncService = syncService
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.syncDataProviders = syncDataProviders
         self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -624,6 +629,7 @@ class MainViewController: UIViewController {
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
+                                                              aiChatSyncCleaner: aiChatSyncCleaner,
                                                               aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
@@ -811,6 +817,7 @@ class MainViewController: UIViewController {
                                                       featureFlagger: featureFlagger,
                                                       aichatIPadTabFeature: aichatIPadTabFeature,
                                                       aiChatSettings: aiChatSettings,
+                                                      aiChatSyncCleaner: aiChatSyncCleaner,
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
@@ -3463,6 +3470,10 @@ class MainViewController: UIViewController {
 
     func onDuckAIVoiceModeRequested() {
         Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.ntp.rawValue])
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         openAIChatInVoiceMode()
     }
 
@@ -3958,6 +3969,10 @@ extension MainViewController: OmniBarDelegate {
         // and resolves to .dismissed, not .suspended.
         hideSuggestionTray()
         omniBar.cancel()
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         loadQuery(query)
         hideNotificationBarIfBrokenSitePromptShown()
         showHomeRowReminder()
@@ -5108,7 +5123,7 @@ extension MainViewController: TabDelegate {
                 }
                 sheet.prefersGrabberVisible = grabberVisible
                 if #unavailable(iOS 26) {
-                    sheet.preferredCornerRadius = 24
+                    sheet.preferredCornerRadius = SheetMetrics.cornerRadius
                 }
             }
         }
@@ -6418,11 +6433,19 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
         switch target {
         case .SERP:
             Pixel.fire(pixel: .voiceSearchSERPDone)
+            if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+                ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+            }
+            postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
             loadQuery(query)
 
         case .AIChat:
             Pixel.fire(pixel: .voiceSearchAIChatDone)
             if let coordinator = unifiedToggleInputCoordinator, coordinator.isAITabState, coordinator.hasBoundUserScript {
+                if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+                    ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+                }
+                postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()

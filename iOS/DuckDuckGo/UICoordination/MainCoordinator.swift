@@ -278,6 +278,7 @@ final class MainCoordinator {
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         aiChatAddressBarExperience: aiChatAddressBarExperience,
                                         themeManager: ThemeManager.shared,
                                         keyValueStore: keyValueStore,

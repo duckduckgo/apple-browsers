@@ -2322,6 +2322,9 @@ public struct UserText {
     public static let aiChatRecentChatsButtonAccessibility = NSLocalizedString("duckai.contextual.recent.chats.button", value: "Recent Chats", comment: "Accessibility label for the recent chats button in the Duck.ai contextual sheet header")
     public static let aiChatRecentChatsSectionTitle = NSLocalizedString("duckai.contextual.recent.chats.section", value: "Recent Chats", comment: "Section header in the recent chats popup")
     public static let aiChatViewAllChats = NSLocalizedString("duckai.contextual.view.all.chats", value: "View all chats", comment: "Action to view all chats in the recent chats popup")
+    public static let removeRecentChatConfirmationTitle = NSLocalizedString("duckai.recent.chat.remove.confirmation.title", value: "Delete this chat?", comment: "Title of the confirmation alert shown before deleting a recent Duck.ai chat")
+    public static let removeRecentChatConfirmationMessage = NSLocalizedString("duckai.recent.chat.remove.confirmation.message", value: "\"%@\" will be permanently deleted everywhere.", comment: "Message of the confirmation alert shown before deleting a recent Duck.ai chat. %@ is the chat title.")
+    public static let removeRecentChatConfirmationButton = NSLocalizedString("duckai.recent.chat.remove.confirmation.button", value: "Delete", comment: "Destructive button confirming deletion of a recent Duck.ai chat")
 
     // MARK: - AI Chat Context Chip
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")

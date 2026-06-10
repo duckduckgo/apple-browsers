@@ -495,6 +495,11 @@ extension MainViewController {
                                                   adBlockingAvailability: adBlockingAvailability)
 
         settingsViewModel.autoClearActionDelegate = self
+        settingsViewModel.onRequestOpenDuckAIChat = { [weak self] in
+            self?.dismiss(animated: true) {
+                self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
+            }
+        }
         Pixel.fire(pixel: .settingsPresented)
 
         func doLaunch() {

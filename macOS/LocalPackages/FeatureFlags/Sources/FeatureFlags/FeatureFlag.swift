@@ -396,7 +396,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1214533186882448
     case aiChatSettingsLinkInAiFeatures
 
-    // TODO - add Asana task
+    // https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114757?focus=true
     case syncScopedAccessCredentials
 }
 

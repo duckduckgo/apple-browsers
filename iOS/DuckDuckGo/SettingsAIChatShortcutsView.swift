@@ -42,21 +42,27 @@ enum DuckAIChromeShortcutVisibility {
     }
 
     /// No `isIPad` parameter — the only caller (`TabsBarViewController`) is iPad-only by construction.
+    /// Shown when the master "Tab Bar" toggle is on and at least one half is still visible.
     static func isChromeButtonVisible(
         featureFlagger: FeatureFlagger,
-        isAIChatTabBarUserSettingsEnabled: Bool
+        isTabBarShortcutEnabled: Bool,
+        isDuckAIButtonVisible: Bool,
+        isContextualSheetButtonVisible: Bool
     ) -> Bool {
         featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
-            && isAIChatTabBarUserSettingsEnabled
+            && isTabBarShortcutEnabled
+            && (isDuckAIButtonVisible || isContextualSheetButtonVisible)
     }
 
-    /// On iPad with the chrome shortcut in play, the in-address-bar Duck.ai icon only
-    /// shows at narrow widths where the tabs bar (and chrome pill) is hidden.
+    /// On iPad with the chrome shortcut in play, the in-address-bar Duck.ai button only
+    /// shows at narrow widths where the tabs bar (and chrome pill) is hidden. It mirrors the
+    /// master "Tab Bar" toggle — shown whenever the shortcut is on, hidden only once both
+    /// halves are hidden (which already flips the master toggle off).
     static func isAddressBarButtonVisibleOnIPad(
         isLargeWidth: Bool,
-        isAIChatTabBarUserSettingsEnabled: Bool
+        isTabBarShortcutEnabled: Bool
     ) -> Bool {
-        !isLargeWidth && isAIChatTabBarUserSettingsEnabled
+        !isLargeWidth && isTabBarShortcutEnabled
     }
 }
 

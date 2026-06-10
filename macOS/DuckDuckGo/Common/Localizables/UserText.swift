@@ -1099,8 +1099,6 @@ struct UserText {
     static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open pop-up windows permission access name")
     static let permissionNotification = NSLocalizedString("permission.notification", value: "Notifications", comment: "Web notifications permission access name")
 
-    static let permissionMuteFormat = NSLocalizedString("permission.mute", value: "Pause %@ use on “%@”", comment: "Temporarily pause input media device %@ access for %@2 website")
-    static let permissionUnmuteFormat = NSLocalizedString("permission.unmute", value: "Resume %@ use on “%@”", comment: "Resume input media device %@ access for %@ website")
     static let permissionReloadToEnable = NSLocalizedString("permission.reloadPage", value: "Reload to ask permission again", comment: "Reload webpage to ask for input media device access permission again")
 
     static let permissionAllowExternalSchemeFormat = NSLocalizedString("permission.allow.externalScheme.format", value: "Allow “%@“ to open %@", comment: "Allow to open External Link (%@ 2) to open on current domain (%@ 1)")

@@ -1,12 +1,12 @@
 appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
+    - release
     - unified_toggle_input
 name: test_unified_toggle_input
 
 ---
 
-# Launch with onboarding skipped and unifiedToggleInput feature flag enabled
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
     clearState: true
@@ -17,64 +17,42 @@ name: test_unified_toggle_input
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
         ff.unifiedToggleInput: "true"
+        ff.experimentalAddressBar: "true"
 
-# Step 1: Navigate to Duck.ai tab
+# Dismiss any launch-time modal BEFORE navigating the Browsing Menu (set_search_and_duckai's
+# first action taps the menu, which a lingering modal would otherwise block).
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+# Enable "Search & Duck.ai" mode via Settings UI (cannot inject via launch arg — crashes)
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+# Focus NTP omnibar — reveals the Search/Duck.ai segmented toggle
 - tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-
-# Dismiss any web modals that appear (onboarding, promo, subscription etc.)
-- runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
-- runFlow:
-    when:
-        visible: "Back to Settings"
-    commands:
-        - tapOn: "Back to Settings"
-
-# Step 2: Verify collapsed state — input bar shows placeholder
+    id: "searchEntry"
 - assertVisible:
-    text: "Ask privately"
+    id: "AddressBar.Button.DuckAI"
+- assertVisible:
+    id: "AddressBar.Button.Search"
 
-# Step 3: Tap to expand — toggle and text field appear
+# Switch to Duck.ai mode — AI toolbar (ModelChip) appears
 - tapOn:
-    text: "Ask privately"
+    id: "AddressBar.Button.DuckAI"
 - assertVisible:
-    text: "Search"
-- assertVisible:
-    text: "Duck.ai"
+    id: "AIChat.Toolbar.Button.ModelChip"
 
-# Step 4: Duck.ai mode is default when expanded — toolbar visible
-- assertVisible:
-    text: "4o-mini"
-
-# Step 5: Switch to Search mode — toolbar disappears
+# Switch back to Search mode — ModelChip disappears
 - tapOn:
-    text: "Search"
+    id: "AddressBar.Button.Search"
 - assertNotVisible:
-    text: "4o-mini"
+    id: "AIChat.Toolbar.Button.ModelChip"
 
-# Step 6: Switch back to Duck.ai — toolbar reappears
-- tapOn:
-    text: "Duck.ai"
-- assertVisible:
-    text: "4o-mini"
-
-# Step 7: Type text — verify input accepts it
-- tapOn:
-    text: "Ask privately"
+# Typed text is preserved across mode switches
 - inputText: "What is a tokamak?"
+- assertVisible: "What is a tokamak?"
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+- assertVisible: "What is a tokamak?"
 - assertVisible:
-    text: "What is a tokamak?"
+    id: "AIChat.Toolbar.Button.ModelChip"

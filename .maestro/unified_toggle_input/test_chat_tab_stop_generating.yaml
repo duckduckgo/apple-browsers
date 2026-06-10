@@ -1,0 +1,42 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_chat_tab_stop_generating
+
+---
+
+- runFlow:
+    file: ../shared/open_chat_tab.yaml
+
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Submit a prompt long enough that generation is still in progress when we stop it.
+- tapOn:
+    id: "searchEntry"
+- inputText: "Explain the life cycle of a duck in detail."
+- tapOn: "Submit"
+
+# First send on a clearState device shows the anonymous-chat consent. Accepting it dispatches
+# the pending prompt (verified on-device: no re-submit needed).
+- runFlow:
+    when:
+        visible: "Agree"
+    commands:
+        - tapOn: "Agree"
+
+# The Stop button appears while the live model is generating; tap it.
+# NOTE: this races a live backend response and is inherently latency/availability dependent.
+# It is acceptable for the nightly release job but is not a deterministic gate.
+- extendedWaitUntil:
+    visible: "Stop generating"
+    timeout: 15000
+- tapOn: "Stop generating"
+
+# Generation halts: the Stop control disappears and the user's prompt bubble remains.
+- extendedWaitUntil:
+    notVisible: "Stop generating"
+    timeout: 10000
+- assertVisible: "Explain the life cycle of a duck in detail."

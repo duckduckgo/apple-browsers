@@ -101,6 +101,14 @@ extension URL {
         } == true
     }
 
+    /// Returns `true` if the URL requests the Duck AI settings to be open on load (`?settings=open`).
+    public var isDuckAISettingsOpen: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.settingsName && $0.value == AIChatURLParameters.settingsOpenValue
+        } == true
+    }
+
     /// Returns the chat ID from the URL if present, or nil if not a Duck AI URL with a chat ID.
     public var duckAIChatID: String? {
         guard isDuckAIURL,

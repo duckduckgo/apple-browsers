@@ -250,6 +250,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
     case escapeHatchFireButton
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215530020470713?focus=true
+    case escapeHatchHideShortcut
+
     case crashReportOptInStatusResetting
 
     case screenTimeCleaning
@@ -543,6 +546,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
     case nativeStoragePathMigration
+
+    /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
+    /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
+    case onboardingToggleAffectsNtpAndDdg
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -588,6 +595,14 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Risky Domain Protection for VPN
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case riskyDomainsProtection
+
+    /// Kill switch for the orphaned-proxy detection machinery (tunnel heartbeat + proxy detection loop + pixel).
+    /// Off by default → detection runs; enable remotely to disable it.
+    case orphanProxyDetectionKillSwitch
+
+    /// Kill switch for the orphaned-proxy full-bypass behavior.
+    /// Off by default → bypass engages when an orphaned proxy is detected; enable remotely to disable it.
+    case orphanProxyBypassKillSwitch
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -778,6 +793,10 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
+    /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
+    case lightweightReloadOnDataClear
+    /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
+    case protectedDataLoadGate
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

@@ -176,6 +176,9 @@ protocol AIChatUserScriptHandling: AnyObject {
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -207,6 +210,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let keyValueStore: KeyValueStoring
     private let isNativeStorageBridgeAvailable: Bool
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
+    private let installDateProvider: () -> Date?
+    private let installTypeProvider: () -> AIChatInstallType
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -228,7 +233,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> = AIChatUserScriptErrorEventMapper(),
-         isNativeStorageBridgeAvailable: Bool = false) {
+         isNativeStorageBridgeAvailable: Bool = false,
+         installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
+         installTypeProvider: @escaping () -> AIChatInstallType = {
+             StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
+         }) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
@@ -239,6 +248,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
+        self.installDateProvider = installDateProvider
+        self.installTypeProvider = installTypeProvider
         setUpSyncStatusObserver()
     }
 
@@ -388,7 +399,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
             supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
-            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
+            installType: installTypeProvider(),
+            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
         )
     }
 
@@ -563,6 +576,28 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatNewImageGenerationChatStarted, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Model Picker
+
+    @MainActor
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatShowModelPicker, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Recovery-Card Submit Block
+
+    @MainActor
+    func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.isSubmitBlockedByRecoveryCard = true
+        return nil
+    }
+
+    @MainActor
+    func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.isSubmitBlockedByRecoveryCard = false
         return nil
     }
 

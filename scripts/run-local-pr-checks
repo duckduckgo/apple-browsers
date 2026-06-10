@@ -21,6 +21,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 PLATFORMS=("iOS" "macOS")
 SWIFTLINT_ALL=false
+BASE_REF="origin/${GITHUB_BASE_REF:-main}"
 
 PASS_COUNT=0
 FAIL_COUNT=0
@@ -44,7 +45,8 @@ Options:
   --platform ios|macos   Restrict per-platform checks (pixel + translation) to
                          one platform. Default: both.
   --all                  Run SwiftLint over the whole repo (CI parity) instead
-                         of only files changed vs origin/main.
+                         of only files changed vs the base branch (origin/main,
+                         or origin/$GITHUB_BASE_REF when set).
   -h, --help             Show this help.
 
 Exit code equals the number of failed checks (0 = all green; skips never fail).
@@ -53,16 +55,16 @@ EOF
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
-ORIGIN_MAIN_STATUS=""
-origin_main_available() {
-  if [ -z "$ORIGIN_MAIN_STATUS" ]; then
-    if git -C "$REPO_ROOT" rev-parse --verify --quiet origin/main >/dev/null 2>&1; then
-      ORIGIN_MAIN_STATUS="yes"
+BASE_REF_STATUS=""
+base_ref_available() {
+  if [ -z "$BASE_REF_STATUS" ]; then
+    if git -C "$REPO_ROOT" rev-parse --verify --quiet "$BASE_REF" >/dev/null 2>&1; then
+      BASE_REF_STATUS="yes"
     else
-      ORIGIN_MAIN_STATUS="no"
+      BASE_REF_STATUS="no"
     fi
   fi
-  [ "$ORIGIN_MAIN_STATUS" = "yes" ]
+  [ "$BASE_REF_STATUS" = "yes" ]
 }
 
 pass() { PASS_COUNT=$((PASS_COUNT + 1)); printf '  %sPASS%s  %s\n' "$C_GREEN" "$C_RESET" "$1"; }
@@ -119,13 +121,13 @@ check_swiftlint() {
     return
   fi
 
-  if ! origin_main_available; then
-    skip "swiftlint" "origin/main not available — fetch it, or use --all"
+  if ! base_ref_available; then
+    skip "swiftlint" "$BASE_REF not available — fetch it, or use --all"
     return
   fi
 
   local base
-  base="$(git -C "$REPO_ROOT" merge-base origin/main HEAD)"
+  base="$(git -C "$REPO_ROOT" merge-base "$BASE_REF" HEAD)"
 
   local swift_files=()
   while IFS= read -r f; do
@@ -163,7 +165,7 @@ check_pixels() {
 
 check_translations() {
   if ! have python3; then skip "translation checks" "python3 not installed"; return; fi
-  if ! origin_main_available; then skip "translation checks" "origin/main not available — fetch it"; return; fi
+  if ! base_ref_available; then skip "translation checks" "$BASE_REF not available — fetch it"; return; fi
 
   local scripts=(verify_locale_list verify_string_extraction check_new_string_translations check_marker_consistency check_deleted_string_translations)
   local plat script

@@ -160,11 +160,17 @@ public final class PixelKit {
     }()
 
     private static let weeksToCoalesceCohort = 6
+
+    private static func retryQueueFileName(forSource source: String?) -> String {
+        let sanitizedSource = (source ?? "default").replacingOccurrences(of: "/", with: "-")
+        return "pixelkit-retry-queue-\(sanitizedSource).json"
+    }
     private let dateGenerator: () -> Date
     public private(set) static var shared: PixelKit?
     private let appVersion: String
     private let defaultHeaders: [String: String]
     private let fireRequest: FireRequest
+    private let retryQueue: PixelRetryQueue?
     private var dryRun: Bool
     private let source: String?
     private let channel: String?
@@ -222,6 +228,24 @@ public final class PixelKit {
         self.dateGenerator = dateGenerator
         self.defaults = defaults
         self.fireRequest = fireRequest
+
+        if dryRun {
+            self.retryQueue = nil
+        } else {
+            // Wrap the network fire-request with a retry queue so failed pixels are persisted and re-sent
+            // at launch and after subsequent successful fires (28-day expiry). Reuses the same `defaults`
+            // for throttling state. This is internal to PixelKit and hidden from its consumers.
+            let retryQueue = PixelRetryQueue(
+                fireRequest: fireRequest,
+                store: PixelRetryQueueFileStore(fileName: Self.retryQueueFileName(forSource: source)),
+                lastProcessingDateStorage: defaults,
+                calendar: self.pixelCalendar,
+                dateGenerator: dateGenerator
+            )
+            self.retryQueue = retryQueue
+            retryQueue.sendQueuedPixels()
+        }
+
         logger.debug("👾 PixelKit initialised: dryRun: \(self.dryRun, privacy: .public) appVersion: \(self.appVersion, privacy: .public) source: \(self.source ?? "-", privacy: .public) channel: \(self.channel ?? "-", privacy: .public) defaultHeaders: \(self.defaultHeaders, privacy: .public) pixelCalendar: \(self.pixelCalendar, privacy: .public)")
     }
 
@@ -687,7 +711,8 @@ public final class PixelKit {
                 }
                 return
             }
-            fireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
+            let effectiveFireRequest = retryQueue?.fireRequest ?? fireRequest
+            effectiveFireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
         }
 
     private func prefixedAndSuffixedName(for event: PixelKitEvent, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> String {

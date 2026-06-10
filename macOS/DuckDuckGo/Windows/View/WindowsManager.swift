@@ -65,6 +65,7 @@ final class WindowsManager {
                              aiChatSessionStore: AIChatSessionStoring = Application.appDelegate.aiChatSessionStore,
                              fireCoordinator: FireCoordinator = Application.appDelegate.fireCoordinator,
                              burnerMode: BurnerMode? = nil,
+                             isOpenedAutomatically: Bool = false, // `true` when the window is opened by app logic rather than a direct user gesture
                              droppingPoint: NSPoint? = nil,
                              contentSize: NSSize? = nil,
                              showWindow: Bool = true,

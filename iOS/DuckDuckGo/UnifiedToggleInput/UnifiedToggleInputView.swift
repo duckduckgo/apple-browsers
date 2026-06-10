@@ -200,6 +200,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
     }
 
+    var isToolbarSubmitBlockedByRecoveryCard: Bool = false {
+        didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
+    }
+
     var isGenerating: Bool = false {
         didSet { toolsToolbar.isGenerating = isGenerating }
     }
@@ -212,6 +216,11 @@ final class UnifiedToggleInputView: UIView {
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
         set { toolsToolbar.modelPickerMenu = newValue }
+    }
+
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        toolsToolbar.presentModelPickerMenu()
     }
 
     var toolsMenu: UIMenu? {

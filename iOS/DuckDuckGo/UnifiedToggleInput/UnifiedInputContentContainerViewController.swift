@@ -478,13 +478,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         ])
         unifiedSuggestionsContainerView = containerView
 
-        // Search only fetches in `.search` mode — in Duck.ai mode the typed prompt must not hit the
-        // search autocomplete endpoint (legacy parity; the Duck.ai surface runs its own URL loader).
-        // Emitting "" off-mode resets the loader to empty and stops requests.
+        // Search only fetches in `.search` mode — in Duck.ai the typed prompt must not hit the search
+        // autocomplete endpoint (legacy parity; Duck.ai runs its own URL loader). Filter (pause) rather
+        // than mapping to "": dropping off-mode emissions preserves the last results, and toggling back
+        // with unchanged text is deduped — so no clear-and-refetch flicker on every toggle.
         let searchTextPublisher = Publishers.CombineLatest(
             switchBarHandler.toggleStatePublisher,
             switchBarHandler.currentTextPublisher)
-            .map { mode, text in mode == .search ? text : "" }
+            .filter { mode, _ in mode == .search }
+            .map { _, text in text }
             .removeDuplicates()
             .eraseToAnyPublisher()
 

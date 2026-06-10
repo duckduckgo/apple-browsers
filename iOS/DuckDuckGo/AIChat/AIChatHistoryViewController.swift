@@ -311,6 +311,9 @@ extension AIChatHistoryViewController: UITableViewDelegate {
                 tableView.moveRow(at: move.source, to: move.destination)
             }, completion: { [weak self] _ in
                 self?.isApplyingLocalUpdate = false
+                // Catch up any reactive emission that fired (and got skipped) while the
+                // flag was set — e.g. an FE-driven add/delete that landed mid-animation.
+                self?.refreshContent()
                 completion(true)
             })
         }

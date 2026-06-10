@@ -40,7 +40,8 @@ public struct ChatPinner: ChatPinning {
         guard let record = try storageHandler.getChat(chatId: chatId) else {
             throw ChatPinningError.chatNotFound
         }
-        guard var json = try JSONSerialization.jsonObject(with: record.data, options: []) as? [String: Any] else {
+        guard let parsed = try? JSONSerialization.jsonObject(with: record.data, options: []),
+              var json = parsed as? [String: Any] else {
             throw ChatPinningError.invalidChatBlob
         }
         json["pinned"] = pinned

@@ -112,9 +112,20 @@ final class ChatPinnerTests: XCTestCase {
         }
     }
 
-    func testSetPinned_throwsInvalidChatBlob_whenStoredDataIsNotJSONObject() throws {
+    func testSetPinned_throwsInvalidChatBlob_whenStoredDataIsNotJSON() throws {
         let storage = DuckAiNativeMemoryStorageHandler()
         try storage.putChat(chatId: "c1", data: Data("not even json".utf8))
+        let pinner = ChatPinner(storageHandler: storage)
+
+        XCTAssertThrowsError(try pinner.setPinned(chatId: "c1", pinned: true)) { error in
+            XCTAssertEqual(error as? ChatPinningError, .invalidChatBlob)
+        }
+    }
+
+    func testSetPinned_throwsInvalidChatBlob_whenJSONRootIsNotADictionary() throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        // Valid JSON, but the root is an array — can't carry a `pinned` field.
+        try storage.putChat(chatId: "c1", data: Data("[1, 2, 3]".utf8))
         let pinner = ChatPinner(storageHandler: storage)
 
         XCTAssertThrowsError(try pinner.setPinned(chatId: "c1", pinned: true)) { error in

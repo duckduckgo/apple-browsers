@@ -1,0 +1,47 @@
+# ai-chat-settings.yaml
+# Validates the "Duck.ai Settings" row in Settings > AI Features:
+#  - it is shown below the Duck.ai toggle when Duck.ai is enabled
+#  - it is hidden when the Duck.ai toggle is disabled
+#  - tapping it dismisses Settings and opens duck.ai in a new tab
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+# Set up
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Navigate to Settings > AI Features
+- tapOn: "Browsing Menu"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "AI Features"
+    direction: DOWN
+- tapOn: "AI Features"
+
+# Duck.ai is enabled by default - the new row should be visible below the toggle
+- assertVisible:
+    id: "Settings.AIFeatures.DuckAISettings"
+- assertVisible: "Duck.ai Settings"
+
+# Disable the main Duck.ai toggle - the row should be hidden
+- tapOn:
+    id: "Settings.AIFeatures.EnableToggle"
+- assertNotVisible:
+    id: "Settings.AIFeatures.DuckAISettings"
+- assertNotVisible: "Duck.ai Settings"
+
+# Re-enable the main Duck.ai toggle - the row should reappear
+- tapOn:
+    id: "Settings.AIFeatures.EnableToggle"
+- assertVisible:
+    id: "Settings.AIFeatures.DuckAISettings"
+
+# Tapping the row dismisses Settings and opens duck.ai in a new tab
+- tapOn:
+    id: "Settings.AIFeatures.DuckAISettings"
+- assertNotVisible: "AI Features"
+- assertVisible: ".*duck\\.ai.*"

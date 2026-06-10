@@ -3460,6 +3460,9 @@ Take back control of your personal information with the browser designed for dat
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
 
+/* Settings row that opens Duck.ai in a new tab */
+"settings.aichat.duckai.settings" = "Duck.ai Settings";
+
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Manage Duck.ai Shortcuts";
 

@@ -415,7 +415,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
-    private var isSyncingEmbeddedExtensions = false
+    private var webExtensionLifecycleCoordinatorStorage: Any?
+
+    @available(macOS 15.4, *)
+    var webExtensionLifecycleCoordinator: WebExtensionLifecycleCoordinator? {
+        get { webExtensionLifecycleCoordinatorStorage as? WebExtensionLifecycleCoordinator }
+        set { webExtensionLifecycleCoordinatorStorage = newValue }
+    }
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings?
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
@@ -1948,6 +1954,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await self?.initializeWebExtensions()
             },
             onFeatureFlagDisabled: { [weak self] in
+                self?.webExtensionLifecycleCoordinator?.cancelAll()
+                self?.webExtensionLifecycleCoordinator = nil
                 self?.webExtensionManager = nil
             },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
@@ -1972,10 +1980,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
             self.webExtensionManager = webExtensionManager
 
-            // Load extensions asynchronously - the controller is already attached to tabs
-            Task {
-                await self.loadAndSyncEmbeddedExtensions(webExtensionManager)
+            let coordinator = WebExtensionLifecycleCoordinator(manager: webExtensionManager) { [weak self] in
+                self?.enabledEmbeddedExtensionTypes() ?? []
             }
+            self.webExtensionLifecycleCoordinator = coordinator
+
+            // Load extensions asynchronously - the controller is already attached to tabs
+            coordinator.loadAndSync()
         } else {
             webExtensionManager = nil
         }
@@ -1985,9 +1996,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func initializeWebExtensions() async {
         guard webExtensionManager == nil else {
-            if let manager = webExtensionManager as? WebExtensionManager {
-                await loadAndSyncEmbeddedExtensions(manager)
-            }
+            await webExtensionLifecycleCoordinator?.loadAndSync().value
             return
         }
 
@@ -1999,25 +2008,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.webExtensionManager = webExtensionManager
 
-        await loadAndSyncEmbeddedExtensions(webExtensionManager)
+        let coordinator = WebExtensionLifecycleCoordinator(manager: webExtensionManager) { [weak self] in
+            self?.enabledEmbeddedExtensionTypes() ?? []
+        }
+        self.webExtensionLifecycleCoordinator = coordinator
+        await coordinator.loadAndSync().value
     }
 
     @available(macOS 15.4, *)
     @MainActor
     private func syncEmbeddedExtensions() async {
-        guard !isSyncingEmbeddedExtensions else { return }
-        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
-
-        isSyncingEmbeddedExtensions = true
-        defer { isSyncingEmbeddedExtensions = false }
-
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
-    }
-
-    @available(macOS 15.4, *)
-    @MainActor
-    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
-        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+        await webExtensionLifecycleCoordinator?.sync().value
     }
 
     @available(macOS 15.4, *)

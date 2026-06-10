@@ -129,6 +129,109 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.textState, .empty)
     }
 
+    // MARK: - Model Picker (showModelPicker)
+
+    func test_modelChip_isHidden_duringActiveChat_byDefault() {
+        _ = sut.prepareExternalPromptSubmission()
+
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    func test_presentModelPickerForActiveChat_revealsModelChip_duringActiveChat() {
+        _ = sut.prepareExternalPromptSubmission()
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+
+        sut.presentModelPickerForActiveChat()
+
+        XCTAssertTrue(sut.hasSubmittedPrompt) // still an active chat — no new chat started
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_selectingSupportedModel_afterPresentingModelPicker_reHidesModelChip() {
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.modelStore.models = [
+            AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)
+        ]
+        sut.handleModelSelection("gpt-5")
+
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    // MARK: - Recovery-Card Submit Block
+
+    func test_recoveryCardBlock_propagatesToViewController() {
+        sut.isSubmitBlockedByRecoveryCard = true
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByRecoveryCard)
+
+        sut.isSubmitBlockedByRecoveryCard = false
+        XCTAssertFalse(sut.viewController.isSubmitBlockedByRecoveryCard)
+    }
+
+    func test_handleModelSelection_supportedModel_clearsRecoveryBlock() {
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.handleModelSelection("gpt-5")
+
+        XCTAssertFalse(sut.isSubmitBlockedByRecoveryCard)
+    }
+
+    func test_handleModelSelection_gatedModel_keepsRecoveryBlock() {
+        sut.modelStore.models = [makeModel(id: "gated", access: false)]
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.handleModelSelection("gated")
+
+        XCTAssertTrue(sut.isSubmitBlockedByRecoveryCard, "A gated selection routes to the upsell — the recovery block must remain")
+    }
+
+    func test_presentModelPickerForActiveChat_withSupportedModel_clearsRecoveryBlock() {
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.presentModelPickerForActiveChat()
+
+        XCTAssertFalse(sut.isSubmitBlockedByRecoveryCard, "Entering Switch Model with a supported model already selected reconciles and unblocks submit")
+    }
+
+    func test_presentModelPickerForActiveChat_withNoSupportedModel_keepsRecoveryBlock() {
+        mockPreferences.selectedModelId = nil
+        sut.modelStore.models = [makeModel(id: "gated", access: false)]
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.presentModelPickerForActiveChat()
+
+        XCTAssertTrue(sut.isSubmitBlockedByRecoveryCard,
+                      "With no accessible model there is nothing to adopt — the block (and recovery card) must remain")
+    }
+
+    func test_presentModelPickerForActiveChat_withEmptyModelList_keepsRecoveryBlock() {
+        sut.modelStore.updateSelectedModel("gated", isNewChatContext: false)
+        sut.modelStore.models = []
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.presentModelPickerForActiveChat()
+
+        XCTAssertTrue(sut.isSubmitBlockedByRecoveryCard,
+                      "Empty model list ⇒ no access-checked selectedModel ⇒ block must remain")
+    }
+
+    func test_hide_clearsRecoveryBlock() {
+        sut.isSubmitBlockedByRecoveryCard = true
+        sut.hide()
+        XCTAssertFalse(sut.isSubmitBlockedByRecoveryCard)
+    }
+
+    func test_startNewChat_clearsRecoveryBlock() {
+        sut.isSubmitBlockedByRecoveryCard = true
+        sut.startNewChat()
+        XCTAssertFalse(sut.isSubmitBlockedByRecoveryCard)
+    }
+
     func test_showExpanded_withNilPrefilledText_doesNotSetPrefilledState() {
         sut.showExpanded(prefilledText: nil)
         XCTAssertEqual(sut.textState, .empty)

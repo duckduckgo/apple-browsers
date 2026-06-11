@@ -59,9 +59,32 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return super.keyCommands
         }
 
+        var commands = super.keyCommands ?? []
         let shiftEnter = UIKeyCommand(action: #selector(handleShiftEnter), input: "\r", modifierFlags: .shift)
         shiftEnter.wantsPriorityOverSystemBehavior = true
-        return (super.keyCommands ?? []) + [shiftEnter]
+        commands.append(shiftEnter)
+
+        // The text view is multi-line, so only claim the arrows when navigating the list or when the caret has no
+        // line to move into; otherwise they fall through to normal caret movement.
+        if omniBarView.aiChatTextView.isFirstResponder {
+            let hasHighlight = omniDelegate?.onAIChatSuggestionsHasHighlight() ?? false
+            let canEnterList = omniDelegate?.onAIChatSuggestionsIsNavigationAvailable() ?? false
+            if hasHighlight || (canEnterList && omniBarView.aiChatTextView.isCaretOnLastLine) {
+                commands.append(.prioritizedArrow(input: UIKeyCommand.inputDownArrow, action: #selector(handleAIChatArrowDown)))
+            }
+            if hasHighlight {
+                commands.append(.prioritizedArrow(input: UIKeyCommand.inputUpArrow, action: #selector(handleAIChatArrowUp)))
+            }
+        }
+        return commands
+    }
+
+    @objc private func handleAIChatArrowDown() {
+        omniDelegate?.onAIChatSuggestionsMoveSelectionDown()
+    }
+
+    @objc private func handleAIChatArrowUp() {
+        omniDelegate?.onAIChatSuggestionsMoveSelectionUp()
     }
 
     @objc private func handleShiftEnter() {
@@ -637,6 +660,10 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            // A highlighted chat-history row claims Return instead of submitting the typed prompt.
+            if omniDelegate?.onAIChatSuggestionsActivateHighlight() == true {
+                return false
+            }
             submitIPadDuckAIText(from: textView)
             return false
         }
@@ -713,4 +740,27 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
         UniversalOmniBarEditingStateTransition(isPresenting: false,
                                                addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
+}
+
+private extension UITextView {
+
+    /// True when the caret sits on the last visual line, so Down has no line below to move into.
+    var isCaretOnLastLine: Bool {
+        guard let selectedTextRange else { return true }
+        let caretMaxY = caretRect(for: selectedTextRange.end).maxY
+        let documentEndMaxY = caretRect(for: endOfDocument).maxY
+        return caretMaxY >= documentEndMaxY - 1
+    }
+
+}
+
+private extension UIKeyCommand {
+
+    /// An arrow-key command that takes priority over the system/text-view default for that key.
+    static func prioritizedArrow(input: String, action: Selector) -> UIKeyCommand {
+        let command = UIKeyCommand(action: action, input: input, modifierFlags: [])
+        command.wantsPriorityOverSystemBehavior = true
+        return command
+    }
+
 }

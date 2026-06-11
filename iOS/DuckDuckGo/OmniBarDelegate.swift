@@ -141,6 +141,14 @@ protocol OmniBarDelegate: AnyObject {
     // MARK: - Fire Mode
     func onTryFireModeRequested()
     func isCurrentTabFireTab() -> Bool
+
+    // MARK: - AI Chat suggestions keyboard navigation (iPad)
+    func onAIChatSuggestionsIsNavigationAvailable() -> Bool
+    func onAIChatSuggestionsHasHighlight() -> Bool
+    func onAIChatSuggestionsMoveSelectionDown()
+    func onAIChatSuggestionsMoveSelectionUp()
+    /// Activates the highlighted row; returns whether one was activated.
+    func onAIChatSuggestionsActivateHighlight() -> Bool
 }
 
 extension OmniBarDelegate {
@@ -156,6 +164,12 @@ extension OmniBarDelegate {
     func onPrivacyIconPressed(isHighlighted: Bool) {
 
     }
+
+    func onAIChatSuggestionsIsNavigationAvailable() -> Bool { false }
+    func onAIChatSuggestionsHasHighlight() -> Bool { false }
+    func onAIChatSuggestionsMoveSelectionDown() { }
+    func onAIChatSuggestionsMoveSelectionUp() { }
+    func onAIChatSuggestionsActivateHighlight() -> Bool { false }
     
     func onMenuPressed() {
         

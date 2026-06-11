@@ -54,6 +54,15 @@ final class SearchSuggestionsSource: SuggestionsSource {
 
     // MARK: - Section mapping
 
+    /// The top-hits actually shown: the result's hits, or a single phrase fallback (the query itself)
+    /// when every category is empty — mirrors `AutocompleteViewModel`. Display and row resolution both
+    /// use this so the fallback row stays tappable (resolving against the raw, empty result returned nil).
+    private static func effectiveTopHits(from result: SuggestionResult, query: String) -> [Suggestion] {
+        guard result.topHits.isEmpty, result.duckduckgoSuggestions.isEmpty, result.localSuggestions.isEmpty, !query.isEmpty
+        else { return result.topHits }
+        return [.phrase(phrase: query)]
+    }
+
     static func sections(from result: SuggestionResult, query: String, showAskAIChat: Bool) -> [SuggestionSection] {
         var sections: [SuggestionSection] = []
 
@@ -64,12 +73,7 @@ final class SearchSuggestionsSource: SuggestionsSource {
                 rows: suggestions.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: id, includesDeleteAccessory: true) }))
         }
 
-        var topHits = result.topHits
-        // Empty → single non-tap-ahead phrase fallback (mirrors AutocompleteViewModel).
-        if topHits.isEmpty && result.duckduckgoSuggestions.isEmpty && result.localSuggestions.isEmpty && !query.isEmpty {
-            topHits = [.phrase(phrase: query)]
-        }
-        section("topHits", topHits)
+        section("topHits", effectiveTopHits(from: result, query: query))
         section("ddg", result.duckduckgoSuggestions)
         section("local", result.localSuggestions)
         if showAskAIChat, !query.isEmpty {
@@ -86,7 +90,7 @@ final class SearchSuggestionsSource: SuggestionsSource {
     }
 
     static func suggestion(forRowID id: String, in result: SuggestionResult, query: String) -> Suggestion? {
-        let all = result.topHits + result.duckduckgoSuggestions + result.localSuggestions
+        let all = effectiveTopHits(from: result, query: query) + result.duckduckgoSuggestions + result.localSuggestions
         for prefix in ["topHits", "ddg", "local"] {
             if let match = all.first(where: { SuggestionRowMapper.row(for: $0, query: query, idPrefix: prefix, includesDeleteAccessory: true).id == id }) {
                 return match

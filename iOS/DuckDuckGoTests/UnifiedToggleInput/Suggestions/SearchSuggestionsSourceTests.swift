@@ -57,4 +57,14 @@ final class SearchSuggestionsSourceTests: XCTestCase {
         let resolved = SearchSuggestionsSource.suggestion(forRowID: "topHits-website-\(url.absoluteString)", in: result, query: "a")
         XCTAssertEqual(resolved, suggestion)
     }
+
+    func test_emptyResultFallbackPhraseRow_isResolvable() {
+        // No results → a single phrase fallback row (the query). The displayed row must resolve back
+        // to a suggestion so tapping it is handled (it previously resolved against the empty result → nil).
+        let sections = SearchSuggestionsSource.sections(from: .appEmpty, query: "zxqw", showAskAIChat: false)
+        let rowID = try? XCTUnwrap(sections.first?.rows.first?.id)
+        XCTAssertEqual(rowID, "topHits-phrase-zxqw")
+        let resolved = SearchSuggestionsSource.suggestion(forRowID: "topHits-phrase-zxqw", in: .appEmpty, query: "zxqw")
+        XCTAssertEqual(resolved, .phrase(phrase: "zxqw"))
+    }
 }

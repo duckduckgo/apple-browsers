@@ -52,7 +52,7 @@ private struct PrimaryButtonColors {
         pressed: Color(singleUseColor: .rebranding(.accentPrimaryPressed)),
         disabled: Color(singleUseColor: .rebranding(.accentPrimary)),
         text: Color(singleUseColor: .rebranding(.accentPrimaryText)),
-        textDisabled: Color(singleUseColor: .rebranding(.accentPrimaryText))
+        textDisabled: Color(singleUseColor: .rebranding(.buttonsContentDisabled))
     )
 
     static let rebrandedBrand = PrimaryButtonColors(
@@ -60,7 +60,7 @@ private struct PrimaryButtonColors {
         pressed: Color(singleUseColor: .rebranding(.buttonsPrimaryPressed)),
         disabled: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
         text: Color(singleUseColor: .rebranding(.buttonsPrimaryText)),
-        textDisabled: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
+        textDisabled: Color(singleUseColor: .rebranding(.buttonsContentDisabled))
     )
 
     static let rebrandedDestructive = PrimaryButtonColors(
@@ -68,7 +68,7 @@ private struct PrimaryButtonColors {
         pressed: Color(singleUseColor: .rebranding(.destructivePrimaryPressed)),
         disabled: Color(singleUseColor: .rebranding(.destructivePrimary)),
         text: Color(singleUseColor: .rebranding(.destructivePrimaryText)),
-        textDisabled: Color(singleUseColor: .rebranding(.destructivePrimaryText))
+        textDisabled: Color(singleUseColor: .rebranding(.buttonsContentDisabled))
     )
 }
 
@@ -130,19 +130,19 @@ private func makeRebrandedPrimaryBody(
     forcePressed: Bool = false
 ) -> some View {
     let isPressed = configuration.isPressed || forcePressed
+    let backgroundColor = isPressed ? colors.pressed : colors.standard
 
     configuration.label
         .fixedSize(horizontal: false, vertical: true)
         .multilineTextAlignment(.center)
         .lineLimit(nil)
         .font(rebrandedButtonFont(compact: compact))
-        .foregroundColor(colors.text)
+        .foregroundColor(disabled ? colors.textDisabled : colors.text)
         .padding(.vertical)
         .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
         .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
-        .background(isPressed ? colors.pressed : colors.standard)
+        .background(disabled ? backgroundColor.opacity(Consts.disabledOpacity) : backgroundColor)
         .clipShape(Capsule())
-        .opacity(disabled ? Consts.disabledOpacity : 1)
         .ddgButtonDynamicTypeCap()
 }
 
@@ -366,9 +366,15 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
         let destructiveColor = Color(singleUseColor: .rebranding(.destructivePrimary))
         let pressedDestructiveColor = Color(singleUseColor: .rebranding(.destructivePrimaryPressed))
         let isPressed = configuration.isPressed || pressed
-        let foregroundColor = isPressed ? pressedDestructiveColor : destructiveColor
-        let backgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryDefault))
-        let pressedBackgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryPressed))
+        let foregroundColor = disabled
+            ? destructiveColor.opacity(Consts.disabledOpacity)
+            : (isPressed ? pressedDestructiveColor : destructiveColor)
+        let backgroundColor: Color = {
+            if disabled { return Color(singleUseColor: .rebranding(.buttonsSecondaryDisabledBackground)) }
+            return isPressed
+                ? Color(singleUseColor: .rebranding(.buttonsSecondaryPressed))
+                : Color(singleUseColor: .rebranding(.buttonsSecondaryDefault))
+        }()
 
         return configuration.label
             .fixedSize(horizontal: false, vertical: true)
@@ -379,10 +385,9 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
             .padding(.vertical)
             .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
             .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
-            .background(isPressed ? pressedBackgroundColor : backgroundColor)
+            .background(backgroundColor)
             .clipShape(Capsule())
             .contentShape(Capsule())
-            .opacity(disabled ? Consts.disabledOpacity : 1)
             .ddgButtonDynamicTypeCap()
     }
 }
@@ -605,26 +610,31 @@ public struct SecondaryFillButtonStyle: ButtonStyle {
     }
 
     private func rebrandedBody(configuration: Configuration) -> some View {
-        let standardBackgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryDefault))
-        let pressedBackgroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryPressed))
-        let defaultForegroundColor = Color(singleUseColor: .rebranding(.buttonsSecondaryText))
         let isPressed = configuration.isPressed || pressed
+        let foregroundColor = disabled
+            ? Color(singleUseColor: .rebranding(.buttonsSecondaryDisabledText))
+            : Color(singleUseColor: .rebranding(.buttonsSecondaryText))
+        let backgroundColor: Color = {
+            if disabled { return Color(singleUseColor: .rebranding(.buttonsSecondaryDisabledBackground)) }
+            return isPressed
+                ? Color(singleUseColor: .rebranding(.buttonsSecondaryPressed))
+                : Color(singleUseColor: .rebranding(.buttonsSecondaryDefault))
+        }()
 
         return configuration.label
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .lineLimit(nil)
             .font(rebrandedButtonFont(compact: compact))
-            .foregroundColor(defaultForegroundColor)
+            .foregroundColor(foregroundColor)
             .if(!isFreeform) { view in
                 view
                     .padding(.vertical)
                     .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
                     .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             }
-            .background(isPressed ? pressedBackgroundColor : standardBackgroundColor)
+            .background(backgroundColor)
             .clipShape(Capsule())
-            .opacity(disabled ? Consts.disabledOpacity : 1)
             .ddgButtonDynamicTypeCap()
     }
 }
@@ -689,9 +699,12 @@ public struct GhostButtonStyle: ButtonStyle {
 
     private func rebrandedBody(configuration: Configuration) -> some View {
         let isPressed = configuration.isPressed || pressed
+        let foregroundColor = isPressed
+            ? Color(singleUseColor: .rebranding(.accentPrimaryPressed))
+            : Color(singleUseColor: .rebranding(.accentPrimary))
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
-            .foregroundColor(Color(singleUseColor: .rebranding(.accentPrimary)))
+            .foregroundColor(foregroundColor)
             .padding()
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(backgroundColor(isPressed))

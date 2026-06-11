@@ -211,15 +211,13 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .surfaceTertiary: return surfaceTertiary
         case .surfaceCanvas: return surfaceCanvas
 
-        case .accent:
-            return DesignSystemRebrand.isAppRebranded() ? dynamicColor(for: SingleUseColor.Rebranding.accentPrimary) : accent
+        case .accent: return accent
         case .accentGlowSecondary: return accentGlowSecondary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .shieldPrivacy: return shieldPrivacy
         case .border: return border
-        case .textLink:
-            return DesignSystemRebrand.isAppRebranded() ? dynamicColor(for: SingleUseColor.Rebranding.textLink) : textLink
+        case .textLink: return textLink
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
         case .textTertiary: return textTertiary
@@ -346,12 +344,18 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen60)
         case .buttonsPrimaryText:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        case .buttonsContentDisabled:
+            return DynamicColor(lightColor: Color(0xF5F4F6), darkColor: Color(0x212020))
         case .buttonsSecondaryDefault:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.04))
         case .buttonsSecondaryPressed:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.12), darkColor: RebrandingColor.GrayScale.white.opacity(0.24))
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.12), darkColor: RebrandingColor.GrayScale.white.opacity(0.08))
         case .buttonsSecondaryText:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
+        case .buttonsSecondaryDisabledBackground:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: .clear)
+        case .buttonsSecondaryDisabledText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.36), darkColor: Color(0x707070))
         case .destructivePrimary:
             return DynamicColor(lightColor: Color(0xD83544), darkColor: Color(0xE44D55))
         case .destructivePrimaryPressed:

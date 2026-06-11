@@ -3306,19 +3306,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open DuckDuckGo on your other device and paste the code."
+            "value" : "Come back to this device after pasting the code."
           }
         }
       }
     },
     "preferences.sync.sync-with-another-device.copy-confirmation.title" : {
-      "comment" : "Title of the reminder shown after the user copies the sync code, telling them to keep the window open.",
+      "comment" : "Title of the reminder shown after the user copies the sync code.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Don’t close this window"
+            "value" : "Paste the code on your other device"
           }
         }
       }
@@ -4230,7 +4230,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "**On your other device, copy the code and Paste it below.**"
+            "value" : "**On your other device, copy the code and paste it below**"
           }
         }
       }
@@ -4254,7 +4254,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "**Copy this code and paste it on your other device.**"
+            "value" : "**Copy this code and paste it on your other device**"
           }
         }
       }

@@ -377,10 +377,10 @@
 "sync.simplified.scan-or-view-code.connecting.title" = "Keep “Sync & Backup” open on both devices";
 
 /* Message of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Open DuckDuckGo on your other device and paste the code.";
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Come back to this device after pasting the code.";
 
-/* Title of the reminder shown after the user copies the sync code, telling them to keep the page open. */
-"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Don’t close this page";
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Paste the code on your other device";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Manually Enter Code";
@@ -410,7 +410,7 @@
 "sync.simplified.scan-or-view-code.title" = "Sync Your Devices";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Scan or Paste this code on your other";
+"sync.simplified.scan-or-view-code.view.instructions" = "Scan or Paste this code in your other";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sync & Backup";

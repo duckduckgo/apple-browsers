@@ -132,7 +132,7 @@ class AutocompleteViewModel: ObservableObject {
     func clearSelection() {
         selection = nil
         // Highlighting overwrote the omnibar with the suggestion text, so on deselect restore the
-        // user's typed query via the existing highlight callback (a no-op in the Duck.ai switch bar).
+        // user's typed query via the existing highlight callback.
         if let query {
             delegate?.onSuggestionHighlighted(.phrase(phrase: query), forQuery: query)
         }

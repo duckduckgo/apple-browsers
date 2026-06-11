@@ -1071,11 +1071,14 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             lastDemonstrated: now,
             now: now
         )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
             dataImportDidImport: false,
             dockStatus: false,
             appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
             isAppStoreBuild: false
         )
 
@@ -1091,9 +1094,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             demonstrationDays: 1,
             lastDemonstrated: Date()
         )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
             appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
             isAppStoreBuild: false
         )
 
@@ -1110,9 +1116,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             lastDemonstrated: yesterday,
             now: now
         )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
             appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
             isAppStoreBuild: false
         )
 
@@ -1127,6 +1136,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             lastDemonstrated: now,
             now: now
         )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
         for card in NewTabPageDataModel.CardID.allCases where card != .defaultApp && card != .addAppToDockMac && card != .bringStuff {
             testPersistor.setTimesDismissed(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardDismissed, for: card)
@@ -1135,6 +1146,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             defaultBrowserIsDefault: false,
             appearancePreferences: appearancePrefs,
             persistor: testPersistor,
+            featureFlagger: testFeatureFlagger,
             isAppStoreBuild: false
         )
 
@@ -1150,6 +1162,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             lastDemonstrated: now,
             now: now
         )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testProvider = createProvider(
             defaultBrowserIsDefault: true,
             dataImportDidImport: true,
@@ -1158,11 +1172,34 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             subscriptionCardShouldShow: false,
             syncConnected: true,
             appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
             isAppStoreBuild: true
         )
 
         XCTAssertTrue(testProvider.cards.isEmpty)
         XCTAssertTrue(appearancePrefs.continueSetUpCardsClosed)
+    }
+
+    func testWhenOnboardingDelayNotMetAndAdvancedOrderingDisabledThenOnboardingCardsAreIncluded() {
+        let now = Date()
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 0,
+            lastDemonstrated: now,
+            now: now
+        )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = []
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
+            isAppStoreBuild: false
+        )
+
+        let cards = testProvider.cards
+        XCTAssertTrue(cards.contains(.defaultApp))
+        XCTAssertTrue(cards.contains(.addAppToDockMac))
+        XCTAssertTrue(cards.contains(.bringStuff))
     }
 
     // MARK: - Helper Functions

@@ -84,6 +84,11 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     /// Whether to use standard or advanced ordering for the card list.
     private var shouldUseAdvancedCardOrdering: Bool
 
+    /// Whether the day-0 delay for onboarding-related cards is active.
+    private var isOnboardingCardDelayEnabled: Bool {
+        shouldUseAdvancedCardOrdering
+    }
+
     /// Which card level to show first in the list of cards.
     /// This is used to swap the card order after `cardLevel1DemonstrationDays` have passed.
     private var firstCardLevel: NewTabPageDataModel.CardLevel {
@@ -327,10 +332,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
     }
 
     /// Returns whether the card should be shown in the list of visible cards.
-    /// This checks to following conditions:
+    /// This checks the following conditions:
     /// - Whether the card has been permanently dismissed
     /// - Whether the card's specific visibility conditions are met.
-    /// - For onboarding cards, whether the delay has passed to start showing them.
+    /// - For onboarding cards when `nextStepsListAdvancedCardOrdering` is enabled, whether the delay has passed to start showing them.
     func shouldShowCard(_ card: NewTabPageDataModel.CardID) -> Bool {
         guard !isCardPermanentlyDismissed(card) else {
             return false
@@ -338,7 +343,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         guard isCardEligible(card) else {
             return false
         }
-        if Self.onboardingCardIDs.contains(card) {
+        if isOnboardingCardDelayEnabled && Self.onboardingCardIDs.contains(card) {
             return appearancePreferences.isOnboardingNextStepsCardsDelayMet
         }
         return true
@@ -368,6 +373,9 @@ private extension NewTabPageNextStepsSingleCardProvider {
     }
 
     func hasPendingOnboardingCards() -> Bool {
+        guard isOnboardingCardDelayEnabled else {
+            return false
+        }
         guard !appearancePreferences.isOnboardingNextStepsCardsDelayMet else {
             return false
         }

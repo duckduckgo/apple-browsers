@@ -39,4 +39,16 @@ enum TextZoomLevel: Int, CaseIterable, CustomStringConvertible {
     case percent160 = 160
     case percent170 = 170
 
+    func incremented() -> TextZoomLevel {
+        let all = Self.allCases
+        guard let index = all.firstIndex(of: self), all.indices.contains(index + 1) else { return self }
+        return all[index + 1]
+    }
+
+    func decremented() -> TextZoomLevel {
+        let all = Self.allCases
+        guard let index = all.firstIndex(of: self), all.indices.contains(index - 1) else { return self }
+        return all[index - 1]
+    }
+
 }

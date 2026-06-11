@@ -19,7 +19,6 @@
 import Foundation
 
 /// Coarse classification of a Duck.ai chat used to pick an icon and an export format.
-/// Mirrors the Android `ChatType` enum so chat exports are interchangeable across platforms.
 public enum ChatType: Equatable {
     case discussion
     case voice
@@ -28,11 +27,9 @@ public enum ChatType: Equatable {
 
 public extension DuckAiChat {
 
-    /// Derives the chat type using the same precedence as Android's `ChatType.kt`:
-    /// `isImageGeneration` wins (set at decode time by inspecting messages for the
-    /// `generate-image` tool-call component — chats that produced images via a tool call
-    /// don't always use the image-mode model id, so the model-id check alone would miss
-    /// them). Otherwise fall through to the model-id classifier for voice / discussion.
+    /// `isImageGeneration` wins over the model-id classifier — chats that produced images
+    /// via a tool call don't always use the image-mode model id, so the model-id check
+    /// alone would miss them.
     var chatType: ChatType {
         if isImageGeneration { return .imageGeneration }
         switch AIChatSuggestion.kind(forModel: model) {

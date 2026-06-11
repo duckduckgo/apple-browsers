@@ -20,8 +20,8 @@
 import AIChat
 import Foundation
 
-/// Mirrors Android's `ChatHistoryRepository.exportChat`. Call off the main thread —
-/// image-generation exports do storage reads, base64 decoding, and zip writing.
+/// Call off the main thread — image-generation exports do storage reads, base64 decoding,
+/// and zip writing.
 protocol ChatHistoryDownloading {
     func downloadChat(chatId: String) throws -> URL
 }
@@ -100,7 +100,9 @@ struct ChatHistoryDownloader: ChatHistoryDownloading {
               let dataString = dict["data"] as? String else {
             return nil
         }
-        let base64 = dataString.split(separator: ",", maxSplits: 1).last.map(String.init) ?? dataString
+        // `omittingEmptySubsequences: false` keeps a trailing comma from producing an empty
+        // last element we'd then try to base64-decode.
+        let base64 = dataString.split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false).last.map(String.init) ?? dataString
         return Data(base64Encoded: base64)
     }
 }

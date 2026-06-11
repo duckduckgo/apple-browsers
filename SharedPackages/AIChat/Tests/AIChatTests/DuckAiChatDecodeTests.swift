@@ -19,10 +19,6 @@
 import XCTest
 @testable import AIChat
 
-/// Focused tests on `DuckAiChat.decode(from:)` — primarily the `isImageGeneration` flag,
-/// which is computed at decode time by inspecting the messages array for the FE's
-/// `ui-component`/`generate-image` tool-call signal. Mirrors the Android
-/// `RealDuckAiChatStore.hasGenerateImageUiComponent()` derivation.
 final class DuckAiChatDecodeTests: XCTestCase {
 
     // MARK: - isImageGeneration
@@ -83,8 +79,8 @@ final class DuckAiChatDecodeTests: XCTestCase {
     }
 
     func testIsImageGeneration_falseWhenUserMessageHasGenerateImagePart() throws {
-        // Only assistant messages count — protects against a malformed user message slipping
-        // through (mirrors Android's `role == ASSISTANT_ROLE` guard).
+        // Only assistant messages count — protects against a malformed user message
+        // slipping through.
         let json = """
             {
               "chatId": "c1",

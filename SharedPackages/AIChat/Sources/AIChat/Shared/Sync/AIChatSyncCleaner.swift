@@ -31,6 +31,7 @@ public protocol AIChatSyncCleaning: AnyObject {
     func deleteIfNeeded() async
     func recordChatUpdate(chatID: String) async
     func updateIfNeeded() async
+    func scheduleSync()
 }
 
 public final class AIChatSyncCleaner: AIChatSyncCleaning {
@@ -141,6 +142,14 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
 
         await deleteByTimestamp()
         await deletePendingChats()
+    }
+
+    public func scheduleSync() {
+        guard canUseAIChatSyncDelete else {
+            return
+        }
+
+        sync.scheduler.notifyDataChanged()
     }
 
     private func deleteByTimestamp() async {

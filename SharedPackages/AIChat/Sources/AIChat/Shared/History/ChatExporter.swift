@@ -20,7 +20,7 @@ import Foundation
 
 /// Formats a Duck.ai chat (FE-owned JSON blob) into the cross-platform plain-text shape.
 /// Pure — no I/O, no DI. Inject a `TimeZone` to keep tests deterministic across machine
-/// timezones. Mirrors the Android `ChatExporter` byte-for-byte so exports are interchangeable.
+/// timezones.
 public struct ChatExporter {
 
     private let timeZone: TimeZone
@@ -153,7 +153,7 @@ public struct ChatExporter {
                 return part["text"] as? String
             }
             if !textParts.isEmpty {
-                return textParts.joined(separator: "\n")
+                return textParts.joined()
             }
         }
         return (message["content"] as? String) ?? ""
@@ -240,7 +240,7 @@ public struct ChatExporter {
 }
 
 private extension String {
-    /// Mirrors Kotlin's `String.isBlank` — true for empty AND whitespace-only strings.
+    /// True for empty AND whitespace-only strings.
     var isBlankOrEmpty: Bool {
         trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }

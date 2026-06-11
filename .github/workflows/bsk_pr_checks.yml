@@ -91,7 +91,7 @@ jobs:
         id: run-unit-tests
         run: |
           set -o pipefail && xcodebuild test \
-            -scheme BrowserServicesKit \
+            -scheme BrowserServicesKit-Package \
             -destination 'platform=macOS' \
             -derivedDataPath DerivedData \
             -skipPackagePluginValidation \

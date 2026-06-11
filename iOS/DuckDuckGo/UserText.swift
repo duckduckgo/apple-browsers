@@ -120,12 +120,18 @@ public struct UserText {
     public static let actionPrint = NSLocalizedString("action.title.print", value: "Print", comment: "Print action in the menu header")
     public static let actionPrintSite = NSLocalizedString("action.title.print.site", value: "Print", comment: "Print action in the menu list")
     public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "Duck.ai", comment: "Open AI Chat action in the menu list")
-    public static let actionToggleAIChatContextualSheet = NotLocalizedString("action.title.aiChat.toggleContextualSheet", value: "Toggle Duck.ai sheet", comment: "Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. Not translated; final copy will land in a follow-up PR.")
-    public static let accessibilityLabelOpenAIChat = NotLocalizedString("accessibility.label.aiChat.openDuckAI", value: "Open Duck.ai", comment: "Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\". Not translated; final copy will land in a follow-up PR.")
-    public static let actionHideAIChatChromeShortcut = NotLocalizedString("action.title.aiChat.hideChromeShortcut", value: "Hide Duck.ai Shortcut", comment: "Title of the long-press menu item on the iPad Duck.ai chrome chip that turns off the navigation-bar shortcut. Not translated; final copy will land in a follow-up PR.")
-    public static let actionOpenAISettings = NotLocalizedString("action.title.aiChat.openSettings", value: "Open AI Settings", comment: "Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. Not translated; final copy will land in a follow-up PR.")
-    public static let accessibilityValueAIChatContextualSheetOpen = NotLocalizedString("accessibility.value.aiChat.contextualSheet.open", value: "Open", comment: "Accessibility value when the Duck.ai contextual sheet is open. Not translated; final copy will land in a follow-up PR.")
-    public static let accessibilityValueAIChatContextualSheetClosed = NotLocalizedString("accessibility.value.aiChat.contextualSheet.closed", value: "Closed", comment: "Accessibility value when the Duck.ai contextual sheet is closed. Not translated; final copy will land in a follow-up PR.")
+    public static let actionToggleAIChatContextualSheet = NSLocalizedString("action.title.aiChat.toggleContextualSheet", value: "Toggle Duck.ai sheet", comment: "Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page.")
+    public static let accessibilityLabelOpenAIChat = NSLocalizedString("accessibility.label.aiChat.openDuckAI", value: "Open Duck.ai", comment: "Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\".")
+    public static let actionHideAIChatDuckAIButton = NSLocalizedString("action.title.aiChat.hideDuckAIButton", value: "Hide Duck.ai Shortcut", comment: "Long-press menu item on the iPad Duck.ai chrome chip that hides the Duck.ai (open) button half.")
+
+    public static let actionShowAIChatDuckAIButton = NSLocalizedString("action.title.aiChat.showDuckAIButton", value: "Show Duck.ai Shortcut", comment: "Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half.")
+
+    public static let actionHideAIChatContextualSheetButton = NSLocalizedString("action.title.aiChat.hideContextualSheetButton", value: "Hide Bottom Sheet Shortcut", comment: "Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half.")
+
+    public static let actionShowAIChatContextualSheetButton = NSLocalizedString("action.title.aiChat.showContextualSheetButton", value: "Show Bottom Sheet Shortcut", comment: "Long-press menu item on the iPad Duck.ai chrome chip that re-shows the bottom-sheet button half.")
+    public static let actionOpenAISettings = NSLocalizedString("action.title.aiChat.openSettings", value: "Open AI Settings", comment: "Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features.")
+    public static let accessibilityValueAIChatContextualSheetOpen = NSLocalizedString("accessibility.value.aiChat.contextualSheet.open", value: "Open", comment: "Accessibility value when the Duck.ai contextual sheet is open.")
+    public static let accessibilityValueAIChatContextualSheetClosed = NSLocalizedString("accessibility.value.aiChat.contextualSheet.closed", value: "Closed", comment: "Accessibility value when the Duck.ai contextual sheet is closed.")
     public static let actionDuckAIVoice = NSLocalizedString("action.title.duckai.voice", value: "Duck.ai Voice", comment: "Open Duck.ai Voice mode action")
     public static let actionNewAIChat = NSLocalizedString("action.title.aiChat.new", value: "New Chat", comment: "Start new AI Chat action in the menu list")
     public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
@@ -1638,6 +1644,8 @@ public struct UserText {
     public static let settingsAfterInactivityIntervalLabel = NSLocalizedString("settings.afterInactivity.interval.label", value: "Inactivity Timer", comment: "Settings picker label for the inactivity duration before showing New Tab")
     public static let settingsAfterInactivityIdleIntervalNone = NSLocalizedString("settings.afterInactivity.idle.interval.none", value: "None", comment: "Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold)")
     public static let settingsAfterInactivityFooterNone = NSLocalizedString("settings.afterInactivity.footer.none", value: "Choose what you see when you return to DuckDuckGo.", comment: "Section footer when no inactivity timer is set or the Last Used Tab option is selected")
+    public static let settingsLastTabShortcutLabel = NotLocalizedString("settings.lastTabShortcut.label", value: "Last Tab Shortcut", comment: "Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity. Not translated; final copy will land in a follow-up PR.")
+    public static let settingsLastTabShortcutSubtitle = NotLocalizedString("settings.lastTabShortcut.subtitle", value: "Displays a link to quickly revisit the last opened tab when you launch the app after inactivity.", comment: "Settings toggle subtitle describing the Last Tab Shortcut option. Not translated; final copy will land in a follow-up PR.")
 
     // Escape Hatch (Return to Tab Card)
     public static let escapeHatchReturnToLabel = NSLocalizedString("escapeHatch.returnTo.label", value: "Return to…", comment: "Label shown on the escape hatch card above the tab title")
@@ -1649,6 +1657,7 @@ public struct UserText {
     public static let escapeHatchMenuReturnToTab = NSLocalizedString("escapeHatch.menu.returnToTab", value: "Return to Tab", comment: "Menu item that returns the user to the open tab from the escape hatch card")
     public static let escapeHatchMenuCloseTab = NSLocalizedString("escapeHatch.menu.closeTab", value: "Close Tab", comment: "Menu item that closes the open tab referenced by the escape hatch card")
     public static let escapeHatchMenuDeleteTab = NSLocalizedString("escapeHatch.menu.deleteTab", value: "Delete Tab", comment: "Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card")
+    public static let escapeHatchMenuDontShowThis = NotLocalizedString("escapeHatch.menu.dontShowThis", value: "Don’t Show This", comment: "Menu item that hides the 'Return to tab' shortcut so only the tab switcher is shown after inactivity. Not translated; final copy will land in a follow-up PR.")
     public static let escapeHatchTabSwitcherPrivateTabsLabel = NSLocalizedString("escapeHatch.tabSwitcher.privateTabs.label", value: "Private Tabs", comment: "Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form")
 
     // Subscription Section
@@ -2231,6 +2240,8 @@ public struct UserText {
 
     public static let settingsManageAIChatShortcuts = NSLocalizedString("settings.aichat.manage.shortcuts", value: "Manage Duck.ai Shortcuts", comment: "Top level settings for managing AI Chat shortcuts")
 
+    public static let settingsDuckAISettings = NSLocalizedString("settings.aichat.duckai.settings", value: "Duck.ai Settings", comment: "Settings row that opens Duck.ai in a new tab")
+
     public static let settingsAiChatSearchInputFooter = NSLocalizedString("settings.aichat.shortcuts.input.footer", value: "Search the web or ask Duck.ai directly from the Address Bar", comment: "Settings screen footer text for showing AI Chat in the input box")
 
     public static let settingsAiChatSearchInput = NSLocalizedString("settings.aichat.shortcuts.input", value: "Experimental Address Bar", comment: "Settings screen text for showing AI Chat in the input box")
@@ -2260,13 +2271,11 @@ public struct UserText {
 
     public static let aiChatSettingsEnableVoiceSearchToggle = NSLocalizedString("duckai.settings.enable.voice-search-toggle", value: "Voice Search", comment: "Toggle text to enable/disable Duck.ai in voice search")
 
-    public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
+    public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tab Manager Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
-    // Held as NotLocalizedString until copy is approved at Ship Review; convert to NSLocalizedString afterwards.
-    public static let aiChatSettingsEnableTabBarToggle = NotLocalizedString("duckai.settings.enable.tab-bar-toggle", value: "Tab Bar", comment: "Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar)")
+    public static let aiChatSettingsEnableTabBarToggle = NSLocalizedString("duckai.settings.enable.tab-bar-toggle", value: "Tab Bar", comment: "Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar)")
 
-    // Held as NotLocalizedString until copy is approved at Ship Review; convert to NSLocalizedString afterwards.
-    public static let aiChatSettingsEnableTabBarSubtitle = NotLocalizedString("duckai.settings.enable.tab-bar-subtitle", value: "Show in the browser tab bar or address bar, depending on window size.", comment: "Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings")
+    public static let aiChatSettingsEnableTabBarSubtitle = NSLocalizedString("duckai.settings.enable.tab-bar-subtitle", value: "Show in the browser tab bar or address bar, depending on window size.", comment: "Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings")
     
     public static let aiChatSettingsBrowserShortcutsSectionTitle = NSLocalizedString("duckai.settings.browserShortcuts.section.title", value: "Browser shortcuts", comment: "Title for section that groups shortcuts related to browser")
 
@@ -2323,6 +2332,9 @@ public struct UserText {
     public static let aiChatRecentChatsButtonAccessibility = NSLocalizedString("duckai.contextual.recent.chats.button", value: "Recent Chats", comment: "Accessibility label for the recent chats button in the Duck.ai contextual sheet header")
     public static let aiChatRecentChatsSectionTitle = NSLocalizedString("duckai.contextual.recent.chats.section", value: "Recent Chats", comment: "Section header in the recent chats popup")
     public static let aiChatViewAllChats = NSLocalizedString("duckai.contextual.view.all.chats", value: "View all chats", comment: "Action to view all chats in the recent chats popup")
+    public static let removeRecentChatConfirmationTitle = NSLocalizedString("duckai.recent.chat.remove.confirmation.title", value: "Delete this chat?", comment: "Title of the confirmation alert shown before deleting a recent Duck.ai chat")
+    public static let removeRecentChatConfirmationMessage = NSLocalizedString("duckai.recent.chat.remove.confirmation.message", value: "\"%@\" will be permanently deleted everywhere.", comment: "Message of the confirmation alert shown before deleting a recent Duck.ai chat. %@ is the chat title.")
+    public static let removeRecentChatConfirmationButton = NSLocalizedString("duckai.recent.chat.remove.confirmation.button", value: "Delete", comment: "Destructive button confirming deletion of a recent Duck.ai chat")
 
     // MARK: - AI Chat Context Chip
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")

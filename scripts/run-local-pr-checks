@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+# Runs cheap non-test-suite PR checks.
+#
+# Optional: use as an LLM "fix before finishing" hook (personal, uncommitted).
+# Claude Code and Codex both have a Stop hook where exit 2 + stderr blocks
+# completion and feeds the text back, so the agent fixes issues before stopping.
+# Send this script's output to stderr and map failure to exit 2:
+#
+#   Claude Code — .claude/settings.local.json (gitignored):
+#     { "hooks": { "Stop": [ { "matcher": "", "hooks": [ { "type": "command",
+#       "command": "\"$CLAUDE_PROJECT_DIR/scripts/run-local-pr-checks\" >&2 || exit 2" } ] } ] } }
+#
+#   Codex — ~/.codex/config.toml (outside the repo):
+#     [[hooks.Stop]]
+#     [[hooks.Stop.hooks]]
+#     type = "command"
+#     command = ["bash", "-lc", "scripts/run-local-pr-checks >&2 || exit 2"]
+set -uo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+PLATFORMS=("iOS" "macOS")
+SWIFTLINT_ALL=false
+BASE_REF="origin/${GITHUB_BASE_REF:-main}"
+
+PASS_COUNT=0
+FAIL_COUNT=0
+SKIP_COUNT=0
+
+if [ -t 1 ]; then
+  C_GREEN=$'\033[32m'; C_RED=$'\033[31m'; C_YELLOW=$'\033[33m'; C_DIM=$'\033[2m'; C_RESET=$'\033[0m'
+else
+  C_GREEN=''; C_RED=''; C_YELLOW=''; C_DIM=''; C_RESET=''
+fi
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/run-local-pr-checks [options]
+
+Runs the cheap static PR checks CI enforces: ActionLint, ShellCheck, SwiftLint,
+pixel lint/validation, and translation/string checks. Each tool is skipped (not
+failed) when it is not installed.
+
+Options:
+  --platform ios|macos   Restrict per-platform checks (pixel + translation) to
+                         one platform. Default: both.
+  --all                  Run SwiftLint over the whole repo (CI parity) instead
+                         of only files changed vs the base branch (origin/main,
+                         or origin/$GITHUB_BASE_REF when set).
+  -h, --help             Show this help.
+
+Exit code equals the number of failed checks (0 = all green; skips never fail).
+EOF
+}
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+BASE_REF_STATUS=""
+base_ref_available() {
+  if [ -z "$BASE_REF_STATUS" ]; then
+    if git -C "$REPO_ROOT" rev-parse --verify --quiet "$BASE_REF" >/dev/null 2>&1; then
+      BASE_REF_STATUS="yes"
+    else
+      BASE_REF_STATUS="no"
+    fi
+  fi
+  [ "$BASE_REF_STATUS" = "yes" ]
+}
+
+pass() { PASS_COUNT=$((PASS_COUNT + 1)); printf '  %sPASS%s  %s\n' "$C_GREEN" "$C_RESET" "$1"; }
+skip() { SKIP_COUNT=$((SKIP_COUNT + 1)); printf '  %sSKIP%s  %s %s(%s)%s\n' "$C_YELLOW" "$C_RESET" "$1" "$C_DIM" "$2" "$C_RESET"; }
+
+run_check() {
+  local name="$1" workdir="$2"; shift 2
+  local output status
+  output="$(cd "$workdir" && "$@" 2>&1)"
+  status=$?
+  if [ "$status" -eq 0 ]; then
+    pass "$name"
+  else
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    printf '  %sFAIL%s  %s\n' "$C_RED" "$C_RESET" "$name"
+    [ -n "$output" ] && printf '%s\n' "$output" | sed 's/^/        /'
+  fi
+}
+
+check_actionlint() {
+  if ! have actionlint; then skip "actionlint" "actionlint not installed"; return; fi
+  run_check "actionlint" "$REPO_ROOT" actionlint -shellcheck=
+}
+
+check_shellcheck() {
+  if ! have shellcheck; then skip "shellcheck" "shellcheck not installed"; return; fi
+
+  local ios_files=()
+  while IFS= read -r f; do ios_files+=("$f"); done \
+    < <(cd "$REPO_ROOT" && find iOS/scripts -type f -name '*.sh' 2>/dev/null | sort)
+  if [ ${#ios_files[@]} -eq 0 ]; then
+    skip "shellcheck (iOS)" "no shell scripts found"
+  else
+    run_check "shellcheck (iOS)" "$REPO_ROOT" shellcheck -x -P iOS/scripts "${ios_files[@]}"
+  fi
+
+  # helpers are excluded from being checked but kept on the source path so that
+  # `source` directives in the other scripts still resolve.
+  local mac_files=()
+  while IFS= read -r f; do mac_files+=("$f"); done \
+    < <(cd "$REPO_ROOT" && find macOS/scripts -type f -name '*.sh' -not -path '*/helpers/*' 2>/dev/null | sort)
+  if [ ${#mac_files[@]} -eq 0 ]; then
+    skip "shellcheck (macOS)" "no shell scripts found"
+  else
+    run_check "shellcheck (macOS)" "$REPO_ROOT" shellcheck -x -P macOS/scripts -P macOS/scripts/helpers "${mac_files[@]}"
+  fi
+}
+
+check_swiftlint() {
+  if ! have mint; then skip "swiftlint" "mint not installed"; return; fi
+
+  if [ "$SWIFTLINT_ALL" = true ]; then
+    run_check "swiftlint (all files)" "$REPO_ROOT" mint run swiftlint lint --strict --quiet
+    return
+  fi
+
+  if ! base_ref_available; then
+    skip "swiftlint" "$BASE_REF not available — fetch it, or use --all"
+    return
+  fi
+
+  local base
+  base="$(git -C "$REPO_ROOT" merge-base "$BASE_REF" HEAD)"
+
+  local swift_files=()
+  while IFS= read -r f; do
+    [ -n "$f" ] && swift_files+=("$REPO_ROOT/$f")
+  done < <({
+    git -C "$REPO_ROOT" diff --name-only --diff-filter=d "$base" -- '*.swift'
+    git -C "$REPO_ROOT" ls-files --others --exclude-standard -- '*.swift'
+  } | sort -u)
+
+  if [ ${#swift_files[@]} -eq 0 ]; then
+    pass "swiftlint (no changed Swift files)"
+    return
+  fi
+
+  # SwiftLint indexes its working directory even when given explicit files (~50s
+  # on this repo); running from /tmp with --working-directory avoids that scan
+  # while still resolving config and the Mintfile-pinned version from the root.
+  run_check "swiftlint (${#swift_files[@]} changed)" /tmp \
+    mint run --mintfile "$REPO_ROOT/Mintfile" swiftlint lint --strict --quiet \
+    --working-directory "$REPO_ROOT" "${swift_files[@]}"
+}
+
+check_pixels() {
+  if ! have npm; then skip "pixel checks" "npm not installed"; return; fi
+  local plat
+  for plat in "${PLATFORMS[@]}"; do
+    if [ ! -d "$REPO_ROOT/$plat/node_modules" ]; then
+      skip "pixel checks ($plat)" "node_modules missing — run npm ci in $plat"
+      continue
+    fi
+    run_check "pixel-lint ($plat)" "$REPO_ROOT/$plat" npm run pixel-lint
+    run_check "pixel-defs ($plat)" "$REPO_ROOT/$plat" npm run validate-defs-without-formatting
+  done
+}
+
+check_translations() {
+  if ! have python3; then skip "translation checks" "python3 not installed"; return; fi
+  if ! base_ref_available; then skip "translation checks" "$BASE_REF not available — fetch it"; return; fi
+
+  local scripts=(verify_locale_list verify_string_extraction check_new_string_translations check_marker_consistency check_deleted_string_translations)
+  local plat script
+  for plat in "${PLATFORMS[@]}"; do
+    for script in "${scripts[@]}"; do
+      run_check "$script ($plat)" "$REPO_ROOT" python3 "scripts/translation-pr-checks/$script.py" --platform "$plat"
+    done
+  done
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --platform|--platform=*)
+      if [ "$1" = "--platform" ]; then shift; val="${1:-}"; else val="${1#*=}"; fi
+      case "$val" in
+        ios|iOS)     PLATFORMS=("iOS") ;;
+        macos|macOS) PLATFORMS=("macOS") ;;
+        *) printf 'error: --platform expects "ios" or "macos"\n' >&2; exit 2 ;;
+      esac
+      ;;
+    --all) SWIFTLINT_ALL=true ;;
+    -h|--help) usage; exit 0 ;;
+    *) printf 'error: unknown option: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+check_actionlint
+check_shellcheck
+check_swiftlint
+check_pixels
+check_translations
+
+if [ "$FAIL_COUNT" -gt 0 ]; then
+  printf '\n%s%s passed, %s failed, %s skipped%s\n' "$C_RED" "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT" "$C_RESET"
+else
+  printf '\n%s%s passed, %s failed, %s skipped%s\n' "$C_GREEN" "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT" "$C_RESET"
+fi
+
+exit "$FAIL_COUNT"

@@ -32,6 +32,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, isDraggingToggle isDragging: Bool)
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment, isUserInitiated: Bool)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
@@ -150,6 +151,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarAIVoiceChatActive = newValue }
     }
 
+    var isSubmitBlockedByRecoveryCard: Bool {
+        get { inputBarView.isToolbarSubmitBlockedByRecoveryCard }
+        set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
+    }
+
     var isGenerating: Bool = false {
         didSet {
             guard isGenerating != oldValue else { return }
@@ -166,6 +172,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     var modelPickerMenu: UIMenu? {
         get { inputBarView.modelPickerMenu }
         set { inputBarView.modelPickerMenu = newValue }
+    }
+
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        inputBarView.presentModelPickerMenu()
     }
 
     var toolsMenu: UIMenu? {
@@ -429,6 +440,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode) {
         delegate?.unifiedToggleInputVC(self, didChangeMode: mode)
+    }
+
+    func unifiedToggleInputView(_ view: UnifiedToggleInputView, isDraggingToggle isDragging: Bool) {
+        delegate?.unifiedToggleInputVC(self, isDraggingToggle: isDragging)
     }
 
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView) {

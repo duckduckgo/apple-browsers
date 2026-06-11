@@ -3,7 +3,18 @@
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
-//  Licensed under the Apache License, Version 2.0.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 //
 
 import AIChat
@@ -72,6 +83,13 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         static let search = "search"
     }
 
+    /// Row-id prefixes/ids minted by `SuggestionRowMapper`, parsed back in `selection(forRowID:)`.
+    private enum RowID {
+        static let chatPrefix = "chat-"
+        static let urlsPrefix = SectionID.urls + "-"
+        static let searchDuckDuckGo = SectionID.search + "-searchDuckDuckGo"
+    }
+
     static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String, deleteEnabled: Bool = false) -> [SuggestionSection] {
         var sections: [SuggestionSection] = []
         if !snapshot.chats.isEmpty {
@@ -100,15 +118,15 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         let urls = urlLoader.topURLs
         let q = query()
 
-        if id.hasPrefix("chat-") {
-            let chatID = String(id.dropFirst("chat-".count))
+        if id.hasPrefix(RowID.chatPrefix) {
+            let chatID = String(id.dropFirst(RowID.chatPrefix.count))
             return chats.first { $0.id == chatID }.map { .chat($0) }
         }
-        if id == "search-searchDuckDuckGo" {
+        if id == RowID.searchDuckDuckGo {
             return .searchDuckDuckGo(q)
         }
-        if id.hasPrefix("urls-") {
-            return urls.first { SuggestionRowMapper.row(for: $0, query: q, idPrefix: "urls").id == id }
+        if id.hasPrefix(RowID.urlsPrefix) {
+            return urls.first { SuggestionRowMapper.row(for: $0, query: q, idPrefix: SectionID.urls).id == id }
                 .map { .url($0) }
         }
         return nil

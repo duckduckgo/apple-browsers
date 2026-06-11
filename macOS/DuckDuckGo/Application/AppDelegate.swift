@@ -2066,6 +2066,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
+                       session: "macos-browser",
                        channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in

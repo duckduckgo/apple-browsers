@@ -547,6 +547,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// legacy App Group path.
     case nativeStoragePathMigration
 
+    /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
+    /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
+    /// screenshot preview.
+    case tabSwitcherRichCard
+
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg

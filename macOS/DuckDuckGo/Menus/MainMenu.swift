@@ -169,7 +169,7 @@ final class MainMenu: NSMenu {
     let toggleShareShortcutMenuItem = NSMenuItem(title: UserText.shareMenuItem, action: #selector(MainViewController.toggleShareShortcut), keyEquivalent: "")
         .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
     let toggleDownloadsShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowDownloadsShortcut, action: #selector(MainViewController.toggleDownloadsShortcut), keyEquivalent: "J")
-        .withImage(DesignSystemImages.Glyphs.Size12.downloads)
+        .withImage(DesignSystemImages.Glyphs.Size12.download)
     let toggleAutofillShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowAutofillShortcut, action: #selector(MainViewController.toggleAutofillShortcut), keyEquivalent: "A")
         .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
     let toggleBookmarksShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowBookmarksShortcut, action: #selector(MainViewController.toggleBookmarksShortcut), keyEquivalent: "K")
@@ -466,7 +466,7 @@ final class MainMenu: NSMenu {
             toggleBookmarksBarMenuItem
 
             NSMenuItem(title: UserText.openDownloads, action: #selector(MainViewController.toggleDownloads), keyEquivalent: "j")
-                .withImage(DesignSystemImages.Glyphs.Size12.downloads)
+                .withImage(DesignSystemImages.Glyphs.Size12.download)
             NSMenuItem.separator()
 
             homeButtonMenuItem

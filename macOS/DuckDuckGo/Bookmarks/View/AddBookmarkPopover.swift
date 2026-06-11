@@ -73,6 +73,9 @@ final class AddBookmarkPopover: NSPopover {
         guard let bookmark else { return }
         let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
         let syncButtonViewModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard)
+        // Resolve sync-button visibility before measuring the hosting view so the
+        // initial intrinsicContentSize accounts for it and the popover anchors correctly.
+        syncButtonViewModel.viewDidLoad()
         let contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonViewModel))
         // It's important to set the frame at least once here. If we don't, the popover
         // can miscalculate position, especially in macOS 26 (Sequoia)

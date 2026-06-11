@@ -20,10 +20,12 @@
 import AIChat
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Lottie
+import MetricBuilder
 import OSLog
 import PrivacyConfig
 import SwiftUI
@@ -84,7 +86,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let headerButtonSize: CGFloat = 44
         static let headerHorizontalPadding: CGFloat = 16
         static let titleSpacing: CGFloat = 8
-        static let sheetCornerRadius: CGFloat = 24
         static let contentTopPadding: CGFloat = 8
         static let dimmingAlpha: CGFloat = 0.3
         static let iPadPopoverWidth: CGFloat = 375
@@ -242,6 +243,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
         button.accessibilityTraits = .button
+        button.accessibilityIdentifier = "AIChat.ContextualSheet.CloseButton"
         return button
     }()
 
@@ -346,6 +348,13 @@ final class AIChatContextualSheetViewController: UIViewController {
         hideDimmingView(animated: animated)
     }
 
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isBeingDismissed {
+            delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateShadowPath()
@@ -368,7 +377,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         sheet.prefersGrabberVisible = true
         sheet.prefersEdgeAttachedInCompactHeight = true
-        sheet.preferredCornerRadius = Constants.sheetCornerRadius
+        sheet.preferredCornerRadius = SheetMetrics.cornerRadius
     }
 
     // MARK: - Actions
@@ -679,7 +688,7 @@ private extension AIChatContextualSheetViewController {
             }
             sheet.prefersGrabberVisible = false
             if #unavailable(iOS 26) {
-                sheet.preferredCornerRadius = Constants.sheetCornerRadius
+                sheet.preferredCornerRadius = SheetMetrics.cornerRadius
             }
         }
     }
@@ -847,7 +856,7 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        // Coordinator handles state transitions
+        webViewController?.notifyFrontendPromptSubmissionAcknowledged()
     }
 
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {
@@ -925,8 +934,9 @@ private extension AIChatContextualSheetViewController {
     
     func setupUI() {
         view.backgroundColor = UIColor(Color(singleUseColor: .duckAIContextualSheetBackground))
+        view.accessibilityIdentifier = "AIChat.ContextualSheet" // Anchor for UI tests asserting the sheet is presented.
 
-        view.layer.cornerRadius = Constants.sheetCornerRadius
+        view.layer.cornerRadius = SheetMetrics.cornerRadius
         view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner] // Top corners only
 
         view.layer.shadowColor = UIColor(designSystemColor: .shadowPrimary).cgColor
@@ -1018,7 +1028,7 @@ private extension AIChatContextualSheetViewController {
         let shadowPath = UIBezierPath(
             roundedRect: view.bounds,
             byRoundingCorners: [.topLeft, .topRight],
-            cornerRadii: CGSize(width: Constants.sheetCornerRadius, height: Constants.sheetCornerRadius)
+            cornerRadii: CGSize(width: SheetMetrics.cornerRadius, height: SheetMetrics.cornerRadius)
         )
         view.layer.shadowPath = shadowPath.cgPath
     }
@@ -1091,8 +1101,17 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
     func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
         isCurrentlyMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
     }
+}
 
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+// MARK: - Duck.ai Wide Event
+
+extension AIChatContextualSheetViewController {
+
+    func notifySheetDismissed() {
+        webViewController?.notifySheetDismissed()
+    }
+
+    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
+        webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
 }

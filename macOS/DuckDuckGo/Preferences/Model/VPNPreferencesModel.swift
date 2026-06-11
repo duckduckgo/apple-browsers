@@ -18,8 +18,11 @@
 
 import AppKit
 import Combine
+import CombineExtensions
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI

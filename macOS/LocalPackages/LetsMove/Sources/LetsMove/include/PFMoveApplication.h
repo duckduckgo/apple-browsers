@@ -27,6 +27,13 @@ void PFMoveToApplicationsFolderIfNecessary(BOOL allowAlertSilencing);
  See https://github.com/potionfactory/LetsMove/issues/64 for details. */
 BOOL PFMoveIsInProgress(void);
 
+/**
+ Returns YES if a subsequent call to \c PFMoveToApplicationsFolderIfNecessary with the same
+ \c allowAlertSilencing value would present the "Move to Applications Folder" prompt, or NO otherwise.
+ Evaluates the same conditions as that function (suppression preference and Applications-folder
+ location) without showing any UI, so callers can detect launches that will be blocked by the prompt. */
+BOOL PFMoveToApplicationsFolderWillPrompt(BOOL allowAlertSilencing);
+
 #ifdef __cplusplus
 }
 #endif

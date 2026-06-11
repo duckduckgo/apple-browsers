@@ -32,14 +32,16 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, isDraggingToggle isDragging: Bool)
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment, isUserInitiated: Bool)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapAppMenu(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -63,6 +65,14 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     // MARK: - Public API
+
+    /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
+    var aiTabFireButton: UIButton { inputBarView.aiTabFireButton }
+
+    /// Dims the input bar for the fire-education onboarding step without affecting the fire button.
+    func setOnboardingDimmed(_ dimmed: Bool) {
+        inputBarView.setOnboardingDimmed(dimmed)
+    }
 
     init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
@@ -141,6 +151,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarAIVoiceChatActive = newValue }
     }
 
+    var isSubmitBlockedByRecoveryCard: Bool {
+        get { inputBarView.isToolbarSubmitBlockedByRecoveryCard }
+        set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
+    }
+
     var isGenerating: Bool = false {
         didSet {
             guard isGenerating != oldValue else { return }
@@ -157,6 +172,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     var modelPickerMenu: UIMenu? {
         get { inputBarView.modelPickerMenu }
         set { inputBarView.modelPickerMenu = newValue }
+    }
+
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        inputBarView.presentModelPickerMenu()
     }
 
     var toolsMenu: UIMenu? {
@@ -197,6 +217,16 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isReasoningButtonHidden: Bool {
         get { inputBarView.isReasoningButtonHidden }
         set { inputBarView.isReasoningButtonHidden = newValue }
+    }
+
+    var isToolbarReturnKeyHidden: Bool {
+        get { inputBarView.isToolbarReturnKeyHidden }
+        set { inputBarView.isToolbarReturnKeyHidden = newValue }
+    }
+
+    func setAvailableExpandedHeight(_ available: CGFloat?) {
+        loadViewIfNeeded()
+        inputBarView.setAvailableExpandedHeight(available)
     }
 
     var isImageButtonHidden: Bool {
@@ -359,9 +389,9 @@ final class UnifiedToggleInputViewController: UIViewController {
             guard let self else { return }
             self.notifyHeightDidChange()
         }
-        barView.onAttachmentRemoved = { [weak self] id in
+        barView.onAttachmentRemoved = { [weak self] id, attachment, isUserInitiated in
             guard let self else { return }
-            delegate?.unifiedToggleInputVC(self, didRemoveAttachment: id)
+            delegate?.unifiedToggleInputVC(self, didRemoveAttachment: id, attachment: attachment, isUserInitiated: isUserInitiated)
         }
         barView.onAttachmentsLayoutDidChange = { [weak self] in
             guard let self else { return }
@@ -412,6 +442,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
         delegate?.unifiedToggleInputVC(self, didChangeMode: mode)
     }
 
+    func unifiedToggleInputView(_ view: UnifiedToggleInputView, isDraggingToggle isDragging: Bool) {
+        delegate?.unifiedToggleInputVC(self, isDraggingToggle: isDragging)
+    }
+
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidClearSelectedTool(self)
     }
@@ -420,8 +454,12 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
         delegate?.unifiedToggleInputVCDidTapFire(self)
     }
 
-    func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView) {
-        delegate?.unifiedToggleInputVCDidTapVoice(self)
+    func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapAppMenu(self)
+    }
+
+    func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapReturnKey(self)
     }
 }
 
@@ -497,12 +535,14 @@ private extension UnifiedToggleInputContainerView {
         bannerBottomToContainerConstraint = errorBannerView.bottomAnchor.constraint(equalTo: bottomAnchor)
         bannerTopToInputConstraint = errorBannerView.topAnchor.constraint(equalTo: unifiedInputView.bottomAnchor, constant: Metrics.bannerSpacing)
         bannerBottomToInputConstraint = errorBannerView.bottomAnchor.constraint(equalTo: unifiedInputView.topAnchor, constant: -Metrics.bannerSpacing)
-        bannerLeadingConstraint = errorBannerView.leadingAnchor.constraint(equalTo: leadingAnchor)
-        bannerTrailingConstraint = errorBannerView.trailingAnchor.constraint(equalTo: trailingAnchor)
+        bannerLeadingConstraint = errorBannerView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor)
+        bannerTrailingConstraint = errorBannerView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor)
 
+        // Pin content horizontally to the safe area so the card and its flanking buttons clear the
+        // Dynamic Island in landscape; the horizontal safe-area inset is 0 in portrait and on iPad.
         NSLayoutConstraint.activate([
-            unifiedInputView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            unifiedInputView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            unifiedInputView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+            unifiedInputView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
             bannerLeadingConstraint,
             bannerTrailingConstraint,
             bannerHeightConstraint,

@@ -22,6 +22,7 @@ import os.log
 import Core
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Configuration
 import Persistence
 

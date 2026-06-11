@@ -113,13 +113,9 @@ private struct TextView: View {
         VStack(alignment: .leading, spacing: 0) {
 
                 HStack {
-                    if #available(macOS 12, *) {
-                        Text(model.text)
-                            .foregroundColor(Color.secondary)
-                            .textSelection(.enabled)
-                    } else {
-                        Text(model.text)
-                    }
+                    Text(model.text)
+                        .foregroundColor(Color.secondary)
+                        .textSelection(.enabled)
 
                     Spacer()
                 }

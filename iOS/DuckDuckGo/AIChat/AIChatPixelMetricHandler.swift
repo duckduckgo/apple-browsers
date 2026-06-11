@@ -92,5 +92,6 @@ enum VoiceEntryPointSource: String {
     case controlCenter = "widget.controlcenter"
     case lockscreenComplication = "widget.lockscreen.complication"
     case quickActions = "widget.quickactions"
+    case quickActionsMedium = "widget.quickactions.medium"
     case siri
 }

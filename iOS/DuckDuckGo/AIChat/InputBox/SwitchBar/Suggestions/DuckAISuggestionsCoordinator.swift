@@ -19,13 +19,18 @@
 
 import AIChat
 import Combine
+import Core
+import DDGSync
 import Suggestions
 import UIKit
+import PrivacyConfig
 
 protocol DuckAISuggestionsCoordinatorDelegate: AnyObject {
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion)
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion)
+    func duckAISuggestionsDidDeleteURL(_ suggestion: Suggestion)
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String)
+    func duckAISuggestionsDidRequestSyncSetup()
 }
 
 /// Owns the chat fetcher, URL fetcher, and multi-section VC for Duck.ai mode; container talks to this instead of the fetchers directly.
@@ -39,8 +44,11 @@ final class DuckAISuggestionsCoordinator {
     private let chatManager: AIChatHistoryManager
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let chatViewModel: AIChatSuggestionsViewModel
+    private let historyManager: HistoryManaging
     private let queryProvider: () -> String
     private let layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration
+    private let syncPromoManager: SyncPromoManaging?
+    private let syncService: DDGSyncing?
 
     private var viewController: DuckAISuggestionsViewController?
     private var cancellables = Set<AnyCancellable>()
@@ -65,13 +73,19 @@ final class DuckAISuggestionsCoordinator {
     init(chatManager: AIChatHistoryManager,
          urlLoader: DuckAIURLSuggestionsLoader,
          chatViewModel: AIChatSuggestionsViewModel,
+         historyManager: HistoryManaging,
          queryProvider: @escaping () -> String,
-         layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard) {
+         layoutConfiguration: DuckAISuggestionsViewController.LayoutConfiguration = .standard,
+         syncPromoManager: SyncPromoManaging? = nil,
+         syncService: DDGSyncing? = nil) {
         self.chatManager = chatManager
         self.urlLoader = urlLoader
         self.chatViewModel = chatViewModel
+        self.historyManager = historyManager
         self.queryProvider = queryProvider
         self.layoutConfiguration = layoutConfiguration
+        self.syncPromoManager = syncPromoManager
+        self.syncService = syncService
     }
 
     func start<P: Publisher>(in containerView: UIView,
@@ -99,9 +113,16 @@ final class DuckAISuggestionsCoordinator {
             chatViewModel: chatViewModel,
             urlLoader: urlLoader,
             queryProvider: queryProvider,
-            layoutConfiguration: layoutConfiguration
+            layoutConfiguration: layoutConfiguration,
+            syncPromoManager: syncPromoManager,
+            syncService: syncService
         )
         vc.delegate = self
+
+        vc.onBecameVisible = { [weak self] in
+            guard let self else { return }
+            self.chatManager.refreshSuggestions(query: self.queryProvider())
+        }
 
         // Hide the hatch the moment the user starts typing; restore on backspace-to-empty (mirrors Search-side autocomplete covering NTP).
         textPublisher
@@ -140,6 +161,14 @@ final class DuckAISuggestionsCoordinator {
         viewController?.setAdditionalTopInset(inset)
     }
 
+    func setIsVisibleContent(_ visible: Bool) {
+        viewController?.setIsVisibleContent(visible)
+    }
+
+    func refreshURLSuggestions() {
+        urlLoader.refreshSuggestions()
+    }
+
     func tearDown() {
         cancellables.removeAll()
         onContentChanged = nil
@@ -166,5 +195,37 @@ extension DuckAISuggestionsCoordinator: DuckAISuggestionsViewControllerDelegate 
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
         delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: query)
+    }
+
+    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController, source: UIView) {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
+
+        FireConfirmationPresenter.presentFireConfirmation(suggestion: chat, presenter: sender, source: source) {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
+
+        } onConfirm: { [weak self] in
+            self?.chatManager.deleteChatSuggestion(suggestion: chat)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteConfirmed)
+        }
+    }
+
+    func duckAISuggestionsDidRequestURLDeletion(_ suggestion: Suggestion) {
+        guard case .historyEntry(_, let url, _) = suggestion else {
+            assertionFailure("Only history suggestions can be deleted")
+            return
+        }
+
+        Task {
+            await historyManager.deleteHistoryForURL(url)
+            delegate?.duckAISuggestionsDidDeleteURL(suggestion)
+            urlLoader.refreshSuggestions()
+
+            Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
+            DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
+        }
+    }
+
+    func duckAISuggestionsDidRequestSyncSetup() {
+        delegate?.duckAISuggestionsDidRequestSyncSetup()
     }
 }

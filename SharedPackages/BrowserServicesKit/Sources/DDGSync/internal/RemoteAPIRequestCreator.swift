@@ -19,6 +19,7 @@
 import Foundation
 import Networking
 import Common
+import FoundationExtensions
 import os.log
 public struct RemoteAPIRequestCreator: RemoteAPIRequestCreating {
 

@@ -20,6 +20,7 @@ import AIChat
 import AppKit
 import AppUpdaterShared
 import Common
+import FoundationExtensions
 import CryptoKit
 import os.log
 import Persistence

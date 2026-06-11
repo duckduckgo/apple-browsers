@@ -21,7 +21,9 @@ import Foundation
 import UIKit
 import SwiftUI
 import Common
+import FoundationExtensions
 import Core
+import MetricBuilder
 
 struct FireConfirmationPresenter {
 
@@ -152,7 +154,7 @@ struct FireConfirmationPresenter {
         }
         sheet.prefersGrabberVisible = false
         if #unavailable(iOS 26) {
-            sheet.preferredCornerRadius = Constants.sheetCornerRadius
+            sheet.preferredCornerRadius = MainActor.assumeIsolated { SheetMetrics.cornerRadius }
         }
     }
     
@@ -185,7 +187,6 @@ private extension FireConfirmationPresenter {
     enum Constants {
         static let iPadSheetWidth: CGFloat = 375
         static let iPadSheetDefaultHeight: CGFloat = 520
-        static let sheetCornerRadius: CGFloat = 24
         static let maxHeightRatio: CGFloat = 0.9
     }
 }

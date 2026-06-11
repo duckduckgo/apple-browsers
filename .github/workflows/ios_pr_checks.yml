@@ -10,6 +10,7 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
@@ -19,6 +20,7 @@ on:
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/translation-pr-checks/**'
   schedule:
     - cron: '10,35,50 4,5,6 * * *'
   workflow_call:
@@ -491,6 +493,36 @@ jobs:
 
       - name: Check translations
         run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform iOS
+
+      - name: Check markdown markers
+        id: marker-check
+        run: |
+          output=$(python3 scripts/translation-pr-checks/check_marker_consistency.py --platform iOS 2>&1) || marker_failed=1
+          echo "$output"
+          if [ "${marker_failed:-0}" = "1" ]; then
+            echo "has_issues=true" >> "$GITHUB_OUTPUT"
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "message<<$EOF" >> "$GITHUB_OUTPUT"
+            echo "$output" >> "$GITHUB_OUTPUT"
+            echo "$EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on PR with marker mismatches
+        if: steps.marker-check.outputs.has_issues == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MARKER_MESSAGE: ${{ steps.marker-check.outputs.message }}
+        run: |
+          body=$(printf '## ⚠️ Markdown Marker Mismatches\n\nBold marker (`**`) counts must match the English source. Fix the affected translations at the Smartling source.\n\n```\n%s\n```' "$MARKER_MESSAGE")
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$body"
+
+      - name: Fail if marker mismatches
+        if: steps.marker-check.outputs.has_issues == 'true'
+        run: |
+          echo "Markdown marker mismatches detected (see PR comment and output above)."
+          exit 1
 
       - name: Check for orphaned translations
         id: orphaned-translations

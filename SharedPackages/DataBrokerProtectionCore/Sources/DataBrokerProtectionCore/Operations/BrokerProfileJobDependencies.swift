@@ -39,6 +39,7 @@ public protocol BrokerProfileJobDependencyProviding {
     var featureFlagger: DBPFeatureFlagging { get }
     var applicationNameForUserAgent: String? { get }
     var wideEvent: WideEventManaging? { get }
+    var contentBlocking: DBPWebViewContentBlocking? { get }
 
     func isAuthenticatedUser() async -> Bool
 
@@ -67,6 +68,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let featureFlagger: DBPFeatureFlagging
     public let applicationNameForUserAgent: String?
     public let wideEvent: WideEventManaging?
+    public let contentBlocking: DBPWebViewContentBlocking?
     public let isAuthenticatedUserProvider: () async -> Bool
 
     public init(database: any DataBrokerProtectionRepository,
@@ -84,6 +86,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
                 jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
                 wideEvent: WideEventManaging? = nil,
+                contentBlocking: DBPWebViewContentBlocking? = nil,
                 isAuthenticatedUserProvider: @escaping () async -> Bool = { true }
     ) {
         self.database = database
@@ -101,6 +104,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgent = applicationNameForUserAgent
         self.wideEvent = wideEvent
+        self.contentBlocking = contentBlocking
         self.isAuthenticatedUserProvider = isAuthenticatedUserProvider
     }
 
@@ -118,6 +122,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             stageDurationCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,
+            contentBlocking: self.contentBlocking,
             shouldRunNextStep: shouldRunNextStep
         )
     }
@@ -137,6 +142,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,
             actionsHandlerMode: .optOut,
+            contentBlocking: self.contentBlocking,
             shouldRunNextStep: shouldRunNextStep
         )
     }

@@ -143,7 +143,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     privacyStats: MockPrivacyStats(),
                                     voiceSearchHelper: MockVoiceSearchHelper(),
                                     launchSourceManager: MockLaunchSourceManager(),
-                                    darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
+                                    darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+                                    adBlockingAvailability: StubAdBlockingAvailability()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
@@ -181,6 +182,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             featureFlagger: featureFlagger,
             idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
             afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .lastUsedTab, keyValueStore: keyValueStore),
+            lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: keyValueStore),
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,

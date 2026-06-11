@@ -19,7 +19,9 @@
 import AppKit
 import AppKitExtensions
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import NetworkProtectionProxy
 import os.log
 import Subscription

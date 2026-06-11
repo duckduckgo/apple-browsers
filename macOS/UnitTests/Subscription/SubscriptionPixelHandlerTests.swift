@@ -99,6 +99,16 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         )
     }
 
+    func testOSDistributionActiveSubscription() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .osDistributionActiveSubscription)
+
+        let osMajorVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+        let expectedName = "os_distribution_active_subscriptions_major_version_\(osMajorVersion)_macos_desktop_monthly"
+        XCTAssertTrue(firedPixels.contains { $0.name == expectedName },
+                      "Expected \(expectedName). Fired: \(firedPixels.map(\.name))")
+    }
+
     func testGetTokensErrorPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
         let error = OAuthClientError.invalidTokenRequest(.reused)

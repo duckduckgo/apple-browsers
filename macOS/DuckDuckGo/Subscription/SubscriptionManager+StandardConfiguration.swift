@@ -19,6 +19,7 @@
 import Foundation
 import Subscription
 import Common
+import FoundationExtensions
 import PixelKit
 import PrivacyConfig
 import FeatureFlags
@@ -100,26 +101,18 @@ extension DefaultSubscriptionManager {
             }
         }
         let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }
-        if #available(macOS 12.0, *) {
-            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: userDefaults,
-                                                                             pixelHandler: pixelHandler)
-            self.init(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                        subscriptionFeatureFlagger: subscriptionFeatureFlagger,
-                                                                        pendingTransactionHandler: pendingTransactionHandler),
-                      oAuthClient: authClient,
-                      userDefaults: userDefaults,
-                      subscriptionEndpointService: subscriptionEndpointService,
-                      subscriptionEnvironment: environment,
-                      pixelHandler: pixelHandler,
-                      isInternalUserEnabled: isInternalUserEnabled)
-        } else {
-            self.init(oAuthClient: authClient,
-                      userDefaults: userDefaults,
-                      subscriptionEndpointService: subscriptionEndpointService,
-                      subscriptionEnvironment: environment,
-                      pixelHandler: pixelHandler,
-                      isInternalUserEnabled: isInternalUserEnabled)
-        }
+
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: userDefaults,
+                                                                         pixelHandler: pixelHandler)
+        self.init(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                                    subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                                    pendingTransactionHandler: pendingTransactionHandler),
+                  oAuthClient: authClient,
+                  userDefaults: userDefaults,
+                  subscriptionEndpointService: subscriptionEndpointService,
+                  subscriptionEnvironment: environment,
+                  pixelHandler: pixelHandler,
+                  isInternalUserEnabled: isInternalUserEnabled)
     }
 }
 

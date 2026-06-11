@@ -16,8 +16,11 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Combine
+import CombineExtensions
 import Foundation
 import Navigation
 import NewTabPage
@@ -150,14 +153,6 @@ struct CustomErrorSettings: Codable {
 }
 
 final class DuckPlayer {
-    static let usesSimulatedRequests: Bool = {
-        if #available(macOS 12.0, *) {
-            return true
-        } else {
-            return false
-        }
-    }()
-
     static let duckPlayerHost: String = "player"
     static let commonName = UserText.duckPlayer
 
@@ -180,13 +175,15 @@ final class DuckPlayer {
     convenience init(
         preferencesPersistor: DuckPlayerPreferencesPersistor,
         privacyConfigurationManager: PrivacyConfigurationManaging,
-        internalUserDecider: InternalUserDecider
+        internalUserDecider: InternalUserDecider,
+        featureFlagger: FeatureFlagger
     ) {
         self.init(
             preferences: DuckPlayerPreferences(
                 persistor: preferencesPersistor,
                 privacyConfigurationManager: privacyConfigurationManager,
-                internalUserDecider: internalUserDecider
+                internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger
             ),
             privacyConfigurationManager: privacyConfigurationManager
         )

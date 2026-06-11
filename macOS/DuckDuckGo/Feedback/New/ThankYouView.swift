@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Lottie
@@ -40,7 +41,7 @@ struct ThankYouView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 20)
-            .padding([.leading, .trailing], 24)
+            .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
 
             // Link section
             VStack(alignment: .leading, spacing: 16) {
@@ -48,7 +49,7 @@ struct ThankYouView: View {
                     .systemLabel(color: .textSecondary)
                     .multilineText()
                     .multilineTextAlignment(.leading)
-                    .padding([.leading, .trailing], 24)
+                    .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
 
                 Button {
                     onSeeWhatsNew()
@@ -62,7 +63,7 @@ struct ThankYouView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .padding([.leading, .trailing], 24)
+                .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
 
                 Spacer()
 
@@ -78,9 +79,9 @@ struct ThankYouView: View {
                     Text(UserText.feedbackFormClose)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(DismissActionButtonStyle())
-                .padding([.leading, .trailing], 24)
-                .padding(.bottom, 16)
+                .buttonStyle(DismissActionButtonStyle(topPadding: 8, bottomPadding: 8, pillShape: true))
+                .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+                .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

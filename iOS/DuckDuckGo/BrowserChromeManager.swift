@@ -161,8 +161,8 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         return heightAllowsHide && (delegate?.canHideBars ?? true)
     }
 
-    func reset() {
-        animator.revealBars(animated: true)
+    func reset(animated: Bool = true) {
+        animator.revealBars(animated: animated)
     }
 }
 

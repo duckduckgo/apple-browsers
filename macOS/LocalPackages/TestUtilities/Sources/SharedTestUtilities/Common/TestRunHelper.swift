@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import CommonObjCExtensions
 import Foundation
 import os.log
@@ -49,8 +50,12 @@ extension XCTestCase {
 
                     objToDeinit = nil
 
-                } else if !(view is WKWebView),
-                          let viewController = view.nextResponder as? NSViewController,
+                } else if view is WKWebView {
+                    if view.window != nil {
+                        objToDeinit = view
+                    }
+
+                } else if let viewController = view.nextResponder as? NSViewController,
                           !viewController.className.hasPrefix("TUINS"),
                           !viewController.className.hasPrefix("NSTextInsertionIndicator"),
                           !viewController.className.hasPrefix("STWeb"),
@@ -79,9 +84,98 @@ extension XCTestCase {
 
 }
 
+private struct WebContentProcessDrain {
+
+    struct Result {
+        let initialProcessCount: Int?
+        let finalProcessCount: Int?
+        let didSettle: Bool
+        let elapsedTime: TimeInterval
+    }
+
+    let processCount: () -> Int?
+    let spinRunLoop: (TimeInterval) -> Void
+    let now: () -> Date
+
+    func waitUntilSettled(
+        timeout: TimeInterval = 2,
+        pollInterval: TimeInterval = 0.05,
+        stableDuration: TimeInterval = 0.25
+    ) -> Result {
+        let start = now()
+
+        guard let initialProcessCount = processCount() else {
+            return Result(
+                initialProcessCount: nil,
+                finalProcessCount: nil,
+                didSettle: false,
+                elapsedTime: now().timeIntervalSince(start)
+            )
+        }
+
+        guard initialProcessCount > 0 else {
+            return Result(
+                initialProcessCount: initialProcessCount,
+                finalProcessCount: initialProcessCount,
+                didSettle: true,
+                elapsedTime: now().timeIntervalSince(start)
+            )
+        }
+
+        let deadline = start.addingTimeInterval(timeout)
+        var lastProcessCount = initialProcessCount
+        var stableSince = start
+
+        while now() < deadline {
+            spinRunLoop(pollInterval)
+
+            guard let currentProcessCount = processCount() else {
+                return Result(
+                    initialProcessCount: initialProcessCount,
+                    finalProcessCount: nil,
+                    didSettle: false,
+                    elapsedTime: now().timeIntervalSince(start)
+                )
+            }
+
+            if currentProcessCount == 0 {
+                return Result(
+                    initialProcessCount: initialProcessCount,
+                    finalProcessCount: currentProcessCount,
+                    didSettle: true,
+                    elapsedTime: now().timeIntervalSince(start)
+                )
+            }
+
+            if currentProcessCount == lastProcessCount {
+                if now().timeIntervalSince(stableSince) >= stableDuration {
+                    return Result(
+                        initialProcessCount: initialProcessCount,
+                        finalProcessCount: currentProcessCount,
+                        didSettle: true,
+                        elapsedTime: now().timeIntervalSince(start)
+                    )
+                }
+            } else {
+                lastProcessCount = currentProcessCount
+                stableSince = now()
+            }
+        }
+
+        return Result(
+            initialProcessCount: initialProcessCount,
+            finalProcessCount: lastProcessCount,
+            didSettle: false,
+            elapsedTime: now().timeIntervalSince(start)
+        )
+    }
+
+}
+
 @objc(TestRunHelper)
 public final class TestRunHelper: NSObject {
     @objc(sharedInstance) static let shared = TestRunHelper()
+    private static let webProcessCountLimit: UInt32 = 25
     private var windowObserver: Any?
 
     fileprivate let processPool = WKProcessPool()
@@ -126,6 +220,143 @@ public final class TestRunHelper: NSObject {
         loadedViews.append(.init(view: view))
     }
 
+    fileprivate func finishIntegrationTestUI() {
+        guard case .integrationTests = AppVersion.runType else { return }
+
+        let finishUI = {
+            MainActor.assumeIsolated {
+                let shouldCloseWindow = { (window: NSWindow) in
+                    !(window.className.contains("NSMenu")
+                      || window.className.contains("NSNextStep")
+                      || window.className.contains("TUINSWindow")
+                      || window.className == "NSStatusBarWindow")
+                }
+
+                let hasIntegrationTestUI = self.loadedViews.contains(where: { $0.view != nil })
+                    || NSApp.windows.contains(where: shouldCloseWindow)
+
+                guard hasIntegrationTestUI else { return }
+
+                let initialWebContentProcessCount = Self.webContentProcessCount()
+                if let initialWebContentProcessCount {
+                    Logger.tests.debug("Integration test UI cleanup starting with \(initialWebContentProcessCount) WebContent processes")
+                }
+
+                RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+                for ref in self.loadedViews {
+                    guard let webView = ref.view as? WKWebView else { continue }
+                    webView.stopLoading()
+                    webView.navigationDelegate = nil
+                    webView.uiDelegate = nil
+                }
+
+                autoreleasepool {
+                    NSApp.windows
+                        .filter(shouldCloseWindow)
+                        .forEach { $0.close() }
+                }
+
+                let deadline = Date().addingTimeInterval(2)
+                while Date() < deadline,
+                      NSApp.windows.contains(where: { shouldCloseWindow($0) && $0.isVisible }) {
+                    RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+                }
+
+                RunLoop.main.run(until: Date().addingTimeInterval(0.25))
+
+                let drainResult = WebContentProcessDrain.live.waitUntilSettled()
+                Self.logWebContentProcessDrainResult(drainResult)
+            }
+        }
+
+        if Thread.isMainThread {
+            finishUI()
+        } else {
+            DispatchQueue.main.sync(execute: finishUI)
+        }
+    }
+
+    private static func setWebProcessCountLimit(_ limit: UInt32) {
+        let selector = NSSelectorFromString("_setWebProcessCountLimit:")
+        guard WKProcessPool.responds(to: selector),
+              let method = class_getClassMethod(WKProcessPool.self, selector) else { return }
+
+        let imp = method_getImplementation(method)
+        typealias SetWebProcessCountLimitType = @convention(c) (AnyClass, ObjectiveC.Selector, UInt32) -> Void
+        let setWebProcessCountLimit = unsafeBitCast(imp, to: SetWebProcessCountLimitType.self)
+        setWebProcessCountLimit(WKProcessPool.self, selector, limit)
+        Logger.tests.debug("Set WebProcess count limit to \(limit)")
+    }
+
+    fileprivate static func webContentProcessCount() -> Int? {
+        let collectProcessCount: () -> Int? = {
+            let selector = Selector(("_webContentProcessInfo"))
+            guard WKProcessPool.responds(to: selector) else { return nil }
+
+            // _webContentProcessInfo must be called on the main thread. WebKit's
+            // AuxiliaryProcessProxy objects are owned and destroyed on the main thread;
+            // calling this API off the main thread can race with WebContent process termination.
+            return autoreleasepool {
+                guard let processInfoList = WKProcessPool.perform(selector)?
+                    .takeUnretainedValue() as? [NSObject] else { return nil }
+
+                let pidSelector = Selector(("pid"))
+                return processInfoList.reduce(into: 0) { count, processInfo in
+                    guard processInfo.responds(to: pidSelector),
+                          let pid = processInfo.value(forKey: "pid") as? pid_t,
+                          pid > 0 else { return }
+                    count += 1
+                }
+            }
+        }
+
+        return Thread.isMainThread
+            ? collectProcessCount()
+            : DispatchQueue.main.sync { collectProcessCount() }
+    }
+
+    private static func logWebContentProcessDrainResult(_ result: WebContentProcessDrain.Result) {
+        guard let initialProcessCount = result.initialProcessCount else {
+            Logger.tests.debug("Integration test UI cleanup could not read WebContent process count")
+            return
+        }
+
+        guard let finalProcessCount = result.finalProcessCount else {
+            Logger.tests.debug("""
+            Integration test UI cleanup lost WebContent process count after \(result.elapsedTime, format: .fixed(precision: 2))s; \
+            initial count: \(initialProcessCount)
+            """)
+            return
+        }
+
+        if result.didSettle {
+            Logger.tests.debug("""
+            Integration test UI cleanup WebContent process count settled from \(initialProcessCount) to \(finalProcessCount) \
+            in \(result.elapsedTime, format: .fixed(precision: 2))s
+            """)
+        } else {
+            Logger.tests.warning("""
+            Integration test UI cleanup timed out waiting for WebContent process count to settle from \(initialProcessCount) \
+            to \(finalProcessCount) after \(result.elapsedTime, format: .fixed(precision: 2))s
+            """)
+        }
+    }
+
+}
+
+private extension WebContentProcessDrain {
+
+    static var live: WebContentProcessDrain {
+        WebContentProcessDrain(
+            processCount: TestRunHelper.webContentProcessCount,
+            spinRunLoop: { interval in
+                RunLoop.main.run(until: Date().addingTimeInterval(interval))
+            },
+            now: Date.init
+        )
+    }
+
 }
 
 extension TestRunHelper: XCTestObservation {
@@ -138,16 +369,7 @@ extension TestRunHelper: XCTestObservation {
             }
         }
 
-        if #available(macOS 13.0, *) {
-            let selector = NSSelectorFromString("_setWebProcessCountLimit:")
-            if WKProcessPool.responds(to: selector),
-               let method = class_getClassMethod(WKProcessPool.self, selector) {
-                let imp = method_getImplementation(method)
-                typealias SetWebProcessCountLimitType = @convention(c) (AnyClass, ObjectiveC.Selector, UInt32) -> Void
-                let setWebProcessCountLimit = unsafeBitCast(imp, to: SetWebProcessCountLimitType.self)
-                setWebProcessCountLimit(WKProcessPool.self, selector, 5)
-            }
-        }
+        Self.setWebProcessCountLimit(Self.webProcessCountLimit)
         processPool.perform(NSSelectorFromString("setWebViewsUsingProcessPool:"), with: Set([NSValue(point: .zero)])) // avoid deallocation checks on this process pool
     }
 
@@ -175,6 +397,7 @@ extension TestRunHelper: XCTestObservation {
         if !loadedViews.isEmpty {
             let descr = loadedViews.compactMap(\.view).description
             Logger.tests.warning("Loaded views not empty at start of test case: \(descr)")
+            finishIntegrationTestUI()
             loadedViews = []
         }
 
@@ -193,10 +416,10 @@ extension TestRunHelper: XCTestObservation {
             // cleanup dedicated temporary directory after each test run
             FileManager.default.cleanupTemporaryDirectory()
         }
+
         NSApp.swizzled_currentEvent = nil
-        if #available(macOS 12.0, *) {
-            WKWebView.customHandlerSchemes = []
-        }
+        finishIntegrationTestUI()
+        WKWebView.customHandlerSchemes = []
 
         // Check for non-nil variables that should be cleaned up
         if ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true {
@@ -246,6 +469,7 @@ extension TestRunHelper: XCTestObservation {
 
             withExtendedLifetime(waiter) {}
         }
+
         loadedViews = []
     }
 

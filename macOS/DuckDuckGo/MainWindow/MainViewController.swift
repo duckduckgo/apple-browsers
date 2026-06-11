@@ -22,6 +22,7 @@ import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
+import FoundationExtensions
 import History
 import NetworkProtectionIPC
 import NetworkQualityMonitor
@@ -598,10 +599,6 @@ final class MainViewController: NSViewController {
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
     }
 
-    func toggleDuckAISidebar() {
-        aiChatCoordinator.toggleSidebar()
-    }
-
     private func wireToggleReferenceToAIChatTextContainer() {
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
@@ -1150,7 +1147,13 @@ extension MainViewController {
 
     private func handleReturnKey(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
         guard event.keyCode == kVK_Return,
-              navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true else {
+              let addressBarTextField = navigationBarViewController.addressBarViewController?.addressBarTextField,
+              addressBarTextField.isFirstResponder else {
+            return false
+        }
+
+        if featureFlagger.isFeatureOn(.addressBarIMEConfirmFix),
+           addressBarTextField.editor?.hasMarkedText() == true {
             return false
         }
 
@@ -1160,18 +1163,18 @@ extension MainViewController {
             let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
             if isSwitchingToAIChatMode {
-                let currentText = navigationBarViewController.addressBarViewController?.addressBarTextField.stringValueWithoutSuffix ?? ""
+                let currentText = addressBarTextField.stringValueWithoutSuffix
                 self.aiChatOmnibarTextContainerViewController.insertNewlineIfHasContent(addressBarText: currentText)
             }
             return true
         } else if flags.contains(.control),
                   featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            navigationBarViewController.addressBarViewController?.addressBarTextField.openAIChatWithPrompt()
+            addressBarTextField.openAIChatWithPrompt()
             return true
         } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
             navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
         } else {
-            navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+            addressBarTextField.addressBarEnterPressed()
         }
         return true
     }

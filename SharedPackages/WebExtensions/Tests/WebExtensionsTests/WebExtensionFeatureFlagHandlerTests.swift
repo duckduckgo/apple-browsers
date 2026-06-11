@@ -27,6 +27,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     private var mockWebExtensionManager: MockWebExtensionManaging!
     private var featureFlagSubject: PassthroughSubject<Bool, Never>!
     private var embeddedFlagSubject: PassthroughSubject<Bool, Never>!
+    private var adBlockingDefaultsFlagSubject: PassthroughSubject<Bool, Never>!
     private var sut: WebExtensionFeatureFlagHandler!
 
     override func setUp() {
@@ -34,12 +35,14 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         mockWebExtensionManager = MockWebExtensionManaging()
         featureFlagSubject = PassthroughSubject<Bool, Never>()
         embeddedFlagSubject = PassthroughSubject<Bool, Never>()
+        adBlockingDefaultsFlagSubject = PassthroughSubject<Bool, Never>()
     }
 
     override func tearDown() {
         sut = nil
         featureFlagSubject = nil
         embeddedFlagSubject = nil
+        adBlockingDefaultsFlagSubject = nil
         mockWebExtensionManager = nil
         super.tearDown()
     }
@@ -457,6 +460,137 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 
         XCTAssertEqual(enabledCallCount, 1)
     }
+
+    // MARK: - Ad Blocking Defaults Flag Tests
+
+    func testWhenAdBlockingDefaultsFlagFlipsToTrueThenChangeCallbackIsCalled() async throws {
+        let changedExpectation = expectation(description: "onAdBlockingDefaultsFlagChanged called")
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onAdBlockingDefaultsFlagChanged: { changedExpectation.fulfill() }
+        )
+
+        adBlockingDefaultsFlagSubject.send(true)
+
+        await fulfillment(of: [changedExpectation], timeout: 1.0)
+    }
+
+    func testWhenAdBlockingDefaultsFlagFlipsToFalseThenChangeCallbackIsCalled() async throws {
+        let changedExpectation = expectation(description: "onAdBlockingDefaultsFlagChanged called")
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onAdBlockingDefaultsFlagChanged: { changedExpectation.fulfill() }
+        )
+
+        adBlockingDefaultsFlagSubject.send(false)
+
+        await fulfillment(of: [changedExpectation], timeout: 1.0)
+    }
+
+    func testWhenAdBlockingDefaultsFlagFlipsThenWebExtensionManagerIsNotUninstalled() async throws {
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onAdBlockingDefaultsFlagChanged: {}
+        )
+
+        adBlockingDefaultsFlagSubject.send(true)
+        adBlockingDefaultsFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertFalse(mockWebExtensionManager.uninstallAllExtensionsCalled)
+        XCTAssertFalse(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
+    }
+
+    func testWhenAdBlockingDefaultsPublisherIsNilThenHandlerDoesNotCrash() {
+        var callbackCalled = false
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            adBlockingDefaultsFlagPublisher: nil,
+            onFeatureFlagDisabled: {},
+            onAdBlockingDefaultsFlagChanged: { callbackCalled = true }
+        )
+
+        XCTAssertFalse(callbackCalled)
+    }
+
+    func testWhenAdBlockingDefaultsCallbackIsNilThenHandlerDoesNotCrashOnEmission() async throws {
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onAdBlockingDefaultsFlagChanged: nil
+        )
+
+        adBlockingDefaultsFlagSubject.send(true)
+        try await Task.sleep(for: .milliseconds(100))
+    }
+
+    func testWhenAdBlockingDefaultsFlagToggledMultipleTimesThenCallbackIsCalledForEachEmission() async throws {
+        var callCount = 0
+        let firstCall = expectation(description: "first onAdBlockingDefaultsFlagChanged")
+        let secondCall = expectation(description: "second onAdBlockingDefaultsFlagChanged")
+
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onAdBlockingDefaultsFlagChanged: {
+                callCount += 1
+                if callCount == 1 {
+                    firstCall.fulfill()
+                } else {
+                    secondCall.fulfill()
+                }
+            }
+        )
+
+        adBlockingDefaultsFlagSubject.send(true)
+        await fulfillment(of: [firstCall], timeout: 1.0)
+
+        adBlockingDefaultsFlagSubject.send(false)
+        await fulfillment(of: [secondCall], timeout: 1.0)
+
+        XCTAssertEqual(callCount, 2)
+    }
+
+    func testWhenAdBlockingDefaultsFlagRapidlyFlippedThenOnlyLastCallbackRuns() async throws {
+        var callCount = 0
+        let lastCallExpectation = expectation(description: "last onAdBlockingDefaultsFlagChanged completes")
+
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onAdBlockingDefaultsFlagChanged: {
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
+                callCount += 1
+                lastCallExpectation.fulfill()
+            }
+        )
+
+        adBlockingDefaultsFlagSubject.send(true)
+        adBlockingDefaultsFlagSubject.send(false)
+        adBlockingDefaultsFlagSubject.send(true)
+
+        await fulfillment(of: [lastCallExpectation], timeout: 1.0)
+        try await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertEqual(callCount, 1)
+    }
 }
 
 // MARK: - Mock
@@ -478,6 +612,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
 
     func loadInstalledExtensions() async {}
+    func reloadInstalledExtensions() async {}
     func installExtension(from sourceURL: URL) async throws {}
     @MainActor func uninstallExtension(identifier: String) throws {}
 

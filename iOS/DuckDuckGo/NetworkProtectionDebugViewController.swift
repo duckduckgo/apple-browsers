@@ -17,13 +17,15 @@
 //  limitations under the License.
 //
 
-import UIKit
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import Network
 import NetworkExtension
-import VPN
 import Subscription
+import UIKit
+import VPN
 
 final class NetworkProtectionDebugViewController: UITableViewController {
     private let titles = [

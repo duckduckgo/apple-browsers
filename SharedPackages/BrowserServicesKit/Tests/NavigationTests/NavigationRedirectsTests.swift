@@ -25,7 +25,7 @@ import WebKit
 import XCTest
 @testable import Navigation
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
     func testClientRedirectFromHashedUrlToNonHashedUrl() throws {

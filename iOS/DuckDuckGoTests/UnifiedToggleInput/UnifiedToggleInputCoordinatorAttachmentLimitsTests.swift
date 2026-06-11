@@ -621,11 +621,13 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences()) -> UnifiedToggleInputCoordinator {
+    private func makeCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences(),
+                                 duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil) -> UnifiedToggleInputCoordinator {
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
-            preferences: preferences)
+            preferences: preferences,
+            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation)
         coordinator.modelStore.attachmentLimits = makeLimits()
         return coordinator
     }
@@ -720,7 +722,7 @@ private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
-    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
+    func unifiedToggleInputDidRequestAppMenu() {}
 }
 
 private final class StubAIChatPreferences: AIChatPreferencesPersisting {

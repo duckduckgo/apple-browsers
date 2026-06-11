@@ -25,27 +25,41 @@ extension OnboardingRebranding.OnboardingView {
 
     struct AIComparisonContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        @Binding var showContent: Bool
+        @Binding var isVisible: Bool
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+
         private let content: OnboardingAIComparisonContent
         private let continueAction: () -> Void
 
         init(
             content: OnboardingAIComparisonContent,
-            showContent: Binding<Bool>,
+            isVisible: Binding<Bool>,
             continueAction: @escaping () -> Void,
         ) {
             self.content = content
-            self._showContent = showContent
+            self._isVisible = isVisible
             self.continueAction = continueAction
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                Text(content.title)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
+                TypingText(
+                    content.title,
+                    startAnimating: $shouldStartTyping,
+                    onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    }
+                )
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .font(onboardingTheme.typography.title)
+                .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     RebrandedOnboardingComparisonTableView(
@@ -58,14 +72,16 @@ extension OnboardingRebranding.OnboardingView {
                         availableFeatureAnimation: .animated(startAnimation: showContent)
                     )
 
-                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
-                        Button(action: continueAction) {
-                            Text(content.primaryCTA)
-                        }
-                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+                    Button(action: continueAction) {
+                        Text(content.primaryCTA)
                     }
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
                 }
+                .opacity(showContent ? 1 : 0)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
     }

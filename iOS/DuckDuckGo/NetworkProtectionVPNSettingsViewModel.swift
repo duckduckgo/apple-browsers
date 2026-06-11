@@ -17,12 +17,14 @@
 //  limitations under the License.
 //
 
+import Combine
+import CombineExtensions
+import ConcurrencyExtensions
+import Core
 import Foundation
+import PrivacyConfig
 import UserNotifications
 import VPN
-import Combine
-import Core
-import PrivacyConfig
 
 enum NetworkProtectionNotificationsViewKind: Equatable {
     case loading

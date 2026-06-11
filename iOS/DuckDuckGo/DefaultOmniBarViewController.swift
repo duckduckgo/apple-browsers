@@ -113,7 +113,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         let activationDecision = unifiedToggleInputOmnibarActivating?.activateFromOmnibarIfNeeded(
             currentText: extractCurrentTextForEditing(textField),
-            tapped: textFieldTapped)
+            tapped: textFieldTapped,
+            textEntryMode: textEntryMode)
 
         if activationDecision == .intercept {
             return false
@@ -246,6 +247,29 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         ])
     }
 
+    override func refreshText(forUrl url: URL?, forceFullURL: Bool) {
+        /// Skip while the expanded duck.ai panel is open — otherwise the page title bleeds
+        /// through the transparent aiChatTextView. https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
+        if omniBarView.isSearchAreaExpanded {
+            return
+        }
+        super.refreshText(forUrl: url, forceFullURL: forceFullURL)
+    }
+
+    override func enterAIChatMode() {
+        /// Skip while the user is editing — would reveal the favicon over the open panel.
+        ///  https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
+        if omniBarView.isSearchAreaExpanded || omniBarView.textField.isEditing {
+            return
+        }
+        super.enterAIChatMode()
+
+        if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled,
+           state is SmallOmniBarState.AIChatModeState {
+            refreshState(SmallOmniBarState.AIChatTabModeState(dependencies: dependencies, isLoading: state.isLoading))
+        }
+    }
+
     override func updateInterface(from oldState: any OmniBarState, to state: any OmniBarState) {
         super.updateInterface(from: oldState, to: state)
 
@@ -323,6 +347,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         pendingHideEditingStateLogo = false
         let editingStateViewController = OmniBarEditingStateViewController(
             switchBarHandler: switchBarHandler,
+            aiChatSyncCleaner: dependencies.aiChatSyncCleaner,
             duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
             escapeHatchModel: escapeHatchModel,
             initialLogoHidden: initialLogoHidden
@@ -406,6 +431,11 @@ extension DefaultOmniBarViewController {
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted)
+                /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit
+                /// collapse animation.
+                /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
+                omniBarView.setSearchAreaExpanded(false, animated: false)
+                omniBarView.aiChatTextView.resignFirstResponder()
                 omniDelegate?.onPromptSubmitted(query, tools: nil)
             }
         } else {

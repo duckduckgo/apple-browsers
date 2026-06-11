@@ -668,163 +668,163 @@
       }
     },
     "onboarding.highlights.browsers.features.duckplayer.title" : {
-      "comment" : "Message to highlight browser capability of watching YouTube videos without targeted ads",
+      "comment" : "Message to highlight browser capability of watching YouTube videos without ads",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "bg" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Гледайте YouTube без насочени реклами"
+            "value" : "Гледай видеоклипове в YouTube без реклами"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Přehrávej YouTube bez cílených reklam"
+            "value" : "Přehrávání videí na YouTube bez reklam"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afspil YouTube uden målrettede annoncer"
+            "value" : "Afspil YouTube-videoer uden annoncer"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "YouTube ohne gezielte Werbung abspielen"
+            "value" : "YouTube-Videos ohne Werbung abspielen"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Αναπαράγετε στο YouTube χωρίς στοχευμένες διαφημίσεις"
+            "value" : "Δες βίντεο στο YouTube χωρίς διαφημίσεις"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Play YouTube without targeted ads"
+            "value" : "Play YouTube videos without ads"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reproduce YouTube sin anuncios segmentados"
+            "value" : "Reproduce vídeos de YouTube sin anuncios"
           }
         },
         "et" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Esita YouTube’i ilma sihitud reklaamideta"
+            "value" : "Esita YouTube'i videoid ilma reklaamideta"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toista YouTubea ilman kohdennettuja mainoksia"
+            "value" : "Toistaa YouTube-videoita ilman mainoksia"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Profitez de YouTube sans publicités ciblées"
+            "value" : "Lecture de vidéos YouTube sans publicités"
           }
         },
         "hr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reproduciraj YouTube bez ciljanih oglasa"
+            "value" : "Reproduciraj YouTube videozapise bez oglasa"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nézd a YouTube-ot célzott hirdetések nélkül"
+            "value" : "YouTube-videók megtekintése hirdetések nélkül"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Guarda YouTube senza annunci mirati"
+            "value" : "Riproduci video di YouTube senza annunci"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ターゲティング広告なしでYouTubeを再生"
+            "value" : "広告なしでYouTube動画を再生"
           }
         },
         "lt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Žiūrėkite „YouTube“ be tikslinių skelbimų"
+            "value" : "Žiūrėkite „YouTube“ vaizdo įrašus be reklamų"
           }
         },
         "lv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Skaties YouTube bez mērķētām reklāmām"
+            "value" : "Atskaņo YouTube videoklipus bez reklāmām"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Se YouTube uten målrettede annonser"
+            "value" : "Spill av YouTube-videoer uten annonser"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Speel YouTube af zonder gerichte advertentie"
+            "value" : "Speel YouTube-video's af zonder advertenties"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odtwarzanie treści w serwisie YouTube bez spersonalizowanych reklam"
+            "value" : "Odtwarzaj filmy na YouTube bez reklam"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vê YouTube sem anúncios segmentados"
+            "value" : "Reproduz vídeos do YouTube sem anúncios"
           }
         },
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redă YouTube fără reclame direcționate"
+            "value" : "Redă videoclipuri YouTube fără reclame"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Позволяет смотреть YouTube без целевой рекламы"
+            "value" : "Смотрите видео на YouTube без рекламы"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sleduj YouTube bez cielených reklám"
+            "value" : "Prehrávajte videá z YouTube bez reklám"
           }
         },
         "sl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Predvajajte YouTube brez ciljanih oglasov"
+            "value" : "Predvajanje videoposnetkov na YouTubu brez oglasov"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Titta på YouTube utan riktade annonser"
+            "value" : "Spela upp YouTube-videor utan annonser"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "YouTube videolarını hedeflenmiş reklamlar olmadan izleyin"
+            "value" : "YouTube videolarını reklamsız oynatın"
           }
         }
       }

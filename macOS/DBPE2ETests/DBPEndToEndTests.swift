@@ -115,10 +115,6 @@ final class DBPEndToEndTests: XCTestCase {
      When we adopt Swift 6, this can likely be replaced with the new testing macros
      */
     func testWhenProfileIsSaved_ThenEachStepHappensInSequence() async throws {
-        // Disabled while we investigate the opt-out step timing out against the fake broker, which fails broadly across branches and the scheduled main run.
-        // Tracking: https://app.asana.com/1/137249556945/project/1203108348835387/task/1215581159471305
-        try XCTSkipIf(true, "Disabled: opt-out step times out against the fake broker.")
-
         // Given
 
         // Local state set up

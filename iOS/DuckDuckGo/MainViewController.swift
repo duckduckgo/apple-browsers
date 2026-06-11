@@ -5392,7 +5392,22 @@ extension MainViewController: TabDelegate {
         // `.storageUnavailable` failure so the screen shows an error rather than a
         // misleading empty list.
         let reader = ChatHistoryReader(observer: duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)
-        let viewModel = AIChatHistoryViewModel(reader: reader)
+        // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
+        // rather than `uniqueKeysWithValues:` — the model list is server-supplied so we
+        // can't guarantee unique ids and the latter crashes on duplicates.
+        let modelDisplays = Dictionary(
+            (unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let downloader = ChatHistoryDownloader(
+            storageHandler: duckAiNativeStorageHandler,
+            modelDisplays: modelDisplays
+        )
+        let viewModel = AIChatHistoryViewModel(
+            reader: reader,
+            fireExecutor: fireExecutor,
+            downloader: downloader
+        )
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel)
         let navigationController = UINavigationController(rootViewController: content)
@@ -5600,11 +5615,20 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
-    func viewModelDidRequestDeleteChat(chatId: String) {
-        // The chat-history sheet shows persistent chats, so this is never a fire-mode burn.
-        Task { @MainActor in
-            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
-        }
+    func viewModelDidExportChat(filename: String) {
+        let message = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: filename)
+        let addressBarBottom = appSettings.currentAddressBarPosition.isBottom
+        ActionMessageView.present(
+            message: message,
+            numberOfLines: 2,
+            actionTitle: UserText.actionGenericShow,
+            presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+            onAction: { [weak self] in
+                self?.dismiss(animated: true) { [weak self] in
+                    self?.segueToDownloads()
+                }
+            }
+        )
     }
 }
 

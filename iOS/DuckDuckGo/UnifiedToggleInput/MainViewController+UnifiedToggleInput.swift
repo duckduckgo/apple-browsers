@@ -269,7 +269,7 @@ extension MainViewController {
         case .standardChrome:
             statusBackgroundPresentation = .standard
             rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
-            navigationBarContainerColor = nil
+            navigationBarContainerColor = ThemeManager.shared.currentTheme.barBackgroundColor
             inputContentContainerColor = .clear
             unifiedToggleInputContainerColor = .clear
             webViewBackgroundColor = nil

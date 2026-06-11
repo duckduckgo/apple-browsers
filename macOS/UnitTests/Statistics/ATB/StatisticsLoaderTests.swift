@@ -95,6 +95,38 @@ class StatisticsLoaderTests: XCTestCase {
         }
     }
 
+    func testRefreshRetentionAtbOnNavigationFiresStandardAndDailySerpPixelWithDailyRateLimited() {
+        // GIVEN
+        let firstExpectation = expectation(description: #function)
+        var firedPixelNames: [String] = []
+        let capturingPixelKit = PixelKit(
+            dryRun: false,
+            appVersion: "1.0.0",
+            defaultHeaders: [:],
+            defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+            fireRequest: { name, _, _, _, _, onComplete in
+                firedPixelNames.append(name)
+                onComplete(true, nil)
+            }
+        )
+        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "retentionatb"
+        mockStatisticsStore.variant = "test"
+        loadSuccessfulUpdateAtbStub()
+
+        // WHEN
+        testee.refreshRetentionAtbOnNavigation(isSearch: true, isDuckAI: false) {
+            firstExpectation.fulfill()
+        }
+        wait(for: [firstExpectation], timeout: 5)
+
+        // THEN
+        XCTAssertEqual(firedPixelNames.filter { $0 == "m_mac_navigation_search" }.count, 1)
+        XCTAssertEqual(firedPixelNames.filter { $0 == "m_mac_navigation_search_daily" }.count, 1)
+    }
+
     func testRefreshSearchRetentionAtbFiresSearchesOSDistributionPixel() {
         var firedPixelNames: [String] = []
         let capturingPixelKit = PixelKit(dryRun: false,

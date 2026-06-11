@@ -1040,10 +1040,14 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeDuckAIMenuItems() -> [BrowsingMenuEntry] {
         guard unifiedToggleInputFeature.isAvailable, shouldShowAIChatInMenu else { return [] }
 
+        // Native sheet when the flag is on; Duck.ai web sidebar otherwise.
+        let chatsEntry: BrowsingMenuEntry = featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+            ? buildDuckAiChatsEntry(withSmallIcon: false)
+            : buildOpenChatListEntry(useSmallIcon: false)
         return [
             buildNewAIChatEntry(withSmallIcon: false),
             buildAINewVoiceChatEntry(useSmallIcon: false),
-            buildOpenChatListEntry(useSmallIcon: false),
+            chatsEntry,
             buildOpenSettingsEntry(useSmallIcon: false)
         ]
     }

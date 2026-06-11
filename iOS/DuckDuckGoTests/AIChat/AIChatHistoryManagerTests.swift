@@ -20,6 +20,7 @@
 import XCTest
 import Combine
 import AIChat
+import AIChatTestingUtilities
 @testable import DuckDuckGo
 
 @MainActor
@@ -29,6 +30,7 @@ final class AIChatHistoryManagerTests: XCTestCase {
     private var mockAIChatSettings: MockAIChatSettingsProvider!
     private var viewModel: AIChatSuggestionsViewModel!
     private var mockHistoryCleaner: MockHistoryCleaner!
+    private var mockChatSyncCleaner: MockAIChatSyncCleaning!
     private var sut: AIChatHistoryManager!
 
     override func setUp() {
@@ -36,12 +38,21 @@ final class AIChatHistoryManagerTests: XCTestCase {
         mockSuggestionsReader = MockAIChatSuggestionsReader()
         mockAIChatSettings = MockAIChatSettingsProvider()
         viewModel = AIChatSuggestionsViewModel()
-        mockHistoryCleaner = MockHistoryCleaner()
+
+        let historyCleaner = MockHistoryCleaner()
+        mockHistoryCleaner = historyCleaner
+
+        mockChatSyncCleaner = MockAIChatSyncCleaning()
+
         sut = AIChatHistoryManager(
             suggestionsReader: mockSuggestionsReader,
             aiChatSettings: mockAIChatSettings,
+            aiChatDeleter: AIChatDeleter(
+                historyCleanerProvider: { _, _ in historyCleaner },
+                aiChatSyncCleaner: mockChatSyncCleaner
+            ),
             viewModel: viewModel,
-            historyCleaner: mockHistoryCleaner
+            isFireTab: false
         )
     }
 
@@ -51,6 +62,7 @@ final class AIChatHistoryManagerTests: XCTestCase {
         mockHistoryCleaner = nil
         mockAIChatSettings = nil
         mockSuggestionsReader = nil
+        mockChatSyncCleaner = nil
         super.tearDown()
     }
 
@@ -238,6 +250,19 @@ final class AIChatHistoryManagerTests: XCTestCase {
 
         XCTAssertEqual(mockSuggestionsReader.fetchSuggestionsCallCount, 1)
         XCTAssertNil(mockSuggestionsReader.lastQuery)
+    }
+
+    // MARK: - SyncCleaner Tests
+
+    func testRemoveChatSuggestion_RecordsDeletionWithSyncCleaner() async {
+        let chat = AIChatSuggestion(id: "1", title: "Test Chat", isPinned: false, chatId: "chat-1")
+        sut.deleteChatSuggestion(suggestion: chat)
+
+        let predicate = NSPredicate { _, _ in
+            self.mockChatSyncCleaner.recordChatDeletionCalls == ["chat-1"]
+        }
+        let exp = expectation(for: predicate, evaluatedWith: nil)
+        await fulfillment(of: [exp], timeout: 5.0)
     }
 }
 

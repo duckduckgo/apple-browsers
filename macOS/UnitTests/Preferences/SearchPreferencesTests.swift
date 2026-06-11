@@ -29,6 +29,7 @@ class SearchPreferencesTests: XCTestCase {
     override func setUpWithError() throws {
         PixelKit.setUp(dryRun: true,
                        appVersion: "",
+                       session: "test",
                        defaultHeaders: [:],
                        defaults: UserDefaults()) { _, _, _, _, _, _ in }
     }

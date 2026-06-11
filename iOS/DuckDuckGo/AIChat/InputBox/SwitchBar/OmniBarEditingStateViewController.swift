@@ -117,6 +117,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
@@ -161,6 +162,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                   privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
                   aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+                  aiChatSyncCleaner: AIChatSyncCleaning? = nil,
                   voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                   escapeHatchModel: EscapeHatchModel? = nil,
@@ -178,6 +180,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.aiChatSettings = aiChatSettings
         self.voiceShortcutFeature = voiceShortcutFeature
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.escapeHatchModel = escapeHatchModel
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
@@ -426,30 +429,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     /// Fire tabs use a no-op reader that always returns empty results,
     /// preventing chat history from being fetched or displayed.
     private func makeAIChatHistoryManager() -> AIChatHistoryManager {
-        let suggestionsReader: AIChatSuggestionsReading
-        if switchBarHandler.isFireTab {
-            suggestionsReader = NilSuggestionsReader()
-        } else {
-            let reader = SuggestionsReader(
-                featureFlagger: featureFlagger,
-                privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: duckAiNativeStorageHandler,
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            )
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        }
+        let (chatManager, _) = AIChatHistoryManager.makeHistoryManager(isFireTab: switchBarHandler.isFireTab,
+                                                                       isIPadExperience: false,
+                                                                       featureFlagger: featureFlagger,
+                                                                       privacyConfigurationManager: privacyConfigurationManager,
+                                                                       chatSyncCleaner: aiChatSyncCleaner,
+                                                                       chatSettings: aiChatSettings,
+                                                                       nativeStorageHandler: duckAiNativeStorageHandler)
 
-        let historyCleaner = HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger,
-                                            privacyConfig: privacyConfigurationManager,
-                                            nativeStorageHandler: duckAiNativeStorageHandler)
-
-        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
-
-        return AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                    aiChatSettings: aiChatSettings,
-                                    viewModel: viewModel,
-                                    historyCleaner: historyCleaner)
+        return chatManager
     }
 
     private func installDaxLogoView() {

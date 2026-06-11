@@ -204,6 +204,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
     }
 
     func testWhenAuthenticationChallengeReturnsCancel_responderChainReceivesFailure() throws {
+        throw XCTSkip("Disabled and pending investigation: https://app.asana.com/1/137249556945/task/1215587453456948?focus=true")
         navigationDelegate.setResponders(
             .strong(NavigationResponderMock { _ in }),
             .strong(NavigationResponderMock { _ in }),

@@ -347,5 +347,29 @@
         "key": "d",
         "type": "integer",
         "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
+    },
+    "nextStepsDaysSinceInstall": {
+        "key": "daysSinceInstall",
+        "type": "integer",
+        "description": "Days since app install (in buckets of 0, 1, 2-3, 4+)",
+        "enum": [0, 1, 2, 4]
+    },
+    "nextStepsActiveUsageDays": {
+        "key": "nextStepsActiveUsageDays",
+        "type": "integer",
+        "description": "Number of days the New Tab Page has been opened with Next Steps cards visible",
+        "enum": [0, 1, 2, 3, 4, 6, 9, 14]
+    },
+    "ntpImpressionCount": {
+        "key": "ntpImpressionCount",
+        "type": "integer",
+        "description": "Number of times the New Tab Page has been opened (newTabPageWebViewDidAppear)",
+        "enum": [1, 2, 3, 4, 5, 6, 7, 8, 10, 15, 25, 50]
+    },
+    "nextStepsCardImpressionCount": {
+        "key": "cardImpressionCount",
+        "type": "integer",
+        "description": "Number of times a Next Steps card was shown (appeared at the top of the Next Steps card stack)",
+        "maximum": 10
     }
 }

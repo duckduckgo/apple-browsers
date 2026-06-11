@@ -91,6 +91,7 @@ extension MainViewController {
             toggleModeStorage: toggleModeStorage,
             stateStore: stateStore,
             syncService: syncService,
+            aiChatSyncCleaner: aiChatSyncCleaner,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
         )
         coordinator.delegate = self
@@ -268,7 +269,7 @@ extension MainViewController {
         case .standardChrome:
             statusBackgroundPresentation = .standard
             rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
-            navigationBarContainerColor = nil
+            navigationBarContainerColor = ThemeManager.shared.currentTheme.barBackgroundColor
             inputContentContainerColor = .clear
             unifiedToggleInputContainerColor = .clear
             webViewBackgroundColor = nil
@@ -631,6 +632,26 @@ private extension MainViewController {
                 self?.handleNewImageGenerationChatStarted(for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatShowModelPicker)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.handleShowModelPicker(for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+    }
+
+    /// Routes the FE's `showModelPicker` to the foreground Duck.ai tab's UTI so the user can pick a
+    /// supported model for the active chat (recovery-card "Switch Model" CTA). No-op when there's no
+    /// foreground Duck.ai UTI.
+    private func handleShowModelPicker(for webView: WKWebView) {
+        let isCurrent = tabManager.controller(forWebView: webView) === currentTab
+        let isAITab = currentTab?.isAITab == true
+        guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
+            return
+        }
+        coordinator.presentModelPickerForActiveChat()
     }
 
     /// Updates the foreground tab's UTI to reflect an FE-initiated image-generation chat.

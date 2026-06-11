@@ -250,6 +250,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
     case escapeHatchFireButton
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215530020470713?focus=true
+    case escapeHatchHideShortcut
+
     case crashReportOptInStatusResetting
 
     case screenTimeCleaning
@@ -543,6 +546,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
     case nativeStoragePathMigration
+
+    /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
+    /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
+    /// screenshot preview.
+    case tabSwitcherRichCard
 
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.

@@ -59,6 +59,7 @@ final class IPadTabChatHistoryCoordinator {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let iPadTabFeature: AIChatIPadTabFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let textSubject = PassthroughSubject<String, Never>()
@@ -69,6 +70,7 @@ final class IPadTabChatHistoryCoordinator {
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          aiChatSettings: AIChatSettingsProvider,
+         aiChatSyncCleaner: AIChatSyncCleaning?,
          iPadTabFeature: AIChatIPadTabFeatureProviding,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.featureFlagger = featureFlagger
@@ -76,6 +78,7 @@ final class IPadTabChatHistoryCoordinator {
         self.aiChatSettings = aiChatSettings
         self.iPadTabFeature = iPadTabFeature
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.aiChatSyncCleaner = aiChatSyncCleaner
     }
 
     // MARK: - Public Methods
@@ -166,31 +169,13 @@ final class IPadTabChatHistoryCoordinator {
     /// Fire tabs use a no-op reader that always returns empty results,
     /// preventing chat history from being fetched or displayed.
     private func makeHistoryManager(isFireTab: Bool) -> (AIChatHistoryManager, AIChatSuggestionsViewModel) {
-        let suggestionsReader: AIChatSuggestionsReading
-        if isFireTab {
-            suggestionsReader = NilSuggestionsReader()
-        } else {
-            let reader = SuggestionsReader(
-                featureFlagger: featureFlagger,
-                privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: duckAiNativeStorageHandler,
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            )
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        }
-
-        let historyCleaner = HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger,
-                                            privacyConfig: privacyConfigurationManager,
-                                            nativeStorageHandler: duckAiNativeStorageHandler)
-
-        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
-        let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                           aiChatSettings: aiChatSettings,
-                                           viewModel: viewModel,
-                                           historyCleaner: historyCleaner,
-                                           isIPadExperience: true)
-        return (manager, viewModel)
+        AIChatHistoryManager.makeHistoryManager(isFireTab: isFireTab,
+                                                isIPadExperience: true,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: privacyConfigurationManager,
+                                                chatSyncCleaner: aiChatSyncCleaner,
+                                                chatSettings: aiChatSettings,
+                                                nativeStorageHandler: duckAiNativeStorageHandler)
     }
 
     /// Returns the shadow wrapper and an inner clip view for installing content.

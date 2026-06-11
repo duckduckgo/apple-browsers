@@ -334,6 +334,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
     case escapeHatchFireButton
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215530020470713?focus=true
+    case escapeHatchHideShortcut
+
     /// Test-only feature flag for verifying UI test override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestFeatureFlag
@@ -451,6 +454,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
     case removeChatHistory
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
+    case aiChatTabSwitcherRichCard
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -705,6 +711,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchActions))
         case .escapeHatchFireButton:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchFireButton))
+        case .escapeHatchHideShortcut:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchHideShortcut))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:
@@ -772,11 +780,13 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .floatingUI:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUI))
         case .removeChatHistory:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
+        case .aiChatTabSwitcherRichCard:
+            Config(source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         }
     }
 

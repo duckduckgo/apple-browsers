@@ -62,9 +62,10 @@ final class AIChatHistoryManager {
     private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatDeleter: AIChatDeleting
     private let viewModel: AIChatSuggestionsViewModel
-    private let historyCleaner: HistoryCleaning
     private let isIPadExperience: Bool
+    private let isFireTab: Bool
 
     var titleLayoutConfiguration: AIChatHistoryListViewController.TitleLayoutConfiguration?
     private(set) var hasCompletedInitialFetch = false
@@ -79,14 +80,16 @@ final class AIChatHistoryManager {
 
     init(suggestionsReader: AIChatSuggestionsReading,
          aiChatSettings: AIChatSettingsProvider,
+         aiChatDeleter: AIChatDeleting,
          viewModel: AIChatSuggestionsViewModel,
-         historyCleaner: HistoryCleaning,
-         isIPadExperience: Bool = false) {
+         isIPadExperience: Bool = false,
+         isFireTab: Bool) {
         self.suggestionsReader = suggestionsReader
         self.aiChatSettings = aiChatSettings
+        self.aiChatDeleter = aiChatDeleter
         self.viewModel = viewModel
-        self.historyCleaner = historyCleaner
         self.isIPadExperience = isIPadExperience
+        self.isFireTab = isFireTab
     }
 
     // MARK: - Public Methods
@@ -107,7 +110,7 @@ final class AIChatHistoryManager {
                 self.delegate?.aiChatHistoryManager(self, didSelectChatURL: url)
             },
             onChatDeleted: { [weak self] chat in
-                self?.removeChatSuggestion(suggestion: chat)
+                self?.deleteChatSuggestion(suggestion: chat)
             }
         )
 
@@ -169,21 +172,23 @@ final class AIChatHistoryManager {
 
     /// Removes an AIChatSuggestion and refreshes the Suggestions List
     ///
-    func removeChatSuggestion(suggestion: AIChatSuggestion) {
+    func deleteChatSuggestion(suggestion: AIChatSuggestion) {
         viewModel.removeSuggestion(suggestion)
 
         Task { @MainActor in
-            await self.removeChatSuggestionInTask(suggestion: suggestion)
+            await self.deleteChatSuggestionFromHistory(suggestion: suggestion)
+            self.refreshSuggestions()
         }
     }
 
-    private func removeChatSuggestionInTask(suggestion: AIChatSuggestion) async {
-        let result = await historyCleaner.deleteAIChat(chatID: suggestion.chatId)
+    private func deleteChatSuggestionFromHistory(suggestion: AIChatSuggestion) async {
+        let result = await aiChatDeleter.deleteChat(chatID: suggestion.chatId, isFireMode: isFireTab)
         if case .failure = result {
             viewModel.cancelPendingRemoval(suggestion)
+            return
         }
 
-        refreshSuggestions()
+        aiChatDeleter.scheduleSync()
     }
 
     private func refreshSuggestions() {

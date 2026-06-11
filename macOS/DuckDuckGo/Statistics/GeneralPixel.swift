@@ -1383,7 +1383,6 @@ enum GeneralPixel: PixelKitEvent {
         case .fireWindowOpened(trigger: let trigger):
             return "m_mac_firewindow_opened_\(trigger)"
         }
-        
     }
 
     var parameters: [String: String]? {

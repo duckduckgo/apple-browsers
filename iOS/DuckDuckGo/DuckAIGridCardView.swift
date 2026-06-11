@@ -48,9 +48,8 @@ final class DuckAIGridCardView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Apply the supplied grid item to the view. Items in the `.fallbackScreenshot`
-    /// case are not expected to reach here (the cell hides the rich-card container
-    /// for that case); we still handle it defensively by clearing all subviews.
+    /// Apply the supplied grid item to the view.
+    /// Callers pass `nil` when they want the screenshot fallback
     func configure(with item: DuckAIGridItem) {
         switch item {
         case .text(let title, let snippet):
@@ -67,12 +66,6 @@ final class DuckAIGridCardView: UIView {
             // Dedicated content views for these variants are not built yet; render
             // the title only so the cell scaffold still has something meaningful.
             titleLabel.text = title
-            snippetLabel.text = nil
-            snippetLabel.isHidden = true
-            chipView.isHidden = true
-
-        case .fallbackScreenshot:
-            titleLabel.text = nil
             snippetLabel.text = nil
             snippetLabel.isHidden = true
             chipView.isHidden = true
@@ -141,9 +134,6 @@ final class DuckAIGridCardView: UIView {
             accessibilityValue = snippet
         case .image(let title, _), .voice(let title), .empty(let title):
             accessibilityLabel = title
-            accessibilityValue = nil
-        case .fallbackScreenshot:
-            accessibilityLabel = nil
             accessibilityValue = nil
         }
     }

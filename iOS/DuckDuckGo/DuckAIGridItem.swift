@@ -37,22 +37,16 @@ enum DuckAIGridItem: Equatable {
     /// Empty-state card (centered Dax logo + "Duck.ai" label): a chat exists in
     /// native storage but has no assistant messages yet.
     case empty(title: String)
-
-    /// Render the standard tab screenshot (flag off, no chat ID, chat not in
-    /// storage, storage disabled, decode failure).
-    case fallbackScreenshot
 }
 
 extension DuckAIGridItem {
 
-    /// Pure mapping from a decoded native chat to a `DuckAIGridItem`. Kept free
-    /// of I/O so it can be unit-tested in isolation; the storage reads live in
-    /// `DuckAIGridContentResolver`.
-    ///
-    /// Stub. The real mapping (last-assistant-message extraction; voice/image/
-    /// text/empty classification) lands alongside the decoder change that
-    /// exposes the last assistant message and its file refs.
-    static func from(chat: DuckAiChat) -> DuckAIGridItem {
-        .fallbackScreenshot
+    /// Pure mapping from a decoded native chat to a `DuckAIGridItem`, or `nil`
+    /// when the chat shouldn't be rendered as a rich card (callers fall back to
+    /// the existing screenshot path). Kept free of I/O so it can be unit-tested
+    /// in isolation; the storage reads live in `DuckAIGridContentResolver`.
+    static func from(chat: DuckAiChat) -> DuckAIGridItem? {
+        // TODO: - Replace this stub with actual implementation
+        nil
     }
 }

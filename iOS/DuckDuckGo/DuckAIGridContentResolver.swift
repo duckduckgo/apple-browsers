@@ -22,10 +22,12 @@ import AIChat
 import PrivacyConfig
 import os.log
 
-/// Resolves a `DuckAIGridItem` for a tab.
+/// Resolves a `DuckAIGridItem` for a tab. Returns `nil` when the tab should fall
+/// back to the existing screenshot path (flag off, not a Duck.ai chat tab, native
+/// data unavailable, decode failure, …).
 @MainActor
 protocol DuckAIGridItemProviding {
-    func gridItem(for tab: Tab) -> DuckAIGridItem
+    func gridItem(for tab: Tab) -> DuckAIGridItem?
 }
 
 /// Resolves the content shown for a Duck.ai chat tab in the tab switcher grid,
@@ -50,31 +52,32 @@ final class DuckAIGridContentResolver: DuckAIGridItemProviding {
     }
 
     /// `DuckAIGridItemProviding` entry point. Applies the outer feature-flag gate
-    /// and the no-chat-ID gate, then defers to `gridItem(forChatID:)`.
-    func gridItem(for tab: Tab) -> DuckAIGridItem {
-        guard featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) else { return .fallbackScreenshot }
-        guard let chatID = tab.link?.url.duckAIChatID else { return .fallbackScreenshot }
+    /// and the no-chat-ID gate, then defers to `gridItem(forChatID:)`. Returns
+    /// `nil` when any gate fails — the caller falls back to the screenshot path.
+    func gridItem(for tab: Tab) -> DuckAIGridItem? {
+        guard featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) else { return nil }
+        guard let chatID = tab.link?.url.duckAIChatID else { return nil }
         return gridItem(forChatID: chatID)
     }
 
-    /// Returns the grid item for the given chat id, or `.fallbackScreenshot` when
-    /// native data is unavailable, incomplete, or the chat has no meaningful content.
-    /// Caller is responsible for the outer feature-flag gate; see `gridItem(for:)`.
-    func gridItem(forChatID chatID: String) -> DuckAIGridItem {
+    /// Returns the grid item for the given chat id, or `nil` when native data is
+    /// unavailable, incomplete, or the chat has no meaningful content. Caller is
+    /// responsible for the outer feature-flag gate; see `gridItem(for:)`.
+    func gridItem(forChatID chatID: String) -> DuckAIGridItem? {
         guard let storageHandler, aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
-            return .fallbackScreenshot
+            return nil
         }
 
         do {
             guard try storageHandler.isMigrationDone(key: DuckAiMigrationKey.chats),
                   let record = try storageHandler.getChat(chatId: chatID) else {
-                return .fallbackScreenshot
+                return nil
             }
             let decoded = try DuckAiChat.decode(from: record.data)
             return DuckAIGridItem.from(chat: decoded.chat)
         } catch {
             Logger.aiChat.error("DuckAIGridContentResolver: failed to read chat: \(error.localizedDescription)")
-            return .fallbackScreenshot
+            return nil
         }
     }
 
@@ -99,13 +102,13 @@ final class DuckAIGridContentResolver: DuckAIGridItemProviding {
 @MainActor
 final class DummyDuckAIGridItemProvider: DuckAIGridItemProviding {
 
-    private static let cycle: [DuckAIGridItem] = [
+    private static let cycle: [DuckAIGridItem?] = [
         .text(title: "Cute ducks",
               snippet: "Sure! Ducks are highly social birds that live in flocks called rafts when on water and waddles when on land. They have waterproof feathers thanks to a preen gland near the tail."),
-        .fallbackScreenshot
+        nil
     ]
 
-    func gridItem(for tab: Tab) -> DuckAIGridItem {
+    func gridItem(for tab: Tab) -> DuckAIGridItem? {
         // Stable per-tab assignment so the same tab always picks the same dummy variant
         // across cell reuse / collection-view reloads. `String.hashValue` is randomized
         // per process but stable within it, which is sufficient for dev iteration.

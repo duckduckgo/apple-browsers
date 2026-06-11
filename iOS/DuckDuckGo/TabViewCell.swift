@@ -215,17 +215,6 @@ class TabViewCell: UICollectionViewCell {
         previewTrailingConstraint?.isActive = true
     }
 
-    /// Whether the cell should render the Duck.ai rich grid card for the supplied item,
-    /// vs. the existing screenshot path. `.fallbackScreenshot` falls back to the screenshot.
-    private func shouldShowRichCard(for item: DuckAIGridItem) -> Bool {
-        switch item {
-        case .text, .image, .voice, .empty:
-            return true
-        case .fallbackScreenshot:
-            return false
-        }
-    }
-
     private static func unreadImageAsset(accentColor: UIColor) -> UIImageAsset {
 
         func unreadImage(for style: UIUserInterfaceStyle) -> UIImage {
@@ -538,7 +527,7 @@ class TabViewCell: UICollectionViewCell {
                 link?.isHidden = true
             }
 
-            if let item = duckAIGridItem, shouldShowRichCard(for: item) {
+            if let item = duckAIGridItem {
                 richCardContainer?.configure(with: item)
                 richCardContainer?.isHidden = false
                 self.preview?.isHidden = true

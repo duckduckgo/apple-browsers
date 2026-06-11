@@ -76,7 +76,7 @@
     },
     "m_debug_interaction_repeated_failed_scroll": {
         "description": "Fires when the native web scroll view did not move after repeated vertical drags on a scrollable page (3 consecutive failed attempts within 30s). Observability for the 'web page visible, taps work, scroll dead' freeze; this measures the symptom (scroll did not move), NOT a confirmed browser bug.",
-        "owners": ["pikorddg"],
+        "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
@@ -98,7 +98,7 @@
     },
     "m_debug_interaction_wedged_recognizer": {
         "description": "Fires when a non-scroll gesture recognizer is found in an active (began/changed) state with no touches down, and is still wedged on a re-check ~1s later, while a web page is shown. Reliable mechanism signal for a recognizer that may be starving the web scroll pan.",
-        "owners": ["pikorddg"],
+        "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [

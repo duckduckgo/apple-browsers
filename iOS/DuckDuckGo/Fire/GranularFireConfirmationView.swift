@@ -238,6 +238,8 @@ private final class PreviewAIChatSettings: AIChatSettingsProvider {
     var isAIChatVoiceSearchUserSettingsEnabled: Bool { false }
     var isAIChatTabSwitcherUserSettingsEnabled: Bool { false }
     var isAIChatTabBarUserSettingsEnabled: Bool { false }
+    var isAIChatTabBarDuckAIButtonVisible: Bool { true }
+    var isAIChatTabBarContextualSheetButtonVisible: Bool { true }
     var isAutomaticContextAttachmentEnabled: Bool { false }
     var isChatSuggestionsEnabled: Bool { false }
     func enableAIChat(enable: Bool) {}
@@ -246,6 +248,8 @@ private final class PreviewAIChatSettings: AIChatSettingsProvider {
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {}
     func enableAIChatTabSwitcherUserSettings(enable: Bool) {}
     func enableAIChatTabBarUserSettings(enable: Bool) {}
+    func setAIChatTabBarDuckAIButtonVisible(_ visible: Bool) {}
+    func setAIChatTabBarContextualSheetButtonVisible(_ visible: Bool) {}
     func enableAIChatSearchInputUserSettings(enable: Bool) {}
     func enableAutomaticContextAttachment(enable: Bool) {}
     func enableChatSuggestions(enable: Bool) {}

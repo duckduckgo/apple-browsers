@@ -107,13 +107,13 @@ struct UnifiedSuggestionsView: View {
         return false
     }
 
-    /// Favorites stays mounted like the list and toggles a plain `.opacity` — NOT an insert/remove
-    /// `.transition` (which snaps when interrupted by rapid Search↔Duck.ai toggling). Its opacity is
-    /// instant (`.animation(nil)`): the incoming list fades in, but favorites must not linger visibly
-    /// over Duck.ai while the crossfade runs. Logo is still drawn by DaxLogoManager.
+    /// Once favorites has been shown it stays mounted and toggles a plain `.opacity` — NOT an insert/
+    /// remove `.transition` (which snaps when interrupted by rapid Search↔Duck.ai toggling). Gated on
+    /// `favoritesEverShown` so a Duck.ai-first session never builds the heavy NTP controller. Opacity
+    /// is instant (`.animation(nil)`) so favorites doesn't linger over Duck.ai while the list fades in.
     @ViewBuilder
     private var overlayLayer: some View {
-        if let controller = favoritesProvider() {
+        if viewModel.favoritesEverShown, let controller = favoritesProvider() {
             SuggestionsFavoritesView(controller: controller)
                 .opacity(isShowingFavorites ? 1 : 0)
                 .animation(nil, value: isShowingFavorites)

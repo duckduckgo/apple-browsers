@@ -253,7 +253,7 @@ struct SyncWithAnotherDeviceView: View {
     fileprivate func fallbackInstructionStepText(_ markdown: String, showAppIcon: Bool) -> some View {
         HStack(spacing: 4) {
             Text(markdown.replacingOccurrences(of: "**", with: ""))
-                .foregroundColor(.secondary)
+                .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             if showAppIcon {
                 Image(.duckDuckGo24)
@@ -268,7 +268,7 @@ struct SyncWithAnotherDeviceView: View {
     fileprivate func parseBoldMarkdown(_ string: String) -> AttributedString {
         guard var result = try? AttributedString(markdown: string) else {
             var plain = AttributedString(string.replacingOccurrences(of: "**", with: ""))
-            plain.foregroundColor = .secondary
+            plain.foregroundColor = .primary
             return plain
         }
         for run in result.runs {
@@ -277,8 +277,7 @@ struct SyncWithAnotherDeviceView: View {
                 result[run.range].inlinePresentationIntent = nil
                 continue
             }
-            let isBold = run.inlinePresentationIntent?.contains(.stronglyEmphasized) == true
-            result[run.range].foregroundColor = isBold ? .primary : .secondary
+            result[run.range].foregroundColor = .primary
             result[run.range].inlinePresentationIntent = nil
         }
         return result

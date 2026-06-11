@@ -91,29 +91,3 @@ final class DuckAIGridContentResolver: DuckAIGridItemProviding {
         return UIImage(data: file.data)
     }
 }
-
-// TODO: - Remove this when proper resolver is wired up
-#if DEBUG
-/// Debug-only `DuckAIGridItemProviding` that returns a deterministic rotating cycle
-/// of `DuckAIGridItem` values keyed by the tab's stable `uid`. Used to scaffold and
-/// visually iterate on the rich-card cell UI before the real
-/// `DuckAIGridContentResolver` is wired into the tab switcher. Never ships in release
-/// builds — the entire type is gated behind `#if DEBUG`.
-@MainActor
-final class DummyDuckAIGridItemProvider: DuckAIGridItemProviding {
-
-    private static let cycle: [DuckAIGridItem?] = [
-        .text(title: "Cute ducks",
-              snippet: "Sure! Ducks are highly social birds that live in flocks called rafts when on water and waddles when on land. They have waterproof feathers thanks to a preen gland near the tail."),
-        nil
-    ]
-
-    func gridItem(for tab: Tab) -> DuckAIGridItem? {
-        // Stable per-tab assignment so the same tab always picks the same dummy variant
-        // across cell reuse / collection-view reloads. `String.hashValue` is randomized
-        // per process but stable within it, which is sufficient for dev iteration.
-        let index = abs(tab.uid.hashValue) % Self.cycle.count
-        return Self.cycle[index]
-    }
-}
-#endif

@@ -87,7 +87,7 @@ class TabSwitcherPageViewController: UIViewController {
          tabSwitcherSettings: TabSwitcherSettings,
          trackerCountViewModel: TabSwitcherTrackerCountViewModel?,
          isFireModeEnabled: Bool,
-         duckAIGridItemProvider: DuckAIGridItemProviding? = nil) {
+         duckAIGridItemProvider: DuckAIGridItemProviding?) {
         self.browsingMode = browsingMode
         self.tabsModel = tabsModel
         self.previewsSource = previewsSource
@@ -95,15 +95,7 @@ class TabSwitcherPageViewController: UIViewController {
         self.trackerCountViewModel = trackerCountViewModel
         self.isFireModeEnabled = isFireModeEnabled
         self.currentSelection = tabsModel.currentIndex
-        // TODO: - Remove the below once the provider is properky wired up
-#if DEBUG
-        // Default to a deterministic dummy provider in dev builds so the rich-card
-        // UI is exercised end-to-end without any further plumbing. Production code
-        // should pass the real provider explicitly.
-        self.duckAIGridItemProvider = duckAIGridItemProvider ?? DummyDuckAIGridItemProvider()
-#else
         self.duckAIGridItemProvider = duckAIGridItemProvider
-#endif
         super.init(nibName: nil, bundle: nil)
     }
 

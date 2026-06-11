@@ -85,6 +85,32 @@ final class ChatExporterTests: XCTestCase {
         XCTAssertTrue(content.contains("GPT-5 mini:\nplain-content fallback"))
     }
 
+    func testDiscussion_multipleTextParts_joinedWithoutSeparator() throws {
+        // FE stores streaming response chunks as individual text parts; they must be
+        // concatenated without any separator so mid-word splits don't appear in the export.
+        let json = """
+            {
+              "model": "gpt-5-mini",
+              "messages": [
+                {"role":"user","createdAt":"2026-05-15T14:00:00.000Z","content":"hi"},
+                {"role":"assistant","content":"","parts":[
+                  {"type":"text","text":"Ass"},
+                  {"type":"text","text":"uming"},
+                  {"type":"text","text":" you mean a dog breed."}
+                ]}
+              ]
+            }
+            """
+
+        let result = try exporter.export(rawJson: Data(json.utf8), chatType: .discussion, modelDisplay: gpt5MiniDisplay)
+
+        guard case .text(let content) = result else {
+            XCTFail("Expected `.text`, got \(result)"); return
+        }
+        XCTAssertTrue(content.contains("GPT-5 mini:\nAssuming you mean a dog breed."),
+                      "streaming chunks must be joined without newlines")
+    }
+
     func testDiscussion_reasoningParts_areIgnored_onlyTextPartsAreIncluded() throws {
         let json = """
             {

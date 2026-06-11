@@ -153,7 +153,7 @@ public struct ChatExporter {
                 return part["text"] as? String
             }
             if !textParts.isEmpty {
-                return textParts.joined(separator: "\n")
+                return textParts.joined()
             }
         }
         return (message["content"] as? String) ?? ""

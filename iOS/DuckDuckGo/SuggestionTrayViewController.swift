@@ -273,6 +273,10 @@ class SuggestionTrayViewController: UIViewController {
         return containerView.frame
     }
 
+    func refreshSuggestionsIfNeeded() {
+        autocompleteController?.refreshSuggestions()
+    }
+
     func didHide(animated: Bool) {
         removeAutocomplete(animated: animated)
         removeNewTabPage(animated: animated)

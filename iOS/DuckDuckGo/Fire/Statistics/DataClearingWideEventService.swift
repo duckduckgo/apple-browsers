@@ -217,6 +217,8 @@ private extension FireRequest {
             return .deeplink
         case .autoClear:
             return .autoClear
+        case .chatSuggestions:
+            return .chatSuggestions
         }
     }
 }

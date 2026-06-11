@@ -101,6 +101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tabDragAndDropManager: TabDragAndDropManager
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
+    let applicationUpdateDetector: ApplicationUpdateDetector
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
@@ -1237,6 +1238,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             memoryProvider: MemoryUsageMonitor.residentMemorySize(forPID:)
         )
 
+        applicationUpdateDetector = ApplicationUpdateDetector(settings: UserDefaults.standard.throwingKeyedStoring())
+
         super.init()
 
         webExtensionManagerHolder.appDelegate = self
@@ -1305,6 +1308,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                              tabsPreferences: tabsPreferences,
                                                              keyValueStore: keyValueStore,
                                                              sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                                                             applicationUpdateDetecting: applicationUpdateDetector,
                                                              pixelFiring: PixelKit.shared)
 
         initializeUpdateController()
@@ -1679,6 +1683,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
+                applicationUpdateDetector: applicationUpdateDetector,
                 allowCustomUpdateFeed: allowCustomUpdateFeed,
                 isAutoUpdatePaused: { [featureFlagger] in
                     if buildType.isDebugBuild {

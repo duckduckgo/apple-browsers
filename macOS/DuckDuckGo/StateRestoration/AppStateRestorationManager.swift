@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import Foundation
 import Combine
 import CombineExtensions
@@ -48,6 +49,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     private let tabsPreferences: TabsPreferences
     private let keyValueStore: ThrowingKeyValueStoring
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
+    private let applicationUpdateDetecting: any ApplicationUpdateDetecting
     private let pixelFiring: PixelFiring?
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
@@ -88,6 +90,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
                      tabsPreferences: TabsPreferences,
                      keyValueStore: ThrowingKeyValueStoring,
                      sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+                     applicationUpdateDetecting: (any ApplicationUpdateDetecting),
                      pixelFiring: PixelFiring?) {
         let service = StatePersistenceService(fileStore: fileStore, fileName: Constants.fileName)
         self.init(fileStore: fileStore,
@@ -96,6 +99,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
                   tabsPreferences: tabsPreferences,
                   keyValueStore: keyValueStore,
                   sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                  applicationUpdateDetecting: applicationUpdateDetecting,
                   pixelFiring: pixelFiring)
     }
 
@@ -106,6 +110,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         tabsPreferences: TabsPreferences,
         keyValueStore: ThrowingKeyValueStoring,
         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+        applicationUpdateDetecting: (any ApplicationUpdateDetecting),
         pixelFiring: PixelFiring?
     ) {
         self.service = service
@@ -114,6 +119,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         self.tabsPreferences = tabsPreferences
         self.keyValueStore = keyValueStore
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
+        self.applicationUpdateDetecting = applicationUpdateDetecting
         self.pixelFiring = pixelFiring
     }
 
@@ -171,7 +177,8 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         // don't automatically restore windows if relaunched 2nd time with no recently updated app session state
         readLastSessionState(restoreWindows: restoreWindows, restoreRegularTabs: restoreRegularTabs)
 
-        detectUnexpectedAppTermination(didRestoreRegularTabs: restoreRegularTabs)
+        let updateStatus = applicationUpdateDetecting.isApplicationUpdated()
+        detectUnexpectedAppTermination(didRestoreRegularTabs: restoreRegularTabs, updateStatus: updateStatus)
 
         stateChangedCancellable = Publishers.Merge(
                 Application.appDelegate.windowControllersManager.stateChanged,
@@ -233,18 +240,15 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         tabsPreferences.migratePinnedTabsSettingIfNecessary(nil)
     }
 
-    private func detectUnexpectedAppTermination(didRestoreRegularTabs: Bool) {
-#if DEBUG
-        guard AppVersion.runType != .normal else { return }
-#else
-        guard AppVersion.runType != .uiTests || ProcessInfo.processInfo.arguments.contains("CRASH_RESTORE_TEST") else { return }
-#endif
-
+    private func detectUnexpectedAppTermination(didRestoreRegularTabs: Bool, updateStatus: AppUpdateStatus) {
         let didCloseUnexpectedly = !appDidTerminateAsExpected
         appDidTerminateAsExpected = false // Set to false so it will be false if the app closes without terminating properly
 
         guard didCloseUnexpectedly else { return }
-        pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected)
+
+        pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: UncleanExitRestartReason(updateStatus)))
+
+        guard !shouldSuppressUncleanExitRestorePrompt else { return }
 
         // Display a prompt to restore the last session when the user has disabled "restore previous session".
         // Don't show the prompt if tabs were already restored (e.g. during automatic relaunch).
@@ -255,6 +259,18 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
                 restoreLastSessionState(interactive: true, includeRegularTabs: true)
             }
         }
+    }
+
+    private var shouldSuppressUncleanExitRestorePrompt: Bool {
+        // Suppress during regular Xcode debug runs, but still allow unit/integration test hosts.
+        if StandardApplicationBuildType().isDebugBuild, AppVersion.runType == .normal {
+            return true
+        }
+        // Suppress in UI tests except the dedicated crash-restore prompt suite.
+        if AppVersion.runType == .uiTests, !ProcessInfo.processInfo.arguments.contains("CRASH_RESTORE_TEST") {
+            return true
+        }
+        return false
     }
 }
 
@@ -268,5 +284,16 @@ struct StateRestorationAppTerminationDecider: ApplicationTerminationDecider {
     func shouldTerminate(isAsync: Bool) -> TerminationQuery {
         stateRestorationManager.applicationWillTerminate()
         return .sync(.next)
+    }
+}
+
+private extension UncleanExitRestartReason {
+    init(_ updateStatus: AppUpdateStatus) {
+        switch updateStatus {
+        case .updated, .downgraded:
+            self = .appUpdate
+        default:
+            self = .crash
+        }
     }
 }

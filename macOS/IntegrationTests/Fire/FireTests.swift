@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
@@ -327,6 +328,7 @@ final class FireTests: XCTestCase {
                                                                     tabsPreferences: NSApp.delegateTyped.tabsPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
+                                                                    applicationUpdateDetecting: NSApp.delegateTyped.applicationUpdateDetector,
                                                                     pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 
@@ -359,6 +361,7 @@ final class FireTests: XCTestCase {
                                                                     tabsPreferences: NSApp.delegateTyped.tabsPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
+                                                                    applicationUpdateDetecting: NSApp.delegateTyped.applicationUpdateDetector,
                                                                     pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 

@@ -18,13 +18,18 @@
 
 import PixelKit
 
+enum UncleanExitRestartReason: String {
+    case crash
+    case appUpdate = "app_update"
+}
+
 /**
  * This enum keeps pixels related to the session restore prompt when the app was closed unexpectedly.
  *
  * See macOS/PixelDefinitions/pixels/session_restore_prompt_pixels.json5 for more details.
  */
 enum SessionRestorePromptPixel: PixelKitEvent {
-    case unexpectedAppTerminationDetected
+    case unexpectedAppTerminationDetected(reason: UncleanExitRestartReason)
     case promptShown
     case promptDismissedWithoutRestore
     case promptDismissedWithRestore
@@ -45,7 +50,17 @@ enum SessionRestorePromptPixel: PixelKitEvent {
     }
 
     var parameters: [String: String]? {
-        nil
+        switch self {
+        case .unexpectedAppTerminationDetected(let reason):
+            return ["restart-source-attribution": reason.rawValue]
+        case .promptShown,
+                .promptDismissedWithoutRestore,
+                .promptDismissedWithRestore,
+                .appTerminatedWhilePromptShowing,
+                .appTerminationFlagReadFailed,
+                .appTerminationFlagWriteFailed:
+            return nil
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {

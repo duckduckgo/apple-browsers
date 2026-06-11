@@ -143,6 +143,7 @@ extension SimplifiedScanOrShowCodeView {
             }
             .buttonStyle(.plain)
         }
+        .padding(.horizontal, Metrics.copyConfirmationHorizontalPadding)
     }
 
     private var copyConfirmationCallout: some View {

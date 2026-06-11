@@ -19,9 +19,6 @@
 import XCTest
 @testable import AIChat
 
-/// Cross-platform parity tests for the Duck.ai chat-history export format. Ports
-/// `duckchat-impl/.../ChatExporterTest.kt` test-for-test so iOS and Android exports stay
-/// byte-for-byte identical (separators, spacing, headers, image placeholders, fallbacks).
 final class ChatExporterTests: XCTestCase {
 
     /// Fixed TimeZone so the asserted "4:23:15 PM" timestamps reproduce on any CI machine

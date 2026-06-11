@@ -21,8 +21,8 @@ import Foundation
 import ZIPFoundation
 
 /// Writes a chat export to the app's Downloads directory as
-/// `duck.ai_yyyy-MM-dd_HH-mm-ss.<txt|zip>` (Android-parity filename). The Downloads list
-/// view reads files straight from this directory — no separate registration needed.
+/// `duck.ai_yyyy-MM-dd_HH-mm-ss.<txt|zip>`. The Downloads list view reads files straight
+/// from this directory — no separate registration needed.
 protocol ChatExportWriting {
     func write(_ payload: ChatExportPayload) throws -> URL
 }
@@ -75,7 +75,7 @@ struct ChatExportWriter: ChatExportWriting {
         let url = resolveAvailableFile(extension: Constants.zipExtension)
         let archive = try Archive(url: url, accessMode: .create)
 
-        // UTF-8 BOM prefix matches Android — keeps `chat.txt` readable in Windows Notepad.
+        // UTF-8 BOM prefix so `chat.txt` opens cleanly in Windows Notepad.
         let textBytes = Constants.utf8BOM + Data(content.utf8)
         try archive.addEntry(
             with: Constants.zipTextEntryName,

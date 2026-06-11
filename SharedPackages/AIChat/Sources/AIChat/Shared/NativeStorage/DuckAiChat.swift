@@ -42,9 +42,8 @@ public struct DuckAiChat: Equatable {
     public let reasoningMode: String?
 
     /// True when any assistant message in the chat carries a `ui-component` part named
-    /// `generate-image` — i.e. the chat produced generated images via a Duck.ai tool call,
-    /// regardless of the chat's `model` field. Matches the Android `isImageGeneration`
-    /// derivation byte-for-byte so chat-history exports classify equivalently.
+    /// `generate-image` — i.e. the chat produced generated images via a tool call,
+    /// regardless of the chat's `model` field.
     public let isImageGeneration: Bool
 
     public init(
@@ -109,8 +108,7 @@ private struct ChatBlob: Decodable {
     let messages: [MessageBlob]?
     let reasoningMode: String?
 
-    /// Mirrors Android's `JSONObject.hasGenerateImageUiComponent()` — true when any assistant
-    /// message carries a `ui-component` part named `generate-image`.
+    /// True when any assistant message carries a `ui-component` part named `generate-image`.
     var hasGenerateImageUiComponent: Bool {
         guard let messages else { return false }
         return messages.contains { message in

@@ -18,8 +18,7 @@
 
 import Foundation
 
-/// Plain-text model attribution for the chat-history export header. Mirrors the Android
-/// `ModelDisplay` so the two platforms produce identical export headers.
+/// Plain-text model attribution for the chat-history export header.
 public struct ModelDisplay: Equatable, Sendable {
     public let fullName: String?
     public let shortName: String

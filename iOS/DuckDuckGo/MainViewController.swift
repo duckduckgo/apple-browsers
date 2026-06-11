@@ -5349,11 +5349,12 @@ extension MainViewController: TabDelegate {
         // `.storageUnavailable` failure so the screen shows an error rather than a
         // misleading empty list.
         let reader = ChatHistoryReader(observer: duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)
-        // Snapshot the UTI model catalog so the export header reads e.g. "OpenAI's GPT-5
-        // mini Model" instead of just the raw id. Empty when UTI is off; exporter falls
-        // back to the raw id.
+        // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
+        // rather than `uniqueKeysWithValues:` — the model list is server-supplied so we
+        // can't guarantee unique ids and the latter crashes on duplicates.
         let modelDisplays = Dictionary(
-            uniqueKeysWithValues: (unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) }
+            (unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
+            uniquingKeysWith: { first, _ in first }
         )
         let downloader = ChatHistoryDownloader(
             storageHandler: duckAiNativeStorageHandler,

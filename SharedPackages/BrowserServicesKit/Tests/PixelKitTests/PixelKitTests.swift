@@ -395,6 +395,66 @@ final class PixelKitTests: XCTestCase {
         XCTAssertNotEqual(map?["daily"], map?["monthly"], "Daily and monthly should track different dates")
     }
 
+    /// `.debounce(seconds:)` suppresses re-firing the same pixel within the window, anchored to the
+    /// last *actual* fire (a suppressed call must not extend the window), and fires again once at least
+    /// `seconds` have elapsed since the last fire.
+    func testDebounceSuppressesWithinWindowAndFiresAfterWindow() {
+        let appVersion = "1.0.5"
+        let event = TestEventV2.testEventWithoutParameters
+        let userDefaults = userDefaults()
+        let timeMachine = TimeMachine()
+
+        let fireCallbackCalled = expectation(description: "Expect the pixel firing callback to be called")
+        fireCallbackCalled.expectedFulfillmentCount = 2
+        fireCallbackCalled.assertForOverFulfill = true
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: appVersion,
+                                source: PixelKit.Source.macDMG.rawValue,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                dateGenerator: timeMachine.now,
+                                defaults: userDefaults) { _, _, _, _, _, _ in
+            fireCallbackCalled.fulfill()
+        }
+
+        pixelKit.fire(event, frequency: .debounce(seconds: 5))   // t0 — Fired
+        timeMachine.travel(by: .second, value: 2)
+        pixelKit.fire(event, frequency: .debounce(seconds: 5))   // t0+2 — Skipped (within window)
+        timeMachine.travel(by: .second, value: 4)
+        pixelKit.fire(event, frequency: .debounce(seconds: 5))   // t0+6 — Fired (window elapsed since t0)
+
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
+    /// `.debounce(seconds: 0)` is an empty window, so it never suppresses and fires every time.
+    func testDebounceWithZeroSecondsAlwaysFires() {
+        let appVersion = "1.0.5"
+        let event = TestEventV2.testEventWithoutParameters
+        let userDefaults = userDefaults()
+        let timeMachine = TimeMachine()
+
+        let fireCallbackCalled = expectation(description: "Expect the pixel firing callback to be called")
+        fireCallbackCalled.expectedFulfillmentCount = 3
+        fireCallbackCalled.assertForOverFulfill = true
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: appVersion,
+                                source: PixelKit.Source.macDMG.rawValue,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                dateGenerator: timeMachine.now,
+                                defaults: userDefaults) { _, _, _, _, _, _ in
+            fireCallbackCalled.fulfill()
+        }
+
+        pixelKit.fire(event, frequency: .debounce(seconds: 0))
+        pixelKit.fire(event, frequency: .debounce(seconds: 0))
+        pixelKit.fire(event, frequency: .debounce(seconds: 0))
+
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
     /// A pixel whose last-fire date was previously stored as a raw `Date` (legacy format)
     /// should still be recognized as fired today AND have its storage migrated to a
     /// `[frequency.mapKey: Date]` map on the next `pixelHasBeenFiredDailyToday` check.

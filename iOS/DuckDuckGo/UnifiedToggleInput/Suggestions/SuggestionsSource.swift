@@ -66,22 +66,28 @@ final class DuckAISuggestionsSource: SuggestionsSource {
 
     // MARK: - Section mapping
 
+    private enum SectionID {
+        static let chats = "chats"
+        static let urls = "urls"
+        static let search = "search"
+    }
+
     static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String, deleteEnabled: Bool = false) -> [SuggestionSection] {
         var sections: [SuggestionSection] = []
         if !snapshot.chats.isEmpty {
             sections.append(SuggestionSection(
-                id: "chats",
+                id: SectionID.chats,
                 rows: snapshot.chats.map { SuggestionRowMapper.row(for: $0, includesFireDelete: deleteEnabled) }))
         }
         if !snapshot.urls.isEmpty {
             sections.append(SuggestionSection(
-                id: "urls",
-                rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: "urls", includesDeleteAccessory: deleteEnabled) }))
+                id: SectionID.urls,
+                rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: SectionID.urls, includesDeleteAccessory: deleteEnabled) }))
         }
         if !query.isEmpty {
             sections.append(SuggestionSection(
-                id: "search",
-                rows: [SuggestionRowMapper.searchRow(query: query, idPrefix: "search")]))
+                id: SectionID.search,
+                rows: [SuggestionRowMapper.searchRow(query: query, idPrefix: SectionID.search)]))
         }
         return sections
     }

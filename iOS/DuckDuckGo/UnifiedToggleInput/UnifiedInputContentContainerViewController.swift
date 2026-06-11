@@ -48,12 +48,6 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
 
 final class UnifiedInputContentContainerViewController: UIViewController {
 
-    /// Selects how visible content should refresh without spreading query and tray logic across multiple call sites.
-    private enum SuggestionRefreshStrategy {
-        case none
-        case currentQuery(animated: Bool)
-        case currentState
-    }
 
     // MARK: - Properties
 
@@ -245,8 +239,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if didModeChange {
             switchBarHandler.setToggleState(mode)
         }
-        let suggestionRefresh: SuggestionRefreshStrategy = mode == .search ? .currentState : .none
-        refreshVisibleContent(suggestionRefresh: suggestionRefresh, animateContentUpdates: false)
+        refreshVisibleContent(animateContentUpdates: false)
     }
 
     func setActive(_ active: Bool) {
@@ -262,10 +255,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         guard isContentActive else { return }
         guard needsVisibleRefresh else { return }
 
-        refreshVisibleContent(
-            suggestionRefresh: currentModeSuggestionRefresh(),
-            animateContentUpdates: false
-        )
+        refreshVisibleContent(animateContentUpdates: false)
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
@@ -462,7 +452,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let host = UnifiedSuggestionsHost(config: config)
         host.onContentChanged = { [weak self] in
-            self?.refreshVisibleContent(suggestionRefresh: .none, animateContentUpdates: true)
+            self?.refreshVisibleContent(animateContentUpdates: true)
         }
 
         let containerView = UIView()
@@ -628,7 +618,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.refreshVisibleContent(suggestionRefresh: .currentQuery(animated: true), animateContentUpdates: true)
+                self.refreshVisibleContent(animateContentUpdates: true)
             }
             .store(in: &cancellables)
 
@@ -658,10 +648,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.refreshVisibleContent(
-                    suggestionRefresh: self.currentModeSuggestionRefresh(),
-                    animateContentUpdates: false
-                )
+                self.refreshVisibleContent(animateContentUpdates: false)
             }
     }
 
@@ -813,27 +800,13 @@ private extension UnifiedInputContentContainerViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
-                self.refreshVisibleContent(
-                    suggestionRefresh: self.currentModeSuggestionRefresh(),
-                    animateContentUpdates: false
-                )
+                self.refreshVisibleContent(animateContentUpdates: false)
             }
             .store(in: &cancellables)
     }
 
-    private func currentModeSuggestionRefresh() -> SuggestionRefreshStrategy {
-        switch switchBarHandler.currentToggleState {
-        case .search:
-            .currentState
-        case .aiChat:
-            .none
-        }
-    }
 
-    private func refreshVisibleContent(
-        suggestionRefresh: SuggestionRefreshStrategy,
-        animateContentUpdates: Bool
-    ) {
+    private func refreshVisibleContent(animateContentUpdates: Bool) {
         guard isContentActive else {
             markNeedsVisibleRefresh()
             return

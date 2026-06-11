@@ -36,7 +36,9 @@ enum SuggestionRowMapper {
                 title: title,
                 query: nil,
                 subtitle: url.formattedForSuggestion(),
-                accessibilityID: "Autocomplete.Suggestions.ListItem.Bookmark-\(url.formattedForSuggestion())")
+                accessibilityID: isFavorite
+                    ? "Autocomplete.Suggestions.ListItem.Favorite-\(url.formattedForSuggestion())"
+                    : "Autocomplete.Suggestions.ListItem.Bookmark-\(url.formattedForSuggestion())")
 
         case .historyEntry(_, let url, _) where url.isDuckDuckGoSearch:
             return SuggestionRow(

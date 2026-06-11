@@ -121,15 +121,21 @@ final class PixelRetryQueue {
                                        parameters: parameters,
                                        allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                                        timestamp: now)
-        do {
-            // Drop already-expired items here too, so a long offline stretch (only failures, no drains)
-            // can't keep known-dead pixels queued until the next successful send.
-            if let cutoff = expiryCutoff(from: now) {
+        // Best-effort prune of already-expired items, so a long offline stretch (only failures, no drains)
+        // can't keep known-dead pixels queued. Kept separate from the append below so a prune failure can
+        // never prevent the new failed pixel from being queued for retry.
+        if let cutoff = expiryCutoff(from: now) {
+            do {
                 let expiredIDs = Set(try store.storedItems().filter { $0.timestamp < cutoff }.map(\.id))
                 if !expiredIDs.isEmpty {
                     try store.remove(itemsWithIDs: expiredIDs)
                 }
+            } catch {
+                logger.error("Failed to prune expired pixels from the retry queue: \(error.localizedDescription, privacy: .public)")
             }
+        }
+
+        do {
             try store.append([item])
         } catch {
             logger.error("Failed to persist pixel \(pixelName, privacy: .public) for retry: \(error.localizedDescription, privacy: .public)")

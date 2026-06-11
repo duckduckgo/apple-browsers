@@ -265,4 +265,17 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertEqual(store.items.first?.pixelName, "m_new")
         XCTAssertFalse(store.items.contains(expired))
     }
+
+    func testWhenExpiredPruningFails_ThenTheFailedPixelIsStillQueued() {
+        store.storedItemsError = NSError(domain: "test", code: 9)   // the prune's read throws
+        fireMock.organicResult = (false, NSError(domain: "test", code: 1))
+        let queue = makeQueue()
+        let completed = expectation(description: "onComplete")
+
+        // A prune failure must not prevent the new failed pixel from being queued.
+        queue.fireRequest("m_new", [:], [:], nil, true) { _, _ in completed.fulfill() }
+        wait(for: [completed], timeout: 1.0)
+
+        XCTAssertTrue(store.items.contains { $0.pixelName == "m_new" })
+    }
 }

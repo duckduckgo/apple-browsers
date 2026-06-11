@@ -104186,66 +104186,6 @@
         }
       }
     },
-    "sync.pairing-v2.confirmation.action" : {
-      "comment" : "Button title to confirm Pairing V2 sync setup with another device",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Sync Now"
-          }
-        }
-      }
-    },
-    "sync.pairing-v2.confirmation.ddg.message" : {
-      "comment" : "Message asking whether another DuckDuckGo device should sync with this device. The placeholder is the other device name.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "\"%@\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats."
-          }
-        }
-      }
-    },
-    "sync.pairing-v2.confirmation.third-party.message" : {
-      "comment" : "Message asking whether a third-party device should sync with this device. The placeholder is the other device name.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "\"%@\" will be able to access your synced Duck.ai chats."
-          }
-        }
-      }
-    },
-    "sync.pairing-v2.confirmation.title" : {
-      "comment" : "Title of the dialog to confirm Pairing V2 sync setup with another device",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Sync new device?"
-          }
-        }
-      }
-    },
-    "sync.pairing-v2.unknown-peer-name" : {
-      "comment" : "Fallback device name for Pairing V2 confirmation dialogs",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "the other device"
-          }
-        }
-      }
-    },
     "sync.promo.autofill.title" : {
       "comment" : "Title for the Sync Promotion banner",
       "extractionState" : "extracted_with_value",

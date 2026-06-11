@@ -74,7 +74,7 @@ final class DuckAIGridContentResolver: DuckAIGridItemProviding {
                 return nil
             }
             let decoded = try DuckAiChat.decode(from: record.data)
-            return DuckAIGridItem.from(chat: decoded.chat)
+            return DuckAIGridItem.from(chat: decoded.chat, lastMessageContent: decoded.lastMessageContent)
         } catch {
             Logger.aiChat.error("DuckAIGridContentResolver: failed to read chat: \(error.localizedDescription)")
             return nil

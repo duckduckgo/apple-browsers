@@ -41,12 +41,21 @@ enum DuckAIGridItem: Equatable {
 
 extension DuckAIGridItem {
 
-    /// Pure mapping from a decoded native chat to a `DuckAIGridItem`, or `nil`
-    /// when the chat shouldn't be rendered as a rich card (callers fall back to
-    /// the existing screenshot path). Kept free of I/O so it can be unit-tested
-    /// in isolation; the storage reads live in `DuckAIGridContentResolver`.
-    static func from(chat: DuckAiChat) -> DuckAIGridItem? {
-        // TODO: - Replace this stub with actual implementation
-        nil
+    /// Maps a decoded chat (+ the text of its last message) to a grid item, or
+    /// `nil` when the chat shouldn't be rendered as a rich card (callers fall back
+    /// to the existing screenshot path). Pure; storage reads live in
+    /// `DuckAIGridContentResolver`.
+    static func from(chat: DuckAiChat, lastMessageContent: String?) -> DuckAIGridItem? {
+        let title = chat.title.isEmpty ? UserText.aiChatTabSwitcherCardUntitledChat : chat.title
+        let kind = AIChatSuggestion.kind(forModel: chat.model)
+
+        switch kind {
+        case .text:
+            let snippet = lastMessageContent?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !snippet.isEmpty else { return nil }
+            return .text(title: title, snippet: snippet)
+        case .image, .voice:
+            return nil
+        }
     }
 }

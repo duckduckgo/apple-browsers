@@ -198,10 +198,8 @@ public class StatisticsLoader {
             group.enter()
             group.enter()
 
-            // The refreshSearchRetentionAtb call below is what fires the `.searches`
-            // OS-distribution pixel for a Duck.ai prompt, so Duck.ai usage is included in our
-            // search + AI-query traffic count. (refreshDuckAIRetentionAtb deliberately does not
-            // fire it, to avoid double-counting a single prompt.)
+            // The refreshSearchRetentionAtb call below fires the `.searches` OS-distribution pixel
+            // for a Duck.ai prompt, so Duck.ai usage is included in our search + AI-query traffic count.
             self.refreshSearchRetentionAtb {
                 group.leave()
             }
@@ -218,11 +216,6 @@ public class StatisticsLoader {
 
     private func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
-
-        // Intentionally does NOT fire the `.searches` OS-distribution pixel. The Duck.ai prompt
-        // path (refreshRetentionAtbOnDuckAIPromptSubmission) also calls refreshSearchRetentionAtb,
-        // which is the single emit point for `.searches`. Firing here as well would double-count a
-        // single prompt now that `.searches` is a per-event pixel rather than monthly-deduped.
 
         guard !isDuckAIRetentionRequestInProgress else {
             completion()

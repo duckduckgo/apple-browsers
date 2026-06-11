@@ -851,6 +851,8 @@ class TabViewController: UIViewController {
             .assign(to: \.netPConnectionStatus, onWeaklyHeld: self)
     }
 
+    private(set) var webScrollObserver: WebScrollObserver?
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         // The email manager is pulled from the main view controller, so reconnect it now, otherwise, it's nil
@@ -866,6 +868,7 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
 
         checkWebViewVisibilityConsistency()
+        webScrollObserver?.checkForWedgedRecognizer()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -968,6 +971,13 @@ class TabViewController: UIViewController {
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()
         })
+
+        if webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) {
+            webScrollObserver = WebScrollObserver(container: webViewContainer,
+                                                  scrollView: { [weak self] in self?.webView?.scrollView },
+                                                  currentURL: { [weak self] in self?.webView?.url })
+            webScrollObserver?.install()
+        }
 
         if isAITab {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)

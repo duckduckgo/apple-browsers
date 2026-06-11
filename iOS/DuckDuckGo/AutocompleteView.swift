@@ -126,6 +126,17 @@ private struct HideScrollContentBackground: ViewModifier {
     }
 }
 
+private struct SuggestionSelectedKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+private extension EnvironmentValues {
+    var suggestionIsSelected: Bool {
+        get { self[SuggestionSelectedKey.self] }
+        set { self[SuggestionSelectedKey.self] = newValue }
+    }
+}
+
 private struct SuggestionsSection: View {
 
     @EnvironmentObject var autocompleteViewModel: AutocompleteViewModel
@@ -184,6 +195,10 @@ private struct SuggestionView: View {
         guard model.canShowTapAhead else { return nil }
         return Image(uiImage: autocompleteModel.isAddressBarAtBottom ?
                      DesignSystemImages.Glyphs.Size16.arrowCircleDownLeft : DesignSystemImages.Glyphs.Size16.arrowCircleUpLeft)
+    }
+
+    private var isSelected: Bool {
+        autocompleteModel.selection == model
     }
 
     var body: some View {
@@ -248,6 +263,7 @@ private struct SuggestionView: View {
 
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .environment(\.suggestionIsSelected, isSelected)
     }
 
 }
@@ -255,6 +271,8 @@ private struct SuggestionView: View {
 private struct SuggestionListItem: View {
 
     @EnvironmentObject var autocompleteModel: AutocompleteViewModel
+
+    @Environment(\.suggestionIsSelected) private var isSelected: Bool
 
     let icon: Image
     let title: String
@@ -281,12 +299,17 @@ private struct SuggestionListItem: View {
         self.onDelete = onDelete
     }
 
+    // On a selected row the background is the accent fill, so content switches to the on-accent color to stay legible.
+    private func contentColor(_ base: DesignSystemColor) -> Color {
+        Color(designSystemColor: isSelected ? .accentContentPrimary : base)
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             icon
                 .resizable()
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .tintIfAvailable(Color(designSystemColor: .icons))
+                .tintIfAvailable(contentColor(.icons))
 
             VStack(alignment: .leading, spacing: 0) {
 
@@ -295,15 +318,15 @@ private struct SuggestionListItem: View {
                     if let query, title.hasPrefix(query) {
                         Text(query)
                             .font(Font(uiFont: UIFont.daxBodyRegular()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .foregroundColor(contentColor(.textPrimary))
                         +
                         Text(title.dropping(prefix: query))
                             .font(Font(uiFont: UIFont.daxBodyBold()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .foregroundColor(contentColor(.textPrimary))
                     } else {
                         Text(title)
                             .font(Font(uiFont: UIFont.daxBodyRegular()))
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .foregroundColor(contentColor(.textPrimary))
                     }
                 }
                 .lineLimit(1)
@@ -311,7 +334,7 @@ private struct SuggestionListItem: View {
                 if let subtitle {
                     Text(subtitle)
                         .daxFootnoteRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .foregroundColor(contentColor(.textSecondary))
                         .lineLimit(1)
                         .frame(minHeight: Metrics.subtitleMinHeight)
                 }
@@ -331,14 +354,14 @@ private struct SuggestionListItem: View {
                     .highPriorityGesture(TapGesture().onEnded {
                         onTapIndicator?()
                     })
-                    .tintIfAvailable(Color.init(designSystemColor: .iconsSecondary))
+                    .tintIfAvailable(contentColor(.iconsSecondary))
                     .padding(.leading, Metrics.indicatorLeadingPadding)
             } else if let onDelete {
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
                     .highPriorityGesture(TapGesture().onEnded {
                         onDelete()
                     })
-                    .tintIfAvailable(Color(designSystemColor: .iconsSecondary))
+                    .tintIfAvailable(contentColor(.iconsSecondary))
                     .padding(.leading, Metrics.indicatorLeadingPadding)
                     .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.DeleteButton")
                     .accessibilityLabel(UserText.actionDelete)

@@ -69,7 +69,7 @@ final class DuckAIGridContentResolver: DuckAIGridItemProviding {
         }
 
         do {
-            guard try storageHandler.isMigrationDone(key: DuckAiMigrationKey.chats),
+            guard try storageHandler.isMigrationDone(),
                   let record = try storageHandler.getChat(chatId: chatID) else {
                 return nil
             }

@@ -307,17 +307,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         persistor.setTimesShown(0, for: secondCard)
         let testProvider = createProvider()
 
-        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
-        let cancellable = testProvider.cardsPublisher
-            .sink { cards in
-                expectation.fulfill()
-            }
-
-        // WHEN - Trigger card list refresh
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
-
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
+        // WHEN
+        triggerNewTabPageView(on: testProvider)
 
         // THEN
         XCTAssertEqual(persistor.timesShown(for: firstCard), 1)
@@ -331,17 +322,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         persistor.ntpImpressionCount = 0
         let testProvider = createProvider()
 
-        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
-        let cancellable = testProvider.cardsPublisher
-            .sink { cards in
-                expectation.fulfill()
-            }
-
-        // WHEN - Trigger card list refresh
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
-
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
+        // WHEN
+        triggerNewTabPageView(on: testProvider)
 
         // THEN
         XCTAssertEqual(persistor.ntpImpressionCount, 1)
@@ -354,17 +336,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         appearancePreferences.isContinueSetUpCardsViewOutdated = true
         let testProvider = createProvider()
 
-        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
-        let cancellable = testProvider.cardsPublisher
-            .sink { cards in
-                expectation.fulfill()
-            }
-
-        // WHEN - Trigger card list refresh
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
-
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
+        // WHEN
+        triggerNewTabPageView(on: testProvider)
 
         // THEN
         XCTAssertEqual(persistor.ntpImpressionCount, 0)
@@ -1154,6 +1127,51 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertFalse(appearancePrefs.continueSetUpCardsClosed)
     }
 
+    @MainActor
+    func testWhenOnboardingDelayMetAfterEmptyListThenTimesShownIsIncrementedForFirstOnboardingCard() {
+        // GIVEN
+        var now = Date()
+        let appearancePersistor = MockAppearancePreferencesPersistor(
+            continueSetUpCardsLastDemonstrated: now,
+            continueSetUpCardsNumberOfDaysDemonstrated: 0
+        )
+        let appearancePrefs = AppearancePreferences(
+            persistor: appearancePersistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            dateTimeProvider: { now },
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        for card in NewTabPageDataModel.CardID.allCases where card != .defaultApp && card != .addAppToDockMac && card != .bringStuff {
+            testPersistor.setTimesDismissed(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardDismissed, for: card)
+        }
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            persistor: testPersistor,
+            featureFlagger: testFeatureFlagger,
+            isAppStoreBuild: false
+        )
+
+        // WHEN - simulate opening the New Tab Page with delay not yet met
+        triggerNewTabPageView(on: testProvider)
+
+        // THEN
+        XCTAssertTrue(testProvider.cards.isEmpty)
+        XCTAssertEqual(testPersistor.timesShown(for: .defaultApp), 0)
+
+        // WHEN - simulate time passing to meet onboarding delay requirement
+        now = now.addingTimeInterval(.day)
+        triggerNewTabPageView(on: testProvider)
+
+        // THEN
+        XCTAssertEqual(testProvider.cards.first, .defaultApp)
+        XCTAssertEqual(testPersistor.timesShown(for: .defaultApp), 1)
+    }
+
     func testWhenNonOnboardingCardsExhaustedAndOnboardingIneligibleThenContinueSetUpCardsClosed() {
         let now = Date()
         let appearancePrefs = createAppearancePrefs(
@@ -1344,6 +1362,19 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatMenuConfig: MockAIChatConfig()
         )
+    }
+
+    private func triggerNewTabPageView(on testProvider: NewTabPageNextStepsSingleCardProvider) {
+        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                expectation.fulfill()
+            }
+
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
     }
 }
 

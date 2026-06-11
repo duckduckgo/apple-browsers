@@ -27,10 +27,6 @@ import SwiftUI
 final class UnifiedSuggestionsViewModel: ObservableObject {
 
     @Published private(set) var content: UnifiedSuggestionsContentKind = .logo
-    /// Latches once favorites has been shown. The view mounts the (heavy) favorites controller only
-    /// after this is true, so a Duck.ai-first session never builds it — yet once shown it stays
-    /// mounted so the favorites↔recents crossfade doesn't snap (see `UnifiedSuggestionsView`).
-    @Published private(set) var favoritesEverShown = false
     /// Reactive sync-promo visibility (driven by the container) so show/hide animates with the
     /// content crossfade instead of snapping via a root-view rebuild.
     @Published var showsSyncPromo = false
@@ -67,7 +63,6 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// collapsing promo card makes them flash over its space.
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool) {
         guard newContent != content else { return }
-        if case .favorites = newContent { favoritesEverShown = true }
         if modeChanged && !Self.sameCategory(content, newContent) && !showsSyncPromo {
             withAnimation(.easeInOut(duration: 0.2)) { content = newContent }
         } else {

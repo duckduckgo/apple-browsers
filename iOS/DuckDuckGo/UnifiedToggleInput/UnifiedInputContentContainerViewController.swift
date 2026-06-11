@@ -112,6 +112,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// In-flight search history-delete task; cancelled on deinit so its post-delete refetch can't
     /// run against a torn-down loader (parity with the duck.ai surface's `deleteTask`).
     private var searchDeleteTask: Task<Void, Never>?
+    /// The Search surface's loader; held so a Duck.ai-side URL delete can refresh it too.
+    private var searchLoader: SearchSuggestionsLoader?
     /// Duck.ai sync-promo presenter; nil when there's no sync service.
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
         syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
@@ -391,6 +393,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             requestRunner.run(request, completion: completion)
         }
         let loader = SearchSuggestionsLoader(dataSource: dataSource, useUnifiedURLPrediction: featureFlagger.isFeatureOn(.unifiedURLPredictor))
+        searchLoader = loader
 
         let source = SearchSuggestionsSource(
             loader: loader,
@@ -432,6 +435,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                     await SuggestionHistoryDeletion.delete(url, using: dependencies.historyManager)
                     guard let self, !Task.isCancelled else { return }
                     loader?.fetch(query: self.switchBarHandler.currentText)
+                    self.duckAISurface?.refreshURLSuggestions()
                 }
             },
             onTapAheadRow: { [weak self] id in
@@ -843,6 +847,12 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsSurfacePr
 
     func duckAISurfaceStateDidChange() {
         updateDaxVisibility()
+    }
+
+    func duckAISurfaceDidDeleteURLSuggestion() {
+        // The deleted URL was removed from the shared history store; refresh Search so it doesn't
+        // linger there (the gated search loader won't re-fetch on a plain mode toggle).
+        searchLoader?.fetch(query: switchBarHandler.currentText)
     }
 
     func duckAISurfaceRequestsChatDeletionConfirmation(for chat: AIChatSuggestion,

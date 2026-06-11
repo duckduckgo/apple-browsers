@@ -45,7 +45,7 @@ final class DuckAISuggestionsSource: SuggestionsSource {
          urlLoader: DuckAIURLSuggestionsLoader,
          chatManager: AIChatHistoryManager,
          query: @escaping () -> String,
-         deleteEnabled: Bool = false) {
+         deleteEnabled: @escaping () -> Bool = { false }) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.chatManager = chatManager
@@ -59,7 +59,7 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         )
 
         sectionsPublisher = pipeline.snapshotPublisher
-            .map { snapshot in Self.sections(from: snapshot, query: query(), deleteEnabled: deleteEnabled) }
+            .map { snapshot in Self.sections(from: snapshot, query: query(), deleteEnabled: deleteEnabled()) }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }

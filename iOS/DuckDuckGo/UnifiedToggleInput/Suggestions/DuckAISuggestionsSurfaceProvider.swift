@@ -31,6 +31,8 @@ protocol DuckAISuggestionsSurfaceProviderDelegate: AnyObject {
     /// The duck.ai fetchers' content/settle state changed (was `onFetchCompleted`); the owner
     /// refreshes dax visibility.
     func duckAISurfaceStateDidChange()
+    /// A URL suggestion was deleted from the shared history store; the owner refreshes Search too.
+    func duckAISurfaceDidDeleteURLSuggestion()
     /// Present the fire/delete confirmation for a recent-chat suggestion (the owner is the host VC).
     func duckAISurfaceRequestsChatDeletionConfirmation(for chat: AIChatSuggestion,
                                                        onConfirm: @escaping () -> Void,
@@ -55,6 +57,7 @@ final class DuckAISuggestionsSurfaceProvider {
     func hasContent() -> Bool { hasContentReader?() ?? false }
     func hasSettled(forQuery query: String) -> Bool { hasSettledReader?(query) ?? false }
     func refreshRecents() { refreshRecentsAction?() }
+    func refreshURLSuggestions() { refreshURLSuggestionsAction?() }
     /// Recent-chat count for the sync-promo gating; 0 while detached.
     var recentsCount: Int { recentsCountReader?() ?? 0 }
 
@@ -71,6 +74,7 @@ final class DuckAISuggestionsSurfaceProvider {
     private var hasContentReader: (() -> Bool)?
     private var hasSettledReader: ((String) -> Bool)?
     private var refreshRecentsAction: (() -> Void)?
+    private var refreshURLSuggestionsAction: (() -> Void)?
     private var recentsCountReader: (() -> Int)?
     /// In-flight history-delete task; cancelled on detach so its post-delete refetch can't run
     /// against a torn-down source.
@@ -124,7 +128,7 @@ final class DuckAISuggestionsSurfaceProvider {
             urlLoader: urlLoader,
             chatManager: chatManager,
             query: { [weak self] in self?.switchBarHandler.currentText ?? "" },
-            deleteEnabled: featureFlagger.isFeatureOn(.removeChatHistory)
+            deleteEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.removeChatHistory) }
         )
         chatManager.onFetchCompleted = { [weak self] _, _ in self?.delegate?.duckAISurfaceStateDidChange() }
 
@@ -163,6 +167,9 @@ final class DuckAISuggestionsSurfaceProvider {
         refreshRecentsAction = { [weak chatManager, weak self] in
             chatManager?.refreshSuggestions(query: self?.switchBarHandler.currentText ?? "")
         }
+        refreshURLSuggestionsAction = { [weak self] in
+            source.fetchURLSuggestions(query: self?.switchBarHandler.currentText ?? "")
+        }
         recentsCountReader = { [weak chatViewModel] in chatViewModel?.filteredSuggestions.count ?? 0 }
 
         host.attachDuckAISurface(surface, textPublisher: textPublisher)
@@ -178,6 +185,7 @@ final class DuckAISuggestionsSurfaceProvider {
         hasContentReader = nil
         hasSettledReader = nil
         refreshRecentsAction = nil
+        refreshURLSuggestionsAction = nil
         recentsCountReader = nil
         chatDeleteAction = nil
     }
@@ -195,6 +203,7 @@ final class DuckAISuggestionsSurfaceProvider {
             await SuggestionHistoryDeletion.delete(url, using: self.dependencies.historyManager)
             guard !Task.isCancelled else { return }
             source.fetchURLSuggestions(query: self.switchBarHandler.currentText)
+            self.delegate?.duckAISurfaceDidDeleteURLSuggestion()
         }
     }
 

@@ -861,18 +861,25 @@ public final class PixelKit {
         )
     }
 
+    /// Evaluates `within` against the stored last-fire date for `frequency`'s `mapKey`.
+    /// Returns `false` when there's no stored date for that frequency, and fails closed
+    /// (returns `true`, suppressing the pixel) on a storage read error.
+    private func pixelHasBeenFired(_ name: String, frequency: Frequency, within: (Date) -> Bool) -> Bool {
+        do {
+            let map = try migratedLastFireDateMap(forKey: userDefaultsKeyName(forPixelName: name))
+            guard let lastFireDate = map[frequency.mapKey] else { return false }
+            return within(lastFireDate)
+        } catch {
+            return true
+        }
+    }
+
     /// Returns `true` if the pixel was last fired less than `seconds` ago (so it should be suppressed).
     /// The stored fire date is shared across debounce intervals (mapKey `"debounce"`), and the window is
     /// evaluated against the passed `seconds`. Fails closed (suppresses) on a storage read error.
     private func pixelHasBeenFiredWithinDebounceInterval(_ name: String, seconds: TimeInterval) -> Bool {
-        do {
-            let map = try migratedLastFireDateMap(forKey: userDefaultsKeyName(forPixelName: name))
-            if let lastFireDate = map[Frequency.debounce(seconds: seconds).mapKey] {
-                return lastFireDate > dateGenerator().addingTimeInterval(-seconds)
-            }
-            return false
-        } catch {
-            return true
+        pixelHasBeenFired(name, frequency: .debounce(seconds: seconds)) { lastFireDate in
+            lastFireDate > dateGenerator().addingTimeInterval(-seconds)
         }
     }
 
@@ -886,14 +893,8 @@ public final class PixelKit {
             return false
         }
 
-        do {
-            let map = try migratedLastFireDateMap(forKey: userDefaultsKeyName(forPixelName: name))
-            if let lastFireDate = map[Frequency.daily.mapKey] {
-                return pixelCalendar.isDate(dateGenerator(), inSameDayAs: lastFireDate)
-            }
-            return false
-        } catch {
-            return true
+        return pixelHasBeenFired(name, frequency: .daily) { lastFireDate in
+            pixelCalendar.isDate(dateGenerator(), inSameDayAs: lastFireDate)
         }
     }
 

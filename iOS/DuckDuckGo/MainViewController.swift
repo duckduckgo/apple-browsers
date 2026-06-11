@@ -3903,7 +3903,7 @@ extension MainViewController: OmniBarDelegate {
     // it has rows, otherwise the URL-only fallback tray (the two are mutually exclusive).
     private enum AIChatSuggestionSurface {
         case chatHistory
-        case urlFallback
+        case urlFallbackSuggestions
     }
 
     private var activeAIChatSuggestionSurface: AIChatSuggestionSurface? {
@@ -3911,7 +3911,7 @@ extension MainViewController: OmniBarDelegate {
         if iPadTabChatHistoryCoordinator.isNavigationAvailable { return .chatHistory }
         let isURLFallbackShowing = suggestionTrayController?.suggestionFilter == .urlsOnly
             && viewCoordinator.suggestionTrayContainer.isHidden == false
-        return isURLFallbackShowing ? .urlFallback : nil
+        return isURLFallbackShowing ? .urlFallbackSuggestions : nil
     }
 
     func onAIChatSuggestionsIsNavigationAvailable() -> Bool {
@@ -3921,7 +3921,7 @@ extension MainViewController: OmniBarDelegate {
     func onAIChatSuggestionsHasHighlight() -> Bool {
         switch activeAIChatSuggestionSurface {
         case .chatHistory: return iPadTabChatHistoryCoordinator.hasHighlightedSuggestion
-        case .urlFallback: return suggestionTrayController?.highlightedSuggestion != nil
+        case .urlFallbackSuggestions: return suggestionTrayController?.highlightedSuggestion != nil
         case nil: return false
         }
     }
@@ -3929,7 +3929,7 @@ extension MainViewController: OmniBarDelegate {
     func onAIChatSuggestionsMoveSelectionDown() {
         switch activeAIChatSuggestionSurface {
         case .chatHistory: iPadTabChatHistoryCoordinator.moveSelectionDown()
-        case .urlFallback: suggestionTrayController?.keyboardMoveSelectionDown()
+        case .urlFallbackSuggestions: suggestionTrayController?.keyboardMoveSelectionDown()
         case nil: break
         }
     }
@@ -3938,7 +3938,7 @@ extension MainViewController: OmniBarDelegate {
         switch activeAIChatSuggestionSurface {
         case .chatHistory:
             iPadTabChatHistoryCoordinator.moveSelectionUp()
-        case .urlFallback:
+        case .urlFallbackSuggestions:
             // At the first row, clear the highlight so focus returns to the text input.
             if suggestionTrayController?.isKeyboardSelectionAtFirstRow == true {
                 suggestionTrayController?.clearKeyboardSelection()
@@ -3954,7 +3954,7 @@ extension MainViewController: OmniBarDelegate {
         switch activeAIChatSuggestionSurface {
         case .chatHistory:
             return iPadTabChatHistoryCoordinator.activateHighlightedSuggestion()
-        case .urlFallback:
+        case .urlFallbackSuggestions:
             guard let suggestion = suggestionTrayController?.highlightedSuggestion else { return false }
             onOmniSuggestionSelected(suggestion)
             return true

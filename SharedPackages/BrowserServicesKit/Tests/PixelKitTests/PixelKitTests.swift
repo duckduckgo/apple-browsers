@@ -622,6 +622,7 @@ final class PixelKitTests: XCTestCase {
 
         PixelKit.setUp(dryRun: true,
                        appVersion: "test",
+                       session: "test",
                        defaultHeaders: [:],
                        pixelCalendar: calendar,
                        dateGenerator: timeMachine.now,

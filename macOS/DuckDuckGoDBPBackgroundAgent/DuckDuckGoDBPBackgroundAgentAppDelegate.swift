@@ -49,6 +49,7 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: "dbpBackgroundAgent",
+                       session: "dbp-agent",
                        channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.standard) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping (Bool, Error?) -> Void) in

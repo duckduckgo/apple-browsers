@@ -249,4 +249,20 @@ final class PixelRetryQueueTests: XCTestCase {
 
         XCTAssertEqual(store.items, [item])
     }
+
+    func testWhenAFailedPixelIsEnqueued_ThenExpiredItemsArePruned() {
+        let expired = makeItem(name: "m_stale", ageInDays: 30)
+        try? store.append([expired])
+        fireMock.organicResult = (false, NSError(domain: "test", code: 1))
+        let queue = makeQueue()
+        let completed = expectation(description: "onComplete")
+
+        // A failing organic fire enqueues the new pixel and prunes already-expired items (no drain needed).
+        queue.fireRequest("m_new", [:], [:], nil, true) { _, _ in completed.fulfill() }
+        wait(for: [completed], timeout: 1.0)
+
+        XCTAssertEqual(store.items.count, 1)
+        XCTAssertEqual(store.items.first?.pixelName, "m_new")
+        XCTAssertFalse(store.items.contains(expired))
+    }
 }

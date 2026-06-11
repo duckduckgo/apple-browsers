@@ -28,8 +28,8 @@ import Persistence
 /// 28 days are dropped without sending.
 ///
 /// `PixelKit` creates and owns this internally: it wraps the `FireRequest` passed to `PixelKit.setUp`,
-/// reuses the same `defaults` for throttling state, and drains the queue at launch and after each
-/// successful send. Consumers of `PixelKit` don't interact with it directly.
+/// reuses the same `defaults` for throttling state, and drains the queue after each successful send.
+/// Consumers of `PixelKit` don't interact with it directly.
 ///
 /// This is a port of iOS `PersistentPixel`; a Swift Concurrency modernisation can follow later.
 final class PixelRetryQueue {
@@ -57,6 +57,12 @@ final class PixelRetryQueue {
     private let calendar: Calendar
     private let dateGenerator: () -> Date
 
+    /// In-memory source of truth for the last drain time, seeded once from `lastProcessingDateStorage` at
+    /// init and written through on update. Reading it from memory (rather than from disk on every drain)
+    /// means a persistent read failure can't be misread as "never drained" and trigger a drain on every
+    /// fire. Only accessed on `workQueue` after the initial seed.
+    private var lastProcessingDate: Date?
+
     private let workQueue = DispatchQueue(label: "PixelKit Retry Queue")
     private let logger = Logger(subsystem: "PixelKit", category: "PixelRetryQueue")
 
@@ -78,6 +84,7 @@ final class PixelRetryQueue {
         self.lastProcessingDateKey = lastProcessingDateKey
         self.calendar = calendar
         self.dateGenerator = dateGenerator
+        self.lastProcessingDate = ((try? lastProcessingDateStorage.object(forKey: lastProcessingDateKey)) ?? nil) as? Date
     }
 
     /// The decorated closure PixelKit routes its fires through.
@@ -115,18 +122,30 @@ final class PixelRetryQueue {
                                        allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                                        timestamp: now)
         do {
+            // Drop already-expired items here too, so a long offline stretch (only failures, no drains)
+            // can't keep known-dead pixels queued until the next successful send.
+            if let cutoff = expiryCutoff(from: now) {
+                let expiredIDs = Set(try store.storedItems().filter { $0.timestamp < cutoff }.map(\.id))
+                if !expiredIDs.isEmpty {
+                    try store.remove(itemsWithIDs: expiredIDs)
+                }
+            }
             try store.append([item])
         } catch {
             logger.error("Failed to persist pixel \(pixelName, privacy: .public) for retry: \(error.localizedDescription, privacy: .public)")
         }
     }
 
+    /// The cutoff date before which queued items are considered expired (older than `expiryDays`).
+    private func expiryCutoff(from now: Date) -> Date? {
+        calendar.date(byAdding: .day, value: -Constants.expiryDays, to: now)
+    }
+
     /// Drains the queue: replays each item not older than 28 days through the underlying closure, drops
     /// expired items, and removes anything successfully sent. Throttled to `minimumProcessingInterval`.
     func sendQueuedPixels(completion: @escaping (PixelRetryQueueStorageError?) -> Void = { _ in }) {
         workQueue.async {
-            let storedProcessingDate = (try? self.lastProcessingDateStorage.object(forKey: self.lastProcessingDateKey)) ?? nil
-            if let lastProcessingDate = storedProcessingDate as? Date {
+            if let lastProcessingDate = self.lastProcessingDate {
                 let threshold = self.dateGenerator().addingTimeInterval(-Constants.minimumProcessingInterval)
                 if threshold <= lastProcessingDate {
                     completion(nil)
@@ -148,8 +167,11 @@ final class PixelRetryQueue {
             }
 
             // Advance the throttle only once there's work to process, so empty drains (the common case
-            // after a successful send) don't block replay of failures queued shortly afterwards.
-            try? self.lastProcessingDateStorage.set(self.dateGenerator(), forKey: self.lastProcessingDateKey)
+            // after a successful send) don't block replay of failures queued shortly afterwards. The
+            // in-memory value is the source of truth; the disk write is best-effort.
+            let now = self.dateGenerator()
+            self.lastProcessingDate = now
+            try? self.lastProcessingDateStorage.set(now, forKey: self.lastProcessingDateKey)
 
             self.fire(queuedItems: queuedItems) { idsToRemove in
                 do {
@@ -168,7 +190,7 @@ final class PixelRetryQueue {
         let idsAccessQueue = DispatchQueue(label: "PixelKit Retry Queue IDs Access Queue")
         var idsToRemove: Set<UUID> = []
         let now = dateGenerator()
-        let cutoff = calendar.date(byAdding: .day, value: -Constants.expiryDays, to: now)
+        let cutoff = expiryCutoff(from: now)
 
         for item in queuedItems {
             if let cutoff, item.timestamp < cutoff {

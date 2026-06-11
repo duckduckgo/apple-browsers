@@ -46,7 +46,7 @@ public final class LocalSuggestionsReader: SuggestionsReading {
             let decoded = records.compactMap { try? DuckAiChat.decode(from: $0.data) }
 
             let trimmedQuery = query?.trimmingCharacters(in: .whitespaces)
-            let filtered: [(chat: DuckAiChat, firstUserMessageContent: String?)]
+            let filtered: [(chat: DuckAiChat, firstUserMessageContent: String?, lastMessageContent: String?)]
 
             if let trimmedQuery, !trimmedQuery.isEmpty {
                 filtered = decoded.filter { $0.chat.title.localizedCaseInsensitiveContains(trimmedQuery) }

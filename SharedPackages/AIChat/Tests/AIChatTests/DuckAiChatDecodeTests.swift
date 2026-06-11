@@ -127,4 +127,86 @@ final class DuckAiChatDecodeTests: XCTestCase {
         XCTAssertTrue(decoded.chat.isImageGeneration,
                       "Assistant tool-call message without `content` must not block the detection")
     }
+
+    // MARK: - lastMessageContent
+
+    func testWhenLastMessageIsAssistantTextThenLastMessageContentIsAssistantText() throws {
+        let json = """
+            {
+              "chatId": "c1",
+              "model": "gpt-5-mini",
+              "messages": [
+                {"role":"user","content":"hello"},
+                {"role":"assistant","content":"hi there!"}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertEqual(decoded.lastMessageContent, "hi there!")
+    }
+
+    func testWhenLastMessageIsUserTextThenLastMessageContentIsUserText() throws {
+        let json = """
+            {
+              "chatId": "c1",
+              "model": "gpt-5-mini",
+              "messages": [
+                {"role":"assistant","content":"earlier reply"},
+                {"role":"user","content":"a follow up"}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertEqual(decoded.lastMessageContent, "a follow up")
+    }
+
+    func testWhenLastMessageContentIsRichObjectThenTextValueIsExtracted() throws {
+        let json = """
+            {
+              "chatId": "c1",
+              "model": "gpt-5-mini",
+              "messages": [
+                {"role":"user","content":"what's this?"},
+                {"role":"assistant","content":{"text":"a duck","images":[]}}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertEqual(decoded.lastMessageContent, "a duck")
+    }
+
+    func testWhenLastMessageHasOnlyPartsThenLastMessageContentIsNil() throws {
+        let json = """
+            {
+              "chatId": "c1",
+              "model": "gpt-5-mini",
+              "messages": [
+                {"role":"user","content":"draw a duck"},
+                {"role":"assistant","parts":[
+                  {"type":"ui-component","name":"generate-image"}
+                ]}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertNil(decoded.lastMessageContent)
+    }
+
+    func testWhenMessagesArrayIsAbsentThenLastMessageContentIsNil() throws {
+        let json = #"{"chatId":"c1","model":"gpt-5-mini"}"#
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertNil(decoded.lastMessageContent)
+    }
+
+    func testWhenMessagesArrayIsEmptyThenLastMessageContentIsNil() throws {
+        let json = #"{"chatId":"c1","model":"gpt-5-mini","messages":[]}"#
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertNil(decoded.lastMessageContent)
+    }
 }

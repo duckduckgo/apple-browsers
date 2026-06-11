@@ -79,7 +79,7 @@ final class WindowsManager {
         assert(tabCollectionViewModel == nil || tabCollectionViewModel!.isPopup == popUp)
         let fireWindowOpenTrigger = Self.fireWindowOpenTrigger(
             isBurner: effectiveBurnerMode.isBurner,
-            isOpenFireWindowByDefaultEnabled: isOpenFireWindowByDefaultEnabled(),
+            burnerModeWasExplicitlyProvided: burnerMode != nil,
             isOpenedAutomatically: isOpenedAutomatically
         )
         let mainWindowController = makeNewWindow(tabCollectionViewModel: tabCollectionViewModel,
@@ -140,15 +140,11 @@ final class WindowsManager {
 
     private class func burnerModeByDefault() -> BurnerMode {
         // Use user preference for default window type
-        if isOpenFireWindowByDefaultEnabled() {
-            return BurnerMode(isBurner: true)
+        if let appDelegate = NSApp.delegate as? AppDelegate {
+            return appDelegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled ? BurnerMode(isBurner: true) : .regular
         } else {
             return .regular
         }
-    }
-
-    private class func isOpenFireWindowByDefaultEnabled() -> Bool {
-        (NSApp.delegate as? AppDelegate)?.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled == true
     }
 
     @discardableResult
@@ -306,16 +302,18 @@ final class WindowsManager {
     /// Classifies how a Fire Window was opened given inputs available at `openNewWindow`'s call site.
     /// - Returns:
     ///   - `nil` when the open is not for a Fire Window.
-    ///   - `.manual` for explicit user actions when "Open Fire Window by default" is not enabled.
-    ///   - `.automatic` when the open was driven by app logic or the "Open Fire Window by default" preference is enabled.
+    ///   - `.manual` for explicit user actions that requested a burner mode.
+    ///   - `.automatic` when the open was driven by app logic (`isOpenedAutomatically == true`, e.g.
+    ///     startup or a ⌘N press promoted by the "Open Fire Window by default" preference) or when the
+    ///     caller didn't pass a burner mode (preference fallback).
     static func fireWindowOpenTrigger(
         isBurner: Bool,
-        isOpenFireWindowByDefaultEnabled: Bool,
+        burnerModeWasExplicitlyProvided: Bool,
         isOpenedAutomatically: Bool
     ) -> FireWindowOpenTrigger? {
         guard isBurner else { return nil }
 
-        if isOpenedAutomatically || isOpenFireWindowByDefaultEnabled {
+        if isOpenedAutomatically || !burnerModeWasExplicitlyProvided {
             return .automatic
         }
         return .manual

@@ -27,7 +27,7 @@ struct WindowsManagerFireWindowOpenTriggerTests {
     func nilWhenNotBurner(isOpenedAutomatically: Bool) {
         #expect(WindowsManager.fireWindowOpenTrigger(
             isBurner: false,
-            isOpenFireWindowByDefaultEnabled: true,
+            burnerModeWasExplicitlyProvided: true,
             isOpenedAutomatically: isOpenedAutomatically
         ) == nil)
     }
@@ -36,7 +36,7 @@ struct WindowsManagerFireWindowOpenTriggerTests {
     func manualWhenExplicitBurnerAndNotAutomatic() {
         #expect(WindowsManager.fireWindowOpenTrigger(
             isBurner: true,
-            isOpenFireWindowByDefaultEnabled: false,
+            burnerModeWasExplicitlyProvided: true,
             isOpenedAutomatically: false
         ) == .manual)
     }
@@ -45,7 +45,7 @@ struct WindowsManagerFireWindowOpenTriggerTests {
     func automaticWhenIsOpenedAutomatically() {
         #expect(WindowsManager.fireWindowOpenTrigger(
             isBurner: true,
-            isOpenFireWindowByDefaultEnabled: false,
+            burnerModeWasExplicitlyProvided: true,
             isOpenedAutomatically: true
         ) == .automatic)
     }
@@ -54,7 +54,7 @@ struct WindowsManagerFireWindowOpenTriggerTests {
     func automaticWhenBurnerInferred() {
         #expect(WindowsManager.fireWindowOpenTrigger(
             isBurner: true,
-            isOpenFireWindowByDefaultEnabled: true,
+            burnerModeWasExplicitlyProvided: false,
             isOpenedAutomatically: false
         ) == .automatic)
     }
@@ -63,7 +63,7 @@ struct WindowsManagerFireWindowOpenTriggerTests {
     func automaticWhenBothInferredAndAutomatic() {
         #expect(WindowsManager.fireWindowOpenTrigger(
             isBurner: true,
-            isOpenFireWindowByDefaultEnabled: true,
+            burnerModeWasExplicitlyProvided: false,
             isOpenedAutomatically: true
         ) == .automatic)
     }

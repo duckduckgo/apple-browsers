@@ -327,7 +327,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
     }
 
     /// Returns whether the card should be shown in the list of visible cards.
-    /// This checks both if the card has been permanently dismissed and if the card's specific visibility conditions are met.
+    /// This checks to following conditions:
+    /// - Whether the card has been permanently dismissed
+    /// - Whether the card's specific visibility conditions are met.
+    /// - For onboarding cards, whether the delay has passed to start showing them.
     func shouldShowCard(_ card: NewTabPageDataModel.CardID) -> Bool {
         guard !isCardPermanentlyDismissed(card) else {
             return false

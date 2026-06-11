@@ -70,6 +70,19 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
     }
 
     @MainActor
+    func testDataSourceReflectsTabModelChangesAfterConstruction() {
+        let tabsModel = makeTabsModel()
+        let dataSource = makeDataSource(tabsModel: tabsModel)
+
+        XCTAssertEqual(dataSource.openTabs(for: MockSuggestionLoading()).count, 2)
+
+        // A long-lived data source (e.g. the unified-input host) must reflect tabs cleared by fire,
+        // not a snapshot taken on first access.
+        tabsModel.clearAll()
+        XCTAssertTrue(dataSource.openTabs(for: MockSuggestionLoading()).isEmpty)
+    }
+
+    @MainActor
     func testDataSourceReturnsBookmarks() {
         let dataSource = makeDataSource()
         let bookmarks = dataSource.bookmarks(for: MockSuggestionLoading())
@@ -83,7 +96,7 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
     }
 
     @MainActor
-    private func makeDataSource() -> AutocompleteSuggestionsDataSource {
+    private func makeDataSource(tabsModel: TabsModel? = nil) -> AutocompleteSuggestionsDataSource {
 
         var mockHistoryCoordinator = NullHistoryCoordinator()
         mockHistoryCoordinator.history = [
@@ -96,7 +109,7 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
             historyManager: MockHistoryManager(historyCoordinator: mockHistoryCoordinator, isEnabledByUser: true, historyFeatureEnabled: true),
             bookmarksDatabase: db,
             featureFlagger: MockFeatureFlagger(),
-            tabsModel: makeTabsModel()) { _, completion in
+            tabsModel: tabsModel ?? makeTabsModel()) { _, completion in
                 completion("[]".data(using: .utf8), nil)
         }
     }

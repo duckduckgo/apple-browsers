@@ -74,7 +74,7 @@ final class StatisticsLoader {
                         completion()
                     }
                 }
-                PixelKit.fire(GeneralPixel.serp, frequency: .standard)
+                PixelKit.fire(GeneralPixel.serp, frequency: .dailyAndStandard)
                 PixelKit.fire(GeneralPixel.serpInitial, frequency: .uniqueByName)
                 self.fireSearchExperimentPixels()
                 if AppVersion.runType == .normal {

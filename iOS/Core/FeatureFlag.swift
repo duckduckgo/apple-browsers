@@ -777,7 +777,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .floatingUI:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUI))
         case .removeChatHistory:

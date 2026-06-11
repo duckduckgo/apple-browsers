@@ -135,10 +135,14 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     @Published private var cardList: [NewTabPageDataModel.CardID] = []
 
+    var isNextStepsCardsComplete: Bool {
+        appearancePreferences.isContinueSetUpCardsViewOutdated || appearancePreferences.continueSetUpCardsClosed
+    }
+
     /// Returns the list of cards to be displayed, or an empty list if the continue set up cards view is considered outdated or was previously closed.
     /// The widget only shows the first card in the list, but we provide the full list of available cards so it can show a progress indicator.
     var cards: [NewTabPageDataModel.CardID] {
-        guard !appearancePreferences.isContinueSetUpCardsViewOutdated, !appearancePreferences.continueSetUpCardsClosed else {
+        guard !isNextStepsCardsComplete else {
             return []
         }
         return cardList
@@ -238,7 +242,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         if let card = cards.first {
             pixelHandler.fireNextStepsCardShownPixels([card])
             pixelHandler.fireAddToDockPresentedPixelIfNeeded([card])
-            persistor.incrementTimesShown(for: card)
         }
     }
 }
@@ -252,7 +255,17 @@ private extension NewTabPageNextStepsSingleCardProvider {
         if cards.isEmpty {
             appearancePreferences.continueSetUpCardsClosed = true
         }
+        // Record a new card impression if the first card in the list has changed:
+        // after a card is dismissed, no longer eligible to be shown, or the cards are shuffled/re-ordered.
+        if let initialVisibleCard = self.cards.first, cards.first != initialVisibleCard {
+            recordImpression(for: cards.first)
+        }
         cardList = cards
+    }
+
+    func recordImpression(for card: NewTabPageDataModel.CardID?) {
+        guard !isNextStepsCardsComplete, let card else { return }
+        persistor.incrementTimesShown(for: card)
     }
 
     /// If this is not the first session, sorts `standardCards` with the `defaultApp` card first, and the remaining cards in random order.
@@ -269,12 +282,14 @@ private extension NewTabPageNextStepsSingleCardProvider {
         var orderedCards = persistor.orderedCardIDs ?? defaultAdvancedCards.map { $0.cardID }
 
         // Check if the first visible card has been shown 10+ times, and move it to the end of the list
-        if let firstVisibleCard = orderedCards.first(where: shouldShowCard),
-           persistor.timesShown(for: firstVisibleCard) >= Constants.maxTimesCardShown,
-           let index = orderedCards.firstIndex(where: { $0 == firstVisibleCard }) {
-            let card = orderedCards.remove(at: index)
-            orderedCards.append(card)
-            persistor.setTimesShown(0, for: card)
+        if let firstVisibleCard = orderedCards.first(where: shouldShowCard) {
+            let cardImpressions = persistor.timesShown(for: firstVisibleCard)
+            if cardImpressions > 0,
+               cardImpressions % Constants.maxTimesCardShown == 0,
+               let index = orderedCards.firstIndex(where: { $0 == firstVisibleCard }) {
+                let card = orderedCards.remove(at: index)
+                orderedCards.append(card)
+            }
         }
 
         // Swap the order of levels if needed.
@@ -395,6 +410,11 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
+                if !isNextStepsCardsComplete {
+                    recordImpression(for: cards.first)
+                    persistor.ntpImpressionCount += 1
+                }
+
                 let buildType = StandardApplicationBuildType()
                 if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
                     // Reset standard card list and mark first session as complete for debug menu reset action, if needed

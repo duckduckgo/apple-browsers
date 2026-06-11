@@ -18,23 +18,48 @@
 
 import NewTabPage
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageNextStepsCardsPixelHandlerTests: XCTestCase {
     private var pixelHandler: NewTabPageNextStepsCardsPixelHandler!
     private var firedPixels: [(event: PixelKitEvent, frequency: PixelKit.Frequency, includesAppVersionParameter: Bool)] = []
+    private var persistor: MockNewTabPageNextStepsCardsPersistor!
+    private var appearancePrefsPersistor: MockAppearancePreferencesPersistor!
+
+    // Test values
+    private let expectedDaysSinceInstall = 0
+    private let expectedNextStepsActiveUsageDays = 1
+    private let expectedCardImpressions = 2
+    private let expectedNTPImpressions = 3
 
     override func setUp() async throws {
         firedPixels = []
-        pixelHandler = NewTabPageNextStepsCardsPixelHandler { event, frequency, includesAppVersionParameter in
+        persistor = MockNewTabPageNextStepsCardsPersistor()
+        persistor.ntpImpressionCount = expectedNTPImpressions
+        appearancePrefsPersistor = MockAppearancePreferencesPersistor(continueSetUpCardsNumberOfDaysDemonstrated: expectedNextStepsActiveUsageDays)
+        let appearancePreferences = AppearancePreferences(
+            persistor: appearancePrefsPersistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let installDate = Date()
+        pixelHandler = NewTabPageNextStepsCardsPixelHandler(persistor: persistor,
+                                                            appearancePreferences: appearancePreferences,
+                                                            installDateProvider: { installDate },
+                                                            pixelHandler: { event, frequency, includesAppVersionParameter in
             self.firedPixels.append((event, frequency, includesAppVersionParameter))
-        }
+        })
     }
 
     override func tearDown() {
         pixelHandler = nil
         firedPixels = []
+        persistor = nil
+        appearancePrefsPersistor = nil
     }
 
     // MARK: - Shown pixels
@@ -151,14 +176,18 @@ final class NewTabPageNextStepsCardsPixelHandlerTests: XCTestCase {
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
-    func testWhenFireNextStepsCardClickedCalled_ForDefaultApp_ThenItFiresPixel() {
+    func testWhenFireNextStepsCardClickedCalled_ForDefaultApp_ThenItFiresPixel() throws {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.defaultApp
+        let expectedEvent = setUpExpectedClickedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardClickedPixel(.defaultApp)
+        pixelHandler.fireNextStepsCardClickedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedEvent = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.defaultApp.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .standard)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
@@ -176,47 +205,63 @@ final class NewTabPageNextStepsCardsPixelHandlerTests: XCTestCase {
     }
 
     func testWhenFireNextStepsCardClickedCalled_ForAddToDock_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.addAppToDockMac
+        let expectedEvent = setUpExpectedClickedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardClickedPixel(.addAppToDockMac)
+        pixelHandler.fireNextStepsCardClickedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedEvent = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.addAppToDockMac.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .standard)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     func testWhenFireNextStepsCardClickedCalled_ForDuckplayer_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.duckplayer
+        let expectedEvent = setUpExpectedClickedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardClickedPixel(.duckplayer)
+        pixelHandler.fireNextStepsCardClickedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.duckplayer.rawValue)
-        XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     func testWhenFireNextStepsCardClickedCalled_ForEmailProtection_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.emailProtection
+        let expectedEvent = setUpExpectedClickedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardClickedPixel(.emailProtection)
+        pixelHandler.fireNextStepsCardClickedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.emailProtection.rawValue)
-        XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     func testWhenFireNextStepsCardClickedCalled_ForBringStuff_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.bringStuff
+        let expectedEvent = setUpExpectedClickedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardClickedPixel(.bringStuff)
+        pixelHandler.fireNextStepsCardClickedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.bringStuff.rawValue)
-        XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
@@ -233,13 +278,17 @@ final class NewTabPageNextStepsCardsPixelHandlerTests: XCTestCase {
     }
 
     func testWhenFireNextStepsCardClickedCalled_ForSubscription_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.subscription
+        let expectedEvent = setUpExpectedClickedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardClickedPixel(.subscription)
+        pixelHandler.fireNextStepsCardClickedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedEvent = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.subscription.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .standard)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
@@ -247,61 +296,81 @@ final class NewTabPageNextStepsCardsPixelHandlerTests: XCTestCase {
     // MARK: - Dismissed pixels
 
     func testWhenFireNextStepsCardDismissedPixelCalled_ForDefaultApp_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.defaultApp
+        let expectedEvent = setUpExpectedDismissedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardDismissedPixel(.defaultApp)
+        pixelHandler.fireNextStepsCardDismissedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedEvent = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.defaultApp.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .standard)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     func testWhenFireNextStepsCardDismissedPixelCalled_ForAddToDock_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.addAppToDockMac
+        let expectedEvent = setUpExpectedDismissedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardDismissedPixel(.addAppToDockMac)
+        pixelHandler.fireNextStepsCardDismissedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedEvent = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.addAppToDockMac.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .standard)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     func testWhenFireNextStepsCardDismissedPixelCalled_ForDuckplayer_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.duckplayer
+        let expectedEvent = setUpExpectedDismissedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardDismissedPixel(.duckplayer)
+        pixelHandler.fireNextStepsCardDismissedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedEvent = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.duckplayer.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .standard)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     func testWhenFireNextStepsCardDismissedPixelCalled_ForEmailProtection_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.emailProtection
+        let expectedEvent = setUpExpectedDismissedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardDismissedPixel(.emailProtection)
+        pixelHandler.fireNextStepsCardDismissedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedEvent = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.emailProtection.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .standard)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     func testWhenFireNextStepsCardDismissedPixelCalled_ForBringStuff_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.bringStuff
+        let expectedEvent = setUpExpectedDismissedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardDismissedPixel(.bringStuff)
+        pixelHandler.fireNextStepsCardDismissedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedEvent = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.bringStuff.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .standard)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
@@ -319,15 +388,39 @@ final class NewTabPageNextStepsCardsPixelHandlerTests: XCTestCase {
     }
 
     func testWhenFireNextStepsCardDismissedPixelCalled_ForSubscription_ThenItFiresPixel() {
+        // GIVEN
+        let card = NewTabPageDataModel.CardID.subscription
+        let expectedEvent = setUpExpectedDismissedEvent(for: card)
+
         // WHEN
-        pixelHandler.fireNextStepsCardDismissedPixel(.subscription)
+        pixelHandler.fireNextStepsCardDismissedPixel(card)
 
         // THEN
         XCTAssertEqual(firedPixels.count, 1)
-        let expectedEvent = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.subscription.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .standard)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
+}
+
+private extension NewTabPageNextStepsCardsPixelHandlerTests {
+    func setUpExpectedClickedEvent(for card: NewTabPageDataModel.CardID) -> PixelKitEvent {
+        persistor.setTimesShown(expectedCardImpressions, for: card)
+        return NewTabPagePixel.nextStepsCardClicked(card.rawValue,
+                                                    cardImpressionCount: expectedCardImpressions,
+                                                    ntpImpressionCount: expectedNTPImpressions,
+                                                    daysSinceInstall: expectedDaysSinceInstall,
+                                                    activeUsageDays: expectedNextStepsActiveUsageDays)
+    }
+
+    func setUpExpectedDismissedEvent(for card: NewTabPageDataModel.CardID) -> PixelKitEvent {
+        persistor.setTimesShown(expectedCardImpressions, for: card)
+        return NewTabPagePixel.nextStepsCardDismissed(card.rawValue,
+                                                      cardImpressionCount: expectedCardImpressions,
+                                                      ntpImpressionCount: expectedNTPImpressions,
+                                                      daysSinceInstall: expectedDaysSinceInstall,
+                                                      activeUsageDays: expectedNextStepsActiveUsageDays)
+    }
 }

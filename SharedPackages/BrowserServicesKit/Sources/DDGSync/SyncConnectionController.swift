@@ -473,11 +473,11 @@ public class SyncConnectionController: SyncConnectionControlling {
     }
 
     private func pollPairingV2UntilFinished(_ coordinator: PairingV2Coordinator,
-                                            onStateUpdate: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
+                                            onDidPoll: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
         try await coordinator.pollUntilFinished(
             timeout: pairingV2PollingTimeout,
             pollInterval: pairingV2PollIntervalNanoseconds,
-            onStateUpdate: onStateUpdate)
+            onDidPoll: onDidPoll)
     }
 
     private func handlePairingV2Completion(_ completion: PairingV2State.Completion,

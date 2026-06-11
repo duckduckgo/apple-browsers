@@ -137,11 +137,11 @@ final class PairingV2Coordinator {
 
     func pollUntilFinished(timeout: TimeInterval = PairingV2PollingDefaults.sessionTimeout,
                            pollInterval: UInt64 = PairingV2PollingDefaults.pollIntervalNanoseconds,
-                           onStateUpdate: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
+                           onDidPoll: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
         let timeoutDate = Date().addingTimeInterval(timeout)
 
         while true {
-            if let completion = try completedPairingOrThrowFailure() {
+            if let completion = try checkPairingCompletion() {
                 return completion
             }
 
@@ -150,8 +150,8 @@ final class PairingV2Coordinator {
             }
 
             try await pollOnce()
-            await onStateUpdate?(state)
-            if let completion = try completedPairingOrThrowFailure() {
+            await onDidPoll?(state)
+            if let completion = try checkPairingCompletion() {
                 return completion
             }
             try await Task.sleep(nanoseconds: pollInterval)
@@ -163,7 +163,7 @@ final class PairingV2Coordinator {
         await closeLocalChannel()
     }
 
-    func closeLocalChannel() async {
+    private func closeLocalChannel() async {
         guard !hasClosedLocalChannel else {
             return
         }
@@ -454,7 +454,7 @@ final class PairingV2Coordinator {
         try requiredLocalKeyPair().channelID
     }
 
-    private func completedPairingOrThrowFailure() throws -> PairingV2State.Completion? {
+    private func checkPairingCompletion() throws -> PairingV2State.Completion? {
         switch stateMachine.state {
         case .completed(let completion):
             return completion

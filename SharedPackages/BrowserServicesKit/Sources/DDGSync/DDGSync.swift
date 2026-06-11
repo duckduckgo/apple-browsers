@@ -311,13 +311,13 @@ public class DDGSync: DDGSyncing {
                                                                                                  deviceType: deviceType)
             do {
                 try updateAccount(result.account)
-                try dependencies.secureStore.persistScopedPassword(result.scopedPassword)
-                updateProtectedKeysCache(with: result.protectedKeys)
-                scheduler.requestSyncImmediately()
             } catch {
                 Logger.sync.error("3party account upgrade failed to persist the native account: \(String(reflecting: error), privacy: .public)")
                 throw error
             }
+            cacheScopedPasswordInBackground(result.scopedPassword)
+            updateProtectedKeysCache(with: result.protectedKeys)
+            scheduler.requestSyncImmediately()
             return result.devices
         } catch {
             throw handleUnauthenticatedAndMap(error)

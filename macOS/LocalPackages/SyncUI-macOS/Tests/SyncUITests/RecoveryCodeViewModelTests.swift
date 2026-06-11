@@ -32,32 +32,6 @@ final class RecoveryCodeViewModelTests: XCTestCase {
         XCTAssertTrue(model.shouldDisableSubmitButton)
     }
 
-    func testWhenRecoveryCodeIsSetThenSubmitButtonIsEnabled() throws {
-        let model = RecoveryCodeViewModel()
-
-        model.setCode("12345")
-        XCTAssertFalse(model.shouldDisableSubmitButton)
-
-        model.setCode("")
-        XCTAssertTrue(model.shouldDisableSubmitButton)
-    }
-
-    func testRecoveryCodeValidation() throws {
-        let model = RecoveryCodeViewModel()
-
-        XCTAssertEqual(model.recoveryCode, "")
-
-        model.setCode("12345")
-        XCTAssertEqual(model.recoveryCode, "12345")
-
-        model.setCode("Y2hhcmFjdGVycw==")
-        XCTAssertEqual(model.recoveryCode, "Y2hhcmFjdGVycw==")
-
-        model.setCode("😍")
-        XCTAssertEqual(model.recoveryCode, "Y2hhcmFjdGVycw==")
-
-    }
-
     func testWhenPastingV2PairingURLThenCodeIsPreserved() {
         let model = RecoveryCodeViewModel()
         let url = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMi4wIn0"

@@ -28,12 +28,6 @@ final public class RecoveryCodeViewModel: ObservableObject {
         }
     }
 
-    func setCode(_ code: String) {
-        if CharacterSet.base64.isSuperset(of: CharacterSet(charactersIn: code)) {
-            recoveryCode = code
-        }
-    }
-
     func paste() {
         guard let code = NSPasteboard.general.string(forType: .string)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -48,10 +42,4 @@ final public class RecoveryCodeViewModel: ObservableObject {
     }
 
     public init() {}
-}
-
-extension CharacterSet {
-    static var base64: CharacterSet {
-        return CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=")
-    }
 }

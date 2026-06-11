@@ -21,6 +21,7 @@ import Combine
 import XCTest
 import AIChat
 @testable import DuckDuckGo
+@testable import Core
 
 @MainActor
 final class AIChatHistoryViewModelTests: XCTestCase {
@@ -136,14 +137,55 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.requestedChatId, "r1")
     }
 
-    func testDeleteChat_notifiesDelegateWithChatId() {
-        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)])
+    func testDeleteChat_invokesFireExecutorBurnChat() {
+        let fireExecutor = MockChatHistoryFireExecutor()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor)
+
+        sut.deleteChat(chatId: "p1")
+        processMainQueue()
+
+        XCTAssertEqual(fireExecutor.burnedChatIds, ["p1"])
+        XCTAssertEqual(fireExecutor.burnedIsFireMode, [false],
+                       "chat-history sheet only ever deletes persistent chats; never fire-mode")
+    }
+
+    func testDeleteChat_noFireExecutor_isNoOp() {
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: nil)
+        // No fire executor (e.g. dependency wasn't plumbed) — must not crash; nothing to assert
+        // beyond that.
+        sut.deleteChat(chatId: "p1")
+        processMainQueue()
+    }
+
+    func testDownloadChat_onSuccess_notifiesDelegateWithWrittenFilename() {
+        let downloader = StubDownloader()
+        downloader.stubbedResult = .success(URL(fileURLWithPath: "/tmp/duck.ai_2026-01-01_00-00-00.txt"))
+        let queue = DispatchQueue(label: "test.download")
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, downloadQueue: queue)
         let delegate = MockDelegate()
         sut.delegate = delegate
 
-        sut.deleteChat(chatId: "p1")
+        sut.downloadChat(chatId: "r1")
+        queue.sync { }       // drain the off-main work
+        processMainQueue()   // drain the hop-back
 
-        XCTAssertEqual(delegate.deletedChatId, "p1")
+        XCTAssertEqual(downloader.requestedChatIds, ["r1"])
+        XCTAssertEqual(delegate.exportedFilenames, ["duck.ai_2026-01-01_00-00-00.txt"])
+    }
+
+    func testDownloadChat_onFailure_doesNotNotifyDelegate() {
+        let downloader = StubDownloader()
+        downloader.stubbedResult = .failure(ChatHistoryDownloader.DownloadError.chatNotFound)
+        let queue = DispatchQueue(label: "test.download")
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, downloadQueue: queue)
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.downloadChat(chatId: "r1")
+        queue.sync { }
+        processMainQueue()
+
+        XCTAssertEqual(delegate.exportedFilenames, [])
     }
 
     // MARK: - Search
@@ -186,6 +228,17 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(sut.recent.count, 1)
     }
 
+    func testUpdateQuery_whitespaceOnly_leavesEffectiveQueryEmpty() {
+        // The filter trims whitespace; `effectiveQuery` must reflect that, otherwise the
+        // VC's no-results-cell check reads a whitespace-only query as a real search and
+        // shows "No matches found" when the user actually just has no chats.
+        let sut = makeSUT(chats: [])
+        sut.updateQuery("   ")
+        waitForDebounce()
+
+        XCTAssertEqual(sut.effectiveQuery, "")
+    }
+
     func testUpdateQuery_whenNoMatches_isEmpty() {
         let sut = makeSUT(chats: [chat(id: "1", title: "Foo", pinned: false)])
 
@@ -211,8 +264,18 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeSUT(chats: [DuckAiChat]) -> AIChatHistoryViewModel {
-        let sut = AIChatHistoryViewModel(reader: MockChatHistoryReader(chats: chats))
+    private func makeSUT(
+        chats: [DuckAiChat],
+        fireExecutor: FireExecuting? = MockChatHistoryFireExecutor(),
+        downloader: ChatHistoryDownloading? = nil,
+        downloadQueue: DispatchQueue = .main
+    ) -> AIChatHistoryViewModel {
+        let sut = AIChatHistoryViewModel(
+            reader: MockChatHistoryReader(chats: chats),
+            fireExecutor: fireExecutor,
+            downloader: downloader,
+            downloadQueue: downloadQueue
+        )
         processMainQueue() // reader delivers on the main queue; let it drain before asserting
         return sut
     }
@@ -243,10 +306,36 @@ final class AIChatHistoryViewModelTests: XCTestCase {
     private final class MockDelegate: AIChatHistoryViewModelDelegate {
         private(set) var didRequestOpenNewChat = false
         private(set) var requestedChatId: String?
-        private(set) var deletedChatId: String?
+        private(set) var exportedFilenames: [String] = []
 
         func viewModelDidRequestOpenNewChat() { didRequestOpenNewChat = true }
         func viewModelDidRequestOpenChat(chatId: String) { requestedChatId = chatId }
-        func viewModelDidRequestDeleteChat(chatId: String) { deletedChatId = chatId }
+        func viewModelDidExportChat(filename: String) { exportedFilenames.append(filename) }
+    }
+
+    private final class MockChatHistoryFireExecutor: FireExecuting {
+        var burnInProgress: Bool = false
+        weak var delegate: FireExecutorDelegate?
+        private(set) var burnedChatIds: [String] = []
+        private(set) var burnedIsFireMode: [Bool] = []
+
+        func prepare(for request: FireRequest) { }
+        func burn(request: FireRequest, applicationState: DataStoreWarmup.ApplicationState) async { }
+        @discardableResult
+        func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> {
+            burnedChatIds.append(chatID)
+            burnedIsFireMode.append(isFireMode)
+            return .success(())
+        }
+    }
+
+    private final class StubDownloader: ChatHistoryDownloading {
+        var stubbedResult: Result<URL, Error> = .success(URL(fileURLWithPath: "/tmp/stub.txt"))
+        private(set) var requestedChatIds: [String] = []
+
+        func downloadChat(chatId: String) throws -> URL {
+            requestedChatIds.append(chatId)
+            return try stubbedResult.get()
+        }
     }
 }

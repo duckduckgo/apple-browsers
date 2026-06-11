@@ -118,8 +118,12 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
     }
 
     func navigation(_ navigation: Navigation, didFailWith error: WKError) {
-        guard navigation.navigationAction.isForMainFrame,
-              let startTime = navigation.siteLoadingStartTime else {
+        // Check `siteLoadingStartTime` first: `navigation.navigationAction` crashes (force-unwrap) when the
+        // navigation has no recorded actions, e.g. a provisional load that failed before it ever started.
+        // `siteLoadingStartTime` is nil for exactly those navigations, so checking it first lets us bail out
+        // before reading `navigationAction`.
+        guard let startTime = navigation.siteLoadingStartTime,
+              navigation.navigationAction.isForMainFrame else {
             return
         }
 

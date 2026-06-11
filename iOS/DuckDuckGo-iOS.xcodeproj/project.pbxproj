@@ -149,6 +149,8 @@
 		312BF6F12E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */; };
 		312E5746283BB04A00C18FA0 /* AutofillEmptySearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312E5745283BB04A00C18FA0 /* AutofillEmptySearchView.swift */; };
 		312F786A2F28C32D006903C7 /* AIChatHistoryManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312F78692F28C32D006903C7 /* AIChatHistoryManagerTests.swift */; };
+		5AB12C3D4E5F60718293A4F1 /* AIChatHistoryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4F2 /* AIChatHistoryViewModelTests.swift */; };
+		5AB12C3D4E5F60718293A4F3 /* ChatHistoryDownloaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4F4 /* ChatHistoryDownloaderTests.swift */; };
 		3132928308A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3132928208A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift */; };
 		3132927F2F9FE38000C3A276 /* FireModeNativeStorageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3132927E2F9FE38000C3A276 /* FireModeNativeStorageController.swift */; };
 		3132928108A0000000C3A276 /* DuckAiNativeStorageContainerMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3132928008A0000000C3A276 /* DuckAiNativeStorageContainerMigration.swift */; };
@@ -2180,6 +2182,7 @@
 		CBAD0F1D2D02EE43006267B8 /* IdleReturnNTPDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F1C2D02EE43006267B8 /* IdleReturnNTPDebugView.swift */; };
 		CBAD0F1F2D02EE45006267B8 /* IdleReturnEvaluatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F1E2D02EE45006267B8 /* IdleReturnEvaluatorTests.swift */; };
 		CBAD0F212D02EE46006267B8 /* EscapeHatchModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F202D02EE46006267B8 /* EscapeHatchModel.swift */; };
+		BEC5B10A1F9E4CF5A889BBDC /* EscapeHatchModelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98109F19E7F142578C327237 /* EscapeHatchModelBuilder.swift */; };
 		CBAD0F232D02EE47006267B8 /* ReturnToTabCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F222D02EE47006267B8 /* ReturnToTabCard.swift */; };
 		CBAD0F252D02EE49006267B8 /* LastBackgroundDateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F242D02EE48006267B8 /* LastBackgroundDateStore.swift */; };
 		CBAD0F272D02EE4B006267B8 /* AfterInactivitySettingStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F262D02EE4A006267B8 /* AfterInactivitySettingStorage.swift */; };
@@ -2244,6 +2247,9 @@
 		5AB12C3D4E5F60718293A4B7 /* AIChatHistoryEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */; };
 		5AB12C3D4E5F60718293A4B9 /* AIChatHistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */; };
 		5AB12C3D4E5F60718293A4BB /* AIChatHistoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4BC /* AIChatHistoryCell.swift */; };
+		5AB12C3D4E5F60718293A4D1 /* AIChatHistoryNoResultsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4D2 /* AIChatHistoryNoResultsCell.swift */; };
+		5AB12C3D4E5F60718293A4E1 /* ChatExportWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4E2 /* ChatExportWriter.swift */; };
+		5AB12C3D4E5F60718293A4E3 /* ChatHistoryDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4E4 /* ChatHistoryDownloader.swift */; };
 		5AB12C3D4E5F60718293A4BF /* MockChatHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4C0 /* MockChatHistoryReader.swift */; };
 		D1A0B0112F92000100A1B001 /* DataImportEntryPointHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0012F92000100A1B001 /* DataImportEntryPointHandlerTests.swift */; };
 		D1A0B0122F92000100A1B001 /* DataImportUserActivityHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0022F92000100A1B001 /* DataImportUserActivityHandlerTests.swift */; };
@@ -2486,6 +2492,7 @@
 		F2B8A10736AA100000C0DE01 /* UnifiedToggleInputAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10936AA100000C0DE01 /* UnifiedToggleInputAttachment.swift */; };
 		F2B8A10836AA100000C0DE01 /* UnifiedToggleInputFileEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10A36AA100000C0DE01 /* UnifiedToggleInputFileEncoder.swift */; };
 		F2DE024241BD443BAA7E32E3 /* AfterInactivityOptionAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3663DD21563403B96D50EF0 /* AfterInactivityOptionAdapter.swift */; };
+		99E2FD79C4FC4D9F8863DCB8 /* LastTabShortcutAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE843090E1154413AF82C75E /* LastTabShortcutAdapter.swift */; };
 		F40F843728C939760081AE75 /* AutofillLoginListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40F843528C938370081AE75 /* AutofillLoginListViewModelTests.swift */; };
 		F4147354283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4147353283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift */; };
 		F41C2DA326C1925700F9A760 /* BookmarksAndFolders.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F41C2DA126C1925600F9A760 /* BookmarksAndFolders.xcdatamodeld */; };
@@ -2804,6 +2811,8 @@
 		312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerDisplayValidatorTests.swift; sourceTree = "<group>"; };
 		312E5745283BB04A00C18FA0 /* AutofillEmptySearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillEmptySearchView.swift; sourceTree = "<group>"; };
 		312F78692F28C32D006903C7 /* AIChatHistoryManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryManagerTests.swift; sourceTree = "<group>"; };
+		5AB12C3D4E5F60718293A4F2 /* AIChatHistoryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryViewModelTests.swift; sourceTree = "<group>"; };
+		5AB12C3D4E5F60718293A4F4 /* ChatHistoryDownloaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatHistoryDownloaderTests.swift; sourceTree = "<group>"; };
 		3132928208A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiNativeStorageContainerMigrationTests.swift; sourceTree = "<group>"; };
 		3132927E2F9FE38000C3A276 /* FireModeNativeStorageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireModeNativeStorageController.swift; sourceTree = "<group>"; };
 		3132928008A0000000C3A276 /* DuckAiNativeStorageContainerMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiNativeStorageContainerMigration.swift; sourceTree = "<group>"; };
@@ -4881,6 +4890,7 @@
 		CBAD0F1C2D02EE43006267B8 /* IdleReturnNTPDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleReturnNTPDebugView.swift; sourceTree = "<group>"; };
 		CBAD0F1E2D02EE45006267B8 /* IdleReturnEvaluatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleReturnEvaluatorTests.swift; sourceTree = "<group>"; };
 		CBAD0F202D02EE46006267B8 /* EscapeHatchModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscapeHatchModel.swift; sourceTree = "<group>"; };
+		98109F19E7F142578C327237 /* EscapeHatchModelBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscapeHatchModelBuilder.swift; sourceTree = "<group>"; };
 		CBAD0F222D02EE47006267B8 /* ReturnToTabCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnToTabCard.swift; sourceTree = "<group>"; };
 		CBAD0F242D02EE48006267B8 /* LastBackgroundDateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastBackgroundDateStore.swift; sourceTree = "<group>"; };
 		CBAD0F262D02EE4A006267B8 /* AfterInactivitySettingStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterInactivitySettingStorage.swift; sourceTree = "<group>"; };
@@ -5042,6 +5052,7 @@
 		E1A4A4D42F2A111100AA11BB /* TabViewController+UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabViewController+UI.swift"; sourceTree = "<group>"; };
 		E29382A31F7E094527FD807C /* IPadTabChatHistoryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadTabChatHistoryCoordinator.swift; sourceTree = "<group>"; };
 		E3663DD21563403B96D50EF0 /* AfterInactivityOptionAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterInactivityOptionAdapter.swift; sourceTree = "<group>"; };
+		CE843090E1154413AF82C75E /* LastTabShortcutAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastTabShortcutAdapter.swift; sourceTree = "<group>"; };
 		E44F90E856A0488A976B6AFE /* FileCorruptErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCorruptErrorView.swift; sourceTree = "<group>"; };
 		E7971E90992B46FABF42A908 /* AIChatContextualWebViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualWebViewControllerTests.swift; sourceTree = "<group>"; };
 		EA39B7E1268A1A35000C62CD /* privacy-reference-tests */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder; name = "privacy-reference-tests"; path = "../SharedPackages/BrowserServicesKit/Tests/BrowserServicesKitTests/Resources/privacy-reference-tests"; sourceTree = SOURCE_ROOT; };
@@ -5050,6 +5061,9 @@
 		5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryEmptyStateView.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryViewModel.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4BC /* AIChatHistoryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryCell.swift; sourceTree = "<group>"; };
+		5AB12C3D4E5F60718293A4D2 /* AIChatHistoryNoResultsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryNoResultsCell.swift; sourceTree = "<group>"; };
+		5AB12C3D4E5F60718293A4E2 /* ChatExportWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatExportWriter.swift; sourceTree = "<group>"; };
+		5AB12C3D4E5F60718293A4E4 /* ChatHistoryDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatHistoryDownloader.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4C0 /* MockChatHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockChatHistoryReader.swift; sourceTree = "<group>"; };
 		EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DomainMatchingTests.swift; sourceTree = "<group>"; };
 		ED225CDF2F9FCBA500B6E6CB /* MockSyncSetupExperimentPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSyncSetupExperimentPixelFiring.swift; sourceTree = "<group>"; };
@@ -5875,6 +5889,8 @@
 				C14414782EB11A100057F921 /* AIChatFullModeFeatureTests.swift */,
 				C14414822EB11A100057F921 /* AIChatIPadTabFeatureTests.swift */,
 				312F78692F28C32D006903C7 /* AIChatHistoryManagerTests.swift */,
+				5AB12C3D4E5F60718293A4F2 /* AIChatHistoryViewModelTests.swift */,
+				5AB12C3D4E5F60718293A4F4 /* ChatHistoryDownloaderTests.swift */,
 				3132928208A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift */,
 				C12B671F2EC0BDD9003B80DD /* AIChatContentHandlerTests.swift */,
 				B8BCE5B1BA2A40AFBD9B2FDF /* AIBoundaryNavigationDecisionTests.swift */,
@@ -5921,6 +5937,9 @@
 				5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */,
 				5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */,
 				5AB12C3D4E5F60718293A4BC /* AIChatHistoryCell.swift */,
+				5AB12C3D4E5F60718293A4D2 /* AIChatHistoryNoResultsCell.swift */,
+				5AB12C3D4E5F60718293A4E2 /* ChatExportWriter.swift */,
+				5AB12C3D4E5F60718293A4E4 /* ChatHistoryDownloader.swift */,
 				31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */,
 				C150EB1F2F0D814C00A98C97 /* AIChatFeatureFlagProvider.swift */,
 				316AA4592CF8E31F00A2ED28 /* AIChatSettings.swift */,
@@ -10059,6 +10078,7 @@
 				CBAD0F262D02EE4A006267B8 /* AfterInactivitySettingStorage.swift */,
 				CBAD0F2A2D02EE4D006267B8 /* AfterInactivityEffectiveOptionResolver.swift */,
 				E3663DD21563403B96D50EF0 /* AfterInactivityOptionAdapter.swift */,
+				CE843090E1154413AF82C75E /* LastTabShortcutAdapter.swift */,
 				CBAD0F3A2D02EE5B006267B8 /* IdleReturnCohort.swift */,
 				CBAD0F2C2D02EE4F006267B8 /* IdleReturnEligibilityManager.swift */,
 				E0742FD8DD5F46AB8243103F /* NTPAfterIdleInstrumentation.swift */,
@@ -10689,6 +10709,7 @@
 				6FE127372C20492500EB5724 /* NewTabPage.swift */,
 				6FD8E51F2C5BA23200345670 /* NewTabPageViewModel.swift */,
 				CBAD0F202D02EE46006267B8 /* EscapeHatchModel.swift */,
+				98109F19E7F142578C327237 /* EscapeHatchModelBuilder.swift */,
 				B5E5F7422FB6362D00A318E7 /* EscapeHatchModel+Previews.swift */,
 				CBAD0F222D02EE47006267B8 /* ReturnToTabCard.swift */,
 				6F5041C82CC11A5100989E48 /* NewTabPageView.swift */,
@@ -12623,6 +12644,7 @@
 				CBAD0F272D02EE4B006267B8 /* AfterInactivitySettingStorage.swift in Sources */,
 				CBAD0F2B2D02EE4E006267B8 /* AfterInactivityEffectiveOptionResolver.swift in Sources */,
 				F2DE024241BD443BAA7E32E3 /* AfterInactivityOptionAdapter.swift in Sources */,
+				99E2FD79C4FC4D9F8863DCB8 /* LastTabShortcutAdapter.swift in Sources */,
 				5B6D651A2FB4BB8000BDCF4D /* ICSFileReader.swift in Sources */,
 				CBAD0F3B2D02EE5B006267B8 /* IdleReturnCohort.swift in Sources */,
 				80A09D522F6B854400AACDEE /* URLCacheFireWorker.swift in Sources */,
@@ -12785,6 +12807,7 @@
 				F4D9C4FA25117A0F00814B71 /* HomeMessageStorage.swift in Sources */,
 				6F5041C92CC11A5100989E48 /* NewTabPageView.swift in Sources */,
 				CBAD0F212D02EE46006267B8 /* EscapeHatchModel.swift in Sources */,
+				BEC5B10A1F9E4CF5A889BBDC /* EscapeHatchModelBuilder.swift in Sources */,
 				CBAD0F232D02EE47006267B8 /* ReturnToTabCard.swift in Sources */,
 				BFA000022F90000000FEEE01 /* FreemiumPIREligibility.swift in Sources */,
 				D69FBF762B28BE3600B505F1 /* SettingsSubscriptionView.swift in Sources */,
@@ -13271,6 +13294,9 @@
 				5AB12C3D4E5F60718293A4B7 /* AIChatHistoryEmptyStateView.swift in Sources */,
 				5AB12C3D4E5F60718293A4B9 /* AIChatHistoryViewModel.swift in Sources */,
 				5AB12C3D4E5F60718293A4BB /* AIChatHistoryCell.swift in Sources */,
+				5AB12C3D4E5F60718293A4D1 /* AIChatHistoryNoResultsCell.swift in Sources */,
+				5AB12C3D4E5F60718293A4E1 /* ChatExportWriter.swift in Sources */,
+				5AB12C3D4E5F60718293A4E3 /* ChatHistoryDownloader.swift in Sources */,
 				9F0B19B72EA5E74F001FA867 /* ModalPromptCoordinationManager.swift in Sources */,
 				CBD4F13C279EBF4A00B20FD7 /* HomeMessage.swift in Sources */,
 				6FB2A67E2C2DAFB4004D20C8 /* NewTabPageGridView.swift in Sources */,
@@ -14110,6 +14136,8 @@
 				CBCCF96828885DEE006F4A71 /* AppPrivacyConfigurationTests.swift in Sources */,
 				F0A200012F31000100BAD001 /* NewBadgeVisibilityManagerTests.swift in Sources */,
 				312F786A2F28C32D006903C7 /* AIChatHistoryManagerTests.swift in Sources */,
+				5AB12C3D4E5F60718293A4F1 /* AIChatHistoryViewModelTests.swift in Sources */,
+				5AB12C3D4E5F60718293A4F3 /* ChatHistoryDownloaderTests.swift in Sources */,
 				3132928308A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift in Sources */,
 				6F40D15E2C34436500BF22F0 /* HomePageDisplayDailyPixelBucketTests.swift in Sources */,
 				310742AB2848E6FD0012660B /* BackForwardMenuHistoryItemURLSanitizerTests.swift in Sources */,

@@ -744,7 +744,6 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
 
 private extension UITextView {
 
-    /// True when the caret sits on the last visual line, so Down has no line below to move into.
     var isCaretOnLastLine: Bool {
         guard let selectedTextRange else { return true }
         let caretMaxY = caretRect(for: selectedTextRange.end).maxY
@@ -756,7 +755,6 @@ private extension UITextView {
 
 private extension UIKeyCommand {
 
-    /// An arrow-key command that takes priority over the system/text-view default for that key.
     static func prioritizedArrow(input: String, action: Selector) -> UIKeyCommand {
         let command = UIKeyCommand(action: action, input: input, modifierFlags: [])
         command.wantsPriorityOverSystemBehavior = true

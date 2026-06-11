@@ -39,7 +39,7 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
 
     var isExcludeCGNATAvailable: Bool {
-        featureFlagger.isFeatureOn(.vpnExcludeCGNAT)
+        featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle)
     }
 
     private var notificationsAuthorization: NotificationsAuthorizationControlling
@@ -118,7 +118,7 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
 
     @MainActor
     func onViewAppeared() async {
-        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNAT))
+        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
         let status = await notificationsAuthorization.authorizationStatus
         updateViewKind(for: status)
     }

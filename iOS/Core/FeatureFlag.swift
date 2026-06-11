@@ -218,9 +218,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
 
-    /// Gates the "Exclude Carrier-Grade NAT" VPN toggle (internal-only).
+    /// Gates the "Exclude Carrier-Grade NAT" VPN toggle.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
-    case vpnExcludeCGNAT
+    case vpnExcludeCGNATToggle
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
@@ -636,8 +636,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .vpnMenuItem:
             Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
-        case .vpnExcludeCGNAT:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT))
+        case .vpnExcludeCGNATToggle:
+            Config(defaultValue: .enabled, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:

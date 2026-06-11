@@ -50,7 +50,7 @@ final class NewTabPageNextStepsCardsPixelHandlerTests: XCTestCase {
         pixelHandler = NewTabPageNextStepsCardsPixelHandler(persistor: persistor,
                                                             appearancePreferences: appearancePreferences,
                                                             installDateProvider: { installDate },
-                                                            pixelHandler:  { event, frequency, includesAppVersionParameter in
+                                                            pixelHandler: { event, frequency, includesAppVersionParameter in
             self.firedPixels.append((event, frequency, includesAppVersionParameter))
         })
     }

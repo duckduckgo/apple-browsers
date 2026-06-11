@@ -63,6 +63,47 @@ final class JWECompactCodecTests: XCTestCase {
         XCTAssertEqual(decrypted, payload)
     }
 
+    func testWhenRoundTrippingRSAOAEP256ModeThenRecoversPayloadAndProducesExpectedCompactShape() throws {
+        let codec = JWECompactCodec()
+        let keyPair = try RSAKeyPairGenerator.makeKeyPair()
+        let payload = Data(#"{"type":"hello"}"#.utf8)
+        let contentEncryptionKey = Data(repeating: 0x4C, count: 32)
+        let iv = Data(repeating: 0x3D, count: 12)
+        let kid = "sender-channel"
+
+        let token = try codec.encryptRSAOAEP256(payload: payload,
+                                                recipientPublicKey: keyPair.publicKey,
+                                                kid: kid,
+                                                contentEncryptionKey: contentEncryptionKey,
+                                                iv: iv)
+        let parts = token.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
+        let decrypted = try codec.decryptRSAOAEP256(token: token,
+                                                    privateKey: keyPair.privateKey,
+                                                    expectedKid: kid)
+        let decodedIV = try XCTUnwrap(base64URLDecode(parts[2]))
+
+        XCTAssertEqual(parts.count, 5)
+        XCTAssertEqual(parts[0], JWECompactCodec.encodedRSAOAEP256ProtectedHeader(kid: kid))
+        XCTAssertFalse(parts[1].isEmpty)
+        XCTAssertEqual(decodedIV, iv)
+        XCTAssertFalse(parts[3].isEmpty)
+        XCTAssertEqual(decrypted, payload)
+    }
+
+    func testWhenDecryptingRSAOAEP256TokenWithUnexpectedKidThenThrows() throws {
+        let codec = JWECompactCodec()
+        let keyPair = try RSAKeyPairGenerator.makeKeyPair()
+        let token = try codec.encryptRSAOAEP256(payload: Data("payload".utf8),
+                                                recipientPublicKey: keyPair.publicKey,
+                                                kid: "expected-sender")
+
+        XCTAssertThrowsError(try codec.decryptRSAOAEP256(token: token,
+                                                         privateKey: keyPair.privateKey,
+                                                         expectedKid: "other-sender")) { error in
+            XCTAssertEqual(error as? JWECompactCodecError, .unsupportedProtectedHeader)
+        }
+    }
+
     func testWhenDecryptingDirectTokenWithWrongPartCountThenThrows() throws {
         let codec = JWECompactCodec()
         let contentEncryptionKey = Data(repeating: 0x2B, count: 32)

@@ -100,9 +100,6 @@
 /* Device SyncedSheet Button to go get DuckDuckGo on other devices */
 "device.synced.sheet.button.get.other.devices" = "Get DuckDuckGo on Other Devices";
 
-/* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Your data is synced!";
-
 /* Standard Buttons - Done Button */
 "done.button" = "Done";
 

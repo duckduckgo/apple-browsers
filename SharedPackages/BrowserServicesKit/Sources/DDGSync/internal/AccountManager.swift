@@ -19,6 +19,7 @@
 import Foundation
 import DDGSyncCrypto
 import Networking
+import os.log
 
 struct AccountManager: AccountManaging {
 
@@ -217,12 +218,15 @@ struct AccountManager: AccountManaging {
                 token: token,
                 state: .addingNewDevice
             ),
-            devices: try result.devices.map {
-                RegisteredDevice(
-                    id: $0.id,
-                    name: try crypter.base64DecodeAndDecrypt($0.name, using: info.primaryKey),
-                    type: try crypter.base64DecodeAndDecrypt($0.type, using: info.primaryKey)
-                )
+            devices: result.devices.compactMap { device in
+                // Prevent devices with `null` type from blocking login while the V2 device payload is in flux.
+                guard let encryptedType = device.type,
+                      let name = try? crypter.base64DecodeAndDecrypt(device.name, using: info.primaryKey),
+                      let type = try? crypter.base64DecodeAndDecrypt(encryptedType, using: info.primaryKey) else {
+                    return nil
+                }
+
+                return RegisteredDevice(id: device.id, name: name, type: type)
             },
             keys: result.keys,
             accessCredentials: result.accessCredentials
@@ -251,11 +255,17 @@ struct AccountManager: AccountManaging {
     struct Login {
 
         struct Result: Decodable {
-            let devices: [RegisteredDevice]
+            let devices: [Device]
             let token: String
             let protectedEncryptionKey: String
             let accessCredentials: [AccessCredential]?
             let keys: [ProtectedKey]?
+        }
+
+        struct Device: Decodable {
+            let id: String
+            let name: String
+            let type: String?
         }
 
         struct Parameters: Encodable {

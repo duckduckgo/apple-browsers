@@ -63,7 +63,11 @@ public class DDGSync: DDGSyncing {
     }
 
     public var recoveryCode: String? {
-        account?.recoveryCode
+        guard dependencies.syncFeatureFlags.isPairingV2ScanningEnabled(),
+              dependencies.syncFeatureFlags.isPairingV2CodeEnabled() else {
+            return account?.legacyRecoveryCodeV1
+        }
+        return account?.recoveryCodeV2
     }
 
     public var scheduler: Scheduling {
@@ -87,14 +91,14 @@ public class DDGSync: DDGSyncing {
                             privacyConfigurationManager: PrivacyConfigurationManaging,
                             keyValueStore: ThrowingKeyValueStoring,
                             environment: ServerEnvironment = .production,
-                            isScopedAccessCredentialsEnabled: @escaping () -> Bool = { false },
+                            syncFeatureFlags: any SyncFeatureFlagProviding,
                             shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool = { false }) {
         let dependencies = ProductionDependencies(
             serverEnvironment: environment,
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: keyValueStore,
             errorEvents: errorEvents,
-            isScopedAccessCredentialsEnabled: isScopedAccessCredentialsEnabled,
+            syncFeatureFlags: syncFeatureFlags,
             shouldPreserveAccountWhenSyncDisabled: shouldPreserveAccountWhenSyncDisabled
         )
         self.init(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
@@ -279,9 +283,6 @@ public class DDGSync: DDGSyncing {
     }
 
     public func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
-        guard dependencies.isScopedAccessCredentialsEnabled() else {
-            throw SyncError.failedToEncryptValue("scopedAccessCredentials feature is disabled")
-        }
         guard let account else {
             throw SyncError.accountNotFound
         }
@@ -289,8 +290,35 @@ public class DDGSync: DDGSyncing {
         do {
             let scopedPassword = try await ensureThirdPartyScopedPassword(for: account, purpose: purpose)
             let code = try makeThirdPartyRecoveryCode(account: account, scopedPassword: scopedPassword)
-            try dependencies.secureStore.persistScopedPassword(scopedPassword)
+            cacheScopedPasswordInBackground(scopedPassword)
             return code
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String,
+                                                            deviceName: String,
+                                                            deviceType: String) async throws -> [RegisteredDevice] {
+        guard try dependencies.secureStore.account() == nil else {
+            throw SyncError.accountAlreadyExists
+        }
+
+        do {
+            let upgradeCoordinator = dependencies.createThirdPartyAccountUpgradeCoordinator()
+            let result = try await upgradeCoordinator.upgradeThirdPartyAccountToDefaultCredential(recoveryCode,
+                                                                                                 deviceName: deviceName,
+                                                                                                 deviceType: deviceType)
+            do {
+                try updateAccount(result.account)
+            } catch {
+                Logger.sync.error("3party account upgrade failed to persist the native account: \(String(reflecting: error), privacy: .public)")
+                throw error
+            }
+            cacheScopedPasswordInBackground(result.scopedPassword)
+            updateProtectedKeysCache(with: result.protectedKeys)
+            scheduler.requestSyncImmediately()
+            return result.devices
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }
@@ -574,7 +602,7 @@ public class DDGSync: DDGSyncing {
     }
 
     private func persistRecoveredThirdPartyScopedPasswordIfAvailable(from accessCredentials: [AccessCredential]?, account: SyncAccount) {
-        guard dependencies.isScopedAccessCredentialsEnabled() else {
+        guard dependencies.syncFeatureFlags.isScopedAccessCredentialsEnabled() else {
             return
         }
 
@@ -612,6 +640,13 @@ public class DDGSync: DDGSyncing {
             throw SyncError.invalidRecoveryKey
         }
         return code
+    }
+
+    private func cacheScopedPasswordInBackground(_ scopedPassword: Data) {
+        let secureStore = dependencies.secureStore
+        Task {
+            try? secureStore.persistScopedPassword(scopedPassword)
+        }
     }
 
     public func setCustomOperations(_ operations: [any SyncCustomOperation]) {

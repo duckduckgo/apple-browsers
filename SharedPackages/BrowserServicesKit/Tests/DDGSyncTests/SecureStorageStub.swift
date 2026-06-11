@@ -27,6 +27,8 @@ class SecureStorageStub: SecureStoring {
 
     var mockReadError: SyncError?
     var mockWriteError: SyncError?
+    var persistScopedPasswordCalls: [Data] = []
+    var persistScopedPasswordCalled: (() -> Void)?
 
     func persistAccount(_ account: SyncAccount) throws {
         if let mockWriteError {
@@ -50,6 +52,10 @@ class SecureStorageStub: SecureStoring {
     }
 
     func persistScopedPassword(_ scopedPassword: Data) throws {
+        persistScopedPasswordCalls.append(scopedPassword)
+        defer {
+            persistScopedPasswordCalled?()
+        }
         if let mockWriteError {
             throw mockWriteError
         }

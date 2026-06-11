@@ -171,6 +171,16 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws
 
     /**
+     Creates a scoped recovery code for a third-party client pairing flow.
+     */
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String
+
+    /**
+     Upgrades a third-party account recovery code into a default DDG Sync account.
+     */
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> [RegisteredDevice]
+
+    /**
      Rescopes the Main Token into given scope to allow data access for models/endpoints associated with that scope.
      */
     func mainTokenRescope(to scope: String) async throws -> String?
@@ -267,12 +277,6 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
 public protocol DDGSyncingDebuggingSupport {
     var serverEnvironment: ServerEnvironment { get }
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment)
-}
-
-public extension DDGSyncing {
-    var recoveryCode: String? {
-        account?.recoveryCode
-    }
 }
 
 public enum ServerEnvironment: LosslessStringConvertible {

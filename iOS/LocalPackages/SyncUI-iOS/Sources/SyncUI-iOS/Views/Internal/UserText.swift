@@ -123,7 +123,7 @@ public struct UserText {
     static let autoRestoreFooter = NSLocalizedString("auto.restore.toggle.footer", bundle: Bundle.module, value: "Restore your data automatically if you reinstall the app. Sync & Backup data can’t be recovered after 18 months of inactivity.", comment: "Auto-restore section - Footer")
 
     // Device Synced Sheet
-    static let deviceSyncedSheetTitle = NSLocalizedString("device.synced.sheet.title", bundle: Bundle.module, value: "Your data is synced!", comment: "Device SyncedSheet - Title")
+    static let deviceSyncedSheetTitle = NotLocalizedString("device.synced.sheet.title", bundle: Bundle.module, value: "Device synced!", comment: "Device SyncedSheet - Title")
     static let deviceSyncedSheetGetOnOtherDevicesButton = NSLocalizedString("device.synced.sheet.button.get.other.devices", bundle: Bundle.module, value: "Get DuckDuckGo on Other Devices", comment: "Device SyncedSheet Button to go get DuckDuckGo on other devices")
 
     // Recover Synced Data Sheet

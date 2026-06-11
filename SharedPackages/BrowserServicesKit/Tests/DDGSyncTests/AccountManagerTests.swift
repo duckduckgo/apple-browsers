@@ -218,6 +218,41 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(result.accessCredentials?.first?.encrypted3PartyCredential, "encrypted")
     }
 
+    func testWhenLoginResponseIncludesDeviceWithoutTypeThenDeviceIsSkipped() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.login] = makeJSONRequest("""
+        {
+            "devices": [
+                {
+                    "id": "valid-device",
+                    "name": "encrypted_iPhone",
+                    "type": "encrypted_iOS"
+                },
+                {
+                    "id": "missing-type-device",
+                    "name": "Python client",
+                    "type": null
+                }
+            ],
+            "token": "token-1",
+            "protected_encryption_key": ""
+        }
+        """)
+
+        let result = try await accountManager.login(.init(userId: "user-1", primaryKey: Data()),
+                                                   deviceName: "iPhone",
+                                                   deviceType: "iOS")
+
+        XCTAssertEqual(result.devices.map(\.id), ["valid-device"])
+        XCTAssertEqual(result.devices.map(\.name), ["iPhone"])
+        XCTAssertEqual(result.devices.map(\.type), ["iOS"])
+    }
+
     func testWhenLoggingInWithScopedAccessCredentialsEnabledThenLoginRequestIncludesSyncScope() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)

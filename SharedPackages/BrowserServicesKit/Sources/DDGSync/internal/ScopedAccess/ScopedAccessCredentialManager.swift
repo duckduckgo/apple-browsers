@@ -19,6 +19,7 @@
 import CryptoKit
 import Foundation
 
+/// Creates and recovers the scoped ("3party") access credential and its protected keys that let a limited client share a sync account.
 struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
 
     let endpoints: Endpoints
@@ -32,7 +33,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
             return nil
         }
         guard let encryptedCredential = thirdPartyCredential.encrypted3PartyCredential, !encryptedCredential.isEmpty else {
-            throw SyncError.invalidDataInResponse("3P access credential missing encrypted3_party_credential")
+            throw SyncError.invalidDataInResponse("3P access credential missing encrypted_3party_credential")
         }
         let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: primaryKey, userID: userID)
         return try scopedAccessCredentialEnvelope.decryptScopedPassword(from: encryptedCredential, using: defaultCredentialMainKey)
@@ -97,7 +98,6 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
                                                                      account: account,
                                                                      shouldUploadDefaultCredentialKeys: shouldUploadDefaultCredentialKeys)
             .removingDuplicateWrappingIdentities()
-            .map(ProtectedKeyPayload.init)
 
         do {
             try await postThirdPartyAccessCredential(token: token,
@@ -238,7 +238,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
                                                 hashedPassword: String,
                                                 credentialHashedPassword: String,
                                                 encryptedThirdPartyCredential: String,
-                                                keys: [ProtectedKeyPayload]) async throws {
+                                                keys: [ProtectedKey]) async throws {
         let params = CreateThirdPartyCredentialParameters(
             hashedPassword: hashedPassword,
             credentialHashedPassword: credentialHashedPassword,
@@ -368,27 +368,11 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         let accessCredentials: [AccessCredential]?
     }
 
-    struct ProtectedKeyPayload: Encodable {
-        let kid: String
-        let purpose: String
-        let encryptedPrivateKey: String
-        let publicKey: ProtectedKeyPublicKey
-        let encryptedWith: String
-
-        init(key: ProtectedKey) {
-            self.kid = key.kid
-            self.purpose = key.purpose
-            self.encryptedPrivateKey = key.encryptedPrivateKey
-            self.publicKey = key.publicKey
-            self.encryptedWith = key.encryptedWith
-        }
-    }
-
     struct CreateThirdPartyCredentialParameters: Encodable {
         let hashedPassword: String
         let credentialHashedPassword: String
         let encrypted3partyCredential: String
-        let keys: [ProtectedKeyPayload]
+        let keys: [ProtectedKey]
 
         enum CodingKeys: String, CodingKey {
             case hashedPassword = "hashed_password"
@@ -399,11 +383,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
     }
 
     struct SetKeyIfAbsentParameters: Encodable {
-        let keys: [ProtectedKeyPayload]
-
-        init(keys: [ProtectedKey]) {
-            self.keys = keys.map(ProtectedKeyPayload.init)
-        }
+        let keys: [ProtectedKey]
     }
 
     struct SetKeyIfAbsentResult: Decodable {
@@ -423,9 +403,12 @@ struct EnsuredThirdPartyCredential {
     let protectedKeysToCache: [ProtectedKey]
 }
 
-private enum ScopedAccessKeyDerivation {
+/// Derives the scoped credential's hashed password and main key from a secret via HKDF-SHA256, salted by user ID.
+enum ScopedAccessKeyDerivation {
 
+    /// HKDF `info` label distinguishing the password-hash derivation.
     private static let passwordInfo = "Password"
+    /// HKDF `info` label distinguishing the main-key derivation.
     private static let mainKeyInfo = "Main Key"
 
     static func hashedPassword(from secret: Data, userID: String) -> String {

@@ -2118,9 +2118,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             keyValueStore: keyValueStore,
             environment: environment,
-            isScopedAccessCredentialsEnabled: { [featureFlagger] in
-                featureFlagger.isFeatureOn(.syncScopedAccessCredentials)
-            }
+            syncFeatureFlags: SyncFeatureFlagProvider(
+                isScopedAccessCredentialsEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncScopedAccessCredentials)
+                },
+                isPairingV2ScanningEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow)
+                },
+                isPairingV2CodeEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanShowV2ConnectCode)
+                }
+            )
         )
         let aiChatSyncCleaner = AIChatSyncCleaner(
             sync: syncService,

@@ -68,8 +68,10 @@ extension LoginResult {
 }
 
 class AccountManagingMock: AccountManaging {
+    var createAccountCalls: [(deviceName: String, deviceType: String)] = []
     var createAccountError: Error?
     func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
+        createAccountCalls.append((deviceName: deviceName, deviceType: deviceType))
         if let error = createAccountError {
             throw error
         }
@@ -102,7 +104,14 @@ class AccountManagingMock: AccountManaging {
         return refreshTokenStub ?? .mock
     }
 
-    func logout(deviceId: String, token: String) async throws {}
+    var logoutCalls: [(deviceId: String, token: String)] = []
+    var logoutError: Error?
+    func logout(deviceId: String, token: String) async throws {
+        logoutCalls.append((deviceId: deviceId, token: token))
+        if let logoutError {
+            throw logoutError
+        }
+    }
 
     func fetchDevicesForAccount(_ account: SyncAccount) async throws -> [RegisteredDevice] {
         [.mock]
@@ -237,6 +246,13 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var errorEvents: EventMapping<SyncError> = MockErrorHandler()
     var shouldPreserveAccountWhenSyncDisabled: () -> Bool = { false }
     var isScopedAccessCredentialsEnabled: () -> Bool = { true }
+    var isPairingV2ScanningEnabled: () -> Bool = { true }
+    var isPairingV2CodeEnabled: () -> Bool = { true }
+    lazy var syncFeatureFlags: any SyncFeatureFlagProviding = SyncFeatureFlagProvider(
+        isScopedAccessCredentialsEnabled: { [weak self] in self?.isScopedAccessCredentialsEnabled() == true },
+        isPairingV2ScanningEnabled: { [weak self] in self?.isPairingV2ScanningEnabled() == true },
+        isPairingV2CodeEnabled: { [weak self] in self?.isPairingV2CodeEnabled() == true }
+    )
     var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
     var legacyKeyValueStore: KeyValueStoring = MockKeyValueStore()
 
@@ -276,6 +292,18 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         createExchangeRecoveryKeyTransmitterStub ?? MockExchangeRecoveryKeyTransmitting()
     }
 
+    var createPairingV2MessageExchangerStub: PairingV2MessageExchanging?
+    var createPairingV2MessageExchangerCallCount = 0
+    func createPairingV2MessageExchanger() -> PairingV2MessageExchanging {
+        createPairingV2MessageExchangerCallCount += 1
+        return createPairingV2MessageExchangerStub ?? PairingV2MessageExchangingMock()
+    }
+
+    var createThirdPartyAccountUpgradeCoordinatorStub: ThirdPartyAccountUpgradeCoordinating?
+    func createThirdPartyAccountUpgradeCoordinator() -> ThirdPartyAccountUpgradeCoordinating {
+        createThirdPartyAccountUpgradeCoordinatorStub ?? ThirdPartyAccountUpgradeCoordinatingMock()
+    }
+
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment) {}
 
     var createTokenRescopeStub: TokenRescoping?
@@ -288,6 +316,51 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         createAIChatsStub ?? MockAIChatsHandling()
     }
 
+}
+
+final class PairingV2MessageExchangingMock: PairingV2MessageExchanging {
+    var openChannelCalls: [String] = []
+    var openChannelHandler: ((String) async throws -> Void)?
+    var sendCalls: [(messages: [PairingV2EncryptedMessage], channelID: String)] = []
+    var sendHandler: (([PairingV2EncryptedMessage], String) async throws -> Void)?
+    var sendError: Error?
+    var fetchMessagesCalls: [(channelID: String, sequence: Int)] = []
+    var fetchMessagesHandler: ((String, Int) async throws -> [PairingV2SequencedMessage])?
+    var fetchMessagesStub: [PairingV2SequencedMessage] = []
+    var fetchMessagesError: Error?
+    var closeChannelCalls: [String] = []
+    var closeChannelHandler: ((String) async throws -> Void)?
+
+    func openChannel(_ channelID: String) async throws {
+        openChannelCalls.append(channelID)
+        try await openChannelHandler?(channelID)
+    }
+
+    func send(_ messages: [PairingV2EncryptedMessage], to channelID: String) async throws {
+        sendCalls.append((messages: messages, channelID: channelID))
+        if let sendError {
+            throw sendError
+        }
+        if let sendHandler {
+            try await sendHandler(messages, channelID)
+        }
+    }
+
+    func fetchMessages(from channelID: String, after sequence: Int) async throws -> [PairingV2SequencedMessage] {
+        fetchMessagesCalls.append((channelID: channelID, sequence: sequence))
+        if let fetchMessagesError {
+            throw fetchMessagesError
+        }
+        if let fetchMessagesHandler {
+            return try await fetchMessagesHandler(channelID, sequence)
+        }
+        return fetchMessagesStub
+    }
+
+    func closeChannel(_ channelID: String) async throws {
+        closeChannelCalls.append(channelID)
+        try await closeChannelHandler?(channelID)
+    }
 }
 
 final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
@@ -376,6 +449,25 @@ final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
     }
 }
 
+final class ThirdPartyAccountUpgradeCoordinatingMock: ThirdPartyAccountUpgradeCoordinating {
+    var upgradeThirdPartyAccountCalls: [(recoveryCode: String, deviceName: String, deviceType: String)] = []
+    var upgradeThirdPartyAccountStub = UpgradedThirdPartyAccount(account: .mock,
+                                                                devices: [.mock],
+                                                                scopedPassword: Data(repeating: 1, count: 32),
+                                                                protectedKeys: [])
+    var upgradeThirdPartyAccountError: Error?
+
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String,
+                                                     deviceName: String,
+                                                     deviceType: String) async throws -> UpgradedThirdPartyAccount {
+        upgradeThirdPartyAccountCalls.append((recoveryCode: recoveryCode, deviceName: deviceName, deviceType: deviceType))
+        if let upgradeThirdPartyAccountError {
+            throw upgradeThirdPartyAccountError
+        }
+        return upgradeThirdPartyAccountStub
+    }
+}
+
 final class MockRemoteConnecting: RemoteConnecting {
     var code: String = ""
 
@@ -392,7 +484,7 @@ final class MockRemoteConnecting: RemoteConnecting {
 
     var stopPollingCalled = 0
     func stopPolling() {
-        pollForRecoveryKeyCalled += 1
+        stopPollingCalled += 1
     }
 }
 
@@ -614,6 +706,10 @@ struct CryptingMock: CryptingInternal {
     var _extractLoginInfo: (SyncCode.RecoveryKey) throws -> ExtractedLoginInfo = { _ in
         ExtractedLoginInfo(userId: "user", primaryKey: Data(), passwordHash: Data(), stretchedPrimaryKey: Data())
     }
+    var _createAccountCreationKeys: (String, String) throws -> AccountCreationKeys = { _, _ in
+        AccountCreationKeys(primaryKey: Data(), secretKey: Data(), protectedSecretKey: Data(), passwordHash: Data())
+    }
+    var _extractSecretKey: (Data, Data) throws -> Data = { _, _ in Data() }
 
     func fetchSecretKey() throws -> Data {
         .init()
@@ -679,7 +775,7 @@ struct CryptingMock: CryptingInternal {
     }
 
     func createAccountCreationKeys(userId: String, password: String) throws -> AccountCreationKeys {
-        AccountCreationKeys(primaryKey: Data(), secretKey: Data(), protectedSecretKey: Data(), passwordHash: Data())
+        try _createAccountCreationKeys(userId, password)
     }
 
     func extractLoginInfo(recoveryKey: SyncCode.RecoveryKey) throws -> ExtractedLoginInfo {
@@ -687,7 +783,7 @@ struct CryptingMock: CryptingInternal {
     }
 
     func extractSecretKey(protectedSecretKey: Data, stretchedPrimaryKey: Data) throws -> Data {
-        Data()
+        try _extractSecretKey(protectedSecretKey, stretchedPrimaryKey)
     }
 
     func prepareForConnect() throws -> ConnectInfo {

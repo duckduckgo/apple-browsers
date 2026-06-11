@@ -862,6 +862,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
+                "PersistenceTestingUtils",
                 "SecureStorageTestsUtils",
                 "SyncDataProviders",
             ]
@@ -933,10 +934,16 @@ let package = Package(
         .testTarget(
             name: "PixelExperimentKitTests",
             dependencies: [
+                "BloomFilterWrapper",
+                "BrowserServicesKit",
                 "SharedObjCTestsUtils",
                 "PixelExperimentKit",
                 "Configuration",
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
+                "Navigation",
+                "SecureStorage",
+                "Subscription",
+                "UserScript",
             ]
         ),
         .testTarget(

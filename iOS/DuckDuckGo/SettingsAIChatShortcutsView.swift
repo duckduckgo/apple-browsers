@@ -83,7 +83,8 @@ struct SettingsAIChatShortcutsView: View {
                 if shouldShowTabBarShortcut {
                     SettingsCellView(label: UserText.aiChatSettingsEnableTabBarToggle,
                                      subtitle: UserText.aiChatSettingsEnableTabBarSubtitle,
-                                     accessory: .toggle(isOn: viewModel.aiChatTabBarEnabledBinding))
+                                     accessory: .toggle(isOn: viewModel.aiChatTabBarEnabledBinding),
+                                     accessoryAccessibilityIdentifier: "Settings.AIChat.TabBarToggle")
                 }
 
                 if viewModel.state.voiceSearchEnabled {

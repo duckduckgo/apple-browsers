@@ -145,7 +145,11 @@ extension NewTabPageActionsManager {
             featureFlagger: featureFlagger
         )
         let dataImportProvider = BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager, pinningManager: pinningManager)
-        let nextStepsPixelHandler = NewTabPageNextStepsCardsPixelHandler()
+        let nextStepsPixelHandler = NewTabPageNextStepsCardsPixelHandler(
+            persistor: nextStepsCardsPersistor,
+            appearancePreferences: appearancePreferences,
+            installDateProvider: { LocalStatisticsStore().installDate }
+        )
         let nextStepsCardsFacade = NewTabPageNextStepsCardsProviderFacade(
             featureFlagger: featureFlagger,
             dataImportProvider: dataImportProvider,

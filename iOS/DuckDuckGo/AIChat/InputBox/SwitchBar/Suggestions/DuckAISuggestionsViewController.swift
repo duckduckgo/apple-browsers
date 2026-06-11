@@ -32,7 +32,7 @@ protocol DuckAISuggestionsViewControllerDelegate: AnyObject {
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion)
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion)
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String)
-    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController)
+    func duckAISuggestionsDidRequestChatDeletion(_ chat: AIChatSuggestion, sender: UIViewController, source: UIView)
     func duckAISuggestionsDidRequestURLDeletion(_ suggestion: Suggestion)
     func duckAISuggestionsDidRequestSyncSetup()
 }
@@ -518,8 +518,8 @@ private extension DuckAISuggestionsViewController {
 
         cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.fire
         cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
-        cell.onAccessoryButtonPressed = { [weak self] in
-            self?.requestChatDeletion(chat: chat)
+        cell.onAccessoryButtonPressed = { [weak self] source in
+            self?.requestChatDeletion(chat: chat, source: source)
         }
     }
 
@@ -530,13 +530,13 @@ private extension DuckAISuggestionsViewController {
 
         cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.clear
         cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
-        cell.onAccessoryButtonPressed = { [weak self] in
+        cell.onAccessoryButtonPressed = { [weak self] _ in
             self?.requestURLDeletion(suggestion: suggestion)
         }
     }
 
-    func requestChatDeletion(chat: AIChatSuggestion) {
-        delegate?.duckAISuggestionsDidRequestChatDeletion(chat, sender: self)
+    func requestChatDeletion(chat: AIChatSuggestion, source: UIView) {
+        delegate?.duckAISuggestionsDidRequestChatDeletion(chat, sender: self, source: source)
     }
 
     func requestURLDeletion(suggestion: Suggestion) {

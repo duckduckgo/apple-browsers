@@ -676,7 +676,12 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let dependencies = MockSyncDependencies()
         let upgradeCoordinator = ThirdPartyAccountUpgradeCoordinatingMock()
         dependencies.createThirdPartyAccountUpgradeCoordinatorStub = upgradeCoordinator
-        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let secureStore = try XCTUnwrap(dependencies.secureStore as? SecureStorageStub)
+        secureStore.theAccount = nil
+        let scopedPasswordCached = expectation(description: "Scoped password cached")
+        secureStore.persistScopedPasswordCalled = {
+            scopedPasswordCached.fulfill()
+        }
 
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
@@ -736,8 +741,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.completedRegisteredDevices?.map(\.name), [RegisteredDevice.mock.name])
         XCTAssertEqual(coordinator.completedRegisteredDevices?.map(\.type), [RegisteredDevice.mock.type])
         XCTAssertEqual(coordinator.state, .completed(.loggedIn))
-        XCTAssertEqual((dependencies.secureStore as? SecureStorageStub)?.theAccount?.userId, SyncAccount.mock.userId)
-        XCTAssertEqual((dependencies.secureStore as? SecureStorageStub)?.theScopedPassword, Data(repeating: 1, count: 32))
+        XCTAssertEqual(secureStore.theAccount?.userId, SyncAccount.mock.userId)
+
+        await fulfillment(of: [scopedPasswordCached], timeout: 5.0)
+        XCTAssertEqual(secureStore.theScopedPassword, Data(repeating: 1, count: 32))
     }
 
     func testWhenThirdPartyUpgradeReportsExistingNativeCredentialThenPairingFailsWithNativeCredentialAlreadyPresent() async throws {

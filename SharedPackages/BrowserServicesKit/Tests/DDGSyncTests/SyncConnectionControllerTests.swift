@@ -346,12 +346,17 @@ final class SyncConnectionControllerTests: XCTestCase {
         delegate.didFinishTransmittingRecoveryKeyCalled = {
             didFinishTransmitting.fulfill()
         }
+        let didCloseChannel = expectation(description: "did close channel")
+        messageExchanger.closeChannelHandler = { _ in
+            didCloseChannel.fulfill()
+        }
 
         let pairingInfo = try await controller.startExchangeMode()
         payload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
 
         await fulfillment(of: [willBeginTransmitting, didFinishTransmitting], timeout: 5)
         XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, true)
+        await fulfillment(of: [didCloseChannel], timeout: 5)
         XCTAssertFalse(messageExchanger.closeChannelCalls.isEmpty)
     }
 
@@ -385,12 +390,17 @@ final class SyncConnectionControllerTests: XCTestCase {
         delegate.didFinishTransmittingRecoveryKeyCalled = {
             didFinishTransmitting.fulfill()
         }
+        let didCloseChannel = expectation(description: "did close channel")
+        messageExchanger.closeChannelHandler = { _ in
+            didCloseChannel.fulfill()
+        }
 
         let pairingInfo = try await controller.startExchangeMode()
         payload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
 
         await fulfillment(of: [didFinishTransmitting], timeout: 5)
         XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, false)
+        await fulfillment(of: [didCloseChannel], timeout: 5)
         XCTAssertFalse(messageExchanger.closeChannelCalls.isEmpty)
     }
 
@@ -425,6 +435,10 @@ final class SyncConnectionControllerTests: XCTestCase {
         delegate.didCompletePairingWithAlreadyConnectedAccountCalled = {
             didCompleteAlreadyConnected.fulfill()
         }
+        let didCloseChannel = expectation(description: "did close channel")
+        messageExchanger.closeChannelHandler = { _ in
+            didCloseChannel.fulfill()
+        }
 
         let pairingInfo = try await controller.startExchangeMode()
         payload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
@@ -435,6 +449,7 @@ final class SyncConnectionControllerTests: XCTestCase {
             return
         }
         XCTAssertNil(delegate.didErrorErrors)
+        await fulfillment(of: [didCloseChannel], timeout: 5)
         XCTAssertFalse(messageExchanger.closeChannelCalls.isEmpty)
     }
 
@@ -1060,6 +1075,10 @@ final class SyncConnectionControllerTests: XCTestCase {
         }
         let payload = PairingV2QRCodePayload(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
         let url = try payload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+        let didCloseChannel = expectation(description: "did close channel")
+        messageExchanger.closeChannelHandler = { _ in
+            didCloseChannel.fulfill()
+        }
 
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
@@ -1071,6 +1090,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertNil(delegate.didErrorErrors)
         XCTAssertNil(delegate.didCompleteLoginDevices)
         XCTAssertNil(delegate.didCompleteAccountConnectionValue)
+        await fulfillment(of: [didCloseChannel], timeout: 5)
         XCTAssertFalse(messageExchanger.closeChannelCalls.isEmpty)
     }
 

@@ -252,6 +252,7 @@ final class PairingV2Coordinator {
         }
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func execute(_ command: PairingV2Command) async throws {
         switch command {
         case .openV2Channel(let channelID):

@@ -276,39 +276,53 @@ public class SyncConnectionController: SyncConnectionControlling {
             }
         }
 
-        let syncCode: SyncCode
-        do {
-            if let url = URL(string: code) {
-                if let pairingV2Payload = PairingV2QRCodePayload(url: url) {
-                    return await handlePairingV2(qrPayload: pairingV2Payload, codeSource: codeSource)
-                }
-                if let unsupportedVersion = PairingV2QRCodePayload.unsupportedMajorVersion(in: url) {
-                    let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
-                    guard isPairingV2ScanningEnabled else {
-                        await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: setupRole)
-                        return false
-                    }
-                    await delegate?.controllerDidError(.updateRequired, underlyingError: PairingV2Error.unsupportedVersion(unsupportedVersion), setupRole: setupRole)
-                    return false
-                }
-            }
-
-            if canScanLegacyURLBarcodes, let url = URL(string: code) {
-                if let pairingInfo = PairingInfo(url: url) {
-                    return await startPairingMode(pairingInfo, codeSource: codeSource)
-                }
-            }
-
-            do {
-                syncCode = try SyncCode.decodeBase64String(code)
-            } catch {
-                // Very important that this returning blocks further execution as it could be a camera scanning continuously
-                // and therefore call this multiple times.
-                await delegate?.controllerDidError(syncCodeDecodingConnectionError(for: error), underlyingError: error, setupRole: .receiver(.unknown, codeSource))
-                return false
-            }
+        if let result = await handleURLCode(code, canScanLegacyURLBarcodes: canScanLegacyURLBarcodes, codeSource: codeSource) {
+            return result
         }
 
+        do {
+            let syncCode = try SyncCode.decodeBase64String(code)
+            return await handleDecodedSyncCode(syncCode, codeSource: codeSource)
+        } catch {
+            // Very important that this returning blocks further execution as it could be a camera scanning continuously
+            // and therefore call this multiple times.
+            await delegate?.controllerDidError(syncCodeDecodingConnectionError(for: error), underlyingError: error, setupRole: .receiver(.unknown, codeSource))
+            return false
+        }
+    }
+
+    private func handleURLCode(_ code: String, canScanLegacyURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool? {
+        guard let url = URL(string: code) else {
+            return nil
+        }
+
+        if let pairingV2Payload = PairingV2QRCodePayload(url: url) {
+            return await handlePairingV2(qrPayload: pairingV2Payload, codeSource: codeSource)
+        }
+
+        if let unsupportedVersion = PairingV2QRCodePayload.unsupportedMajorVersion(in: url) {
+            return await handleUnsupportedPairingV2Version(unsupportedVersion, codeSource: codeSource)
+        }
+
+        guard canScanLegacyURLBarcodes, let pairingInfo = PairingInfo(url: url) else {
+            return nil
+        }
+
+        return await startPairingMode(pairingInfo, codeSource: codeSource)
+    }
+
+    private func handleUnsupportedPairingV2Version(_ unsupportedVersion: String, codeSource: SyncCodeSource) async -> Bool {
+        let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
+        guard isPairingV2ScanningEnabled else {
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: setupRole)
+            return false
+        }
+
+        await delegate?.controllerDidError(.updateRequired, underlyingError: PairingV2Error.unsupportedVersion(unsupportedVersion), setupRole: setupRole)
+        return false
+    }
+
+    private func handleDecodedSyncCode(_ syncCode: SyncCode, codeSource: SyncCodeSource) async -> Bool {
         if let exchangeKey = syncCode.exchangeKey {
             let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
             await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)

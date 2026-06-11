@@ -53,7 +53,9 @@ class SecureStorageStub: SecureStoring {
 
     func persistScopedPassword(_ scopedPassword: Data) throws {
         persistScopedPasswordCalls.append(scopedPassword)
-        persistScopedPasswordCalled?()
+        defer {
+            persistScopedPasswordCalled?()
+        }
         if let mockWriteError {
             throw mockWriteError
         }

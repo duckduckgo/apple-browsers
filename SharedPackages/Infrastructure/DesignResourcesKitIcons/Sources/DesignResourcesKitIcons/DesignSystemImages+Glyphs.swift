@@ -557,6 +557,7 @@ public extension DesignSystemImages {
             public static var news: DesignSystemImage { .init(resource: .news24) }
             public static var note: DesignSystemImage { .init(resource: .note24) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn24) }
+            public static var openInSmall: DesignSystemImage { .init(resource: .openIn24Small) }
             public static var options: DesignSystemImage { .init(resource: .options24) }
             public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach24) }
             public static var paste: DesignSystemImage { .init(resource: .paste24) }
@@ -574,6 +575,7 @@ public extension DesignSystemImages {
             public static var reset: DesignSystemImage { .init(resource: .reset24) }
             public static var resetSites: DesignSystemImage { .init(resource: .resetSites24) }
             public static var settings: DesignSystemImage { .init(resource: .settings24) }
+            public static var settingsAiChat: DesignSystemImage { .init(resource: .settingsAiChat24) }
             public static var shapeCircle: DesignSystemImage { .init(resource: .shapeCircle24) }
             public static var shield: DesignSystemImage { .init(resource: .shield24) }
             public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked24) }

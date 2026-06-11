@@ -64,6 +64,10 @@ final class DuckAIURLSuggestionsLoader {
             .store(in: &cancellables)
     }
 
+    func refreshSuggestions() {
+        fetch(query: latestDispatchedQuery ?? "")
+    }
+
     func fetch(query: String) {
         latestDispatchedQuery = query
         guard !query.isEmpty else {

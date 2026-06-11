@@ -303,6 +303,7 @@ extension DataClearingWideEventData {
         case quickFire
         case deeplink
         case autoClear
+        case chatSuggestions
     }
 
     /// Execution path during clearing (macOS only).

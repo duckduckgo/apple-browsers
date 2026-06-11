@@ -87,6 +87,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
     private let syncPromoManager: SyncPromoManaging?
@@ -118,6 +119,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          syncService: DDGSyncing? = nil,
+         aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
@@ -128,6 +130,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.syncService = syncService
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
                                                                   featureFlagger: featureFlagger,
                                                                   privacyConfigurationManager: privacyConfigurationManager) }
@@ -476,27 +479,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
               let dependencies = suggestionTrayDependencies else { return }
 
         // Build the chat-side fetcher (existing infrastructure, fire-tab uses no-op reader).
-        let chatViewModel: AIChatSuggestionsViewModel
-        let chatManager: AIChatHistoryManager
-        let chatSuggestionsReader: AIChatSuggestionsReading
-        if switchBarHandler.isFireTab {
-            chatSuggestionsReader = NilSuggestionsReader()
-        } else {
-            let reader = SuggestionsReader(
-                featureFlagger: featureFlagger,
-                privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: duckAiNativeStorageHandler,
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            )
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            chatSuggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        }
-        chatViewModel = AIChatSuggestionsViewModel(maxSuggestions: chatSuggestionsReader.maxHistoryCount)
-        chatManager = AIChatHistoryManager(
-            suggestionsReader: chatSuggestionsReader,
-            aiChatSettings: aiChatSettings,
-            viewModel: chatViewModel
-        )
+        let (chatManager, chatViewModel) = AIChatHistoryManager.makeHistoryManager(isFireTab: switchBarHandler.isFireTab,
+                                                                                   isIPadExperience: false,
+                                                                                   featureFlagger: featureFlagger,
+                                                                                   privacyConfigurationManager: privacyConfigurationManager,
+                                                                                   chatSyncCleaner: aiChatSyncCleaner,
+                                                                                   chatSettings: aiChatSettings,
+                                                                                   nativeStorageHandler: duckAiNativeStorageHandler)
 
         // Build the URL-side fetcher reusing the Search-side suggestion stream + ranking.
         let dataSource = AutocompleteSuggestionsDataSource(
@@ -517,6 +506,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             chatManager: chatManager,
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
+            historyManager: dependencies.historyManager,
             queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" },
             layoutConfiguration: .unifiedToggleInput,
             syncPromoManager: switchBarHandler.isFireTab ? nil : syncPromoManager,
@@ -852,6 +842,11 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
     }
 
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didDeleteSuggestion suggestion: Suggestion) {
+        // The duck.ai URL list shares the same history store. Refresh it so the deleted entry disappears there too.
+        duckAISuggestionsCoordinator?.refreshURLSuggestions()
+    }
+
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
     }
@@ -916,6 +911,11 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsCoordinat
     func duckAISuggestionsDidSelectURL(_ suggestion: Suggestion) {
         fireDuckAISuggestionClickPixel(for: suggestion)
         delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
+    }
+
+    func duckAISuggestionsDidDeleteURL(_ suggestion: Suggestion) {
+        // The search tray reads the same history store. Re-fetch so the deleted entry disappears there too.
+        suggestionTrayManager?.refreshCurrentSuggestions()
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {

@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 struct FireModeEmptyStateView: View {
     
@@ -108,7 +109,7 @@ struct FireModeEmptyStateView: View {
         }
         .padding(Constants.cardPadding)
         .background(Color(designSystemColor: .surface))
-        .clipShape(RoundedRectangle(cornerRadius: Constants.cardCornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius))
     }
 
     // MARK: - Bullet Points
@@ -202,7 +203,6 @@ struct FireModeEmptyStateView: View {
 
         static let cardContentSpacing: CGFloat = 24
         static let cardPadding: CGFloat = 24
-        static let cardCornerRadius: CGFloat = 16
 
         static let bulletSpacing: CGFloat = 12
         static let iconTextSpacing: CGFloat = 8

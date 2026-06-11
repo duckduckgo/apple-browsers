@@ -1054,7 +1054,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         //         ↪ AXImage (TabBarViewItem.favicon)
         //         ↪ AXStaticText (TabBarViewItem.title)
         //         ↪ AXButton (TabBarViewItem.closeButton)
-        //         ↪ AXButton (TabBarViewItem.permissionButton)
         //         ↪ AXButton (TabBarViewItem.muteButton)
         //         ↪ AXButton (TabBarViewItem.crashButton)
         //      ↪ …
@@ -2481,24 +2480,6 @@ extension TabBarViewController: TabBarViewItemDelegate {
         aiChatCoordinator?.closeFloatingWindow(for: tabID)
         guard let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
         tabCollectionViewModel.remove(at: tabIndex)
-    }
-
-    func tabBarViewItemTogglePermissionAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let tabViewModel = tabBarViewItem.tabViewModel as? TabViewModel else {
-            assertionFailure("TabBarViewController: Failed to get view model for tab bar view item")
-            return
-        }
-        // permissionButton is hidden on pinned tabs by design (asserted in `layoutForPinnedMode`).
-        guard !tabViewModel.isPinned else { return }
-        let permissions = tabViewModel.tab.permissions
-
-        if permissions.permissions.camera.isActive || permissions.permissions.microphone.isActive {
-            permissions.set([.camera, .microphone], muted: true)
-        } else if permissions.permissions.camera.isPaused || permissions.permissions.microphone.isPaused {
-            permissions.set([.camera, .microphone], muted: false)
-        } else {
-            assertionFailure("Unexpected Tab Permissions state")
-        }
     }
 
     func tabBarViewItemCloseOtherAction(_ tabBarViewItem: TabBarViewItem) {

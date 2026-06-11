@@ -114,6 +114,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var searchDeleteTask: Task<Void, Never>?
     /// The Search surface's loader; held so a Duck.ai-side URL delete can refresh it too.
     private var searchLoader: SearchSuggestionsLoader?
+    /// The Search surface's data source; held so its bookmark cache can be refreshed each session.
+    private var searchDataSource: AutocompleteSuggestionsDataSource?
     /// Duck.ai sync-promo presenter; nil when there's no sync service.
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
         syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
@@ -191,6 +193,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         super.viewWillAppear(animated)
 
         attachDuckAISurfaceIfNeeded()
+    }
+
+    /// Rebuilds the search suggestions' session-scoped caches (currently the bookmark snapshot) so a
+    /// long-lived data source reflects add/remove since the last editing session. Called on each
+    /// omnibar-editing show — legacy got this for free by building a fresh data source per session.
+    func refreshSuggestionsCaches() {
+        searchDataSource?.refreshCaches()
+        duckAISurface?.refreshCaches()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -394,6 +404,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
         let loader = SearchSuggestionsLoader(dataSource: dataSource, useUnifiedURLPrediction: featureFlagger.isFeatureOn(.unifiedURLPredictor))
         searchLoader = loader
+        searchDataSource = dataSource
 
         let source = SearchSuggestionsSource(
             loader: loader,

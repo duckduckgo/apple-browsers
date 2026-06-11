@@ -48,9 +48,14 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
         }
     }
 
-    private lazy var cachedBookmarks: CachedBookmarks = {
-        CachedBookmarks(bookmarksDatabase)
-    }()
+    private var cachedBookmarks: CachedBookmarks
+
+    /// Rebuilds the bookmark snapshot. A long-lived data source (unified input) must call this at the
+    /// start of each editing session so bookmark add/remove is reflected — legacy gets it for free by
+    /// building a fresh data source per session.
+    func refreshCaches() {
+        cachedBookmarks = CachedBookmarks(bookmarksDatabase)
+    }
 
     var platform: Platform {
         .mobile
@@ -62,6 +67,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
         self.featureFlagger = featureFlagger
         self.tabsModel = tabsModel
         self.performSuggestionsRequest = performSuggestionsRequest
+        self.cachedBookmarks = CachedBookmarks(bookmarksDatabase)
     }
 
     @MainActor

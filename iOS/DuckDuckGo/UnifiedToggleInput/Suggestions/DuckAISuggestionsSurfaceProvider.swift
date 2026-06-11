@@ -58,6 +58,8 @@ final class DuckAISuggestionsSurfaceProvider {
     func hasSettled(forQuery query: String) -> Bool { hasSettledReader?(query) ?? false }
     func refreshRecents() { refreshRecentsAction?() }
     func refreshURLSuggestions() { refreshURLSuggestionsAction?() }
+    /// Rebuilds the URL data source's session-scoped caches (bookmark snapshot) — see the Search side.
+    func refreshCaches() { refreshCachesAction?() }
     /// Recent-chat count for the sync-promo gating; 0 while detached.
     var recentsCount: Int { recentsCountReader?() ?? 0 }
 
@@ -75,6 +77,7 @@ final class DuckAISuggestionsSurfaceProvider {
     private var hasSettledReader: ((String) -> Bool)?
     private var refreshRecentsAction: (() -> Void)?
     private var refreshURLSuggestionsAction: (() -> Void)?
+    private var refreshCachesAction: (() -> Void)?
     private var recentsCountReader: (() -> Int)?
     /// In-flight history-delete task; cancelled on detach so its post-delete refetch can't run
     /// against a torn-down source.
@@ -170,6 +173,7 @@ final class DuckAISuggestionsSurfaceProvider {
         refreshURLSuggestionsAction = { [weak self] in
             source.fetchURLSuggestions(query: self?.switchBarHandler.currentText ?? "")
         }
+        refreshCachesAction = { [weak dataSource] in dataSource?.refreshCaches() }
         recentsCountReader = { [weak chatViewModel] in chatViewModel?.filteredSuggestions.count ?? 0 }
 
         host.attachDuckAISurface(surface, textPublisher: textPublisher)
@@ -186,6 +190,7 @@ final class DuckAISuggestionsSurfaceProvider {
         hasSettledReader = nil
         refreshRecentsAction = nil
         refreshURLSuggestionsAction = nil
+        refreshCachesAction = nil
         recentsCountReader = nil
         chatDeleteAction = nil
     }

@@ -90,6 +90,22 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
     }
 
     @MainActor
+    func testBookmarkCacheIsStaleUntilRefreshed() {
+        let dataSource = makeDataSource()
+        XCTAssertEqual(dataSource.bookmarks(for: MockSuggestionLoading()).count, 5)
+
+        let rootFolder = BookmarkUtils.fetchRootFolder(mainContext)!
+        _ = BasicBookmarksStructure.createBookmarksList(usingNames: ["NewBookmark"], parent: rootFolder, in: mainContext)
+        try? mainContext.save()
+
+        // A long-lived data source keeps the session snapshot until explicitly refreshed.
+        XCTAssertEqual(dataSource.bookmarks(for: MockSuggestionLoading()).count, 5)
+
+        dataSource.refreshCaches()
+        XCTAssertEqual(dataSource.bookmarks(for: MockSuggestionLoading()).count, 6)
+    }
+
+    @MainActor
     func testDataSourceReturnsEmptyInternalPages() {
         let dataSource = makeDataSource()
         XCTAssertTrue(dataSource.internalPages(for: MockSuggestionLoading()).isEmpty)

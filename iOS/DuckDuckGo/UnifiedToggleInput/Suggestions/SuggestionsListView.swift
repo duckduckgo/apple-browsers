@@ -70,6 +70,7 @@ struct SuggestionsListView: View {
                     onDelete: { viewModel.deleteRow(id: row.id) },
                     onFire: { viewModel.fireDeleteRow(id: row.id) })
             }
+            .accessibilityIdentifier(row.accessibilityID)
             .listRowInsets(rowInsets(for: row))
             .listRowBackground(Color(designSystemColor: .surface))
             .modifier(SeparatorTrailingToContentModifier())

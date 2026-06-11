@@ -62,6 +62,12 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         NewTabPageNextStepsCardsDebugPersistor()
     }()
 
+    private static let onboardingCardIDs: Set<NewTabPageDataModel.CardID> = [
+        .defaultApp,
+        .addAppToDockMac,
+        .bringStuff
+    ]
+
     enum Constants {
         /// Maximum times a card can be dismissed before it is permanently hidden.
         ///
@@ -252,7 +258,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
 
     func refreshCardList() {
         let cards = shouldUseAdvancedCardOrdering ? getOrderedCardsWithAdvancedOrdering() : standardCards.filter(shouldShowCard)
-        if cards.isEmpty {
+        if cards.isEmpty && !hasPendingOnboardingCards() {
             appearancePreferences.continueSetUpCardsClosed = true
         }
         // Record a new card impression if the first card in the list has changed:
@@ -326,7 +332,16 @@ private extension NewTabPageNextStepsSingleCardProvider {
         guard !isCardPermanentlyDismissed(card) else {
             return false
         }
+        guard isCardEligible(card) else {
+            return false
+        }
+        if Self.onboardingCardIDs.contains(card) {
+            return appearancePreferences.isOnboardingNextStepsCardsDelayMet
+        }
+        return true
+    }
 
+    func isCardEligible(_ card: NewTabPageDataModel.CardID) -> Bool {
         switch card {
         case .defaultApp:
             return !defaultBrowserProvider.isDefault
@@ -346,6 +361,15 @@ private extension NewTabPageNextStepsSingleCardProvider {
             return syncService?.featureFlags.contains(.all) == true && syncService?.authState == .inactive
         case .youtubeAdBlocking:
             return adBlockingAvailability.isEnabled
+        }
+    }
+
+    func hasPendingOnboardingCards() -> Bool {
+        guard !appearancePreferences.isOnboardingNextStepsCardsDelayMet else {
+            return false
+        }
+        return Self.onboardingCardIDs.contains { card in
+            isCardEligible(card) && !isCardPermanentlyDismissed(card)
         }
     }
 

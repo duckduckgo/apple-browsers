@@ -58,11 +58,9 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         legacyPersistor = MockHomePageContinueSetUpModelPersisting()
         legacySubscriptionCardPersistor = MockHomePageSubscriptionCardPersisting()
 
-        appearancePreferences = AppearancePreferences(
-            persistor: MockAppearancePreferencesPersistor(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger(),
-            aiChatMenuConfig: MockAIChatConfig()
+        appearancePreferences = createAppearancePrefs(
+            demonstrationDays: 1,
+            lastDemonstrated: Date()
         )
 
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -1064,6 +1062,109 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
     }
 
+    // MARK: - Onboarding cards day-0 delay
+
+    func testWhenOnboardingDelayNotMetThenOnboardingCardsAreExcluded() {
+        let now = Date()
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 0,
+            lastDemonstrated: now,
+            now: now
+        )
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            dataImportDidImport: false,
+            dockStatus: false,
+            appearancePreferences: appearancePrefs,
+            isAppStoreBuild: false
+        )
+
+        let cards = testProvider.cards
+        XCTAssertFalse(cards.contains(.defaultApp))
+        XCTAssertFalse(cards.contains(.addAppToDockMac))
+        XCTAssertFalse(cards.contains(.bringStuff))
+        XCTAssertFalse(cards.isEmpty)
+    }
+
+    func testWhenOnboardingDelayMetViaDemonstrationDaysThenOnboardingCardsAreIncluded() {
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 1,
+            lastDemonstrated: Date()
+        )
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            isAppStoreBuild: false
+        )
+
+        let cards = testProvider.cards
+        XCTAssertTrue(cards.contains(.defaultApp))
+        XCTAssertTrue(cards.contains(.bringStuff))
+    }
+
+    func testWhenOnboardingDelayMetViaCalendarRollThenOnboardingCardsAreIncluded() {
+        let now = Date()
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: now)!
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 0,
+            lastDemonstrated: yesterday,
+            now: now
+        )
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            isAppStoreBuild: false
+        )
+
+        let cards = testProvider.cards
+        XCTAssertTrue(cards.contains(.defaultApp))
+    }
+
+    func testWhenNonOnboardingCardsExhaustedButOnboardingPendingThenContinueSetUpCardsNotClosed() {
+        let now = Date()
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 0,
+            lastDemonstrated: now,
+            now: now
+        )
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        for card in NewTabPageDataModel.CardID.allCases where card != .defaultApp && card != .addAppToDockMac && card != .bringStuff {
+            testPersistor.setTimesDismissed(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardDismissed, for: card)
+        }
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            persistor: testPersistor,
+            isAppStoreBuild: false
+        )
+
+        XCTAssertTrue(testProvider.cards.isEmpty)
+        XCTAssertFalse(appearancePrefs.continueSetUpCardsClosed)
+    }
+
+    func testWhenNonOnboardingCardsExhaustedAndOnboardingIneligibleThenContinueSetUpCardsClosed() {
+        let now = Date()
+        let appearancePrefs = createAppearancePrefs(
+            didChangeAnyCustomizationSetting: true,
+            demonstrationDays: 0,
+            lastDemonstrated: now,
+            now: now
+        )
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: true,
+            dataImportDidImport: true,
+            dockStatus: true,
+            emailManagerSignedIn: true,
+            subscriptionCardShouldShow: false,
+            syncConnected: true,
+            appearancePreferences: appearancePrefs,
+            isAppStoreBuild: true
+        )
+
+        XCTAssertTrue(testProvider.cards.isEmpty)
+        XCTAssertTrue(appearancePrefs.continueSetUpCardsClosed)
+    }
+
     // MARK: - Helper Functions
 
     private func createProvider(
@@ -1191,14 +1292,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     private func createAppearancePrefs(didChangeAnyCustomizationSetting: Bool = false,
-                                       demonstrationDays: Int = 0) -> AppearancePreferences {
+                                       demonstrationDays: Int = 0,
+                                       lastDemonstrated: Date? = nil,
+                                       now: Date = Date()) -> AppearancePreferences {
         let persistor = MockAppearancePreferencesPersistor(
+            continueSetUpCardsLastDemonstrated: lastDemonstrated,
             continueSetUpCardsNumberOfDaysDemonstrated: demonstrationDays,
             didChangeAnyNewTabPageCustomizationSetting: didChangeAnyCustomizationSetting
         )
         return AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            dateTimeProvider: { now },
             featureFlagger: MockFeatureFlagger(),
             aiChatMenuConfig: MockAIChatConfig()
         )

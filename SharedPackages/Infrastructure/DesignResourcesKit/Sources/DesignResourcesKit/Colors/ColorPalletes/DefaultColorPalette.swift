@@ -31,6 +31,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x404145 = Color(0x404145)
     private static let xE0E0E0 = Color(0xE0E0E0)
     private static let xF2F2F2 = Color(0xF2F2F2)
+    private static let xF3F6FF = Color(0xF3F6FF)
     private static let xF9F9F9 = Color(0xF9F9F9)
     private static let x000000 = Color(0x000000)
     private static let xFFFFFF = Color(0xFFFFFF)
@@ -63,6 +64,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
     private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x3D3D3D)
     private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let backgroundPromptMessage = DynamicColor(lightColor: xF3F6FF, darkColor: xFFFFFF.opacity(0.09))
 
     // Shadow
     private static let shadowPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.04), darkColor: .shade(0.16))
@@ -177,6 +179,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .background: return background
         case .backgroundTertiary: return backgroundTertiary
         case .backgroundSheets: return backgroundSheets
+        case .backgroundPromptMessage: return backgroundPromptMessage
         case .backdrop: return backdrop
         case .panel: return background
         case .icons: return icons

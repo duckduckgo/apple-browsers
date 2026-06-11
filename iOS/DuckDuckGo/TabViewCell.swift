@@ -120,6 +120,9 @@ class TabViewCell: UICollectionViewCell {
     // Grid view
     var preview: UIImageView?
 
+    /// Container for the Duck.ai rich tab grid card content (text/image/voice/empty).
+    var richCardContainer: DuckAIGridCardView?
+
     weak var previewAspectRatio: NSLayoutConstraint?
     var previewTopConstraint: NSLayoutConstraint?
     var previewBottomConstraint: NSLayoutConstraint?
@@ -210,6 +213,17 @@ class TabViewCell: UICollectionViewCell {
         previewBottomConstraint?.isActive = true
         previewBottomConstraint?.constant = Constants.previewPadding * 2
         previewTrailingConstraint?.isActive = true
+    }
+
+    /// Whether the cell should render the Duck.ai rich grid card for the supplied item,
+    /// vs. the existing screenshot path. `.fallbackScreenshot` falls back to the screenshot.
+    private func shouldShowRichCard(for item: DuckAIGridItem) -> Bool {
+        switch item {
+        case .text, .image, .voice, .empty:
+            return true
+        case .fallbackScreenshot:
+            return false
+        }
     }
 
     private static func unreadImageAsset(accentColor: UIColor) -> UIImageAsset {
@@ -478,7 +492,8 @@ class TabViewCell: UICollectionViewCell {
     func update(withTab tab: Tab,
                 isSelectionModeEnabled: Bool,
                 preview: UIImage?,
-                isFireModeEnabled: Bool) {
+                isFireModeEnabled: Bool,
+                duckAIGridItem: DuckAIGridItem? = nil) {
         accessibilityElements = [ title as Any, removeButton as Any ]
 
         self.tab = tab
@@ -502,6 +517,10 @@ class TabViewCell: UICollectionViewCell {
 
         unread.isHidden = tab.viewed
 
+        // Reset rich-card / preview visibility on every reuse
+        richCardContainer?.isHidden = true
+        self.preview?.isHidden = false
+
         if tab.isAITab {
             let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
             let conversationTitle = tab.aiChatConversationTitle
@@ -519,7 +538,11 @@ class TabViewCell: UICollectionViewCell {
                 link?.isHidden = true
             }
 
-            if let preview = preview {
+            if let item = duckAIGridItem, shouldShowRichCard(for: item) {
+                richCardContainer?.configure(with: item)
+                richCardContainer?.isHidden = false
+                self.preview?.isHidden = true
+            } else if let preview = preview {
                 self.updatePreviewToDisplay(image: preview)
                 self.preview?.contentMode = .scaleAspectFill
                 self.preview?.image = preview

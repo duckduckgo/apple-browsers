@@ -25,6 +25,7 @@ public enum DesignSystemColor {
 
     case backgroundTertiary
     case backgroundSheets
+    case backgroundPromptMessage
     case panel
 
     // Surfaces

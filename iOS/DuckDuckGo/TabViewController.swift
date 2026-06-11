@@ -781,6 +781,7 @@ class TabViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
+        webScrollObserver?.reset()
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
         unregisterFromResignActive()
@@ -1821,6 +1822,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        webScrollObserver?.reset()
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)

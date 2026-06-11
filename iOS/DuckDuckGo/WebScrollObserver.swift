@@ -104,13 +104,16 @@ final class WebScrollObserver: NSObject {
     }
 
     private func dragEnded(dx: CGFloat, dy: CGFloat) {
+        // Capture the start offset by value now — a second drag within the recheck window would
+        // otherwise overwrite `dragStartOffsetY` before this closure runs.
+        let startOffsetY = dragStartOffsetY
         // Re-sample after a beat so late settling counts as movement.
         DispatchQueue.main.asyncAfter(deadline: .now() + Constant.postEndRecheck) { [weak self] in
-            self?.classifyDrag(dx: dx, dy: dy)
+            self?.classifyDrag(dx: dx, dy: dy, startOffsetY: startOffsetY)
         }
     }
 
-    private func classifyDrag(dx: CGFloat, dy: CGFloat) {
+    private func classifyDrag(dx: CGFloat, dy: CGFloat, startOffsetY: CGFloat) {
         guard isEligible(), let scrollView = scrollViewProvider() else { return }
 
         // Only count vertical-dominant drags long enough to be a real scroll attempt.
@@ -121,14 +124,12 @@ final class WebScrollObserver: NSObject {
         let metrics = scrollMetrics(scrollView)
         let fingerUp = dy < 0
         let hasHeadroom = fingerUp
-            ? dragStartOffsetY < metrics.maxY - Constant.minHeadroom
-            : dragStartOffsetY > metrics.minY + Constant.minHeadroom
-        guard hasHeadroom else {
-            reset()
-            return
-        }
+            ? startOffsetY < metrics.maxY - Constant.minHeadroom
+            : startOffsetY > metrics.minY + Constant.minHeadroom
+        // At the top/bottom edge there's nothing to scroll in this direction — skip, don't reset the streak.
+        guard hasHeadroom else { return }
 
-        let moved = abs(scrollView.contentOffset.y - dragStartOffsetY) >= Constant.movedThreshold
+        let moved = abs(scrollView.contentOffset.y - startOffsetY) >= Constant.movedThreshold
         if moved {
             reset()
             recentStatus = "last drag scrolled OK (\(formatted(now())))"
@@ -166,8 +167,8 @@ final class WebScrollObserver: NSObject {
     func checkForWedgedRecognizer() {
         guard isEligible(), let wedged = Self.firstWedgedRecognizer() else { return }
         wedgeCandidate = wedged
-        DispatchQueue.main.asyncAfter(deadline: .now() + Constant.wedgeRecheck) { [weak self] in
-            guard let self, let candidate = self.wedgeCandidate, candidate === wedged,
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constant.wedgeRecheck) { [weak self, weak wedged] in
+            guard let self, let wedged, let candidate = self.wedgeCandidate, candidate === wedged,
                   Self.isWedged(candidate) else { return }
             self.wedgeCandidate = nil
             Logger.interaction.error("Wedged recognizer detected: \(Self.bucket(for: candidate), privacy: .public)")
@@ -200,10 +201,14 @@ final class WebScrollObserver: NSObject {
         }
     }
 
-    private func formatted(_ date: Date) -> String {
+    private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    private func formatted(_ date: Date) -> String {
+        Self.timeFormatter.string(from: date)
     }
 
     private static func isWedged(_ recognizer: UIGestureRecognizer) -> Bool {

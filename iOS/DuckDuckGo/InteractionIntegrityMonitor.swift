@@ -48,7 +48,7 @@ final class InteractionIntegrityMonitor {
             Logger.interaction.debug("\(label, privacy: .public) pan: began")
             arm(recognizer, label: label)
         case .changed:
-            arm(recognizer, label: label)
+            extend(recognizer, label: label)
         case .ended, .cancelled, .failed:
             Logger.interaction.debug("\(label, privacy: .public) pan: \(recognizer.state.diagnosticName, privacy: .public)")
             disarm()
@@ -68,6 +68,18 @@ final class InteractionIntegrityMonitor {
                                         selector: #selector(watchdogFired(_:)),
                                         userInfo: nil,
                                         repeats: false)
+    }
+
+    /// Push the deadline out on each `.changed` rather than recreating the timer, which would churn the
+    /// run loop ~60×/sec during an active pan.
+    private func extend(_ recognizer: UIGestureRecognizer, label: String) {
+        guard let watchdog else {
+            arm(recognizer, label: label)
+            return
+        }
+        armedRecognizer = recognizer
+        armedLabel = label
+        watchdog.fireDate = Date(timeIntervalSinceNow: Constant.watchdogTimeout)
     }
 
     private func disarm() {

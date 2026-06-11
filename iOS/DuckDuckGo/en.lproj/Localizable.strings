@@ -2527,11 +2527,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Reload";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Reset Zoom";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Select";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Show All Tabs";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Zoom In";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Zoom Out";
 
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "DuckDuckGo for Mac has the speed you need, the browsing features you expect, and comes packed with our best-in-class privacy essentials.";

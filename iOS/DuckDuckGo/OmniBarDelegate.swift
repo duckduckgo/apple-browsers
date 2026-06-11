@@ -149,6 +149,8 @@ protocol OmniBarDelegate: AnyObject {
     func onAIChatSuggestionsMoveSelectionUp()
     /// Activates the highlighted row; returns whether one was activated.
     func onAIChatSuggestionsActivateHighlight() -> Bool
+    /// Clears the highlight, e.g. when the user taps back into the text view.
+    func onAIChatSuggestionsClearHighlight()
 }
 
 extension OmniBarDelegate {
@@ -170,7 +172,8 @@ extension OmniBarDelegate {
     func onAIChatSuggestionsMoveSelectionDown() { }
     func onAIChatSuggestionsMoveSelectionUp() { }
     func onAIChatSuggestionsActivateHighlight() -> Bool { false }
-    
+    func onAIChatSuggestionsClearHighlight() { }
+
     func onMenuPressed() {
         
     }

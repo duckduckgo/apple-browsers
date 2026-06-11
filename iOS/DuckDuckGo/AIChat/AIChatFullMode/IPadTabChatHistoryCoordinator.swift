@@ -173,6 +173,8 @@ final class IPadTabChatHistoryCoordinator {
     @discardableResult
     func activateHighlightedSuggestion() -> Bool { historyManager?.activateHighlightedSuggestion() ?? false }
 
+    func clearSelection() { historyManager?.clearSelection() }
+
     // MARK: - Private Methods
 
     /// Creates an `AIChatHistoryManager` configured for the current tab.

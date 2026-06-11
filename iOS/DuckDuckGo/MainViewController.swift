@@ -3963,6 +3963,12 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
+    func onAIChatSuggestionsClearHighlight() {
+        guard isModeToggleInAIChatMode else { return }
+        iPadTabChatHistoryCoordinator.clearSelection()
+        suggestionTrayController?.clearKeyboardSelection()
+    }
+
     func didRequestCurrentURL() -> URL? {
         return currentTab?.url
     }

@@ -95,12 +95,24 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         }
     }
 
+    @objc private func aiChatTextViewTapped() {
+        omniDelegate?.onAIChatSuggestionsClearHighlight()
+    }
+
     // MARK: - Initialization
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         omniBarView.duckAITextViewDelegate = self
+
+        // A tap in the text view dismisses any keyboard suggestion highlight, even when the caret does not move
+        // (so `textViewDidChangeSelection` would not fire) such as tapping an empty field.
+        let highlightDismissTap = UITapGestureRecognizer(target: self, action: #selector(aiChatTextViewTapped))
+        highlightDismissTap.cancelsTouchesInView = false
+        highlightDismissTap.delegate = self
+        omniBarView.aiChatTextView.addGestureRecognizer(highlightDismissTap)
+
         omniBarView.isAIVoiceChatEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             self?.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
@@ -694,6 +706,11 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
     }
 
+    func textViewDidChangeSelection(_ textView: UITextView) {
+        // Moving the caret in the text (e.g. tapping back into the field) dismisses the keyboard suggestion highlight.
+        omniDelegate?.onAIChatSuggestionsClearHighlight()
+    }
+
     func textViewDidEndEditing(_ textView: UITextView) {
         guard !modeToggleTextModel.isTransitioning else { return }
 
@@ -740,6 +757,16 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
         UniversalOmniBarEditingStateTransition(isPresenting: false,
                                                addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
+}
+
+extension DefaultOmniBarViewController: UIGestureRecognizerDelegate {
+
+    // Observe taps without consuming them, so the text view's own caret/selection gestures still run.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        true
+    }
+
 }
 
 private extension UITextView {

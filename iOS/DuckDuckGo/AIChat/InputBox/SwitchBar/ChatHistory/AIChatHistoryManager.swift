@@ -152,6 +152,10 @@ final class AIChatHistoryManager {
         return true
     }
 
+    func clearSelection() {
+        viewModel.clearSelection()
+    }
+
     /// Fires the selection pixels and opens the chat. Shared by tap (the VC's `onChatSelected`) and keyboard activation.
     private func handleChatActivation(_ chat: AIChatSuggestion) {
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected

@@ -28,11 +28,16 @@ final class AIChatHistoryViewController: UIViewController {
     private let viewModel: AIChatHistoryViewModel
     private var cancellables: Set<AnyCancellable> = []
 
+    /// Set while a swipe-driven animation is in flight to suppress reactive reloads that
+    /// would otherwise cancel the slide.
+    private var isApplyingLocalUpdate = false
+
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .insetGrouped)
         table.dataSource = self
         table.delegate = self
         table.register(AIChatHistoryCell.self, forCellReuseIdentifier: AIChatHistoryCell.reuseIdentifier)
+        table.register(AIChatHistoryNoResultsCell.self, forCellReuseIdentifier: AIChatHistoryNoResultsCell.reuseIdentifier)
         table.translatesAutoresizingMaskIntoConstraints = false
         table.sectionHeaderTopPadding = 0
         // Both are needed to keep the `.insetGrouped` rounded bottom corner of the last
@@ -56,6 +61,12 @@ final class AIChatHistoryViewController: UIViewController {
         host.view.backgroundColor = .clear
         return host
     }()
+
+    /// `!loadFailed` so a storage failure (which also clears the lists) routes through the
+    /// load-error alert instead of being misread as a no-matches search.
+    private var isShowingNoSearchResults: Bool {
+        viewModel.isEmpty && !viewModel.effectiveQuery.isEmpty && !viewModel.loadFailed
+    }
 
     init(viewModel: AIChatHistoryViewModel) {
         self.viewModel = viewModel
@@ -143,9 +154,11 @@ final class AIChatHistoryViewController: UIViewController {
 
     private func bindViewModel() {
         Publishers.CombineLatest3(viewModel.$pinned, viewModel.$recent, viewModel.$hasLoaded)
+            .removeDuplicates { lhs, rhs in lhs.0 == rhs.0 && lhs.1 == rhs.1 && lhs.2 == rhs.2 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _, _, _ in
-                self?.refreshContent()
+                guard let self, !self.isApplyingLocalUpdate else { return }
+                self.refreshContent()
             }
             .store(in: &cancellables)
 
@@ -226,14 +239,15 @@ final class AIChatHistoryViewController: UIViewController {
 extension AIChatHistoryViewController: UITableViewDataSource {
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        viewModel.numberOfSections
+        isShowingNoSearchResults ? 1 : viewModel.numberOfSections
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.numberOfRows(in: section)
+        isShowingNoSearchResults ? 1 : viewModel.numberOfRows(in: section)
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        if isShowingNoSearchResults { return nil }
         guard let title = viewModel.title(forSection: section) else { return nil }
         let label = UILabel()
         label.text = title
@@ -253,10 +267,14 @@ extension AIChatHistoryViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        viewModel.title(forSection: section) == nil ? .leastNormalMagnitude : UITableView.automaticDimension
+        if isShowingNoSearchResults { return .leastNormalMagnitude }
+        return viewModel.title(forSection: section) == nil ? .leastNormalMagnitude : UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if isShowingNoSearchResults {
+            return tableView.dequeueReusableCell(withIdentifier: AIChatHistoryNoResultsCell.reuseIdentifier, for: indexPath)
+        }
         let cell = tableView.dequeueReusableCell(withIdentifier: AIChatHistoryCell.reuseIdentifier, for: indexPath)
         guard let chatCell = cell as? AIChatHistoryCell else { return cell }
         chatCell.titleLabel.text = viewModel.title(forRowAt: indexPath)
@@ -275,6 +293,37 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         viewModel.openChat(chatId: chatId)
     }
 
+    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard let chatId = viewModel.chatId(forRowAt: indexPath) else { return nil }
+        let wasPinned = viewModel.isPinned(chatId: chatId)
+
+        let action = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            guard let self, let move = self.viewModel.togglePin(chatId: chatId) else {
+                completion(false); return
+            }
+            self.isApplyingLocalUpdate = true
+            // Refresh the icon while the cell is still at its source position — `moveRow`
+            // keeps the same instance, so it'd otherwise carry the pre-toggle icon.
+            if let cell = tableView.cellForRow(at: move.source) as? AIChatHistoryCell {
+                cell.iconImageView.image = self.viewModel.icon(forRowAt: move.destination)
+            }
+            tableView.performBatchUpdates({
+                tableView.moveRow(at: move.source, to: move.destination)
+            }, completion: { [weak self] _ in
+                self?.isApplyingLocalUpdate = false
+                // Catch up any reactive emission that fired (and got skipped) while the
+                // flag was set — e.g. an FE-driven add/delete that landed mid-animation.
+                self?.refreshContent()
+                completion(true)
+            })
+        }
+        action.image = DesignSystemImages.Glyphs.Size24.pin
+        action.accessibilityLabel = wasPinned
+            ? UserText.aiChatHistoryUnpinSwipeAccessibilityLabel
+            : UserText.aiChatHistoryPinSwipeAccessibilityLabel
+        return UISwipeActionsConfiguration(actions: [action])
+    }
+
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         // Resolve chatId now (see `chatId(forRowAt:)` doc) and capture it in the closures.
         guard let chatId = viewModel.chatId(forRowAt: indexPath) else { return nil }
@@ -283,11 +332,11 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             self?.viewModel.deleteChat(chatId: chatId)
             completion(true)
         }
-        delete.image = DesignSystemImages.Glyphs.Size24.trash
+        delete.image = DesignSystemImages.Glyphs.Size24.fire
         delete.accessibilityLabel = UserText.aiChatHistoryDeleteSwipeAccessibilityLabel
 
-        let download = UIContextualAction(style: .normal, title: nil) { _, _, completion in
-            // Download wiring lands in a follow-up; dismiss the swipe for now.
+        let download = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            self?.viewModel.downloadChat(chatId: chatId)
             completion(true)
         }
         download.image = DesignSystemImages.Glyphs.Size24.downloads

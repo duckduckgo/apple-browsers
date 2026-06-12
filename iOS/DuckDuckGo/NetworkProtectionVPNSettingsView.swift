@@ -107,7 +107,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
         }
 
-        let footer = Text(footerText)
+        let footer = Text(LocalizedStringKey(footerText))
             .foregroundColor(.init(designSystemColor: .textSecondary))
             .accentColor(Color(designSystemColor: .accent))
             .daxFootnoteRegular()

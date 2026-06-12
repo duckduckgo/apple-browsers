@@ -28,6 +28,7 @@ public protocol AIChatFeatureFlagProviding {
 }
 
 public extension AIChatFeatureFlagProviding {
-    // Defaults off so the pin/unpin push only rolls out where the subfeature is wired.
-    func supportsSyncChatsUpdate() -> Bool { false }
+    // Defaults on — the push is already gated by the umbrella AI Chat sync flag; this
+    // subfeature only adds an independent remote kill switch.
+    func supportsSyncChatsUpdate() -> Bool { true }
 }

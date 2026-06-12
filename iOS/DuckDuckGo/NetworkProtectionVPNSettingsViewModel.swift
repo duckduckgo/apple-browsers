@@ -68,7 +68,7 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
 
     @Published public var excludeCGNAT: Bool {
         didSet {
-            guard oldValue != excludeCGNAT else {
+            guard settings.excludeCGNAT != excludeCGNAT else {
                 return
             }
 

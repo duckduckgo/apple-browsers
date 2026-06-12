@@ -24,9 +24,10 @@ extension UserDefaults {
         "networkProtectionSettingExcludeCGNAT"
     }
 
-    /// On by default. Internal testers get the carve-out today; everyone
-    /// gets it when the feature ships publicly.
-    public static let excludeCGNATDefaultValue = true
+    /// Off by default: all traffic goes through the VPN. Users turn it on as a
+    /// troubleshooting step when carrier services (Wi-Fi calling, messaging,
+    /// voicemail) have trouble through the tunnel.
+    public static let excludeCGNATDefaultValue = false
 
     @objc
     dynamic var networkProtectionSettingExcludeCGNAT: Bool {

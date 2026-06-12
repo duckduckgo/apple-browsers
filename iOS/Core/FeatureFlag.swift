@@ -637,7 +637,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnMenuItem:
             Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
         case .vpnExcludeCGNATToggle:
-            Config(defaultValue: .enabled, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:

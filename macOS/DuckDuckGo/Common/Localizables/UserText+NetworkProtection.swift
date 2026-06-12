@@ -321,9 +321,9 @@ extension UserText {
 
     static let vpnExcludeLocalNetworksSettingDescription = NSLocalizedString("vpn.setting.description.exclude.local.networks", value: "Bypass the VPN for local network connections, like to a printer.", comment: "Exclude Local Networks setting description")
 
-    static let vpnExcludeCGNATSettingTitle = NSLocalizedString("vpn.setting.title.exclude.cgnat", value: "Exclude Carrier Services", comment: "Exclude CGNAT setting title")
+    static let vpnExcludeCGNATSettingTitle = NSLocalizedString("vpn.setting.title.exclude.cgnat", value: "Exclude carrier services", comment: "Exclude CGNAT setting title")
 
-    static let vpnExcludeCGNATSettingDescription = NSLocalizedString("vpn.setting.description.exclude.cgnat", value: "Let services like Wi-Fi calling and voicemail bypass the VPN so they keep working.", comment: "Exclude CGNAT setting description")
+    static let vpnExcludeCGNATSettingDescription = NSLocalizedString("vpn.setting.description.exclude.cgnat", value: "Recommended off so all your traffic goes through the VPN. If you have problems connecting to online services, try turning it on.", comment: "Exclude CGNAT setting description")
 
     static let openVPNButtonTitle = NSLocalizedString("vpn.button.title.open.vpn", value: "Open VPN…", comment: "Uninstall VPN button title")
 

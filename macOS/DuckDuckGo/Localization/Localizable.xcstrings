@@ -113196,7 +113196,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Let services like Wi-Fi calling and voicemail bypass the VPN so they keep working."
+            "value" : "Recommended off so all your traffic goes through the VPN. If you have problems connecting to online services, try turning it on."
           }
         }
       }
@@ -113508,7 +113508,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Exclude Carrier Services"
+            "value" : "Exclude carrier services"
           }
         }
       }

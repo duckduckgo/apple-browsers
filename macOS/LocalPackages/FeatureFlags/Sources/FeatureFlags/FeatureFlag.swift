@@ -452,7 +452,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
         case .vpnExcludeCGNATToggle:
-            Config(defaultValue: .enabled, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT), category: .vpn)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT), category: .vpn)
         case .vpnOrphanProxyDetectionKillSwitch:
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyDetectionKillSwitch), category: .vpn)
         case .vpnOrphanProxyBypassKillSwitch:

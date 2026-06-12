@@ -2798,7 +2798,7 @@ https://duckduckgo.com/mac";
 "network.protection.vpn.data-volume" = "Data Volume";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Let services like Wi-Fi calling and voicemail bypass the VPN so they keep working.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Recommended off so all your traffic goes through the VPN. If you have problems with features like Wi-Fi calling, messaging, or voicemail, try turning it on.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Exclude Carrier Services";

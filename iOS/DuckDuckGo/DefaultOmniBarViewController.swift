@@ -67,8 +67,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         // The text view is multi-line, so only claim the arrows when navigating the list or when the caret has no
         // line to move into; otherwise they fall through to normal caret movement.
         if omniBarView.aiChatTextView.isFirstResponder {
-            let hasHighlight = omniDelegate?.onAIChatSuggestionsHasHighlight() ?? false
-            let canEnterList = omniDelegate?.onAIChatSuggestionsIsNavigationAvailable() ?? false
+            let hasHighlight = omniDelegate?.hasAIChatSuggestionsHighlight() ?? false
+            let canEnterList = omniDelegate?.isAIChatSuggestionsNavigationAvailable() ?? false
             if hasHighlight || (canEnterList && omniBarView.aiChatTextView.isCaretOnLastLine) {
                 commands.append(.prioritizedArrow(input: UIKeyCommand.inputDownArrow, action: #selector(handleAIChatArrowDown)))
             }

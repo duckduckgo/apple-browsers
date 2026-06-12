@@ -3925,11 +3925,11 @@ extension MainViewController: OmniBarDelegate {
         return isURLFallbackShowing ? .urlFallbackSuggestions : nil
     }
 
-    func onAIChatSuggestionsIsNavigationAvailable() -> Bool {
+    func isAIChatSuggestionsNavigationAvailable() -> Bool {
         activeAIChatSuggestionSurface != nil
     }
 
-    func onAIChatSuggestionsHasHighlight() -> Bool {
+    func hasAIChatSuggestionsHighlight() -> Bool {
         switch activeAIChatSuggestionSurface {
         case .chatHistory: return iPadTabChatHistoryCoordinator.hasHighlightedSuggestion
         case .urlFallbackSuggestions: return suggestionTrayController?.highlightedSuggestion != nil

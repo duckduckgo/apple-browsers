@@ -159,7 +159,10 @@ final class AIChatHistoryViewModel: ObservableObject {
         // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
         Task { @MainActor in
-            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            guard case .success = result else { return }
+            // Flush the deletion to sync now so the FE doesn't re-pull the chat.
+            fireExecutor.scheduleSync()
         }
     }
 

@@ -147,6 +147,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(fireExecutor.burnedChatIds, ["p1"])
         XCTAssertEqual(fireExecutor.burnedIsFireMode, [false],
                        "chat-history sheet only ever deletes persistent chats; never fire-mode")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 1,
+                       "a successful delete must flush sync so the deletion isn't re-pulled")
     }
 
     func testDeleteChat_noFireExecutor_isNoOp() {
@@ -418,6 +420,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         weak var delegate: FireExecutorDelegate?
         private(set) var burnedChatIds: [String] = []
         private(set) var burnedIsFireMode: [Bool] = []
+        private(set) var scheduleSyncCallCount = 0
 
         func prepare(for request: FireRequest) { }
         func burn(request: FireRequest, applicationState: DataStoreWarmup.ApplicationState) async { }
@@ -426,6 +429,9 @@ final class AIChatHistoryViewModelTests: XCTestCase {
             burnedChatIds.append(chatID)
             burnedIsFireMode.append(isFireMode)
             return .success(())
+        }
+        func scheduleSync() {
+            scheduleSyncCallCount += 1
         }
     }
 

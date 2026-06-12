@@ -4152,6 +4152,8 @@
 		CCF40A722ED7529D00CBF271 /* UserChurnPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A702ED7529D00CBF271 /* UserChurnPixel.swift */; };
 		CCF40A782ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A772ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift */; };
 		CCF40A792ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A772ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift */; };
+		CCF7761F2FD9641B005C9832 /* NewTabPagePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF7761E2FD9641B005C9832 /* NewTabPagePixelTests.swift */; };
+		CCF776202FD9641B005C9832 /* NewTabPagePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF7761E2FD9641B005C9832 /* NewTabPagePixelTests.swift */; };
 		CCF78AD62F34996900263097 /* CombineSchedulers in Frameworks */ = {isa = PBXBuildFile; productRef = CCF78AD52F34996900263097 /* CombineSchedulers */; };
 		CCF78AD82F34997400263097 /* CombineSchedulers in Frameworks */ = {isa = PBXBuildFile; productRef = CCF78AD72F34997400263097 /* CombineSchedulers */; };
 		CD2AB5BF2C8222F20019EB49 /* MaliciousSiteProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A42C821FFE00F9399D /* MaliciousSiteProtectionManager.swift */; };
@@ -6795,6 +6797,7 @@
 		CCF40A6A2ED7434C00CBF271 /* UserChurnServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserChurnServiceTests.swift; sourceTree = "<group>"; };
 		CCF40A702ED7529D00CBF271 /* UserChurnPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserChurnPixel.swift; sourceTree = "<group>"; };
 		CCF40A772ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserChurnBackgroundActivityScheduler.swift; sourceTree = "<group>"; };
+		CCF7761E2FD9641B005C9832 /* NewTabPagePixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePixelTests.swift; sourceTree = "<group>"; };
 		CD2AB5C92C8225E70019EB49 /* URLTokenValidator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLTokenValidator.swift; sourceTree = "<group>"; };
 		CD3301282C887B1C009AA127 /* URLTokenValidatorTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLTokenValidatorTests.swift; sourceTree = "<group>"; };
 		CD33012B2C89B588009AA127 /* ErrorPageHTMLFactory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ErrorPageHTMLFactory.swift; sourceTree = "<group>"; };
@@ -12193,6 +12196,7 @@
 				B6DA441D2616C84600DD1EC2 /* PixelStoreMock.swift */,
 				4B117F7C276C0CB5002F3D8C /* LocalStatisticsStoreTests.swift */,
 				B610F2E327A8F37A00FCEBE9 /* CBRCompileTimeReporterTests.swift */,
+				CCF7761E2FD9641B005C9832 /* NewTabPagePixelTests.swift */,
 			);
 			path = Statistics;
 			sourceTree = "<group>";
@@ -16557,6 +16561,7 @@
 				56EA402A2DB7830800B5061E /* LocalizationTests.swift in Sources */,
 				3790E2F52F6D5F70003EACD2 /* TabCollectionViewModelTests.swift in Sources */,
 				7B1522B12DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */,
+				CCF776202FD9641B005C9832 /* NewTabPagePixelTests.swift in Sources */,
 				3706FE81293F661700E42796 /* PermissionModelTests.swift in Sources */,
 				5681ED442BDBA5F900F59729 /* SyncBookmarksAdapterTests.swift in Sources */,
 				BB0036652E426EDD0016DDEF /* ReportProblemFormViewModelTests.swift in Sources */,
@@ -18742,6 +18747,7 @@
 				1D4B03D92CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift in Sources */,
 				B6106BB326A7F4AA0013B453 /* GeolocationServiceMock.swift in Sources */,
 				4B8AC93D26B49BE600879451 /* FirefoxLoginReaderTests.swift in Sources */,
+				CCF7761F2FD9641B005C9832 /* NewTabPagePixelTests.swift in Sources */,
 				3714B1E728EDB7FA0056C57A /* DuckPlayerPreferencesTests.swift in Sources */,
 				9F1556822DDC41E600A35DBA /* MockDefaultBrowserAndDockPromptStorage.swift in Sources */,
 				BBD31EAB2E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift in Sources */,

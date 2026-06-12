@@ -35,6 +35,14 @@ final class MockDDGSyncing: DDGSyncing {
         
     }
 
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
+        ""
+    }
+
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> [RegisteredDevice] {
+        []
+    }
+
     func mainTokenRescope(to scope: String) async throws -> String? {
         nil
     }
@@ -79,6 +87,10 @@ final class MockDDGSyncing: DDGSyncing {
     }
 
     var account: SyncAccount?
+    var recoveryCodeOverride: String?
+    var recoveryCode: String? {
+        recoveryCodeOverride ?? account?.legacyRecoveryCodeV1
+    }
 
     var scheduler: Scheduling
 
@@ -201,7 +213,7 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
         true
     }
 
-    func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
+    func syncCodeEntered(code: String, canScanLegacyURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
         true
     }
 

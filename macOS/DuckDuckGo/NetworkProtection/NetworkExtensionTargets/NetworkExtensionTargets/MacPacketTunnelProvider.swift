@@ -714,6 +714,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
+                       session: "macos-vpn-tunnel",
                        channel: channel,
                        defaultHeaders: defaultHeaders,
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in

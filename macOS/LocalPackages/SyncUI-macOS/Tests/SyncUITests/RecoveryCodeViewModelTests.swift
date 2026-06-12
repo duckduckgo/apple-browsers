@@ -16,39 +16,41 @@
 //  limitations under the License.
 //
 
+import AppKit
 import XCTest
 @testable import SyncUI_macOS
 
 final class RecoveryCodeViewModelTests: XCTestCase {
+
+    override func tearDown() {
+        NSPasteboard.general.clearContents()
+        super.tearDown()
+    }
 
     func testSubmitButtonIsDisabledByDefault() throws {
         let model = RecoveryCodeViewModel()
         XCTAssertTrue(model.shouldDisableSubmitButton)
     }
 
-    func testWhenRecoveryCodeIsSetThenSubmitButtonIsEnabled() throws {
+    func testWhenPastingV2PairingURLThenCodeIsPreserved() {
         let model = RecoveryCodeViewModel()
+        let url = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMi4wIn0"
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(url, forType: .string)
 
-        model.setCode("12345")
-        XCTAssertFalse(model.shouldDisableSubmitButton)
+        model.paste()
 
-        model.setCode("")
-        XCTAssertTrue(model.shouldDisableSubmitButton)
+        XCTAssertEqual(model.recoveryCode, url)
     }
 
-    func testRecoveryCodeValidation() throws {
+    func testWhenPastingCodeWithWhitespaceThenWhitespaceIsRemoved() {
         let model = RecoveryCodeViewModel()
+        let input = " https://duckduckgo.com/sync/pairing/\n#&code2=abc \n"
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(input, forType: .string)
 
-        XCTAssertEqual(model.recoveryCode, "")
+        model.paste()
 
-        model.setCode("12345")
-        XCTAssertEqual(model.recoveryCode, "12345")
-
-        model.setCode("Y2hhcmFjdGVycw==")
-        XCTAssertEqual(model.recoveryCode, "Y2hhcmFjdGVycw==")
-
-        model.setCode("😍")
-        XCTAssertEqual(model.recoveryCode, "Y2hhcmFjdGVycw==")
-
+        XCTAssertEqual(model.recoveryCode, "https://duckduckgo.com/sync/pairing/#&code2=abc")
     }
 }

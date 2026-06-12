@@ -2815,7 +2815,7 @@ https://duckduckgo.com/mac";
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Shortcuts";
 
-/* Footer text for the Strict Routing setting item. */
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
 "network.protection.vpn.strict.routing.setting.footer" = "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like CarPlay, AirDrop, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
 
 /* Title for the Strict Routing setting item. */

@@ -350,7 +350,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             }
         }
 
-        do {
+        do { 
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
             try await startupMonitor.waitForStartSuccess(tunnelManager)

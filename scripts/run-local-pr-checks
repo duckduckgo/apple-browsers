@@ -100,11 +100,10 @@ emit_hook_guidance_header() {
   cat <<'EOF'
 [local PR checks] Finishing is blocked: static checks failed (see below).
 
-This gate lints your UNCOMMITTED working-tree changes (SwiftLint is scoped to
-the files you changed). Those changes being uncommitted is expected and correct
-- the gate runs before you commit, not because you forgot to. To clear it, fix
-the violations listed below directly in the working tree, then finish again. Do
-NOT stage or commit anything to satisfy this hook.
+This gate lints the changes on your branch, committed or not (SwiftLint is
+scoped to the files you changed). It is blocking on the violations listed below,
+not on your commit state - committing or staging will not clear it. To clear it,
+fix the violations directly in the code, then finish again.
 
 EOF
 }
@@ -282,7 +281,7 @@ fi
 # In hook mode, failure must exit 2 - the code that blocks the agent and feeds
 # stderr back. Outside hook mode keep the documented contract: exit = failures.
 if [ "$HOOK_MODE" = true ] && [ "$FAIL_COUNT" -gt 0 ]; then
-  printf '\nTo finish: fix the FAIL items above in the working tree, then stop again. Leave the changes uncommitted.\n'
+  printf '\nTo finish: fix the FAIL items above, then stop again. Committing will not clear this gate; fixing the violations will.\n'
   exit 2
 fi
 exit "$FAIL_COUNT"

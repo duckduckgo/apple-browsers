@@ -323,7 +323,7 @@ extension UserText {
 
     static let vpnStrictRoutingSettingTitle = NSLocalizedString("vpn.setting.title.strict.routing", value: "Strict routing", comment: "Strict routing setting title")
 
-    static let vpnStrictRoutingSettingDescription = NSLocalizedString("vpn.setting.description.strict.routing", value: "We recommend keeping this on when using networks you don't trust. If you're having trouble reaching local devices or other networks, try turning it off.", comment: "Strict routing setting description")
+    static let vpnStrictRoutingSettingDescription = NSLocalizedString("vpn.setting.description.strict.routing", value: "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like AirDrop, Sidecar, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)", comment: "Strict routing setting description. The 'Learn more' text is a Markdown link.")
 
     static let openVPNButtonTitle = NSLocalizedString("vpn.button.title.open.vpn", value: "Open VPN…", comment: "Uninstall VPN button title")
 

@@ -3910,6 +3910,76 @@ extension MainViewController: OmniBarDelegate {
         updateIPadURLFallbackSuggestions()
     }
 
+    // In AI-chat mode the arrow keys drive whichever suggestion surface is showing: the chat-history list when
+    // it has rows, otherwise the URL-only fallback tray (the two are mutually exclusive).
+    private enum AIChatSuggestionSurface {
+        case chatHistory
+        case urlFallbackSuggestions
+    }
+
+    private var activeAIChatSuggestionSurface: AIChatSuggestionSurface? {
+        guard isModeToggleInAIChatMode else { return nil }
+        if iPadTabChatHistoryCoordinator.isNavigationAvailable { return .chatHistory }
+        let isURLFallbackShowing = suggestionTrayController?.suggestionFilter == .urlsOnly
+            && viewCoordinator.suggestionTrayContainer.isHidden == false
+        return isURLFallbackShowing ? .urlFallbackSuggestions : nil
+    }
+
+    func isAIChatSuggestionsNavigationAvailable() -> Bool {
+        activeAIChatSuggestionSurface != nil
+    }
+
+    func hasAIChatSuggestionsHighlight() -> Bool {
+        switch activeAIChatSuggestionSurface {
+        case .chatHistory: return iPadTabChatHistoryCoordinator.hasHighlightedSuggestion
+        case .urlFallbackSuggestions: return suggestionTrayController?.highlightedSuggestion != nil
+        case nil: return false
+        }
+    }
+
+    func onAIChatSuggestionsMoveSelectionDown() {
+        switch activeAIChatSuggestionSurface {
+        case .chatHistory: iPadTabChatHistoryCoordinator.moveSelectionDown()
+        case .urlFallbackSuggestions: suggestionTrayController?.keyboardMoveSelectionDown()
+        case nil: break
+        }
+    }
+
+    func onAIChatSuggestionsMoveSelectionUp() {
+        switch activeAIChatSuggestionSurface {
+        case .chatHistory:
+            iPadTabChatHistoryCoordinator.moveSelectionUp()
+        case .urlFallbackSuggestions:
+            // At the first row, clear the highlight so focus returns to the text input.
+            if suggestionTrayController?.isKeyboardSelectionAtFirstRow == true {
+                suggestionTrayController?.clearKeyboardSelection()
+            } else {
+                suggestionTrayController?.keyboardMoveSelectionUp()
+            }
+        case nil:
+            break
+        }
+    }
+
+    func onAIChatSuggestionsActivateHighlight() -> Bool {
+        switch activeAIChatSuggestionSurface {
+        case .chatHistory:
+            return iPadTabChatHistoryCoordinator.activateHighlightedSuggestion()
+        case .urlFallbackSuggestions:
+            guard let suggestion = suggestionTrayController?.highlightedSuggestion else { return false }
+            onOmniSuggestionSelected(suggestion)
+            return true
+        case nil:
+            return false
+        }
+    }
+
+    func onAIChatSuggestionsClearHighlight() {
+        guard isModeToggleInAIChatMode else { return }
+        iPadTabChatHistoryCoordinator.clearSelection()
+        suggestionTrayController?.clearKeyboardSelection()
+    }
+
     func didRequestCurrentURL() -> URL? {
         return currentTab?.url
     }
@@ -4850,6 +4920,9 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     }
     
     func autocomplete(highlighted suggestion: Suggestion, for query: String) {
+        // In iPad duck.ai mode the visible editor is the chat text view, so keep the highlight on the
+        // suggestion row rather than writing the hidden search field.
+        guard !isModeToggleInAIChatMode else { return }
 
         switch suggestion {
         case .phrase(phrase: let phrase), .askAIChat(let phrase):

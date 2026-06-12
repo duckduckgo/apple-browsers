@@ -212,6 +212,68 @@ final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
         XCTAssertEqual(mockDataStore.lastDeleteChatId, "chat-1")
     }
 
+    // MARK: - Locally deleted chat IDs
+
+    func testWhenDeleteChatThenRecordsLocallyDeletedChatId() throws {
+        try handler.deleteChat(chatId: "chat-1")
+
+        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
+        XCTAssertEqual(recorded, ["chat-1"])
+    }
+
+    func testWhenDeleteUnknownChatThenStillRecordsId() throws {
+        // The mock data store does not track chats; deleting an absent id must still record it.
+        try handler.deleteChat(chatId: "never-existed")
+
+        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
+        XCTAssertEqual(recorded, ["never-existed"])
+    }
+
+    func testWhenDeletingSameChatTwiceThenRecordedOnce() throws {
+        try handler.deleteChat(chatId: "dup")
+        try handler.deleteChat(chatId: "dup")
+
+        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
+        XCTAssertEqual(recorded, ["dup"])
+    }
+
+    func testWhenDeletingMultipleChatsThenIdsAccumulate() throws {
+        try handler.deleteChat(chatId: "a")
+        try handler.deleteChat(chatId: "b")
+
+        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
+        XCTAssertEqual(recorded.map { Set($0) }, Set(["a", "b"]))
+    }
+
+    func testWhenConcurrentDeleteChatsThenNoIdsAreLost() throws {
+        let iterations = 100
+        let queue1 = DispatchQueue(label: "test.delchat1", qos: .userInitiated)
+        let queue2 = DispatchQueue(label: "test.delchat2", qos: .userInitiated)
+        let group = DispatchGroup()
+
+        for i in 0..<iterations {
+            group.enter()
+            queue1.async {
+                try? self.handler.deleteChat(chatId: "a\(i)")
+                group.leave()
+            }
+            group.enter()
+            queue2.async {
+                try? self.handler.deleteChat(chatId: "b\(i)")
+                group.leave()
+            }
+        }
+
+        group.wait()
+
+        let recorded = Set((try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]) ?? [])
+        XCTAssertEqual(recorded.count, iterations * 2, "Expected \(iterations * 2) ids but got \(recorded.count) — updates were lost")
+        for i in 0..<iterations {
+            XCTAssertTrue(recorded.contains("a\(i)"), "Missing id a\(i)")
+            XCTAssertTrue(recorded.contains("b\(i)"), "Missing id b\(i)")
+        }
+    }
+
     func testWhenGetAllChatsThenDelegatesToDataStore() throws {
         mockDataStore.stubbedChats = [DuckAiChatRecord(chatId: "c1", data: Data())]
         let result = try handler.getAllChats()

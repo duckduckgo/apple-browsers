@@ -71315,66 +71315,6 @@
         }
       }
     },
-    "permission.mute" : {
-      "comment" : "Temporarily pause input media device %@ access for %@2 website",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verwendung von %1$@ für „%2$@“ pausieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Pause %1$@ use on “%2$@”"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pausar el uso de %1$@ en \"%2$@\""
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suspendre l'utilisation de %1$@ sur « %2$@ »"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Metti in pausa l'utilizzo di %1$@ su \"%2$@\""
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toegang van %1$@ tot “%2$@\" pauzeren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wstrzymaj korzystanie z urządzenia %1$@ w witrynie „%2$@”"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pausar a utilização de %1$@ em \"%2$@\""
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@: приостановить доступ на сайте %2$@"
-          }
-        }
-      }
-    },
     "permission.notification" : {
       "comment" : "Web notifications permission access name",
       "extractionState" : "extracted_with_value",
@@ -73392,66 +73332,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настройки системы → Конфиденциальность"
-          }
-        }
-      }
-    },
-    "permission.unmute" : {
-      "comment" : "Resume input media device %@ access for %@ website",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verwendung von %1$@ am „%2$@“ wieder aufnehmen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Resume %1$@ use on “%2$@”"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reanudar el uso de %1$@ en \"%2$@\""
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reprendre l'utilisation de %1$@ sur « %2$@ »"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Riprendi l'uso di %1$@ su \"%2$@\""
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toegang van %1$@ tot “%2$@” hervatten"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wznów korzystanie z urządzenia %1$@ w witrynie „%2$@”"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retomar a utilização de %1$@ em \"%2$@\""
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@: возобновить доступ на сайте %2$@"
           }
         }
       }

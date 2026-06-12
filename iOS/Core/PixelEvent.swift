@@ -968,6 +968,9 @@ extension Pixel {
 
         case debugWebViewInVisibleTabHidden
 
+        case debugInteractionRepeatedFailedScroll
+        case debugInteractionWedgedRecognizer
+
         case debugPromptCoordinationFailedToSaveLastPresentationDate
         case debugPromptCoordinationFailedToRetrieveLastPresentationDate
 
@@ -1484,9 +1487,12 @@ extension Pixel {
         case ntpAfterIdleEscapeHatchBurnImmediatelyTapped
         case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab
         case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab
+        case ntpAfterIdleEscapeHatchHiddenFromMenu
         case ntpAfterIdleSettingChangedToNewTab
         case ntpAfterIdleSettingChangedToLastUsedTab
         case ntpAfterIdleSettingIdleIntervalChanged
+        case ntpAfterIdleLastTabShortcutSettingEnabled
+        case ntpAfterIdleLastTabShortcutSettingDisabled
 
         // MARK: DuckPlayer
 
@@ -1726,6 +1732,9 @@ extension Pixel {
         // MARK: AI Chat Recent Chats
         case aiChatRecentChatSelectedPinned
         case aiChatRecentChatSelected
+        case aiChatRecentChatDeleteButtonTapped
+        case aiChatRecentChatDeleteConfirmed
+        case aiChatRecentChatDeleteCancelled
 
         // MARK: AI Chat Contextual Mode
         case aiChatContextualSheetOpened
@@ -2909,6 +2918,9 @@ extension Pixel.Event {
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
 
+        case .debugInteractionRepeatedFailedScroll: return "m_debug_interaction_repeated_failed_scroll"
+        case .debugInteractionWedgedRecognizer: return "m_debug_interaction_wedged_recognizer"
+
             // MARK: - Debug Prompt Coordination
 
         case .debugPromptCoordinationFailedToSaveLastPresentationDate: return "m_debug_prompt-coordination_failed-to-save_last-presentation-date"
@@ -3324,9 +3336,12 @@ extension Pixel.Event {
         case .ntpAfterIdleEscapeHatchBurnImmediatelyTapped: return "m_ntp_after_idle_escape_hatch_burn_immediately_tapped"
         case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_new_tab"
         case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_last_used_tab"
+        case .ntpAfterIdleEscapeHatchHiddenFromMenu: return "m_ntp_after_idle_escape_hatch_hidden_from_menu"
         case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
         case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
         case .ntpAfterIdleSettingIdleIntervalChanged: return "m_ntp_after_idle_setting_idle_interval_changed"
+        case .ntpAfterIdleLastTabShortcutSettingEnabled: return "m_ntp_after_idle_last_tab_shortcut_setting_enabled"
+        case .ntpAfterIdleLastTabShortcutSettingDisabled: return "m_ntp_after_idle_last_tab_shortcut_setting_disabled"
 
         // MARK: DuckPlayer
         case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
@@ -3557,6 +3572,9 @@ extension Pixel.Event {
         // MARK: AI Chat Recent Chats
         case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
         case .aiChatRecentChatSelected: return "m_aichat_recent_chat_selected"
+        case .aiChatRecentChatDeleteButtonTapped: return "m_aichat_recent_chat_delete_button_tapped"
+        case .aiChatRecentChatDeleteConfirmed: return "m_aichat_recent_chat_delete_confirmed"
+        case .aiChatRecentChatDeleteCancelled: return "m_aichat_recent_chat_delete_cancelled"
 
         // MARK: AI Chat Contextual Mode
         case .aiChatContextualSheetOpened: return "m_aichat_contextual_sheet_opened"

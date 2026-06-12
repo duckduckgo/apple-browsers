@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
 import DuckUI
+import MetricBuilder
 
 struct ImportPasswordsViaSyncView: View {
 
@@ -59,43 +60,47 @@ struct ImportPasswordsViaSyncView: View {
         @State private var navigate = false
 
         var body: some View {
-            Image(rebrandable: "Desktop-Sync-Passwords-128")
+            VStack(spacing: 8) {
+                Image(rebrandable: "Desktop-Sync-Passwords-128")
 
-            Text(UserText.autofillImportPasswordsViaSyncTitle)
-                .daxTitle2()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .multilineTextAlignment(.center)
-                .padding(.top, 16)
+                VStack(spacing: 4) {
+                    Text(UserText.autofillImportPasswordsViaSyncTitle)
+                        .daxTitle2()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .multilineTextAlignment(.center)
 
-            Text(UserText.autofillImportPasswordsViaSyncSubtitle)
-                .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
-                .padding(.top, 8)
+                    Text(UserText.autofillImportPasswordsViaSyncSubtitle)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 8)
 
-            Button {
-                viewModel.buttonPressed(.getBrowser)
-                self.navigate = true
-            } label: {
-                Text(ImportPasswordsViaSyncViewModel.ButtonType.getBrowser.title)
-                    .frame(width: viewModel.maxButtonWidth())
+                VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
+                    Button {
+                        viewModel.buttonPressed(.getBrowser)
+                        self.navigate = true
+                    } label: {
+                        Text(ImportPasswordsViaSyncViewModel.ButtonType.getBrowser.title)
+                    }
+                    .buttonStyle(PrimaryButtonStyle(compact: true))
+
+                    Button {
+                        viewModel.buttonPressed(.sync)
+                    } label: {
+                        Text(ImportPasswordsViaSyncViewModel.ButtonType.sync.title)
+                    }
+                    .buttonStyle(SecondaryFillButtonStyle(compact: true))
+                }
+                .fixedSize(horizontal: true, vertical: false)
+                .padding(8)
             }
-            .buttonStyle(PrimaryButtonStyle(fullWidth: false))
-            .padding(.top, 24)
-
-            Button {
-                viewModel.buttonPressed(.sync)
-            } label: {
-                Text(ImportPasswordsViaSyncViewModel.ButtonType.sync.title)
-                    .frame(width: viewModel.maxButtonWidth())
-            }
-            .buttonStyle(SecondaryFillButtonStyle(fullWidth: false))
-            .padding(.top, 8)
-
-            NavigationLink(destination: DesktopDownloadView(viewModel: .init(platform: .desktop)), isActive: $navigate) {
-                EmptyView()
-            }
-
+            .background(
+                NavigationLink(destination: DesktopDownloadView(viewModel: .init(platform: .desktop)), isActive: $navigate) {
+                    EmptyView()
+                }
+            )
         }
     }
 

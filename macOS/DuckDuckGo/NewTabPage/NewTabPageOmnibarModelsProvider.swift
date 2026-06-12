@@ -23,6 +23,7 @@ import Subscription
 
 /// Fetches AI models from the duck.ai API and builds sectioned model lists
 /// using the shared section builder for the NTP dropdown.
+@MainActor
 final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
     private(set) var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?

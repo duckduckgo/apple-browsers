@@ -48,7 +48,11 @@ struct EscapeHatchModelTests {
         }
     }
 
-    private func makeSUT(targetTab: Tab, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger = MockFeatureFlagger()) -> EscapeHatchModel {
+    private func makeSUT(targetTab: Tab,
+                         router: EscapeHatchActionRouter,
+                         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+                         lastTabShortcutAdapter: LastTabShortcutAdapter = LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore()),
+                         onShortcutHidden: @escaping () -> Void = {}) -> EscapeHatchModel {
         EscapeHatchModel(
             title: "title",
             subtitle: "subtitle",
@@ -61,7 +65,9 @@ struct EscapeHatchModelTests {
             afterInactivityOptionAdapter: AfterInactivityOptionAdapter(
                 initialOption: .lastUsedTab,
                 keyValueStore: MockKeyValueFileStore()
-            )
+            ),
+            lastTabShortcutAdapter: lastTabShortcutAdapter,
+            onShortcutHidden: onShortcutHidden
         )
     }
 
@@ -127,5 +133,64 @@ struct EscapeHatchModelTests {
                           featureFlagger: flagger)
 
         #expect(sut.isFireButtonEnabled == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("isHideShortcutEnabled tracks the escapeHatchHideShortcut flag", .timeLimit(.minutes(1)))
+    func hideShortcutEnabledTracksFlag() {
+        let off = makeSUT(targetTab: Tab(uid: "tab"), router: SpyRouter(), featureFlagger: MockFeatureFlagger())
+        #expect(off.isHideShortcutEnabled == false)
+
+        let on = makeSUT(targetTab: Tab(uid: "tab"),
+                         router: SpyRouter(),
+                         featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.escapeHatchHideShortcut]))
+        #expect(on.isHideShortcutEnabled == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("hideShortcut disables the setting and reports telemetry", .timeLimit(.minutes(1)))
+    func hideShortcutDisablesAndReports() {
+        let adapter = LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore())
+        var hiddenReports = 0
+        let sut = makeSUT(targetTab: Tab(uid: "tab"),
+                          router: SpyRouter(),
+                          featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.escapeHatchHideShortcut]),
+                          lastTabShortcutAdapter: adapter,
+                          onShortcutHidden: { hiddenReports += 1 })
+
+        sut.hideShortcut()
+
+        #expect(adapter.isEnabled == false)
+        #expect(hiddenReports == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("Card is hidden when the shortcut is disabled and the hide feature is available", .timeLimit(.minutes(1)))
+    func cardHiddenWhenShortcutDisabled() {
+        let adapter = LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore())
+        let sut = makeSUT(targetTab: Tab(uid: "tab"),
+                          router: SpyRouter(),
+                          featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.escapeHatchHideShortcut]),
+                          lastTabShortcutAdapter: adapter)
+
+        // Target tab is present, so the card is visible while the shortcut is enabled.
+        #expect(sut.isReturnToTabCardVisible == true)
+
+        adapter.setEnabled(false)
+        #expect(sut.isReturnToTabCardVisible == false)
+    }
+
+    @available(iOS 16, *)
+    @Test("Shortcut is always considered enabled when the hide feature is unavailable", .timeLimit(.minutes(1)))
+    func shortcutAlwaysEnabledWhenFeatureUnavailable() {
+        let adapter = LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore())
+        adapter.setEnabled(false)
+        let sut = makeSUT(targetTab: Tab(uid: "tab"),
+                          router: SpyRouter(),
+                          featureFlagger: MockFeatureFlagger(),
+                          lastTabShortcutAdapter: adapter)
+
+        #expect(sut.isLastTabShortcutEnabled == true)
+        #expect(sut.isReturnToTabCardVisible == true)
     }
 }

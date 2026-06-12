@@ -18,6 +18,7 @@
 
 import Combine
 import PersistenceTestingUtils
+import PixelKit
 import PixelKitTestingUtilities
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -212,6 +213,32 @@ final class AppStateRestorationManagerTests: XCTestCase {
         try mockKeyValueStore.set(true, forKey: terminationFlagKey)
 
         appStateManager.applicationDidFinishLaunching()
+
+        mockPixelKit.verifyExpectations()
+    }
+
+    @MainActor
+    func testWhenTerminationFlagReadFails_ThenDebugReadPixelIsFiredAndPromptIsNotShown() throws {
+        mockKeyValueStore.throwOnRead = MockError.error
+        addMockSessionData()
+        mockPixelKit.expectedFireCalls = [
+            .init(pixel: DebugEvent(SessionRestorePromptPixel.appTerminationFlagReadFailed, error: MockError.error), frequency: .standard)
+        ]
+
+        appStateManager.applicationDidFinishLaunching()
+
+        mockPixelKit.verifyExpectations()
+        XCTAssertFalse(mockPromptCoordinator.sessionPromptShown)
+    }
+
+    @MainActor
+    func testWhenTerminationFlagWriteFailsOnApplicationWillTerminate_ThenDebugWritePixelIsFired() throws {
+        mockKeyValueStore.throwOnSet = MockError.error
+        mockPixelKit.expectedFireCalls = [
+            .init(pixel: DebugEvent(SessionRestorePromptPixel.appTerminationFlagWriteFailed, error: MockError.error), frequency: .standard)
+        ]
+
+        appStateManager.applicationWillTerminate()
 
         mockPixelKit.verifyExpectations()
     }

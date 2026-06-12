@@ -65,6 +65,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
                 }
             } catch {
                 Logger.general.error("Failed to read appDidTerminateAsExpected from keyValueStore: \(error)")
+                pixelFiring?.fire(DebugEvent(SessionRestorePromptPixel.appTerminationFlagReadFailed, error: error))
             }
             return true
         }
@@ -73,6 +74,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
                 try keyValueStore.set(newValue, forKey: Constants.appDidTerminateAsExpectedKey)
             } catch {
                 Logger.general.error("Failed to write appDidTerminateAsExpected to keyValueStore: \(error)")
+                pixelFiring?.fire(DebugEvent(SessionRestorePromptPixel.appTerminationFlagWriteFailed, error: error))
             }
         }
     }

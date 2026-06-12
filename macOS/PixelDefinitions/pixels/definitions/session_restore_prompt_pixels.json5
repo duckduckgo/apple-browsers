@@ -28,5 +28,17 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_debug_unclean-exit-flag_read-failed": {
+        "description": "Fired when reading the appDidTerminateAsExpected flag from KeyValueStore fails during unclean exit detection",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_debug_unclean-exit-flag_write-failed": {
+        "description": "Fired when writing the appDidTerminateAsExpected flag to KeyValueStore fails during clean quit or launch arming",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

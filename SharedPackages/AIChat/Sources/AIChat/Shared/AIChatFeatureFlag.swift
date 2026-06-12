@@ -21,7 +21,13 @@ import Foundation
 public protocol AIChatFeatureFlagProviding {
     func isAIChatSyncEnabled() -> Bool
     func supportsSyncChatsDeletion() -> Bool
+    func supportsSyncChatsUpdate() -> Bool
     func isNativeDataAccessEnabled() -> Bool
     func isNativeDataStorageEnabled() -> Bool
 
+}
+
+public extension AIChatFeatureFlagProviding {
+    // Defaults off so the pin/unpin push only rolls out where the subfeature is wired.
+    func supportsSyncChatsUpdate() -> Bool { false }
 }

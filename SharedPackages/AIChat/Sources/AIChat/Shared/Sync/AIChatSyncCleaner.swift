@@ -69,6 +69,7 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
 
     private var canUseAIChatSyncUpdate: Bool {
         guard featureFlagProvider.isAIChatSyncEnabled() else { return false }
+        guard featureFlagProvider.supportsSyncChatsUpdate() else { return false }
         guard sync.authState != .inactive else { return false }
         return isChatHistoryEnabled
     }

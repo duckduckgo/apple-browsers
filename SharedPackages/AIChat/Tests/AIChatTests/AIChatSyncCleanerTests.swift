@@ -552,6 +552,20 @@ final class AIChatSyncCleanerTests: XCTestCase {
         XCTAssertEqual(mockSync.mockScheduler.notifyDataChangedCallCount, 0)
     }
 
+    func testGivenUpdateSubfeatureDisabled_WhenRecordChatUpdate_ThenNothingIsStored() async {
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsUpdateResult = false
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        await sut.recordChatUpdate(chatID: "chat-1")
+
+        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+        XCTAssertNil(stored, "Updates must not enqueue while the update subfeature is off")
+        XCTAssertEqual(mockSync.mockScheduler.notifyDataChangedCallCount, 0)
+    }
+
     func testGivenAllConditionsMet_WhenRecordChatUpdate_ThenChatIDIsStoredAndSyncIsTriggered() async {
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
         mockSync.authState = .active

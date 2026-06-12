@@ -217,7 +217,9 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private func applyHighlightAppearance(atRow row: Int, isHighlighted: Bool) {
-        guard let cell = tableView.cellForRow(at: IndexPath(row: row, section: 0)) else { return }
+        let indexPath = IndexPath(row: row, section: 0)
+        guard tableView.indexPathsForVisibleRows?.contains(indexPath) == true,
+              let cell = tableView.cellForRow(at: indexPath) else { return }
         cell.backgroundColor = highlightBackgroundColor(isHighlighted: isHighlighted)
     }
 

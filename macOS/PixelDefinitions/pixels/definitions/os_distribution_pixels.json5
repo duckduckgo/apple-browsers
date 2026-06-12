@@ -30,7 +30,7 @@
         "description": "Fires on each search or Duck.ai prompt submission (total search + AI-query traffic).",
         "owners": ["jdjackson"],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1215252656518903?focus=true"],
-        "triggers": ["search_ddg", "user_submitted"],
+        "triggers": ["search_ddg"],
         "parameters": [
             {
                 "key": "petal",

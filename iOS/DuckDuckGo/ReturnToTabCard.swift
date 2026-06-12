@@ -47,7 +47,7 @@ struct ReturnToTabCard: View {
 
     @ViewBuilder
     private func bodyWithActions(width: CGFloat) -> some View {
-        SwipeActionView(onCommit: model.primarySwipeAction.perform) {
+        SwipeActionView(onCommit: model.performPrimarySwipeAction) {
             contentView
         } actions: {
             swipeableActionsView
@@ -140,11 +140,7 @@ struct ReturnToTabCard: View {
     }
 
     private func deleteTab() {
-        if model.isFireTab {
-            model.onBurnTabImmediately()
-        } else {
-            model.onBurnTabWithConfirmation(fireButtonFrameInWindow)
-        }
+        model.burnFromButton(fireButtonFrameInWindow)
     }
 
     private var menuView: some View {
@@ -171,7 +167,7 @@ struct ReturnToTabCard: View {
                 text: UserText.escapeHatchMenuReturnToTab,
                 icon: DesignSystemImages.Glyphs.Size16.goBackCircle,
                 role: .none,
-                action: model.onCardTap
+                action: model.returnToTabFromMenu
             )
             destructiveActionButtons
             if model.isHideShortcutEnabled{
@@ -188,6 +184,7 @@ struct ReturnToTabCard: View {
                 afterInactivityPicker
             }
         }
+        .onAppear { model.menuDidAppear() }
     }
 
     @ViewBuilder
@@ -199,7 +196,7 @@ struct ReturnToTabCard: View {
                     text: UserText.escapeHatchMenuDeleteTab,
                     icon: DesignSystemImages.Glyphs.Size16.fire,
                     role: .destructive,
-                    action: model.onBurnTabImmediately
+                    action: model.burnImmediatelyFromMenu
                 )
             }
         } else {
@@ -207,14 +204,14 @@ struct ReturnToTabCard: View {
                 text: UserText.escapeHatchMenuCloseTab,
                 icon: DesignSystemImages.Glyphs.Size16.closeOutline,
                 role: .destructive,
-                action: model.onCloseTab
+                action: model.closeTabFromMenu
             )
             if !model.isFireButtonEnabled {
                 MenuActionButton(
                     text: UserText.escapeHatchMenuDeleteTab,
                     icon: DesignSystemImages.Glyphs.Size16.fire,
                     role: .destructive,
-                    action: { model.onBurnTabWithConfirmation(menuFrameInWindow) }
+                    action: { model.burnWithConfirmationFromMenu(menuFrameInWindow) }
                 )
             }
         }

@@ -549,7 +549,7 @@ class SwitchBarTextEntryView: UIView {
         guard isURL else { return false }
         // In search mode the address bar is always single-line; the interaction flag is irrelevant.
         // In AI chat mode, URLs can expand once the user has actively started interacting.
-        return currentMode != .aiChat || !hasBeenInteractedWith
+        return currentMode == .search || !hasBeenInteractedWith
     }
 
     private func updateTextViewHeight() {

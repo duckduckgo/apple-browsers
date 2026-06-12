@@ -172,7 +172,8 @@ public final class VPNStartupMonitor {
             group.addTask {
                 try Task.checkCancellation()
 
-                // Check status after subscribing to catch fast transitions
+                // Evaluate the current status first, in case the connection is already terminal
+                // and no further status-change notification is coming.
                 if case .finished = await evaluate(targetConnection) {
                     return
                 }

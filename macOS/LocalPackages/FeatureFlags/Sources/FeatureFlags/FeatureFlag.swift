@@ -440,7 +440,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
         case .vpnStrictRoutingToggle:
-            Config(defaultValue: .enabled, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle), category: .vpn)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)
         case .autoUpdateInREVIEW:

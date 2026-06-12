@@ -633,7 +633,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnMenuItem:
             Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
         case .vpnStrictRoutingToggle:
-            Config(defaultValue: .enabled, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:

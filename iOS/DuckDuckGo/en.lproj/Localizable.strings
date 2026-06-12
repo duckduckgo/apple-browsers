@@ -2819,7 +2819,7 @@ https://duckduckgo.com/mac";
 "network.protection.vpn.strict.routing.setting.footer" = "We recommend keeping this on when using networks you don't trust. If you're having trouble reaching local devices or other networks, try turning it off.";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Strict routing";
+"network.protection.vpn.strict.routing.setting.title" = "Strict Routing";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";

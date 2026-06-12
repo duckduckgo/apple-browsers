@@ -48,6 +48,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private var previousStatus: NEVPNStatus = .invalid
     private let persistentPixel: PersistentPixelFiring
     private let settings: VPNSettings
+    private lazy var startupMonitor = VPNStartupMonitor()
     private var cancellables = Set<AnyCancellable>()
     
     // Wide Event
@@ -171,7 +172,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         subscribeToSnoozeTimingChanges()
         subscribeToStatusChanges()
         subscribeToConfigurationChanges()
-        subscribeToEnforceRoutesSettingChanges()
+        subscribeToSettingsChanges()
     }
 
     /// Starts the VPN connection used for Network Protection
@@ -237,6 +238,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         await stop()
+        await startupMonitor.waitForStop(internalManager)
         await start()
         try? await enableOnDemand(tunnelManager: internalManager)
     }
@@ -351,6 +353,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         do {
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
+            try await startupMonitor.waitForStartSuccess(tunnelManager)
             UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion]) { error in
                 guard error != nil else { return }
                 UserDefaults.networkProtectionGroupDefaults.vpnFirstEnabled = Pixel.Event.networkProtectionNewUser.lastFireDate(
@@ -444,17 +447,55 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Handling Settings Changes
 
-    private func subscribeToEnforceRoutesSettingChanges() {
-        settings.enforceRoutesPublisher
-            .dropFirst()
+    private func subscribeToSettingsChanges() {
+        settings.changePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] enforceRoutes in
+            .sink { [weak self] change in
                 guard let self else { return }
                 Task {
-                    try? await self.handleSetEnforceRoutes(enforceRoutes)
+                    // Handle the settings change right in the controller
+                    try? await self.handleSettingsChange(change)
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// This is where the tunnel owner has a chance to handle the settings change locally.
+    ///
+    /// The extension can also handle these changes so not everything needs to be handled here.
+    ///
+    private func handleSettingsChange(_ change: VPNSettings.Change) async throws {
+        switch change {
+        case .setIncludeAllNetworks(let includeAllNetworks):
+            try await handleSetIncludeAllNetworks(includeAllNetworks)
+        case .setEnforceRoutes(let enforceRoutes):
+            try await handleSetEnforceRoutes(enforceRoutes)
+        case .setExcludeLocalNetworks(let excludeLocalNetworks):
+            try await handleSetExcludeLocalNetworks(excludeLocalNetworks)
+        case .setConnectOnLogin,
+                .setExcludeAPNs,
+                .setExcludeCellularServices,
+                .setExcludeDeviceCommunication,
+                .setNotifyStatusChanges,
+                .setRegistrationKeyValidity,
+                .setSelectedServer,
+                .setSelectedEnvironment,
+                .setSelectedLocation,
+                .setDNSSettings,
+                .setShowInMenuBar,
+                .setDisableRekeying:
+            // Intentional no-op as this is handled by the extension or applied on the next connect
+            break
+        }
+    }
+
+    private func handleSetIncludeAllNetworks(_ includeAllNetworks: Bool) async throws {
+        guard let tunnelManager = await tunnelManager,
+              tunnelManager.protocolConfiguration?.includeAllNetworks == !includeAllNetworks else {
+            return
+        }
+
+        try await setupAndSave(tunnelManager)
     }
 
     private func handleSetEnforceRoutes(_ enforceRoutes: Bool) async throws {
@@ -471,6 +512,14 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         if await isConnected {
             await restart()
         }
+    }
+
+    private func handleSetExcludeLocalNetworks(_ excludeLocalNetworks: Bool) async throws {
+        guard let tunnelManager = await tunnelManager else {
+            return
+        }
+
+        try await setupAndSave(tunnelManager)
     }
 
     // MARK: - Observing Status Changes

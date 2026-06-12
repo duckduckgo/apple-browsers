@@ -196,6 +196,48 @@ final class DuckAiChatDecodeTests: XCTestCase {
         XCTAssertNil(decoded.lastMessageContent)
     }
 
+    func testWhenLastMessageHasEmptyContentAndTextPartThenLastMessageContentIsExtractedFromParts() throws {
+        // Reasoning models (e.g. `gpt-5-mini`) ship assistant responses with `content == ""`
+        // and the visible text inside `parts[].text` where `type == "text"`.
+        let json = """
+            {
+              "chatId": "c1",
+              "model": "gpt-5-mini",
+              "messages": [
+                {"role":"user","content":"hello"},
+                {"role":"assistant","content":"","parts":[
+                  {"type":"reasoning","encryptedText":"opaque"},
+                  {"type":"text","text":"the actual reply"},
+                  {"type":"text","text":"second line"}
+                ]}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertEqual(decoded.lastMessageContent, "the actual reply\n\nsecond line")
+    }
+
+    func testWhenLastMessageHasContentAndTextPartThenContentWins() throws {
+        // When both fields are populated the top-level `content` is authoritative (it's what
+        // every non-reasoning chat uses). `parts` is only consulted as a fallback.
+        let json = """
+            {
+              "chatId": "c1",
+              "model": "gpt-5-mini",
+              "messages": [
+                {"role":"user","content":"hello"},
+                {"role":"assistant","content":"top level","parts":[
+                  {"type":"text","text":"from parts"}
+                ]}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertEqual(decoded.lastMessageContent, "top level")
+    }
+
     func testWhenMessagesArrayIsAbsentThenLastMessageContentIsNil() throws {
         let json = #"{"chatId":"c1","model":"gpt-5-mini"}"#
 

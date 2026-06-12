@@ -92,9 +92,9 @@ extension DuckAiChat {
 
         let firstUserMessage = blob.messages?
             .first(where: { $0.role == "user" })?
-            .content?.textValue
+            .effectiveTextContent
 
-        let lastMessage = blob.messages?.last?.content?.textValue
+        let lastMessage = blob.messages?.last?.effectiveTextContent
 
         return (chat: chat,
                 firstUserMessageContent: firstUserMessage,
@@ -134,11 +134,31 @@ private struct MessageBlob: Decodable {
     /// `messages` array.
     let content: MessageContent?
     let parts: [MessagePart]?
+
+    /// Returns the visible text of the message. Prefers `content` (used by most chats and
+    /// by all user messages); falls back to concatenating `parts[].text` of `type == "text"`
+    /// because reasoning-model assistant messages (e.g. `gpt-5-mini`) ship with `content == ""`
+    /// and carry the actual response in `parts`. Returns `nil` when neither path produces text.
+    var effectiveTextContent: String? {
+        if let direct = content?.textValue, !direct.isEmpty {
+            return direct
+        }
+        guard let parts else { return nil }
+        let textParts = parts.compactMap { part -> String? in
+            guard part.type == "text", let text = part.text, !text.isEmpty else { return nil }
+            return text
+        }
+        guard !textParts.isEmpty else { return nil }
+        return textParts.joined(separator: "\n\n")
+    }
 }
 
 private struct MessagePart: Decodable {
     let type: String?
     let name: String?
+    /// Visible text payload of a `type == "text"` part. Other part types (`reasoning`,
+    /// `ui-component`, `tool-invocation`) don't carry user-visible text and leave this nil.
+    let text: String?
 }
 
 /// Handles polymorphic message content: either a plain string or a rich object with a `text` field.

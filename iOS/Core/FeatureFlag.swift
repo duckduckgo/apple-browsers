@@ -454,6 +454,18 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
     case removeChatHistory
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
+    case aiChatTabSwitcherRichCard
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114749?focus=true
+    case syncScopedAccessCredentials
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114760?focus=true
+    case syncCanUseV2ConnectFlow
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114767?focus=true
+    case syncCanShowV2ConnectCode
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -777,11 +789,19 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .floatingUI:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUI))
         case .removeChatHistory:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
+        case .aiChatTabSwitcherRichCard:
+            Config(source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
+        case .syncScopedAccessCredentials:
+            Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
+        case .syncCanUseV2ConnectFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
+        case .syncCanShowV2ConnectCode:
+            Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         }
     }
 

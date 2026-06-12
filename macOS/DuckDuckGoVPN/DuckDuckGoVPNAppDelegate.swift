@@ -87,6 +87,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: pixelSource,
+                       session: "vpn-agent",
                        channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in

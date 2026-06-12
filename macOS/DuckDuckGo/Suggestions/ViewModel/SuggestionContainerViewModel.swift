@@ -331,7 +331,6 @@ final class SuggestionContainerViewModel {
                 do {
                     try validateShouldSelectTopSuggestion(from: result)
                 } catch {
-                    Logger.general.debug("SuggestionContainerViewModel: ignoring top suggestion from \( result.map(String.init(describing:)) ?? "<nil>"): \(error)")
                     self.hasAutoSelectedSuggestion = false
                     return
                 }
@@ -362,6 +361,12 @@ final class SuggestionContainerViewModel {
         }
 
         suggestionContainer.getSuggestions(for: userStringValue)
+    }
+
+    @MainActor
+    func prewarmRemoteSuggestionsConnection() {
+        guard searchPreferences.showAutocompleteSuggestions else { return }
+        suggestionContainer.prewarmRemoteSuggestionsConnection()
     }
 
     func clearUserStringValue() {

@@ -76,6 +76,11 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     var account: SyncAccount? { get }
 
     /**
+     Recovery code for the currently logged in sync account.
+     */
+    var recoveryCode: String? { get }
+
+    /**
      Used to trigger Sync by the client app.
 
      Sync is not started directly, but instead its schedule is handled internally based on input events.
@@ -164,6 +169,16 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
      Step D from https://app.asana.com/0/0/1209571867429615
      */
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws
+
+    /**
+     Creates a scoped recovery code for a third-party client pairing flow.
+     */
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String
+
+    /**
+     Upgrades a third-party account recovery code into a default DDG Sync account.
+     */
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> [RegisteredDevice]
 
     /**
      Rescopes the Main Token into given scope to allow data access for models/endpoints associated with that scope.

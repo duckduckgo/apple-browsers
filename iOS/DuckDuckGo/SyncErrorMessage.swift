@@ -30,9 +30,21 @@ enum SyncErrorMessage {
     case unableToRemoveDevice
     case unableToCreateRecoveryPdf
     case unableToRecognizeCode
+    case updateRequired
+    case unsupportedThirdPartyRecoveryCode
+    case thirdPartyAccountAlreadyUpgraded
+    case alreadyPairedWithAccount
+    case syncCancelledFromOtherDevice
 
     var title: String {
-        return UserText.syncErrorAlertTitle
+        switch self {
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountTitle
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceTitle
+        default:
+            return UserText.syncErrorAlertTitle
+        }
     }
 
     var description: String {
@@ -57,6 +69,27 @@ enum SyncErrorMessage {
             return UserText.unableToCreateRecoveryPDF
         case .unableToRecognizeCode:
             return UserText.unableToRecognizeCode
+        case .updateRequired:
+            return UserText.syncUpdateRequiredDescription
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeDescription
+        case .thirdPartyAccountAlreadyUpgraded:
+            return UserText.syncThirdPartyAccountAlreadyUpgradedDescription
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountDescription
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceDescription
+        }
+    }
+
+    var buttonTitle: String {
+        switch self {
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountButton
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceButton
+        default:
+            return UserText.syncPausedAlertOkButton
         }
     }
 

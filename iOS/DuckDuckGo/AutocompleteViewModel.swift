@@ -137,7 +137,7 @@ class AutocompleteViewModel: ObservableObject {
 
 }
 
-/// Arrow-key selection math shared by the search autocomplete and the Duck.ai suggestion lists.
+/// Keyboard arrow selection math for the autocomplete suggestion list.
 enum SuggestionListKeyboardSelection {
 
     /// From no selection, picks the first item; otherwise advances one, clamping at the end. A selection not

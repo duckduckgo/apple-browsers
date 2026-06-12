@@ -357,7 +357,7 @@ private extension DefaultColorPalette {
         case .buttonsSecondaryDisabledText:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.36), darkColor: Color(0x707070))
         case .destructivePrimary:
-            return DynamicColor(lightColor: Color(0xD83544), darkColor: Color(0xE44D55))
+            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
         case .destructivePrimaryPressed:
             return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
         case .destructivePrimaryText:

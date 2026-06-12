@@ -44,7 +44,6 @@ public final class AIChats: AIChatsHandling {
         self.api = api
         self.endpoints = endpoints
         self.dateFormatter = ISO8601DateFormatter()
-        self.dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     }
 
     public func delete(until: Date, token: String) async throws {

@@ -666,6 +666,24 @@ final class AIChatSyncCleanerTests: XCTestCase {
         XCTAssertNil(stored, "Unresolvable IDs should be dropped to avoid retrying forever")
     }
 
+    func testGivenOneResolvableAndOneMissingChat_WhenUpdateIfNeeded_ThenOnlyResolvableIsPatchedAndBothAreDropped() async {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try? storage.putChat(chatId: "chat-1", data: Self.chatBlob(chatId: "chat-1", pinned: true))
+        // chat-2 is intentionally missing from storage — it should still be dropped from the queue.
+        try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT(storageHandler: storage)
+
+        await sut.updateIfNeeded()
+
+        XCTAssertEqual(mockSync.patchAIChatsUpdates?.map(\.chatId), ["chat-1"],
+                       "Only the resolvable id should be patched")
+        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+        XCTAssertNil(stored, "Both the patched id and the unresolvable id should be cleared from the queue")
+    }
+
     // MARK: - Fixtures
 
     private static func chatBlob(chatId: String, pinned: Bool) -> Data {

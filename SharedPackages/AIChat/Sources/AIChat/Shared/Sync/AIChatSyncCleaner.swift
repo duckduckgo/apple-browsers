@@ -215,14 +215,20 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
             let pinned = (json["pinned"] as? Bool) ?? false
             return AIChatUpdate(chatId: chatId, pinned: pinned)
         }
-        guard !updates.isEmpty else {
-            await state.removeChatsFromPendingUpdates(chatIDs: Set(candidates))
-            return
+
+        // Ids that no longer resolve in storage (e.g. chat deleted locally) can never be synced —
+        // drop them now so they don't linger in the queue and get retried on every cycle.
+        let resolvedIDs = Set(updates.map(\.chatId))
+        let unresolvableIDs = Set(candidates).subtracting(resolvedIDs)
+        if !unresolvableIDs.isEmpty {
+            await state.removeChatsFromPendingUpdates(chatIDs: unresolvableIDs)
         }
+
+        guard !updates.isEmpty else { return }
 
         do {
             try await sync.patchAIChats(updates: updates)
-            await state.removeChatsFromPendingUpdates(chatIDs: Set(updates.map(\.chatId)))
+            await state.removeChatsFromPendingUpdates(chatIDs: resolvedIDs)
         } catch {
             httpRequestErrorHandler?(error)
             Logger.aiChat.debug("Failed to patch pending ai chats: \(error.localizedDescription)")

@@ -118,9 +118,13 @@ final class AIChatHistoryViewController: UIViewController {
         let headerView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: headerHeight))
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         headerView.addSubview(searchBar)
+        // The table imposes a transient width==0 on the header before it gets its real
+        // width; let trailing yield during that pass instead of logging a conflict.
+        let searchBarTrailing = searchBar.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -12)
+        searchBarTrailing.priority = .required - 1
         NSLayoutConstraint.activate([
             searchBar.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 12),
-            searchBar.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -12),
+            searchBarTrailing,
             searchBar.topAnchor.constraint(equalTo: headerView.topAnchor),
             searchBar.bottomAnchor.constraint(equalTo: headerView.bottomAnchor)
         ])

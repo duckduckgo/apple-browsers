@@ -87,6 +87,28 @@ base_ref_available() {
 pass() { PASS_COUNT=$((PASS_COUNT + 1)); [ "$HOOK_MODE" = true ] && return; printf '  %sPASS%s  %s\n' "$C_GREEN" "$C_RESET" "$1"; }
 skip() { SKIP_COUNT=$((SKIP_COUNT + 1)); [ "$HOOK_MODE" = true ] && return; printf '  %sSKIP%s  %s %s(%s)%s\n' "$C_YELLOW" "$C_RESET" "$1" "$C_DIM" "$2" "$C_RESET"; }
 
+# Printed once, the first time a check fails in hook mode, to frame the block for
+# the agent. The fed-back stderr is the only thing the agent sees, so without
+# this it reads a bare lint dump at "finish" time and misdiagnoses it as "I
+# forgot to commit", then tries to commit/stage instead of fixing the
+# violation. Costs a few lines of context, but only on failure.
+HOOK_HEADER_PRINTED=false
+emit_hook_guidance_header() {
+  [ "$HOOK_MODE" = true ] || return
+  [ "$HOOK_HEADER_PRINTED" = true ] && return
+  HOOK_HEADER_PRINTED=true
+  cat <<'EOF'
+[local PR checks] Finishing is blocked: static checks failed (see below).
+
+This gate lints your UNCOMMITTED working-tree changes (SwiftLint is scoped to
+the files you changed). Those changes being uncommitted is expected and correct
+- the gate runs before you commit, not because you forgot to. To clear it, fix
+the violations listed below directly in the working tree, then finish again. Do
+NOT stage or commit anything to satisfy this hook.
+
+EOF
+}
+
 run_check() {
   local name="$1" workdir="$2"; shift 2
   local output status
@@ -96,6 +118,7 @@ run_check() {
     pass "$name"
   else
     FAIL_COUNT=$((FAIL_COUNT + 1))
+    emit_hook_guidance_header
     printf '  %sFAIL%s  %s\n' "$C_RED" "$C_RESET" "$name"
     [ -n "$output" ] && printf '%s\n' "$output" | sed 's/^/        /'
   fi
@@ -259,6 +282,7 @@ fi
 # In hook mode, failure must exit 2 - the code that blocks the agent and feeds
 # stderr back. Outside hook mode keep the documented contract: exit = failures.
 if [ "$HOOK_MODE" = true ] && [ "$FAIL_COUNT" -gt 0 ]; then
+  printf '\nTo finish: fix the FAIL items above in the working tree, then stop again. Leave the changes uncommitted.\n'
   exit 2
 fi
 exit "$FAIL_COUNT"

@@ -80,7 +80,7 @@ final class EscapeHatchModel: ObservableObject {
     /// When on, the destructive "delete tab" action is surfaced as a dedicated Fire button on the card
     /// instead of (and removed from) the three-dots menu. Gated by the `escapeHatchFireButton` feature flag.
     let isFireButtonEnabled: Bool
-    /// When on, the "Don't Show This" menu item is surfaced and the card can be hidden, leaving only the tab
+    /// When on, the "Hide These Shortcuts" menu item is surfaced and the card can be hidden, leaving only the tab
     /// switcher pill. Gated by the `escapeHatchHideShortcut` feature flag.
     let isHideShortcutEnabled: Bool
     let onCardTap: () -> Void

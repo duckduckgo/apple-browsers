@@ -61,7 +61,7 @@ protocol NTPAfterIdleInstrumentation: AnyObject {
     /// The user changed the Opening Screen option from the escape hatch's settings menu.
     func escapeHatchOptionChanged(to option: AfterInactivityOption)
 
-    /// The user hid the "Return to tab" shortcut via the card's "Don't Show This" menu item.
+    /// The user hid the "Return to tab" shortcut via the card's "Hide These Shortcuts" menu item.
     func escapeHatchHiddenFromMenu()
 }
 

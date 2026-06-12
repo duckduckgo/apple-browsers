@@ -20,8 +20,8 @@
 import Foundation
 import Persistence
 
-/// Owns the "Last Tab Shortcut" preference, shared by the Settings toggle and the escape hatch's
-/// "Don't Show This" action so both stay in sync. Defaults to enabled when nothing is stored.
+/// Owns the "Last Used Tab Shortcut" preference, shared by the Settings toggle and the escape hatch's
+/// "Hide These Shortcuts" action so both stay in sync. Defaults to enabled when nothing is stored.
 final class LastTabShortcutAdapter: ObservableObject {
 
     @Published var isEnabled: Bool

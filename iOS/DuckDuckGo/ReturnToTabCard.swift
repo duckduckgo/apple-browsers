@@ -174,21 +174,17 @@ struct ReturnToTabCard: View {
                 action: model.onCardTap
             )
             destructiveActionButtons
-            if model.isHideShortcutEnabled {
-                MenuActionButton(
-                    text: UserText.escapeHatchMenuDontShowThis,
-                    icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
-                    role: .none,
-                    action: model.hideShortcut
-                )
+            if model.isHideShortcutEnabled{
+                Section {
+                    afterInactivityPicker
+                    MenuActionButton(
+                        text: UserText.escapeHatchMenuHideTheseShortcuts,
+                        icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
+                        role: .none,
+                        action: model.hideShortcut
+                    )
+                }
             } else {
-                afterInactivityPicker
-            }
-        }
-
-        // With the hide shortcut, the After Inactivity option moves to its own section, below a divider.
-        if model.isHideShortcutEnabled {
-            Section {
                 afterInactivityPicker
             }
         }

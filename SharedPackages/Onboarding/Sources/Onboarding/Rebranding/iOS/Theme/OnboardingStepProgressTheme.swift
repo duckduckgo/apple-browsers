@@ -117,10 +117,10 @@ public extension OnboardingStepProgressTheme {
             unselectedDotSize: 6.0
         ),
         colors: .init(
-            background: Color(singleUseColor: .rebranding(.surfaceTertiary)),
-            border: Color(singleUseColor: .rebranding(.accentAltPrimary)),
+            background: OnboardingRebrandColor.surfaceTertiary,
+            border: OnboardingRebrandColor.accentAltPrimary,
             selectedDot: Color(singleUseColor: .rebranding(.accentPrimary)),
-            unselectedDot: Color(singleUseColor: .rebranding(.accentAltPrimary)),
+            unselectedDot: OnboardingRebrandColor.accentAltPrimary,
             text: Color(singleUseColor: .rebranding(.textPrimary))
         ),
         textAlignment: .trailing,

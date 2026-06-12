@@ -330,14 +330,8 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .accentGlowPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
-        case .accentAltPrimary:
-            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
-        case .accentAltGlowPrimary:
-            return DynamicColor(lightColor: Color(0xA1CFF7).opacity(0.16), darkColor: Color(0xA1CFF7).opacity(0.16))
         case .backdrop:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: .blue80)
-        case .surfaceTertiary:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x011D34))
         case .buttonsPrimaryDefault:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen40)
         case .buttonsPrimaryPressed:
@@ -370,8 +364,6 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.09), darkColor: RebrandingColor.GrayScale.white.opacity(0.06))
         case .decorationSecondary:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.16), darkColor: RebrandingColor.GrayScale.white.opacity(0.09))
-        case .backgroundAccent:
-            return DynamicColor(lightColor: Color(0x7295F6).opacity(0.20), darkColor: Color(0x8FABF9).opacity(0.20))
         case .alertGreen:
             return DynamicColor(staticColor: RebrandingColor.Green.green40)
         }

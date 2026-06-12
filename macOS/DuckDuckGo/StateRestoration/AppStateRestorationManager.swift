@@ -246,7 +246,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
 
         guard didCloseUnexpectedly else { return }
 
-        pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: UncleanExitRestartReason(updateStatus)))
+        pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: UncleanExitRestartSource(updateStatus)))
 
         guard !shouldSuppressUncleanExitRestorePrompt else { return }
 
@@ -287,7 +287,7 @@ struct StateRestorationAppTerminationDecider: ApplicationTerminationDecider {
     }
 }
 
-private extension UncleanExitRestartReason {
+private extension UncleanExitRestartSource {
     init(_ updateStatus: AppUpdateStatus) {
         switch updateStatus {
         case .updated, .downgraded:

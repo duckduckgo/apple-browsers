@@ -11,7 +11,7 @@
                 "key": "restart-source-attribution",
                 "description": "Whether the unclean exit and subsequent restart coincided with an app update.",
                 "type": "string",
-                "enum": ["crash", "app_update"]
+                "enum": ["crash_or_force_quit", "app_update"]
             }
         ]
     },

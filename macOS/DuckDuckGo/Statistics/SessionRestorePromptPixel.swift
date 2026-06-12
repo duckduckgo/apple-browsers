@@ -18,8 +18,8 @@
 
 import PixelKit
 
-enum UncleanExitRestartReason: String {
-    case crash
+enum UncleanExitRestartSource: String {
+    case crash = "crash_or_force_quit"
     case appUpdate = "app_update"
 }
 
@@ -29,7 +29,7 @@ enum UncleanExitRestartReason: String {
  * See macOS/PixelDefinitions/pixels/session_restore_prompt_pixels.json5 for more details.
  */
 enum SessionRestorePromptPixel: PixelKitEvent {
-    case unexpectedAppTerminationDetected(reason: UncleanExitRestartReason)
+    case unexpectedAppTerminationDetected(reason: UncleanExitRestartSource)
     case promptShown
     case promptDismissedWithoutRestore
     case promptDismissedWithRestore

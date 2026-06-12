@@ -514,7 +514,10 @@ class TabViewCell: UICollectionViewCell {
             let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
             let conversationTitle = tab.aiChatConversationTitle
             let isListMode = link != nil
-            let displayTitle = isListMode ? aiChatTitle : (conversationTitle ?? aiChatTitle)
+            // When the rich card is rendered, the conversation title lives inside the
+            // card body, so the cell header always reads "Duck.ai" — same as list mode.
+            let showsRichCard = duckAIGridItem != nil
+            let displayTitle = (isListMode || showsRichCard) ? aiChatTitle : (conversationTitle ?? aiChatTitle)
             removeButton.accessibilityLabel = UserText.closeTab(withTitle: conversationTitle ?? aiChatTitle, atAddress: "")
             title.accessibilityLabel = UserText.openTab(withTitle: conversationTitle ?? aiChatTitle, atAddress: "")
             title.text = displayTitle

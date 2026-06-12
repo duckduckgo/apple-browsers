@@ -30,7 +30,7 @@ final class DuckAIGridCardView: UIView {
         static let contentHorizontalInset: CGFloat = 8
         static let contentBottomInset: CGFloat = 8
         static let titleSnippetSpacing: CGFloat = 4
-        static let snippetChipSpacing: CGFloat = 4
+        static let snippetChipSpacing: CGFloat = 8
         static let chipHeight: CGFloat = 22
     }
 

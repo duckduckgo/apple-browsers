@@ -35,7 +35,7 @@ final class TabViewGridCell: TabViewCell {
         static let unreadOffset: CGFloat = 7
         static let previewHorizontalInset: CGFloat = 8
         static let previewBottomPadding: CGFloat = 4
-        static let richCardInset: CGFloat = 8
+        static let richCardInset: UIEdgeInsets = .init(top: 4, left: 8, bottom: 8, right: 8)
     }
 
     static let reuseIdentifier = "TabViewGridCell"
@@ -140,10 +140,10 @@ final class TabViewGridCell: TabViewCell {
             pvBottom,
             pvTrailing,
 
-            richCard.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: Constants.richCardInset),
-            richCard.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: Constants.richCardInset),
-            richCard.trailingAnchor.constraint(equalTo: background.trailingAnchor, constant: -Constants.richCardInset),
-            richCard.bottomAnchor.constraint(equalTo: background.bottomAnchor, constant: -Constants.richCardInset),
+            richCard.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: Constants.richCardInset.top),
+            richCard.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: Constants.richCardInset.left),
+            richCard.trailingAnchor.constraint(equalTo: background.trailingAnchor, constant: -Constants.richCardInset.right),
+            richCard.bottomAnchor.constraint(equalTo: background.bottomAnchor, constant: -Constants.richCardInset.bottom),
         ])
     }
 }

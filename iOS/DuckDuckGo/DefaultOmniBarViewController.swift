@@ -773,10 +773,12 @@ extension DefaultOmniBarViewController: UIGestureRecognizerDelegate {
 private extension UITextView {
 
     var isCaretOnLastLine: Bool {
+        // Subpixel tolerance absorbing rounding between the caret position and the end of the document.
+        let lastLineTolerance: CGFloat = 1
         guard let selectedTextRange else { return true }
         let caretMaxY = caretRect(for: selectedTextRange.end).maxY
         let documentEndMaxY = caretRect(for: endOfDocument).maxY
-        return caretMaxY >= documentEndMaxY - 1
+        return caretMaxY >= documentEndMaxY - lastLineTolerance
     }
 
 }

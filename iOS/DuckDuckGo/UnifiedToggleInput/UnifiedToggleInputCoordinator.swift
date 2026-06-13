@@ -886,7 +886,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // recomputing from `inputMode == .aiChat && enabled` alone would strip the AI toolbar
         // on a Duck.ai tab when the user disables the toggle.
         viewController.updateToggleEnabled(enabled, showsToolbar: computeRenderState().cardLayout.showsToolbar)
-        contentViewController.isSwipeEnabled = isToggleVisible
         let effective = effectiveInputMode(for: inputMode)
         let inputModeChanged = effective != inputMode
         if inputModeChanged {
@@ -1220,7 +1219,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Content & Layout
 
     func pushContentInsets() {
-        let utiHeight = viewController.view.frame.height
+        // Use the deterministic target height (same source adjustUI uses for the navbar
+        // constraint) while editing, so the content inset animates in lockstep with the
+        // input instead of chasing transient frame values mid-animation.
+        let utiHeight = isInputEditing ? editingHeight() : viewController.view.frame.height
         if cardPosition == .top {
             contentViewController.setContentInset(top: utiHeight, bottom: 0)
         } else {

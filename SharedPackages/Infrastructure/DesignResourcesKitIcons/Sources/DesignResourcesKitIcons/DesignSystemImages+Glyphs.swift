@@ -58,7 +58,6 @@ public extension DesignSystemImages {
             public static var currency: DesignSystemImage { .init(resource: .currency12) }
             public static var deviceMobile: DesignSystemImage { .init(resource: .deviceMobile12) }
             public static var download: DesignSystemImage { .init(resource: .download12) }
-            public static var downloads: DesignSystemImage { .init(resource: .downloads12) }
             public static var duckAi: DesignSystemImage { .init(resource: .duckAi12) }
             public static var edit: DesignSystemImage { .init(resource: .edit12) }
             public static var email: DesignSystemImage { .init(resource: .email12) }
@@ -69,7 +68,6 @@ public extension DesignSystemImages {
             public static var favorite: DesignSystemImage { .init(resource: .favorite12) }
             public static var feedback: DesignSystemImage { .init(resource: .feedback12) }
             public static var feedbackAlert: DesignSystemImage { .init(resource: .feedbackAlert12) }
-            public static var findSearch: DesignSystemImage { .init(resource: .findSearch12) }
             public static var fingerprint: DesignSystemImage { .init(resource: .fingerprint12) }
             public static var fire: DesignSystemImage { .init(resource: .fire12) }
             public static var fireproof: DesignSystemImage { .init(resource: .fireproof12) }

@@ -311,6 +311,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
 
+    /// Internal-only gate for web-scroll-freeze observability (scroll-failure observer + gesture watchdog).
+    case webScrollFreezeObservability
+
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
     /// default; ship a privacy-config entry to roll back. See
     /// `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab`.
@@ -457,6 +460,15 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
     case aiChatTabSwitcherRichCard
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114749?focus=true
+    case syncScopedAccessCredentials
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114760?focus=true
+    case syncCanUseV2ConnectFlow
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114767?focus=true
+    case syncCanShowV2ConnectCode
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -699,6 +711,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.unifiedToggleInput))
+        case .webScrollFreezeObservability:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeObservability))
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .freeTrialConversionWideEvent:
@@ -780,13 +794,19 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .floatingUI:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUI))
         case .removeChatHistory:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
         case .aiChatTabSwitcherRichCard:
             Config(source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
+        case .syncScopedAccessCredentials:
+            Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
+        case .syncCanUseV2ConnectFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
+        case .syncCanShowV2ConnectCode:
+            Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         }
     }
 

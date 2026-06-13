@@ -255,6 +255,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
+    /// Internal-only observability for the hard-to-reproduce "web view scroll frozen, taps still work" bug:
+    /// a passive scroll-failure observer plus a gesture watchdog. Off for the general population by default.
+    case webScrollFreezeObservability
+
     case screenTimeCleaning
 
     case minimalChromeInLandscape
@@ -634,6 +638,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case aiChatSyncPromo
     case simplifiedSyncSetupExperiment
     case allowSingleDeviceOnConnectScreen
+    case scopedAccessCredentials
+    case canUseV2ConnectFlow
+    case canShowV2ConnectCode
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

@@ -28,6 +28,10 @@ final class AIChatHistoryViewController: UIViewController {
     private let viewModel: AIChatHistoryViewModel
     private var cancellables: Set<AnyCancellable> = []
 
+    /// Set while a swipe-driven animation is in flight to suppress reactive reloads that
+    /// would otherwise cancel the slide.
+    private var isApplyingLocalUpdate = false
+
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .insetGrouped)
         table.dataSource = self
@@ -150,9 +154,11 @@ final class AIChatHistoryViewController: UIViewController {
 
     private func bindViewModel() {
         Publishers.CombineLatest3(viewModel.$pinned, viewModel.$recent, viewModel.$hasLoaded)
+            .removeDuplicates { lhs, rhs in lhs.0 == rhs.0 && lhs.1 == rhs.1 && lhs.2 == rhs.2 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _, _, _ in
-                self?.refreshContent()
+                guard let self, !self.isApplyingLocalUpdate else { return }
+                self.refreshContent()
             }
             .store(in: &cancellables)
 
@@ -285,6 +291,37 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         guard let chatId = viewModel.chatId(forRowAt: indexPath) else { return }
         viewModel.openChat(chatId: chatId)
+    }
+
+    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard let chatId = viewModel.chatId(forRowAt: indexPath) else { return nil }
+        let wasPinned = viewModel.isPinned(chatId: chatId)
+
+        let action = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            guard let self, let move = self.viewModel.togglePin(chatId: chatId) else {
+                completion(false); return
+            }
+            self.isApplyingLocalUpdate = true
+            // Refresh the icon while the cell is still at its source position — `moveRow`
+            // keeps the same instance, so it'd otherwise carry the pre-toggle icon.
+            if let cell = tableView.cellForRow(at: move.source) as? AIChatHistoryCell {
+                cell.iconImageView.image = self.viewModel.icon(forRowAt: move.destination)
+            }
+            tableView.performBatchUpdates({
+                tableView.moveRow(at: move.source, to: move.destination)
+            }, completion: { [weak self] _ in
+                self?.isApplyingLocalUpdate = false
+                // Catch up any reactive emission that fired (and got skipped) while the
+                // flag was set — e.g. an FE-driven add/delete that landed mid-animation.
+                self?.refreshContent()
+                completion(true)
+            })
+        }
+        action.image = DesignSystemImages.Glyphs.Size24.pin
+        action.accessibilityLabel = wasPinned
+            ? UserText.aiChatHistoryUnpinSwipeAccessibilityLabel
+            : UserText.aiChatHistoryPinSwipeAccessibilityLabel
+        return UISwipeActionsConfiguration(actions: [action])
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {

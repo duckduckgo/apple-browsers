@@ -146,6 +146,8 @@ public struct UserText {
     public static let aiChatHistoryLoadErrorMessage = NotLocalizedString("aiChat.history.loadError.message", value: "Something went wrong loading your Duck.ai chats. Please try again later.", comment: "Message of the alert shown when Duck.ai chat history fails to load. Not translated; final copy will land in a follow-up PR.")
     public static let aiChatHistoryDeleteSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.delete.a11y", value: "Delete chat", comment: "Accessibility label for the delete action revealed by swiping a Duck.ai chat row. Not translated; final copy will land in a follow-up PR.")
     public static let aiChatHistoryDownloadSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.download.a11y", value: "Download chat", comment: "Accessibility label for the download action revealed by swiping a Duck.ai chat row. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryPinSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.pin.a11y", value: "Pin chat", comment: "Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatHistoryUnpinSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.unpin.a11y", value: "Unpin chat", comment: "Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. Not translated; final copy will land in a follow-up PR.")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
@@ -1281,6 +1283,20 @@ public struct UserText {
     }
     public static let syncRemoveDeviceConfirmAction = NSLocalizedString("sync.remove-device.action", value: "Remove", comment: "Caption for a button to remove device from Sync")
     public static let syncCodeCopied = NSLocalizedString("sync.code.copied", value: "Recovery code copied to clipboard", comment: "Message confirming that recovery code was copied to clipboard")
+    public static let syncPairingV2ConfirmationTitle = NotLocalizedString("sync.pairing-v2.confirmation.title", value: "Sync new device?", comment: "Title of the dialog to confirm sync setup with another device")
+    public static let syncPairingV2ConfirmationAction = NotLocalizedString("sync.pairing-v2.confirmation.action", value: "Sync Now", comment: "Caption for a button to confirm sync setup with another device")
+    public static let syncPairingV2UnknownPeerName = NotLocalizedString("sync.pairing-v2.unknown-peer-name", value: "the other device", comment: "Fallback device name for confirmation dialogs")
+    public static func syncPairingV2ConfirmationMessage(_ deviceName: String, isThirdPartyPeer: Bool) -> String {
+        let message = isThirdPartyPeer ? NotLocalizedString(
+            "sync.pairing-v2.confirmation.third-party.message",
+            value: "\"%@\" will be able to access your synced Duck.ai chats.",
+            comment: "Message for the dialog to confirm sync setup with a third-party device")
+        : NotLocalizedString(
+            "sync.pairing-v2.confirmation.ddg.message",
+            value: "\"%@\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats.",
+            comment: "Message for the dialog to confirm sync setup with another DuckDuckGo device")
+        return message.format(arguments: deviceName)
+    }
 
     // Simplified Sync
     public static let simplifiedSyncEnabledToast = NSLocalizedString("sync.simplified.enabled.toast", value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
@@ -1343,6 +1359,15 @@ public struct UserText {
     public static let unableToRemoveDeviceDescription = NSLocalizedString("alert.unable-to-remove-device-description", value: "Unable to remove this device from Sync & Backup.", comment: "Description for unable to remove device error")
     public static let unableToCreateRecoveryPDF = NSLocalizedString("alert.unable-to-create-recovery-pdf-description", value: "Unable to create the recovery PDF.", comment: "Description for unable to create recovery pdf error")
     public static let unableToRecognizeCode = NSLocalizedString("alert.unable-to-scan-qr-code-description", value: "Sorry, this code is invalid. Please make sure the correct code was entered or scanned.", comment: "Description for unable to scan qr code error")
+    public static let syncUpdateRequiredDescription = NotLocalizedString("alert.sync-update-required-description", value: "Please update the DuckDuckGo browser and try again.", comment: "Description for Sync error shown when the app version does not support the scanned Sync code")
+    public static let syncUnsupportedThirdPartyRecoveryCodeDescription = NotLocalizedString("alert.sync-code-only-compatible-with-duckai-description", value: "This code is only compatible with Duck.ai website.", comment: "Description for Sync error shown when a third-party recovery code can only be used with Duck.ai")
+    public static let syncThirdPartyAccountAlreadyUpgradedDescription = NotLocalizedString("alert.sync-from-another-connected-device-description", value: "Please Sync this device from an already-connected DuckDuckGo browser on another device.", comment: "Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential")
+    public static let syncAlreadyPairedWithAccountTitle = NotLocalizedString("alert.sync-already-paired-with-account-title", value: "Already Paired", comment: "Title for Sync error shown when both devices are already paired with the same account")
+    public static let syncAlreadyPairedWithAccountDescription = NotLocalizedString("alert.sync-already-paired-with-account-description", value: "You're already paired with this account on both devices.", comment: "Description for Sync error shown when both devices are already paired with the same account")
+    public static let syncAlreadyPairedWithAccountButton = NotLocalizedString("alert.sync-already-paired-with-account-button", value: "Got It", comment: "Button title for Sync error shown when both devices are already paired with the same account")
+    public static let syncCancelledFromOtherDeviceTitle = NotLocalizedString("alert.sync-cancelled-from-other-device-title", value: "Sync canceled from your other device.", comment: "Title for Sync error shown when setup is canceled from the other device")
+    public static let syncCancelledFromOtherDeviceDescription = NotLocalizedString("alert.sync-cancelled-from-other-device-description", value: "Please try again.", comment: "Description for Sync error shown when setup is canceled from the other device")
+    public static let syncCancelledFromOtherDeviceButton = NotLocalizedString("alert.sync-cancelled-from-other-device-button", value: "Got It", comment: "Button title for Sync error shown when setup is canceled from the other device")
     static let syncUnavailableMessage = NSLocalizedString("sync.warning.data.syncing.disabled", value: "Sorry, but Sync & Backup is currently unavailable. Please try again later.", comment: "Data syncing unavailable warning message")
     static let syncUnavailableMessageUpgradeRequired = NSLocalizedString("sync.warning.data.syncing.disabled.upgrade.required", value: "Sorry, but Sync & Backup is no longer available in this app version. Please update DuckDuckGo to the latest version to continue.", comment: "Data syncing unavailable warning message")
 
@@ -1646,8 +1671,8 @@ public struct UserText {
     public static let settingsAfterInactivityIntervalLabel = NSLocalizedString("settings.afterInactivity.interval.label", value: "Inactivity Timer", comment: "Settings picker label for the inactivity duration before showing New Tab")
     public static let settingsAfterInactivityIdleIntervalNone = NSLocalizedString("settings.afterInactivity.idle.interval.none", value: "None", comment: "Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold)")
     public static let settingsAfterInactivityFooterNone = NSLocalizedString("settings.afterInactivity.footer.none", value: "Choose what you see when you return to DuckDuckGo.", comment: "Section footer when no inactivity timer is set or the Last Used Tab option is selected")
-    public static let settingsLastTabShortcutLabel = NotLocalizedString("settings.lastTabShortcut.label", value: "Last Tab Shortcut", comment: "Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity. Not translated; final copy will land in a follow-up PR.")
-    public static let settingsLastTabShortcutSubtitle = NotLocalizedString("settings.lastTabShortcut.subtitle", value: "Displays a link to quickly revisit the last opened tab when you launch the app after inactivity.", comment: "Settings toggle subtitle describing the Last Tab Shortcut option. Not translated; final copy will land in a follow-up PR.")
+    public static let settingsLastTabShortcutLabel = NotLocalizedString("settings.lastTabShortcut.label", value: "Last Used Tab Shortcut", comment: "Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity. Not translated; final copy will land in a follow-up PR.")
+    public static let settingsLastTabShortcutSubtitle = NotLocalizedString("settings.lastTabShortcut.subtitle", value: "Displays a link to return to the last used tab when you launch the app after inactivity.", comment: "Settings toggle subtitle describing the Last Used Tab Shortcut option. Not translated; final copy will land in a follow-up PR.")
 
     // Escape Hatch (Return to Tab Card)
     public static let escapeHatchReturnToLabel = NSLocalizedString("escapeHatch.returnTo.label", value: "Return to…", comment: "Label shown on the escape hatch card above the tab title")
@@ -1659,9 +1684,9 @@ public struct UserText {
     public static let escapeHatchMenuReturnToTab = NSLocalizedString("escapeHatch.menu.returnToTab", value: "Return to Tab", comment: "Menu item that returns the user to the open tab from the escape hatch card")
     public static let escapeHatchMenuCloseTab = NSLocalizedString("escapeHatch.menu.closeTab", value: "Close Tab", comment: "Menu item that closes the open tab referenced by the escape hatch card")
     public static let escapeHatchMenuDeleteTab = NSLocalizedString("escapeHatch.menu.deleteTab", value: "Delete Tab", comment: "Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card")
-    public static let escapeHatchMenuDontShowThis = NotLocalizedString("escapeHatch.menu.dontShowThis", value: "Don’t Show This", comment: "Menu item that hides the 'Return to tab' shortcut so only the tab switcher is shown after inactivity. Not translated; final copy will land in a follow-up PR.")
+    public static let escapeHatchMenuHideTheseShortcuts = NotLocalizedString("escapeHatch.menu.dontShowThis", value: "Hide These Shortcuts", comment: "Menu item that hides the 'Return to tab' shortcut so only the tab switcher is shown after inactivity. Not translated; final copy will land in a follow-up PR.")
     public static let escapeHatchTabSwitcherPrivateTabsLabel = NSLocalizedString("escapeHatch.tabSwitcher.privateTabs.label", value: "Private Tabs", comment: "Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form")
-
+    
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
     public static let settingsPProSectionFooter = NSLocalizedString("settings.ppro.footer", value: "Privacy Policy and Terms of Service", comment: "Title for Link in the Footer of Privacy Pro section")

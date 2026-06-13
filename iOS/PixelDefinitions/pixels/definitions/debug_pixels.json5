@@ -73,5 +73,43 @@
                 "description": "The name of the pixel that was suppressed due to the storage write failure"
             }
         ]
+    },
+    "m_debug_interaction_repeated_failed_scroll": {
+        "description": "Fires when the native web scroll view did not move after repeated vertical drags on a scrollable page (3 consecutive failed attempts within 30s). Observability for the 'web page visible, taps work, scroll dead' freeze; this measures the symptom (scroll did not move), NOT a confirmed browser bug.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "attempt_count_bucket",
+                "description": "Bucketed number of consecutive failed scroll attempts when the streak fired.",
+                "type": "string",
+                "enum": ["3", "4_5", "6_plus"]
+            },
+            {
+                "key": "direction",
+                "description": "Dominant drag direction across the failed attempts.",
+                "type": "string",
+                "enum": ["up", "down", "mixed"]
+            }
+        ],
+        "expires": "2026-07-11"
+    },
+    "m_debug_interaction_wedged_recognizer": {
+        "description": "Fires when a non-scroll gesture recognizer is found in an active (began/changed) state with no touches down, and is still wedged on a re-check ~1s later, while a web page is shown. Reliable mechanism signal for a recognizer that may be starving the web scroll pan.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "recognizer",
+                "description": "Bucketed class of the wedged recognizer.",
+                "type": "string",
+                "enum": ["web_scroll_pan", "pull_to_refresh_pan", "swipe_tabs", "edge_pan", "tap", "long_press", "other_pan", "other"]
+            }
+        ],
+        "expires": "2026-07-11"
     }
 }

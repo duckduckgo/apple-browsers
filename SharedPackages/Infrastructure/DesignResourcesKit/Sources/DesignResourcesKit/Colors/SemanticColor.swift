@@ -65,6 +65,9 @@ public enum DesignSystemColor {
     case accentContentPrimary
     case accentTertiary
 
+    // Container
+    case containerBorderPrimary
+
     // System
     case lines
     case border

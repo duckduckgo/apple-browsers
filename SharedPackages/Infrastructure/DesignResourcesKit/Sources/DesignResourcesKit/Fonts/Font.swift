@@ -123,6 +123,13 @@ public extension UIFont {
         return UIFont(descriptor: boldDescriptor, size: 0)
     }
 
+    static func daxCaptionMedium() -> UIFont {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .caption2)
+        let newDescriptor = descriptor.addingAttributes([.traits: [
+            UIFontDescriptor.TraitKey.weight: UIFont.Weight.medium]])
+        return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
+    }
+
 }
 
 #endif

@@ -30,7 +30,7 @@ final class DuckAIGridCardView: UIView {
         static let contentHorizontalInset: CGFloat = 8
         static let contentBottomInset: CGFloat = 8
         static let titleSnippetSpacing: CGFloat = 4
-        static let snippetChipSpacing: CGFloat = 8
+        static let snippetChipSpacing: CGFloat = 4
         static let chipHeight: CGFloat = 22
     }
 
@@ -56,7 +56,7 @@ final class DuckAIGridCardView: UIView {
             titleLabel.text = title
             snippetLabel.text = snippet
             snippetLabel.isHidden = false
-            chipView.configure(icon: DesignSystemImages.Glyphs.Size16.chat,
+            chipView.configure(icon: DesignSystemImages.Glyphs.Size12.chat,
                                label: UserText.aiChatTabSwitcherCardChipChat)
             chipView.isHidden = false
 
@@ -83,7 +83,7 @@ final class DuckAIGridCardView: UIView {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.font = .daxSubheadSemibold()
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        titleLabel.numberOfLines = 1
+        titleLabel.numberOfLines = 2
         titleLabel.adjustsFontForContentSizeCategory = true
         addSubview(titleLabel)
 
@@ -148,8 +148,8 @@ private final class ChipView: UIView {
     private enum Metrics {
         static let cornerRadius: CGFloat = 11
         static let horizontalPadding: CGFloat = 8
-        static let iconLabelSpacing: CGFloat = 4
-        static let iconSize: CGFloat = 14
+        static let iconLabelSpacing: CGFloat = 6
+        static let iconSize: CGFloat = 11
         static let borderWidth: CGFloat = 1
     }
 
@@ -178,14 +178,12 @@ private final class ChipView: UIView {
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        iconView.tintColor = UIColor(designSystemColor: .icons)
         addSubview(iconView)
 
         label.translatesAutoresizingMaskIntoConstraints = false
-        // Design uses an SF Medium weight (500); DRK doesn't ship a footnote-medium,
-        // so regular is the closest match — semibold reads too heavy here.
-        label.font = .daxFootnoteRegular()
-        label.textColor = UIColor(designSystemColor: .textSecondary)
+        label.font = .daxCaptionMedium()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
         label.adjustsFontForContentSizeCategory = true
         addSubview(label)
 
@@ -214,7 +212,7 @@ private final class ChipView: UIView {
     private func applyBorderColor() {
         // CGColor doesn't auto-resolve against the trait collection — refresh in
         // traitCollectionDidChange so dark mode doesn't end up with a stale colour.
-        layer.borderColor = UIColor(designSystemColor: .lines)
+        layer.borderColor = UIColor(designSystemColor: .containerBorderPrimary)
             .resolvedColor(with: traitCollection)
             .cgColor
     }

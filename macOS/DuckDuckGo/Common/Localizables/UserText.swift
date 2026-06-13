@@ -1099,8 +1099,6 @@ struct UserText {
     static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open pop-up windows permission access name")
     static let permissionNotification = NSLocalizedString("permission.notification", value: "Notifications", comment: "Web notifications permission access name")
 
-    static let permissionMuteFormat = NSLocalizedString("permission.mute", value: "Pause %@ use on “%@”", comment: "Temporarily pause input media device %@ access for %@2 website")
-    static let permissionUnmuteFormat = NSLocalizedString("permission.unmute", value: "Resume %@ use on “%@”", comment: "Resume input media device %@ access for %@ website")
     static let permissionReloadToEnable = NSLocalizedString("permission.reloadPage", value: "Reload to ask permission again", comment: "Reload webpage to ask for input media device access permission again")
 
     static let permissionAllowExternalSchemeFormat = NSLocalizedString("permission.allow.externalScheme.format", value: "Allow “%@“ to open %@", comment: "Allow to open External Link (%@ 2) to open on current domain (%@ 1)")
@@ -1185,6 +1183,20 @@ struct UserText {
     static let general = NSLocalizedString("preferences.general", value: "General", comment: "Title of the option to show the General preferences")
     static let sync = NSLocalizedString("preferences.sync", value: "Sync & Backup", comment: "Title of the option to show the Sync preferences")
     static let syncAutoLockPrompt = NSLocalizedString("preferences.sync.auto-lock-prompt", value: "Unlock device to setup Sync & Backup", comment: "Reason for auth when setting up Sync")
+    static let syncPairingV2ConfirmationTitle = NotLocalizedString("sync.pairing-v2.confirmation.title", value: "Sync new device?", comment: "Title of the dialog to confirm sync setup with another device")
+    static let syncPairingV2ConfirmationAction = NotLocalizedString("sync.pairing-v2.confirmation.action", value: "Sync Now", comment: "Caption for a button to confirm sync setup with another device")
+    static let syncPairingV2UnknownPeerName = NotLocalizedString("sync.pairing-v2.unknown-peer-name", value: "the other device", comment: "Fallback device name for confirmation dialogs")
+    static func syncPairingV2ConfirmationMessage(_ peerName: String, isThirdPartyPeer: Bool) -> String {
+        let message = isThirdPartyPeer ? NotLocalizedString(
+            "sync.pairing-v2.confirmation.third-party.message",
+            value: "\"%@\" will be able to access your synced Duck.ai chats.",
+            comment: "Message for the dialog to confirm sync setup with a third-party device")
+        : NotLocalizedString(
+            "sync.pairing-v2.confirmation.ddg.message",
+            value: "\"%@\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats.",
+            comment: "Message for the dialog to confirm sync setup with another DuckDuckGo device")
+        return String(format: message, peerName)
+    }
     static let syncBookmarkPausedAlertTitle = NSLocalizedString("alert.sync-bookmarks-paused-title", value: "Bookmark Sync is Paused", comment: "Title for alert shown when sync bookmarks paused for too many items")
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")

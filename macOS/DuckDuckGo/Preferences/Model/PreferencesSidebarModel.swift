@@ -55,6 +55,12 @@ final class PreferencesSidebarModel: ObservableObject {
                 pixelFiring?.fire(AIChatPixel.aiChatSettingsDisplayed, frequency: .dailyAndCount)
             case .subscription where winBackOfferVisibilityManager.isOfferAvailable:
                 pixelFiring?.fire(SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown)
+            case .emailProtection:
+                pixelFiring?.fire(
+                    SettingsPixel.settingsPaneOpened(selectedPane),
+                    frequency: .dailyAndStandard,
+                    withAdditionalParameters: ["subscribed": String(subscriptionManager.isUserAuthenticated)]
+                )
             default:
                 pixelFiring?.fire(SettingsPixel.settingsPaneOpened(selectedPane), frequency: .daily)
             }

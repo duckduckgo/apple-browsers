@@ -29,7 +29,17 @@ final class MockChatHistoryReader: ChatHistoryReading {
         self.subject = CurrentValueSubject(chats)
     }
 
+    /// Sorts emitted chats the same way the real `ChatHistoryReader` does: pinned first,
+    /// then `lastEdit` descending. Tests that exercise ordering would otherwise rely on
+    /// declaration order, which the real reader doesn't honour.
     func chatsPublisher() -> AnyPublisher<[DuckAiChat], Error> {
-        subject.eraseToAnyPublisher()
+        subject
+            .map { chats in
+                chats.sorted { lhs, rhs in
+                    if lhs.pinned != rhs.pinned { return lhs.pinned }
+                    return lhs.lastEdit > rhs.lastEdit
+                }
+            }
+            .eraseToAnyPublisher()
     }
 }

@@ -1,0 +1,47 @@
+# duckai_chrome_shortcut_contextual_sheet_toggle.yaml
+#
+# Scenario 2: On a web page, tapping the icon half opens the contextual sheet
+# (icon glyph -> open); tapping again closes it (icon glyph -> closed).
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - duckai_chrome_shortcut
+
+---
+
+- runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
+
+# Load a regular web page (not the New Tab Page, not Duck.ai) so the icon half shows.
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://example.com"
+- pressKey: Enter
+- assertVisible: ".*Example Domain.*"
+
+# The icon half is visible on a regular page. (Closed state is verified via the
+# sheet-presented assertions below, not the provisional "Closed" accessibility value.)
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
+
+# Tap the icon half -> the contextual sheet opens.
+- tapOn:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+
+# Close the sheet. (While the sheet is presented modally the tabs-bar chip is
+# removed from the accessibility hierarchy, so close via the sheet's X button.)
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: "AIChat.ContextualSheet"
+
+# The chip is interactive again; the sheet was dismissed above, i.e. the closed state.
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"

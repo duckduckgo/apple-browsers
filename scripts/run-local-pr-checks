@@ -1,0 +1,287 @@
+#!/usr/bin/env bash
+# Runs cheap non-test-suite PR checks.
+#
+# Optional: use as an LLM "fix before finishing" Stop hook (personal,
+# uncommitted). Claude Code and Codex run a Stop hook when the agent tries to
+# finish; exit 2 with output on stderr blocks completion and feeds the text
+# back so the agent fixes the issues first.
+#
+# When invoked as a Stop hook the script detects the hook's JSON on stdin and
+# owns the hook contract itself, so the configured command is just the script
+# path - no ">&2 || exit 2" wrapper needed. In hook mode it:
+#   - routes output to stderr and exits 2 on failure (blocks + feeds back);
+#   - stays completely silent on success, to spend zero agent context;
+#   - exits 0 without re-running when the agent is only re-invoking us because
+#     our own previous run blocked (stop_hook_active=true), so pre-existing
+#     failures can't trap the agent in an endless re-check loop.
+# A normal terminal or CI run (no hook JSON on stdin) is unaffected: full live
+# output, exit code = number of failed checks.
+#
+#   Claude Code — .claude/settings.local.json (gitignored):
+#     { "hooks": { "Stop": [ { "matcher": "", "hooks": [ { "type": "command",
+#       "command": "\"$CLAUDE_PROJECT_DIR/scripts/run-local-pr-checks\"" } ] } ] } }
+#
+#   Codex — ~/.codex/config.toml (outside the repo):
+#     [[hooks.Stop]]
+#     [[hooks.Stop.hooks]]
+#     type = "command"
+#     command = ["bash", "-lc", "scripts/run-local-pr-checks"]
+set -uo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+PLATFORMS=("iOS" "macOS")
+SWIFTLINT_ALL=false
+BASE_REF="origin/${GITHUB_BASE_REF:-main}"
+
+PASS_COUNT=0
+FAIL_COUNT=0
+SKIP_COUNT=0
+
+# Set by detect_hook_context when stdin carries an agent Stop-hook payload.
+HOOK_MODE=false
+STOP_HOOK_ACTIVE=false
+
+if [ -t 1 ]; then
+  C_GREEN=$'\033[32m'; C_RED=$'\033[31m'; C_YELLOW=$'\033[33m'; C_DIM=$'\033[2m'; C_RESET=$'\033[0m'
+else
+  C_GREEN=''; C_RED=''; C_YELLOW=''; C_DIM=''; C_RESET=''
+fi
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/run-local-pr-checks [options]
+
+Runs the cheap static PR checks CI enforces: ActionLint, ShellCheck, SwiftLint,
+pixel lint/validation, and translation/string checks. Each tool is skipped (not
+failed) when it is not installed.
+
+Options:
+  --platform ios|macos   Restrict per-platform checks (pixel + translation) to
+                         one platform. Default: both.
+  --all                  Run SwiftLint over the whole repo (CI parity) instead
+                         of only files changed vs the base branch (origin/main,
+                         or origin/$GITHUB_BASE_REF when set).
+  -h, --help             Show this help.
+
+Exit code equals the number of failed checks (0 = all green; skips never fail).
+EOF
+}
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+BASE_REF_STATUS=""
+base_ref_available() {
+  if [ -z "$BASE_REF_STATUS" ]; then
+    if git -C "$REPO_ROOT" rev-parse --verify --quiet "$BASE_REF" >/dev/null 2>&1; then
+      BASE_REF_STATUS="yes"
+    else
+      BASE_REF_STATUS="no"
+    fi
+  fi
+  [ "$BASE_REF_STATUS" = "yes" ]
+}
+
+# In hook mode pass/skip still count but print nothing: a successful run must
+# emit no output, and on failure we only want the failing checks fed back.
+pass() { PASS_COUNT=$((PASS_COUNT + 1)); [ "$HOOK_MODE" = true ] && return; printf '  %sPASS%s  %s\n' "$C_GREEN" "$C_RESET" "$1"; }
+skip() { SKIP_COUNT=$((SKIP_COUNT + 1)); [ "$HOOK_MODE" = true ] && return; printf '  %sSKIP%s  %s %s(%s)%s\n' "$C_YELLOW" "$C_RESET" "$1" "$C_DIM" "$2" "$C_RESET"; }
+
+# Printed once, the first time a check fails in hook mode, to frame the block for
+# the agent. The fed-back stderr is the only thing the agent sees, so without
+# this it reads a bare lint dump at "finish" time and misdiagnoses it as "I
+# forgot to commit", then tries to commit/stage instead of fixing the
+# violation. Costs a few lines of context, but only on failure.
+HOOK_HEADER_PRINTED=false
+emit_hook_guidance_header() {
+  [ "$HOOK_MODE" = true ] || return
+  [ "$HOOK_HEADER_PRINTED" = true ] && return
+  HOOK_HEADER_PRINTED=true
+  cat <<'EOF'
+[local PR checks] Finishing is blocked: static checks failed (see below).
+
+This gate lints the changes on your branch, committed or not (SwiftLint is
+scoped to the files you changed). It is blocking on the violations listed below,
+not on your commit state - committing or staging will not clear it. To clear it,
+fix the violations directly in the code, then finish again.
+
+EOF
+}
+
+run_check() {
+  local name="$1" workdir="$2"; shift 2
+  local output status
+  output="$(cd "$workdir" && "$@" 2>&1)"
+  status=$?
+  if [ "$status" -eq 0 ]; then
+    pass "$name"
+  else
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    emit_hook_guidance_header
+    printf '  %sFAIL%s  %s\n' "$C_RED" "$C_RESET" "$name"
+    [ -n "$output" ] && printf '%s\n' "$output" | sed 's/^/        /'
+  fi
+}
+
+check_actionlint() {
+  if ! have actionlint; then skip "actionlint" "actionlint not installed"; return; fi
+  run_check "actionlint" "$REPO_ROOT" actionlint -shellcheck=
+}
+
+check_shellcheck() {
+  if ! have shellcheck; then skip "shellcheck" "shellcheck not installed"; return; fi
+
+  local ios_files=()
+  while IFS= read -r f; do ios_files+=("$f"); done \
+    < <(cd "$REPO_ROOT" && find iOS/scripts -type f -name '*.sh' 2>/dev/null | sort)
+  if [ ${#ios_files[@]} -eq 0 ]; then
+    skip "shellcheck (iOS)" "no shell scripts found"
+  else
+    run_check "shellcheck (iOS)" "$REPO_ROOT" shellcheck -x -P iOS/scripts "${ios_files[@]}"
+  fi
+
+  # helpers are excluded from being checked but kept on the source path so that
+  # `source` directives in the other scripts still resolve.
+  local mac_files=()
+  while IFS= read -r f; do mac_files+=("$f"); done \
+    < <(cd "$REPO_ROOT" && find macOS/scripts -type f -name '*.sh' -not -path '*/helpers/*' 2>/dev/null | sort)
+  if [ ${#mac_files[@]} -eq 0 ]; then
+    skip "shellcheck (macOS)" "no shell scripts found"
+  else
+    run_check "shellcheck (macOS)" "$REPO_ROOT" shellcheck -x -P macOS/scripts -P macOS/scripts/helpers "${mac_files[@]}"
+  fi
+}
+
+check_swiftlint() {
+  if ! have mint; then skip "swiftlint" "mint not installed"; return; fi
+
+  if [ "$SWIFTLINT_ALL" = true ]; then
+    run_check "swiftlint (all files)" "$REPO_ROOT" mint run swiftlint lint --strict --quiet
+    return
+  fi
+
+  if ! base_ref_available; then
+    skip "swiftlint" "$BASE_REF not available — fetch it, or use --all"
+    return
+  fi
+
+  local base
+  base="$(git -C "$REPO_ROOT" merge-base "$BASE_REF" HEAD)"
+
+  local swift_files=()
+  while IFS= read -r f; do
+    [ -n "$f" ] && swift_files+=("$REPO_ROOT/$f")
+  done < <({
+    git -C "$REPO_ROOT" diff --name-only --diff-filter=d "$base" -- '*.swift'
+    git -C "$REPO_ROOT" ls-files --others --exclude-standard -- '*.swift'
+  } | sort -u)
+
+  if [ ${#swift_files[@]} -eq 0 ]; then
+    pass "swiftlint (no changed Swift files)"
+    return
+  fi
+
+  # SwiftLint indexes its working directory even when given explicit files (~50s
+  # on this repo); running from /tmp with --working-directory avoids that scan
+  # while still resolving config and the Mintfile-pinned version from the root.
+  run_check "swiftlint (${#swift_files[@]} changed)" /tmp \
+    mint run --mintfile "$REPO_ROOT/Mintfile" swiftlint lint --strict --quiet \
+    --working-directory "$REPO_ROOT" "${swift_files[@]}"
+}
+
+check_pixels() {
+  if ! have npm; then skip "pixel checks" "npm not installed"; return; fi
+  local plat
+  for plat in "${PLATFORMS[@]}"; do
+    if [ ! -d "$REPO_ROOT/$plat/node_modules" ]; then
+      skip "pixel checks ($plat)" "node_modules missing — run npm ci in $plat"
+      continue
+    fi
+    run_check "pixel-lint ($plat)" "$REPO_ROOT/$plat" npm run pixel-lint
+    run_check "pixel-defs ($plat)" "$REPO_ROOT/$plat" npm run validate-defs-without-formatting
+  done
+}
+
+check_translations() {
+  if ! have python3; then skip "translation checks" "python3 not installed"; return; fi
+  if ! base_ref_available; then skip "translation checks" "$BASE_REF not available — fetch it"; return; fi
+
+  local scripts=(verify_locale_list verify_string_extraction check_new_string_translations check_marker_consistency check_deleted_string_translations)
+  local plat script
+  for plat in "${PLATFORMS[@]}"; do
+    for script in "${scripts[@]}"; do
+      run_check "$script ($plat)" "$REPO_ROOT" python3 "scripts/translation-pr-checks/$script.py" --platform "$plat"
+    done
+  done
+}
+
+# Detect being run as an agent (Claude Code / Codex) Stop hook by inspecting
+# stdin: those harnesses pipe a JSON object describing the event. A terminal or
+# CI run leaves stdin a TTY or empty, so it never trips this. No jq dependency -
+# we only need to spot a JSON object and one boolean flag. The per-read timeout
+# guarantees we never block if stdin is an idle open pipe.
+detect_hook_context() {
+  [ -t 0 ] && return
+  local input="" line=""
+  while IFS= read -r -t 1 line || [ -n "$line" ]; do
+    input+="$line"$'\n'
+    line=""
+  done
+  printf '%s' "$input" | grep -q '^[[:space:]]*{' || return
+  HOOK_MODE=true
+  # stop_hook_active=true => the agent is only re-invoking us because our own
+  # previous run blocked; let it finish instead of looping on the same failures.
+  printf '%s' "$input" | grep -Eq '"stop_hook_active"[[:space:]]*:[[:space:]]*true' && STOP_HOOK_ACTIVE=true
+  return 0
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --platform|--platform=*)
+      if [ "$1" = "--platform" ]; then shift; val="${1:-}"; else val="${1#*=}"; fi
+      case "$val" in
+        ios|iOS)     PLATFORMS=("iOS") ;;
+        macos|macOS) PLATFORMS=("macOS") ;;
+        *) printf 'error: --platform expects "ios" or "macos"\n' >&2; exit 2 ;;
+      esac
+      ;;
+    --all) SWIFTLINT_ALL=true ;;
+    -h|--help) usage; exit 0 ;;
+    *) printf 'error: unknown option: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+detect_hook_context
+if [ "$HOOK_MODE" = true ]; then
+  # A re-invocation triggered by our own previous block: exit cleanly so the
+  # agent can finish, otherwise pre-existing failures loop forever.
+  [ "$STOP_HOOK_ACTIVE" = true ] && exit 0
+  # Stop hooks read the blocked command's stderr; route everything there. Combined
+  # with the silent pass/skip above, a clean run now emits nothing at all.
+  exec 1>&2
+fi
+
+check_actionlint
+check_shellcheck
+check_swiftlint
+check_pixels
+check_translations
+
+# Summary line: shown for any terminal/CI run, and for a hook run that failed
+# (gives the agent the counts). Suppressed only when a hook run fully passes.
+if ! { [ "$HOOK_MODE" = true ] && [ "$FAIL_COUNT" -eq 0 ]; }; then
+  if [ "$FAIL_COUNT" -gt 0 ]; then
+    printf '\n%s%s passed, %s failed, %s skipped%s\n' "$C_RED" "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT" "$C_RESET"
+  else
+    printf '\n%s%s passed, %s failed, %s skipped%s\n' "$C_GREEN" "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT" "$C_RESET"
+  fi
+fi
+
+# In hook mode, failure must exit 2 - the code that blocks the agent and feeds
+# stderr back. Outside hook mode keep the documented contract: exit = failures.
+if [ "$HOOK_MODE" = true ] && [ "$FAIL_COUNT" -gt 0 ]; then
+  printf '\nTo finish: fix the FAIL items above, then stop again. Committing will not clear this gate; fixing the violations will.\n'
+  exit 2
+fi
+exit "$FAIL_COUNT"

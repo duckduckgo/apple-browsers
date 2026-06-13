@@ -1,0 +1,21 @@
+# Dismiss the focused address-bar editing state, independent of the address-bar variant.
+#
+# The classic omnibar shows a text "Cancel" button. The experimental address bar /
+# unified-toggle-input editing overlay (on for internal users) replaces it with a
+# back-chevron labelled "Back". Each block taps only its own control if present, so
+# exactly one fires and the flow passes in both modes. (The browser's back button is
+# labelled "Browse back", so it does not collide with "Back".)
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- runFlow:
+    when:
+      visible: "Cancel"
+    commands:
+      - tapOn: "Cancel"
+- runFlow:
+    when:
+      visible: "Back"
+    commands:
+      - tapOn: "Back"

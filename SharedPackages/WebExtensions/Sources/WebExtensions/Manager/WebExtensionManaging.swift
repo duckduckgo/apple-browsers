@@ -51,6 +51,15 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func loadInstalledExtensions() async
 
+    /// Reloads the extensions removed by the most recent `unloadAllExtensions()` using the parsed
+    /// extensions captured at unload time, skipping the disk re-parsing, installed-store reads and
+    /// orphaned-file cleanup performed by `loadInstalledExtensions()`. Falls back to
+    /// `loadInstalledExtensions()` when nothing is cached. Intended for the data-clearing (fire)
+    /// flow, where the installed set is unchanged.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func reloadInstalledExtensions() async
+
     /// Installs an extension from a source URL, copying it to platform storage.
     /// - Parameter sourceURL: The source URL of the extension (e.g., from document picker).
     @available(macOS 15.4, iOS 18.4, *)

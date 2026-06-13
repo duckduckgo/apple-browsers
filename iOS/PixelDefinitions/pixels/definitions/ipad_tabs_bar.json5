@@ -1,0 +1,48 @@
+// iPad tabs bar usage baseline pixels.
+{
+    "m_tab_bar_tab_selected": {
+        "description": "User selects (switches to) a tab in the iPad tabs bar.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "expires": "2026-08-05",
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_tab_bar_tab_closed": {
+        "description": "User closes a tab via the close button in the iPad tabs bar.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "tab_state",
+                "type": "string",
+                "description": "Whether the closed tab was the active (currently shown) tab or an inactive background tab. Inactive indicates a close-without-switching.",
+                "enum": ["active", "inactive"]
+            }
+        ]
+    },
+    "m_tab_bar_new_tab": {
+        "description": "User opens a new tab via the add-tab button in the iPad tabs bar.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_tab_bar_overflow_daily": {
+        "description": "Fires once per day when the iPad tabs bar holds more tabs than fit and must scroll horizontally.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "expires": "2026-08-05",
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_tab_bar_open_tab_count_daily": {
+        "description": "Fires once per day with the bucketed number of open tabs, sampled at the first iPad tabs bar refresh of the day.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "tabCount"]
+    }
+}

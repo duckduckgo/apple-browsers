@@ -37,8 +37,8 @@ struct SettingsAIExperimentalPickerView: View {
         HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
             PickerOptionView(
                 isSelected: !isDuckAISelected,
-                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAIActive : .searchExperimentalOn,
-                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAI : .searchExperimentalOff,
+                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAIActive : rebrandableImage(.inputToggleSearchSelected, legacy: .inputToggleSearchSelectedLegacy),
+                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAI : rebrandableImage(.inputToggleSearchLight, legacy: .inputToggleSearchLightLegacy),
                 title: UserText.Onboarding.SearchExperience.searchOnlyOption,
                 showNewBadge: false,
                 titleMinHeight: maxOptionTitleHeight
@@ -50,8 +50,8 @@ struct SettingsAIExperimentalPickerView: View {
 
             PickerOptionView(
                 isSelected: isDuckAISelected,
-                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAIActive : .aiExperimentalOn,
-                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAI : .aiExperimentalOff,
+                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAIActive : rebrandableImage(.inputToggleAISelectedLight, legacy: .inputToggleAISelectedLightLegacy),
+                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAI : rebrandableImage(.inputToggleAILight, legacy: .inputToggleAILightLegacy),
                 title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
                 showNewBadge: false,
                 titleMinHeight: maxOptionTitleHeight
@@ -75,6 +75,10 @@ struct SettingsAIExperimentalPickerView: View {
 
     private var isIPadAIToggleOn: Bool {
         AppDependencyProvider.shared.featureFlagger.isFeatureOn(.iPadAIToggle)
+    }
+
+    private func rebrandableImage(_ rebranded: ImageResource, legacy: ImageResource) -> ImageResource {
+        AppRebrand.isAppRebranded() ? rebranded : legacy
     }
 }
 

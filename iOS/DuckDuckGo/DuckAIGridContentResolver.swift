@@ -80,14 +80,4 @@ final class DuckAIGridContentResolver: DuckAIGridItemProviding {
             return nil
         }
     }
-
-    /// Loads an image referenced by a chat from the native file store. Returns `nil`
-    /// when the file is missing or is not a decodable image.
-    func loadImage(fileRef: String) -> UIImage? {
-        guard let storageHandler,
-              let file = try? storageHandler.getFile(uuid: fileRef) else {
-            return nil
-        }
-        return UIImage(data: file.data)
-    }
 }

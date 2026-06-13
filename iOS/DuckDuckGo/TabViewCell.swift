@@ -483,8 +483,6 @@ class TabViewCell: UICollectionViewCell {
                 preview: UIImage?,
                 isFireModeEnabled: Bool,
                 duckAIGridItem: DuckAIGridItem? = nil) {
-        accessibilityElements = [ title as Any, removeButton as Any ]
-
         self.tab = tab
         self.isSelectionModeEnabled = isSelectionModeEnabled
         self.isFireModeEnabled = isFireModeEnabled
@@ -583,6 +581,14 @@ class TabViewCell: UICollectionViewCell {
         }
 
         updateUIForSelectionMode(removeButton, selectionIndicator)
+
+        // Include the rich card between the header title and close button so VoiceOver
+        // reads the conversation title/snippet that lives inside the card body.
+        if let richCard = richCardContainer, !richCard.isHidden {
+            accessibilityElements = [title as Any, richCard as Any, removeButton as Any]
+        } else {
+            accessibilityElements = [title as Any, removeButton as Any]
+        }
     }
     
     private func updateEmptyTabLabel(for tab: Tab) {

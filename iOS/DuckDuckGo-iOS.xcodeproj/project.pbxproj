@@ -151,6 +151,8 @@
 		312BF6F12E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */; };
 		312E5746283BB04A00C18FA0 /* AutofillEmptySearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312E5745283BB04A00C18FA0 /* AutofillEmptySearchView.swift */; };
 		312F786A2F28C32D006903C7 /* AIChatHistoryManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312F78692F28C32D006903C7 /* AIChatHistoryManagerTests.swift */; };
+		5AB12C3D4E5F60718293A4F1 /* AIChatHistoryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4F2 /* AIChatHistoryViewModelTests.swift */; };
+		5AB12C3D4E5F60718293A4F3 /* ChatHistoryDownloaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4F4 /* ChatHistoryDownloaderTests.swift */; };
 		3132927F2F9FE38000C3A276 /* FireModeNativeStorageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3132927E2F9FE38000C3A276 /* FireModeNativeStorageController.swift */; };
 		3132928108A0000000C3A276 /* DuckAiNativeStorageContainerMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3132928008A0000000C3A276 /* DuckAiNativeStorageContainerMigration.swift */; };
 		3132928308A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3132928208A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift */; };
@@ -2845,6 +2847,8 @@
 		312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerDisplayValidatorTests.swift; sourceTree = "<group>"; };
 		312E5745283BB04A00C18FA0 /* AutofillEmptySearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillEmptySearchView.swift; sourceTree = "<group>"; };
 		312F78692F28C32D006903C7 /* AIChatHistoryManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryManagerTests.swift; sourceTree = "<group>"; };
+		5AB12C3D4E5F60718293A4F2 /* AIChatHistoryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryViewModelTests.swift; sourceTree = "<group>"; };
+		5AB12C3D4E5F60718293A4F4 /* ChatHistoryDownloaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatHistoryDownloaderTests.swift; sourceTree = "<group>"; };
 		3132927E2F9FE38000C3A276 /* FireModeNativeStorageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireModeNativeStorageController.swift; sourceTree = "<group>"; };
 		3132928008A0000000C3A276 /* DuckAiNativeStorageContainerMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiNativeStorageContainerMigration.swift; sourceTree = "<group>"; };
 		3132928208A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiNativeStorageContainerMigrationTests.swift; sourceTree = "<group>"; };

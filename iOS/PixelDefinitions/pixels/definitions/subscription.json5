@@ -732,6 +732,12 @@
                 "enum": ["partial_data"]
             },
             {
+                "key": "feature.data.ext.application_state",
+                "type": "string",
+                "description": "String representing whether the app is in the background or the foreground at the end of the token refresh",
+                "enum": ["background", "foreground"]
+            },
+            {
                 "key": "feature.data.ext.refresh_trigger",
                 "type": "string",
                 "description": "String representing what caused the token refresh to begin",

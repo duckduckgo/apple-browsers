@@ -105,9 +105,7 @@ final class AIChatHistoryManager {
             viewModel: viewModel,
             isIPadExperience: isIPadExperience,
             onChatSelected: { [weak self] chat in
-                guard let self else { return }
-                let url = self.aiChatSettings.aiChatURL.withChatID(chat.chatId)
-                self.delegate?.aiChatHistoryManager(self, didSelectChatURL: url)
+                self?.handleChatActivation(chat)
             },
             onChatDeleted: { [weak self] chat in
                 self?.deleteChatSuggestion(suggestion: chat)
@@ -140,6 +138,43 @@ final class AIChatHistoryManager {
         if !isIPadExperience {
             fetchSuggestionsIfNeeded(query: "")
         }
+    }
+
+    // MARK: - Keyboard selection
+
+    var hasHighlightedSuggestion: Bool {
+        viewModel.selectedIndex != nil
+    }
+
+    func moveSelectionDown() {
+        viewModel.selectNext()
+    }
+
+    func moveSelectionUp() {
+        viewModel.selectPrevious()
+    }
+
+    @discardableResult
+    func activateHighlightedSuggestion() -> Bool {
+        guard let suggestion = viewModel.selectedSuggestion else { return false }
+        handleChatActivation(suggestion)
+        return true
+    }
+
+    func clearSelection() {
+        viewModel.clearSelection()
+    }
+
+    /// Fires the selection pixels and opens the chat. Shared by tap (the VC's `onChatSelected`) and keyboard activation.
+    private func handleChatActivation(_ chat: AIChatSuggestion) {
+        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
+        DailyPixel.fireDailyAndCount(pixel: pixel)
+        if isIPadExperience {
+            let iPadPixel: Pixel.Event = chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected
+            DailyPixel.fireDailyAndCount(pixel: iPadPixel)
+        }
+        let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
+        delegate?.aiChatHistoryManager(self, didSelectChatURL: url)
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {

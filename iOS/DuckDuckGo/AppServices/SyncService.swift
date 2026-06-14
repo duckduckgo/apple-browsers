@@ -84,6 +84,17 @@ final class SyncService {
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: keyValueStore,
             environment: environment,
+            syncFeatureFlags: SyncFeatureFlagProvider(
+                isScopedAccessCredentialsEnabled: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncScopedAccessCredentials)
+                },
+                isPairingV2ScanningEnabled: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanUseV2ConnectFlow)
+                },
+                isPairingV2CodeEnabled: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanShowV2ConnectCode)
+                }
+            ),
             shouldPreserveAccountWhenSyncDisabled: {
                 autoRestoreDecisionManager.shouldPreserveAccountWhenSyncDisabled()
             }

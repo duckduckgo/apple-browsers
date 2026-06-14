@@ -41,6 +41,11 @@ public struct DuckAiChat: Equatable {
     /// Raw FE-supplied reasoning-mode string for this chat.
     public let reasoningMode: String?
 
+    /// True when any assistant message in the chat carries a `ui-component` part named
+    /// `generate-image` — i.e. the chat produced generated images via a tool call,
+    /// regardless of the chat's `model` field.
+    public let isImageGeneration: Bool
+
     public init(
         chatId: String,
         title: String,
@@ -48,7 +53,8 @@ public struct DuckAiChat: Equatable {
         lastEdit: String,
         pinned: Bool,
         fileRefs: [String] = [],
-        reasoningMode: String? = nil
+        reasoningMode: String? = nil,
+        isImageGeneration: Bool = false
     ) {
         self.chatId = chatId
         self.title = title
@@ -57,6 +63,25 @@ public struct DuckAiChat: Equatable {
         self.pinned = pinned
         self.fileRefs = fileRefs
         self.reasoningMode = reasoningMode
+        self.isImageGeneration = isImageGeneration
+    }
+}
+
+// MARK: - Mutation helpers
+
+public extension DuckAiChat {
+    /// Returns a copy with `pinned` set to the supplied value.
+    func withPinned(_ newValue: Bool) -> DuckAiChat {
+        DuckAiChat(
+            chatId: chatId,
+            title: title,
+            model: model,
+            lastEdit: lastEdit,
+            pinned: newValue,
+            fileRefs: fileRefs,
+            reasoningMode: reasoningMode,
+            isImageGeneration: isImageGeneration
+        )
     }
 }
 
@@ -77,12 +102,13 @@ extension DuckAiChat {
             lastEdit: blob.lastEdit ?? "",
             pinned: blob.pinned ?? false,
             fileRefs: blob.fileRefs ?? [],
-            reasoningMode: blob.reasoningMode
+            reasoningMode: blob.reasoningMode,
+            isImageGeneration: blob.hasGenerateImageUiComponent
         )
 
         let firstUserMessage = blob.messages?
             .first(where: { $0.role == "user" })?
-            .content.textValue
+            .content?.textValue
 
         return (chat: chat, firstUserMessageContent: firstUserMessage)
     }
@@ -99,11 +125,32 @@ private struct ChatBlob: Decodable {
     let fileRefs: [String]?
     let messages: [MessageBlob]?
     let reasoningMode: String?
+
+    /// True when any assistant message carries a `ui-component` part named `generate-image`.
+    var hasGenerateImageUiComponent: Bool {
+        guard let messages else { return false }
+        return messages.contains { message in
+            guard message.role == "assistant" else { return false }
+            return message.parts?.contains { part in
+                part.type == "ui-component" && part.name == "generate-image"
+            } ?? false
+        }
+    }
 }
 
 private struct MessageBlob: Decodable {
     let role: String
-    let content: MessageContent
+    /// Assistant tool-call messages can ship without a `content` string — they carry the
+    /// payload in `parts` instead. Keeping this optional means we still decode the message
+    /// (and can inspect `parts` to detect image-gen chats) instead of failing the whole
+    /// `messages` array.
+    let content: MessageContent?
+    let parts: [MessagePart]?
+}
+
+private struct MessagePart: Decodable {
+    let type: String?
+    let name: String?
 }
 
 /// Handles polymorphic message content: either a plain string or a rich object with a `text` field.

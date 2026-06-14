@@ -163,6 +163,21 @@ final class IPadTabChatHistoryCoordinator {
         textSubject.send(query)
     }
 
+    // MARK: - Keyboard selection
+
+    var isNavigationAvailable: Bool { isInstalled && hasSuggestions }
+
+    var hasHighlightedSuggestion: Bool { historyManager?.hasHighlightedSuggestion ?? false }
+
+    func moveSelectionDown() { historyManager?.moveSelectionDown() }
+
+    func moveSelectionUp() { historyManager?.moveSelectionUp() }
+
+    @discardableResult
+    func activateHighlightedSuggestion() -> Bool { historyManager?.activateHighlightedSuggestion() ?? false }
+
+    func clearSelection() { historyManager?.clearSelection() }
+
     // MARK: - Private Methods
 
     /// Creates an `AIChatHistoryManager` configured for the current tab.

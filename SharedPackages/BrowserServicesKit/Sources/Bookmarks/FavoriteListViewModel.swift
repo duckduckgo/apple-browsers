@@ -128,8 +128,6 @@ public class FavoritesListViewModel: FavoritesListInteracting, ObservableObject 
         favorite.removeFromFavorites(with: favoritesDisplayMode)
 
         save()
-
-        readFavorites(with: favoriteFolder)
     }
 
     public func moveFavorite(_ favorite: BookmarkEntity,
@@ -168,13 +166,17 @@ public class FavoritesListViewModel: FavoritesListInteracting, ObservableObject 
         mutableChildrenSet.moveObjects(at: IndexSet(integer: actualFromIndex), to: actualToIndex)
 
         save()
-
-        readFavorites(with: favoriteFolder)
     }
 
     private func save() {
         do {
             try context.save()
+            // Refresh the published `favorites` before notifying, so reactive consumers (e.g. a
+            // second NewTabPage instance observing updates) read the post-change array rather than
+            // the stale pre-change one.
+            if let favoriteFolder {
+                readFavorites(with: favoriteFolder)
+            }
             localSubject.send()
         } catch {
             context.rollback()

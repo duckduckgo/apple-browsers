@@ -121,7 +121,7 @@ CI runs `node scripts/check_wide_event_consistency.mjs` and `node scripts/check_
 
 **Never hand-edit anything under `wide_events/generated_schemas/`.** Those files are generated artifacts - the pixel validator regenerates each one from its `wide_events/definitions/*.json5` source, and the filename encodes the version, so every version bump produces a brand-new file and leaves the old ones untouched. The only correct way to change a generated schema is to edit the source definition and bump its `meta.version`. Any diff that modifies an existing `generated_schemas/*.json` file in place is wrong - flag it unconditionally. (`scripts/check_wide_event_schema_immutability.mjs` enforces this on CI, but call it out in review too.)
 
-Only flag if a wide event is added in Swift but has no definition files at all. Validating the deep shape of the schema itself (e.g. nested `ext.ipv4.http.status`) is still the human reviewer's job.
+One more case to flag: a wide event added in Swift with no definition files at all. The only thing left to the human reviewer (not the automated checks or the rules above) is validating the deep shape of the schema itself, e.g. nested `ext.ipv4.http.status` - everything above should still be flagged in review.
 
 ### What NOT to Flag
 

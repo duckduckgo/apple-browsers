@@ -15,12 +15,19 @@
 //
 // "Modified" is measured against the merge-base with the PR base branch
 // (origin/$GITHUB_BASE_REF, else origin/main), so only this branch's changes
-// count: a versioned schema that already existed on the base branch cannot be
-// edited in place. Comparing against HEAD instead would not catch it, because a
-// developer who regenerates in place commits the rewritten schema and the
-// working tree then matches HEAD. Falls back to HEAD when no base branch is
-// available, e.g. a local run with uncommitted changes. New (added) files are
-// fine: they represent a new schema version.
+// count: a versioned schema that already existed on the base branch must not be
+// edited in place. TWO diffs against that base are unioned, because the preceding
+// `validate-ddg-pixel-defs` step regenerates generated_schemas/ in the working
+// tree from the committed sources before this check runs:
+//   - base vs WORKING TREE catches a source whose `feature.data.ext` shape changed
+//     with no `meta.version` bump even if the developer never committed the
+//     regenerated schema - regeneration materializes the change in the working tree.
+//   - base vs committed HEAD catches a generated schema hand-edited and COMMITTED
+//     with no source change - regeneration reverts it in the working tree, hiding it
+//     from the first diff, so the committed state must be inspected separately.
+// Falls back to HEAD as the base when no base branch is available, e.g. a local run
+// with uncommitted changes (the HEAD-vs-HEAD diff is then empty, leaving just the
+// working-tree diff). New (added) files are fine: they represent a new schema version.
 
 import { execSync } from 'node:child_process';
 import path from 'node:path';
@@ -53,17 +60,28 @@ function resolveBase() {
     return 'HEAD';
 }
 
-let modifiedFiles;
-try {
-    // --diff-filter=M restricts to in-place modifications (not adds, deletes, renames).
-    const out = execSync(`git diff --name-only --diff-filter=M ${resolveBase()} -- ${SCHEMAS_DIR}`, {
+// In-place modifications (--diff-filter=M excludes adds, deletes, renames) between
+// the given revs, restricted to the generated_schemas dir. With one rev, git diffs
+// that rev against the working tree; with two, it diffs the two revs.
+function modifiedSchemas(...revs) {
+    const out = execSync(`git diff --name-only --diff-filter=M ${revs.join(' ')} -- ${SCHEMAS_DIR}`, {
         cwd: process.cwd(),
         encoding: 'utf8',
     });
-    modifiedFiles = out
+    return out
         .split('\n')
         .map((f) => f.trim())
         .filter(Boolean);
+}
+
+const base = resolveBase();
+
+let modifiedFiles;
+try {
+    // Union of base-vs-working-tree and base-vs-committed-HEAD (see header): the
+    // first catches changes the regenerator materializes, the second catches a
+    // committed in-place edit the regenerator would scrub from the working tree.
+    modifiedFiles = [...new Set([...modifiedSchemas(base), ...modifiedSchemas(base, 'HEAD')])].sort();
 } catch (err) {
     console.error(`Could not run git diff against ${SCHEMAS_DIR}: ${err.message}`);
     process.exit(2);

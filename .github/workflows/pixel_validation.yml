@@ -10,6 +10,8 @@ on:
       - 'macOS/PixelDefinitions/**'
       - 'iOS/package*'
       - 'iOS/PixelDefinitions/**'
+      - 'scripts/check_wide_event_*.mjs'
+      - '.github/workflows/pixel_validation.yml'
 
 jobs:
   pixel-validation:

@@ -19,10 +19,13 @@
 // PR base branch so only this branch's work counts:
 //
 //   1. COMPLETENESS - a wide event must have both halves. Fails when this branch
-//      leaves a `meta.type` one-sided that was not already one-sided at the base.
-//      Pre-existing single-sided definitions (e.g. legacy wide-event pixels with
-//      no in-repo source) are grandfathered, so they can be edited freely and
-//      back-filled later without tripping this check.
+//      leaves a `meta.type` one-sided in a state it was not already in at the base:
+//      a newly one-sided pair, a previously complete pair broken, OR a pre-existing
+//      one-sided def flipped to miss its other half (e.g. pixel-only becomes
+//      source-only). Pre-existing single-sided definitions (e.g. legacy wide-event
+//      pixels with no in-repo source) are grandfathered only while they stay
+//      one-sided in the SAME direction, so they can be edited freely and back-filled
+//      later without tripping this check.
 //
 //   2. CO-MODIFICATION - for a pair that was already complete at the base, the
 //      two definitions should move together. Fails when exactly one side's
@@ -241,7 +244,12 @@ const coModificationErrors = [];
 // Rule 1 - completeness: a pair that is one-sided NOW and was not already
 // one-sided at the base (so this branch added or broke it).
 for (const [metaType, kind] of currentIncomplete) {
-    if (baseIncomplete.has(metaType)) continue; // pre-existing single-sided def, grandfathered
+    // Grandfather only the *same* one-sided state. A pre-existing pixel-only (or
+    // source-only) def stays exempt while it remains pixel-only (or source-only),
+    // but flipping it to the other one-sided state - e.g. dropping the pixel and
+    // adding a source, leaving an orphan source nothing emits - is a new fault and
+    // is flagged.
+    if (baseIncomplete.get(metaType) === kind) continue; // unchanged one-sided def, grandfathered
     if (kind === 'missing-source') {
         const pixelFiles = [...current.pixelFilesByType.get(metaType)].join(', ');
         completenessErrors.push({ metaType, kind, present: pixelFiles });

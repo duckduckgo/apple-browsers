@@ -106,15 +106,15 @@ Only check expiry dates on definitions that are added or modified in the PR, not
 
 ### Wide Event Definitions
 
-Wide events have **two parallel definition files** that must stay in lockstep:
+A wide event has **two parallel definition files, and they must be kept in sync** - neither should be added, removed, or changed without the other:
 - The **pixel definition** (`{iOS,macOS}/PixelDefinitions/pixels/definitions/*.json5`) declares the wide-event pixel with `feature.data.ext.*` parameters or `keyPattern`s.
 - The **wide-event source definition** (`{iOS,macOS}/PixelDefinitions/wide_events/definitions/*.json5`) declares the schema and generates `wide_events/generated_schemas/<meta-type>-<version>.json`, which is what remote validation uses.
 
-These two files are paired by `meta.type` — every wide-event pixel def has a `{ "key": "meta.type", "enum": ["<meta-type>"] }` parameter whose enum value matches the wide-event source's `meta.type`.
+These two files are paired by `meta.type` - every wide-event pixel def has a `{ "key": "meta.type", "enum": ["<meta-type>"] }` parameter whose enum value matches the wide-event source's `meta.type`. (The pixel side is transitional and will eventually be retired in favour of the dedicated wide-event source format; until then, treat keeping the pair in sync as the rule.)
 
-CI runs `node scripts/check_wide_event_consistency.mjs` and `node scripts/check_wide_event_schema_immutability.mjs` for both platforms, and these enforce most of the rules below automatically. Still flag these patterns in review when they appear:
+CI runs `node scripts/check_wide_event_consistency.mjs` and `node scripts/check_wide_event_schema_immutability.mjs` for both platforms. The consistency check exists to enforce that the pixel and source definitions stay in sync: (1) a wide event must have **both** files - a PR that adds (or removes) one side without the other fails, though pre-existing single-sided definitions are grandfathered, so back-filling the missing half of an older definition is fine and expected; and (2) when one definition changes, its **paired definition must change too** - this is compared per `meta.type` definition, so unrelated edits to other pixels that merely share a `.json5` file are not flagged. Reinforce these in review, and still flag the patterns below:
 
-- A PR modifies the pixel definition's `feature.data.ext.*` parameters without making the same change in the matching wide-event source definition (or vice versa). Both must move together.
+- A PR changes one half of a paired wide event (the pixel definition's `feature.data.ext.*` parameters, or the matching source definition's schema) without the corresponding change in the other half. The pixel and source describe the same event and must be kept in sync - both should move together (and a `meta.version` bump in the source is required if the schema shape changed).
 - A PR changes the **shape** of the wide-event source definition (renames / adds / removes a `feature.data.ext.*` field, changes a type or enum) without bumping that source definition's `meta.version`. Schema versions are immutable artifacts — the regenerator produces a new file per version, and editing an existing generated schema in place is forbidden.
 - A PR changes the **shape** of the Swift wide-event object/emitter (`WideEventData` stored properties that become `feature.data.ext.*`, `jsonParameters()` keys, status reasons, enum values, or field types) without bumping `WideEventMetadata.version` and the matching source definition's `meta.version`.
 - A PR modifies the Swift wide-event emitter (`jsonParameters()` keys, `WideEventMetadata.version`) and only one of the two definition files. All three (Swift emitter + pixel def + wide-event source) must agree.

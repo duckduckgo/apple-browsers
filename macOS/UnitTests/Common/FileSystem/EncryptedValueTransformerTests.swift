@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import CryptoKit
 import SharedTestUtilities
 import XCTest
@@ -45,6 +46,68 @@ final class EncryptedValueTransformerTests: XCTestCase {
 
         XCTAssertTrue(reverseTransformedValue is String)
         XCTAssertEqual(reverseTransformedValue as? String, value)
+    }
+
+    // MARK: - Corrupt favicon image must not crash favicon loading
+
+    /// Builds a valid keyed-archive of an `NSImage`, then corrupts the embedded TIFF magic bytes so that
+    /// `-[NSBitmapImageRep initWithCoder:]` raises an ObjC `NSInvalidUnarchiveOperationException`
+    /// ("Archived bitmap contains bad TIFF data...") on decode – the same failure mode seen in production.
+    private func makeCorruptArchivedImageData() throws -> Data {
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 4, pixelsHigh: 4,
+                                   bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        let image = NSImage(size: NSSize(width: 4, height: 4))
+        image.addRepresentation(rep)
+
+        var data = try NSKeyedArchiver.archivedData(withRootObject: image, requiringSecureCoding: true)
+        let tiffMagics: [[UInt8]] = [[0x49, 0x49, 0x2A, 0x00], [0x4D, 0x4D, 0x00, 0x2A]]
+        var corrupted = false
+        data.withUnsafeMutableBytes { raw in
+            let bytes = raw.bindMemory(to: UInt8.self)
+            guard bytes.count > 4 else { return }
+            for i in 0..<(bytes.count - 4) where !corrupted {
+                for magic in tiffMagics where bytes[i] == magic[0] && bytes[i + 1] == magic[1]
+                    && bytes[i + 2] == magic[2] && bytes[i + 3] == magic[3] {
+                    bytes[i] = 0xFF; bytes[i + 1] = 0xFF; bytes[i + 2] = 0xFF; bytes[i + 3] = 0xFF
+                    corrupted = true
+                }
+            }
+        }
+        XCTAssertTrue(corrupted, "Test setup failed: TIFF magic not found in archived NSImage")
+        return data
+    }
+
+    /// Mirrors the decode performed by `EncryptedValueTransformer<NSImage>` via the
+    /// `NSKeyedUnarchiver+DecodingFailurePolicy` helper.
+    private func decodeImage(from data: Data) throws -> NSImage? {
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+        unarchiver.decodingFailurePolicy = .setErrorAndReturn
+        unarchiver.requiresSecureCoding = true
+        let object = unarchiver.decodeObject(of: NSImage.self, forKey: NSKeyedArchiveRootObjectKey)
+        unarchiver.finishDecoding()
+        return object
+    }
+
+    /// Documents the precondition: corrupt bitmap data raises an ObjC exception that `.setErrorAndReturn`
+    /// and Swift `try?` do NOT catch – so it can only be caught with `NSException.catch`.
+    func testDecodingCorruptArchivedImageRaisesUncatchableObjCException() throws {
+        let data = try makeCorruptArchivedImageData()
+        var raisedObjCException = false
+        do {
+            _ = try NSException.catch { try? self.decodeImage(from: data) }
+        } catch {
+            raisedObjCException = true
+        }
+        XCTAssertTrue(raisedObjCException, "Expected decoding corrupt TIFF data to raise an ObjC NSException")
+    }
+
+    /// Verifies the fix: wrapping the decode in `NSException.catch` (as `FaviconStore` now does) turns the
+    /// crash into a graceful `nil` image.
+    func testFaviconImageDecodingCatchesCorruptDataAndReturnsNilWithoutCrashing() throws {
+        let data = try makeCorruptArchivedImageData()
+        let image = try? NSException.catch { try? self.decodeImage(from: data) }
+        XCTAssertNil(image, "Corrupt favicon image should decode to nil instead of crashing")
     }
 
 }

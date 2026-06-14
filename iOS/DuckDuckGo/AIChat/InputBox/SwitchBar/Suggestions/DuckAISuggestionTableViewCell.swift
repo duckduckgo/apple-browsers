@@ -30,7 +30,8 @@ final class DuckAISuggestionTableViewCell: UITableViewCell {
     private lazy var accessoryButton: UIButton = {
         let action = UIAction { [weak self] _ in
             guard let self else { return }
-            self.onAccessoryButtonPressed?(self)
+            // Anchor on the image view rather than the (larger, trailing-aligned) button so the popover is positioned over the actual image.
+            self.onAccessoryButtonPressed?(self.accessoryButton.imageView ?? self.accessoryButton)
         }
 
         let button = UIButton(type: .system)

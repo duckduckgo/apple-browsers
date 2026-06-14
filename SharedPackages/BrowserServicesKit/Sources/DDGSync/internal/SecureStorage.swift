@@ -23,12 +23,28 @@ struct SecureStorage: SecureStoring {
     // DO NOT CHANGE except if you want to deliberately invalidate all users's sync accounts.
     // The keys have a uid to deter casual hacker from easily seeing which keychain entry is related to what.
     private static let encodedKey = "833CC26A-3804-4D37-A82A-C245BC670692".data(using: .utf8)
+    private static let scopedPasswordEncodedKey = "A41F3610-CA35-485B-8B74-38BC6309786D".data(using: .utf8)
+    private static let protectedKeysEncodedKey = "E5F0D7A6-04F5-44FB-9AA5-68073089B749".data(using: .utf8)
 
     private static let defaultQuery: [AnyHashable: Any] = [
         kSecClass: kSecClassGenericPassword,
         kSecAttrService: "\(Bundle.main.bundleIdentifier ?? "com.duckduckgo").sync",
         kSecAttrGeneric: encodedKey as Any,
         kSecAttrAccount: encodedKey as Any
+    ]
+
+    private static let protectedKeysQuery: [AnyHashable: Any] = [
+        kSecClass: kSecClassGenericPassword,
+        kSecAttrService: "\(Bundle.main.bundleIdentifier ?? "com.duckduckgo").sync",
+        kSecAttrGeneric: protectedKeysEncodedKey as Any,
+        kSecAttrAccount: protectedKeysEncodedKey as Any
+    ]
+
+    private static let scopedPasswordQuery: [AnyHashable: Any] = [
+        kSecClass: kSecClassGenericPassword,
+        kSecAttrService: "\(Bundle.main.bundleIdentifier ?? "com.duckduckgo").sync",
+        kSecAttrGeneric: scopedPasswordEncodedKey as Any,
+        kSecAttrAccount: scopedPasswordEncodedKey as Any
     ]
 
     func persistAccount(_ account: SyncAccount) throws {
@@ -76,7 +92,76 @@ struct SecureStorage: SecureStoring {
     }
 
     func removeAccount() throws {
+        try? removeScopedPassword()
+        try? removeProtectedKeys()
+
         let status = SecItemDelete(Self.defaultQuery as CFDictionary)
+        guard [errSecSuccess, errSecItemNotFound].contains(status) else {
+            throw SyncError.failedToRemoveSecureStore(status: status)
+        }
+    }
+
+    func persistScopedPassword(_ scopedPassword: Data) throws {
+        var query = Self.scopedPasswordQuery
+        query[kSecUseDataProtectionKeychain] = true
+        query[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlock
+        query[kSecAttrSynchronizable] = false
+        query[kSecValueData] = scopedPassword
+
+        var status = SecItemAdd(query as CFDictionary, nil)
+        if status == errSecDuplicateItem {
+            status = SecItemUpdate(query as CFDictionary, [
+                kSecValueData: scopedPassword
+            ] as CFDictionary)
+        }
+
+        guard status == errSecSuccess else {
+            throw SyncError.failedToWriteSecureStore(status: status)
+        }
+    }
+
+    func scopedPassword() throws -> Data? {
+        var query = Self.scopedPasswordQuery
+        query[kSecReturnData] = true
+
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        guard [errSecSuccess, errSecItemNotFound].contains(status) else {
+            throw SyncError.failedToReadSecureStore(status: status)
+        }
+
+        return item as? Data
+    }
+
+    func removeScopedPassword() throws {
+        let status = SecItemDelete(Self.scopedPasswordQuery as CFDictionary)
+        guard [errSecSuccess, errSecItemNotFound].contains(status) else {
+            throw SyncError.failedToRemoveSecureStore(status: status)
+        }
+    }
+
+    func persistProtectedKeys(_ data: Data) throws {
+        var query = Self.protectedKeysQuery
+        query[kSecUseDataProtectionKeychain] = true
+        query[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlock
+        query[kSecAttrSynchronizable] = false
+        query[kSecValueData] = data
+
+        var status = SecItemAdd(query as CFDictionary, nil)
+
+        if status == errSecDuplicateItem {
+            status = SecItemUpdate(query as CFDictionary, [
+                kSecValueData: data
+            ] as CFDictionary)
+        }
+
+        guard status == errSecSuccess else {
+            throw SyncError.failedToWriteSecureStore(status: status)
+        }
+    }
+
+    func removeProtectedKeys() throws {
+        let status = SecItemDelete(Self.protectedKeysQuery as CFDictionary)
         guard [errSecSuccess, errSecItemNotFound].contains(status) else {
             throw SyncError.failedToRemoveSecureStore(status: status)
         }

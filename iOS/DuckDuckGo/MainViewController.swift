@@ -589,6 +589,10 @@ class MainViewController: UIViewController {
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
 
+    /// Watchdog for container pan gestures that arbitrate with web scrolling. Owned here (not a singleton)
+    /// and fed gesture state from `handleUnifiedInputSwipeTabsPan`.
+    let interactionIntegrityMonitor = InteractionIntegrityMonitor()
+
     /// Overlay used to render tab-swipe transitions. Hosts per-tab full-screen snapshots so
     /// the swipe moves chrome+content as a single visual unit instead of as N separately
     /// translated layers. Hidden when not swiping; populated and made visible by
@@ -1746,7 +1750,7 @@ class MainViewController: UIViewController {
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle)
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
         }
 
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
@@ -1773,8 +1777,14 @@ class MainViewController: UIViewController {
         unifiedToggleInputCoordinator?.setEscapeHatch(hatch)
     }
 
-    private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
+    private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?) {
         ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
+        // Fire the card impression once per presentation here (not from the card's onAppear): the same hatch
+        // model is mounted in several hosts — NTP, suggestions, AI-chat history — so a view-level hook counts
+        // once per mount.
+        if hatch?.isReturnToTabCardVisible == true {
+            ntpAfterIdleInstrumentation.escapeHatchShown()
+        }
         if openedAfterIdle {
             postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
         }
@@ -3910,6 +3920,76 @@ extension MainViewController: OmniBarDelegate {
         updateIPadURLFallbackSuggestions()
     }
 
+    // In AI-chat mode the arrow keys drive whichever suggestion surface is showing: the chat-history list when
+    // it has rows, otherwise the URL-only fallback tray (the two are mutually exclusive).
+    private enum AIChatSuggestionSurface {
+        case chatHistory
+        case urlFallbackSuggestions
+    }
+
+    private var activeAIChatSuggestionSurface: AIChatSuggestionSurface? {
+        guard isModeToggleInAIChatMode else { return nil }
+        if iPadTabChatHistoryCoordinator.isNavigationAvailable { return .chatHistory }
+        let isURLFallbackShowing = suggestionTrayController?.suggestionFilter == .urlsOnly
+            && viewCoordinator.suggestionTrayContainer.isHidden == false
+        return isURLFallbackShowing ? .urlFallbackSuggestions : nil
+    }
+
+    func isAIChatSuggestionsNavigationAvailable() -> Bool {
+        activeAIChatSuggestionSurface != nil
+    }
+
+    func hasAIChatSuggestionsHighlight() -> Bool {
+        switch activeAIChatSuggestionSurface {
+        case .chatHistory: return iPadTabChatHistoryCoordinator.hasHighlightedSuggestion
+        case .urlFallbackSuggestions: return suggestionTrayController?.highlightedSuggestion != nil
+        case nil: return false
+        }
+    }
+
+    func onAIChatSuggestionsMoveSelectionDown() {
+        switch activeAIChatSuggestionSurface {
+        case .chatHistory: iPadTabChatHistoryCoordinator.moveSelectionDown()
+        case .urlFallbackSuggestions: suggestionTrayController?.keyboardMoveSelectionDown()
+        case nil: break
+        }
+    }
+
+    func onAIChatSuggestionsMoveSelectionUp() {
+        switch activeAIChatSuggestionSurface {
+        case .chatHistory:
+            iPadTabChatHistoryCoordinator.moveSelectionUp()
+        case .urlFallbackSuggestions:
+            // At the first row, clear the highlight so focus returns to the text input.
+            if suggestionTrayController?.isKeyboardSelectionAtFirstRow == true {
+                suggestionTrayController?.clearKeyboardSelection()
+            } else {
+                suggestionTrayController?.keyboardMoveSelectionUp()
+            }
+        case nil:
+            break
+        }
+    }
+
+    func onAIChatSuggestionsActivateHighlight() -> Bool {
+        switch activeAIChatSuggestionSurface {
+        case .chatHistory:
+            return iPadTabChatHistoryCoordinator.activateHighlightedSuggestion()
+        case .urlFallbackSuggestions:
+            guard let suggestion = suggestionTrayController?.highlightedSuggestion else { return false }
+            onOmniSuggestionSelected(suggestion)
+            return true
+        case nil:
+            return false
+        }
+    }
+
+    func onAIChatSuggestionsClearHighlight() {
+        guard isModeToggleInAIChatMode else { return }
+        iPadTabChatHistoryCoordinator.clearSelection()
+        suggestionTrayController?.clearKeyboardSelection()
+    }
+
     func didRequestCurrentURL() -> URL? {
         return currentTab?.url
     }
@@ -4850,6 +4930,9 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     }
     
     func autocomplete(highlighted suggestion: Suggestion, for query: String) {
+        // In iPad duck.ai mode the visible editor is the chat text view, so keep the highlight on the
+        // suggestion row rather than writing the hidden search field.
+        guard !isModeToggleInAIChatMode else { return }
 
         switch suggestion {
         case .phrase(phrase: let phrase), .askAIChat(let phrase):
@@ -5392,7 +5475,24 @@ extension MainViewController: TabDelegate {
         // `.storageUnavailable` failure so the screen shows an error rather than a
         // misleading empty list.
         let reader = ChatHistoryReader(observer: duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)
-        let viewModel = AIChatHistoryViewModel(reader: reader)
+        // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
+        // rather than `uniqueKeysWithValues:` — the model list is server-supplied so we
+        // can't guarantee unique ids and the latter crashes on duplicates.
+        let modelDisplays = Dictionary(
+            (unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let downloader = ChatHistoryDownloader(
+            storageHandler: duckAiNativeStorageHandler,
+            modelDisplays: modelDisplays
+        )
+        let pinner: ChatPinning? = duckAiNativeStorageHandler.map(ChatPinner.init(storageHandler:))
+        let viewModel = AIChatHistoryViewModel(
+            reader: reader,
+            fireExecutor: fireExecutor,
+            downloader: downloader,
+            pinner: pinner
+        )
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel)
         let navigationController = UINavigationController(rootViewController: content)
@@ -5600,11 +5700,20 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
-    func viewModelDidRequestDeleteChat(chatId: String) {
-        // The chat-history sheet shows persistent chats, so this is never a fire-mode burn.
-        Task { @MainActor in
-            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
-        }
+    func viewModelDidExportChat(filename: String) {
+        let message = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: filename)
+        let addressBarBottom = appSettings.currentAddressBarPosition.isBottom
+        ActionMessageView.present(
+            message: message,
+            numberOfLines: 2,
+            actionTitle: UserText.actionGenericShow,
+            presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+            onAction: { [weak self] in
+                self?.dismiss(animated: true) { [weak self] in
+                    self?.segueToDownloads()
+                }
+            }
+        )
     }
 }
 

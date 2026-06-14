@@ -35,5 +35,5 @@ public struct DuckAiNativeStorageSettings: StoringKeys {
 public enum DuckAiNativeStorageReservedEntryKeys: String {
     /// Entry holding the JSON array of chat IDs deleted on the native side.
     /// The web app reads it to reconcile deletions it did not itself initiate. Value: `[String]`.
-    case locallyDeletedChatIds = "locallyDeletedChatIds"
+    case locallyDeletedChatIds
 }

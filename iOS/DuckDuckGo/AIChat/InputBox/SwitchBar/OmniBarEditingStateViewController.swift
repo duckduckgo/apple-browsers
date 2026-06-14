@@ -668,7 +668,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     /// list transitions naturally from full results to URL-only during the fade animation.
     private func prepareURLFallbackForModeTransition(to mode: TextEntryMode) {
         guard mode == .aiChat, shouldShowURLFallback else { return }
-        daxLogoManager.updateVisibility(isHomeDaxVisible: false, isAIDaxVisible: false)
+        daxLogoManager.updateVisibility(isHomeDaxVisible: false, isAIDaxVisible: false, committedMode: mode)
         suggestionTrayManager?.showURLOnlySuggestions(for: switchBarHandler.currentText, animated: false)
     }
 
@@ -740,7 +740,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             isAIChatHistoryPending: isAIChatHistoryPending
         )
 
-        daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+        daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible, committedMode: switchBarHandler.currentToggleState)
         let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Constants.escapeHatchLogoZoneHeight : 0
         daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
     }

@@ -1750,7 +1750,7 @@ class MainViewController: UIViewController {
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle)
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
         }
 
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
@@ -1777,8 +1777,14 @@ class MainViewController: UIViewController {
         unifiedToggleInputCoordinator?.setEscapeHatch(hatch)
     }
 
-    private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
+    private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?) {
         ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
+        // Fire the card impression once per presentation here (not from the card's onAppear): the same hatch
+        // model is mounted in several hosts — NTP, suggestions, AI-chat history — so a view-level hook counts
+        // once per mount.
+        if hatch?.isReturnToTabCardVisible == true {
+            ntpAfterIdleInstrumentation.escapeHatchShown()
+        }
         if openedAfterIdle {
             postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
         }

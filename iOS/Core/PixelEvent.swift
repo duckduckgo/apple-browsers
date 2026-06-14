@@ -1488,6 +1488,14 @@ extension Pixel {
         case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab
         case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab
         case ntpAfterIdleEscapeHatchHiddenFromMenu
+        case ntpAfterIdleEscapeHatchShown
+        case ntpAfterIdleEscapeHatchMenuShown
+        case ntpAfterIdleEscapeHatchReturnToTabTappedFromMenu
+        case ntpAfterIdleEscapeHatchCloseTabTappedFromMenu
+        case ntpAfterIdleEscapeHatchBurnWithConfirmationTappedFromMenu
+        case ntpAfterIdleEscapeHatchBurnImmediatelyTappedFromMenu
+        case ntpAfterIdleEscapeHatchSwipeActionPerformed
+        case ntpAfterIdleEscapeHatchBurnTappedFromButton
         case ntpAfterIdleSettingChangedToNewTab
         case ntpAfterIdleSettingChangedToLastUsedTab
         case ntpAfterIdleSettingIdleIntervalChanged
@@ -3337,6 +3345,14 @@ extension Pixel.Event {
         case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_new_tab"
         case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_last_used_tab"
         case .ntpAfterIdleEscapeHatchHiddenFromMenu: return "m_ntp_after_idle_escape_hatch_hidden_from_menu"
+        case .ntpAfterIdleEscapeHatchShown: return "m_ntp_after_idle_escape_hatch_shown"
+        case .ntpAfterIdleEscapeHatchMenuShown: return "m_ntp_after_idle_escape_hatch_menu_shown"
+        case .ntpAfterIdleEscapeHatchReturnToTabTappedFromMenu: return "m_ntp_after_idle_escape_hatch_return_to_tab_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchCloseTabTappedFromMenu: return "m_ntp_after_idle_escape_hatch_close_tab_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchBurnWithConfirmationTappedFromMenu: return "m_ntp_after_idle_escape_hatch_burn_with_confirmation_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchBurnImmediatelyTappedFromMenu: return "m_ntp_after_idle_escape_hatch_burn_immediately_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchSwipeActionPerformed: return "m_ntp_after_idle_escape_hatch_swipe_action_performed"
+        case .ntpAfterIdleEscapeHatchBurnTappedFromButton: return "m_ntp_after_idle_escape_hatch_burn_tapped_from_button"
         case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
         case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
         case .ntpAfterIdleSettingIdleIntervalChanged: return "m_ntp_after_idle_setting_idle_interval_changed"

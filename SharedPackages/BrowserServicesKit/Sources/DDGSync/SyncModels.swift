@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 public struct SyncAccount: Codable, Sendable {
     public let deviceId: String
@@ -252,6 +253,43 @@ public struct ProtectedKey: Codable, Sendable {
     public let publicKey: ProtectedKeyPublicKey
     public let encryptedWith: String
     public let purpose: String
+
+    enum CodingKeys: String, CodingKey {
+        case kid
+        case encryptedPrivateKey
+        case publicKey
+        case encryptedWith
+        case purpose
+    }
+
+    public init(kid: String,
+                encryptedPrivateKey: String,
+                publicKey: ProtectedKeyPublicKey,
+                encryptedWith: String,
+                purpose: String) {
+        self.kid = kid
+        self.encryptedPrivateKey = encryptedPrivateKey
+        self.publicKey = publicKey
+        self.encryptedWith = encryptedWith
+        self.purpose = purpose
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        kid = try container.decode(String.self, forKey: .kid)
+        encryptedPrivateKey = try container.decode(String.self, forKey: .encryptedPrivateKey)
+        publicKey = try container.decode(ProtectedKeyPublicKey.self, forKey: .publicKey)
+        purpose = try container.decode(String.self, forKey: .purpose)
+
+        if let encryptedWith = try container.decodeIfPresent(String.self, forKey: .encryptedWith), !encryptedWith.isEmpty {
+            self.encryptedWith = encryptedWith
+        } else {
+            // Legacy/server compatibility: treat missing/empty encrypted_with as the default credential.
+            Logger.sync.error("Protected key response missing encrypted_with; defaulting to ddg for compatibility")
+            encryptedWith = SyncCredentialID.defaultCredential
+        }
+    }
 }
 
 public struct ProtectedKeyPublicKey: Codable, Sendable, Equatable {

@@ -2226,7 +2226,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Synchronisierung wird vorbereitet"
+            "value" : "„Sync & Backup“ auf beiden Geräten offen lassen"
           }
         },
         "en" : {
@@ -2238,43 +2238,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preparando la sincronización"
+            "value" : "Mantén «Sync & Backup» abierto en ambos dispositivos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Préparation à la synchronisation"
+            "value" : "Gardez « Sync & Backup » ouvert sur les deux appareils"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preparazione alla sincronizzazione"
+            "value" : "Mantieni aperto “Sync & Backup” su entrambi i dispositivi"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voorbereiden op synchroniseren"
+            "value" : "Houd 'Sync & Backup' open op beide apparaten"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przygotowywanie do synchronizacji"
+            "value" : "Zachowaj otwartą opcję „Sync & Backup” na obu urządzeniach"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A preparar para sincronizar"
+            "value" : "Mantenha “Sync & Backup” aberto em ambos os dispositivos"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Подготовка к синхронизации"
+            "value" : "Держите «Sync & Backup» открытыми на обоих устройствах"
           }
         }
       }
@@ -3303,10 +3303,58 @@
       "comment" : "Message of the reminder shown after the user copies the sync code.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kehre nach dem Einfügen des Codes zu diesem Gerät zurück."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Come back to this device after pasting the code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelve a este dispositivo después de pegar el código."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reviens à cet appareil après avoir collé le code."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna su questo dispositivo dopo aver incollato il codice."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ga terug naar dit apparaat nadat je de code hebt geplakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Po wklejeniu kodu wróć do tego urządzenia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volta a este dispositivo depois de colares o código."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вернись к этому устройству после вставки кода."
           }
         }
       }
@@ -3315,10 +3363,58 @@
       "comment" : "Title of the reminder shown after the user copies the sync code.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge den Code auf deinem anderen Gerät ein"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Paste the code on your other device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pega el código en tu otro dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colle le code sur ton autre appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incolla il codice sull'altro dispositivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plak de code op je andere apparaat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wklej kod na inne urządzenie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cola o código no teu outro dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вставь код на другое устройство"
           }
         }
       }
@@ -4110,7 +4206,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffne auf einem anderen Gerät **DuckDuckGo**"
+            "value" : "Öffne auf einem anderen Gerät die [DuckDuckGo-App](https://duckduckgo.com/app/devices)"
           }
         },
         "en" : {
@@ -4122,43 +4218,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abre **DuckDuckGo** en otro dispositivo"
+            "value" : "En otro dispositivo, abre la [DuckDuckGo App](https://duckduckgo.com/app/devices)"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sur un autre appareil, ouvrez **DuckDuckGo**"
+            "value" : "Sur un autre appareil, ouvre l’application [DuckDuckGo](https://duckduckgo.com/app/devices)"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Su un altro dispositivo, apri **DuckDuckGo**"
+            "value" : "Su un altro dispositivo, apri l'[app DuckDuckGo](https://duckduckgo.com/app/devices)"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open **DuckDuckGo** op een ander apparaat."
+            "value" : "Open op een ander apparaat de [DuckDuckGo-app](https://duckduckgo.com/app/devices)"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Na innym urządzeniu otwórz **DuckDuckGo**"
+            "value" : "Otwórz [DuckDuckGo App](https://duckduckgo.com/app/devices) na innym urządzeniu"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Noutro dispositivo, abre o **DuckDuckGo**"
+            "value" : "Noutro dispositivo, abre a [DuckDuckGo App](https://duckduckgo.com/app/devices)"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Откройте **DuckDuckGo** на втором устройстве."
+            "value" : "На другом устройстве откройте [DuckDuckGo App](https://duckduckgo.com/app/devices)"
           }
         }
       }
@@ -4227,10 +4323,58 @@
       "comment" : "Third instruction for setting up 'Sync with another device', shown while entering a code from the other device. The whole sentence is wrapped in **text** bold markers, which should be preserved.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Kopier auf deinem anderen Gerät den Code und füge ihn unten ein**"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "**On your other device, copy the code and paste it below**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**En tu otro dispositivo, copia el código y pégalo abajo**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Sur ton autre appareil, copie le code et colle-le ci-dessous**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Sull'altro dispositivo, copia il codice e incolla qui sotto**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Kopieer op je andere apparaat de code en plak hem hieronder**"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Skopiuj kod i wklej go poniżej na innym urządzeniu**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**No teu outro dispositivo, copia o código e cola-o abaixo**"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**На другом устройстве скопируйте код и вставьте его ниже**"
           }
         }
       }
@@ -4239,10 +4383,58 @@
       "comment" : "Third instruction for setting up 'Sync with another device', shown while displaying a QR code. **text** markers indicate bold styling, which should be kept around the emphasized phrase.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Richte dein Handy auf diesen Bildschirm**, um den QR-Code zu scannen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "**Point your phone at this screen** to scan the QR code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Apunta tu móvil a esta pantalla** para escanear el código QR"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Pointez votre téléphone vers cet écran** pour scanner le code QR"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Punta il telefono verso questo schermo** per scansionare il codice QR"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Richt je telefoon op dit scherm** om de QR-code te scannen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aby zeskanować kod QR, **skieruj telefon na ten ekran**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Aponta o telemóvel para este ecrã** para digitalizar o código QR"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Наведите телефон на этот экран**, чтобы отсканировать QR-код"
           }
         }
       }
@@ -4251,10 +4443,58 @@
       "comment" : "Third instruction for setting up 'Sync with another device', shown while displaying a text code to copy. The whole sentence is wrapped in **text** bold markers, which should be preserved.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Kopiere diesen Code und füge ihn auf deinem anderen Gerät ein**"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "**Copy this code and paste it on your other device**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Copia este código y pégalo en tu otro dispositivo**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Copie ce code et colle-le sur ton autre appareil**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Copia questo codice e incollalo sull'altro dispositivo**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Kopieer deze code en plak hem op je andere apparaat**"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Skopiuj ten kod i wklej go na inne urządzenie**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Copia este código e cola-o no teu outro dispositivo**"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Скопируйте этот код и вставьте его на другое устройство.**"
           }
         }
       }
@@ -4263,10 +4503,58 @@
       "comment" : "Fourth instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the emphasized phrase.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Schließ dieses Fenster nicht**, während die Verbindung hergestellt wird"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "**Don’t close this window** while connecting"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**No cierres esta ventana** mientras se conecta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Ne ferme pas cette fenêtre** pendant la connexion"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Non chiudere questa finestra** durante la connessione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Sluit dit venster niet** tijdens het verbinden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podczas łączenia **nie zamykaj tego okna**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Não feches esta janela** enquanto ligas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Не закрывайте это окно** во время подключения."
           }
         }
       }

@@ -1712,6 +1712,8 @@
 		EEC3BD2E2E5897310093F638 /* SwiftUIExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = EEC3BD2F2E5897310093F638 /* SwiftUIExtensions */; };
 		EEC3BD302E5897310093F638 /* PreferencesUI-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = EEC3BD312E5897310093F638 /* PreferencesUI-macOS */; };
 		EEC3BD322E5897310093F638 /* SwiftUIExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = EEC3BD332E5897310093F638 /* SwiftUIExtensions */; };
+		EEC3BD342E5897310093F638 /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = EEC3BD352E5897310093F638 /* DesignResourcesKitIcons */; };
+		EEC3BD362E5897310093F638 /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = EEC3BD372E5897310093F638 /* DesignResourcesKitIcons */; };
 		4B9579212AC687170062CA31 /* HardwareModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9579202AC687170062CA31 /* HardwareModel.swift */; };
 		4B9579222AC687170062CA31 /* HardwareModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9579202AC687170062CA31 /* HardwareModel.swift */; };
 		4B9754EC2984300100D7B834 /* EmailManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B3B848F297A0E1000A384BD /* EmailManagerExtension.swift */; };
@@ -7075,6 +7077,7 @@
 				EEC3BD2A2E5897310093F638 /* SyncUI-macOS in Frameworks */,
 				EEC3BD2C2E5897310093F638 /* PreferencesUI-macOS in Frameworks */,
 				EEC3BD2E2E5897310093F638 /* SwiftUIExtensions in Frameworks */,
+				EEC3BD342E5897310093F638 /* DesignResourcesKitIcons in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7453,6 +7456,7 @@
 				EEC3BD282E5897310093F638 /* SyncUI-macOS in Frameworks */,
 				EEC3BD302E5897310093F638 /* PreferencesUI-macOS in Frameworks */,
 				EEC3BD322E5897310093F638 /* SwiftUIExtensions in Frameworks */,
+				EEC3BD362E5897310093F638 /* DesignResourcesKitIcons in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -13237,6 +13241,7 @@
 				EEC3BD2B2E5897310093F638 /* SyncUI-macOS */,
 				EEC3BD2D2E5897310093F638 /* PreferencesUI-macOS */,
 				EEC3BD2F2E5897310093F638 /* SwiftUIExtensions */,
+				EEC3BD352E5897310093F638 /* DesignResourcesKitIcons */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 3706FE99293F661700E42796 /* Unit Tests App Store.xctest */;
@@ -13834,6 +13839,7 @@
 				EEC3BD292E5897310093F638 /* SyncUI-macOS */,
 				EEC3BD312E5897310093F638 /* PreferencesUI-macOS */,
 				EEC3BD332E5897310093F638 /* SwiftUIExtensions */,
+				EEC3BD372E5897310093F638 /* DesignResourcesKitIcons */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = AA585D90248FD31400E9A3E2 /* Unit Tests.xctest */;
@@ -20587,6 +20593,14 @@
 		EEC3BD332E5897310093F638 /* SwiftUIExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SwiftUIExtensions;
+		};
+		EEC3BD352E5897310093F638 /* DesignResourcesKitIcons */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DesignResourcesKitIcons;
+		};
+		EEC3BD372E5897310093F638 /* DesignResourcesKitIcons */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DesignResourcesKitIcons;
 		};
 		4B9EE3132D76C7F900DDC75C /* Bookmarks */ = {
 			isa = XCSwiftPackageProductDependency;

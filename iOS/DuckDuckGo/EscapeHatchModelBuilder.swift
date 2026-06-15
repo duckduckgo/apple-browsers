@@ -111,7 +111,8 @@ struct EscapeHatchModelBuilder {
             featureFlagger: featureFlagger,
             afterInactivityOptionAdapter: afterInactivityOptionAdapter,
             lastTabShortcutAdapter: lastTabShortcutAdapter,
-            onShortcutHidden: { [instrumentation] in instrumentation.escapeHatchHiddenFromMenu() }
+            onShortcutHidden: { [instrumentation] in instrumentation.escapeHatchHiddenFromMenu() },
+            instrumentation: instrumentation
         )
     }
 }

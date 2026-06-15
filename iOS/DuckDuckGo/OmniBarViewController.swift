@@ -821,7 +821,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
     }
 
-    var querySubmitted = false
+    private(set) var querySubmitted = false
     func onQuerySubmitted() {
         querySubmitted = true
         defer {

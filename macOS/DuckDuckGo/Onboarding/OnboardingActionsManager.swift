@@ -455,6 +455,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     static func applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: FeatureFlagger) {
         guard AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger) else { return }
         DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool = DuckPlayerMode.disabled.boolValue
+        // Refresh any live DuckPlayerPreferences (e.g. the app delegate's) so its in-memory
+        // @Published mode reflects the new stored value without waiting for a cold relaunch.
+        NotificationCenter.default.post(name: DuckPlayerPreferences.duckPlayerModeDidChangeNotification, object: nil)
     }
 
     /// Returns true if the toggle onboarding step was shown to the user.

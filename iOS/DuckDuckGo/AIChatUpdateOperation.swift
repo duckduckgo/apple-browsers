@@ -1,5 +1,6 @@
 //
-//  AIChatFeatureFlag.swift
+//  AIChatUpdateOperation.swift
+//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,18 +18,19 @@
 //
 
 import Foundation
+import DDGSync
+import AIChat
 
-public protocol AIChatFeatureFlagProviding {
-    func isAIChatSyncEnabled() -> Bool
-    func supportsSyncChatsDeletion() -> Bool
-    func supportsSyncChatsUpdate() -> Bool
-    func isNativeDataAccessEnabled() -> Bool
-    func isNativeDataStorageEnabled() -> Bool
+/// Drains the pending chat-update queue on every sync cycle. Sibling of `AIChatDeleteOperation`.
+final class AIChatUpdateOperation: SyncCustomOperation {
 
-}
+    private weak var cleaner: (any AIChatSyncCleaning)?
 
-public extension AIChatFeatureFlagProviding {
-    // Defaults on — the push is already gated by the umbrella AI Chat sync flag; this
-    // subfeature only adds an independent remote kill switch.
-    func supportsSyncChatsUpdate() -> Bool { true }
+    init(cleaner: any AIChatSyncCleaning) {
+        self.cleaner = cleaner
+    }
+
+    func run() async throws {
+        await cleaner?.updateIfNeeded()
+    }
 }

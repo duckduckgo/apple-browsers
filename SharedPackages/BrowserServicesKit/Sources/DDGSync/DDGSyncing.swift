@@ -200,6 +200,14 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func deleteAIChats(chatIds: [String]) async throws
 
     /**
+     Submits per-chat attribute updates (currently only `pinned`) to the AI chat sync patch
+     endpoint so other signed-in devices pick up the change.
+
+     - Parameter updates: An array of attribute changes, one per chat.
+     */
+    func patchAIChats(updates: [AIChatUpdate]) async throws
+
+    /**
      Persists whether AI Chat History is enabled in the AI Chat frontend.
 
      This value is intended for client apps to gate AI Chat server-side deletion behavior when mirroring local clears.

@@ -50,6 +50,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     private let keyValueStore: ThrowingKeyValueStoring
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
     private let applicationUpdateDetecting: any ApplicationUpdateDetecting
+    private let restartSourceResolver: UncleanExitRestartSourceResolving
     private let pixelFiring: PixelFiring?
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
@@ -91,6 +92,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
                      keyValueStore: ThrowingKeyValueStoring,
                      sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
                      applicationUpdateDetecting: (any ApplicationUpdateDetecting),
+                     restartSourceResolver: UncleanExitRestartSourceResolving,
                      pixelFiring: PixelFiring?) {
         let service = StatePersistenceService(fileStore: fileStore, fileName: Constants.fileName)
         self.init(fileStore: fileStore,
@@ -100,6 +102,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
                   keyValueStore: keyValueStore,
                   sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                   applicationUpdateDetecting: applicationUpdateDetecting,
+                  restartSourceResolver: restartSourceResolver,
                   pixelFiring: pixelFiring)
     }
 
@@ -111,6 +114,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         keyValueStore: ThrowingKeyValueStoring,
         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
         applicationUpdateDetecting: (any ApplicationUpdateDetecting),
+        restartSourceResolver: UncleanExitRestartSourceResolving,
         pixelFiring: PixelFiring?
     ) {
         self.service = service
@@ -120,6 +124,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         self.keyValueStore = keyValueStore
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
         self.applicationUpdateDetecting = applicationUpdateDetecting
+        self.restartSourceResolver = restartSourceResolver
         self.pixelFiring = pixelFiring
     }
 
@@ -246,7 +251,9 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
 
         guard didCloseUnexpectedly else { return }
 
-        pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: UncleanExitRestartSource(updateStatus)))
+        pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected(
+            reason: restartSourceResolver.resolve(updateStatus: updateStatus)
+        ))
 
         guard !shouldSuppressUncleanExitRestorePrompt else { return }
 
@@ -284,16 +291,5 @@ struct StateRestorationAppTerminationDecider: ApplicationTerminationDecider {
     func shouldTerminate(isAsync: Bool) -> TerminationQuery {
         stateRestorationManager.applicationWillTerminate()
         return .sync(.next)
-    }
-}
-
-private extension UncleanExitRestartSource {
-    init(_ updateStatus: AppUpdateStatus) {
-        switch updateStatus {
-        case .updated, .downgraded:
-            self = .appUpdate
-        default:
-            self = .crash
-        }
     }
 }

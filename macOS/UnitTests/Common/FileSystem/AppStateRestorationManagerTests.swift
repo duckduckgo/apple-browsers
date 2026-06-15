@@ -39,6 +39,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
     private var appStateManager: AppStateRestorationManager!
     private var mockPixelKit: PixelKitMock!
     private var mockApplicationUpdateDetecting: MockApplicationUpdateDetecting!
+    private var mockRestartSourceResolver: MockUncleanExitRestartSourceResolver!
     private let terminationFlagKey = "appDidTerminateAsExpected"
 
     @MainActor
@@ -58,6 +59,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
         mockPromptCoordinator = SessionRestorePromptCoordinatorMock()
         mockPixelKit = PixelKitMock()
         mockApplicationUpdateDetecting = MockApplicationUpdateDetecting()
+        mockRestartSourceResolver = MockUncleanExitRestartSourceResolver()
 
         appStateManager = AppStateRestorationManager(
             fileStore: mockFileStore,
@@ -67,6 +69,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
             keyValueStore: mockKeyValueStore,
             sessionRestorePromptCoordinator: mockPromptCoordinator,
             applicationUpdateDetecting: mockApplicationUpdateDetecting,
+            restartSourceResolver: mockRestartSourceResolver,
             pixelFiring: mockPixelKit
         )
     }
@@ -74,6 +77,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
     override func tearDown() {
         appStateManager = nil
         mockApplicationUpdateDetecting = nil
+        mockRestartSourceResolver = nil
         mockKeyValueStore = nil
         mockStartupPreferences = nil
         mockTabsPreferences = nil
@@ -204,9 +208,22 @@ final class AppStateRestorationManagerTests: XCTestCase {
     // MARK: - Pixels
 
     @MainActor
-    func testWhenAppDidTerminateUnexpectedly_ThenCrashPixelIsFired() throws {
+    func testWhenAppDidTerminateUnexpectedly_ThenUnknownPixelIsFired() throws {
         try mockKeyValueStore.set(false, forKey: terminationFlagKey)
-        mockApplicationUpdateDetecting.updateStatus = .noChange
+        mockRestartSourceResolver.resolvedSource = .unknown
+        mockPixelKit.expectedFireCalls = [
+            .init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: .unknown), frequency: .standard)
+        ]
+
+        appStateManager.applicationDidFinishLaunching()
+
+        mockPixelKit.verifyExpectations()
+    }
+
+    @MainActor
+    func testWhenAppDidTerminateUnexpectedlyAfterCrash_ThenCrashPixelIsFired() throws {
+        try mockKeyValueStore.set(false, forKey: terminationFlagKey)
+        mockRestartSourceResolver.resolvedSource = .crash
         mockPixelKit.expectedFireCalls = [
             .init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: .crash), frequency: .standard)
         ]
@@ -219,7 +236,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
     @MainActor
     func testWhenAppDidTerminateUnexpectedlyAfterAppUpdate_ThenAppUpdatePixelIsFiredAndPromptIsShown() throws {
         try mockKeyValueStore.set(false, forKey: terminationFlagKey)
-        mockApplicationUpdateDetecting.updateStatus = .updated
+        mockRestartSourceResolver.resolvedSource = .appUpdate
         addMockSessionData()
         mockPixelKit.expectedFireCalls = [
             .init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: .appUpdate), frequency: .standard)
@@ -319,6 +336,16 @@ private final class MockApplicationUpdateDetecting: ApplicationUpdateDetecting {
                               previousVersion: String?,
                               previousBuild: String?) -> AppUpdateStatus {
         updateStatus
+    }
+}
+
+private final class MockUncleanExitRestartSourceResolver: UncleanExitRestartSourceResolving {
+    var resolvedSource: UncleanExitRestartSource = .unknown
+
+    func captureSparklePendingUpdateSnapshot() {}
+
+    func resolve(updateStatus: AppUpdateStatus) -> UncleanExitRestartSource {
+        resolvedSource
     }
 }
 

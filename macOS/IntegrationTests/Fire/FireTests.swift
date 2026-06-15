@@ -329,6 +329,7 @@ final class FireTests: XCTestCase {
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
                                                                     applicationUpdateDetecting: NSApp.delegateTyped.applicationUpdateDetector,
+                                                                    restartSourceResolver: NSApp.delegateTyped.uncleanExitRestartSourceResolver,
                                                                     pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 
@@ -362,6 +363,7 @@ final class FireTests: XCTestCase {
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
                                                                     applicationUpdateDetecting: NSApp.delegateTyped.applicationUpdateDetector,
+                                                                    restartSourceResolver: NSApp.delegateTyped.uncleanExitRestartSourceResolver,
                                                                     pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 

@@ -395,7 +395,6 @@ struct NetworkProtectionStatusView: View {
         guard let metadata = await DefaultVPNMetadataCollector().collectMetadata(),
               let supportInfo = metadata.toPrettyPrintedJSON() else {
             showCopySupportInfoConfirmation(.failed)
-            ActionMessageView.present(message: UserText.netPVPNSettingsCopyDiagnosticsFailed)
             return
         }
 
@@ -404,7 +403,6 @@ struct NetworkProtectionStatusView: View {
             options: [.expirationDate: Date().addingTimeInterval(Self.supportInfoPasteboardExpirationInterval)]
         )
         showCopySupportInfoConfirmation(.copied)
-        ActionMessageView.present(message: UserText.netPVPNSettingsCopyDiagnosticsCopied)
     }
 
     @MainActor

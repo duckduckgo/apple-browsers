@@ -2902,14 +2902,8 @@ https://duckduckgo.com/mac";
 /* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
 "network.protection.vpn.settings.copy-diagnostics.caption" = "Copies anonymized VPN diagnostic information to your clipboard. Include it when contacting Support to help us troubleshoot your connection.";
 
-/* Toast shown after VPN diagnostic information is copied to the clipboard. */
-"network.protection.vpn.settings.copy-diagnostics.copied" = "VPN diagnostics copied";
-
 /* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
 "network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Copied to clipboard";
-
-/* Toast shown when VPN diagnostic information could not be copied to the clipboard. */
-"network.protection.vpn.settings.copy-diagnostics.failed" = "Couldn't copy VPN diagnostics";
 
 /* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
 "network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Couldn't copy to clipboard";

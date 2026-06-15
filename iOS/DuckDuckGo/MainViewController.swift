@@ -531,22 +531,6 @@ class MainViewController: UIViewController {
         self.fireModeCapability = FireModeCapability.create()
         self.fireModePromotionEligibility = fireModePromotionEligibility
         self.onboardingManager = onboardingManager
-
-        // // TODO: OVERRIDE - Remove before shipping.
-        // // Forces onboarding to always reset to a clean state on every launch so the
-        // // duck.ai query entry/suggestion-selection onboarding screen is always shown.
-        // tutorialSettings.hasSeenOnboarding = false
-        // tutorialSettings.hasSkippedOnboarding = false
-        // // Must be nil so the flow re-evaluates as .default.
-        // tutorialSettings.onboardingFlowType = nil
-        // // Reset all persisted DaxDialogs flags so contextual dialogs fire from scratch.
-        // let debugDaxSettings = DefaultDaxDialogsSettings()
-        // debugDaxSettings.isDismissed = false
-        // debugDaxSettings.tryAnonymousSearchShown = false
-        // debugDaxSettings.tryVisitASiteShown = false
-        // debugDaxSettings.browsingAfterSearchShown = false
-        // debugDaxSettings.browsingWithTrackersShown = false
-        // debugDaxSettings.browsingWithoutTrackersShown = false
         // debugDaxSettings.browsingMajorTrackingSiteShown = false
         // debugDaxSettings.fireButtonEducationShownOrExpired = false
         // debugDaxSettings.fireMessageExperimentShown = false

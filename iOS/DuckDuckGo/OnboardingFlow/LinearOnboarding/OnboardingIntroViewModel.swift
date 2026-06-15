@@ -184,17 +184,6 @@ final class OnboardingIntroViewModel: ObservableObject {
         state = .landing(contentProvider.landingContent)
         currentIntroStep = currentOnboardingStep
         restorePendingOnboardingStepIfNeeded()
-
-        // TODO: OVERRIDE - Remove before shipping. Inserts the duck.ai query selection step
-        // at the end of the step list and jumps to it directly, skipping all preceding intro
-        // steps. Appending at the end means makeNextViewState() finds no further step after
-        // selection and calls completeOnboardingIntro(), which opens duck.ai as expected.
-        // `makeInitialViewState()` (called from `onAppear`) will render this step immediately.
-        // if !introSteps.contains(.duckAIQuerySelection) {
-        //     introSteps.append(.duckAIQuerySelection)
-        // }
-        // currentIntroStep = .duckAIQuerySelection
-        // END TODO OVERRIDE
     }
 
     func onAppear() {

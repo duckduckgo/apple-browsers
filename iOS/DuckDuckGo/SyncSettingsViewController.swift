@@ -649,7 +649,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
         await dismissPresentedViewController()
-        await showPreparingSync()
+        await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
     }
 
     func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {

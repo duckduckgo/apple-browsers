@@ -56,17 +56,17 @@ private struct PrimaryButtonColors {
     )
 
     static let rebrandedBrand = PrimaryButtonColors(
-        standard: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
-        pressed: Color(singleUseColor: .rebranding(.buttonsPrimaryPressed)),
-        disabled: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
-        text: Color(singleUseColor: .rebranding(.buttonsPrimaryText)),
+        standard: Color(designSystemColor: .accentBrandPrimary),
+        pressed: Color(designSystemColor: .accentBrandTertiary),
+        disabled: Color(designSystemColor: .accentBrandPrimary),
+        text: Color(designSystemColor: .accentBrandContentPrimary),
         textDisabled: Color(singleUseColor: .rebranding(.buttonsContentDisabled))
     )
 
     static let rebrandedDestructive = PrimaryButtonColors(
-        standard: Color(singleUseColor: .rebranding(.destructivePrimary)),
+        standard: Color(designSystemColor: .destructivePrimary),
         pressed: Color(singleUseColor: .rebranding(.destructivePrimaryPressed)),
-        disabled: Color(singleUseColor: .rebranding(.destructivePrimary)),
+        disabled: Color(designSystemColor: .destructivePrimary),
         text: Color(singleUseColor: .rebranding(.destructivePrimaryText)),
         textDisabled: Color(singleUseColor: .rebranding(.buttonsContentDisabled))
     )
@@ -363,7 +363,7 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
     }
 
     private func rebrandedBody(configuration: Configuration) -> some View {
-        let destructiveColor = Color(singleUseColor: .rebranding(.destructivePrimary))
+        let destructiveColor = Color(designSystemColor: .destructivePrimary)
         let pressedDestructiveColor = Color(singleUseColor: .rebranding(.destructivePrimaryPressed))
         let isPressed = configuration.isPressed || pressed
         let foregroundColor = disabled
@@ -446,7 +446,7 @@ public struct DestructiveGhostButtonStyle: ButtonStyle {
     }
 
     private func rebrandedBody(configuration: Configuration) -> some View {
-        let destructiveColor = Color(singleUseColor: .rebranding(.destructivePrimary))
+        let destructiveColor = Color(designSystemColor: .destructivePrimary)
         let pressedTextColor = Color(singleUseColor: .rebranding(.destructivePrimaryPressed))
         let isPressed = configuration.isPressed || pressed
 
@@ -525,7 +525,7 @@ public struct SecondaryButtonStyle: ButtonStyle {
     }
 
     private func rebrandedBody(configuration: Configuration) -> some View {
-        let accent = Color(singleUseColor: .rebranding(.accentPrimary))
+        let accent = Color(designSystemColor: .accentPrimary)
         let isPressed = configuration.isPressed || pressed
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
@@ -700,8 +700,8 @@ public struct GhostButtonStyle: ButtonStyle {
     private func rebrandedBody(configuration: Configuration) -> some View {
         let isPressed = configuration.isPressed || pressed
         let foregroundColor = isPressed
-            ? Color(singleUseColor: .rebranding(.accentPrimaryPressed))
-            : Color(singleUseColor: .rebranding(.accentPrimary))
+            ? Color(designSystemColor: .accentTertiary)
+            : Color(designSystemColor: .accentPrimary)
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(foregroundColor)

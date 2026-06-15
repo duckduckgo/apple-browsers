@@ -124,6 +124,11 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let accentPrimary = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let accentGlowSecondary = DynamicColor(lightColor: .blue50.opacity(0.12), darkColor: x7295F6.opacity(0.12))
 
+    // Accent Brand — unused in the default palette (brand buttons render only when rebranded); falls back to the primary blue.
+    private static let accentBrandPrimary = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let accentBrandTertiary = DynamicColor(lightColor: .blue70, darkColor: .blue50)
+    private static let accentBrandContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
+
     // System
     private static let border = DynamicColor(lightColor: .gray30, darkColor: .gray40)
 
@@ -213,6 +218,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
         case .accentPrimary: return accentPrimary
         case .accentGlowSecondary: return accentGlowSecondary
+        case .accentBrandPrimary: return accentBrandPrimary
+        case .accentBrandTertiary: return accentBrandTertiary
+        case .accentBrandContentPrimary: return accentBrandContentPrimary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .shieldPrivacy: return shieldPrivacy

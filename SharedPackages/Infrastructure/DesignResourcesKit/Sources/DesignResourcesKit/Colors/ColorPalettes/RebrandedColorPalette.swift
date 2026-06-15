@@ -42,6 +42,12 @@ struct RebrandedColorPalette: ColorPaletteDefinition {
             return DynamicColor(staticColor: RebrandingColor.Green.green40)
         case .alertYellow:
             return DynamicColor(staticColor: RebrandingColor.Pollen.pollen50)
+        case .accentBrandPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen40)
+        case .accentBrandTertiary:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen60)
+        case .accentBrandContentPrimary:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         default:
             return DefaultColorPalette.dynamicColor(for: designSystemColor)
         }

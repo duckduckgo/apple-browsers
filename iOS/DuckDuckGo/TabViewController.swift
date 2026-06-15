@@ -755,6 +755,10 @@ class TabViewController: UIViewController {
         registerForAddressBarLocationNotifications()
         registerForAutofillNotifications()
 
+        if #available(iOS 18.4, *) {
+            registerForWebExtensionNotifications()
+        }
+
         if #available(iOS 16.4, *) {
             registerForInspectableWebViewNotifications()
         }
@@ -794,6 +798,25 @@ class TabViewController: UIViewController {
                                                 #selector(onAddressBarPositionChanged),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
                                                object: nil)
+    }
+
+    @available(iOS 18.4, *)
+    private func registerForWebExtensionNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(handleWebExtensionDashboardStateRefresh),
+                                               name: .webExtensionAutoconsentDashboardStateRefresh,
+                                               object: nil)
+    }
+
+    @available(iOS 18.4, *)
+    @objc private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
+        guard let domain = notification.userInfo?[AutoconsentNotification.UserInfoKeys.domain] as? String,
+              let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo,
+              privacyInfo?.url.host == domain else {
+            return
+        }
+
+        privacyInfo?.cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
     @available(iOS 16.4, *)
@@ -3767,6 +3790,23 @@ extension TabViewController: AutoconsentUserScriptDelegate {
     
     func autoconsentUserScript(consentStatus: CookieConsentInfo) {
         privacyInfo?.cookieConsentManaged = consentStatus
+    }
+}
+
+// MARK: - ConsentStatusInfo to CookieConsentInfo Conversion
+
+@available(iOS 18.4, *)
+extension ConsentStatusInfo {
+    func toCookieConsentInfo() -> CookieConsentInfo {
+        CookieConsentInfo(
+            consentManaged: consentManaged,
+            cosmetic: cosmetic,
+            optoutFailed: optoutFailed,
+            selftestFailed: selftestFailed,
+            consentReloadLoop: consentReloadLoop,
+            consentRule: consentRule,
+            consentHeuristicEnabled: consentHeuristicEnabled
+        )
     }
 }
 

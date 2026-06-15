@@ -354,7 +354,7 @@ struct NetworkProtectionStatusView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(copySupportInfoState == .copying)
+            .disabled(copySupportInfoState != .idle)
             .animation(.easeInOut(duration: 0.18), value: copySupportInfoState)
         } footer: {
             Text(UserText.netPVPNSettingsCopyDiagnosticsCaption).foregroundColor(.init(designSystemColor: .textSecondary))

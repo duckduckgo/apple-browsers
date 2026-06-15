@@ -45,7 +45,7 @@ struct VPNMetadata: Encodable {
     }
 
     struct NetworkInfo: Encodable {
-        let currentPath: String
+        let currentPath: NetworkProtectionNetworkPathInfo?
         let deviceAddressCategories: [NetworkProtectionIPAddressCategory]
         let routerAddressCategories: [NetworkProtectionIPAddressCategory]
     }
@@ -255,7 +255,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
                 monitor.cancel()
 
                 return .init(
-                    currentPath: path.anonymousDescription,
+                    currentPath: path.anonymousPathInfo,
                     deviceAddressCategories: NetworkProtectionAddressMetadata.deviceAddressCategories(for: path),
                     routerAddressCategories: NetworkProtectionAddressMetadata.routerAddressCategories(for: path)
                 )
@@ -265,7 +265,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             let currentExecutionTime = CFAbsoluteTimeGetCurrent() - startTime
             if currentExecutionTime >= 3.0 {
                 return .init(
-                    currentPath: "Timed out fetching path",
+                    currentPath: nil,
                     deviceAddressCategories: [.unknown],
                     routerAddressCategories: [.unknown]
                 )

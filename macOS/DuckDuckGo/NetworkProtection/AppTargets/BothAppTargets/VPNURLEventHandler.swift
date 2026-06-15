@@ -56,8 +56,6 @@ final class VPNURLEventHandler {
             showPreferences()
         case VPNAppLaunchCommand.shareFeedback.launchURL:
             showShareFeedback()
-        case VPNAppLaunchCommand.copySupportInfo.launchURL:
-            _ = await copySupportInfo()
         case VPNAppLaunchCommand.justOpen.launchURL:
             showMainWindow()
         case VPNAppLaunchCommand.showVPNLocations.launchURL:

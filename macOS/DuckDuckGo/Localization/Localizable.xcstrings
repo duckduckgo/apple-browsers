@@ -115229,8 +115229,8 @@
         }
       }
     },
-    "vpn.status-view.copy-support-info-copied.menu-item.title" : {
-      "comment" : "Temporary VPN status view menu item title shown after VPN support information is copied to the clipboard.",
+    "vpn.preferences.copy-support-info-copied.button.title" : {
+      "comment" : "Temporary VPN settings button title shown after VPN support information is copied to the clipboard.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -115241,8 +115241,8 @@
         }
       }
     },
-    "vpn.status-view.copy-support-info-failed.menu-item.title" : {
-      "comment" : "Temporary VPN status view menu item title shown when VPN support information could not be copied to the clipboard.",
+    "vpn.preferences.copy-support-info-failed.button.title" : {
+      "comment" : "Temporary VPN settings button title shown when VPN support information could not be copied to the clipboard.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -115253,8 +115253,8 @@
         }
       }
     },
-    "vpn.status-view.copy-support-info.menu-item.title" : {
-      "comment" : "The VPN status view's menu item that copies VPN support information to the clipboard.",
+    "vpn.preferences.copy-support-info.button.title" : {
+      "comment" : "The VPN settings button that copies VPN support information to the clipboard.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {

@@ -41,7 +41,7 @@ struct VPNMetadata: Encodable {
     }
 
     struct NetworkInfo: Encodable {
-        let currentPath: String
+        let currentPath: NetworkProtectionNetworkPathInfo?
         let lastPathChangeDate: String
         let lastPathChange: String
         let secondsSincePathChange: String
@@ -209,7 +209,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
                 let path = monitor.currentPath
                 monitor.cancel()
 
-                return .init(currentPath: path.anonymousDescription,
+                return .init(currentPath: path.anonymousPathInfo,
                              lastPathChangeDate: lastPathChangeDate,
                              lastPathChange: lastPathChange,
                              secondsSincePathChange: secondsSincePathChange,
@@ -220,7 +220,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             // Wait up to 3 seconds to fetch the path.
             let currentExecutionTime = CFAbsoluteTimeGetCurrent() - startTime
             if currentExecutionTime >= 3.0 {
-                return .init(currentPath: "Timed out fetching path",
+                return .init(currentPath: nil,
                              lastPathChangeDate: lastPathChangeDate,
                              lastPathChange: lastPathChange,
                              secondsSincePathChange: secondsSincePathChange,

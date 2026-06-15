@@ -28,36 +28,18 @@ struct MenuItemButton: View {
         let color: Color
     }
 
-    private struct Confirmation {
-        let successIcon: Image?
-        let successTitle: String
-        let failureIcon: Image?
-        let failureTitle: String
-    }
-
-    private enum ConfirmationState: Equatable {
-        case idle
-        case success
-        case failure
-    }
-
     @Environment(\.colorScheme) private var colorScheme
     private let icon: Image?
     private let title: String
     private let titleColor: Color
     private let detail: Detail?
     private let highlightColor: Color
-    private let confirmation: Confirmation?
-    private let action: () async -> Bool
+    private let action: () async -> Void
 
     private let highlightAnimationStepSpeed = AnimationConstants.highlightAnimationStepSpeed
-    private let confirmationAnimation = Animation.easeInOut(duration: 0.18)
-    private let confirmationResetDelay: TimeInterval = 2.0
 
     @State private var isHovered = false
     @State private var animatingTap = false
-    @State private var isPerformingAction = false
-    @State private var confirmationState = ConfirmationState.idle
 
     init(icon: Image? = nil, title: String, titleColor: Color, highlightColor: Color, action: @escaping () async -> Void) {
 
@@ -66,34 +48,6 @@ struct MenuItemButton: View {
         self.titleColor = titleColor
         self.detail = nil
         self.highlightColor = highlightColor
-        self.confirmation = nil
-        self.action = {
-            await action()
-            return true
-        }
-    }
-
-    init(icon: Image? = nil,
-         title: String,
-         titleColor: Color,
-         highlightColor: Color,
-         successIcon: Image? = nil,
-         successTitle: String,
-         failureIcon: Image? = nil,
-         failureTitle: String,
-         action: @escaping () async -> Bool) {
-
-        self.icon = icon
-        self.title = title
-        self.titleColor = titleColor
-        self.detail = nil
-        self.highlightColor = highlightColor
-        self.confirmation = Confirmation(
-            successIcon: successIcon,
-            successTitle: successTitle,
-            failureIcon: failureIcon,
-            failureTitle: failureTitle
-        )
         self.action = action
     }
 
@@ -103,11 +57,7 @@ struct MenuItemButton: View {
         self.titleColor = titleColor
         self.detail = Detail(text: detail, color: detailColor)
         self.highlightColor = highlightColor
-        self.confirmation = nil
-        self.action = {
-            await action()
-            return true
-        }
+        self.action = action
     }
 
     var body: some View {
@@ -115,15 +65,12 @@ struct MenuItemButton: View {
             buttonTapped()
         }) {
             HStack(spacing: 4) {
-                if let currentIcon {
-                    currentIcon
+                if let icon {
+                    icon
                         .foregroundColor(isHovered ? highlightColor : titleColor)
-                        .transition(.opacity)
                 }
-                Text(currentTitle)
+                Text(title)
                     .foregroundColor(isHovered ? highlightColor : titleColor)
-                    .transition(.opacity)
-                    .id(currentTitle)
 
                 if let detail {
                     Text(detail.text)
@@ -140,7 +87,6 @@ struct MenuItemButton: View {
         )
         .contentShape(Rectangle())
         .cornerRadius(AppVersion.isLiquidGlassSupported ? 7 : 4)
-        .animation(confirmationAnimation, value: confirmationState)
         .onTapGesture {
             buttonTapped()
         }
@@ -150,36 +96,6 @@ struct MenuItemButton: View {
             }
         }
         .buttonStyle(PlainButtonStyle())
-    }
-
-    private var currentIcon: Image? {
-        guard let confirmation else {
-            return icon
-        }
-
-        switch confirmationState {
-        case .idle:
-            return icon
-        case .success:
-            return confirmation.successIcon
-        case .failure:
-            return confirmation.failureIcon
-        }
-    }
-
-    private var currentTitle: String {
-        guard let confirmation else {
-            return title
-        }
-
-        switch confirmationState {
-        case .idle:
-            return title
-        case .success:
-            return confirmation.successTitle
-        case .failure:
-            return confirmation.failureTitle
-        }
     }
 
     private func buttonBackground(highlighted: Bool) -> some View {
@@ -192,11 +108,6 @@ struct MenuItemButton: View {
     }
 
     private func buttonTapped() {
-        guard !isPerformingAction else {
-            return
-        }
-
-        isPerformingAction = true
         animatingTap = true
         isHovered = false
 
@@ -207,34 +118,8 @@ struct MenuItemButton: View {
                 animatingTap = false
 
                 Task {
-                    let succeeded = await action()
-                    await MainActor.run {
-                        isPerformingAction = false
-                        showConfirmation(succeeded: succeeded)
-                    }
+                    await action()
                 }
-            }
-        }
-    }
-
-    private func showConfirmation(succeeded: Bool) {
-        guard confirmation != nil else {
-            return
-        }
-
-        let newState: ConfirmationState = succeeded ? .success : .failure
-
-        withAnimation(confirmationAnimation) {
-            confirmationState = newState
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + confirmationResetDelay) {
-            guard confirmationState == newState else {
-                return
-            }
-
-            withAnimation(confirmationAnimation) {
-                confirmationState = .idle
             }
         }
     }

@@ -258,7 +258,17 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
         )
 
         let networkInfo = VPNMetadata.NetworkInfo(
-            currentPath: "path",
+            currentPath: NetworkProtectionNetworkPathInfo(
+                status: "satisfied",
+                unsatisfiedReason: nil,
+                mainInterfaceType: "wifi",
+                utunInterfaceCount: 1,
+                ipsecInterfaceCount: 0,
+                dnsInterfaceCount: 0,
+                unidentifiedInterfaceCount: 0,
+                isConstrained: false,
+                isExpensive: false
+            ),
             deviceAddressCategories: [.ipv4Private192],
             routerAddressCategories: [.ipv4Private192]
         )

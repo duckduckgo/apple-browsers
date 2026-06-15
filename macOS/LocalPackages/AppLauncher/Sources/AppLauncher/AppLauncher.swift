@@ -71,7 +71,7 @@ public final class AppLauncher: AppLaunching {
         if command.hideApp {
             configuration.activates = false
             configuration.addsToRecentItems = false
-            configuration.createsNewApplicationInstance = command.createsNewApplicationInstanceWhenHidden
+            configuration.createsNewApplicationInstance = true
             configuration.hides = true
         } else {
             configuration.activates = true

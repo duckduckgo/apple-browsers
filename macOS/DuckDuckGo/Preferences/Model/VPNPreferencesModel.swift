@@ -118,6 +118,14 @@ final class VPNPreferencesModel: ObservableObject {
 
     @Published var showUninstallVPN: Bool
 
+    enum CopySupportInfoState: Equatable {
+        case idle
+        case copied
+        case failed
+    }
+
+    @Published private(set) var copySupportInfoState: CopySupportInfoState = .idle
+
     private var onboardingStatus: OnboardingStatus {
         didSet {
             showUninstallVPN = DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
@@ -374,6 +382,27 @@ final class VPNPreferencesModel: ObservableObject {
     func openVPNViewInMainWindow() {
         PixelKit.fire(SubscriptionPixel.subscriptionVPNSettings)
         NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: nil)
+    }
+
+    @MainActor
+    func copySupportInfo() async {
+        let succeeded = await VPNURLEventHandler().copySupportInfo()
+        showCopySupportInfoConfirmation(succeeded ? .copied : .failed)
+    }
+
+    @MainActor
+    private func showCopySupportInfoConfirmation(_ state: CopySupportInfoState) {
+        copySupportInfoState = state
+
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+            guard copySupportInfoState == state else {
+                return
+            }
+
+            copySupportInfoState = .idle
+        }
     }
 
     @MainActor

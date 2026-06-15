@@ -23,7 +23,6 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
     case justOpen
     case manageExcludedApps
     case manageExcludedDomains
-    case copySupportInfo
     case shareFeedback
     case showFAQ
     case showStatus
@@ -47,8 +46,6 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
             return "networkprotection://excluded-apps"
         case .manageExcludedDomains:
             return "networkprotection://excluded-domains"
-        case .copySupportInfo:
-            return "networkprotection://copy-support-info"
         case .shareFeedback:
             return "networkprotection://share-feedback"
         case .showFAQ:
@@ -90,19 +87,8 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
 
     public var hideApp: Bool {
         switch self {
-        case .copySupportInfo:
-            return true
         default:
             return false
-        }
-    }
-
-    public var createsNewApplicationInstanceWhenHidden: Bool {
-        switch self {
-        case .copySupportInfo:
-            return false
-        default:
-            return true
         }
     }
 }

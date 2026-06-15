@@ -70,20 +70,20 @@ extension UserText {
         value: "Send Feedback",
         comment: "The VPN status view's 'Send Feedback' menu item for our main app")
 
-    static let vpnStatusViewCopySupportInfoMenuItemTitle = NSLocalizedString(
-        "vpn.status-view.copy-support-info.menu-item.title",
+    static let vpnSettingsCopySupportInfoButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-support-info.button.title",
         value: "Copy VPN Support Info",
-        comment: "The VPN status view's menu item that copies VPN support information to the clipboard.")
+        comment: "The VPN settings button that copies VPN support information to the clipboard.")
 
-    static let vpnStatusViewCopySupportInfoCopiedMenuItemTitle = NSLocalizedString(
-        "vpn.status-view.copy-support-info-copied.menu-item.title",
+    static let vpnSettingsCopySupportInfoCopiedButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-support-info-copied.button.title",
         value: "Copied to clipboard",
-        comment: "Temporary VPN status view menu item title shown after VPN support information is copied to the clipboard.")
+        comment: "Temporary VPN settings button title shown after VPN support information is copied to the clipboard.")
 
-    static let vpnStatusViewCopySupportInfoFailedMenuItemTitle = NSLocalizedString(
-        "vpn.status-view.copy-support-info-failed.menu-item.title",
+    static let vpnSettingsCopySupportInfoFailedButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-support-info-failed.button.title",
         value: "Couldn't copy to clipboard",
-        comment: "Temporary VPN status view menu item title shown when VPN support information could not be copied to the clipboard.")
+        comment: "Temporary VPN settings button title shown when VPN support information could not be copied to the clipboard.")
 
     static let vpnStatusViewFAQMenuItemTitle = NSLocalizedString(
         "vpn.status-view.faq.menu-item.title",

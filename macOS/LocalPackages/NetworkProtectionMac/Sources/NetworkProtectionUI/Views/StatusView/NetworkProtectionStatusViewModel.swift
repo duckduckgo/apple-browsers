@@ -38,16 +38,6 @@ extension NetworkProtectionStatusView {
         public enum MenuItem {
             case divider(uuid: UUID = UUID())
             case text(uuid: UUID = UUID(), icon: Image? = nil, title: String, action: () async -> Void)
-            case confirmingText(
-                uuid: UUID = UUID(),
-                icon: Image? = nil,
-                title: String,
-                successIcon: Image? = nil,
-                successTitle: String,
-                failureIcon: Image? = nil,
-                failureTitle: String,
-                action: () async -> Bool
-            )
             case textWithDetail(uuid: UUID = UUID(), icon: Image? = nil, title: String, detail: String, action: () async -> Void)
 
             public var uuid: UUID {
@@ -55,8 +45,6 @@ extension NetworkProtectionStatusView {
                 case .divider(let uuid):
                     return uuid
                 case .text(let uuid, _, _, _):
-                    return uuid
-                case .confirmingText(let uuid, _, _, _, _, _, _, _):
                     return uuid
                 case .textWithDetail(let uuid, _, _, _, _):
                     return uuid

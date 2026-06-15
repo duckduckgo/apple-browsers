@@ -204,6 +204,18 @@ extension Preferences {
                                              isSheetPresented: $showsCustomDNSServerPageSheet)
                 }
 
+                // SECTION: Diagnostics
+
+                PreferencePaneSection {
+                    Button(copySupportInfoButtonTitle) {
+                        Task { @MainActor in
+                            await model.copySupportInfo()
+                        }
+                    }
+                    .disabled(model.copySupportInfoState != .idle)
+                }
+                .padding(.bottom, 12)
+
                 // SECTION: Uninstall
 
                 if model.showUninstallVPN {
@@ -218,6 +230,17 @@ extension Preferences {
             }
             .onAppear {
                 model.onViewAppeared()
+            }
+        }
+
+        private var copySupportInfoButtonTitle: String {
+            switch model.copySupportInfoState {
+            case .idle:
+                return UserText.vpnSettingsCopySupportInfoButtonTitle
+            case .copied:
+                return UserText.vpnSettingsCopySupportInfoCopiedButtonTitle
+            case .failed:
+                return UserText.vpnSettingsCopySupportInfoFailedButtonTitle
             }
         }
 

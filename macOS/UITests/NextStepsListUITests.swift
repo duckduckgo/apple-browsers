@@ -67,8 +67,6 @@ final class NextStepsListUITests: UITestCase {
     }
 
     func testNextStepsListWidgetDisappearsAfterMaxDemonstrationDays() throws {
-        throw XCTSkip("Failing test, skipping for now until we can resolve the issue")
-
         shiftMaxNextStepsDays()
         app.openNewTab()
 

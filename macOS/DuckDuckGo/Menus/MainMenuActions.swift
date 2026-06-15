@@ -1645,7 +1645,7 @@ extension MainViewController {
         let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         persistor.continueSetUpCardsLastDemonstrated = (persistor.continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
         NSApp.delegateTyped.appearancePreferences.continueSetUpCardsViewDidAppear()
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @objc func debugShiftNewTabOpeningDateNtimes(_ sender: Any?) {

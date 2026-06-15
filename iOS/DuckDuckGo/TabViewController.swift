@@ -1485,7 +1485,8 @@ class TabViewController: UIViewController {
     }
 
     private func showBars(animated: Bool = true) {
-        chromeDelegate?.setBarsHidden(false, animated: animated, customAnimationDuration: nil)
+        // resetBars syncs BarsAnimator's state; setBarsHidden alone leaves it stale and the chrome can stick hidden.
+        chromeDelegate?.resetBars(animated: animated)
     }
 
     private func hideBars(animated: Bool = true) {

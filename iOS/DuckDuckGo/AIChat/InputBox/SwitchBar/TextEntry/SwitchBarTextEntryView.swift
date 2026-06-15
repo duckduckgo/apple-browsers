@@ -546,7 +546,10 @@ class SwitchBarTextEntryView: UIView {
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
     private func isUnexpandedURL() -> Bool {
-        return !hasBeenInteractedWith && isURL
+        guard isURL else { return false }
+        // In search mode the address bar is always single-line; the interaction flag is irrelevant.
+        // In AI chat mode, URLs can expand once the user has actively started interacting.
+        return currentMode == .search || !hasBeenInteractedWith
     }
 
     private func updateTextViewHeight() {

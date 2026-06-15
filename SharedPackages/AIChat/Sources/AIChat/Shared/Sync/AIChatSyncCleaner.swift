@@ -17,6 +17,7 @@
 //
 
 import DDGSync
+import DuckAiDataStore
 import Foundation
 import os.log
 import Persistence
@@ -226,12 +227,8 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     private func buildPendingUpdates(for candidates: [String]) -> [AIChatUpdate] {
         guard let storageHandler else { return [] }
         return candidates.compactMap { chatId in
-            guard let record = try? storageHandler.getChat(chatId: chatId),
-                  let json = try? JSONSerialization.jsonObject(with: record.data) as? [String: Any] else {
-                return nil
-            }
-            let pinned = (json["pinned"] as? Bool) ?? false
-            return AIChatUpdate(chatId: chatId, pinned: pinned)
+            guard let record = try? storageHandler.getChat(chatId: chatId) else { return nil }
+            return AIChatUpdate(record: record)
         }
     }
 
@@ -320,5 +317,17 @@ private actor AIChatSyncState {
         } else {
             try? store.set(Array(current), forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
         }
+    }
+}
+
+extension AIChatUpdate {
+
+    /// Builds an update from a stored chat record, reading the `pinned` flag from its raw JSON blob.
+    /// Returns `nil` when the blob can't be parsed as a JSON object.
+    init?(record: DuckAiChatRecord) {
+        guard let json = try? JSONSerialization.jsonObject(with: record.data) as? [String: Any] else {
+            return nil
+        }
+        self.init(chatId: record.chatId, pinned: (json["pinned"] as? Bool) ?? false)
     }
 }

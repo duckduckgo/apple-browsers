@@ -110,6 +110,10 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
         // Limit to max suggestions
         filteredSuggestions = Array(allChats.prefix(maxSuggestions))
 
+        if filteredSuggestions.isEmpty {
+            showViewAllChats = false
+        }
+
         // Reset selection if it's now out of bounds
         if let index = selectedIndex, index >= filteredSuggestions.count {
             let maxValidIndex = showViewAllChats ? filteredSuggestions.count : filteredSuggestions.count - 1
@@ -214,6 +218,10 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
         filteredSuggestions.removeAll { $0.id == suggestion.id }
 
         suggestionIDsPendingRemoval.insert(suggestion.id)
+
+        if filteredSuggestions.isEmpty {
+            showViewAllChats = false
+        }
 
         // Adjust selection after removal
         if let index = selectedIndex {

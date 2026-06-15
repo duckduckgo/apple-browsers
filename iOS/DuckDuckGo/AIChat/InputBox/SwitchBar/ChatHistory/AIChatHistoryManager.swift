@@ -272,8 +272,8 @@ final class AIChatHistoryManager {
             let suggestions = await reader.fetchSuggestions(query: effectiveQuery, maxChats: maxChats)
             guard !Task.isCancelled else { return }
             let hasSuggestions = !(suggestions.pinned.isEmpty && suggestions.recent.isEmpty)
-            // Surface the "View all chats" row whenever there is at least one chat to open the history page for.
-            let showViewAllChats = isViewAllChatsEnabled && hasSuggestions
+            // Surface the "View all chats" row when browsing recents (empty query), not while searching.
+            let showViewAllChats = isViewAllChatsEnabled && hasSuggestions && query.isEmpty
             viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent, showViewAllChats: showViewAllChats)
             hasCompletedInitialFetch = true
             lastCompletedFetchQuery = query

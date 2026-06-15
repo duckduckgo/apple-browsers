@@ -96,8 +96,8 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         var sections: [SuggestionSection] = []
         if !snapshot.chats.isEmpty {
             var chatRows = snapshot.chats.map { SuggestionRowMapper.row(for: $0, includesFireDelete: deleteEnabled) }
-            // Append the "View all chats" entry as the last row of the chats section.
-            if viewAllChatsEnabled {
+            // Append the "View all chats" entry when browsing recents; hide it while the user is searching.
+            if viewAllChatsEnabled && query.isEmpty {
                 chatRows.append(SuggestionRowMapper.viewAllChatsRow(id: RowID.viewAllChats))
             }
             sections.append(SuggestionSection(id: SectionID.chats, rows: chatRows))

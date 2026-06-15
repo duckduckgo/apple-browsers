@@ -118,7 +118,7 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             "consentHeuristicEnabled": true
         ]
         let params: [String: Any] = [
-            "url": "https://example.com",
+            "url": "https://example.com/articles/one",
             "consentStatus": consentStatus
         ]
         let message = WebExtensionMessage(
@@ -137,7 +137,7 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             let dict = response as? [String: Any]
             XCTAssertEqual(dict?["response"] as? String, "ok")
             XCTAssertNotNil(mockDelegate.dashboardRefreshed)
-            XCTAssertEqual(mockDelegate.dashboardRefreshed?.0, "example.com")
+            XCTAssertEqual(mockDelegate.dashboardRefreshed?.0.absoluteString, "https://example.com/articles/one")
             XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.consentManaged, true)
             XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.cosmetic, false)
             XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.consentRule, "test-rule")
@@ -218,7 +218,7 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
 @available(macOS 15.4, iOS 18.4, *)
 final class MockAutoconsentDelegate: AutoconsentMessageHandlerDelegate {
     var animationShown: (URL, Bool)?
-    var dashboardRefreshed: (String, ConsentStatusInfo)?
+    var dashboardRefreshed: (URL, ConsentStatusInfo)?
     var popupHandled: CookiePopupHandledInfo?
     var pixelSent: PixelInfo?
 
@@ -226,8 +226,8 @@ final class MockAutoconsentDelegate: AutoconsentMessageHandlerDelegate {
         animationShown = (topUrl, isCosmetic)
     }
 
-    func refreshDashboardState(domain: String, consentStatus: ConsentStatusInfo) {
-        dashboardRefreshed = (domain, consentStatus)
+    func refreshDashboardState(url: URL, consentStatus: ConsentStatusInfo) {
+        dashboardRefreshed = (url, consentStatus)
     }
 
     func handleCookiePopup(_ popupInfo: CookiePopupHandledInfo) {

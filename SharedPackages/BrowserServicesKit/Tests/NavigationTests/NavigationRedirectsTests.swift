@@ -85,13 +85,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             switch request.path {
             case urls.local2.path:
                 return .raw(301, "Moved", ["Location": urls.local3.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             case urls.local3.path:
                 return .ok(.data(data.html))
             default:
                 return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             }
         }]
@@ -129,7 +129,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 return .ok(.data(data.html))
             case 2:
                 return .raw(301, "Moved", ["Location": urls.localHashed.absoluteString]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             default:
                 return .ok(.data(data.html))
@@ -184,7 +184,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 return .ok(.data(data.html))
             default:
                 return .raw(200, "OK", ["refresh": "1; url=" + urls.local2.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             }
         }]
@@ -230,13 +230,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 return .ok(.data(data.metaRedirect))
             case urls.local3.path:
                 return .raw(301, "Moved", ["Location": urls.local4.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             case urls.local4.path:
                 return .ok(.data(data.html))
             default:
                 return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             }
         }]
@@ -357,13 +357,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 return .ok(.data(data.metaRedirect))
             case urls.local3.path:
                 return .raw(301, "Moved", ["Location": urls.local4.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             case urls.local4.path:
                 return .ok(.data(data.html))
             default:
                 return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             }
         }]
@@ -418,13 +418,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 return .ok(.data(data.metaRedirect))
             case urls.local3.path:
                 return .raw(301, "Moved", ["Location": urls.local4.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             case urls.local4.path:
                 return .ok(.data(data.html))
             default:
                 return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             }
         }]
@@ -618,13 +618,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 return .ok(.data(data.metaRedirect))
             case urls.local3.path:
                 return .raw(301, "Moved", ["Location": urls.local4.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             case urls.local4.path:
                 return .ok(.data(data.html))
             default:
                 return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             }
         }]
@@ -673,7 +673,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             }
             counter += 1
             return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                try! writer.write(data.empty)
+                try writer.write(data.empty)
             }
         }]
         try server.start(8084)
@@ -721,7 +721,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             }
             counter += 1
             return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                try! writer.write(data.empty)
+                try writer.write(data.empty)
             }
         }]
         try server.start(8084)
@@ -942,7 +942,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             guard request.path == "/" else { return nil }
 
             return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                try! writer.write(data.empty)
+                try writer.write(data.empty)
             }
         }, { [data] request in
             return .ok(.html(data.html.utf8String()!))
@@ -1047,7 +1047,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 return .ok(.data(data.html))
             default:
                 return .raw(200, "OK", ["refresh": "1; url=" + urls.local2.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             }
         }]
@@ -1093,7 +1093,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 return .ok(.data(data.html))
             default:
                 return .raw(200, "OK", ["refresh": "1; url=" + urls.local2.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             }
         }]
@@ -1138,7 +1138,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 return .ok(.data(data.html))
             default:
                 return .raw(200, "OK", ["refresh": "1; url=" + urls.local2.path]) { writer in
-                    try! writer.write(data.empty)
+                    try writer.write(data.empty)
                 }
             }
         }]

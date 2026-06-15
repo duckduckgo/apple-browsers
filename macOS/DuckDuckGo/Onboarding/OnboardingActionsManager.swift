@@ -443,13 +443,18 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
         }
 
-        // When the ad-blocking defaults rollout is active, a newly-onboarded user
-        // gets Duck Player turned off by default.
-        if AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger) {
-            DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool = DuckPlayerMode.disabled.boolValue
-        }
+        Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
 
         fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
+    }
+
+    /// Applies the Duck Player default dictated by the ad-blocking defaults rollout for a
+    /// newly-onboarded user (Duck Player off). Static so every onboarding-completion path can invoke
+    /// it — normal completion, the debug "Skip Onboarding" action, and the automation/UI-test bypass
+    /// — keeping the behavior consistent regardless of how onboarding ends.
+    static func applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: FeatureFlagger) {
+        guard AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger) else { return }
+        DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool = DuckPlayerMode.disabled.boolValue
     }
 
     /// Returns true if the toggle onboarding step was shown to the user.

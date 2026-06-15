@@ -946,18 +946,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(cards.first, .defaultApp, "DefaultApp should be first in subsequent sessions")
     }
 
-    func testFirstSession_WhenNewHomePageTabOpens_ThenCardsAreNotShuffled_AndIsFirstSessionIsSet() {
+    func testFirstSession_WhenNewTabPageOpens_ThenCardsAreNotShuffled_AndIsFirstSessionIsSet() {
         featureFlagger.enabledFeatureFlags = []
         let testProvider = createProvider(isFirstSession: true)
         let initialCards = testProvider.standardCards
         let expectation = XCTestExpectation(description: "New tab page open notification is published")
-        let cancellable = NotificationCenter.default.publisher(for: HomePage.Models.newHomePageTabOpen)
+        let cancellable = NotificationCenter.default.publisher(for: .newTabPageOpen)
             .receive(on: DispatchQueue.main)
             .sink { _ in
                 expectation.fulfill()
             }
 
-        NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
+        NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
         wait(for: [expectation], timeout: 1.0)
         cancellable.cancel()
 
@@ -965,18 +965,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(testProvider.standardCards, initialCards, "Standard cards should remain the same when new tab page open notification is received in the first session")
     }
 
-    func testSubsequentSession_WhenNewHomePageTabOpens_ThenCardsAreShuffled() {
+    func testSubsequentSession_WhenNewTabPageOpens_ThenCardsAreShuffled() {
         featureFlagger.enabledFeatureFlags = []
         let testProvider = createProvider(isFirstSession: false)
         let initialCards = testProvider.standardCards
         let expectation = XCTestExpectation(description: "New tab page open notification is published")
-        let cancellable = NotificationCenter.default.publisher(for: HomePage.Models.newHomePageTabOpen)
+        let cancellable = NotificationCenter.default.publisher(for: .newTabPageOpen)
             .receive(on: DispatchQueue.main)
             .sink { _ in
                 expectation.fulfill()
             }
 
-        NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
+        NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
         wait(for: [expectation], timeout: 1.0)
         cancellable.cancel()
 

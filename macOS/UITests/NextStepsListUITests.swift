@@ -25,7 +25,7 @@ final class NextStepsListUITests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["nextStepsListWidget": true])
+        app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         resetNextSteps()
         webView = app.webViews.firstMatch
@@ -40,11 +40,11 @@ final class NextStepsListUITests: UITestCase {
     func testNextStepsListWidgetAppearsOnNewTabPage() throws {
         app.openNewTab()
 
-        // Confirm Next Steps widget is visible (same section label is used for legacy and list widget)
+        // Confirm Next Steps widget is visible
         XCTAssertTrue(nextStepsSection.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Next Steps content should be visible on New Tab Page")
 
-        // Confirm card for Next Steps List widget is visible, using its "No Thanks" button
+        // Confirm Next Steps card is visible, using its "No Thanks" button
         XCTAssertTrue(nextStepsCardDismissButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Dismiss button should be visible in the Next Steps content")
     }

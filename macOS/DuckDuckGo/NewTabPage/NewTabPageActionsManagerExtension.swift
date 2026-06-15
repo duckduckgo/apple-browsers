@@ -150,28 +150,28 @@ extension NewTabPageActionsManager {
             appearancePreferences: appearancePreferences,
             installDateProvider: { LocalStatisticsStore().installDate }
         )
-        let nextStepsCardsFacade = NewTabPageNextStepsCardsProviderFacade(
-            featureFlagger: featureFlagger,
-            dataImportProvider: dataImportProvider,
-            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-            legacyPersistor: homePageContinueSetUpModelPersistor,
-            pixelHandler: nextStepsPixelHandler,
-            cardActionsHandler: NewTabPageNextStepsCardsActionHandler(
+        let nextStepsCardsProvider = NewTabPageNextStepsSingleCardProvider(
+            cardActionHandler: NewTabPageNextStepsCardsActionHandler(
                 defaultBrowserProvider: SystemDefaultBrowserProvider(),
                 dockCustomizer: dockCustomization,
                 dataImportProvider: dataImportProvider,
                 tabOpener: NewTabPageTabOpener(),
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 pixelHandler: nextStepsPixelHandler,
-                newTabPageNavigator: DefaultNewTabPageNavigator(),
-                featureFlagger: featureFlagger
+                newTabPageNavigator: DefaultNewTabPageNavigator()
             ),
-            appearancePreferences: appearancePreferences,
-            legacySubscriptionCardPersistor: subscriptionCardPersistor,
+            pixelHandler: nextStepsPixelHandler,
             persistor: nextStepsCardsPersistor,
+            legacyPersistor: homePageContinueSetUpModelPersistor,
+            legacySubscriptionCardPersistor: subscriptionCardPersistor,
+            appearancePreferences: appearancePreferences,
+            featureFlagger: featureFlagger,
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            dockCustomizer: dockCustomization,
+            dataImportProvider: dataImportProvider,
             duckPlayerPreferences: duckPlayerPreferences,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             syncService: syncService,
-            dockCustomization: dockCustomization,
             adBlockingAvailability: NSApp.delegateTyped.adBlockingAvailability
         )
         let buildType = StandardApplicationBuildType()
@@ -199,7 +199,7 @@ extension NewTabPageActionsManager {
             )
             promoService.setDelegate(for: PromoServiceFactory.freemiumDBP.id, delegate: delegate)
 
-            let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)
+            let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsProvider)
             promoService.setDelegate(for: PromoServiceFactory.nextSteps.id, delegate: nextStepsDelegate)
         }
 
@@ -219,7 +219,7 @@ extension NewTabPageActionsManager {
             NewTabPageCustomBackgroundClient(model: customizationProvider),
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),
             NewTabPageFreemiumDBPClient(provider: freemiumDBPBannerProvider),
-            NewTabPageNextStepsCardsClient(model: nextStepsCardsFacade),
+            NewTabPageNextStepsCardsClient(model: nextStepsCardsProvider),
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),

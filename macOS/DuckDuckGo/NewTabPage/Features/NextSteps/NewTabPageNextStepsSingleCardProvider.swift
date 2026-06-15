@@ -226,7 +226,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         observeCardVisibilityChanges()
         observeKeyWindowChanges()
         observeNewTabPageWebViewDidAppear()
-        observeNewHomePageTabOpen()
+        observeNewTabPageOpen()
         observeFeatureFlagChanges()
     }
 
@@ -482,12 +482,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .store(in: &cancellables)
     }
 
-    /// Observes the `HomePage.Models.newHomePageTabOpen` notification to reshuffle the cards, if needed.
+    /// Observes the `newTabPageOpen` notification to reshuffle the cards, if needed.
     ///
-    /// Note: This notification is not triggered on every new tab page open, for example when a new tab is opened in the same window.
-    /// However, for now we want to shuffle the cards with the same timing as in `HomePage.Models.ContinueSetUpModel`.
-    func observeNewHomePageTabOpen() {
-        NotificationCenter.default.publisher(for: HomePage.Models.newHomePageTabOpen)
+    func observeNewTabPageOpen() {
+        NotificationCenter.default.publisher(for: .newTabPageOpen)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -518,4 +516,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
             }
             .store(in: &cancellables)
     }
+}
+
+extension Notification.Name {
+    static let newTabPageOpen = Notification.Name("newTabPageOpen")
 }

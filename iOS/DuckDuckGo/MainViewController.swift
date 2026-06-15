@@ -6462,6 +6462,17 @@ extension MainViewController: OnboardingDelegate {
 
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+
+        // When the ad-blocking defaults rollout is active, a newly-onboarded user
+        // gets Duck Player turned off by default. Disable both the classic (iPad) and
+        // native (iPhone) settings so the active one is off regardless of device or
+        // the native-UI feature flag.
+        if adBlockingAvailability.areAdBlockingDefaultsActive {
+            appSettings.duckPlayerMode = .disabled
+            appSettings.duckPlayerNativeYoutubeMode = .never
+            appSettings.duckPlayerNativeUISERPEnabled = false
+        }
+
         // Now that linear onboarding has finished, any experiment cohort
         // enrollment that occurred is in place. Run the unified-toggle-input
         // setup that was deferred at viewDidLoad.

@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import Common
+import DuckPlayer
 import FoundationExtensions
 import Foundation
 import Onboarding
@@ -440,6 +441,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         /// mark the flag to skip the popover
         if userSawToggleOnboarding {
             aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
+        }
+
+        // When the ad-blocking defaults rollout is active, a newly-onboarded user
+        // gets Duck Player turned off by default.
+        if AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger) {
+            DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool = DuckPlayerMode.disabled.boolValue
         }
 
         fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)

@@ -735,7 +735,7 @@ class MainViewController: UIViewController {
         // Automation bypass: a UI-test override can mark onboarding already-completed without ever
         // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
         if case .overridden(.uiTests(completed: true)) = onboardingStatus {
-            applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded()
+            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
         }
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
@@ -6470,7 +6470,7 @@ extension MainViewController: OnboardingDelegate {
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
 
-        applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded()
+        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
 
         // Now that linear onboarding has finished, any experiment cohort
         // enrollment that occurred is in place. Run the unified-toggle-input
@@ -6501,19 +6501,6 @@ extension MainViewController: OnboardingDelegate {
         controller.dismiss(animated: true) { [weak self] in
             self?.newTabPageViewController?.onboardingCompleted()
         }
-    }
-
-    /// Applies the Duck Player defaults dictated by the ad-blocking defaults rollout for a
-    /// newly-onboarded user (Duck Player off). Called from every onboarding-completion path —
-    /// normal completion/skip via `onboardingCompleted(controller:)` and the automation/UI-test
-    /// bypass in `configureStartupPresentation()` — so behavior is consistent regardless of how
-    /// onboarding ends. Disables the classic (iPad), native (iPhone) and native-SERP settings so
-    /// the active one is off regardless of device or the native-UI feature flag.
-    private func applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded() {
-        guard adBlockingAvailability.areAdBlockingDefaultsActive else { return }
-        appSettings.duckPlayerMode = .disabled
-        appSettings.duckPlayerNativeYoutubeMode = .never
-        appSettings.duckPlayerNativeUISERPEnabled = false
     }
 
     func markOnboardingSeen() {

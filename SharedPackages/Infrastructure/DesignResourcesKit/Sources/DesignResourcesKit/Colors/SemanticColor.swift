@@ -48,7 +48,7 @@ public enum DesignSystemColor {
     case textPrimary
     case textSecondary
     case textTertiary
-    case textLink
+    case accentTextPrimary
     case textSelectionFill
     case textPlaceholder
 

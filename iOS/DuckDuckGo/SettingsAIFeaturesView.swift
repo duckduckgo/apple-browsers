@@ -51,7 +51,7 @@ struct SettingsAIFeaturesView: View {
                     } label: {
                         Text(UserText.aiFeaturesLearnMore)
                             .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .textLink))
+                            .foregroundColor(Color(designSystemColor: .accentTextPrimary))
                     }
                     .buttonStyle(.plain)
                 }

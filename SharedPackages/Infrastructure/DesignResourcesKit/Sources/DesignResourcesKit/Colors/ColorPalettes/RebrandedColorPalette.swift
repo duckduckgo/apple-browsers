@@ -32,7 +32,7 @@ struct RebrandedColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Eggshell.eggshell90)
         case .accentGlowSecondary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.12), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.12))
-        case .textLink:
+        case .accentTextPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
         case .textSelectionFill:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))

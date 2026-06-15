@@ -57,7 +57,7 @@ public struct RadioButtonConfiguration {
 
     public init(
         font: Font = Font(UIFont.daxCaption().withSize(13)),
-        selectedTextColor: Color = .init(designSystemColor: .textLink),
+        selectedTextColor: Color = .init(designSystemColor: .accentTextPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textSecondary),
         selectedBackgroundColor: Color = .init(designSystemColor: .accentPrimary).opacity(0.2),
         unselectedBackgroundColor: Color = .clear,

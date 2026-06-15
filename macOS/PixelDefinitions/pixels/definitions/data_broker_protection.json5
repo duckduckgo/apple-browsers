@@ -35,14 +35,14 @@
     },
     "m_mac_dbp_optout_stage_start": {
         "description": "Fired at the start stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId", "channel"]
     },
     "m_mac_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -60,7 +60,7 @@
     },
     "m_mac_dbp_optout_stage_captcha-parse": {
         "description": "Fired at the captcha parse stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -78,7 +78,7 @@
     },
     "m_mac_dbp_optout_stage_captcha-send": {
         "description": "Fired at the captcha send stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -96,7 +96,7 @@
     },
     "m_mac_dbp_optout_stage_captcha-solve": {
         "description": "Fired at the captcha solve stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -114,7 +114,7 @@
     },
     "m_mac_dbp_optout_stage_submit": {
         "description": "Fired at the submit stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -132,7 +132,7 @@
     },
     "m_mac_dbp_optout_stage_email-receive": {
         "description": "Fired at the email receive stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -150,7 +150,7 @@
     },
     "m_mac_dbp_optout_stage_email-confirm": {
         "description": "Fired at the email confirmation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -186,7 +186,7 @@
     },
     "m_mac_dbp_optout_stage_validate": {
         "description": "Fired at the validation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -204,7 +204,7 @@
     },
     "m_mac_dbp_optout_stage_fill-form": {
         "description": "Fired at the fill-form stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -222,7 +222,7 @@
     },
     "m_mac_dbp_optout_stage_finish": {
         "description": "Fired at the finish stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -241,7 +241,7 @@
     },
     "m_mac_dbp_optout_process_submit-success": {
         "description": "Fired when an opt-out submission succeeds.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -277,7 +277,7 @@
     },
     "m_mac_dbp_optout_process_success": {
         "description": "Fired when an opt-out attempt completes successfully.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -309,7 +309,7 @@
     },
     "m_mac_dbp_optout_process_failure": {
         "description": "Fired when an opt-out attempt fails.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -616,7 +616,7 @@
     },
     "m_mac_dbp_update_databrokers_success": {
         "description": "Fired when a data broker JSON is updated successfuly.",
-        "owners": ["edulpn", "jozsef-vesza"],
+        "owners": ["jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -638,7 +638,7 @@
     },
     "m_mac_dbp_update_databrokers_failure": {
         "description": "Fired when a data broker JSON update has failed.",
-        "owners": ["edulpn", "jozsef-vesza"],
+        "owners": ["jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": [
@@ -1237,21 +1237,21 @@
     },
     "m_mac_dbp_event_scanning-events_new-match": {
         "description": "Fired when a new matching profile is found during a scan",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_event_scanning-events_re-appearance": {
         "description": "Fired when a previously removed profile re-appears on a data broker during a scan",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_databroker_custom_stats_optoutsubmit": {
         "description": "Fired daily with per-broker opt-out submission success rate stats.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["scheduled"],
         "suffixes": [],
         "parameters": [
@@ -1268,7 +1268,7 @@
     },
     "m_mac_dbp_custom_stats_optoutsubmit": {
         "description": "Fired daily with global opt-out submission success rate stats.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["scheduled"],
         "suffixes": [],
         "parameters": [

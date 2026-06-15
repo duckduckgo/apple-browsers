@@ -68,13 +68,21 @@ struct SuggestionsListView: View {
                     isAddressBarAtBottom: isAddressBarAtBottom,
                     onTapAhead: { viewModel.tapAheadRow(id: row.id) },
                     onDelete: { viewModel.deleteRow(id: row.id) },
-                    onFire: { viewModel.fireDeleteRow(id: row.id) })
+                    onFire: { frame in viewModel.fireDeleteRow(id: row.id, sourceRect: frame) })
             }
             .accessibilityIdentifier(row.accessibilityID)
             .listRowInsets(rowInsets(for: row))
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(rowBackground(for: row))
             .modifier(SeparatorTrailingToContentModifier())
         }
+    }
+
+    /// Highlights the hardware-keyboard-selected row (iPad popover); plain surface otherwise.
+    /// `selectedRowID` stays nil on iPhone (no arrow-key navigation), so this is inert there.
+    private func rowBackground(for row: SuggestionRow) -> Color {
+        row.id == viewModel.selectedRowID
+            ? Color(designSystemColor: .accent)
+            : Color(designSystemColor: .surface)
     }
 
     /// Vertical padding per Figma; horizontal inset (on top of the list's 24pt content margin) keeps

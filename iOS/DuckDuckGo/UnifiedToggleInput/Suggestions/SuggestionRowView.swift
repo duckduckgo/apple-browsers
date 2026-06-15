@@ -29,7 +29,10 @@ struct SuggestionRowView: View {
     let isAddressBarAtBottom: Bool
     let onTapAhead: () -> Void
     let onDelete: () -> Void
-    let onFire: () -> Void
+    /// Carries the 🔥 button's global frame so the iPad popover can anchor the delete confirmation to it.
+    let onFire: (CGRect) -> Void
+
+    @State private var fireButtonFrame: CGRect = .zero
 
     private enum Metrics {
         static let iconSize: CGFloat = 24
@@ -99,9 +102,15 @@ struct SuggestionRowView: View {
                            accessibilityID: "Autocomplete.Suggestions.ListItem.DeleteButton",
                            action: onDelete)
         case .fire:
-            deletionButton(glyph: DesignSystemImages.Glyphs.Size16.fire,
-                           accessibilityID: "Autocomplete.Suggestions.ListItem.FireDeleteButton",
-                           action: onFire)
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.fire)
+                .tintIfAvailable(Color(designSystemColor: .iconsSecondary))
+                .background(GeometryReader { proxy in
+                    Color.clear.preference(key: FireButtonFrameKey.self, value: proxy.frame(in: .global))
+                })
+                .onPreferenceChange(FireButtonFrameKey.self) { fireButtonFrame = $0 }
+                .highPriorityGesture(TapGesture().onEnded { onFire(fireButtonFrame) })
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.FireDeleteButton")
+                .accessibilityLabel(UserText.actionDelete)
         case .none:
             EmptyView()
         }
@@ -114,4 +123,9 @@ struct SuggestionRowView: View {
             .accessibilityIdentifier(accessibilityID)
             .accessibilityLabel(UserText.actionDelete)
     }
+}
+
+private struct FireButtonFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) { value = nextValue() }
 }

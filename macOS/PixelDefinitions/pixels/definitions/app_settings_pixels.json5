@@ -14,6 +14,13 @@
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "subscribed"]
     },
+    "browser_menu_update": {
+        "description": "Fires when the user clicks the \"Check for Updates…\" item in the menu bar. pixelSource distinguishes App Store (browser-appstore) from Sparkle/DMG (browser-dmg) builds.",
+        "owners": ["diegoreymendez", "jotaemepereira"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_settings_sync_app_icon_with_theme_turned_on": {
         "description": "Fired when the user turns on the setting to sync the app icon with the selected theme",
         "owners": ["Bunn"],

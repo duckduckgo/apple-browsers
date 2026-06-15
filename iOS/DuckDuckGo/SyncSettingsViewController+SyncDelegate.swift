@@ -238,7 +238,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
             let alertController = UIAlertController(
                 title: type.title,
-                message: [type.description, error?.localizedDescription].compactMap({ $0 }).joined(separator: "\n"),
+                message: type.description,
                 preferredStyle: .alert)
             let okAction = UIAlertAction(title: type.buttonTitle, style: .default, handler: nil)
             alertController.addAction(okAction)

@@ -19,8 +19,9 @@
 import PixelKit
 
 enum UncleanExitRestartSource: String {
-    case crash = "crash_or_force_quit"
+    case crash = "crash"
     case appUpdate = "app_update"
+    case unknown = "unknown"
 }
 
 /**

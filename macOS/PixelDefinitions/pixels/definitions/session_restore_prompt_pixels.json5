@@ -9,9 +9,9 @@
             "channel",
             {
                 "key": "restart-source-attribution",
-                "description": "Whether the unclean exit and subsequent restart coincided with an app update.",
+                "description": "Why the unclean exit and subsequent restart occurred.",
                 "type": "string",
-                "enum": ["crash_or_force_quit", "app_update"]
+                "enum": ["crash", "app_update", "unknown"]
             }
         ]
     },

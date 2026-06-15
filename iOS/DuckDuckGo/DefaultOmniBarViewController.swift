@@ -619,6 +619,14 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         }
     }
 
+    func onViewAllChatsSelected() {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+            self.editingStateViewController = nil
+            self.omniDelegate?.onViewAllChatsSelected()
+        }
+    }
+
     func onDismissRequested() {
         // Restore the tab's committed mode — the user toggled but didn't submit.
         omniDelegate?.onExperimentalAddressBarCancelPressed()

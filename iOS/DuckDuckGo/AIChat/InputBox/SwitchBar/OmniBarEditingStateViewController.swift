@@ -39,6 +39,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
     func onChatHistorySelected(url: URL)
+    func onViewAllChatsSelected()
     func onDismissRequested()
     func onSwitchToTab(_ tab: Tab)
     func onTabSwitcherRequested()
@@ -914,6 +915,10 @@ extension OmniBarEditingStateViewController: AIChatHistoryManagerDelegate {
 
     func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
         delegate?.onChatHistorySelected(url: url)
+    }
+
+    func aiChatHistoryManagerDidSelectViewAllChats(_ manager: AIChatHistoryManager) {
+        delegate?.onViewAllChatsSelected()
     }
 }
 

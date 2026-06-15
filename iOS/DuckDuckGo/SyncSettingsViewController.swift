@@ -717,6 +717,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         case .pollingForRecoveryKeyTimedOut:
             await dismissPresentedViewController()
             handleRecoveryKeyPollingTimeout(setupRole: setupRole)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: nil)
         }
 
         syncSetupExperimentPixels.fireSetupEndedAbandoned()

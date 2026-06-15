@@ -593,7 +593,7 @@ class SuggestionTrayViewController: UIViewController {
     /// Hosts (or clears) the Duck.ai source in the popover. The tray builds a controller around it,
     /// resolves row taps via the source, and routes navigation to `duckAINavigationDelegate`.
     func setPopoverDuckAISource(_ source: DuckAISuggestionsSource?,
-                             querySubject: CurrentValueSubject<String, Never>? = nil) {
+                                querySubject: CurrentValueSubject<String, Never>? = nil) {
         teardownPopoverDuckAIController()
         guard let source, let querySubject else { return }
         popoverDuckAISource = source

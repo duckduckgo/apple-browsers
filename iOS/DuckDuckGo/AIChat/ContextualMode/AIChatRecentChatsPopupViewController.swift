@@ -392,3 +392,5 @@ extension AIChatRecentChatsPopupViewController: UIGestureRecognizerDelegate {
         return !contentView.bounds.contains(location)
     }
 }
+
+// Don't merge this comment.

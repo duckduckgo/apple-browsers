@@ -301,9 +301,9 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
         )
 
         let subscriptionInfo = VPNMetadata.SubscriptionInfo(
-            hasSubscriptionAccount: true,
-            isVPNFeatureIncludedInSubscription: true,
-            canStartVPN: true
+            isSubscriptionAuthenticated: true,
+            subscriptionPlanIncludesVPN: true,
+            accountCanUseVPN: true
         )
 
         return VPNMetadata(

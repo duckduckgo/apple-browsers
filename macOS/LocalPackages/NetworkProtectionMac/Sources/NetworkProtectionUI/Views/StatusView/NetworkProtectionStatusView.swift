@@ -105,6 +105,17 @@ public struct NetworkProtectionStatusView: View {
                         await action()
                         dismiss()
                     }.applyMenuAttributes()
+                case .confirmingText(_, let icon, let title, let successIcon, let successTitle, let failureIcon, let failureTitle, let action):
+                    MenuItemButton(icon: icon,
+                                   title: title,
+                                   titleColor: Color(.defaultText),
+                                   highlightColor: .white,
+                                   successIcon: successIcon,
+                                   successTitle: successTitle,
+                                   failureIcon: failureIcon,
+                                   failureTitle: failureTitle) {
+                        await action()
+                    }.applyMenuAttributes()
                 case .textWithDetail(_, let icon, let title, let detail, let action):
                     MenuItemButton(icon: icon,
                                    title: title,

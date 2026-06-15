@@ -57,7 +57,7 @@ final class VPNURLEventHandler {
         case VPNAppLaunchCommand.shareFeedback.launchURL:
             showShareFeedback()
         case VPNAppLaunchCommand.copySupportInfo.launchURL:
-            await copySupportInfo()
+            _ = await copySupportInfo()
         case VPNAppLaunchCommand.justOpen.launchURL:
             showMainWindow()
         case VPNAppLaunchCommand.showVPNLocations.launchURL:
@@ -91,16 +91,17 @@ final class VPNURLEventHandler {
         windowControllersManager.showShareFeedbackModal(source: .vpn)
     }
 
-    func copySupportInfo() async {
+    func copySupportInfo() async -> Bool {
         let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionManager)
         let metadata = await collector.collectMetadata()
 
         guard let supportInfo = metadata.toPrettyPrintedJSON() else {
             assertionFailure("Failed to encode VPN support info")
-            return
+            return false
         }
 
         NSPasteboard.general.copy(supportInfo)
+        return true
     }
 
     func showMainWindow() {

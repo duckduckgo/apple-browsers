@@ -22,4 +22,11 @@ public protocol AppLaunchCommand {
     var allowsRunningApplicationSubstitution: Bool { get }
     var launchURL: URL? { get }
     var hideApp: Bool { get }
+    var createsNewApplicationInstanceWhenHidden: Bool { get }
+}
+
+public extension AppLaunchCommand {
+    var createsNewApplicationInstanceWhenHidden: Bool {
+        true
+    }
 }

@@ -2896,6 +2896,21 @@ https://duckduckgo.com/mac";
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo routes DNS queries through our DNS servers so your internet provider can't see what websites you visit.";
 
+/* Title for the row that copies VPN support information to the clipboard. */
+"network.protection.vpn.settings.copy-support-info" = "Copy VPN Support Info";
+
+/* Toast shown after VPN support information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-support-info.copied" = "VPN support info copied";
+
+/* Temporary title for the row after VPN support information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-support-info.copied-to-clipboard" = "Copied to clipboard";
+
+/* Toast shown when VPN support information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-support-info.failed" = "Couldn't copy VPN support info";
+
+/* Temporary title for the row when VPN support information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-support-info.failed-to-copy-to-clipboard" = "Couldn't copy to clipboard";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "FAQs and Support";
 

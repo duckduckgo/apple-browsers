@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Combine
 import CombineExtensions
 import Common
+import DesignResourcesKitIcons
 import FoundationExtensions
 import FeatureFlags
 import Foundation
@@ -120,6 +121,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
 
     private func statusViewSubmenu() -> [StatusBarMenu.MenuItem] {
         let appLauncher = AppLauncher(appBundleURL: Bundle.main.bundleURL)
+        let vpnURLEventHandler = VPNURLEventHandler()
         let vpnAppState = VPNAppState(defaults: .netP)
 
         var menuItems = [StatusBarMenu.MenuItem]()
@@ -158,9 +160,16 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
             .text(icon: Image(.support16), title: UserText.vpnStatusViewSendFeedbackMenuItemTitle, action: {
                 try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.shareFeedback)
             }),
-            .text(icon: Image(systemName: "doc.on.doc"), title: UserText.vpnStatusViewCopySupportInfoMenuItemTitle, action: {
-                try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.copySupportInfo)
-            })
+            .confirmingText(
+                icon: Image(nsImage: DesignSystemImages.Glyphs.Size16.copy),
+                title: UserText.vpnStatusViewCopySupportInfoMenuItemTitle,
+                successIcon: Image(nsImage: DesignSystemImages.Glyphs.Size16.check),
+                successTitle: UserText.vpnStatusViewCopySupportInfoCopiedMenuItemTitle,
+                failureIcon: Image(nsImage: DesignSystemImages.Glyphs.Size16.alert),
+                failureTitle: UserText.vpnStatusViewCopySupportInfoFailedMenuItemTitle,
+                action: {
+                    await vpnURLEventHandler.copySupportInfo()
+                })
         ])
 
         return menuItems

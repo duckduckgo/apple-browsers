@@ -57,4 +57,14 @@ final class UserText {
         "vpn.status-view.copy-support-info.menu-item.title",
         value: "Copy VPN Support Info",
         comment: "The VPN status view's menu item that copies VPN support information to the clipboard.")
+
+    static let vpnStatusViewCopySupportInfoCopiedMenuItemTitle = NSLocalizedString(
+        "vpn.status-view.copy-support-info-copied.menu-item.title",
+        value: "Copied to clipboard",
+        comment: "Temporary VPN status view menu item title shown after VPN support information is copied to the clipboard.")
+
+    static let vpnStatusViewCopySupportInfoFailedMenuItemTitle = NSLocalizedString(
+        "vpn.status-view.copy-support-info-failed.menu-item.title",
+        value: "Couldn't copy to clipboard",
+        comment: "Temporary VPN status view menu item title shown when VPN support information could not be copied to the clipboard.")
 }

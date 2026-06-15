@@ -83,13 +83,15 @@ struct VPNMetadata: Encodable {
     }
 
     struct SubscriptionInfo: Encodable {
-        let hasSubscriptionAccount: Bool
+        /// Whether the app has authenticated subscription account state.
+        let isSubscriptionAuthenticated: Bool
 
-        // nil means unknown
-        let isVPNFeatureIncludedInSubscription: Bool?
+        /// Whether the user's subscription plan/SKU includes VPN, based on cached plan feature data. `nil` means the lookup failed.
+        let subscriptionPlanIncludesVPN: Bool?
 
-        // nil means unknown
-        let canStartVPN: Bool?
+        /// Whether the subscription account's current access token grants VPN access. This does not guarantee VPN can start on this device.
+        /// `nil` means the token entitlement lookup failed.
+        let accountCanUseVPN: Bool?
     }
 
     struct LastDisconnectError: Encodable {
@@ -314,13 +316,13 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     }
 
     func collectSubscriptionInfo() async -> VPNMetadata.SubscriptionInfo {
-        let isVPNFeatureIncludedInSubscription = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)
-        let canStartVPN = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
+        let subscriptionPlanIncludesVPN = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)
+        let accountCanUseVPN = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
 
         return .init(
-            hasSubscriptionAccount: subscriptionManager.isUserAuthenticated,
-            isVPNFeatureIncludedInSubscription: isVPNFeatureIncludedInSubscription,
-            canStartVPN: canStartVPN)
+            isSubscriptionAuthenticated: subscriptionManager.isUserAuthenticated,
+            subscriptionPlanIncludesVPN: subscriptionPlanIncludesVPN,
+            accountCanUseVPN: accountCanUseVPN)
     }
 }
 

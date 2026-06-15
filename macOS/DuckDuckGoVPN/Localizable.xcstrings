@@ -727,6 +727,42 @@
         }
       }
     },
+    "vpn.status-view.copy-support-info-copied.menu-item.title" : {
+      "comment" : "Temporary VPN status view menu item title shown after VPN support information is copied to the clipboard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copied to clipboard"
+          }
+        }
+      }
+    },
+    "vpn.status-view.copy-support-info-failed.menu-item.title" : {
+      "comment" : "Temporary VPN status view menu item title shown when VPN support information could not be copied to the clipboard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't copy to clipboard"
+          }
+        }
+      }
+    },
+    "vpn.status-view.copy-support-info.menu-item.title" : {
+      "comment" : "The VPN status view's menu item that copies VPN support information to the clipboard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy VPN Support Info"
+          }
+        }
+      }
+    },
     "vpn.status-view.excluded-apps.menu-item.title" : {
       "comment" : "The VPN status view's 'Excluded Apps' menu item for our status menu app.",
       "extractionState" : "extracted_with_value",

@@ -30,6 +30,14 @@ struct NetworkProtectionStatusView: View {
 
     static let defaultImageSize = CGSize(width: 32, height: 32)
     private static let supportInfoPasteboardExpirationInterval: TimeInterval = 10 * 60
+    private static let supportInfoCopyConfirmationResetDelay: UInt64 = 2_000_000_000
+
+    private enum CopySupportInfoState: Equatable {
+        case idle
+        case copying
+        case copied
+        case failed
+    }
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -38,6 +46,8 @@ struct NetworkProtectionStatusView: View {
 
     @ObservedObject
     public var feedbackFormModel: UnifiedFeedbackFormViewModel
+
+    @State private var copySupportInfoState = CopySupportInfoState.idle
 
     var tipsModel: VPNTipsModel {
         statusModel.tipsModel
@@ -325,8 +335,9 @@ struct NetworkProtectionStatusView: View {
                 }
             } label: {
                 HStack {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.copy)
-                    Text(UserText.netPVPNSettingsCopySupportInfo)
+                    copySupportInfoIcon
+                    Text(copySupportInfoTitle)
+                        .id(copySupportInfoTitle)
                     Spacer()
                 }
                 .daxBodyRegular()
@@ -334,16 +345,47 @@ struct NetworkProtectionStatusView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .disabled(copySupportInfoState == .copying)
+            .animation(.easeInOut(duration: 0.18), value: copySupportInfoState)
         } header: {
             Text(UserText.vpnAbout).foregroundColor(.init(designSystemColor: .textSecondary))
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }
 
+    private var copySupportInfoIcon: Image {
+        switch copySupportInfoState {
+        case .copied:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.check)
+        case .failed:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.alertRecolorable)
+        case .idle, .copying:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.copy)
+        }
+    }
+
+    private var copySupportInfoTitle: String {
+        switch copySupportInfoState {
+        case .copied:
+            return UserText.netPVPNSettingsCopySupportInfoCopiedToClipboard
+        case .failed:
+            return UserText.netPVPNSettingsCopySupportInfoFailedToCopyToClipboard
+        case .idle, .copying:
+            return UserText.netPVPNSettingsCopySupportInfo
+        }
+    }
+
     @MainActor
     private func copyVPNSupportInfo() async {
+        guard copySupportInfoState != .copying else {
+            return
+        }
+
+        copySupportInfoState = .copying
+
         guard let metadata = await DefaultVPNMetadataCollector().collectMetadata(),
               let supportInfo = metadata.toPrettyPrintedJSON() else {
+            showCopySupportInfoConfirmation(.failed)
             ActionMessageView.present(message: UserText.netPVPNSettingsCopySupportInfoFailed)
             return
         }
@@ -352,7 +394,27 @@ struct NetworkProtectionStatusView: View {
             [[UTType.plainText.identifier: supportInfo]],
             options: [.expirationDate: Date().addingTimeInterval(Self.supportInfoPasteboardExpirationInterval)]
         )
+        showCopySupportInfoConfirmation(.copied)
         ActionMessageView.present(message: UserText.netPVPNSettingsCopySupportInfoCopied)
+    }
+
+    @MainActor
+    private func showCopySupportInfoConfirmation(_ state: CopySupportInfoState) {
+        withAnimation(.easeInOut(duration: 0.18)) {
+            copySupportInfoState = state
+        }
+
+        Task {
+            try? await Task.sleep(nanoseconds: Self.supportInfoCopyConfirmationResetDelay)
+
+            guard copySupportInfoState == state else {
+                return
+            }
+
+            withAnimation(.easeInOut(duration: 0.18)) {
+                copySupportInfoState = .idle
+            }
+        }
     }
 
     @ViewBuilder

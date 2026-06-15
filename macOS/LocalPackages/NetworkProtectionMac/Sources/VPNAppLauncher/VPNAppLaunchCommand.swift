@@ -90,8 +90,19 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
 
     public var hideApp: Bool {
         switch self {
+        case .copySupportInfo:
+            return true
         default:
             return false
+        }
+    }
+
+    public var createsNewApplicationInstanceWhenHidden: Bool {
+        switch self {
+        case .copySupportInfo:
+            return false
+        default:
+            return true
         }
     }
 }

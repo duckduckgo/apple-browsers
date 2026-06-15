@@ -34,15 +34,16 @@ public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
     }
 
     public func cookies(for url: URL) async -> [HTTPCookie] {
-        await withCheckedContinuation { continuation in
-            cookieStore.getAllCookies { cookies in
-                let domain = url.host ?? ""
-                let relevant = cookies.filter { cookie in
-                    let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
-                    return domain.hasSuffix(cookieDomain)
-                }
-                continuation.resume(returning: relevant)
-            }
+        // `WKHTTPCookieStore` is `@MainActor`-isolated and asserts it is accessed on the main
+        // thread. The async `allCookies()` performs that hop for us; the previous
+        // `withCheckedContinuation` + `getAllCookies` invoked the store synchronously on whatever
+        // (often background) executor this nonisolated function was resumed on, tripping the
+        // assertion (SIGTRAP). Filtering stays off the main actor since it only reads value data.
+        let cookies = await cookieStore.allCookies()
+        let domain = url.host ?? ""
+        return cookies.filter { cookie in
+            let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
+            return domain.hasSuffix(cookieDomain)
         }
     }
 }

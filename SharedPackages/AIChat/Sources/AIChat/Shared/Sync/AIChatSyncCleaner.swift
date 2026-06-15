@@ -209,21 +209,12 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
         let candidates = Array(Set(pending).subtracting(pendingDeletes))
         guard !candidates.isEmpty else { return }
 
-        let updates: [AIChatUpdate] = candidates.compactMap { chatId in
-            guard let record = try? storageHandler.getChat(chatId: chatId) else { return nil }
-            return AIChatUpdate(record: record)
-        }
-
-        // Ids that no longer resolve in storage (e.g. chat deleted locally) can never be synced —
-        // drop them now so they don't linger in the queue and get retried on every cycle.
-        let resolvedIDs = Set(updates.map(\.chatId))
-        let unresolvableIDs = Set(candidates).subtracting(resolvedIDs)
-        if !unresolvableIDs.isEmpty {
-            await state.removeChatsFromPendingUpdates(chatIDs: unresolvableIDs)
-        }
+        let updates = buildPendingUpdates(for: candidates)
+        await dropUnresolvablePendingUpdates(candidates: Set(candidates), updates: updates)
 
         guard !updates.isEmpty else { return }
 
+        let resolvedIDs = Set(updates.map(\.chatId))
         do {
             try await sync.patchAIChats(updates: updates)
             await state.removeChatsFromPendingUpdates(chatIDs: resolvedIDs)
@@ -231,6 +222,23 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
             httpRequestErrorHandler?(error)
             Logger.aiChat.debug("Failed to patch pending ai chats: \(error.localizedDescription)")
         }
+    }
+
+    private func buildPendingUpdates(for candidates: [String]) -> [AIChatUpdate] {
+        guard let storageHandler else { return [] }
+        return candidates.compactMap { chatId in
+            guard let record = try? storageHandler.getChat(chatId: chatId) else { return nil }
+            return AIChatUpdate(record: record)
+        }
+    }
+
+    private func dropUnresolvablePendingUpdates(candidates: Set<String>, updates: [AIChatUpdate]) async {
+        // Ids that no longer resolve in storage (e.g. chat deleted locally) can never be synced —
+        // drop them now so they don't linger in the queue and get retried on every cycle.
+        let resolvedIDs = Set(updates.map(\.chatId))
+        let unresolvableIDs = candidates.subtracting(resolvedIDs)
+        guard !unresolvableIDs.isEmpty else { return }
+        await state.removeChatsFromPendingUpdates(chatIDs: unresolvableIDs)
     }
 }
 

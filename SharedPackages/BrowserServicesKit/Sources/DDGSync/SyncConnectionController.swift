@@ -249,6 +249,9 @@ public class SyncConnectionController: SyncConnectionControlling {
     @discardableResult
     public func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
         let syncCodeSource = SyncCodeSource.deepLink
+        if case .pairingV2(let url) = pairingInfo.kind {
+            return await syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: false, codeSource: syncCodeSource)
+        }
         return await startPairingMode(pairingInfo, codeSource: syncCodeSource)
     }
 

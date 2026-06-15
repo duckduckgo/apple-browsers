@@ -14,13 +14,6 @@
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "subscribed"]
     },
-    "browser_menu_update": {
-        "description": "Fires when the user clicks the Update CTA in the browser overflow menu, shown only when an update is pending. On App Store builds it opens the updates page; on Sparkle builds it runs the update.",
-        "owners": ["diegoreymendez", "jotaemepereira"],
-        "triggers": ["user_submitted"],
-        "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
     "m_mac_settings_sync_app_icon_with_theme_turned_on": {
         "description": "Fired when the user turns on the setting to sync the app icon with the selected theme",
         "owners": ["Bunn"],

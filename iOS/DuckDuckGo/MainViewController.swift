@@ -3644,6 +3644,10 @@ extension MainViewController: BrowserChromeDelegate {
 
         setBarsVisibility(hidden ? 0 : 1.0, animated: animated, animationDuration: customAnimationDuration)
     }
+
+    func resetBars(animated: Bool) {
+        chromeManager.reset(animated: animated)
+    }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         if percent < 1 {
@@ -3717,6 +3721,8 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var canHideBars: Bool {
+        // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
+        if currentTab?.isError == true { return false }
         return !daxDialogsManager.shouldShowFireButtonPulse
     }
 

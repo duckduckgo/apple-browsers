@@ -4630,9 +4630,6 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Supprimer l'appareil ?";
 
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Code copié";
-
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "L'appareil a bien été synchronisé !";
 

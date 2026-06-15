@@ -1302,7 +1302,6 @@ public struct UserText {
     public static let simplifiedSyncTurnOffTitle = NSLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
     public static let simplifiedSyncTurnOffMessage = NSLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
     public static let simplifiedSyncTurnOffAction = NSLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
-    public static let simplifiedCodeCopiedToast = NSLocalizedString("sync.simplified.code.copied.toast", value: "Code copied", comment: "Toast message shown after copying sync code to clipboard")
     public static let simplifiedRecoveryCodeCopiedToast = NSLocalizedString("sync.simplified.recovery.code.copied.toast", value: "Recovery code copied", comment: "Toast message shown after copying recovery code to clipboard from settings")
     public static let simplifiedSyncSetupFailedToast = NSLocalizedString("sync.simplified.setup.failed.toast", value: "Couldn't enable Sync & Backup", comment: "Toast message shown when sync setup fails")
 

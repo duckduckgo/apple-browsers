@@ -21,7 +21,7 @@
     },
     "m_mac_check_for_updates_from_main_menu": {
         "description": "Fired when the user clicks the \"Check for Updates…\" item in the menu bar, on all build types. pixelSource distinguishes App Store (browser-appstore) from Sparkle/DMG (browser-dmg) builds.",
-        "owners": ["diegoreymendez"],
+        "owners": ["diegoreymendez", "jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]

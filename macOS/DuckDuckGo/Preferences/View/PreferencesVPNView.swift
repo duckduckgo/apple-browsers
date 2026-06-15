@@ -237,7 +237,7 @@ extension Preferences {
 
         private var copyDiagnosticsButtonTitle: String {
             switch model.copySupportInfoState {
-            case .idle:
+            case .idle, .copying:
                 return UserText.vpnSettingsCopyDiagnosticsButtonTitle
             case .copied:
                 return UserText.vpnSettingsCopyDiagnosticsCopiedButtonTitle

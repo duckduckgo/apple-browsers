@@ -120,6 +120,7 @@ final class VPNPreferencesModel: ObservableObject {
 
     enum CopySupportInfoState: Equatable {
         case idle
+        case copying
         case copied
         case failed
     }
@@ -386,6 +387,8 @@ final class VPNPreferencesModel: ObservableObject {
 
     @MainActor
     func copySupportInfo() async {
+        guard copySupportInfoState == .idle else { return }
+        copySupportInfoState = .copying
         let succeeded = await VPNURLEventHandler().copySupportInfo()
         showCopySupportInfoConfirmation(succeeded ? .copied : .failed)
     }

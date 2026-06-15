@@ -2896,20 +2896,23 @@ https://duckduckgo.com/mac";
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo routes DNS queries through our DNS servers so your internet provider can't see what websites you visit.";
 
-/* Title for the row that copies VPN support information to the clipboard. */
-"network.protection.vpn.settings.copy-support-info" = "Copy VPN Support Info";
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Copy VPN Diagnostics";
 
-/* Toast shown after VPN support information is copied to the clipboard. */
-"network.protection.vpn.settings.copy-support-info.copied" = "VPN support info copied";
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Copies anonymized VPN diagnostic information to your clipboard. Include it when contacting Support to help us troubleshoot your connection.";
 
-/* Temporary title for the row after VPN support information is copied to the clipboard. */
-"network.protection.vpn.settings.copy-support-info.copied-to-clipboard" = "Copied to clipboard";
+/* Toast shown after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied" = "VPN diagnostics copied";
 
-/* Toast shown when VPN support information could not be copied to the clipboard. */
-"network.protection.vpn.settings.copy-support-info.failed" = "Couldn't copy VPN support info";
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Copied to clipboard";
 
-/* Temporary title for the row when VPN support information could not be copied to the clipboard. */
-"network.protection.vpn.settings.copy-support-info.failed-to-copy-to-clipboard" = "Couldn't copy to clipboard";
+/* Toast shown when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed" = "Couldn't copy VPN diagnostics";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Couldn't copy to clipboard";
 
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "FAQs and Support";

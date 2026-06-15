@@ -74,6 +74,7 @@ struct NetworkProtectionStatusView: View {
 
             settings()
             about()
+            diagnostics()
         }
         .padding(.top, statusModel.error == nil ? 0 : -20)
         .if(statusModel.animationsOn, transform: {
@@ -328,7 +329,15 @@ struct NetworkProtectionStatusView: View {
                     .foregroundColor(.init(designSystemColor: .textPrimary))
                 }
             }
+        } header: {
+            Text(UserText.vpnAbout).foregroundColor(.init(designSystemColor: .textSecondary))
+        }
+        .listRowBackground(Color(designSystemColor: .surface))
+    }
 
+    @ViewBuilder
+    private func diagnostics() -> some View {
+        Section {
             Button {
                 Task {
                     await copyVPNSupportInfo()
@@ -347,8 +356,8 @@ struct NetworkProtectionStatusView: View {
             .buttonStyle(.plain)
             .disabled(copySupportInfoState == .copying)
             .animation(.easeInOut(duration: 0.18), value: copySupportInfoState)
-        } header: {
-            Text(UserText.vpnAbout).foregroundColor(.init(designSystemColor: .textSecondary))
+        } footer: {
+            Text(UserText.netPVPNSettingsCopyDiagnosticsCaption).foregroundColor(.init(designSystemColor: .textSecondary))
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }
@@ -367,11 +376,11 @@ struct NetworkProtectionStatusView: View {
     private var copySupportInfoTitle: String {
         switch copySupportInfoState {
         case .copied:
-            return UserText.netPVPNSettingsCopySupportInfoCopiedToClipboard
+            return UserText.netPVPNSettingsCopyDiagnosticsCopiedToClipboard
         case .failed:
-            return UserText.netPVPNSettingsCopySupportInfoFailedToCopyToClipboard
+            return UserText.netPVPNSettingsCopyDiagnosticsFailedToCopyToClipboard
         case .idle, .copying:
-            return UserText.netPVPNSettingsCopySupportInfo
+            return UserText.netPVPNSettingsCopyDiagnostics
         }
     }
 
@@ -386,7 +395,7 @@ struct NetworkProtectionStatusView: View {
         guard let metadata = await DefaultVPNMetadataCollector().collectMetadata(),
               let supportInfo = metadata.toPrettyPrintedJSON() else {
             showCopySupportInfoConfirmation(.failed)
-            ActionMessageView.present(message: UserText.netPVPNSettingsCopySupportInfoFailed)
+            ActionMessageView.present(message: UserText.netPVPNSettingsCopyDiagnosticsFailed)
             return
         }
 
@@ -395,7 +404,7 @@ struct NetworkProtectionStatusView: View {
             options: [.expirationDate: Date().addingTimeInterval(Self.supportInfoPasteboardExpirationInterval)]
         )
         showCopySupportInfoConfirmation(.copied)
-        ActionMessageView.present(message: UserText.netPVPNSettingsCopySupportInfoCopied)
+        ActionMessageView.present(message: UserText.netPVPNSettingsCopyDiagnosticsCopied)
     }
 
     @MainActor

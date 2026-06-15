@@ -34,7 +34,6 @@ public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
     }
 
     public func cookies(for url: URL) async -> [HTTPCookie] {
-        // `allCookies()` is `@MainActor`; reading the store off-main (e.g. via `getAllCookies`) traps.
         let cookies = await cookieStore.allCookies()
         let domain = url.host ?? ""
         return cookies.filter { cookie in

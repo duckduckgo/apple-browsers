@@ -880,7 +880,13 @@ class OmniBarViewController: UIViewController, OmniBar {
         expandableBarView?.aiChatTextView.text = nil
         expandableBarView?.updateTextFieldPlaceholderVisibility(hasText: false)
         expandableBarView?.updateAIChatSendButton(hasText: false)
-        omniDelegate?.onOmniQueryUpdated("")
+        // Notify the active mode's delegate so its suggestions refresh for the now-empty query — Duck.ai
+        // text changes route through `onAIChatQueryUpdated`, which `onOmniQueryUpdated` ignores.
+        if selectedTextEntryMode == .aiChat {
+            omniDelegate?.onAIChatQueryUpdated("")
+        } else {
+            omniDelegate?.onOmniQueryUpdated("")
+        }
     }
 
     private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {

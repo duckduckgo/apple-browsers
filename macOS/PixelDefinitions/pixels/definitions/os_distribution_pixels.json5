@@ -27,10 +27,10 @@
         ]
     },
     "os_distribution_searches_major_version": {
-        "description": "Fires at most once per calendar month, on search.",
+        "description": "Fires on each search or Duck.ai prompt submission (total search + AI-query traffic).",
         "owners": ["jdjackson"],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1215252656518903?focus=true"],
-        "triggers": ["scheduled"],
+        "triggers": ["search_ddg"],
         "parameters": [
             {
                 "key": "petal",
@@ -46,11 +46,7 @@
                 "pattern": "^[0-9]{1,2}$"
             },
             "platform",
-            "form_factor",
-            {
-                "description": "Calendar month frequency marker",
-                "enum": ["monthly"]
-            }
+            "form_factor"
         ]
     },
     "os_distribution_active_subscriptions_major_version": {

@@ -121,6 +121,15 @@ class AutocompleteViewModel: ObservableObject {
         }
     }
 
+    func clearSelection() {
+        selection = nil
+        // Highlighting overwrote the omnibar with the suggestion text, so on deselect restore the
+        // user's typed query via the existing highlight callback.
+        if let query {
+            delegate?.onSuggestionHighlighted(.phrase(phrase: query), forQuery: query)
+        }
+    }
+
     func deleteSuggestion(_ suggestion: SuggestionModel) {
         delegate?.deleteSuggestion(suggestion.suggestion)
     }

@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
+import UIComponents
 
 extension SimplifiedScanOrShowCodeView {
 
@@ -31,9 +32,17 @@ extension SimplifiedScanOrShowCodeView {
             qrCodeContainer
 
             shareButtons
-                .padding(.bottom, 16)
+                .padding(.bottom, Metrics.shareButtonsBottomPadding)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, Metrics.horizontalPadding)
+        .overlay(alignment: .bottomLeading) {
+            if showCopyConfirmation {
+                copyConfirmationCallout
+                    .padding(.horizontal, Metrics.copyConfirmationHorizontalPadding)
+                    .padding(.bottom, Metrics.shareButtonsBottomPadding + Metrics.copyButtonSize + Metrics.copyConfirmationSpacing)
+                    .zIndex(1)
+            }
+        }
     }
 
     // MARK: - Instructions With App Chip
@@ -103,6 +112,7 @@ extension SimplifiedScanOrShowCodeView {
         HStack(spacing: 12) {
             Button {
                 model.copyCode()
+                showCopyConfirmation = true
             } label: {
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.copy)
                     .foregroundColor(.white)
@@ -133,5 +143,58 @@ extension SimplifiedScanOrShowCodeView {
             }
             .buttonStyle(.plain)
         }
+        .padding(.horizontal, Metrics.copyConfirmationHorizontalPadding)
+    }
+
+    private var copyConfirmationCallout: some View {
+        BubbleView(
+            arrowLength: Metrics.copyConfirmationArrowLength,
+            arrowWidth: Metrics.copyConfirmationArrowWidth,
+            arrowEdge: .bottom,
+            arrowOffset: 0,
+            cornerRadius: Metrics.copyConfirmationCornerRadius,
+            fillColor: Color(designSystemColor: .surface),
+            contentPadding: EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20)
+        ) {
+            copyConfirmationContent
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+        .environment(\.colorScheme, .light)
+    }
+
+    private var copyConfirmationContent: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading) {
+                Text(UserText.simplifiedViewCodeCopyConfirmationTitle)
+                    .daxSubheadSemibold()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                Text(UserText.simplifiedViewCodeCopyConfirmationMessage)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer()
+
+            Button {
+                showCopyConfirmation = false
+            } label: {
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
+            }
+            .buttonStyle(CloseButtonStyle())
+        }
+    }
+
+    private enum Metrics {
+        static let horizontalPadding: CGFloat = 16
+        static let copyButtonSize: CGFloat = 40
+        static let shareButtonsBottomPadding: CGFloat = 16
+        static let copyConfirmationSpacing: CGFloat = 8
+        static let copyConfirmationArrowLength: CGFloat = 10
+        static let copyConfirmationArrowWidth: CGFloat = 14
+        static let copyConfirmationCornerRadius: CGFloat = 27
+        static let copyConfirmationHorizontalPadding: CGFloat = 12
     }
 }

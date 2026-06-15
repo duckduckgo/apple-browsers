@@ -80,7 +80,7 @@ final class EscapeHatchModel: ObservableObject {
     /// When on, the destructive "delete tab" action is surfaced as a dedicated Fire button on the card
     /// instead of (and removed from) the three-dots menu. Gated by the `escapeHatchFireButton` feature flag.
     let isFireButtonEnabled: Bool
-    /// When on, the "Don't Show This" menu item is surfaced and the card can be hidden, leaving only the tab
+    /// When on, the "Hide These Shortcuts" menu item is surfaced and the card can be hidden, leaving only the tab
     /// switcher pill. Gated by the `escapeHatchHideShortcut` feature flag.
     let isHideShortcutEnabled: Bool
     let onCardTap: () -> Void
@@ -90,6 +90,8 @@ final class EscapeHatchModel: ObservableObject {
     let onBurnTabImmediately: () -> Void
     let onOpeningScreenOptionChanged: (AfterInactivityOption) -> Void
     let onShortcutHidden: () -> Void
+    /// Fires the menu / impression / swipe telemetry that the router can't attribute (it can't tell which surface triggered an action).
+    private let instrumentation: NTPAfterIdleInstrumentation?
 
     init(title: String,
          subtitle: String,
@@ -109,7 +111,8 @@ final class EscapeHatchModel: ObservableObject {
          onBurnTabWithConfirmation: @escaping (CGRect) -> Void,
          onBurnTabImmediately: @escaping () -> Void,
          onOpeningScreenOptionChanged: @escaping (AfterInactivityOption) -> Void = { _ in },
-         onShortcutHidden: @escaping () -> Void = {}) {
+         onShortcutHidden: @escaping () -> Void = {},
+         instrumentation: NTPAfterIdleInstrumentation? = nil) {
         self.title = title
         self.subtitle = subtitle
         self.tabType = tabType
@@ -128,6 +131,7 @@ final class EscapeHatchModel: ObservableObject {
         self.onBurnTabImmediately = onBurnTabImmediately
         self.onOpeningScreenOptionChanged = onOpeningScreenOptionChanged
         self.onShortcutHidden = onShortcutHidden
+        self.instrumentation = instrumentation
 
         subscribeToTabsSource(tabsSource)
         startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
@@ -136,7 +140,7 @@ final class EscapeHatchModel: ObservableObject {
 
     /// Builds the model with action closures wired to a router. The router is captured weakly so holders of `EscapeHatchModel` don't pin its owner's lifecycle.
     ///
-    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, hasReturnToTabCard: Bool = true, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger, afterInactivityOptionAdapter: AfterInactivityOptionAdapter, lastTabShortcutAdapter: LastTabShortcutAdapter, onShortcutHidden: @escaping () -> Void = {}) {
+    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, hasReturnToTabCard: Bool = true, router: EscapeHatchActionRouter, featureFlagger: FeatureFlagger, afterInactivityOptionAdapter: AfterInactivityOptionAdapter, lastTabShortcutAdapter: LastTabShortcutAdapter, onShortcutHidden: @escaping () -> Void = {}, instrumentation: NTPAfterIdleInstrumentation? = nil) {
         self.init(
             title: title,
             subtitle: subtitle,
@@ -168,7 +172,8 @@ final class EscapeHatchModel: ObservableObject {
             onOpeningScreenOptionChanged: { [weak router] option in
                 router?.escapeHatchDidChangeOpeningScreenOption(to: option)
             },
-            onShortcutHidden: onShortcutHidden
+            onShortcutHidden: onShortcutHidden,
+            instrumentation: instrumentation
         )
     }
 
@@ -246,6 +251,52 @@ extension EscapeHatchModel {
         isFireTab
             ? SwipeAction(label: UserText.escapeHatchMenuDeleteTab, perform: onBurnTabImmediately)
             : SwipeAction(label: UserText.escapeHatchMenuCloseTab, perform: onCloseTab)
+    }
+
+    // MARK: - Surface-attributed telemetry
+    //
+    // The router fires the generic action pixels (close/burn/return), but it can't tell which surface
+    // triggered the action. These wrappers fire the menu / swipe / impression pixels at the call site —
+    // where the surface is known — then delegate to the same action closure as before.
+
+    /// The card's menu (three-dots or long-press) was opened.
+    func menuDidAppear() {
+        instrumentation?.escapeHatchMenuShown()
+    }
+
+    func returnToTabFromMenu() {
+        instrumentation?.escapeHatchReturnToTabTappedFromMenu()
+        onCardTap()
+    }
+
+    func closeTabFromMenu() {
+        instrumentation?.escapeHatchCloseTabTappedFromMenu()
+        onCloseTab()
+    }
+
+    func burnImmediatelyFromMenu() {
+        instrumentation?.escapeHatchBurnTappedFromMenu(requiredConfirmation: false)
+        onBurnTabImmediately()
+    }
+
+    func burnWithConfirmationFromMenu(_ sourceRect: CGRect) {
+        instrumentation?.escapeHatchBurnTappedFromMenu(requiredConfirmation: true)
+        onBurnTabWithConfirmation(sourceRect)
+    }
+
+    func performPrimarySwipeAction() {
+        instrumentation?.escapeHatchSwipeActionPerformed()
+        primarySwipeAction.perform()
+    }
+
+    /// The dedicated Fire button on the card: fire tabs burn immediately, everything else asks for confirmation.
+    func burnFromButton(_ sourceRect: CGRect) {
+        instrumentation?.escapeHatchBurnTappedFromButton()
+        if isFireTab {
+            onBurnTabImmediately()
+        } else {
+            onBurnTabWithConfirmation(sourceRect)
+        }
     }
 }
 

@@ -834,8 +834,14 @@ public struct ButtonStylesGallery: View {
         _override = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
     }
 
+    private func applyRebrandOverride() {
+        AppRebrand.isAppRebranded = { isRebranded }
+        DesignSystemPalette.current = isRebranded ? .rebranded : .default
+    }
+
     public var body: some View {
-        ScrollView {
+        applyRebrandOverride()
+        return ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 section("PrimaryButtonStyle") {
                     Button("Default") {}.buttonStyle(PrimaryButtonStyle())

@@ -159,6 +159,46 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         processMainQueue()
     }
 
+    func testBurnAllChats_invokesFireExecutorAndFlushesSync() {
+        let fireExecutor = MockChatHistoryFireExecutor()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor)
+
+        let done = expectation(description: "burnAllChats")
+        Task { await sut.burnAllChats(); done.fulfill() }
+        wait(for: [done], timeout: 1)
+
+        XCTAssertEqual(fireExecutor.burnedAllChatsIsFireMode, [false],
+                       "chat-history sheet only ever clears persistent chats; never fire-mode")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 1,
+                       "a successful clear must flush sync so the deletion isn't re-pulled")
+    }
+
+    func testBurnAllChats_noFireExecutor_isNoOp() {
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: nil)
+        // No fire executor — must not crash.
+        let done = expectation(description: "burnAllChats")
+        Task { await sut.burnAllChats(); done.fulfill() }
+        wait(for: [done], timeout: 1)
+    }
+
+    func testTotalChatCount_reflectsAllChats_notTheSearchFilteredView() {
+        let sut = makeSUT(chats: [
+            chat(id: "a", title: "alpha", pinned: true),
+            chat(id: "b", title: "beta", pinned: false),
+            chat(id: "c", title: "gamma", pinned: false)
+        ])
+        XCTAssertEqual(sut.totalChatCount, 3)
+
+        sut.updateQuery("alpha")
+        waitForDebounce()
+
+        // The visible list is filtered to the single match...
+        XCTAssertEqual(sut.pinned.count + sut.recent.count, 1)
+        // ...but "Delete All" clears every chat, so the count must stay the full total.
+        XCTAssertEqual(sut.totalChatCount, 3,
+                       "totalChatCount must reflect all chats so the Fire confirmation can't understate the delete scope during a search")
+    }
+
     func testDownloadChat_onSuccess_notifiesDelegateWithWrittenFilename() {
         let downloader = StubDownloader()
         downloader.stubbedResult = .success(URL(fileURLWithPath: "/tmp/duck.ai_2026-01-01_00-00-00.txt"))
@@ -420,6 +460,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         weak var delegate: FireExecutorDelegate?
         private(set) var burnedChatIds: [String] = []
         private(set) var burnedIsFireMode: [Bool] = []
+        private(set) var burnedAllChatsIsFireMode: [Bool] = []
         private(set) var scheduleSyncCallCount = 0
 
         func prepare(for request: FireRequest) { }
@@ -428,6 +469,11 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> {
             burnedChatIds.append(chatID)
             burnedIsFireMode.append(isFireMode)
+            return .success(())
+        }
+        @discardableResult
+        func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+            burnedAllChatsIsFireMode.append(isFireMode)
             return .success(())
         }
         func scheduleSync() {

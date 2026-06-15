@@ -27,6 +27,10 @@ protocol AIChatDeleting {
     @MainActor
     func deleteChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error>
 
+    @discardableResult
+    @MainActor
+    func deleteAllChats(isFireMode: Bool) async -> Result<Void, Error>
+
     @MainActor
     func scheduleSync()
 }
@@ -69,6 +73,37 @@ struct AIChatDeleter: AIChatDeleting {
         case .failure(let error):
             DailyPixel.fireDailyAndCount(pixel: .aiChatSingleDeleteFailed)
             Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
+            if let userScriptError = error as? UserScriptError {
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
+            }
+        }
+        return result
+    }
+
+    @discardableResult
+    @MainActor
+    func deleteAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+        let dataStore: WKWebsiteDataStore?
+        if isFireMode {
+            guard #available(iOS 17, *) else {
+                return .success(())
+            }
+            dataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
+        } else {
+            dataStore = nil
+        }
+
+        let cleaner = historyCleanerProvider(dataStore, isFireMode)
+        let result = await cleaner.cleanAIChatHistory()
+        switch result {
+        case .success:
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
+            if !isFireMode {
+                await aiChatSyncCleaner.recordLocalClear(date: Date())
+            }
+        case .failure(let error):
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+            Logger.aiChat.debug("Failed to clear AI Chat history: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
             }

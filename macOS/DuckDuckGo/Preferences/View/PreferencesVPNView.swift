@@ -207,12 +207,14 @@ extension Preferences {
                 // SECTION: Diagnostics
 
                 PreferencePaneSection {
-                    Button(copySupportInfoButtonTitle) {
+                    Button(copyDiagnosticsButtonTitle) {
                         Task { @MainActor in
                             await model.copySupportInfo()
                         }
                     }
                     .disabled(model.copySupportInfoState != .idle)
+
+                    TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
                 }
                 .padding(.bottom, 12)
 
@@ -233,14 +235,14 @@ extension Preferences {
             }
         }
 
-        private var copySupportInfoButtonTitle: String {
+        private var copyDiagnosticsButtonTitle: String {
             switch model.copySupportInfoState {
             case .idle:
-                return UserText.vpnSettingsCopySupportInfoButtonTitle
+                return UserText.vpnSettingsCopyDiagnosticsButtonTitle
             case .copied:
-                return UserText.vpnSettingsCopySupportInfoCopiedButtonTitle
+                return UserText.vpnSettingsCopyDiagnosticsCopiedButtonTitle
             case .failed:
-                return UserText.vpnSettingsCopySupportInfoFailedButtonTitle
+                return UserText.vpnSettingsCopyDiagnosticsFailedButtonTitle
             }
         }
 

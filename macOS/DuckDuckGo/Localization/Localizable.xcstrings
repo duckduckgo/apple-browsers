@@ -115229,8 +115229,8 @@
         }
       }
     },
-    "vpn.preferences.copy-support-info-copied.button.title" : {
-      "comment" : "Temporary VPN settings button title shown after VPN support information is copied to the clipboard.",
+    "vpn.preferences.copy-diagnostics-copied.button.title" : {
+      "comment" : "Temporary VPN settings button title shown after VPN diagnostic information is copied to the clipboard.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -115241,8 +115241,8 @@
         }
       }
     },
-    "vpn.preferences.copy-support-info-failed.button.title" : {
-      "comment" : "Temporary VPN settings button title shown when VPN support information could not be copied to the clipboard.",
+    "vpn.preferences.copy-diagnostics-failed.button.title" : {
+      "comment" : "Temporary VPN settings button title shown when VPN diagnostic information could not be copied to the clipboard.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -115253,14 +115253,26 @@
         }
       }
     },
-    "vpn.preferences.copy-support-info.button.title" : {
-      "comment" : "The VPN settings button that copies VPN support information to the clipboard.",
+    "vpn.preferences.copy-diagnostics.button.title" : {
+      "comment" : "The VPN settings button that copies VPN diagnostic information to the clipboard.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Copy VPN Support Info"
+            "value" : "Copy VPN Diagnostics"
+          }
+        }
+      }
+    },
+    "vpn.preferences.copy-diagnostics.caption" : {
+      "comment" : "Caption beneath the Copy VPN Diagnostics button in VPN settings, explaining what the button does.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copies anonymized VPN diagnostic information to your clipboard. Include it when contacting Support to help us troubleshoot your connection."
           }
         }
       }

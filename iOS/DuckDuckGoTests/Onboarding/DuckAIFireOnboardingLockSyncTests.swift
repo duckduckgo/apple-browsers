@@ -1,5 +1,5 @@
 //
-//  ExperimentDuckAIFireOnboardingLockSyncTests.swift
+//  DuckAIFireOnboardingLockSyncTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,14 +17,14 @@
 //  limitations under the License.
 //
 
-// Regression tests for the race condition where `setExperimentFireControlsLocked(true)`
+// Regression tests for the race condition where `setDuckAIFireControlsLocked(true)`
 // is called before the UTI coordinator exists (coordinator creation is intentionally
 // deferred until after linear onboarding). Without an explicit sync step, the lock call
 // is lost and the coordinator starts unlocked.
 //
 // Fix location: `MainViewController+UnifiedToggleInput.swift`
 //   `setUpUnifiedToggleInputIfNeeded()` — after creating the coordinator, it checks
-//   `experimentDuckAIFireOnboardingFlow.controlsLocked` and applies the lock if needed.
+//   `duckAIFireOnboardingFlow.controlsLocked` and applies the lock if needed.
 
 import AIChat
 import Combine
@@ -32,7 +32,7 @@ import XCTest
 @testable import DuckDuckGo
 
 @MainActor
-final class ExperimentDuckAIFireOnboardingLockSyncTests: XCTestCase {
+final class DuckAIFireOnboardingLockSyncTests: XCTestCase {
 
     private var mockPreferences: MockAIChatPreferencesLockSync!
     private var mockToggleModeStorage: MockToggleModeStorageLockSync!
@@ -63,7 +63,7 @@ final class ExperimentDuckAIFireOnboardingLockSyncTests: XCTestCase {
     }
 
     /// Applies the exact sync guard from `setUpUnifiedToggleInputIfNeeded` to a freshly-created coordinator.
-    private func applySyncIfNeeded(from context: ExperimentDuckAIFireOnboardingFlowContext,
+    private func applySyncIfNeeded(from context: DuckAIFireOnboardingFlowContext,
                                    to coordinator: UnifiedToggleInputCoordinator) {
         if context.controlsLocked {
             coordinator.setOnboardingControlsLocked(true)
@@ -73,7 +73,7 @@ final class ExperimentDuckAIFireOnboardingLockSyncTests: XCTestCase {
     // MARK: - Lock was armed before coordinator existed
 
     func test_whenFlowContextIsLocked_coordinatorIsLockedAfterSync() {
-        var context = ExperimentDuckAIFireOnboardingFlowContext()
+        var context = DuckAIFireOnboardingFlowContext()
         context.controlsLocked = true
 
         let coordinator = makeCoordinator()
@@ -84,7 +84,7 @@ final class ExperimentDuckAIFireOnboardingLockSyncTests: XCTestCase {
     }
 
     func test_whenFlowContextIsLocked_syncedCoordinatorBlocksExpansion() {
-        var context = ExperimentDuckAIFireOnboardingFlowContext()
+        var context = DuckAIFireOnboardingFlowContext()
         context.controlsLocked = true
 
         let coordinator = makeCoordinator()
@@ -97,7 +97,7 @@ final class ExperimentDuckAIFireOnboardingLockSyncTests: XCTestCase {
     }
 
     func test_whenFlowContextIsLocked_syncedCoordinatorDoesNotEmitExpandIntent() {
-        var context = ExperimentDuckAIFireOnboardingFlowContext()
+        var context = DuckAIFireOnboardingFlowContext()
         context.controlsLocked = true
 
         let coordinator = makeCoordinator()
@@ -117,7 +117,7 @@ final class ExperimentDuckAIFireOnboardingLockSyncTests: XCTestCase {
     // MARK: - Lock was not armed (normal path)
 
     func test_whenFlowContextIsNotLocked_coordinatorRemainsUnlocked() {
-        let context = ExperimentDuckAIFireOnboardingFlowContext()
+        let context = DuckAIFireOnboardingFlowContext()
         // controlsLocked defaults to false
 
         let coordinator = makeCoordinator()
@@ -128,7 +128,7 @@ final class ExperimentDuckAIFireOnboardingLockSyncTests: XCTestCase {
     }
 
     func test_whenFlowContextIsNotLocked_coordinatorCanExpand() {
-        let context = ExperimentDuckAIFireOnboardingFlowContext()
+        let context = DuckAIFireOnboardingFlowContext()
 
         let coordinator = makeCoordinator()
         applySyncIfNeeded(from: context, to: coordinator)

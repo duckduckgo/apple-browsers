@@ -40,8 +40,8 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
     /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads `isAvailable` / `isToggleHiddenOnDuckAITab`.
     static func resolve(using featureFlagger: FeatureFlagger) {
-        UserDefaults.app.set(featureFlagger.isFeatureOn(.unifiedToggleInput), forKey: isFeatureFlagEnabledKey)
-        UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatTabHideToggle), forKey: isToggleHiddenOnDuckAITabKey)
+        UserDefaults.app.set(true, forKey: isFeatureFlagEnabledKey)
+        UserDefaults.app.set(true, forKey: isToggleHiddenOnDuckAITabKey)
     }
 
     private let devicePlatform: DevicePlatformProviding.Type
@@ -55,7 +55,8 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
     }
 
     var isAvailable: Bool {
-        isFeatureFlagEnabled && devicePlatform.isIphone
+        // TODO: Rollback this override before shipping
+        true // isFeatureFlagEnabled && devicePlatform.isIphone
     }
 
     var isToggleHiddenOnDuckAITab: Bool {

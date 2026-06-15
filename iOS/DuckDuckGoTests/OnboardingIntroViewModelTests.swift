@@ -519,7 +519,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .onboarding(.init(type: .aiComparisonDialog(content: .mock), step: .init(currentStep: 1, totalSteps: 5))))
     }
 
-    func testWhenAIComparisonActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToDuckAIQueryExperimentDialogAndProgressIs2Of5() {
+    func testWhenAIComparisonActionIsCalled_AndIsDuckAIFlow_ThenViewStateChangesToDuckAIQuerySelectionDialogAndProgressIs2Of5() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
@@ -529,10 +529,10 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.aiComparisonAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .duckAIQueryExperimentDialog(content: .mock, defaultMode: .duckAI), step: .init(currentStep: 2, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .duckAIQueryDialog(content: .mock, defaultMode: .duckAI), step: .init(currentStep: 2, totalSteps: 5))))
     }
 
-    func testWhenSelectDuckAIQueryExperimentActionIsCalled_AndIsDuckAIFlow_ThenFiresInterludeCallbackAndDoesNotMutateState() {
+    func testWhenSelectDuckAIQueryActionIsCalled_AndIsDuckAIFlow_ThenFiresInterludeCallbackAndDoesNotMutateState() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
         onboardingManagerMock.currentOnboardingFlow = .duckAI
@@ -638,10 +638,10 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         if case .onboarding(let intro) = sut.state,
-           case .duckAIQueryExperimentDialog(_, let mode) = intro.type {
+           case .duckAIQueryDialog(_, let mode) = intro.type {
             XCTAssertEqual(mode, .duckAI)
         } else {
-            XCTFail("Expected duckAIQueryExperimentDialog with .duckAI mode, got \(sut.state)")
+            XCTFail("Expected duckAIQueryDialog with .duckAI mode, got \(sut.state)")
         }
     }
 
@@ -1062,10 +1062,10 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN: step inserted with .search default
         if case .onboarding(let intro) = sut.state,
-           case .duckAIQueryExperimentDialog(_, let mode) = intro.type {
+           case .duckAIQueryDialog(_, let mode) = intro.type {
             XCTAssertEqual(mode, .search)
         } else {
-            XCTFail("Expected duckAIQueryExperimentDialog state with .search default mode, got \(sut.state)")
+            XCTFail("Expected duckAIQueryDialog state with .search default mode, got \(sut.state)")
         }
     }
 
@@ -1093,28 +1093,28 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
         let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryChooseAIChat)
 
         // WHEN
         sut.selectDuckAIQueryAction(selection: .duckAI)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryChooseAIChat)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryChooseSearchOnly)
     }
 
     func testWhenSelectDuckAIQueryChooseSearchThenCorrectPixelFires() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = [.duckAIQuerySelection]
         let sut = makeSUT(currentOnboardingStep: .duckAIQuerySelection)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryChooseSearchOnly)
 
         // WHEN
         sut.selectDuckAIQueryAction(selection: .search)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseSearchOnly)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentChooseAIChat)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryChooseSearchOnly)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryChooseAIChat)
     }
 
     func testWhenStateChangesToDuckAIQuerySelectionDialogThenImpressionPixelFires() {
@@ -1124,14 +1124,14 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection,
                           onboardingSearchExperienceProvider: mockSearchExperienceProvider)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQuerySelectionImpression)
 
         // WHEN
         sut.onAppear()
         sut.selectSearchExperienceAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQuerySelectionImpression)
     }
 
     func testWhenStateChangesToAiComparisonDialogThenImpressionPixelFires() {
@@ -1314,10 +1314,10 @@ extension OnboardingIntroViewModelTests {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(resumeStepStore: store)
         sut.onAppear()
-        if case .duckAIQueryExperimentDialog = sut.state.intro?.type {
+        if case .duckAIQueryDialog = sut.state.intro?.type {
             // OK
         } else {
-            XCTFail("Expected duckAIQueryExperimentDialog, got \(String(describing: sut.state.intro?.type))")
+            XCTFail("Expected duckAIQueryDialog, got \(String(describing: sut.state.intro?.type))")
         }
     }
 
@@ -1330,10 +1330,10 @@ extension OnboardingIntroViewModelTests {
         onboardingManagerMock.currentOnboardingFlow = .duckAI
         let sut = makeSUT(featureFlagger: MockFeatureFlagger(), resumeStepStore: store)
         sut.onAppear()
-        if case .duckAIQueryExperimentDialog = sut.state.intro?.type {
+        if case .duckAIQueryDialog = sut.state.intro?.type {
             // OK
         } else {
-            XCTFail("Expected duckAIQueryExperimentDialog, got \(String(describing: sut.state.intro?.type))")
+            XCTFail("Expected duckAIQueryDialog, got \(String(describing: sut.state.intro?.type))")
         }
         XCTAssertEqual(resumeStepRawValue(in: store), OnboardingResumeStep.duckAIQuerySelection.rawValue)
     }

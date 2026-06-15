@@ -222,7 +222,7 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
         return EmptyView()
     }
 
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+    func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         AnyView(EmptyView())
     }
 }

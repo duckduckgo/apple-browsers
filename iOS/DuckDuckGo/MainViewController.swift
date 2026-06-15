@@ -259,8 +259,8 @@ class MainViewController: UIViewController {
     var keyModifierFlags: UIKeyModifierFlags?
     var showKeyboardAfterFireButton: DispatchWorkItem?
 
-    // Duck.ai query experiment fire onboarding flow — see MainViewController+DuckAIExperiment.swift
-    var experimentDuckAIFireOnboardingFlow = ExperimentDuckAIFireOnboardingFlowContext()
+    // Duck.ai fire onboarding flow — see MainViewController+DuckAIFireOnboarding.swift
+    var duckAIFireOnboardingFlow = DuckAIFireOnboardingFlowContext()
 
     // Skip SERP flow (focusing on autocomplete logic) and prepare for new navigation when selecting search bar
     private var skipSERPFlow = true
@@ -531,6 +531,34 @@ class MainViewController: UIViewController {
         self.fireModeCapability = FireModeCapability.create()
         self.fireModePromotionEligibility = fireModePromotionEligibility
         self.onboardingManager = onboardingManager
+
+        // // TODO: OVERRIDE - Remove before shipping.
+        // // Forces onboarding to always reset to a clean state on every launch so the
+        // // duck.ai query entry/suggestion-selection onboarding screen is always shown.
+        // tutorialSettings.hasSeenOnboarding = false
+        // tutorialSettings.hasSkippedOnboarding = false
+        // // Must be nil so the flow re-evaluates as .default.
+        // tutorialSettings.onboardingFlowType = nil
+        // // Reset all persisted DaxDialogs flags so contextual dialogs fire from scratch.
+        // let debugDaxSettings = DefaultDaxDialogsSettings()
+        // debugDaxSettings.isDismissed = false
+        // debugDaxSettings.tryAnonymousSearchShown = false
+        // debugDaxSettings.tryVisitASiteShown = false
+        // debugDaxSettings.browsingAfterSearchShown = false
+        // debugDaxSettings.browsingWithTrackersShown = false
+        // debugDaxSettings.browsingWithoutTrackersShown = false
+        // debugDaxSettings.browsingMajorTrackingSiteShown = false
+        // debugDaxSettings.fireButtonEducationShownOrExpired = false
+        // debugDaxSettings.fireMessageExperimentShown = false
+        // debugDaxSettings.fireButtonPulseDateShown = nil
+        // debugDaxSettings.privacyButtonPulseShown = false
+        // debugDaxSettings.browsingFinalDialogShown = false
+        // debugDaxSettings.subscriptionPromotionDialogShown = false
+        // debugDaxSettings.chatPathVisitSiteSeen = false
+        // debugDaxSettings.isChatFirstPath = false
+        // // Clear any resume checkpoint from a previous partial onboarding run.
+        // OnboardingResumeCheckpointStore.clearAll(in: UserDefaults.app.keyedStoring())
+        // // END TODO OVERRIDE
 
         super.init(nibName: nil, bundle: nil)
         
@@ -1828,19 +1856,19 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         wakeLazyFireButtonAnimator()
 
-        let isExperimentDuckAIFireFlow = experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse ||
-            experimentDuckAIFireOnboardingFlow.state == .active
-        // Keep the experiment fire onboarding dialog visible until the burn action is confirmed.
-        if !isExperimentDuckAIFireFlow {
+        let isDuckAIFireOnboardingFlow = duckAIFireOnboardingFlow.state == .awaitingFirstResponse ||
+            duckAIFireOnboardingFlow.state == .active
+        // Keep the fire onboarding dialog visible until the burn action is confirmed.
+        if !isDuckAIFireOnboardingFlow {
             currentTab?.dismissContextualDaxFireDialog()
         }
         ViewHighlighter.hideAll()
 
-        if isExperimentDuckAIFireFlow {
-            // Keep this path scoped to the onboarding experiment: single "Delete This Chat" action only,
+        if isDuckAIFireOnboardingFlow {
+            // During the Duck.ai fire onboarding: single "Delete This Chat" action only,
             // whether the contextual dialog has already appeared or is still pending.
             contextualOnboardingPixelReporter.measureDuckAIFireButtonCTAAction()
-            presentExperimentDuckAIFireConfirmation()
+            presentDuckAIFireConfirmation()
             performCancel()
             return
         }
@@ -3111,7 +3139,7 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .aiChatResponseReceived)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.showExperimentFireDialogAfterAIChatResponseIfReady()
+                self?.showFireDialogAfterAIChatResponseIfReady()
             }
             .store(in: &aiChatCancellables)
     }
@@ -4348,7 +4376,7 @@ extension MainViewController: OmniBarDelegate {
         Pixel.fire(pixel: .tabSwitchLongPressNewTab, withAdditionalParameters: [
             PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue
         ])
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard !duckAIFireOnboardingFlow.controlsLocked else { return }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         performCancel()
         newTab()
@@ -4992,8 +5020,8 @@ extension MainViewController: NewTabPageControllerDelegate {
         requestTabSwitcher()
     }
 
-    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
-        markSearchContextualOnboardingAsSeenForExperiment()
+    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController) {
+        markSearchContextualOnboardingAsSeen()
     }
 
     func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
@@ -5176,11 +5204,11 @@ extension MainViewController: TabDelegate {
 
     func tabLoadingStateDidChange(tab: TabViewController) {
         if tab.isLoading {
-            experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
-            experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+            duckAIFireOnboardingFlow.triggerWorkItem?.cancel()
+            duckAIFireOnboardingFlow.triggerWorkItem = nil
         } else {
-            scheduleExperimentDuckAIFireOnboardingAfterLoadIfNeeded(for: tab)
-            if experimentDuckAIFireOnboardingFlow.shouldForcePostFireAddressBarPickerRestore && currentTab == tab {
+            scheduleDuckAIFireOnboardingAfterLoadIfNeeded(for: tab)
+            if duckAIFireOnboardingFlow.shouldForcePostFireAddressBarPickerRestore && currentTab == tab {
                 restorePostFireAddressBarPickerIfNeeded()
             }
         }
@@ -5939,9 +5967,9 @@ extension MainViewController {
     }
     
     func showFireButtonPulse() {
-        // During experiment fire onboarding we control pulse lifecycle explicitly.
+        // During Duck.ai fire onboarding we control pulse lifecycle explicitly.
         // Avoid Dax pulse bookkeeping here, because it can immediately clear highlights.
-        if experimentDuckAIFireOnboardingFlow.state != .active {
+        if duckAIFireOnboardingFlow.state != .active {
             daxDialogsManager.fireButtonPulseStarted()
         }
         guard let window = view.window else { return }
@@ -6305,8 +6333,8 @@ extension MainViewController: OnboardingDelegate {
         // Now that linear onboarding has finished, run the unified-toggle-input
         // setup that was deferred at viewDidLoad.
         setUpUnifiedToggleInputIfNeeded()
-        if experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse {
-            onboardingCompletedWithExperimentTransition(controller: controller)
+        if duckAIFireOnboardingFlow.state == .awaitingFirstResponse {
+            onboardingCompletedWithDuckAITransition(controller: controller)
             return
         }
 
@@ -6314,7 +6342,7 @@ extension MainViewController: OnboardingDelegate {
         // which only installs when `shouldUseExperimentalEditingState` is true — itself gated on
         // `aiChatSettings.isAIChatSearchInputUserSettingsEnabled`.
         //
-        // IMPORTANT: Contrary to the Duck.ai experiment on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
+        // IMPORTANT: Contrary to the Duck.ai fire onboarding on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
         // The full prerequisite also calls `daxDialogsManager.disableContextualDaxDialogs()`, which would set
         // `isEnabled = false` before the tailored completion dialog is presented, breaking the subscription
         // chain inside the dialog's `onDismiss` (`nextHomeScreenMessageNew()` would return `nil` from its

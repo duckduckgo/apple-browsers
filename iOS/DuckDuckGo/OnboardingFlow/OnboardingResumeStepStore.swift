@@ -22,17 +22,18 @@ import Persistence
 
 enum OnboardingStorageKeys: String, StorageKeyDescribing {
     case resumeStep = "com-duckduckgo-tutorials-onboardingResumeStep"
-    case resumeExperimentPrompt = "com-duckduckgo-tutorials-onboardingResumeExperimentPrompt"
+    // Raw value kept unchanged for backward compatibility with in-flight onboarding sessions.
+    case resumeDuckAIQueryPrompt = "com-duckduckgo-tutorials-onboardingResumeExperimentPrompt"
 }
 
 struct OnboardingStoringKeys: StoringKeys {
     let resumeStep = StorageKey<OnboardingResumeStep>(OnboardingStorageKeys.resumeStep)
-    let resumeExperimentPrompt = StorageKey<String>(OnboardingStorageKeys.resumeExperimentPrompt)
+    let resumeDuckAIQueryPrompt = StorageKey<String>(OnboardingStorageKeys.resumeDuckAIQueryPrompt)
 }
 
 enum OnboardingResumeCheckpointStore {
     static func clearAll(in store: any KeyedStoring<OnboardingStoringKeys>) {
         store.resumeStep = nil
-        store.resumeExperimentPrompt = nil
+        store.resumeDuckAIQueryPrompt = nil
     }
 }

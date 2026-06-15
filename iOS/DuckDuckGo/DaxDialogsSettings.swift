@@ -55,7 +55,7 @@ protocol DaxDialogsSettings: AnyObject {
     var chatPathVisitSiteSeen: Bool { get set }
 
     /// Whether the user entered the Duck.ai chat-first onboarding path.
-    /// Set when the user completes the fire-education step in the Duck.ai experiment flow.
+    /// Set when the user completes the fire-education step in the Duck.ai fire onboarding flow.
     var isChatFirstPath: Bool { get set }
 
     /// The current phase of the Duck.ai chat-first onboarding path, derived from persisted state flags.

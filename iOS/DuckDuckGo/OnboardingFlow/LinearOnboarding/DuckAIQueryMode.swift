@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-/// The search mode selected by the user in the Duck.ai query experiment onboarding step.
+/// The search mode selected by the user in the Duck.ai query selection onboarding step.
 enum DuckAIQueryMode {
     case search
     case duckAI

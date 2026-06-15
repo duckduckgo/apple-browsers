@@ -63,8 +63,8 @@ extension MainViewController {
         // Idempotent: callable from viewDidLoad, MainCoordinator.startOnboardingFlowIfNotSeenBefore,
         // and onboardingCompleted — first call that passes the gates wins.
         guard unifiedToggleInputCoordinator == nil else { return }
-        // Defer setup until linear onboarding for default flow has completed, so that any experiment
-        // cohort enrollment that happens during onboarding is reflected in
+        // Defer setup until linear onboarding for the default flow has completed, so that any
+        // feature flag evaluation that happens during onboarding is reflected in
         // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
         // Duck.ai tailored-flow users are need UTI during the linear onboarding otherwise they will not see the new UI in the Duck.ai page that is shown during the linear onboarding interlude.
         // Returning users (who skip linear onboarding) fall through immediately.
@@ -114,7 +114,7 @@ extension MainViewController {
         // If the Duck.ai fire onboarding flow armed its lock before the coordinator existed
         // (coordinator creation is deferred until after linear onboarding completes), sync
         // the persisted lock state to both freshly-created objects now.
-        if experimentDuckAIFireOnboardingFlow.controlsLocked {
+        if duckAIFireOnboardingFlow.controlsLocked {
             coordinator.setOnboardingControlsLocked(true)
             aiChatTabChatHeaderView?.setOnboardingLocked(true)
         }
@@ -197,7 +197,7 @@ extension MainViewController {
             //
             // The UTI AI-tab phase reuses `isHidden = true` *transiently*. Any
             // `setBarsVisibility(1)` call during that phase (refreshAITab, BarsAnimator,
-            // applyExperimentDuckAIFireChromeState, etc.) writes the same off-screen
+            // applyDuckAIFireChromeState, etc.) writes the same off-screen
             // value via the clamp. When `isHidden` flips back to false here, nothing
             // else recomputes the constant; the toolbar is unhidden but laid out
             // off-screen. Snap it back to 0.

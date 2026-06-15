@@ -47,7 +47,7 @@ final class ContextualOnboardingPresenter: ContextualOnboardingPresenting {
     }
 
     func presentContextualOnboarding(for spec: DaxDialogs.BrowsingSpec, in vc: TabViewOnboardingDelegate) {
-        presentExperimentContextualOnboarding(for: spec, in: vc)
+        presentContextualOnboardingDialog(for: spec, in: vc)
     }
 
     func dismissContextualOnboardingIfNeeded(from vc: TabViewOnboardingDelegate) {
@@ -62,7 +62,7 @@ final class ContextualOnboardingPresenter: ContextualOnboardingPresenting {
 
 private extension ContextualOnboardingPresenter {
 
-    func presentExperimentContextualOnboarding(for spec: DaxDialogs.BrowsingSpec, in vc: TabViewOnboardingDelegate) {
+    func presentContextualOnboardingDialog(for spec: DaxDialogs.BrowsingSpec, in vc: TabViewOnboardingDelegate) {
         // Adjust message hand emoji based on address bar position
         let platformSpecificMessage = spec.message.replacingOccurrences(
             of: "☝️",

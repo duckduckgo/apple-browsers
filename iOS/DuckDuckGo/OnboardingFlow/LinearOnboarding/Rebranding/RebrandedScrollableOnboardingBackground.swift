@@ -228,7 +228,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
             return OnboardingRebrandingImages.Linear.addressBarPositionBackground
         case .chooseSearchExperienceDialog:
             return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
-        case .duckAIQueryExperimentDialog:
+        case .duckAIQueryDialog:
             return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
         }
     }
@@ -251,7 +251,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
             return 360
         case .chooseSearchExperienceDialog:
             return 294
-        case .duckAIQueryExperimentDialog:
+        case .duckAIQueryDialog:
             return 294
         }
     }
@@ -281,7 +281,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
             return 246
         case .chooseSearchExperienceDialog:
             return 164
-        case .duckAIQueryExperimentDialog:
+        case .duckAIQueryDialog:
             return 164
         }
     }

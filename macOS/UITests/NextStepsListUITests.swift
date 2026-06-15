@@ -60,7 +60,7 @@ final class NextStepsListUITests: UITestCase {
 
         let dismissedCardCycledAway = webView.wait(for: NSPredicate { _, _ in
             !buttonsBeforeDismissal.subtracting(self.visibleWebViewButtonTitles()).isEmpty
-        }, timeout: UITests.Timeouts.elementExistence)
+        })
 
         XCTAssertTrue(dismissedCardCycledAway,
                       "The dismissed card should no longer be visible after tapping dismiss")

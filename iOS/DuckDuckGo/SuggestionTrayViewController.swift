@@ -157,7 +157,22 @@ class SuggestionTrayViewController: UIViewController {
         }
         return autocompleteController?.selectedSuggestion
     }
-    
+
+    /// The suggestion currently highlighted by arrow-key navigation, or nil when nothing is highlighted.
+    var highlightedSuggestion: Suggestion? {
+        autocompleteController?.highlightedSuggestion
+    }
+
+    /// True when the highlighted suggestion is the first selectable row.
+    var isKeyboardSelectionAtFirstRow: Bool {
+        autocompleteController?.isKeyboardSelectionAtFirstRow ?? false
+    }
+
+    /// Clears the arrow-key highlight, returning focus to the text input.
+    func clearKeyboardSelection() {
+        autocompleteController?.clearKeyboardSelection()
+    }
+
     enum SuggestionType: Equatable {
 
         case autocomplete(query: String)
@@ -355,7 +370,22 @@ class SuggestionTrayViewController: UIViewController {
         popoverSearchController?.keyboardMoveSelectionUp()
         autocompleteController?.keyboardMoveSelectionUp()
     }
-    
+
+    // MARK: - Duck.ai keyboard navigation (iPad popover)
+
+    var hasDuckAIHighlight: Bool { popoverDuckAIController?.selectedRowID != nil }
+
+    func duckAIKeyboardMoveSelectionDown() { popoverDuckAIController?.keyboardMoveSelectionDown() }
+    func duckAIKeyboardMoveSelectionUp() { popoverDuckAIController?.keyboardMoveSelectionUp() }
+    func clearDuckAIKeyboardSelection() { popoverDuckAIController?.clearKeyboardSelection() }
+
+    /// Commits the highlighted Duck.ai row (Enter); returns false when nothing is highlighted.
+    func activateHighlightedDuckAISuggestion() -> Bool {
+        guard let id = popoverDuckAIController?.selectedRowID else { return false }
+        handlePopoverDuckAISelection(rowID: id)
+        return true
+    }
+
     func float(withWidth width: CGFloat) {
         containerView.layer.cornerRadius = 24
         containerView.layer.masksToBounds = true

@@ -147,6 +147,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(fireExecutor.burnedChatIds, ["p1"])
         XCTAssertEqual(fireExecutor.burnedIsFireMode, [false],
                        "chat-history sheet only ever deletes persistent chats; never fire-mode")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 1,
+                       "a successful delete must flush sync so the deletion isn't re-pulled")
     }
 
     func testDeleteChat_noFireExecutor_isNoOp() {
@@ -157,11 +159,51 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         processMainQueue()
     }
 
+    func testBurnAllChats_invokesFireExecutorAndFlushesSync() {
+        let fireExecutor = MockChatHistoryFireExecutor()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor)
+
+        let done = expectation(description: "burnAllChats")
+        Task { await sut.burnAllChats(); done.fulfill() }
+        wait(for: [done], timeout: 1)
+
+        XCTAssertEqual(fireExecutor.burnedAllChatsIsFireMode, [false],
+                       "chat-history sheet only ever clears persistent chats; never fire-mode")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 1,
+                       "a successful clear must flush sync so the deletion isn't re-pulled")
+    }
+
+    func testBurnAllChats_noFireExecutor_isNoOp() {
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: nil)
+        // No fire executor — must not crash.
+        let done = expectation(description: "burnAllChats")
+        Task { await sut.burnAllChats(); done.fulfill() }
+        wait(for: [done], timeout: 1)
+    }
+
+    func testTotalChatCount_reflectsAllChats_notTheSearchFilteredView() {
+        let sut = makeSUT(chats: [
+            chat(id: "a", title: "alpha", pinned: true),
+            chat(id: "b", title: "beta", pinned: false),
+            chat(id: "c", title: "gamma", pinned: false)
+        ])
+        XCTAssertEqual(sut.totalChatCount, 3)
+
+        sut.updateQuery("alpha")
+        waitForDebounce()
+
+        // The visible list is filtered to the single match...
+        XCTAssertEqual(sut.pinned.count + sut.recent.count, 1)
+        // ...but "Delete All" clears every chat, so the count must stay the full total.
+        XCTAssertEqual(sut.totalChatCount, 3,
+                       "totalChatCount must reflect all chats so the Fire confirmation can't understate the delete scope during a search")
+    }
+
     func testDownloadChat_onSuccess_notifiesDelegateWithWrittenFilename() {
         let downloader = StubDownloader()
         downloader.stubbedResult = .success(URL(fileURLWithPath: "/tmp/duck.ai_2026-01-01_00-00-00.txt"))
         let queue = DispatchQueue(label: "test.download")
-        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, downloadQueue: queue)
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, mutationQueue: queue)
         let delegate = MockDelegate()
         sut.delegate = delegate
 
@@ -177,7 +219,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         let downloader = StubDownloader()
         downloader.stubbedResult = .failure(ChatHistoryDownloader.DownloadError.chatNotFound)
         let queue = DispatchQueue(label: "test.download")
-        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, downloadQueue: queue)
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader, mutationQueue: queue)
         let delegate = MockDelegate()
         sut.delegate = delegate
 
@@ -186,6 +228,104 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         processMainQueue()
 
         XCTAssertEqual(delegate.exportedFilenames, [])
+    }
+
+    // MARK: - Pin
+
+    func testIsPinned_returnsTrueForChatsInPinnedSection_falseOtherwise() {
+        let sut = makeSUT(chats: [
+            chat(id: "p1", pinned: true),
+            chat(id: "r1", pinned: false)
+        ])
+
+        XCTAssertTrue(sut.isPinned(chatId: "p1"))
+        XCTAssertFalse(sut.isPinned(chatId: "r1"))
+        XCTAssertFalse(sut.isPinned(chatId: "missing"))
+    }
+
+    func testTogglePin_noPinner_returnsNilAndIsNoOp() {
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], pinner: nil)
+
+        let move = sut.togglePin(chatId: "r1")
+
+        XCTAssertNil(move)
+        XCTAssertEqual(sut.recent.map(\.chatId), ["r1"])
+        XCTAssertEqual(sut.pinned, [])
+    }
+
+    func testTogglePin_pinningRecentChat_movesItToPinnedSectionAndReturnsIndexPaths() {
+        let pinner = StubPinner()
+        let sut = makeSUT(
+            chats: [chat(id: "r1", pinned: false), chat(id: "r2", pinned: false)],
+            pinner: pinner
+        )
+
+        let move = sut.togglePin(chatId: "r1")
+
+        XCTAssertEqual(move?.source, IndexPath(row: 0, section: AIChatHistoryViewModel.Section.recent.rawValue))
+        XCTAssertEqual(move?.destination, IndexPath(row: 0, section: AIChatHistoryViewModel.Section.pinned.rawValue))
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["r1"])
+        XCTAssertEqual(sut.recent.map(\.chatId), ["r2"])
+        processMainQueue()
+        XCTAssertEqual(pinner.calls.map(\.chatId), ["r1"])
+        XCTAssertEqual(pinner.calls.map(\.pinned), [true])
+    }
+
+    func testTogglePin_unpinningPinnedChat_movesItToRecentSection() {
+        let pinner = StubPinner()
+        let sut = makeSUT(
+            chats: [chat(id: "p1", pinned: true), chat(id: "r1", pinned: false)],
+            pinner: pinner
+        )
+
+        let move = sut.togglePin(chatId: "p1")
+
+        XCTAssertEqual(move?.source, IndexPath(row: 0, section: AIChatHistoryViewModel.Section.pinned.rawValue))
+        XCTAssertEqual(move?.destination.section, AIChatHistoryViewModel.Section.recent.rawValue)
+        XCTAssertEqual(sut.pinned, [])
+        XCTAssertEqual(sut.recent.map(\.chatId).sorted(), ["p1", "r1"])
+        processMainQueue()
+        XCTAssertEqual(pinner.calls.map(\.pinned), [false])
+    }
+
+    func testTogglePin_insertsAtCorrectPositionByLastEditDescending() {
+        let pinner = StubPinner()
+        let sut = makeSUT(chats: [
+            chat(id: "p_old", lastEdit: "2026-01-01T00:00:00.000Z", pinned: true),
+            chat(id: "p_new", lastEdit: "2026-05-01T00:00:00.000Z", pinned: true),
+            chat(id: "r_mid", lastEdit: "2026-03-01T00:00:00.000Z", pinned: false)
+        ], pinner: pinner)
+
+        let move = sut.togglePin(chatId: "r_mid")
+
+        XCTAssertEqual(move?.destination, IndexPath(row: 1, section: AIChatHistoryViewModel.Section.pinned.rawValue))
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["p_new", "r_mid", "p_old"])
+    }
+
+    func testTogglePin_chatNotFound_returnsNilAndDoesNotCallPinner() {
+        let pinner = StubPinner()
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], pinner: pinner)
+
+        let move = sut.togglePin(chatId: "missing")
+
+        XCTAssertNil(move)
+        processMainQueue()
+        XCTAssertEqual(pinner.requestedChatIds, [])
+    }
+
+    func testTogglePin_pinnerThrows_doesNotRevertOptimisticState() {
+        let pinner = StubPinner()
+        pinner.throwsError = .someError
+        let queue = DispatchQueue(label: "test.pin")
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], pinner: pinner, mutationQueue: queue)
+
+        let move = sut.togglePin(chatId: "r1")
+        queue.sync { }
+        processMainQueue()
+
+        XCTAssertNotNil(move)
+        XCTAssertEqual(sut.pinned.map(\.chatId), ["r1"])
+        XCTAssertEqual(pinner.requestedChatIds, ["r1"])
     }
 
     // MARK: - Search
@@ -268,13 +408,15 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         chats: [DuckAiChat],
         fireExecutor: FireExecuting? = MockChatHistoryFireExecutor(),
         downloader: ChatHistoryDownloading? = nil,
-        downloadQueue: DispatchQueue = .main
+        pinner: ChatPinning? = nil,
+        mutationQueue: DispatchQueue = .main
     ) -> AIChatHistoryViewModel {
         let sut = AIChatHistoryViewModel(
             reader: MockChatHistoryReader(chats: chats),
             fireExecutor: fireExecutor,
             downloader: downloader,
-            downloadQueue: downloadQueue
+            pinner: pinner,
+            mutationQueue: mutationQueue
         )
         processMainQueue() // reader delivers on the main queue; let it drain before asserting
         return sut
@@ -318,6 +460,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         weak var delegate: FireExecutorDelegate?
         private(set) var burnedChatIds: [String] = []
         private(set) var burnedIsFireMode: [Bool] = []
+        private(set) var burnedAllChatsIsFireMode: [Bool] = []
+        private(set) var scheduleSyncCallCount = 0
 
         func prepare(for request: FireRequest) { }
         func burn(request: FireRequest, applicationState: DataStoreWarmup.ApplicationState) async { }
@@ -326,6 +470,14 @@ final class AIChatHistoryViewModelTests: XCTestCase {
             burnedChatIds.append(chatID)
             burnedIsFireMode.append(isFireMode)
             return .success(())
+        }
+        @discardableResult
+        func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+            burnedAllChatsIsFireMode.append(isFireMode)
+            return .success(())
+        }
+        func scheduleSync() {
+            scheduleSyncCallCount += 1
         }
     }
 
@@ -336,6 +488,18 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func downloadChat(chatId: String) throws -> URL {
             requestedChatIds.append(chatId)
             return try stubbedResult.get()
+        }
+    }
+
+    private final class StubPinner: ChatPinning {
+        enum StubError: Error { case someError }
+        var throwsError: StubError?
+        private(set) var calls: [(chatId: String, pinned: Bool)] = []
+        var requestedChatIds: [String] { calls.map(\.chatId) }
+
+        func setPinned(chatId: String, pinned: Bool) throws {
+            calls.append((chatId, pinned))
+            if let throwsError { throw throwsError }
         }
     }
 }

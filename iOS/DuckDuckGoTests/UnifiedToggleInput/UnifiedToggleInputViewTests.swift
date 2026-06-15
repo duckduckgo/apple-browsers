@@ -311,6 +311,56 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(handler.currentText, "he\nllo")
     }
 
+    func test_urlDoesNotExpandHeightInSearchModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.search)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText("https://www.cinemark.com/theatres/ca-playa-vista/cinemark-playa-vista-and-xd?showDate=2026-06-12")
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(heightAfterTap, singleLineHeight, accuracy: 1)
+    }
+
+    func test_urlCanExpandInAIChatModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.aiChat)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText("https://www.cinemark.com/theatres/ca-playa-vista/cinemark-playa-vista-and-xd?showDate=2026-06-12")
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertGreaterThan(heightAfterTap, singleLineHeight)
+    }
+
+    func test_urlCollapsesToSingleLineWhenModeSwitchesFromAIChatToSearch() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.aiChat)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText("https://www.cinemark.com/theatres/ca-playa-vista/cinemark-playa-vista-and-xd?showDate=2026-06-12")
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let expandedHeight = applyFittingHeight(to: sut)
+
+        handler.setToggleState(.search)
+        sut.updatePoseForCurrentState()
+        let heightAfterSwitch = applyFittingHeight(to: sut)
+
+        XCTAssertGreaterThan(expandedHeight, heightAfterSwitch)
+    }
+
     func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewline() {
         let expectedTopAIChatMinimumHeight: CGFloat = 68
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)

@@ -255,6 +255,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
+    /// Internal-only observability for the hard-to-reproduce "web view scroll frozen, taps still work" bug:
+    /// a passive scroll-failure observer plus a gesture watchdog. Off for the general population by default.
+    case webScrollFreezeObservability
+
     case screenTimeCleaning
 
     case minimalChromeInLandscape
@@ -456,6 +460,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
+
+    /// Controls pin/unpin updates of Synced chats
+    case supportsSyncChatsUpdate
 
     /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
     case settingsLinkInAiFeatures

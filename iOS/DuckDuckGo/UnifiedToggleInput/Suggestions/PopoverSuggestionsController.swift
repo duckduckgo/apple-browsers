@@ -91,6 +91,7 @@ final class PopoverSuggestionsController: UIViewController {
 
     func keyboardMoveSelectionDown() { listViewModel.moveSelectionDown() }
     func keyboardMoveSelectionUp() { listViewModel.moveSelectionUp() }
+    func clearKeyboardSelection() { listViewModel.selectedRowID = nil }
 
     /// Cancels the source's loaders/subscriptions; call before removing from the popover.
     func tearDown() {

@@ -67,6 +67,24 @@ public struct DuckAiChat: Equatable {
     }
 }
 
+// MARK: - Mutation helpers
+
+public extension DuckAiChat {
+    /// Returns a copy with `pinned` set to the supplied value.
+    func withPinned(_ newValue: Bool) -> DuckAiChat {
+        DuckAiChat(
+            chatId: chatId,
+            title: title,
+            model: model,
+            lastEdit: lastEdit,
+            pinned: newValue,
+            fileRefs: fileRefs,
+            reasoningMode: reasoningMode,
+            isImageGeneration: isImageGeneration
+        )
+    }
+}
+
 // MARK: - JSON Decoding
 
 extension DuckAiChat {

@@ -61,8 +61,30 @@ protocol NTPAfterIdleInstrumentation: AnyObject {
     /// The user changed the Opening Screen option from the escape hatch's settings menu.
     func escapeHatchOptionChanged(to option: AfterInactivityOption)
 
-    /// The user hid the "Return to tab" shortcut via the card's "Don't Show This" menu item.
+    /// The user hid the "Return to tab" shortcut via the card's "Hide These Shortcuts" menu item.
     func escapeHatchHiddenFromMenu()
+
+    /// The escape hatch "Return to tab" card became visible.
+    func escapeHatchShown()
+
+    /// The user opened the escape hatch card's menu (three-dots or long-press).
+    func escapeHatchMenuShown()
+
+    /// The user selected "Return to Tab" from the escape hatch card's menu.
+    func escapeHatchReturnToTabTappedFromMenu()
+
+    /// The user selected "Close Tab" from the escape hatch card's menu.
+    func escapeHatchCloseTabTappedFromMenu()
+
+    /// The user selected "Delete Tab" from the escape hatch card's menu.
+    /// - Parameter requiredConfirmation: `true` when the burn flow shows the fire confirmation prompt, `false` when the tab is burned immediately.
+    func escapeHatchBurnTappedFromMenu(requiredConfirmation: Bool)
+
+    /// The user performed the primary swipe action on the escape hatch card.
+    func escapeHatchSwipeActionPerformed()
+
+    /// The user tapped the dedicated Fire (delete tab) button on the escape hatch card.
+    func escapeHatchBurnTappedFromButton()
 }
 
 final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
@@ -130,5 +152,33 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
 
     func escapeHatchHiddenFromMenu() {
         firePixel(.ntpAfterIdleEscapeHatchHiddenFromMenu)
+    }
+
+    func escapeHatchShown() {
+        firePixel(.ntpAfterIdleEscapeHatchShown)
+    }
+
+    func escapeHatchMenuShown() {
+        firePixel(.ntpAfterIdleEscapeHatchMenuShown)
+    }
+
+    func escapeHatchReturnToTabTappedFromMenu() {
+        firePixel(.ntpAfterIdleEscapeHatchReturnToTabTappedFromMenu)
+    }
+
+    func escapeHatchCloseTabTappedFromMenu() {
+        firePixel(.ntpAfterIdleEscapeHatchCloseTabTappedFromMenu)
+    }
+
+    func escapeHatchBurnTappedFromMenu(requiredConfirmation: Bool) {
+        firePixel(requiredConfirmation ? .ntpAfterIdleEscapeHatchBurnWithConfirmationTappedFromMenu : .ntpAfterIdleEscapeHatchBurnImmediatelyTappedFromMenu)
+    }
+
+    func escapeHatchSwipeActionPerformed() {
+        firePixel(.ntpAfterIdleEscapeHatchSwipeActionPerformed)
+    }
+
+    func escapeHatchBurnTappedFromButton() {
+        firePixel(.ntpAfterIdleEscapeHatchBurnTappedFromButton)
     }
 }

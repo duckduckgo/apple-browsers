@@ -580,6 +580,10 @@ class MainViewController: UIViewController {
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
 
+    /// Watchdog for container pan gestures that arbitrate with web scrolling. Owned here (not a singleton)
+    /// and fed gesture state from `handleUnifiedInputSwipeTabsPan`.
+    let interactionIntegrityMonitor = InteractionIntegrityMonitor()
+
     /// Overlay used to render tab-swipe transitions. Hosts per-tab full-screen snapshots so
     /// the swipe moves chrome+content as a single visual unit instead of as N separately
     /// translated layers. Hidden when not swiping; populated and made visible by
@@ -1754,7 +1758,7 @@ class MainViewController: UIViewController {
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle)
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
         }
 
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
@@ -1781,8 +1785,14 @@ class MainViewController: UIViewController {
         unifiedToggleInputCoordinator?.setEscapeHatch(hatch)
     }
 
-    private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
+    private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?) {
         ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
+        // Fire the card impression once per presentation here (not from the card's onAppear): the same hatch
+        // model is mounted in several hosts — NTP, suggestions, AI-chat history — so a view-level hook counts
+        // once per mount.
+        if hatch?.isReturnToTabCardVisible == true {
+            ntpAfterIdleInstrumentation.escapeHatchShown()
+        }
         if openedAfterIdle {
             postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
         }
@@ -3655,6 +3665,10 @@ extension MainViewController: BrowserChromeDelegate {
 
         setBarsVisibility(hidden ? 0 : 1.0, animated: animated, animationDuration: customAnimationDuration)
     }
+
+    func resetBars(animated: Bool) {
+        chromeManager.reset(animated: animated)
+    }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         if percent < 1 {
@@ -3728,6 +3742,8 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var canHideBars: Bool {
+        // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
+        if currentTab?.isError == true { return false }
         return !daxDialogsManager.shouldShowFireButtonPulse
     }
 
@@ -3913,6 +3929,34 @@ extension MainViewController: OmniBarDelegate {
     func onAIChatQueryUpdated(_ query: String) {
         iPadAIChatQuery = query
         refreshPopoverSuggestions()
+    }
+
+    // Arrow keys in Duck.ai mode drive the unified Duck.ai popover (recents + URL hits + Search row).
+    func isAIChatSuggestionsNavigationAvailable() -> Bool {
+        guard isModeToggleInAIChatMode, !viewCoordinator.suggestionTrayContainer.isHidden else { return false }
+        return suggestionTrayController?.popoverMode == .duckAI
+            && suggestionTrayController?.popoverDuckAIHasContent == true
+    }
+
+    func hasAIChatSuggestionsHighlight() -> Bool {
+        suggestionTrayController?.hasDuckAIHighlight ?? false
+    }
+
+    func onAIChatSuggestionsMoveSelectionDown() {
+        suggestionTrayController?.duckAIKeyboardMoveSelectionDown()
+    }
+
+    func onAIChatSuggestionsMoveSelectionUp() {
+        suggestionTrayController?.duckAIKeyboardMoveSelectionUp()
+    }
+
+    func onAIChatSuggestionsActivateHighlight() -> Bool {
+        suggestionTrayController?.activateHighlightedDuckAISuggestion() ?? false
+    }
+
+    func onAIChatSuggestionsClearHighlight() {
+        guard isModeToggleInAIChatMode else { return }
+        suggestionTrayController?.clearDuckAIKeyboardSelection()
     }
 
     func didRequestCurrentURL() -> URL? {
@@ -4901,6 +4945,9 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     }
     
     func autocomplete(highlighted suggestion: Suggestion, for query: String) {
+        // In iPad duck.ai mode the visible editor is the chat text view, so keep the highlight on the
+        // suggestion row rather than writing the hidden search field.
+        guard !isModeToggleInAIChatMode else { return }
 
         switch suggestion {
         case .phrase(phrase: let phrase), .askAIChat(let phrase):
@@ -5454,13 +5501,17 @@ extension MainViewController: TabDelegate {
             storageHandler: duckAiNativeStorageHandler,
             modelDisplays: modelDisplays
         )
+        let pinner: ChatPinning? = duckAiNativeStorageHandler.map { storage in
+            ChatPinner(storageHandler: storage, syncCleaner: aiChatSyncCleaner)
+        }
         let viewModel = AIChatHistoryViewModel(
             reader: reader,
             fireExecutor: fireExecutor,
-            downloader: downloader
+            downloader: downloader,
+            pinner: pinner
         )
         viewModel.delegate = self
-        let content = AIChatHistoryViewController(viewModel: viewModel)
+        let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)
         let navigationController = UINavigationController(rootViewController: content)
         navigationController.modalPresentationStyle = .automatic
         present(navigationController, animated: true)

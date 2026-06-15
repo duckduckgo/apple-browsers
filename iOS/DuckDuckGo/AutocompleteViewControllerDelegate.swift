@@ -26,6 +26,8 @@ protocol AutocompleteViewControllerDelegate: AnyObject {
 
     func autocomplete(selectedSuggestion suggestion: Suggestion)
 
+    func autocomplete(deletedSuggestion suggestion: Suggestion)
+
     func autocomplete(highlighted suggestion: Suggestion, for query: String)
     
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion)

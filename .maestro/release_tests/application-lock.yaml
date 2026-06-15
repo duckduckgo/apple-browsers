@@ -26,6 +26,7 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
+        isInternalUser: ${INTERNAL_USER_MODE}
 
 - assertVisible: "Unlock DuckDuckGo."
 - inputText: "password"
@@ -57,5 +58,6 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
+        isInternalUser: ${INTERNAL_USER_MODE}
 
 - assertVisible: "Privacy Test Pages"

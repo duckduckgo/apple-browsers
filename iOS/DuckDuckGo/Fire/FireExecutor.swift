@@ -71,6 +71,7 @@ struct FireRequest {
         case quickFire
         case deeplink
         case autoClear
+        case chatSuggestions
     }
 }
 

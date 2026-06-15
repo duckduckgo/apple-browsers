@@ -75,3 +75,16 @@ struct AutofillEditableCell: View {
 
     }
 }
+
+#Preview {
+    List {
+        AutofillEditableCell(
+            title: "Username",
+            text: .constant("john.appleseed@example.com"),
+            placeholderText: "Username",
+            inEditMode: true,
+            selectedCell: .constant(nil),
+            textFieldAccessibilityIdentifier: "preview.username"
+        )
+    }
+}

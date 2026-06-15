@@ -575,7 +575,6 @@ extension AppDelegate {
         duckPlayer.preferences.duckPlayerMode = .alwaysAsk
         UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
         homePageSetUpDependencies.clearAll()
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @MainActor
@@ -1639,14 +1638,14 @@ extension MainViewController {
         let debugPersistor = NewTabPageNextStepsCardsDebugPersistor()
         guard let card = debugPersistor.debugVisibleCards.first else { return }
         persistor.setTimesShown(10, for: card)
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
     }
 
     @objc func debugShiftNewTabOpeningDate(_ sender: Any?) {
         let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         persistor.continueSetUpCardsLastDemonstrated = (persistor.continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
         NSApp.delegateTyped.appearancePreferences.continueSetUpCardsViewDidAppear()
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
     }
 
     @objc func debugShiftNewTabOpeningDateNtimes(_ sender: Any?) {

@@ -51,8 +51,8 @@ private struct PrimaryButtonColors {
         standard: Color(designSystemColor: .accentPrimary),
         pressed: Color(designSystemColor: .accentTertiary),
         disabled: Color(designSystemColor: .accentPrimary),
-        text: Color(singleUseColor: .rebranding(.accentPrimaryText)),
-        textDisabled: Color(singleUseColor: .rebranding(.buttonsContentDisabled))
+        text: Color(designSystemColor: .accentContentPrimary),
+        textDisabled: Color(designSystemColor: .accentContentPrimary)
     )
 
     static let rebrandedBrand = PrimaryButtonColors(
@@ -60,15 +60,15 @@ private struct PrimaryButtonColors {
         pressed: Color(designSystemColor: .accentBrandTertiary),
         disabled: Color(designSystemColor: .accentBrandPrimary),
         text: Color(designSystemColor: .accentBrandContentPrimary),
-        textDisabled: Color(singleUseColor: .rebranding(.buttonsContentDisabled))
+        textDisabled: Color(designSystemColor: .accentBrandContentPrimary)
     )
 
     static let rebrandedDestructive = PrimaryButtonColors(
         standard: Color(designSystemColor: .destructivePrimary),
         pressed: Color(singleUseColor: .rebranding(.destructivePrimaryPressed)),
         disabled: Color(designSystemColor: .destructivePrimary),
-        text: Color(singleUseColor: .rebranding(.destructivePrimaryText)),
-        textDisabled: Color(singleUseColor: .rebranding(.buttonsContentDisabled))
+        text: Color(designSystemColor: .destructiveContentPrimary),
+        textDisabled: Color(designSystemColor: .destructiveContentPrimary)
     )
 }
 

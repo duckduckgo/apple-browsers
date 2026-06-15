@@ -91,6 +91,7 @@ public enum DesignSystemColor {
 
     // Destructive
     case destructivePrimary
+    case destructiveContentPrimary
 
     // Buttons/Primary
     case buttonsPrimaryDefault

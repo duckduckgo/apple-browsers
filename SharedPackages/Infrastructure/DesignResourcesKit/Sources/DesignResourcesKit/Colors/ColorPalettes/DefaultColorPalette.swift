@@ -139,6 +139,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Destructive
     private static let destructivePrimary = DynamicColor(lightColor: .alertRed, darkColor: .alertRed20)
+    private static let destructiveContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
     // Buttons/Primary
     private static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
@@ -233,6 +234,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
         // Destructive
         case .destructivePrimary: return destructivePrimary
+        case .destructiveContentPrimary: return destructiveContentPrimary
 
             // Buttons/SecondaryFill
         case .buttonsSecondaryFillDefault: return buttonsSecondaryFillDefault

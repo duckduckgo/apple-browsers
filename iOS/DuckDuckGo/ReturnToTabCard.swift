@@ -27,9 +27,11 @@ struct ReturnToTabCard: View {
 
     @ObservedObject var model: EscapeHatchModel
 
-    /// Frame of the three-dots menu button in the key window's coordinate space.
-    /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter
-    /// expects window-space coordinates because it attaches the popover to the key window.
+    /// Frames of the Fire button and the three-dots menu button in the key window's coordinate space.
+    /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter expects
+    /// window-space coordinates because it attaches the popover to the key window. The Fire button is the
+    /// anchor when the Fire-button flag is on; the menu button is the anchor for the legacy in-menu action.
+    @State private var fireButtonFrameInWindow: CGRect = .zero
     @State private var menuFrameInWindow: CGRect = .zero
 
     var body: some View {
@@ -45,7 +47,7 @@ struct ReturnToTabCard: View {
 
     @ViewBuilder
     private func bodyWithActions(width: CGFloat) -> some View {
-        SwipeActionView(onCommit: model.primarySwipeAction.perform) {
+        SwipeActionView(onCommit: model.performPrimarySwipeAction) {
             contentView
         } actions: {
             swipeableActionsView
@@ -67,7 +69,7 @@ struct ReturnToTabCard: View {
         HStack(spacing: Metrics.innerSpacing) {
             mainView
             if model.isActionsEnabled {
-                menuView
+                actionButtonsView
             }
         }
         .padding(contentPaddingEdges, Metrics.horizontalPadding)
@@ -111,13 +113,45 @@ struct ReturnToTabCard: View {
         .accessibilityIdentifier("NTP.escapeHatch.card")
     }
 
+    /// Trailing controls: when enabled, the Fire (delete tab) button sits to the left of the three-dots menu.
+    private var actionButtonsView: some View {
+        HStack(spacing: 0) {
+            if model.isFireButtonEnabled {
+                fireButton
+            }
+            menuView
+        }
+    }
+
+    /// Deletes the tab directly from the card. Mirrors the old "Delete Tab" menu item:
+    /// fire tabs burn immediately, everything else asks for confirmation (anchored to this button on iPad).
+    private var fireButton: some View {
+        Button(action: deleteTab) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
+                .foregroundColor(Color(designSystemColor: .icons))
+                .padding(.horizontal, Metrics.actionIconPadding)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(UserText.escapeHatchMenuDeleteTab))
+        .accessibilityIdentifier("NTP.escapeHatch.fireButton")
+        .onFrameUpdate(in: .global, using: FireButtonFrameInWindowKey.self) { fireButtonFrameInWindow = $0 }
+    }
+
+    private func deleteTab() {
+        model.burnFromButton(fireButtonFrameInWindow)
+    }
+
     private var menuView: some View {
         Menu {
             menuContentView
         } label: {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal)
                 .foregroundColor(Color(designSystemColor: .icons))
-                .padding(.horizontal, Metrics.horizontalPadding)
+                // Tighten the leading gap to the Fire button when it's present; otherwise keep the original padding.
+                .padding(.leading, model.isFireButtonEnabled ? Metrics.actionIconPadding : Metrics.horizontalPadding)
+                .padding(.trailing, Metrics.horizontalPadding)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
         }
@@ -133,46 +167,72 @@ struct ReturnToTabCard: View {
                 text: UserText.escapeHatchMenuReturnToTab,
                 icon: DesignSystemImages.Glyphs.Size16.goBackCircle,
                 role: .none,
-                action: model.onCardTap
+                action: model.returnToTabFromMenu
             )
-            if model.isFireTab {
-                MenuActionButton(
-                    text: UserText.escapeHatchMenuDeleteTab,
-                    icon: DesignSystemImages.Glyphs.Size16.fire,
-                    role: .destructive,
-                    action: model.onBurnTabImmediately
-                )
-            } else {
-                MenuActionButton(
-                    text: UserText.escapeHatchMenuCloseTab,
-                    icon: DesignSystemImages.Glyphs.Size16.closeOutline,
-                    role: .destructive,
-                    action: model.onCloseTab
-                )
-                MenuActionButton(
-                    text: UserText.escapeHatchMenuDeleteTab,
-                    icon: DesignSystemImages.Glyphs.Size16.fire,
-                    role: .destructive,
-                    action: { model.onBurnTabWithConfirmation(menuFrameInWindow) }
-                )
-            }
-            Picker(selection: model.afterInactivityOptionBinding) {
-                ForEach(AfterInactivityOption.allCases, id: \.self) { option in
-                    Text(option.description)
-                        .tag(option)
+            destructiveActionButtons
+            if model.isHideShortcutEnabled{
+                Section {
+                    afterInactivityPicker
+                    MenuActionButton(
+                        text: UserText.escapeHatchMenuHideTheseShortcuts,
+                        icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
+                        role: .none,
+                        action: model.hideShortcut
+                    )
                 }
-            } label: {
-                Text(UserText.settingsAfterInactivityLabel)
-                Text(model.afterInactivityOptionBinding.wrappedValue.description)
-                    .foregroundColor(.secondary)
-                    .font(.subheadline)
-
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
-                    .foregroundColor(Color(designSystemColor: .icons))
-
+            } else {
+                afterInactivityPicker
             }
-            .pickerStyle(.menu)
         }
+        .onAppear { model.menuDidAppear() }
+    }
+
+    @ViewBuilder
+    private var destructiveActionButtons: some View {
+        if model.isFireTab {
+            // When the Fire button is enabled, deleting is handled by that button instead of the menu.
+            if !model.isFireButtonEnabled {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuDeleteTab,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
+                    role: .destructive,
+                    action: model.burnImmediatelyFromMenu
+                )
+            }
+        } else {
+            MenuActionButton(
+                text: UserText.escapeHatchMenuCloseTab,
+                icon: DesignSystemImages.Glyphs.Size16.closeOutline,
+                role: .destructive,
+                action: model.closeTabFromMenu
+            )
+            if !model.isFireButtonEnabled {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuDeleteTab,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
+                    role: .destructive,
+                    action: { model.burnWithConfirmationFromMenu(menuFrameInWindow) }
+                )
+            }
+        }
+    }
+
+    private var afterInactivityPicker: some View {
+        Picker(selection: model.afterInactivityOptionBinding) {
+            ForEach(AfterInactivityOption.allCases, id: \.self) { option in
+                Text(option.description)
+                    .tag(option)
+            }
+        } label: {
+            Text(UserText.settingsAfterInactivityLabel)
+            Text(model.afterInactivityOptionBinding.wrappedValue.description)
+                .foregroundColor(.secondary)
+                .font(.subheadline)
+
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
+                .foregroundColor(Color(designSystemColor: .icons))
+        }
+        .pickerStyle(.menu)
     }
 
     private var swipeableActionsView: some View {
@@ -292,9 +352,18 @@ private struct MenuFrameInWindowKey: PreferenceKey {
     }
 }
 
+private struct FireButtonFrameInWindowKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
 private enum Metrics {
     static let height: CGFloat = 56
     static let horizontalPadding: CGFloat = 16
+    /// Padding around the Fire / menu glyphs so the two trailing buttons sit ~16pt apart, matching the design.
+    static let actionIconPadding: CGFloat = 8
     static let innerSpacing: CGFloat = 8
     static let titleToSubtitleSpacing: CGFloat = 0
     static let textRowHeight: CGFloat = 20
@@ -354,6 +423,19 @@ private enum Metrics {
                                     targetTab: target,
                                     tabCount: 9,
                                     afterInactivityOption: .newTab))
+        .padding()
+        .frame(width: 360)
+}
+
+#Preview("Return to tab — Fire button") {
+    let target = Tab(fireTab: false)
+    ReturnToTabCard(model: .preview(title: "Tokamak - Wikipedia",
+                                    subtitle: "en.wikipedia.org/wiki/Tokamak",
+                                    tabType: .regular,
+                                    domain: "en.wikipedia.org",
+                                    targetTab: target,
+                                    tabCount: 9,
+                                    isFireButtonEnabled: true))
         .padding()
         .frame(width: 360)
 }

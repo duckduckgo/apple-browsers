@@ -134,8 +134,19 @@ class SwitchBarTextEntryView: UIView {
         return Constants.minHeight
     }
 
+    /// Optional ceiling imposed by the host when vertical space is constrained (e.g. landscape,
+    /// where the keyboard leaves little room). The field caps at this height and scrolls internally.
+    var externalMaxHeightCap: CGFloat? {
+        didSet {
+            guard externalMaxHeightCap != oldValue else { return }
+            updateTextViewHeight()
+        }
+    }
+
     private var currentMaxHeight: CGFloat {
-        handler.isUsingFadeOutAnimation ? Constants.maxHeightWhenUsingFadeOutAnimation : Constants.maxHeight
+        let base = handler.isUsingFadeOutAnimation ? Constants.maxHeightWhenUsingFadeOutAnimation : Constants.maxHeight
+        guard let externalMaxHeightCap else { return base }
+        return max(currentMinHeight, min(base, externalMaxHeightCap))
     }
 
     private var isUsingBottomBarIncreasedHeight: Bool {
@@ -535,7 +546,10 @@ class SwitchBarTextEntryView: UIView {
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
     private func isUnexpandedURL() -> Bool {
-        return !hasBeenInteractedWith && isURL
+        guard isURL else { return false }
+        // In search mode the address bar is always single-line; the interaction flag is irrelevant.
+        // In AI chat mode, URLs can expand once the user has actively started interacting.
+        return currentMode == .search || !hasBeenInteractedWith
     }
 
     private func updateTextViewHeight() {

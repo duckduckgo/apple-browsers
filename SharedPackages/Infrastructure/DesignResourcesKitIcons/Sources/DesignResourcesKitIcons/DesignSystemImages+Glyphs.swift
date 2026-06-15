@@ -58,7 +58,6 @@ public extension DesignSystemImages {
             public static var currency: DesignSystemImage { .init(resource: .currency12) }
             public static var deviceMobile: DesignSystemImage { .init(resource: .deviceMobile12) }
             public static var download: DesignSystemImage { .init(resource: .download12) }
-            public static var downloads: DesignSystemImage { .init(resource: .downloads12) }
             public static var duckAi: DesignSystemImage { .init(resource: .duckAi12) }
             public static var edit: DesignSystemImage { .init(resource: .edit12) }
             public static var email: DesignSystemImage { .init(resource: .email12) }
@@ -69,7 +68,6 @@ public extension DesignSystemImages {
             public static var favorite: DesignSystemImage { .init(resource: .favorite12) }
             public static var feedback: DesignSystemImage { .init(resource: .feedback12) }
             public static var feedbackAlert: DesignSystemImage { .init(resource: .feedbackAlert12) }
-            public static var findSearch: DesignSystemImage { .init(resource: .findSearch12) }
             public static var fingerprint: DesignSystemImage { .init(resource: .fingerprint12) }
             public static var fire: DesignSystemImage { .init(resource: .fire12) }
             public static var fireproof: DesignSystemImage { .init(resource: .fireproof12) }
@@ -464,6 +462,7 @@ public extension DesignSystemImages {
             public static var checkSolid: DesignSystemImage { .init(resource: .checkSolid24) }
             public static var checkSmall: DesignSystemImage { .init(resource: .checkSmall24) }
             public static var chat: DesignSystemImage { .init(resource: .chat24) }
+            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned24) }
             public static var chats: DesignSystemImage { .init(resource: .chats24) }
             public static var chevronCircleDown: DesignSystemImage { .init(resource: .chevronCircleDown24) }
             public static var chevronDown: DesignSystemImage { .init(resource: .chevronDown24) }
@@ -556,6 +555,7 @@ public extension DesignSystemImages {
             public static var news: DesignSystemImage { .init(resource: .news24) }
             public static var note: DesignSystemImage { .init(resource: .note24) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn24) }
+            public static var openInSmall: DesignSystemImage { .init(resource: .openIn24Small) }
             public static var options: DesignSystemImage { .init(resource: .options24) }
             public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach24) }
             public static var paste: DesignSystemImage { .init(resource: .paste24) }
@@ -573,6 +573,7 @@ public extension DesignSystemImages {
             public static var reset: DesignSystemImage { .init(resource: .reset24) }
             public static var resetSites: DesignSystemImage { .init(resource: .resetSites24) }
             public static var settings: DesignSystemImage { .init(resource: .settings24) }
+            public static var settingsAiChat: DesignSystemImage { .init(resource: .settingsAiChat24) }
             public static var shapeCircle: DesignSystemImage { .init(resource: .shapeCircle24) }
             public static var shield: DesignSystemImage { .init(resource: .shield24) }
             public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked24) }
@@ -612,6 +613,7 @@ public extension DesignSystemImages {
             public static var viewList: DesignSystemImage { .init(resource: .viewList24) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid24) }
             public static var voice: DesignSystemImage { .init(resource: .voice24) }
+            public static var voicePinned: DesignSystemImage { .init(resource: .voicePinned24) }
             public static var window: DesignSystemImage { .init(resource: .window24) }
             public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs24) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn24) }

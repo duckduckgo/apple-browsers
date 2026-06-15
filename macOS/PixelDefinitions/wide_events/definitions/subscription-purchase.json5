@@ -1,0 +1,61 @@
+{
+    "macos-subscription-purchase": {
+        "description": "Sent at the end of a Privacy Pro subscription purchase journey, from the moment the user initiates a purchase on the paywall through account creation, payment, and entitlement activation, until the purchase succeeds, fails, is cancelled by the user, or is orphaned by app termination and resolved on a later launch.",
+        "owners": ["samsymons"],
+        "meta": {
+            "type": "macos-subscription-purchase",
+            "version": "1.0"
+        },
+        "feature": {
+            "name": "subscription-purchase",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason accompanying outcomes that are not a clean terminal result at send time. `partial_data` = an orphaned flow was completed after app launch without enough captured data to classify it; `missing_entitlements` = entitlements were still not present when the activation timeout elapsed (sent as UNKNOWN); `missing_entitlements_delayed_activation` = entitlements were initially missing but appeared on a later app launch, so the purchase is counted as a delayed SUCCESS.",
+                        "enum": ["partial_data", "missing_entitlements", "missing_entitlements_delayed_activation"]
+                    },
+                    "purchase_platform": {
+                        "type": "string",
+                        "description": "The platform used to make the purchase.",
+                        "enum": ["app_store", "stripe"]
+                    },
+                    "failing_step": {
+                        "type": "string",
+                        "description": "The step the purchase journey failed on. Present on FAILURE outcomes.",
+                        "enum": ["FLOW_START", "ACCOUNT_CREATE", "ACCOUNT_PAYMENT", "ACCOUNT_ACTIVATION"]
+                    },
+                    "subscription_identifier": {
+                        "type": "string",
+                        "description": "Identifier of the subscription product the user attempted to purchase, for example ddg.privacy.pro.monthly.renews.us."
+                    },
+                    "free_trial_eligible": {
+                        "type": "boolean",
+                        "description": "Whether the user was eligible for a free trial at the time of purchase."
+                    },
+                    "funnel_name": {
+                        "type": "string",
+                        "description": "Name of the funnel or entry point that originated the purchase, for example funnel_onboarding_ios."
+                    },
+                    "account_creation_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Time taken to create the account, in milliseconds, rounded up into a bucket.",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "account_payment_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Time taken to complete the payment, in milliseconds, rounded up into a bucket.",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "account_activation_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Time taken to activate the account once entitlements became available, in milliseconds, rounded up into a bucket.",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "error": "errorParameters"
+                }
+            }
+        }
+    }
+}

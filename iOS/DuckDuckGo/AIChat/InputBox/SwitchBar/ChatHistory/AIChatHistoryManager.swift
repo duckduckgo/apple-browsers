@@ -55,11 +55,17 @@ final class AIChatHistoryManager {
             .eraseToAnyPublisher()
     }
 
+    func hasSettled(forQuery query: String) -> Bool {
+        lastCompletedFetchQuery.map { $0 == query } ?? false
+    }
+
     private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatDeleter: AIChatDeleting
     private let viewModel: AIChatSuggestionsViewModel
     private let isIPadExperience: Bool
+    private let isFireTab: Bool
 
     var titleLayoutConfiguration: AIChatHistoryListViewController.TitleLayoutConfiguration?
     private(set) var hasCompletedInitialFetch = false
@@ -74,12 +80,16 @@ final class AIChatHistoryManager {
 
     init(suggestionsReader: AIChatSuggestionsReading,
          aiChatSettings: AIChatSettingsProvider,
+         aiChatDeleter: AIChatDeleting,
          viewModel: AIChatSuggestionsViewModel,
-         isIPadExperience: Bool = false) {
+         isIPadExperience: Bool = false,
+         isFireTab: Bool) {
         self.suggestionsReader = suggestionsReader
         self.aiChatSettings = aiChatSettings
+        self.aiChatDeleter = aiChatDeleter
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
+        self.isFireTab = isFireTab
     }
 
     // MARK: - Public Methods
@@ -95,9 +105,10 @@ final class AIChatHistoryManager {
             viewModel: viewModel,
             isIPadExperience: isIPadExperience,
             onChatSelected: { [weak self] chat in
-                guard let self else { return }
-                let url = self.aiChatSettings.aiChatURL.withChatID(chat.chatId)
-                self.delegate?.aiChatHistoryManager(self, didSelectChatURL: url)
+                self?.handleChatActivation(chat)
+            },
+            onChatDeleted: { [weak self] chat in
+                self?.deleteChatSuggestion(suggestion: chat)
             }
         )
 
@@ -129,6 +140,43 @@ final class AIChatHistoryManager {
         }
     }
 
+    // MARK: - Keyboard selection
+
+    var hasHighlightedSuggestion: Bool {
+        viewModel.selectedIndex != nil
+    }
+
+    func moveSelectionDown() {
+        viewModel.selectNext()
+    }
+
+    func moveSelectionUp() {
+        viewModel.selectPrevious()
+    }
+
+    @discardableResult
+    func activateHighlightedSuggestion() -> Bool {
+        guard let suggestion = viewModel.selectedSuggestion else { return false }
+        handleChatActivation(suggestion)
+        return true
+    }
+
+    func clearSelection() {
+        viewModel.clearSelection()
+    }
+
+    /// Fires the selection pixels and opens the chat. Shared by tap (the VC's `onChatSelected`) and keyboard activation.
+    private func handleChatActivation(_ chat: AIChatSuggestion) {
+        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
+        DailyPixel.fireDailyAndCount(pixel: pixel)
+        if isIPadExperience {
+            let iPadPixel: Pixel.Event = chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected
+            DailyPixel.fireDailyAndCount(pixel: iPadPixel)
+        }
+        let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
+        delegate?.aiChatHistoryManager(self, didSelectChatURL: url)
+    }
+
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         historyViewController?.setEscapeHatch(model)
     }
@@ -155,6 +203,32 @@ final class AIChatHistoryManager {
                 self.fetchSuggestionsIfNeeded(query: text)
             }
             .store(in: &cancellables)
+    }
+
+    /// Removes an AIChatSuggestion and refreshes the Suggestions List
+    ///
+    func deleteChatSuggestion(suggestion: AIChatSuggestion) {
+        viewModel.removeSuggestion(suggestion)
+
+        Task { @MainActor in
+            await self.deleteChatSuggestionFromHistory(suggestion: suggestion)
+            self.refreshSuggestions()
+        }
+    }
+
+    private func deleteChatSuggestionFromHistory(suggestion: AIChatSuggestion) async {
+        let result = await aiChatDeleter.deleteChat(chatID: suggestion.chatId, isFireMode: isFireTab)
+        if case .failure = result {
+            viewModel.cancelPendingRemoval(suggestion)
+            return
+        }
+
+        aiChatDeleter.scheduleSync()
+    }
+
+    private func refreshSuggestions() {
+        let query = lastCompletedFetchQuery ?? ""
+        fetchSuggestionsIfNeeded(query: query)
     }
 
     func refreshSuggestions(query: String) {

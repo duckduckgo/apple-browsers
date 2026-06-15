@@ -99,3 +99,40 @@ public struct SyncFeatureFlags: OptionSet {
         }
     }
 }
+
+/// Supplies externally-owned rollout gates used by Sync internals.
+public protocol SyncFeatureFlagProviding {
+    /// Allows creation and recovery of scoped access credentials for third-party clients.
+    func isScopedAccessCredentialsEnabled() -> Bool
+    /// Allows this client to scan and consume Pairing V2 codes.
+    func isPairingV2ScanningEnabled() -> Bool
+    /// Allows this client to present Pairing V2 codes to peers.
+    func isPairingV2CodeEnabled() -> Bool
+}
+
+public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
+
+    private let isScopedAccessCredentialsEnabledCallback: () -> Bool
+    private let isPairingV2ScanningEnabledCallback: () -> Bool
+    private let isPairingV2CodeEnabledCallback: () -> Bool
+
+    public init(isScopedAccessCredentialsEnabled: @escaping () -> Bool,
+                isPairingV2ScanningEnabled: @escaping () -> Bool,
+                isPairingV2CodeEnabled: @escaping () -> Bool) {
+        self.isScopedAccessCredentialsEnabledCallback = isScopedAccessCredentialsEnabled
+        self.isPairingV2ScanningEnabledCallback = isPairingV2ScanningEnabled
+        self.isPairingV2CodeEnabledCallback = isPairingV2CodeEnabled
+    }
+
+    public func isScopedAccessCredentialsEnabled() -> Bool {
+        isScopedAccessCredentialsEnabledCallback()
+    }
+
+    public func isPairingV2ScanningEnabled() -> Bool {
+        isPairingV2ScanningEnabledCallback()
+    }
+
+    public func isPairingV2CodeEnabled() -> Bool {
+        isPairingV2CodeEnabledCallback()
+    }
+}

@@ -19,12 +19,16 @@
 import Foundation
 import DDGSyncCrypto
 import Networking
+import os.log
 
 struct AccountManager: AccountManaging {
 
+    /// Login access-credential scope. This is unrelated to protected-key purposes such as `ai_chats`.
+    private static let defaultLoginScope = "sync"
     let endpoints: Endpoints
     let api: RemoteAPIRequestCreating
     let crypter: CryptingInternal
+    let isScopedAccessCredentialsEnabled: () -> Bool
 
     func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
         let deviceId = UUID().uuidString
@@ -36,15 +40,16 @@ struct AccountManager: AccountManaging {
         let encryptedDeviceType = try crypter.encryptAndBase64Encode(deviceType, using: accountKeys.primaryKey)
 
         let hashedPassword = Data(accountKeys.passwordHash).base64EncodedString()
-        let protectedEncyrptionKey = Data(accountKeys.protectedSecretKey).base64EncodedString()
+        let protectedEncryptionKey = Data(accountKeys.protectedSecretKey).base64EncodedString()
 
         let params = Signup.Parameters(
             userId: userId,
             hashedPassword: hashedPassword,
-            protectedEncryptionKey: protectedEncyrptionKey,
+            protectedEncryptionKey: protectedEncryptionKey,
             deviceId: deviceId,
             deviceName: encryptedDeviceName,
-            deviceType: encryptedDeviceType
+            deviceType: encryptedDeviceType,
+            credentialId: isScopedAccessCredentialsEnabled() ? SyncCredentialID.defaultCredential : nil
         )
 
         guard let paramJson = try? JSONEncoder.snakeCaseKeys.encode(params) else {
@@ -175,7 +180,8 @@ struct AccountManager: AccountManaging {
             hashedPassword: info.passwordHash.base64EncodedString(),
             deviceId: deviceId,
             deviceName: encryptedDeviceName,
-            deviceType: encryptedDeviceType
+            deviceType: encryptedDeviceType,
+            scope: isScopedAccessCredentialsEnabled() ? Self.defaultLoginScope : nil
         )
 
         let paramJson = try JSONEncoder.snakeCaseKeys.encode(params)
@@ -212,13 +218,18 @@ struct AccountManager: AccountManaging {
                 token: token,
                 state: .addingNewDevice
             ),
-            devices: try result.devices.map {
-                RegisteredDevice(
-                    id: $0.id,
-                    name: try crypter.base64DecodeAndDecrypt($0.name, using: info.primaryKey),
-                    type: try crypter.base64DecodeAndDecrypt($0.type, using: info.primaryKey)
-                )
-            }
+            devices: result.devices.compactMap { device in
+                // Prevent devices with `null` type from blocking login while the V2 device payload is in flux.
+                guard let encryptedType = device.type,
+                      let name = try? crypter.base64DecodeAndDecrypt(device.name, using: info.primaryKey),
+                      let type = try? crypter.base64DecodeAndDecrypt(encryptedType, using: info.primaryKey) else {
+                    return nil
+                }
+
+                return RegisteredDevice(id: device.id, name: name, type: type)
+            },
+            keys: result.keys,
+            accessCredentials: result.accessCredentials
         )
 
     }
@@ -237,15 +248,24 @@ struct AccountManager: AccountManaging {
             let deviceId: String
             let deviceName: String
             let deviceType: String
+            let credentialId: String?
         }
     }
 
     struct Login {
 
         struct Result: Decodable {
-            let devices: [RegisteredDevice]
+            let devices: [Device]
             let token: String
             let protectedEncryptionKey: String
+            let accessCredentials: [AccessCredential]?
+            let keys: [ProtectedKey]?
+        }
+
+        struct Device: Decodable {
+            let id: String
+            let name: String
+            let type: String?
         }
 
         struct Parameters: Encodable {
@@ -254,6 +274,7 @@ struct AccountManager: AccountManaging {
             let deviceId: String
             let deviceName: String
             let deviceType: String
+            let scope: String?
         }
 
     }

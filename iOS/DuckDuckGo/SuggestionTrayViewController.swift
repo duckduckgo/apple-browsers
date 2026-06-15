@@ -96,10 +96,30 @@ class SuggestionTrayViewController: UIViewController {
 
     var coversFullScreen: Bool = false
 
+    /// Horizontal inset applied to the autocomplete content only. Favorites and the shared container stay
+    /// full width, so switching between favorites and autocomplete doesn't resize/recenter the container
+    /// (which would visibly shift the still-mounted favorites view before autocomplete reveals).
+    var autocompleteHorizontalInset: CGFloat = 0
+
     var selectedSuggestion: Suggestion? {
         autocompleteController?.selectedSuggestion
     }
-    
+
+    /// The suggestion currently highlighted by arrow-key navigation, or nil when nothing is highlighted.
+    var highlightedSuggestion: Suggestion? {
+        autocompleteController?.highlightedSuggestion
+    }
+
+    /// True when the highlighted suggestion is the first selectable row.
+    var isKeyboardSelectionAtFirstRow: Bool {
+        autocompleteController?.isKeyboardSelectionAtFirstRow ?? false
+    }
+
+    /// Clears the arrow-key highlight, returning focus to the text input.
+    func clearKeyboardSelection() {
+        autocompleteController?.clearKeyboardSelection()
+    }
+
     enum SuggestionType: Equatable {
     
         case autocomplete(query: String)
@@ -268,6 +288,10 @@ class SuggestionTrayViewController: UIViewController {
         return containerView.frame
     }
 
+    func refreshSuggestionsIfNeeded() {
+        autocompleteController?.refreshSuggestions()
+    }
+
     func didHide(animated: Bool) {
         removeAutocomplete(animated: animated)
         removeNewTabPage(animated: animated)
@@ -304,7 +328,7 @@ class SuggestionTrayViewController: UIViewController {
         applyTopConstraintForLayoutMode()
     }
 
-    func fill(bottomOffset: CGFloat = 0.0, horizontalInset: CGFloat = 0.0) {
+    func fill(bottomOffset: CGFloat = 0.0) {
         additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomOffset, right: 0)
 
         containerView.layer.shadowColor = UIColor.clear.cgColor
@@ -317,7 +341,7 @@ class SuggestionTrayViewController: UIViewController {
         backgroundView.backgroundColor = UIColor.clear
 
         fullWidthConstraint.isActive = true
-        fullWidthConstraint.constant = -(horizontalInset * 2)
+        fullWidthConstraint.constant = 0
         fullHeightConstraint.isActive = coversFullScreen
         fullHeightSafeAreaConstraint.isActive = !coversFullScreen
         fullHeightSafeAreaInequalityConstraint.isActive = !coversFullScreen
@@ -435,7 +459,9 @@ class SuggestionTrayViewController: UIViewController {
                                                     featureDiscovery: featureDiscovery,
                                                     productSurfaceTelemetry: productSurfaceTelemetry)
         controller.suggestionFilter = suggestionFilter
-        install(controller: controller, animated: deferAutocompleteReveal ? false : animated)
+        install(controller: controller,
+                animated: deferAutocompleteReveal ? false : animated,
+                additionalInsets: UIEdgeInsets(top: 0, left: autocompleteHorizontalInset, bottom: 0, right: autocompleteHorizontalInset))
         if deferAutocompleteReveal {
             controller.view.isHidden = true
             pendingDeferredAutocompleteReveal = true

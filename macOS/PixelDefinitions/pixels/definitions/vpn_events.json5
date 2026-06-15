@@ -25,28 +25,28 @@
         "owners": ["diegoreymendez", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource"]
+        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource", "channel"]
     },
     "m_mac_netp_ev_enable_attempt_success": {
         "description": "Fired when a VPN connection attempt succeeds",
         "owners": ["diegoreymendez", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource"]
+        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource", "channel"]
     },
     "m_mac_netp_ev_enable_attempt_failure": {
         "description": "Fired when a VPN connection attempt fails",
         "owners": ["diegoreymendez", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource"]
+        "parameters": ["appVersion", "pixelSource", "connectionAttemptSource", "channel"]
     },
     "m_mac_netp_tunnel_start_attempt_on_demand_without_access_token": {
         "description": "Fired when an on-demand VPN start attempt fails before reaching the actual tunnel start, due to a prerequisite failure such as a missing or unfetchable subscription token, missing settings, or other startup errors. Error parameters identify the underlying cause.",
         "owners": ["diegoreymendez", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211597559231997
     "m_mac_wide_vpn_connection": {
@@ -218,7 +218,7 @@
                 "key": "feature.data.ext.trigger",
                 "type": "string",
                 "description": "What caused the leak check cycle to run",
-                "enum": ["tunnel_start", "reassert", "periodic"]
+                "enum": ["tunnel_start", "reassert", "periodic", "rekey"]
             },
             {
                 "key": "feature.data.ext.status_reason",
@@ -237,6 +237,11 @@
                 "type": "string",
                 "description": "Name of the VPN egress server the cycle ran against",
                 "examples": ["yvr2-netp-prod-egress2"]
+            },
+            {
+                "key": "feature.data.ext.os_version",
+                "type": "string",
+                "description": "Operating system major/minor version at the time of the leak check, for example 13.7 or 26.4"
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.ipv(4|6)\\.leak_ip_type",
@@ -260,6 +265,33 @@
                 "keyPattern": "feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.(error_code|underlying_code)",
                 "type": "integer",
                 "description": "Error code associated with a per-probe error (outer or underlying)"
+            },
+            {
+                "keyPattern": "feature\\.data\\.ext\\.ipv4\\.(http|https|stun)\\.leak_octet[1-4]_matched",
+                "type": "boolean",
+                "description": "Whether the corresponding octet of the observed IPv4 address matched the egress IP, present only when a probe reported a leak"
+            }
+        ]
+    },
+    "m_mac_vpn_proxy_orphaned": {
+        "description": "Fired once per episode when the transparent proxy detects it is orphaned: it has been running past the age threshold while the tunnel's heartbeat is missing or stale, indicating the tunnel is gone",
+        "owners": ["diegoreymendez"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "heartbeat_age",
+                "type": "string",
+                "description": "Bucketed age of the tunnel's last heartbeat at detection time, or 'missing' if no heartbeat was ever recorded",
+                "enum": ["missing", "under_5m", "under_30m", "over_30m"]
+            },
+            {
+                "key": "proxy_age",
+                "type": "string",
+                "description": "Bucketed time the proxy had been running at detection time",
+                "enum": ["under_5m", "under_30m", "under_2h", "over_2h"]
             }
         ]
     }

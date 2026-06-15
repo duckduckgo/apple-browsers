@@ -63,6 +63,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let actionIDKey = "action_id"
         public static let stepTypeKey = "stepType"
         public static let environmentKey = "environment"
+        public static let subscribedKey = "subscribed"
         public static let httpCode = "http_code"
         public static let backendServiceCallSite = "backend_service_callsite"
         public static let isImmediateOperation = "is_manual_scan"
@@ -164,6 +165,9 @@ public enum DataBrokerProtectionSharedPixels {
 
     // freemium → paid upsell
     case freemiumUpsell
+
+    // Temporary Freemium PIR monitoring
+    case freemiumPIRMaintenanceScanSkipped
 
     // events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
@@ -283,6 +287,9 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
             // freemium upsell
         case .freemiumUpsell: return "dbp_freemium_upsell_u"
+
+            // Temporary Freemium PIR monitoring
+        case .freemiumPIRMaintenanceScanSkipped: return "dbp_freemium_pir_maintenance_scan_skipped"
 
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
         case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
@@ -525,7 +532,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .dashboardOpen(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
                 .firstScan(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
             return addingFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
-        case .freemiumUpsell:
+        case .freemiumUpsell,
+                .freemiumPIRMaintenanceScanSkipped:
             return [:]
         case .scanningEventNewMatch(let dataBrokerURL),
                 .scanningEventReAppearance(let dataBrokerURL):
@@ -673,6 +681,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .dashboardOpen,
                 .firstScan,
                 .freemiumUpsell,
+                .freemiumPIRMaintenanceScanSkipped,
                 .weeklyReportBackgroundTaskSession,
                 .weeklyReportStalledScans,
                 .weeklyReportStalledOptOuts,
@@ -828,6 +837,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .updateDataBrokersSuccess:
 
                 pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+            case .freemiumPIRMaintenanceScanSkipped:
+                pixelKit.fire(event, frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .firstScan, .freemiumUpsell:
                 pixelKit.fire(event, frequency: .uniqueByName, withNamePrefix: platform.pixelNamePrefix)
             case .updateDataBrokersFailure(_, _, _, let error):

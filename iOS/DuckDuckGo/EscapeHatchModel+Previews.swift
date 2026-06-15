@@ -45,7 +45,7 @@ extension EscapeHatchTabsSource where Self == StaticEscapeHatchTabsSource {
 
 extension EscapeHatchModel {
     /// Factory for #Preview / test code: stubs action closures as no-ops so call sites stay readable.
-    static func preview(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabCount: Int, isActionsEnabled: Bool = true, afterInactivityOption: AfterInactivityOption = .lastUsedTab, keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) -> EscapeHatchModel {
+    static func preview(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabCount: Int, isActionsEnabled: Bool = true, isFireButtonEnabled: Bool = false, isHideShortcutEnabled: Bool = false, afterInactivityOption: AfterInactivityOption = .lastUsedTab, keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) -> EscapeHatchModel {
         EscapeHatchModel(
             title: title,
             subtitle: subtitle,
@@ -54,10 +54,13 @@ extension EscapeHatchModel {
             targetTab: targetTab,
             tabsSource: .staticTabsSource(count: tabCount, includes: targetTab),
             isActionsEnabled: isActionsEnabled,
+            isFireButtonEnabled: isFireButtonEnabled,
+            isHideShortcutEnabled: isHideShortcutEnabled,
             afterInactivityOptionAdapter: AfterInactivityOptionAdapter(
                 initialOption: afterInactivityOption,
                 keyValueStore: keyValueStore
             ),
+            lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: keyValueStore),
             onCardTap: {},
             onTabSwitcherTap: {},
             onCloseTab: {},

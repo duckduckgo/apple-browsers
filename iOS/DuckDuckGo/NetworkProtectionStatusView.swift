@@ -357,7 +357,9 @@ struct NetworkProtectionStatusView: View {
             .disabled(copySupportInfoState != .idle)
             .animation(.easeInOut(duration: 0.18), value: copySupportInfoState)
         } footer: {
-            Text(UserText.netPVPNSettingsCopyDiagnosticsCaption).foregroundColor(.init(designSystemColor: .textSecondary))
+            Text(UserText.netPVPNSettingsCopyDiagnosticsCaption)
+                .daxFootnoteRegular()
+                .foregroundColor(.init(designSystemColor: .textSecondary))
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

@@ -138,7 +138,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertThrowsError(try JSONDecoder.snakeCaseKeys.decode(ProtectedKey.self, from: Data(json.utf8)))
     }
 
-    func testWhenDecodingProtectedKeyWithoutEncryptedWithThenDecodingFails() {
+    func testWhenDecodingProtectedKeyWithoutEncryptedWithThenDefaultsToDefaultCredential() throws {
         let json = """
         {
             "kid": "key-missing-encrypted-with",
@@ -155,7 +155,71 @@ final class AccountManagerTests: XCTestCase {
         }
         """
 
-        XCTAssertThrowsError(try JSONDecoder.snakeCaseKeys.decode(ProtectedKey.self, from: Data(json.utf8)))
+        let key = try JSONDecoder.snakeCaseKeys.decode(ProtectedKey.self, from: Data(json.utf8))
+
+        XCTAssertEqual(key.encryptedWith, SyncCredentialID.defaultCredential)
+    }
+
+    func testWhenDecodingProtectedKeyWithEmptyEncryptedWithThenDefaultsToDefaultCredential() throws {
+        let json = """
+        {
+            "kid": "key-empty-encrypted-with",
+            "purpose": "browser",
+            "encrypted_private_key": "encrypted-private-key",
+            "public_key": {
+                "alg": "RSA-OAEP-256",
+                "e": "AQAB",
+                "ext": true,
+                "key_ops": ["encrypt"],
+                "kty": "RSA",
+                "n": "modulus"
+            },
+            "encrypted_with": ""
+        }
+        """
+
+        let key = try JSONDecoder.snakeCaseKeys.decode(ProtectedKey.self, from: Data(json.utf8))
+
+        XCTAssertEqual(key.encryptedWith, SyncCredentialID.defaultCredential)
+    }
+
+    func testWhenDecodingProtectedKeysWithMissingEncryptedWithAndValidSiblingThenBothSurvive() throws {
+        let json = """
+        [
+            {
+                "kid": "key-missing-encrypted-with",
+                "purpose": "browser",
+                "encrypted_private_key": "encrypted-private-key",
+                "public_key": {
+                    "alg": "RSA-OAEP-256",
+                    "e": "AQAB",
+                    "ext": true,
+                    "key_ops": ["encrypt"],
+                    "kty": "RSA",
+                    "n": "modulus"
+                }
+            },
+            {
+                "kid": "key-3party",
+                "purpose": "browser",
+                "encrypted_private_key": "encrypted-private-key",
+                "public_key": {
+                    "alg": "RSA-OAEP-256",
+                    "e": "AQAB",
+                    "ext": true,
+                    "key_ops": ["encrypt"],
+                    "kty": "RSA",
+                    "n": "modulus"
+                },
+                "encrypted_with": "3party"
+            }
+        ]
+        """
+
+        let keys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: Data(json.utf8))
+
+        XCTAssertEqual(keys.map(\.kid), ["key-missing-encrypted-with", "key-3party"])
+        XCTAssertEqual(keys.map(\.encryptedWith), [SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty])
     }
 
     func testWhenDecodingAccessCredentialFromServerResponseThenFieldsAreMapped() throws {

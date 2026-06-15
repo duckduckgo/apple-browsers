@@ -488,17 +488,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         if useSimplifiedLayout {
             let controller = UIHostingController(rootView: SimplifiedConnectingSheetView())
             controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
-            if #available(iOS 16.4, *) {
-                controller.sizingOptions = .intrinsicContentSize
-            }
-            if #available(iOS 16.0, *) {
-                let fittingSize = controller.view.systemLayoutSizeFitting(
-                    CGSize(width: UIScreen.main.bounds.width, height: UIView.layoutFittingCompressedSize.height)
-                )
-                controller.sheetPresentationController?.detents = [
-                    .custom { _ in fittingSize.height }
-                ]
-            }
+            controller.sheetPresentationController?.detents = [.large()]
             navigationController?.present(controller, animated: true, completion: completion)
         } else {
             let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
@@ -908,7 +898,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func codeCopied(_ code: String) {
         fireBarcodeCodeCopiedPixel(for: code)
-        ActionMessageView.present(message: UserText.simplifiedCodeCopiedToast)
     }
 
     @MainActor

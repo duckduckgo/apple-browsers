@@ -287,8 +287,7 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
         let dnsSettingsState = VPNMetadata.DNSSettingsState(
             selection: .duckDuckGo,
             blockRiskyDomainsEnabled: true,
-            customDNSServerCount: 0,
-            customDNSServerAddressCategories: []
+            customDNSServerAddressCategory: nil
         )
 
         let vpnSettingsState = VPNMetadata.VPNSettingsState(

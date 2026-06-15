@@ -17,6 +17,8 @@
 //
 
 import BrowserServicesKit
+import DuckPlayer
+import FeatureFlags
 import Foundation
 import PrivacyConfig
 import XCTest
@@ -87,5 +89,34 @@ final class DuckPlayerPreferencesTests: XCTestCase {
         XCTAssertTrue(persister2.duckPlayerModeBool!)
         XCTAssertTrue(persister2.youtubeOverlayInteracted)
         XCTAssertTrue(persister2.youtubeOverlayAnyButtonPressed)
+    }
+
+    // MARK: - Ad-blocking rollout onboarding default
+
+    func testWhenAdBlockingRolloutInactiveThenOnboardingCompletionKeepsDuckPlayerAtAlwaysAsk() {
+        UserDefaultsWrapper<Any>.clearAll()
+
+        OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: MockFeatureFlagger())
+
+        let storedMode = DuckPlayerMode(DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool)
+        XCTAssertEqual(storedMode, .alwaysAsk)
+    }
+
+    func testWhenAdBlockingRolloutActiveThenOnboardingCompletionDisablesDuckPlayer() {
+        UserDefaultsWrapper<Any>.clearAll()
+        let featureFlagger = MockFeatureFlagger(featuresStub: [
+            FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true,
+            FeatureFlag.webExtensions.rawValue: true
+        ])
+
+        OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
+
+        let storedMode = DuckPlayerMode(DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool)
+        if #available(macOS 15.4, *) {
+            XCTAssertEqual(storedMode, .disabled)
+        } else {
+            // The ad-blocking extension is unsupported below macOS 15.4, so the default is unchanged.
+            XCTAssertEqual(storedMode, .alwaysAsk)
+        }
     }
 }

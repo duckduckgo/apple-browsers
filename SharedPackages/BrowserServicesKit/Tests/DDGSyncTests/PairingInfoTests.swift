@@ -77,29 +77,6 @@ final class PairingInfoTests: XCTestCase {
         }
     }
 
-    func testInitWithValidatingPairingV2URL_returnsPairingV2Info() throws {
-        let payload = PairingV2QRCodePayload(channelId: "channel", publicKey: "public-key")
-        let url = try payload.toURL(baseURL: Self.ddgURL)
-        let pairingInfo = try XCTUnwrap(PairingInfo(validatingPairingV2URL: url, deviceName: "the other device"))
-
-        XCTAssertEqual(pairingInfo.base64Code, url.absoluteString)
-        XCTAssertEqual(pairingInfo.deviceName, "the other device")
-        XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL), url)
-    }
-
-    func testInitWithValidatingPairingV2URL_whenUnsupportedVersion_returnsPairingV2Info() throws {
-        let payload = PairingV2QRCodePayload(version: "3.0", channelId: "channel", publicKey: "public-key")
-        let url = try payload.toURL(baseURL: Self.ddgURL)
-
-        XCTAssertNotNil(PairingInfo(validatingPairingV2URL: url, deviceName: "the other device"))
-    }
-
-    func testInitWithValidatingPairingV2URL_whenLegacyPairingURL_returnsNil() throws {
-        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/sync/pairing/#&code=abc&deviceName=My%20iPhone"))
-
-        XCTAssertNil(PairingInfo(validatingPairingV2URL: url, deviceName: "the other device"))
-    }
-
     // MARK: toURL
 
     func testToURL_replacesPlusesWithHyphens() {

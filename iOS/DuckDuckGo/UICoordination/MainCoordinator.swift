@@ -764,16 +764,9 @@ extension MainCoordinator: URLHandling {
         case .customProductPage:
             AppStoreCustomProductPageDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
-            if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) {
-                if let pairingInfo = PairingInfo(url: url) {
-                    controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
-                    return true
-                }
-                if featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow),
-                   let pairingInfo = PairingInfo(validatingPairingV2URL: url, deviceName: UserText.syncPairingV2UnknownPeerName) {
-                    controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
-                    return true
-                }
+            if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
+                controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
+                return true
             }
             return false
         }

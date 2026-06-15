@@ -171,14 +171,6 @@ public struct PairingInfo {
     public let deviceName: String
     let kind: Kind
 
-    public init?(validatingPairingV2URL url: URL, deviceName: String) {
-        guard PairingV2QRCodePayload(url: url) != nil || PairingV2QRCodePayload.unsupportedMajorVersion(in: url) != nil else {
-            return nil
-        }
-
-        self.init(pairingV2URL: url, deviceName: deviceName)
-    }
-
     public init?(url: URL) {
         guard Self.isPairing(url: url) else {
             return nil

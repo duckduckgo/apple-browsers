@@ -70,7 +70,7 @@ struct VPNMetadata: Encodable {
         let selection: Selection
         let blockRiskyDomainsEnabled: Bool?
         let customDNSServerCount: Int
-        let customDNSServerAddressCategories: [NetworkProtectionIPAddressCategory]
+        let customDNSServerAddressCategories: [NetworkProtectionIPAddressCategory]?
     }
 
     struct VPNSettingsState: Encodable {
@@ -355,14 +355,15 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
                 selection: .duckDuckGo,
                 blockRiskyDomainsEnabled: blockRiskyDomains,
                 customDNSServerCount: 0,
-                customDNSServerAddressCategories: []
+                customDNSServerAddressCategories: nil
             )
         case .custom(let servers):
+            let categories = NetworkProtectionAddressMetadata.categories(for: servers)
             return .init(
                 selection: .custom,
                 blockRiskyDomainsEnabled: nil,
                 customDNSServerCount: servers.count,
-                customDNSServerAddressCategories: NetworkProtectionAddressMetadata.categories(for: servers)
+                customDNSServerAddressCategories: categories.isEmpty ? nil : categories
             )
         }
     }

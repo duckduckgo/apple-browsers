@@ -207,14 +207,18 @@ public struct AIChatPageContextData: Codable, Equatable {
 public struct AIChatSelectionContextData: Codable, Equatable {
     public let id: String
     public let title: String
+    /// The source page's favicon, base64-encoded the same way as `AIChatPageContextData.favicon`
+    /// (raw URLs get CSP-blocked in the sidebar). Empty when no favicon is cached.
+    public let favicon: [AIChatPageContextData.PageContextFavicon]
     public let url: String
     public let content: String
     public let truncated: Bool
     public let fullContentLength: Int
 
-    public init(id: String, title: String, url: String, content: String, truncated: Bool, fullContentLength: Int) {
+    public init(id: String, title: String, favicon: [AIChatPageContextData.PageContextFavicon] = [], url: String, content: String, truncated: Bool, fullContentLength: Int) {
         self.id = id
         self.title = title
+        self.favicon = favicon
         self.url = url
         self.content = content
         self.truncated = truncated

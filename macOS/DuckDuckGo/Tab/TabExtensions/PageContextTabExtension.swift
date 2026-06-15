@@ -283,9 +283,32 @@ final class PageContextTabExtension {
     /// sidebar is shown.
     @MainActor
     func appendSelectionContext(_ selection: AIChatSelectionContextData) {
-        pendingSelectionContexts.append(selection)
+        pendingSelectionContexts.append(selectionWithEncodedFavicon(selection))
         // Defer so a just-revealed sidebar's chat VC exists before we push (matches page-context timing).
         Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
+    }
+
+    /// Stamps the source page's base64-encoded favicon onto the selection (raw favicon URLs get
+    /// CSP-blocked in the sidebar). Mirrors `replaceFaviconURLWithEncodedData`; returns the item
+    /// unchanged when no favicon is cached.
+    @MainActor
+    private func selectionWithEncodedFavicon(_ selection: AIChatSelectionContextData) -> AIChatSelectionContextData {
+        guard let pageURL = URL(string: selection.url),
+              let favicon = faviconManagement.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
+              let base64Favicon = favicon.base64PNGDataURL else {
+            return selection
+        }
+
+        let faviconEntry = AIChatPageContextData.PageContextFavicon(href: base64Favicon, rel: "icon")
+        return AIChatSelectionContextData(
+            id: selection.id,
+            title: selection.title,
+            favicon: [faviconEntry],
+            url: selection.url,
+            content: selection.content,
+            truncated: selection.truncated,
+            fullContentLength: selection.fullContentLength
+        )
     }
 
     /// Pushes buffered selection items to the sidebar chat VC (if it exists) and clears the buffer.

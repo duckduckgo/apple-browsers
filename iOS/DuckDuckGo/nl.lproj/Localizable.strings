@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Opnieuw laden";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Zoom resetten";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Selecteren";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Alle tabbladen weergeven";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Inzoomen";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Uitzoomen";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Laatst verwerkt: %@";

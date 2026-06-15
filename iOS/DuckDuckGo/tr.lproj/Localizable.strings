@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Tekrar yükle";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Yakınlaştırmayı Sıfırla";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Seç";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Tüm Sekmeleri Göster";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Yakınlaştır";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Uzaklaştır";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Son İşlenme: %@";

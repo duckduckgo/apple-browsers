@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Reîncarcă";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Resetează focalizarea";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Selecție";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Afișează toate filele";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Mărește";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Micșorează";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Ultima procesare: %@";

@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Γίνεται επαναφόρτωση";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Επαναφορά ζουμ";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Επιλογή";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Προβολή όλων των καρτελών";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Μεγέθυνση";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Σμίκρυνση";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Τελευταία επεξεργασία: %@";

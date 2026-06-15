@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "再読み込み";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "ズームをリセット";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "選択";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "すべてのタブを表示";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "ズームイン";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "ズームアウト";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "最終処理日：%@";

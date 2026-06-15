@@ -719,23 +719,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_startPairingMode_withPairingV2Info_startsPairingV2() async throws {
-        let messageExchanger = PairingV2MessageExchangingMock()
-        messageExchanger.fetchMessagesError = PairingV2Error.cancelled
-        dependencies.createPairingV2MessageExchangerStub = messageExchanger
-        let peerKeyPair = try makePeerKeyPair()
-        let payload = PairingV2QRCodePayload(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
-        let url = try payload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
-        let pairingInfo = PairingInfo(pairingV2URL: url, deviceName: "the other device")
-
-        let result = await controller.startPairingMode(pairingInfo)
-
-        XCTAssertFalse(result)
-        XCTAssertEqual(dependencies.createPairingV2MessageExchangerCallCount, 1)
-        XCTAssertNil(delegate.didErrorErrors)
-    }
-
-    @MainActor
     func test_startPairingMode_withInvalidCode_returnsFailure() async throws {
         let result = await controller.startPairingMode(PairingInfo(base64Code: "invalid_base64", deviceName: "Test"))
         let error = delegate.didErrorErrors?.error

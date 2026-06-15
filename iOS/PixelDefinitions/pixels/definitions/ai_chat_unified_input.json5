@@ -287,5 +287,12 @@
                 "type": "boolean"
             }
         ]
+    },
+    "m_aichat_unified_input_duck_ai_direct_navigation": {
+        "description": "Fires when Duck.ai is disabled under AI Features settings yet the user navigates directly to Duck.ai by typing its address into the Unified Toggle Input and submitting. Does not fire for the in-input Duck.ai shortcut button or other Duck.ai entry points.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

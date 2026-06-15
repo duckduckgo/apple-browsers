@@ -24,6 +24,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 import UIKit
+import PrivacyConfig
 
 /// A view controller displaying the list of recent AI chats
 final class AIChatHistoryListViewController: UIViewController {
@@ -80,8 +81,10 @@ final class AIChatHistoryListViewController: UIViewController {
         }
     }
 
+    private let featureFlagger: FeatureFlagger
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
+    private let onChatDeleted: (AIChatSuggestion) -> Void
     private let isIPadExperience: Bool
     private var cancellables = Set<AnyCancellable>()
 
@@ -92,7 +95,7 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.dataSource = self
         tableView.alwaysBounceVertical = true
         tableView.keyboardDismissMode = .onDrag
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
+        tableView.register(DuckAISuggestionTableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionFooterHeight = 0
@@ -103,6 +106,9 @@ final class AIChatHistoryListViewController: UIViewController {
     private var chats: [AIChatSuggestion] {
         viewModel.filteredSuggestions
     }
+
+    /// Mirrors the view model's last `selectedIndex` so the observer can de-highlight the previous row.
+    private var previousSelectedIndex: Int?
 
     private var currentEscapeHatchModel: EscapeHatchModel?
     private var escapeHatchHostingController: UIHostingController<EscapeHatchView>?
@@ -133,10 +139,15 @@ final class AIChatHistoryListViewController: UIViewController {
 
     init(viewModel: AIChatSuggestionsViewModel,
          isIPadExperience: Bool,
-         onChatSelected: @escaping (AIChatSuggestion) -> Void) {
+         onChatSelected: @escaping (AIChatSuggestion) -> Void,
+         onChatDeleted: @escaping (AIChatSuggestion) -> Void,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger)
+    {
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
+        self.onChatDeleted = onChatDeleted
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -150,6 +161,13 @@ final class AIChatHistoryListViewController: UIViewController {
         super.viewDidLoad()
         setupView()
         subscribeToViewModel()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        /// Dismiss FireConfirmation if present. On iPad this ViewController is dismissed upon rotation
+        presentedViewController?.dismiss(animated: true)
     }
 
     // MARK: - Private Methods
@@ -173,6 +191,40 @@ final class AIChatHistoryListViewController: UIViewController {
                 self?.tableView.reloadData()
             }
             .store(in: &cancellables)
+
+        // Keyboard selection is owned by the view model; repaint the highlighted row as it moves.
+        viewModel.$selectedIndex
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] selectedIndex in
+                self?.applyHighlight(at: selectedIndex)
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Keyboard selection highlight
+
+    private func applyHighlight(at selectedIndex: Int?) {
+        if let previousSelectedIndex {
+            applyHighlightAppearance(atRow: previousSelectedIndex, isHighlighted: false)
+        }
+        previousSelectedIndex = selectedIndex
+        guard let selectedIndex else { return }
+        applyHighlightAppearance(atRow: selectedIndex, isHighlighted: true)
+        // The table reloads asynchronously, so guard against a row it hasn't inserted yet.
+        if tableView.numberOfSections > 0, selectedIndex < tableView.numberOfRows(inSection: 0) {
+            tableView.scrollToRow(at: IndexPath(row: selectedIndex, section: 0), at: .none, animated: false)
+        }
+    }
+
+    private func applyHighlightAppearance(atRow row: Int, isHighlighted: Bool) {
+        let indexPath = IndexPath(row: row, section: 0)
+        guard tableView.indexPathsForVisibleRows?.contains(indexPath) == true,
+              let cell = tableView.cellForRow(at: indexPath) else { return }
+        cell.backgroundColor = highlightBackgroundColor(isHighlighted: isHighlighted)
+    }
+
+    private func highlightBackgroundColor(isHighlighted: Bool) -> UIColor {
+        isHighlighted ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .surface)
     }
 
     func setScrollableTitle(_ title: String?) {
@@ -312,6 +364,37 @@ final class AIChatHistoryListViewController: UIViewController {
 
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor(designSystemColor: .surface)
+
+        configureDeleteActionIfNeeded(cell: cell, chat: chat)
+    }
+}
+
+// MARK: - Chat Deletion
+
+private extension AIChatHistoryListViewController {
+
+    func configureDeleteActionIfNeeded(cell: UITableViewCell, chat: AIChatSuggestion) {
+        guard let cell = cell as? DuckAISuggestionTableViewCell else {
+            return
+        }
+
+        cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.fire
+        cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onAccessoryButtonPressed = { [weak self] source in
+            self?.presentChatDeletionConfirmation(chat: chat, source: source)
+        }
+    }
+
+    func presentChatDeletionConfirmation(chat: AIChatSuggestion, source: UIView) {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
+
+        FireConfirmationPresenter.presentFireConfirmation(suggestion: chat, presenter: self, source: source) {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
+
+        } onConfirm: { [weak self] in
+            self?.onChatDeleted(chat)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteConfirmed)
+        }
     }
 }
 
@@ -334,6 +417,8 @@ extension AIChatHistoryListViewController: UITableViewDataSource {
 
         let chat = chats[indexPath.row]
         configureCell(cell, with: chat)
+        // Re-apply the highlight so a reused cell renders correctly.
+        cell.backgroundColor = highlightBackgroundColor(isHighlighted: viewModel.selectedIndex == indexPath.row)
 
         return cell
     }
@@ -353,19 +438,8 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-
         guard indexPath.row < chats.count else { return }
-
-        let chat = chats[indexPath.row]
-        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
-        DailyPixel.fireDailyAndCount(pixel: pixel)
-
-        if isIPadExperience {
-            let iPadPixel: Pixel.Event = chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected
-            DailyPixel.fireDailyAndCount(pixel: iPadPixel)
-        }
-
-        onChatSelected(chat)
+        onChatSelected(chats[indexPath.row])
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

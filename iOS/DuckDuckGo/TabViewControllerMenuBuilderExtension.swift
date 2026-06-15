@@ -624,6 +624,21 @@ extension TabViewController {
         })
     }
 
+    /// Website app-menu "Duck.ai Settings": opens Duck.ai in a new tab on its settings view.
+    /// Used off a Duck.ai tab, where the in-page `submitOpenSettingsAction` isn't available.
+    private func buildOpenSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatSettings
+            : DesignSystemImages.Glyphs.Size24.aiChatSettings
+        return .regular(name: UserText.actionAIChatSettings,
+                        accessibilityLabel: UserText.actionAIChatSettings,
+                        image: image,
+                        action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
+            self?.openSettingsInNewTab()
+        })
+    }
+
     private func performSaveBookmarkAction(for link: Link,
                                            with bookmarksInterface: MenuBookmarksInteracting) {
         Pixel.fire(pixel: .browsingMenuAddToBookmarks)
@@ -1025,13 +1040,15 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeDuckAIMenuItems() -> [BrowsingMenuEntry] {
         guard unifiedToggleInputFeature.isAvailable, shouldShowAIChatInMenu else { return [] }
 
-        // Duck.ai Settings is intentionally omitted here for now: there's no settings-open Duck.ai URL,
-        // and the in-page submitOpenSettingsAction is a no-op off a Duck.ai tab. It will return once the
-        // frontend exposes a settings-open URL (scoped as a follow-up), wired like Chats below.
+        // Native sheet when the flag is on; Duck.ai web sidebar otherwise.
+        let chatsEntry: BrowsingMenuEntry = featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+            ? buildDuckAiChatsEntry(withSmallIcon: false)
+            : buildOpenChatListEntry(useSmallIcon: false)
         return [
             buildNewAIChatEntry(withSmallIcon: false),
             buildAINewVoiceChatEntry(useSmallIcon: false),
-            buildOpenChatListEntry(useSmallIcon: false)
+            chatsEntry,
+            buildOpenSettingsEntry(useSmallIcon: false)
         ]
     }
 

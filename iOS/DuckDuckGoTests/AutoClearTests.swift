@@ -26,7 +26,7 @@ import BrowserServicesKit
 class AutoClearTests: XCTestCase {
     
     class MockFireExecutor: FireExecuting {
-        
+
         var burnCallCount = 0
         var burnRequest: FireRequest?
         var burnApplicationState: DataStoreWarmup.ApplicationState?
@@ -34,14 +34,18 @@ class AutoClearTests: XCTestCase {
         var burnInProgress: Bool = false
 
         weak var delegate: FireExecutorDelegate?
-        
+
         func prepare(for request: FireRequest) { }
-        
+
         func burn(request: FireRequest,
                   applicationState: DataStoreWarmup.ApplicationState) async {
             burnCallCount += 1
             burnRequest = request
             burnApplicationState = applicationState
+        }
+
+        func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> {
+            .success(())
         }
     }
     

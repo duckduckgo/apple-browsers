@@ -480,8 +480,10 @@ extension MainViewController {
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
+                                                  contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                   idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                   afterInactivityOptionAdapter: afterInactivityOptionAdapter,
+                                                  lastTabShortcutAdapter: lastTabShortcutAdapter,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
@@ -494,6 +496,11 @@ extension MainViewController {
                                                   adBlockingAvailability: adBlockingAvailability)
 
         settingsViewModel.autoClearActionDelegate = self
+        settingsViewModel.onRequestOpenDuckAIChat = { [weak self] in
+            self?.dismiss(animated: true) {
+                self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
+            }
+        }
         Pixel.fire(pixel: .settingsPresented)
 
         func doLaunch() {

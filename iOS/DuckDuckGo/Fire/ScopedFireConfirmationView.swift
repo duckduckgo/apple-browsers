@@ -23,6 +23,7 @@ import DesignResourcesKitIcons
 import Core
 import DuckUI
 import Lottie
+import MetricBuilder
 
 struct ScopedFireConfirmationView: View {
     
@@ -67,12 +68,12 @@ struct ScopedFireConfirmationView: View {
     }
     
     private var headerSection: some View {
-        VStack(spacing: Constants.headerSectionSpacing) {
+        VStack(spacing: SheetMetrics.contentSpacing) {
             if viewModel.showAnimation {
                 animation
             }
-            
-            VStack(spacing: Constants.headlineTextSpacing) {
+
+            VStack(spacing: SheetMetrics.headerSpacing) {
                 Text(viewModel.headerTitle)
                     .daxTitle3()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -92,7 +93,7 @@ struct ScopedFireConfirmationView: View {
     
     /// Scope selection buttons
     private var scopeButtons: some View {
-        VStack(spacing: Constants.buttonSpacing) {
+        VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
             ForEach(viewModel.buttons.indices, id: \.self) { index in
                 let button = viewModel.buttons[index]
                 Button(action: button.action) {
@@ -136,13 +137,43 @@ private extension ScopedFireConfirmationView {
         static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
         static let popoverViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         static let mainSectionSpacing: CGFloat = 16
-        static let headerSectionSpacing: CGFloat = 8
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
         static let headerSectionPaddingNoAnimation: EdgeInsets = .init(top: 36, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96
-        static let headlineTextSpacing: CGFloat = 4
-        static let buttonSpacing: CGFloat = 16
         static let closeButtonPadding: CGFloat = 8
         static let animationDelay: Double = 0.5
     }
 }
+
+#if DEBUG
+private struct PreviewDataClearingCapability: DataClearingCapable {
+    var isFireButtonRefinementsEnabled: Bool { false }
+}
+
+private final class PreviewDownloadManager: DownloadManaging {
+    var downloadList: Set<Download> { [] }
+    var downloadsDirectoryFiles: [URL] { [] }
+    func cancelDownload(_ download: Download) {}
+    func cancelAllDownloads() {}
+    func markAllDownloadsSeen() {}
+    func startMonitoringDownloadsDirectoryChanges() {}
+    func stopMonitoringDownloadsDirectoryChanges() {}
+}
+
+#Preview {
+    // Lightweight dependencies so the preview avoids the app-group-backed shared providers.
+    ScopedFireConfirmationView(
+        viewModel: ScopedFireConfirmationViewModel(
+            tabViewModel: nil,
+            source: .tabSwitcher,
+            fireContext: .singleTab,
+            downloadManager: PreviewDownloadManager(),
+            appSettings: AppUserDefaults(),
+            dataClearingCapability: PreviewDataClearingCapability(),
+            browsingMode: .normal,
+            onConfirm: { _ in },
+            onCancel: {}
+        )
+    )
+}
+#endif

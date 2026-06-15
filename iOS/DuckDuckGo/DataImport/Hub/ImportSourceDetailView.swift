@@ -149,3 +149,7 @@ struct ImportSourceDetailView: View {
         }
     }
 }
+
+#Preview {
+    ImportSourceDetailView(source: .safari, onPrimaryAction: {}, onUploadFile: {})
+}

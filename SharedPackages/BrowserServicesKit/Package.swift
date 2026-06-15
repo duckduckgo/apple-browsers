@@ -64,7 +64,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "15.0.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "15.1.0"),
         .package(path: "../URLPredictor"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
@@ -862,6 +862,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
+                "PersistenceTestingUtils",
                 "SecureStorageTestsUtils",
                 "SyncDataProviders",
             ]
@@ -903,6 +904,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PixelKit",
                 "PixelKitTestingUtilities",
+                "PersistenceTestingUtils",
             ]
         ),
         .testTarget(
@@ -932,10 +934,16 @@ let package = Package(
         .testTarget(
             name: "PixelExperimentKitTests",
             dependencies: [
+                "BloomFilterWrapper",
+                "BrowserServicesKit",
                 "SharedObjCTestsUtils",
                 "PixelExperimentKit",
                 "Configuration",
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
+                "Navigation",
+                "SecureStorage",
+                "Subscription",
+                "UserScript",
             ]
         ),
         .testTarget(

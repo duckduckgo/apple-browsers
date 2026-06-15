@@ -305,4 +305,31 @@ final class NewTabPageNextStepsCardsPersistorTests: XCTestCase {
         let stored = try? keyValueStore.object(forKey: "new.tab.page.next.steps.first.card.level") as? NewTabPageDataModel.CardLevel
         XCTAssertNil(stored)
     }
+
+    func testWhenClearIsCalledThenNtpImpressionCountIsRemoved() throws {
+        persistor.ntpImpressionCount = 5
+        XCTAssertEqual(persistor.ntpImpressionCount, 5)
+
+        persistor.clear()
+
+        XCTAssertEqual(persistor.ntpImpressionCount, 0)
+        let stored = try? keyValueStore.object(forKey: "new.tab.page.next.steps.ntp.impression.count") as? Int
+        XCTAssertNil(stored)
+    }
+
+    // MARK: - New Tab Page Impression Count Tests
+
+    func testNtpImpressionCountReturnsZeroByDefault() {
+        XCTAssertTrue(persistor.ntpImpressionCount == 0)
+    }
+
+    func testNtpImpressionCountIsSetThenValueIsStored() throws {
+        persistor.ntpImpressionCount = 5
+        XCTAssertEqual(try keyValueStore.object(forKey: "new.tab.page.next.steps.ntp.impression.count") as? Int, 5)
+    }
+
+    func testWhenNtpImpressionCountIsRetrievedThenStoredValueIsReturned() throws {
+        try keyValueStore.set(3, forKey: "new.tab.page.next.steps.ntp.impression.count")
+        XCTAssertEqual(persistor.ntpImpressionCount, 3)
+    }
 }

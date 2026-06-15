@@ -36,27 +36,33 @@ enum DuckAIChromeShortcutVisibility {
         isIPad && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
     }
 
-    /// Address Bar settings row hides whenever the Navigation Bar row is shown — they describe the same surface.
+    /// Address Bar settings row hides whenever the Tab Bar row is shown — they describe the same surface.
     static func isAddressBarRowVisible(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
         !isSettingsRowVisible(isIPad: isIPad, featureFlagger: featureFlagger)
     }
 
     /// No `isIPad` parameter — the only caller (`TabsBarViewController`) is iPad-only by construction.
+    /// Shown when the master "Tab Bar" toggle is on and at least one half is still visible.
     static func isChromeButtonVisible(
         featureFlagger: FeatureFlagger,
-        isAIChatNavigationBarUserSettingsEnabled: Bool
+        isTabBarShortcutEnabled: Bool,
+        isDuckAIButtonVisible: Bool,
+        isContextualSheetButtonVisible: Bool
     ) -> Bool {
         featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
-            && isAIChatNavigationBarUserSettingsEnabled
+            && isTabBarShortcutEnabled
+            && (isDuckAIButtonVisible || isContextualSheetButtonVisible)
     }
 
-    /// On iPad with the chrome shortcut in play, the in-address-bar Duck.ai icon only
-    /// shows at narrow widths where the tabs bar (and chrome pill) is hidden.
+    /// On iPad with the chrome shortcut in play, the in-address-bar Duck.ai button only
+    /// shows at narrow widths where the tabs bar (and chrome pill) is hidden. It mirrors the
+    /// master "Tab Bar" toggle — shown whenever the shortcut is on, hidden only once both
+    /// halves are hidden (which already flips the master toggle off).
     static func isAddressBarButtonVisibleOnIPad(
         isLargeWidth: Bool,
-        isAIChatNavigationBarUserSettingsEnabled: Bool
+        isTabBarShortcutEnabled: Bool
     ) -> Bool {
-        !isLargeWidth && isAIChatNavigationBarUserSettingsEnabled
+        !isLargeWidth && isTabBarShortcutEnabled
     }
 }
 
@@ -74,10 +80,11 @@ struct SettingsAIChatShortcutsView: View {
                                      accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
                 }
 
-                if shouldShowNavigationBarShortcut {
-                    SettingsCellView(label: UserText.aiChatSettingsEnableNavigationBarToggle,
-                                     subtitle: UserText.aiChatSettingsEnableNavigationBarSubtitle,
-                                     accessory: .toggle(isOn: viewModel.aiChatNavigationBarEnabledBinding))
+                if shouldShowTabBarShortcut {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableTabBarToggle,
+                                     subtitle: UserText.aiChatSettingsEnableTabBarSubtitle,
+                                     accessory: .toggle(isOn: viewModel.aiChatTabBarEnabledBinding),
+                                     accessoryAccessibilityIdentifier: "Settings.AIChat.TabBarToggle")
                 }
 
                 if viewModel.state.voiceSearchEnabled {
@@ -160,7 +167,7 @@ struct SettingsAIChatShortcutsView: View {
         )
     }
 
-    private var shouldShowNavigationBarShortcut: Bool {
+    private var shouldShowTabBarShortcut: Bool {
         DuckAIChromeShortcutVisibility.isSettingsRowVisible(
             isIPad: UIDevice.current.userInterfaceIdiom == .pad,
             featureFlagger: viewModel.featureFlagger

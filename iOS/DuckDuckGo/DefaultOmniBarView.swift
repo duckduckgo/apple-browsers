@@ -994,10 +994,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private struct Metrics {
         static let itemSize: CGFloat = 44
         static let height: CGFloat = 60
-        static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+        static var cornerRadius: CGFloat { OmniBarMetrics.cornerRadius }
 
         /// Sits 2pt outside `cornerRadius` so the active outline stays concentric with the field.
-        static var activeBorderRadius: CGFloat { AppRebrand.isAppRebranded() ? 24 : 18 }
+        static var activeBorderRadius: CGFloat { OmniBarMetrics.cornerRadius + 2 }
         static let activeBorderWidth: CGFloat = 2
 
         static let textAreaHorizontalPadding: CGFloat = 16

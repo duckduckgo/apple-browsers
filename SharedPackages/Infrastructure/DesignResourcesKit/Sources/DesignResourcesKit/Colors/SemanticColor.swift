@@ -60,7 +60,7 @@ public enum DesignSystemColor {
     case controlsRaisedFillPrimary
 
     // Brand
-    case accent
+    case accentPrimary
     case accentGlowSecondary
     case accentContentPrimary
     case accentTertiary

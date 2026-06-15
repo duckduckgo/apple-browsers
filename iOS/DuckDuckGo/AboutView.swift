@@ -69,7 +69,7 @@ struct AboutViewText: View {
                 .lineLimit(nil)
                 .multilineTextAlignment(.leading)
                 .foregroundColor(.primary)
-                .tintIfAvailable(Color(designSystemColor: .accent))
+                .tintIfAvailable(Color(designSystemColor: .accentPrimary))
                 .padding(.horizontal, 32)
                 .padding(.bottom)
 

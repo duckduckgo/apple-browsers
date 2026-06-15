@@ -168,7 +168,7 @@ struct NumberBadge: View {
                     .frame(width: 24, height: 24)
             )
             .frame(width: 10)
-            .foregroundColor(Color(designSystemColor: .accent))
+            .foregroundColor(Color(designSystemColor: .accentPrimary))
             .fixedSize()
             .padding(10)
     }

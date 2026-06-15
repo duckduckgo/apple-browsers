@@ -211,7 +211,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                 cell.textLabel?.numberOfLines = 0
             case .reset:
                 cell.textLabel?.text = "Edit Custom URL"
-                cell.textLabel?.textColor = UIColor(designSystemColor: .accent)
+                cell.textLabel?.textColor = UIColor(designSystemColor: .accentPrimary)
             case .none:
                 break
             }

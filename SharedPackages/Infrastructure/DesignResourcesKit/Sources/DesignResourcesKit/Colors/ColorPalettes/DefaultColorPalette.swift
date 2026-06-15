@@ -121,7 +121,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let textSelectionFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
 
     // Brand
-    private static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let accentPrimary = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let accentGlowSecondary = DynamicColor(lightColor: .blue50.opacity(0.12), darkColor: x7295F6.opacity(0.12))
 
     // System
@@ -211,7 +211,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .surfaceTertiary: return surfaceTertiary
         case .surfaceCanvas: return surfaceCanvas
 
-        case .accent: return accent
+        case .accentPrimary: return accentPrimary
         case .accentGlowSecondary: return accentGlowSecondary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow

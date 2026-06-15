@@ -184,7 +184,7 @@ private extension SettingsAIFeaturesView {
     var footerAttributedString: AttributedString {
         var base = AttributedString(UserText.settingsAIPickerFooterDescription + " ")
         var link = AttributedString(UserText.subscriptionFeedback)
-        link.foregroundColor = Color(designSystemColor: .accent)
+        link.foregroundColor = Color(designSystemColor: .accentPrimary)
         link.link = FooterAction.shareFeedback.url
         base.append(link)
         return base

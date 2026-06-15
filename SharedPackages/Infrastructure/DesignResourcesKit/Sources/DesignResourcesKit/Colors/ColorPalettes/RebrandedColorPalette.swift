@@ -24,7 +24,7 @@ struct RebrandedColorPalette: ColorPaletteDefinition {
 
     static func dynamicColor(for designSystemColor: DesignSystemColor) -> DynamicColor {
         switch designSystemColor {
-        case .accent:
+        case .accentPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
         case .accentTertiary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)

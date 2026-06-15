@@ -104,7 +104,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 }
 
                 toggle()
-                    .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
+                    .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
             }
         } header: {
             if let headerText {
@@ -113,7 +113,7 @@ struct NetworkProtectionVPNSettingsView: View {
         } footer: {
             Text(footerText)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
-                .accentColor(Color(designSystemColor: .accent))
+                .accentColor(Color(designSystemColor: .accentPrimary))
                 .daxFootnoteRegular()
                 .padding(.top, 6)
         }
@@ -126,7 +126,7 @@ struct NetworkProtectionVPNSettingsView: View {
             Button(UserText.netPTurnOnNotificationsButtonTitle) {
                 viewModel.turnOnNotifications()
             }
-            .foregroundColor(.init(designSystemColor: .accent))
+            .foregroundColor(.init(designSystemColor: .accentPrimary))
         } footer: {
             Text(UserText.netPTurnOnNotificationsSectionFooter)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
@@ -146,7 +146,7 @@ struct NetworkProtectionVPNSettingsView: View {
                     set: viewModel.didToggleAlerts(to:)
                 )
             )
-            .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
+            .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
         } header: {
             Text(UserText.netPVPNAlertsSectionHeader)
         } footer: {

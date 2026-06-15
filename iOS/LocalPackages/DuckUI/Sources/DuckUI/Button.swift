@@ -48,9 +48,9 @@ private struct PrimaryButtonColors {
     )
 
     static let rebrandedPrimary = PrimaryButtonColors(
-        standard: Color(singleUseColor: .rebranding(.accentPrimary)),
-        pressed: Color(singleUseColor: .rebranding(.accentPrimaryPressed)),
-        disabled: Color(singleUseColor: .rebranding(.accentPrimary)),
+        standard: Color(designSystemColor: .accentPrimary),
+        pressed: Color(designSystemColor: .accentTertiary),
+        disabled: Color(designSystemColor: .accentPrimary),
         text: Color(singleUseColor: .rebranding(.accentPrimaryText)),
         textDisabled: Color(singleUseColor: .rebranding(.buttonsContentDisabled))
     )
@@ -799,23 +799,28 @@ private enum Consts {
 
 // MARK: - Debug galleries
 
-/// Scoped override of `AppRebrand.isAppRebranded` for the host view's lifetime.
+/// Scoped override of `AppRebrand.isAppRebranded` and the design-system palette for the host view's lifetime.
 ///
-/// Captures the previous closure at init and restores it on deinit, so it doesn't
-/// permanently mutate global state.
+/// Captures the previous values at init and restores them on deinit, so it doesn't
+/// permanently mutate global state. The palette must be overridden alongside the flag because
+/// the rebranded button fills now resolve through `DesignSystemPalette.current`.
 ///
 /// Internal so the galleries (Xcode previews and the runtime debug menu) can reuse it
 /// within the module, e.g. `IOSButtonsDebugView.swift`.
 final class RebrandPreviewOverride: ObservableObject {
-    private let previous: () -> Bool
+    private let previousIsRebranded: () -> Bool
+    private let previousPalette: ColorPalette
 
     init(isRebranded: Bool) {
-        self.previous = AppRebrand.isAppRebranded
+        self.previousIsRebranded = AppRebrand.isAppRebranded
+        self.previousPalette = DesignSystemPalette.current
         AppRebrand.isAppRebranded = { isRebranded }
+        DesignSystemPalette.current = isRebranded ? .rebranded : .default
     }
 
     deinit {
-        AppRebrand.isAppRebranded = previous
+        AppRebrand.isAppRebranded = previousIsRebranded
+        DesignSystemPalette.current = previousPalette
     }
 }
 

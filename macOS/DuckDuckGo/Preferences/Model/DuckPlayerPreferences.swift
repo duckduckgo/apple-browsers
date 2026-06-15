@@ -67,12 +67,11 @@ final class DuckPlayerPreferences: ObservableObject {
     @Published
     var duckPlayerMode: DuckPlayerMode {
         didSet {
-            guard !isApplyingRolloutDefault, !isHandlingExternalChange else { return }
+            guard !isHandlingExternalChange else { return }
             persistor.duckPlayerModeBool = duckPlayerMode.boolValue
         }
     }
 
-    private var isApplyingRolloutDefault = false
     private var isHandlingExternalChange = false
 
     @Published
@@ -144,15 +143,9 @@ final class DuckPlayerPreferences: ObservableObject {
 
     init(persistor: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
-         internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider,
-         featureFlagger: FeatureFlagger? = nil) {
+         internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider) {
         self.persistor = persistor
-        self.featureFlagger = featureFlagger
-        if let stored = persistor.duckPlayerModeBool {
-            duckPlayerMode = .init(stored)
-        } else {
-            duckPlayerMode = Self.rolloutDefaultsActive(featureFlagger: featureFlagger) ? .disabled : .alwaysAsk
-        }
+        duckPlayerMode = .init(persistor.duckPlayerModeBool)
         youtubeOverlayInteracted = persistor.youtubeOverlayInteracted
         youtubeOverlayAnyButtonPressed = persistor.youtubeOverlayAnyButtonPressed
         duckPlayerAutoplay = persistor.duckPlayerAutoplay
@@ -161,13 +154,6 @@ final class DuckPlayerPreferences: ObservableObject {
         self.internalUserDecider = internalUserDecider
         self.duckPlayerContingencyHandler = DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: privacyConfigurationManager)
 
-        featureFlagger?.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.refreshDefaultModeIfNeeded()
-            }
-            .store(in: &cancellables)
-
         NotificationCenter.default
             .publisher(for: Self.duckPlayerModeDidChangeNotification)
             .receive(on: DispatchQueue.main)
@@ -175,23 +161,6 @@ final class DuckPlayerPreferences: ObservableObject {
                 self?.refreshDuckPlayerModeFromStore()
             }
             .store(in: &cancellables)
-    }
-
-    /// Whether the `adBlockingExtensionEnabledByDefault` rollout has activated the new defaults
-    /// regime — only when the platform actually supports the ad-blocking extension. Static so it
-    /// can be called from `init` before all stored properties are initialized.
-    private static func rolloutDefaultsActive(featureFlagger: FeatureFlagger?) -> Bool {
-        guard let featureFlagger else { return false }
-        return AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger)
-    }
-
-    private func refreshDefaultModeIfNeeded() {
-        guard persistor.duckPlayerModeBool == nil else { return }
-        let resolved: DuckPlayerMode = Self.rolloutDefaultsActive(featureFlagger: featureFlagger) ? .disabled : .alwaysAsk
-        guard resolved != duckPlayerMode else { return }
-        isApplyingRolloutDefault = true
-        duckPlayerMode = resolved
-        isApplyingRolloutDefault = false
     }
 
     private func refreshDuckPlayerModeFromStore() {
@@ -203,6 +172,5 @@ final class DuckPlayerPreferences: ObservableObject {
     }
 
     private var persistor: DuckPlayerPreferencesPersistor
-    private let featureFlagger: FeatureFlagger?
     private var cancellables: Set<AnyCancellable> = []
 }

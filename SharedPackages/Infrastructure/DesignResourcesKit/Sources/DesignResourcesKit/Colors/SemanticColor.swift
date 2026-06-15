@@ -61,6 +61,7 @@ public enum DesignSystemColor {
 
     // Brand
     case accentPrimary
+    case accentGlowPrimary
     case accentGlowSecondary
     case accentContentPrimary
     case accentTertiary
@@ -91,7 +92,9 @@ public enum DesignSystemColor {
 
     // Destructive
     case destructivePrimary
+    case destructiveTertiary
     case destructiveContentPrimary
+    case destructiveGlowPrimary
 
     // Buttons/Primary
     case buttonsPrimaryDefault

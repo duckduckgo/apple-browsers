@@ -65,7 +65,7 @@ private struct PrimaryButtonColors {
 
     static let rebrandedDestructive = PrimaryButtonColors(
         standard: Color(designSystemColor: .destructivePrimary),
-        pressed: Color(singleUseColor: .rebranding(.destructivePrimaryPressed)),
+        pressed: Color(designSystemColor: .destructiveTertiary),
         disabled: Color(designSystemColor: .destructivePrimary),
         text: Color(designSystemColor: .destructiveContentPrimary),
         textDisabled: Color(designSystemColor: .destructiveContentPrimary)
@@ -364,7 +364,7 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
 
     private func rebrandedBody(configuration: Configuration) -> some View {
         let destructiveColor = Color(designSystemColor: .destructivePrimary)
-        let pressedDestructiveColor = Color(singleUseColor: .rebranding(.destructivePrimaryPressed))
+        let pressedDestructiveColor = Color(designSystemColor: .destructiveTertiary)
         let isPressed = configuration.isPressed || pressed
         let foregroundColor = disabled
             ? destructiveColor.opacity(Consts.disabledOpacity)
@@ -447,7 +447,7 @@ public struct DestructiveGhostButtonStyle: ButtonStyle {
 
     private func rebrandedBody(configuration: Configuration) -> some View {
         let destructiveColor = Color(designSystemColor: .destructivePrimary)
-        let pressedTextColor = Color(singleUseColor: .rebranding(.destructivePrimaryPressed))
+        let pressedTextColor = Color(designSystemColor: .destructiveTertiary)
         let isPressed = configuration.isPressed || pressed
 
         return configuration.label
@@ -455,7 +455,7 @@ public struct DestructiveGhostButtonStyle: ButtonStyle {
             .foregroundColor(isPressed ? pressedTextColor : destructiveColor)
             .padding()
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
-            .background(isPressed ? Color(singleUseColor: .rebranding(.destructiveGlowPrimary)) : .clear)
+            .background(isPressed ? Color(designSystemColor: .destructiveGlowPrimary) : .clear)
             .clipShape(Capsule())
             .contentShape(Capsule())
             .opacity(disabled ? Consts.disabledOpacity : 1)
@@ -715,7 +715,7 @@ public struct GhostButtonStyle: ButtonStyle {
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {
-        isPressed ? Color(singleUseColor: .rebranding(.accentGlowPrimary)) : .clear
+        isPressed ? Color(designSystemColor: .accentGlowPrimary) : .clear
     }
 }
 

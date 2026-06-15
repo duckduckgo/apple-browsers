@@ -123,8 +123,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Brand
     private static let accentPrimary = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let accentGlowSecondary = DynamicColor(lightColor: .blue50.opacity(0.12), darkColor: x7295F6.opacity(0.12))
+    // Unused in the default palette (rebrand only). Falls back to the legacy ghost glow.
+    private static let accentGlowPrimary = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
 
-    // Accent Brand — unused in the default palette (brand buttons render only when rebranded); falls back to the primary blue.
+    // Unused in the default palette (rebrand only). Falls back to the primary accent blue.
     private static let accentBrandPrimary = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let accentBrandTertiary = DynamicColor(lightColor: .blue70, darkColor: .blue50)
     private static let accentBrandContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
@@ -140,6 +142,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Destructive
     private static let destructivePrimary = DynamicColor(lightColor: .alertRed, darkColor: .alertRed20)
     private static let destructiveContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
+    // Unused in the default palette (rebrand only). Falls back to the legacy destructove pressed / glow.
+    private static let destructiveTertiary = DynamicColor(lightColor: .alertRed80, darkColor: .alertRed40)
+    private static let destructiveGlowPrimary = DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xE5244B).opacity(0.2))
 
     // Buttons/Primary
     private static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
@@ -218,6 +223,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .surfaceCanvas: return surfaceCanvas
 
         case .accentPrimary: return accentPrimary
+        case .accentGlowPrimary: return accentGlowPrimary
         case .accentGlowSecondary: return accentGlowSecondary
         case .accentBrandPrimary: return accentBrandPrimary
         case .accentBrandTertiary: return accentBrandTertiary
@@ -234,7 +240,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
         // Destructive
         case .destructivePrimary: return destructivePrimary
+        case .destructiveTertiary: return destructiveTertiary
         case .destructiveContentPrimary: return destructiveContentPrimary
+        case .destructiveGlowPrimary: return destructiveGlowPrimary
 
             // Buttons/SecondaryFill
         case .buttonsSecondaryFillDefault: return buttonsSecondaryFillDefault

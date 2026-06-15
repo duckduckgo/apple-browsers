@@ -20,7 +20,7 @@
                     "refresh_trigger": {
                         "type": "string",
                         "description": "The reason for the refresh.",
-                        "enum": ["backend", "client", "token_adoption"]
+                        "enum": ["backend", "client", "create_if_needed", "token_adoption"]
                     },
                     "failing_step": {
                         "type": "string",

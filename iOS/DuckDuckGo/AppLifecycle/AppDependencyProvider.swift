@@ -212,17 +212,19 @@ final class AppDependencyProvider: DependencyProvider {
         let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
         let authService = DefaultOAuthService(baseURL: authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
-        let refreshEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+        let isAuthV2WideEventEnabled = {
 #if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
+            return true
 #else
             return authEnvironment == .production
 #endif
-        })
+        }
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
 
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             authService: authService,
-                                            refreshEventMapping: refreshEventMapper)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
@@ -265,15 +267,10 @@ final class AppDependencyProvider: DependencyProvider {
                                                                pixelHandler: pixelHandler,
                                                                isInternalUserEnabled: {
             ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
-        },
+                                                               },
                                                                wideEvent: wideEvent,
-                                                               isAuthV2WideEventEnabled: {
-#if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
-#else
-            return authEnvironment == .production
-#endif
-        })
+                                                               isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
         self.tokenHandlerProvider = subscriptionManager
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                      storePurchaseManager: storePurchaseManager,

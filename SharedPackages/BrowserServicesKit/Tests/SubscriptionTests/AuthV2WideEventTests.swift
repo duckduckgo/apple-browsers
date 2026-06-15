@@ -241,6 +241,22 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(recovered.pixelParameters()["feature.data.ext.performed_token_recovery"], "true")
     }
 
+    func testDecoding_withoutPerformedTokenRecovery_defaultsToFalse() throws {
+        let eventData = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
+        eventData.recoveryDuration = .startingNow()
+
+        let encoded = try JSONEncoder().encode(eventData)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        json.removeValue(forKey: "performedTokenRecovery")
+
+        let legacyData = try JSONSerialization.data(withJSONObject: json)
+        let decoded = try JSONDecoder().decode(AuthV2TokenRefreshWideEventData.self, from: legacyData)
+
+        XCTAssertFalse(decoded.performedTokenRecovery)
+        XCTAssertEqual(decoded.failingStep, .recoverInvalidToken)
+        XCTAssertNotNil(decoded.recoveryDuration?.start)
+    }
+
     // MARK: - Refresh trigger
 
     func testPixelParameters_refreshTrigger_alwaysEmitted_defaultsToClient() {
@@ -251,16 +267,16 @@ final class AuthV2WideEventTests: XCTestCase {
 
     func testPixelParameters_refreshTrigger_emitsSetValue() {
         let eventData = AuthV2TokenRefreshWideEventData()
-        eventData.refreshTrigger = .tokenAdoption
+        eventData.refreshTrigger = .createIfNeeded
 
-        XCTAssertEqual(eventData.pixelParameters()["feature.data.ext.refresh_trigger"], "token_adoption")
+        XCTAssertEqual(eventData.pixelParameters()["feature.data.ext.refresh_trigger"], "create_if_needed")
     }
 
     func testRefreshEventMapping_startCarriesTrigger() {
         let mock = WideEventMock()
-        let mapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: mock, isFeatureEnabled: { true })
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
 
-        mapping.fire(.tokenRefreshStarted(refreshID: "refresh-trigger", trigger: .tokenAdoption))
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: "refresh-trigger", trigger: .tokenAdoption))
 
         let pending = mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self)
         XCTAssertEqual(pending.first?.refreshTrigger, .tokenAdoption)
@@ -282,30 +298,28 @@ final class AuthV2WideEventTests: XCTestCase {
 
     func testRefreshEventMapping_invalidTokenRequest_defersCompletionAndMarksStep() {
         let mock = WideEventMock()
-        let mapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: mock, isFeatureEnabled: { true })
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
         let refreshID = "refresh-1"
 
-        mapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
-        mapping.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
-        mapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.invalidTokenRequest(.reused)))
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
+        instrumentation.eventMapping.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
+        instrumentation.eventMapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.invalidTokenRequest(.reused)))
 
-        // Recovery layer owns the terminal point - the mapping must NOT complete the flow.
         XCTAssertTrue(mock.completions.isEmpty)
-        // The pending flow must be marked AND have a recovery start time so the recovery layer can locate the newest one.
         let pending = mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self)
         XCTAssertEqual(pending.first?.failingStep, .recoverInvalidToken)
         XCTAssertNotNil(pending.first?.recoveryDuration?.start)
     }
 
     func testRefreshEventMapping_invalidTokenRequest_completesFailureWhenRecoveryWillNotRun() throws {
-        for trigger in [TokenRefreshTrigger.backend, .tokenAdoption] {
+        for trigger in [TokenRefreshTrigger.backend, .createIfNeeded, .tokenAdoption] {
             let mock = WideEventMock()
-            let mapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: mock, isFeatureEnabled: { true })
+            let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
             let refreshID = "refresh-\(trigger.rawValue)"
 
-            mapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: trigger))
-            mapping.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
-            mapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.invalidTokenRequest(.reused)))
+            instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: trigger))
+            instrumentation.eventMapping.fire(.tokenRefreshRefreshingAccessToken(refreshID: refreshID))
+            instrumentation.eventMapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.invalidTokenRequest(.reused)))
 
             XCTAssertEqual(mock.completions.count, 1)
             XCTAssertEqual(mock.completions.first?.1, .failure)
@@ -320,16 +334,65 @@ final class AuthV2WideEventTests: XCTestCase {
 
     func testRefreshEventMapping_otherError_completesFailure() {
         let mock = WideEventMock()
-        let mapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: mock, isFeatureEnabled: { true })
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
         let refreshID = "refresh-2"
 
-        mapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
-        mapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.unknownAccount))
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
+        instrumentation.eventMapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.unknownAccount))
 
         XCTAssertEqual(mock.completions.count, 1)
         guard case .failure = mock.completions.first?.1 else {
             return XCTFail("Expected FAILURE completion for a non-recoverable error")
         }
+    }
+
+    func testRefreshInstrumentation_recoverySuccessCompletesNewestFlowWithoutError() throws {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
+        let staleFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                        globalData: WideEventGlobalData(id: "stale"))
+        staleFlow.recoveryDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSinceNow: -120), end: nil)
+        mock.startFlow(staleFlow)
+
+        let freshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                        globalData: WideEventGlobalData(id: "fresh"))
+        freshFlow.errorData = WideEventErrorData(error: OAuthClientError.invalidTokenRequest(.reused))
+        freshFlow.recoveryDuration = .startingNow()
+        mock.startFlow(freshFlow)
+
+        instrumentation.completeInvalidTokenRecovery(status: .success(reason: nil), error: nil)
+
+        XCTAssertEqual(mock.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mock.completions.first)
+        XCTAssertEqual(data.globalData.id, "fresh")
+        XCTAssertEqual(status, .success(reason: nil))
+
+        let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
+        XCTAssertTrue(refreshData.performedTokenRecovery)
+        XCTAssertNil(refreshData.errorData)
+        XCTAssertNil(refreshData.failingStep)
+        XCTAssertNotNil(refreshData.recoveryDuration?.end)
+    }
+
+    func testRefreshInstrumentation_recoveryFailureCompletesFlowWithError() throws {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          globalData: WideEventGlobalData(id: "refresh-1"))
+        pendingFlow.recoveryDuration = .startingNow()
+        mock.startFlow(pendingFlow)
+
+        instrumentation.completeInvalidTokenRecovery(status: .failure, error: SubscriptionManagerError.noTokenAvailable)
+
+        XCTAssertEqual(mock.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mock.completions.first)
+        XCTAssertEqual(status, .failure)
+
+        let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
+        XCTAssertTrue(refreshData.performedTokenRecovery)
+        XCTAssertNotNil(refreshData.errorData)
+        XCTAssertEqual(refreshData.failingStep, .recoverInvalidToken)
+        XCTAssertNotNil(refreshData.recoveryDuration?.end)
     }
 
     // MARK: - Token adoption source
@@ -348,5 +411,10 @@ final class AuthV2WideEventTests: XCTestCase {
         let vpn = AuthV2TokenAdoptionWideEventData()
         vpn.adoptionSource = .vpn
         XCTAssertEqual(vpn.pixelParameters()["feature.data.ext.adoption_source"], "vpn")
+    }
+
+    private func makeRefreshInstrumentation(wideEvent: WideEventManaging,
+                                            isFeatureEnabled: @escaping () -> Bool = { true }) -> AuthV2TokenRefreshInstrumenting {
+        DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent, isFeatureEnabled: isFeatureEnabled)
     }
 }

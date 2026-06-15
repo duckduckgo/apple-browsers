@@ -727,16 +727,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           frequency: .legacyDailyAndCount)
         }
 
-        let authRefreshWideEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+        let isAuthV2WideEventEnabled = {
 #if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
+            return true
 #else
             return subscriptionEnvironment.serviceEnvironment == .production
 #endif
-        })
+        }
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
-                                            refreshEventMapping: authRefreshWideEventMapper)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
@@ -782,13 +784,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     pixelHandler: pixelHandler,
                                                                     isInternalUserEnabled: isInternalUserEnabled,
                                                                     wideEvent: wideEvent,
-                                                                    isAuthV2WideEventEnabled: {
-#if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
-#else
-            return subscriptionEnvironment.serviceEnvironment == .production
-#endif
-        })
+                                                                    isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
+                                                                    authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
 
         // Expired refresh token recovery
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,

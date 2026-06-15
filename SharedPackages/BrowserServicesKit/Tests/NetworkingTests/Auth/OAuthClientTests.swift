@@ -484,6 +484,27 @@ final class OAuthClientTests: XCTestCase {
         }
     }
 
+    func testGetToken_createIfNeeded_expiredInvalidRefreshToken_usesCreateIfNeededTriggerThenCreatesAccount() async throws {
+        let bodyError = OAuthRequest.BodyError(errorCode: .invalidTokenRequest, tokenStatus: .reused)
+        let requestError = OAuthRequestError(from: bodyError)
+        mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.authAPIError(requestError))
+        mockOAuthService.authorizeResponse = .success("auth_session_id")
+        mockOAuthService.createAccountResponse = .success("auth_code")
+        mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await oAuthClient.setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+
+        let tokenContainer = try await oAuthClient.getTokens(policy: .createIfNeeded)
+
+        XCTAssertFalse(tokenContainer.decodedAccessToken.isExpired())
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
+
+        guard case .tokenRefreshStarted(_, let trigger) = eventCapture.capturedEvents.first else {
+            return XCTFail("Expected createIfNeeded to attempt a refresh before creating an account")
+        }
+        XCTAssertEqual(trigger.rawValue, "create_if_needed")
+    }
+
     // MARK: - Event Mapping
 
     func testEventMapping_successfulRefresh() async throws {

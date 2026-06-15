@@ -232,6 +232,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let requestCoalescer = SubscriptionRequestCoalescer()
     private let wideEvent: WideEventManaging?
     private let isAuthV2WideEventEnabled: () -> Bool
+    private let authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting?
     private let tierOptionsProvider: SubscriptionTierOptionsProviding
 
     public init(storePurchaseManager: StorePurchaseManager? = nil,
@@ -246,6 +247,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 isInternalUserEnabled: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging? = nil,
                 isAuthV2WideEventEnabled: @escaping () -> Bool = { false },
+                authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting? = nil,
                 tierOptionsProvider: SubscriptionTierOptionsProviding? = nil) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
@@ -258,6 +260,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         self.isInternalUserEnabled = isInternalUserEnabled
         self.wideEvent = wideEvent
         self.isAuthV2WideEventEnabled = isAuthV2WideEventEnabled
+        self.authV2TokenRefreshInstrumentation = authV2TokenRefreshInstrumentation
         self.tierOptionsProvider = tierOptionsProvider ?? DefaultSubscriptionTierOptionsProvider(
             subscriptionEnvironmentPlatform: subscriptionEnvironment.purchasePlatform,
             storePurchaseManager: storePurchaseManager,
@@ -611,12 +614,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
-                    completeInvalidTokenRecoveryFlow(status: .success(reason: nil), error: nil)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(status: .success(reason: nil), error: nil)
                     return recoveredTokenContainer
                 } catch {
                     await signOut(notifyUI: false, userInitiated: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
-                    completeInvalidTokenRecoveryFlow(status: .failure, error: error)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(status: .failure, error: error)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 
@@ -643,32 +646,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             throw SubscriptionManagerError.noTokenAvailable
         }
         return currentTokenContainer
-    }
-
-    /// Completes the refresh wide event flow that the OAuthClient event mapping deferred on an invalid token.
-    /// Selects the newest flow marked `.recoverInvalidToken` (by recovery start time): wide-event storage is
-    /// per-process and OAuthClient dedups concurrent refreshes, so the newest such flow is always the one
-    /// this recovery belongs to. Any older orphan left by a process kill is reconciled by the launch backstop.
-    private func completeInvalidTokenRecoveryFlow(status: WideEventStatus, error: Error?) {
-        guard isAuthV2WideEventEnabled(), let wideEvent else { return }
-        guard let data = wideEvent.getAllFlowData(AuthV2TokenRefreshWideEventData.self)
-            .filter({ $0.failingStep == .recoverInvalidToken })
-            .max(by: { ($0.recoveryDuration?.start ?? .distantPast) < ($1.recoveryDuration?.start ?? .distantPast) })
-        else { return }
-
-        data.recoveryDuration?.complete()
-        // A recovery was performed for this journey, regardless of outcome. Lets us count, for example,
-        // how many SUCCESS events required an invalid-token recovery.
-        data.performedTokenRecovery = true
-        if let error {
-            data.errorData = WideEventErrorData(error: error)
-        } else {
-            // Recovered: clear the originating invalid-token error and the failing step so the SUCCESS
-            // event is not shipped with contradictory error data.
-            data.errorData = nil
-            data.failingStep = nil
-        }
-        wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
     }
 
     public func adopt(accessToken: String, refreshToken: String) async throws {

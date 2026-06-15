@@ -152,6 +152,8 @@ public enum TokenRefreshTrigger: String, Codable {
     case backend
     /// A client-initiated refresh: proactive, lazy expiry refresh, or an explicit force refresh.
     case client
+    /// The refresh probe performed before `.createIfNeeded` falls back to creating a new account.
+    case createIfNeeded = "create_if_needed"
     /// The forced refresh performed as part of adopting an externally-provided token container.
     case tokenAdoption = "token_adoption"
 }
@@ -356,7 +358,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
         case .createIfNeeded:
             do {
-                return try await getTokens(policy: .localValid, trigger: trigger)
+                return try await getTokens(policy: .localValid, trigger: .createIfNeeded)
             } catch {
                 Logger.OAuthClient.log("Local token not found, creating a new account")
                 do {

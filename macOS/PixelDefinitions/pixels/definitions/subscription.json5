@@ -613,7 +613,7 @@
                 "key": "feature.data.ext.refresh_trigger",
                 "type": "string",
                 "description": "String representing what caused the token refresh to begin",
-                "enum": ["backend", "client", "token_adoption"]
+                "enum": ["backend", "client", "create_if_needed", "token_adoption"]
             },
             {
                 "key": "feature.data.ext.failing_step",

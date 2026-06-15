@@ -51,6 +51,8 @@ class SubscriptionManagerTests: XCTestCase {
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMock()
         mockPixelHandler = MockSubscriptionPixelHandler()
         mockWideEvent = WideEventMock()
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: mockWideEvent,
+                                                                                    isFeatureEnabled: { true })
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
@@ -61,7 +63,8 @@ class SubscriptionManagerTests: XCTestCase {
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
             pixelHandler: mockPixelHandler,
             wideEvent: mockWideEvent,
-            isAuthV2WideEventEnabled: { true }
+            isAuthV2WideEventEnabled: { true },
+            authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation
         )
 
         subscriptionManager.tokenRecoveryHandler = {
@@ -239,6 +242,14 @@ class SubscriptionManagerTests: XCTestCase {
 
         let (data, _) = try XCTUnwrap(mockWideEvent.completions.first)
         XCTAssertEqual(data.globalData.id, "fresh")
+    }
+
+    func testGetTokenContainer_UsesClientTrigger_SoInvalidTokenRecoveryCanDefer() async throws {
+        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockOAuthClient.getTokensTriggers, [.client])
     }
 
     func testAdopt_FromWebRestore_RecordsWebRestoreAdoptionSource() async throws {

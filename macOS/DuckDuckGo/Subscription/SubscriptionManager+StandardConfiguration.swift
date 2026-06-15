@@ -55,16 +55,18 @@ extension DefaultSubscriptionManager {
         let buildType = StandardApplicationBuildType()
         let wideEvent: WideEventManaging = WideEvent(useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
                                                      featureFlagProvider: featureFlagProvider)
-        let authRefreshEventMapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+        let isAuthV2WideEventEnabled = {
 #if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
+            return true
 #else
             return environment.serviceEnvironment == .production
 #endif
-        })
+        }
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
-                                            refreshEventMapping: authRefreshEventMapping)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
                                                                                baseURL: environment.serviceEnvironment.url)
@@ -112,7 +114,8 @@ extension DefaultSubscriptionManager {
                   subscriptionEndpointService: subscriptionEndpointService,
                   subscriptionEnvironment: environment,
                   pixelHandler: pixelHandler,
-                  isInternalUserEnabled: isInternalUserEnabled)
+                  isInternalUserEnabled: isInternalUserEnabled,
+                  authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
     }
 }
 

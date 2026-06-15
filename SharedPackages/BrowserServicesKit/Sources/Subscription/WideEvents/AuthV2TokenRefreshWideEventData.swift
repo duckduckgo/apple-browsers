@@ -47,9 +47,13 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
 
-    /// What initiated this refresh. Optional for decode safety with flows persisted by older builds;
-    /// always emitted (defaulting to `.client`) so `refresh_trigger` is never null on the wire.
     public var refreshTrigger: TokenRefreshTrigger?
+
+    private enum CodingKeys: String, CodingKey {
+        case globalData, contextData, appData
+        case refreshTokenDuration, fetchJWKSDuration, recoveryDuration, performedTokenRecovery
+        case failingStep, errorData, refreshTrigger
+    }
 
     public init(failingStep: FailingStep? = nil,
                 errorData: WideEventErrorData? = nil,
@@ -61,6 +65,36 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
+    }
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        globalData = try container.decode(WideEventGlobalData.self, forKey: .globalData)
+        contextData = try container.decode(WideEventContextData.self, forKey: .contextData)
+        appData = try container.decode(WideEventAppData.self, forKey: .appData)
+        refreshTokenDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .refreshTokenDuration)
+        fetchJWKSDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .fetchJWKSDuration)
+        recoveryDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .recoveryDuration)
+        performedTokenRecovery = try container.decodeIfPresent(Bool.self, forKey: .performedTokenRecovery) ?? false
+        failingStep = try container.decodeIfPresent(FailingStep.self, forKey: .failingStep)
+        errorData = try container.decodeIfPresent(WideEventErrorData.self, forKey: .errorData)
+        refreshTrigger = try container.decodeIfPresent(TokenRefreshTrigger.self, forKey: .refreshTrigger)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(globalData, forKey: .globalData)
+        try container.encode(contextData, forKey: .contextData)
+        try container.encode(appData, forKey: .appData)
+        try container.encodeIfPresent(refreshTokenDuration, forKey: .refreshTokenDuration)
+        try container.encodeIfPresent(fetchJWKSDuration, forKey: .fetchJWKSDuration)
+        try container.encodeIfPresent(recoveryDuration, forKey: .recoveryDuration)
+        try container.encode(performedTokenRecovery, forKey: .performedTokenRecovery)
+        try container.encodeIfPresent(failingStep, forKey: .failingStep)
+        try container.encodeIfPresent(errorData, forKey: .errorData)
+        try container.encodeIfPresent(refreshTrigger, forKey: .refreshTrigger)
     }
 }
 
@@ -114,83 +148,6 @@ extension AuthV2TokenRefreshWideEventData {
         case 30000..<60000: return 60000
         case 60000..<300000: return 300000
         default: return 600000
-        }
-    }
-
-}
-
-extension AuthV2TokenRefreshWideEventData {
-
-    public static func authV2RefreshEventMapping(wideEvent: WideEventManaging, isFeatureEnabled: @escaping () -> Bool) -> EventMapping<OAuthClientRefreshEvent> {
-        return .init { event, _, _, _ in
-            guard isFeatureEnabled() else {
-                return
-            }
-
-            switch event {
-            case .tokenRefreshStarted(let refreshID, let trigger):
-                let globalData = WideEventGlobalData(id: refreshID)
-                let data = AuthV2TokenRefreshWideEventData(globalData: globalData)
-                data.failingStep = .tokenRead
-                data.refreshTrigger = trigger
-                wideEvent.startFlow(data)
-            case .tokenRefreshRefreshingAccessToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.refreshTokenDuration = .startingNow()
-                    event.failingStep = .refreshAccessToken
-                }
-            case .tokenRefreshRefreshedAccessToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.refreshTokenDuration?.complete()
-                }
-            case .tokenRefreshFetchingJWKS(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.fetchJWKSDuration = .startingNow()
-                    event.failingStep = .fetchingJWKS
-                }
-            case .tokenRefreshFetchedJWKS(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.fetchJWKSDuration?.complete()
-                }
-            case .tokenRefreshVerifyingAccessToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .verifyingAccessToken
-                }
-            case .tokenRefreshVerifyingRefreshToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .verifyingRefreshToken
-                }
-            case .tokenRefreshSavingTokens(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .tokenWrite
-                }
-            case .tokenRefreshSucceeded(let refreshID):
-                if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
-                    data.failingStep = nil
-                    wideEvent.completeFlow(data, status: .success(reason: nil), onComplete: { _, _ in })
-                }
-            case .tokenRefreshFailed(let refreshID, let error):
-                if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
-                    data.errorData = WideEventErrorData(error: error)
-                    if case OAuthClientError.invalidTokenRequest = error {
-                        if (data.refreshTrigger ?? .client) == .client {
-                            // Invalid refresh token: the journey is not over. DefaultSubscriptionManager will attempt
-                            // recovery and complete this flow at the true terminal point. Mark the step and start
-                            // the recovery clock at detection so the recovery layer can locate the newest pending
-                            // flow and record detection-to-outcome latency.
-                            data.failingStep = .recoverInvalidToken
-                            data.recoveryDuration = .startingNow()
-                            wideEvent.updateFlow(data)
-                        } else {
-                            wideEvent.updateFlow(data)
-                            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-                        }
-                    } else {
-                        wideEvent.updateFlow(data)
-                        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-                    }
-                }
-            }
         }
     }
 

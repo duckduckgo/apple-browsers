@@ -57,6 +57,18 @@ final class DuckAIGridItemTests: XCTestCase {
         XCTAssertEqual(item, .text(title: "Cute ducks", snippet: "Hello"))
     }
 
+    // MARK: - Snippet length cap
+
+    func testWhenLastMessageContentExceedsSnippetCapThenSnippetIsTruncatedToCap() {
+        let chat = makeChat(title: "Cute ducks", model: "gpt-4o-mini")
+        let longMessage = String(repeating: "a", count: DuckAIGridItem.snippetCharacterCap + 100)
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: longMessage)
+
+        let expectedSnippet = String(repeating: "a", count: DuckAIGridItem.snippetCharacterCap)
+        XCTAssertEqual(item, .text(title: "Cute ducks", snippet: expectedSnippet))
+    }
+
     // MARK: - Helpers
 
     private func makeChat(title: String, model: String) -> DuckAiChat {

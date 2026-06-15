@@ -41,6 +41,9 @@ enum DuckAIGridItem: Equatable {
 
 extension DuckAIGridItem {
 
+    /// Chat content can be huge and we only need a few lines worth of content anyway for the snippet
+    static let snippetCharacterCap = 500
+
     /// Maps a decoded chat (+ the text of its last message) to a grid item, or
     /// `nil` when the chat shouldn't be rendered as a rich card (callers fall back
     /// to the existing screenshot path). Pure; storage reads live in
@@ -51,8 +54,9 @@ extension DuckAIGridItem {
 
         switch kind {
         case .text:
-            let snippet = lastMessageContent?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard !snippet.isEmpty else { return nil }
+            let trimmed = lastMessageContent?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !trimmed.isEmpty else { return nil }
+            let snippet = String(trimmed.prefix(snippetCharacterCap))
             return .text(title: title, snippet: snippet)
         case .image, .voice:
             return nil

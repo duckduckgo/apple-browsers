@@ -111,13 +111,13 @@ public final class AIChatSuggestionsViewModel: ObservableObject {
         filteredSuggestions = Array(allChats.prefix(maxSuggestions))
 
         if filteredSuggestions.isEmpty {
-            showViewAllChats = false
+            self.showViewAllChats = false
         }
 
         // Reset selection if it's now out of bounds
         if let index = selectedIndex, index >= filteredSuggestions.count {
-            let maxValidIndex = showViewAllChats ? filteredSuggestions.count : filteredSuggestions.count - 1
-            selectedIndex = filteredSuggestions.isEmpty && !showViewAllChats ? nil : maxValidIndex
+            let maxValidIndex = self.showViewAllChats ? filteredSuggestions.count : filteredSuggestions.count - 1
+            selectedIndex = filteredSuggestions.isEmpty && !self.showViewAllChats ? nil : maxValidIndex
         }
     }
 

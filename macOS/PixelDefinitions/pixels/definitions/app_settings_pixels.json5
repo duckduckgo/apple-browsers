@@ -15,10 +15,10 @@
         "parameters": ["appVersion", "pixelSource", "subscribed"]
     },
     "browser_menu_update": {
-        "description": "Fires when the user clicks the \"Check for Updates…\" item in the menu bar. pixelSource distinguishes App Store (browser-appstore) from Sparkle/DMG (browser-dmg) builds.",
+        "description": "Fires when the user clicks the Update CTA in the browser overflow menu, shown only when an update is pending. On App Store builds it opens the updates page; on Sparkle builds it runs the update.",
         "owners": ["diegoreymendez", "jotaemepereira"],
         "triggers": ["user_submitted"],
-        "suffixes": ["daily_count"],
+        "suffixes": ["daily"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_settings_sync_app_icon_with_theme_turned_on": {

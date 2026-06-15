@@ -797,7 +797,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     override func performActionForItem(at index: Int) {
         if let item = item(at: index), item == updateMenuItem {
-            PixelKit.fire(UpdateFlowPixels.updateNowClicked, frequency: .daily)
+            PixelKit.fire(MoreOptionsMenuPixel.updateActionClicked, frequency: .daily)
         }
         super.performActionForItem(at: index)
     }

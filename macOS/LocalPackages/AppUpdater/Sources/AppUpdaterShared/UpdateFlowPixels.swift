@@ -45,13 +45,13 @@ public enum UpdateFlowPixels: PixelKitEvent {
     case updateDuckDuckGoButtonTapped
 
     /**
-     * Event Trigger: "Update available" item tapped in the More Options menu
+     * Event Trigger: "Check for Updates…" item tapped in the menu bar
      *
-     * Fired when the user clicks the update CTA in the More Options menu, which only appears
-     * when an update is pending. On App Store builds this opens the updates page; on Sparkle
-     * builds it runs the update. Distinct from the "Check for Updates…" main menu item.
+     * Fired when the user clicks the "Check for Updates…" item in the app's menu bar, on all
+     * build types. On App Store builds this opens the updates page; on Sparkle builds it opens
+     * the About window. pixelSource distinguishes App Store from Sparkle/DMG builds.
      */
-    case updateNowClicked
+    case checkForUpdatesFromMainMenu
 
     /**
      * Event Trigger: Release metadata fetch fails
@@ -129,8 +129,8 @@ public enum UpdateFlowPixels: PixelKitEvent {
             return "m_mac_update_notification_tapped"
         case .updateDuckDuckGoButtonTapped:
             return "m_mac_update_duckduckgo_button_tapped"
-        case .updateNowClicked:
-            return "m_mac_update_now_clicked"
+        case .checkForUpdatesFromMainMenu:
+            return "m_mac_check_for_updates_from_main_menu"
         case .releaseMetadataFetchFailed:
             return "m_mac_release_metadata_fetch_failed"
         case .updateApplicationSuccess:
@@ -199,7 +199,7 @@ public enum UpdateFlowPixels: PixelKitEvent {
         case .updateNotificationShown,
                 .updateNotificationTapped,
                 .updateDuckDuckGoButtonTapped,
-                .updateNowClicked,
+                .checkForUpdatesFromMainMenu,
                 .releaseMetadataFetchFailed,
                 .updaterDidRunUpdate,
                 .updaterAttemptToRestartWithoutResumeBlock,
@@ -223,7 +223,7 @@ public enum UpdateFlowPixels: PixelKitEvent {
         case .updateNotificationShown,
                 .updateNotificationTapped,
                 .updateDuckDuckGoButtonTapped,
-                .updateNowClicked,
+                .checkForUpdatesFromMainMenu,
                 .releaseMetadataFetchFailed,
                 .updateApplicationSuccess,
                 .updateApplicationFailure,

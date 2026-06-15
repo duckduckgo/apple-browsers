@@ -19,11 +19,11 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_update_now_clicked": {
-        "description": "Fired when the user clicks the \"Update available\" CTA in the More Options menu (shown only when an update is pending). On App Store builds it opens the updates page; on Sparkle builds it runs the update.",
+    "m_mac_check_for_updates_from_main_menu": {
+        "description": "Fired when the user clicks the \"Check for Updates…\" item in the menu bar, on all build types. pixelSource distinguishes App Store (browser-appstore) from Sparkle/DMG (browser-dmg) builds.",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_release_metadata_fetch_failed": {

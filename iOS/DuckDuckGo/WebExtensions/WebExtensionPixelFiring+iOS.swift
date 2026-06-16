@@ -47,6 +47,14 @@ private extension DuckDuckGoWebExtensionType {
         case .adBlockingExtension: return .webExtensionAdBlockingInstallError
         }
     }
+
+    var notLoadedPixel: Pixel.Event {
+        switch self {
+        case .embedded: return .webExtensionEmbeddedNotLoaded
+        case .darkReader: return .webExtensionDarkReaderNotLoaded
+        case .adBlockingExtension: return .webExtensionAdBlockingNotLoaded
+        }
+    }
 }
 
 @available(iOS 18.4, *)
@@ -154,6 +162,22 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                 error: error,
                 withAdditionalParameters: ["extension_type": type.rawValue]
+            )
+        case .stateChecked:
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionStateChecked,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+            )
+        case .expectedExtensionNotLoaded(let type):
+            DailyPixel.fireDailyAndCount(
+                pixel: type.notLoadedPixel,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+            )
+        case .adBlockingScriptletsNotFetched(let extensionLoaded):
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionAdBlockingScriptletsNotFetched,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                withAdditionalParameters: ["extension_loaded": extensionLoaded ? "true" : "false"]
             )
         }
     }

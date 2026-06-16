@@ -75,6 +75,14 @@ enum WebExtensionPixel: PixelKitEvent {
     case scriptletInstalled(extensionType: String, version: String)
     case scriptletInstallError(extensionType: String, error: Error)
 
+    // MARK: - State Monitor
+
+    case stateChecked
+    case embeddedNotLoaded
+    case darkReaderNotLoaded
+    case adBlockingExtensionNotLoaded
+    case adBlockingScriptletsNotFetched(extensionLoaded: Bool)
+
     // MARK: - Daily State
 
     case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
@@ -167,6 +175,16 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_adblocking_detected_static_ad"
         case .adBlockingDetectedBuffering:
             return "m_mac_web_extension_adblocking_detected_buffering"
+        case .stateChecked:
+            return "m_mac_web_extension_state_checked"
+        case .embeddedNotLoaded:
+            return "m_mac_web_extension_embedded_not_loaded"
+        case .darkReaderNotLoaded:
+            return "m_mac_web_extension_dark_reader_not_loaded"
+        case .adBlockingExtensionNotLoaded:
+            return "m_mac_web_extension_ad_blocking_not_loaded"
+        case .adBlockingScriptletsNotFetched:
+            return "m_mac_web_extension_ad_blocking_scriptlets_not_fetched"
         }
     }
 
@@ -202,6 +220,8 @@ enum WebExtensionPixel: PixelKitEvent {
              .adBlockingDetectedStaticAd(let loginState),
              .adBlockingDetectedBuffering(let loginState):
             return ["loginState": loginState]
+        case .adBlockingScriptletsNotFetched(let extensionLoaded):
+            return ["extension_loaded": extensionLoaded ? "true" : "false"]
         default:
             return nil
         }
@@ -251,6 +271,14 @@ private extension DuckDuckGoWebExtensionType {
         case .adBlockingExtension: return .adBlockingExtensionInstallError(error: error)
         }
     }
+
+    var notLoadedPixel: WebExtensionPixel? {
+        switch self {
+        case .embedded: return .embeddedNotLoaded
+        case .darkReader: return .darkReaderNotLoaded
+        case .adBlockingExtension: return .adBlockingExtensionNotLoaded
+        }
+    }
 }
 
 // MARK: - WebExtensionPixelFiring Implementation
@@ -296,6 +324,13 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .scriptletInstalled(extensionType: type.rawValue, version: version)
         case .scriptletInstallError(let type, let error):
             pixel = .scriptletInstallError(extensionType: type.rawValue, error: error)
+        case .stateChecked:
+            pixel = .stateChecked
+        case .expectedExtensionNotLoaded(let type):
+            guard let macPixel = type.notLoadedPixel else { return }
+            pixel = macPixel
+        case .adBlockingScriptletsNotFetched(let extensionLoaded):
+            pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
         }
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }

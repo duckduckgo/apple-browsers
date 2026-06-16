@@ -616,7 +616,7 @@ class TabViewCell: UICollectionViewCell {
                                             loader: DuckAIThumbnailLoading?) {
         guard case .image(_, let fileRef) = item, let loader else { return }
         currentThumbnailFileRef = fileRef
-        thumbnailLoadTask = Task { [weak self, weak loader] in
+        thumbnailLoadTask = Task { @MainActor [weak self, weak loader] in
             guard let loader else { return }
             let image = await loader.loadImage(fileRef: fileRef)
             // Drop the result on cell reuse / item change. Identity check is on the

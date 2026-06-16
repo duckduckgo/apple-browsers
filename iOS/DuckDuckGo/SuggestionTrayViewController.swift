@@ -365,6 +365,13 @@ class SuggestionTrayViewController: UIViewController {
     func duckAIKeyboardMoveSelectionUp() { popoverDuckAIController?.keyboardMoveSelectionUp() }
     func clearDuckAIKeyboardSelection() { popoverDuckAIController?.clearKeyboardSelection() }
 
+    /// Clears any keyboard/pointer highlight on both surfaces — used when the popover is hidden so a
+    /// stale selection can't survive a collapse (which would leave the arrow keys claimed).
+    func clearKeyboardSelections() {
+        popoverSearchController?.clearKeyboardSelection()
+        popoverDuckAIController?.clearKeyboardSelection()
+    }
+
     /// Commits the highlighted Duck.ai row (Enter); returns false when nothing is highlighted.
     func activateHighlightedDuckAISuggestion() -> Bool {
         guard let id = popoverDuckAIController?.selectedRowID else { return false }
@@ -569,6 +576,11 @@ class SuggestionTrayViewController: UIViewController {
         controller.onHighlightRow = { [weak self] id in
             guard let suggestion = source.suggestion(forRowID: id) else { return }
             self?.autocompleteDelegate?.autocomplete(highlighted: suggestion, for: querySubject.value)
+        }
+        controller.onClearHighlight = { [weak self] in
+            // Selection cleared → restore the user's typed query in place of the last previewed suggestion.
+            let query = querySubject.value
+            self?.autocompleteDelegate?.autocomplete(highlighted: .phrase(phrase: query), for: query)
         }
         controller.onDeleteRow = { [weak self, weak loader] id in
             guard let self,

@@ -70,12 +70,13 @@ final class SuggestionsListViewModel: ObservableObject {
         if ids.indices.contains(next) { selectedRowID = ids[next] }
     }
 
-    /// Up from no selection is a no-op (mirrors `AutocompleteViewModel.previousSelection`).
+    /// Up from no selection is a no-op; up from the first row clears the highlight, returning focus to
+    /// the text input (mirrors `AutocompleteViewModel.previousSelection`).
     func moveSelectionUp() {
         let ids = orderedRowIDs
         guard let current = selectedRowID, let index = ids.firstIndex(of: current) else { return }
         let previous = index - 1
-        if ids.indices.contains(previous) { selectedRowID = ids[previous] }
+        selectedRowID = ids.indices.contains(previous) ? ids[previous] : nil
     }
 
     private func clearSelectionIfStale() {

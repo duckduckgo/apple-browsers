@@ -37,8 +37,11 @@ final class PopoverSuggestionsController: UIViewController {
     var onDeleteRow: ((String) -> Void)?
     /// `CGRect` is the 🔥 button's global frame, used to anchor the delete-confirmation popover.
     var onFireDeleteRow: ((String, CGRect) -> Void)?
-    /// Fired when the hardware-keyboard selection moves to a row (to update the omnibar text).
+    /// Fired when the keyboard/pointer selection moves to a row (to preview it in the omnibar text).
     var onHighlightRow: ((String) -> Void)?
+    /// Fired when the selection clears (arrow-up past the top, pointer leaves, tap) so the omnibar can
+    /// restore the user's typed query instead of leaving the last previewed suggestion in the field.
+    var onClearHighlight: (() -> Void)?
 
     /// The id of the row currently highlighted by arrow-key navigation, for Enter-to-commit.
     var selectedRowID: String? { listViewModel.selectedRowID }
@@ -78,15 +81,19 @@ final class PopoverSuggestionsController: UIViewController {
             .sink { [weak self] sections in self?.reportHeight(for: sections) }
             .store(in: &cancellables)
         listViewModel.$selectedRowID
-            .compactMap { $0 }
-            .sink { [weak self] id in self?.onHighlightRow?(id) }
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] id in
+                if let id { self?.onHighlightRow?(id) } else { self?.onClearHighlight?() }
+            }
             .store(in: &cancellables)
     }
 
     func updateQuery(_ query: String) {
-        // Clear any keyboard highlight before new results arrive (mirrors AutocompleteViewController).
-        listViewModel.selectedRowID = nil
+        // Send the query first so a highlight-clear restores the *current* typed text, not the previous
+        // query; then clear any keyboard/pointer highlight before new results arrive.
         querySubject.send(query)
+        listViewModel.selectedRowID = nil
     }
 
     func keyboardMoveSelectionDown() { listViewModel.moveSelectionDown() }

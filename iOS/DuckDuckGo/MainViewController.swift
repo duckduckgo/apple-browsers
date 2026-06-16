@@ -4868,6 +4868,7 @@ extension MainViewController: PopoverSuggestionsHosting {
 
     /// Hides the container but keeps the list surfaces alive, avoiding remove/reinstall flicker on toggle.
     func hidePopover() {
+        suggestionTrayController?.clearKeyboardSelections()
         viewCoordinator.omniBar.showSeparator()
         viewCoordinator.suggestionTrayContainer.isHidden = true
         currentTab?.webView.accessibilityElementsHidden = false
@@ -4880,6 +4881,9 @@ extension MainViewController: SuggestionTrayDuckAINavigationDelegate {
         switch selection {
         case .chat(let chat):
             DailyPixel.fireDailyAndCount(pixel: chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected)
+            if isPad {
+                DailyPixel.fireDailyAndCount(pixel: chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected)
+            }
             Pixel.fire(pixel: .autocompleteDuckAIClickChatHistory)
             onChatHistorySelected(url: aiChatSettings.aiChatURL.withChatID(chat.chatId))
         case .url(let suggestion):

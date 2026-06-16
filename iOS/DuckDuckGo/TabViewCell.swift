@@ -120,6 +120,9 @@ class TabViewCell: UICollectionViewCell {
     // Grid view
     var preview: UIImageView?
 
+    /// Container for the Duck.ai rich tab grid card content (text/image/voice/empty).
+    var richCardContainer: DuckAIGridCardView?
+
     weak var previewAspectRatio: NSLayoutConstraint?
     var previewTopConstraint: NSLayoutConstraint?
     var previewBottomConstraint: NSLayoutConstraint?
@@ -478,9 +481,8 @@ class TabViewCell: UICollectionViewCell {
     func update(withTab tab: Tab,
                 isSelectionModeEnabled: Bool,
                 preview: UIImage?,
-                isFireModeEnabled: Bool) {
-        accessibilityElements = [ title as Any, removeButton as Any ]
-
+                isFireModeEnabled: Bool,
+                duckAIGridItem: DuckAIGridItem? = nil) {
         self.tab = tab
         self.isSelectionModeEnabled = isSelectionModeEnabled
         self.isFireModeEnabled = isFireModeEnabled
@@ -502,11 +504,18 @@ class TabViewCell: UICollectionViewCell {
 
         unread.isHidden = tab.viewed
 
+        // Reset rich-card / preview visibility on every reuse
+        richCardContainer?.isHidden = true
+        self.preview?.isHidden = false
+
         if tab.isAITab {
             let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
             let conversationTitle = tab.aiChatConversationTitle
             let isListMode = link != nil
-            let displayTitle = isListMode ? aiChatTitle : (conversationTitle ?? aiChatTitle)
+            // When the rich card is rendered, the conversation title lives inside the
+            // card body, so the cell header always reads "Duck.ai" — same as list mode.
+            let showsRichCard = duckAIGridItem != nil
+            let displayTitle = (isListMode || showsRichCard) ? aiChatTitle : (conversationTitle ?? aiChatTitle)
             removeButton.accessibilityLabel = UserText.closeTab(withTitle: conversationTitle ?? aiChatTitle, atAddress: "")
             title.accessibilityLabel = UserText.openTab(withTitle: conversationTitle ?? aiChatTitle, atAddress: "")
             title.text = displayTitle
@@ -519,7 +528,11 @@ class TabViewCell: UICollectionViewCell {
                 link?.isHidden = true
             }
 
-            if let preview = preview {
+            if let item = duckAIGridItem {
+                richCardContainer?.configure(with: item)
+                richCardContainer?.isHidden = false
+                self.preview?.isHidden = true
+            } else if let preview = preview {
                 self.updatePreviewToDisplay(image: preview)
                 self.preview?.contentMode = .scaleAspectFill
                 self.preview?.image = preview
@@ -568,6 +581,14 @@ class TabViewCell: UICollectionViewCell {
         }
 
         updateUIForSelectionMode(removeButton, selectionIndicator)
+
+        // Include the rich card between the header title and close button so VoiceOver
+        // reads the conversation title/snippet that lives inside the card body.
+        if let richCard = richCardContainer, !richCard.isHidden {
+            accessibilityElements = [title as Any, richCard as Any, removeButton as Any]
+        } else {
+            accessibilityElements = [title as Any, removeButton as Any]
+        }
     }
     
     private func updateEmptyTabLabel(for tab: Tab) {

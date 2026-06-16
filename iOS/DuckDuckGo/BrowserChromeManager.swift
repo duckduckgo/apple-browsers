@@ -22,6 +22,7 @@ import UIKit
 protocol BrowserChromeDelegate: AnyObject {
     
     func setBarsHidden(_ hidden: Bool, animated: Bool, customAnimationDuration: CGFloat?)
+    func resetBars(animated: Bool)
     func setNavigationBarHidden(_ hidden: Bool)
     func setRefreshControlEnabled(_ isEnabled: Bool)
     func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool)

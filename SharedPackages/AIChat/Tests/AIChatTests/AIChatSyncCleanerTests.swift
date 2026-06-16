@@ -50,11 +50,13 @@ final class AIChatSyncCleanerTests: XCTestCase {
     }
 
     private func makeSUT(dateProvider: @escaping () -> Date = { Date(timeIntervalSince1970: 1000) },
+                         storageHandler: DuckAiNativeStorageHandling? = nil,
                          httpRequestErrorHandler: ((Error) -> Void)? = nil) -> AIChatSyncCleaner {
         AIChatSyncCleaner(
             sync: mockSync,
             keyValueStore: mockKeyValueStore,
             featureFlagProvider: mockFeatureFlagProvider,
+            storageHandler: storageHandler,
             dateProvider: dateProvider,
             httpRequestErrorHandler: httpRequestErrorHandler
         )
@@ -533,5 +535,175 @@ final class AIChatSyncCleanerTests: XCTestCase {
         // Then
         XCTAssertEqual(mockSync.deleteAIChatsCallCount, 1, "Timestamp-based delete should be called")
         XCTAssertEqual(mockSync.deleteAIChatsByChatIdsCallCount, 1, "ChatID-based delete should be called")
+    }
+
+    // MARK: - recordChatUpdate Tests
+
+    func testGivenFeatureFlagDisabled_WhenRecordChatUpdate_ThenNothingIsStored() async {
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = false
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        await sut.recordChatUpdate(chatID: "chat-1")
+
+        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+        XCTAssertNil(stored)
+        XCTAssertEqual(mockSync.mockScheduler.notifyDataChangedCallCount, 0)
+    }
+
+    func testGivenUpdateSubfeatureDisabled_WhenRecordChatUpdate_ThenNothingIsStored() async {
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsUpdateResult = false
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        await sut.recordChatUpdate(chatID: "chat-1")
+
+        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+        XCTAssertNil(stored, "Updates must not enqueue while the update subfeature is off")
+        XCTAssertEqual(mockSync.mockScheduler.notifyDataChangedCallCount, 0)
+    }
+
+    func testGivenAllConditionsMet_WhenRecordChatUpdate_ThenChatIDIsStoredAndSyncIsTriggered() async {
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        await sut.recordChatUpdate(chatID: "chat-1")
+
+        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+        XCTAssertEqual(stored, ["chat-1"])
+        XCTAssertEqual(mockSync.mockScheduler.notifyDataChangedCallCount, 1,
+                       "Eager trigger so pin propagates within seconds")
+    }
+
+    // MARK: - updateIfNeeded Tests
+
+    func testGivenNoStorageHandler_WhenUpdateIfNeeded_ThenNoPatchHappens() async {
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsUpdateResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        try? mockKeyValueStore.set(["chat-1"], forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        sut = makeSUT(storageHandler: nil)
+
+        await sut.updateIfNeeded()
+
+        XCTAssertEqual(mockSync.patchAIChatsCallCount, 0)
+    }
+
+    func testGivenPendingUpdates_WhenUpdateIfNeeded_ThenPatchIsCalledWithReadbackPinnedState() async {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try? storage.putChat(chatId: "chat-1", data: Self.chatBlob(chatId: "chat-1", pinned: true))
+        try? storage.putChat(chatId: "chat-2", data: Self.chatBlob(chatId: "chat-2", pinned: false))
+        try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT(storageHandler: storage)
+
+        await sut.updateIfNeeded()
+
+        XCTAssertEqual(mockSync.patchAIChatsCallCount, 1)
+        let sent = mockSync.patchAIChatsUpdates ?? []
+        XCTAssertEqual(Set(sent.map(\.chatId)), Set(["chat-1", "chat-2"]))
+        XCTAssertEqual(sent.first(where: { $0.chatId == "chat-1" })?.pinned, true)
+        XCTAssertEqual(sent.first(where: { $0.chatId == "chat-2" })?.pinned, false)
+    }
+
+    func testGivenPatchSucceeds_WhenUpdateIfNeeded_ThenQueueIsCleared() async {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try? storage.putChat(chatId: "chat-1", data: Self.chatBlob(chatId: "chat-1", pinned: true))
+        try? mockKeyValueStore.set(["chat-1"], forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT(storageHandler: storage)
+
+        await sut.updateIfNeeded()
+
+        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+        XCTAssertNil(stored, "Successfully-sent IDs should be removed from the pending queue")
+    }
+
+    func testGivenPatchFails_WhenUpdateIfNeeded_ThenQueueIsRetained() async {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try? storage.putChat(chatId: "chat-1", data: Self.chatBlob(chatId: "chat-1", pinned: true))
+        try? mockKeyValueStore.set(["chat-1"], forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        mockSync.patchAIChatsError = NSError(domain: "test", code: 1)
+        sut = makeSUT(storageHandler: storage)
+
+        await sut.updateIfNeeded()
+
+        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+        XCTAssertEqual(stored, ["chat-1"], "Failed updates should be retained for retry on the next sync cycle")
+    }
+
+    func testGivenChatAlsoInDeleteQueue_WhenUpdateIfNeeded_ThenItIsSkipped() async {
+        // Delete-wins arbitration: a chat that's been both pinned and deleted should not
+        // surface to the patch endpoint — the delete will land on the server first.
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try? storage.putChat(chatId: "chat-1", data: Self.chatBlob(chatId: "chat-1", pinned: true))
+        try? storage.putChat(chatId: "chat-2", data: Self.chatBlob(chatId: "chat-2", pinned: true))
+        try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        try? mockKeyValueStore.set(["chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT(storageHandler: storage)
+
+        await sut.updateIfNeeded()
+
+        XCTAssertEqual(mockSync.patchAIChatsUpdates?.map(\.chatId), ["chat-1"],
+                       "Only the non-deleted id should be patched")
+    }
+
+    func testGivenStorageMissingChat_WhenUpdateIfNeeded_ThenIdIsDroppedFromQueue() async {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        // Don't put anything for chat-1 — storage will return nil.
+        try? mockKeyValueStore.set(["chat-1"], forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT(storageHandler: storage)
+
+        await sut.updateIfNeeded()
+
+        XCTAssertEqual(mockSync.patchAIChatsCallCount, 0, "No patch when no chat resolved")
+        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+        XCTAssertNil(stored, "Unresolvable IDs should be dropped to avoid retrying forever")
+    }
+
+    func testGivenOneResolvableAndOneMissingChat_WhenUpdateIfNeeded_ThenOnlyResolvableIsPatchedAndBothAreDropped() async {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try? storage.putChat(chatId: "chat-1", data: Self.chatBlob(chatId: "chat-1", pinned: true))
+        // chat-2 is intentionally missing from storage — it should still be dropped from the queue.
+        try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT(storageHandler: storage)
+
+        await sut.updateIfNeeded()
+
+        XCTAssertEqual(mockSync.patchAIChatsUpdates?.map(\.chatId), ["chat-1"],
+                       "Only the resolvable id should be patched")
+        let stored = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+        XCTAssertNil(stored, "Both the patched id and the unresolvable id should be cleared from the queue")
+    }
+
+    // MARK: - Fixtures
+
+    private static func chatBlob(chatId: String, pinned: Bool) -> Data {
+        let json = """
+        {"chatId":"\(chatId)","title":"t","model":"gpt-4o-mini","lastEdit":"2026-05-01T00:00:00.000Z","pinned":\(pinned)}
+        """
+        return Data(json.utf8)
     }
 }

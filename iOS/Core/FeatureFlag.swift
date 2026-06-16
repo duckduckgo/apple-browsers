@@ -391,6 +391,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692854?focus=true
     case supportsSyncChatsDeletion
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215655022971962?focus=true
+    case supportsSyncChatsUpdate
+
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 
@@ -757,6 +760,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutofillSubfeature.onboardingDismissExperiment), cohortType: AutofillOnboardingDismissExperimentCohort.self)
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsDeletion))
+        case .supportsSyncChatsUpdate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsUpdate))
         case .fireMode:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
         case .fireButtonRefinements:

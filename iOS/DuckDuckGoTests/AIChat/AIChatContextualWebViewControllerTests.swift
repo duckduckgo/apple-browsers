@@ -161,6 +161,8 @@ private final class StubUserAgentManager: UserAgentManaging {
 
     func update(request: inout URLRequest, isDesktop: Bool) {}
     func update(webView: WKWebView, isDesktop: Bool, url: URL?) {}
+
+    var applicationNameForUserAgent: String { "" }
 }
 
 private final class StubDownloadHandler: NSObject, DownloadHandling {

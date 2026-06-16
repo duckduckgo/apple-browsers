@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Załaduj ponownie";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Resetuj powiększenie";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Wybierz";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Pokaż wszystkie karty";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Powiększ";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Pomniejsz";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Ostatnio przetworzono: %@";

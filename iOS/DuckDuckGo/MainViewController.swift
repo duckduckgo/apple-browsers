@@ -725,11 +725,18 @@ class MainViewController: UIViewController {
     }
 
     private func configureStartupPresentation() {
+        let onboardingStatus = LaunchOptionsHandler().onboardingStatus
         let startupOnboardingDecision = StartupOnboardingDecision(
-            onboardingStatus: LaunchOptionsHandler().onboardingStatus,
+            onboardingStatus: onboardingStatus,
             tutorialSettings: tutorialSettings,
             resumeStepStore: onboardingResumeStepStore
         )
+
+        // Automation bypass: a UI-test override can mark onboarding already-completed without ever
+        // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
+        if case .overridden(.uiTests(completed: true)) = onboardingStatus {
+            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+        }
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
 
@@ -6470,6 +6477,9 @@ extension MainViewController: OnboardingDelegate {
 
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+
+        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+
         // Now that linear onboarding has finished, any experiment cohort
         // enrollment that occurred is in place. Run the unified-toggle-input
         // setup that was deferred at viewDidLoad.

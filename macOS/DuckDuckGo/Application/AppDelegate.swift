@@ -1304,10 +1304,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 
+        let buildType = StandardApplicationBuildType()
         uncleanExitRestartSourceResolver = UncleanExitRestartSourceResolver(
             updateControllerSettings: UserDefaults.standard.throwingKeyedStoring(),
-            crashReportDetecting: MainBrowserCrashReportDetector(settings: UserDefaults.standard.throwingKeyedStoring()),
-            buildType: StandardApplicationBuildType()
+            crashReportDetecting: MainBrowserCrashReportDetector(
+                settings: UserDefaults.standard.throwingKeyedStoring(),
+                buildType: buildType
+            ),
+            buildType: buildType
         )
 
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,

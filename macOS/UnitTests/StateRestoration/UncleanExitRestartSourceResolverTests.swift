@@ -112,11 +112,24 @@ final class UncleanExitRestartSourceResolverTests: XCTestCase {
 final class MainBrowserCrashReportDetectorTests: XCTestCase {
 
     private let bundleIdentifier = "com.duckduckgo.macos.browser"
+    private var mockBuildType: MockApplicationBuildType!
+
+    override func setUp() {
+        super.setUp()
+        mockBuildType = MockApplicationBuildType()
+        mockBuildType.isSparkleBuild = true
+    }
+
+    override func tearDown() {
+        mockBuildType = nil
+        super.tearDown()
+    }
 
     func testWhenLastCrashReportCheckDateIsMissing_ThenReturnsFalse() {
         let settingsStore = MockKeyValueFileStore()
         let detector = MainBrowserCrashReportDetector(
             settings: settingsStore.throwingKeyedStoring(),
+            buildType: mockBuildType,
             mainBundleIdentifier: bundleIdentifier
         )
 
@@ -129,7 +142,43 @@ final class MainBrowserCrashReportDetectorTests: XCTestCase {
         try settings.set(Date(), for: \.lastCrashReportCheckDate)
         let detector = MainBrowserCrashReportDetector(
             settings: settings,
+            buildType: mockBuildType,
             mainBundleIdentifier: nil
+        )
+
+        XCTAssertFalse(detector.hasNewMainBrowserCrashReport())
+    }
+
+    func testWhenAppStoreBuild_ThenReturnsFalseWithoutReadingDiagnosticReports() throws {
+        mockBuildType.isSparkleBuild = false
+        mockBuildType.isAppStoreBuild = true
+
+        let settingsStore = MockKeyValueFileStore()
+        let settings = settingsStore.throwingKeyedStoring() as any ThrowingKeyedStoring<CrashReportingSettings>
+        let now = Date()
+        try settings.set(now.addingTimeInterval(-120), for: \.lastCrashReportCheckDate)
+
+        let mainBundleIdentifier = bundleIdentifier
+        let diagnosticReportsDirectory = FileManager.userDiagnosticReports
+        let fileManager = MockFileManager()
+        let reportURL = diagnosticReportsDirectory.appendingPathComponent("DuckDuckGo-new.ips")
+        fileManager.registerFile(
+            at: reportURL,
+            in: diagnosticReportsDirectory,
+            contents: #"{"bundleID":"\#(mainBundleIdentifier)"}"#,
+            creationDate: now.addingTimeInterval(-60)
+        )
+
+        let reader = CrashReportReader(
+            fileManager: fileManager,
+            validBundleIdentifierProvider: { [mainBundleIdentifier] in [mainBundleIdentifier] },
+            dateProvider: { now }
+        )
+        let detector = MainBrowserCrashReportDetector(
+            settings: settings,
+            buildType: mockBuildType,
+            crashReportReader: reader,
+            mainBundleIdentifier: mainBundleIdentifier
         )
 
         XCTAssertFalse(detector.hasNewMainBrowserCrashReport())
@@ -150,6 +199,7 @@ final class MainBrowserCrashReportDetectorTests: XCTestCase {
         )
         let detector = MainBrowserCrashReportDetector(
             settings: settings,
+            buildType: mockBuildType,
             crashReportReader: reader,
             mainBundleIdentifier: mainBundleIdentifier
         )
@@ -182,6 +232,7 @@ final class MainBrowserCrashReportDetectorTests: XCTestCase {
         )
         let detector = MainBrowserCrashReportDetector(
             settings: settings,
+            buildType: mockBuildType,
             crashReportReader: reader,
             mainBundleIdentifier: mainBundleIdentifier
         )

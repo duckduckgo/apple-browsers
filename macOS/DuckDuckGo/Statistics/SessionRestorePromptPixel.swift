@@ -19,8 +19,11 @@
 import PixelKit
 
 enum UncleanExitRestartSource: String {
+    // New crash reported since last launch checkpoint (Sparkle only)
     case crash = "crash"
+    // Pending update snapshot (Sparkle) or version change (App Store)
     case appUpdate = "app_update"
+    // No identified source for the restart
     case unknown = "unknown"
 }
 

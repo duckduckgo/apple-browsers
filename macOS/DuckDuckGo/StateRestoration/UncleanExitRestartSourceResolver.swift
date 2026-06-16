@@ -35,18 +35,21 @@ final class MainBrowserCrashReportDetector: CrashReportDetecting {
 
     private let settings: any ThrowingKeyedStoring<CrashReportingSettings>
     private let crashReportReader: CrashReportReader
+    private let buildType: ApplicationBuildType
     private let mainBundleIdentifier: String?
 
     init(settings: any ThrowingKeyedStoring<CrashReportingSettings>,
+         buildType: ApplicationBuildType,
          crashReportReader: CrashReportReader = CrashReportReader(),
          mainBundleIdentifier: String? = Bundle.main.bundleIdentifier) {
         self.settings = settings
+        self.buildType = buildType
         self.crashReportReader = crashReportReader
         self.mainBundleIdentifier = mainBundleIdentifier
     }
 
     func hasNewMainBrowserCrashReport() -> Bool {
-        guard let mainBundleIdentifier else { return false }
+        guard buildType.isSparkleBuild, let mainBundleIdentifier else { return false }
 
         guard let lastCheckDate = try? settings.lastCrashReportCheckDate else {
             return false

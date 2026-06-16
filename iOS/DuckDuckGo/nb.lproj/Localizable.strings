@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Last inn på nytt";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Tilbakestill zoom";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Velg";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Vis alle faner";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Zoom inn";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Zoom ut";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Sist behandlet: %@";

@@ -99,7 +99,7 @@ struct ScopedFireConfirmationView: View {
                 Button(action: button.action) {
                     Text(button.title)
                 }
-                .modifier(DestructiveButtonModifier(isPrimary: button.style == .primary))
+                .modifier(DestructiveButtonModifier(style: button.style))
                 .accessibilityIdentifier(button.accessibilityIdentifier)
             }
         }
@@ -121,13 +121,16 @@ struct ScopedFireConfirmationView: View {
 }
 
 private struct DestructiveButtonModifier: ViewModifier {
-    let isPrimary: Bool
+    let style: ScopedFireConfirmationViewModel.FireConfirmationButton.Style
 
     func body(content: Content) -> some View {
-        if isPrimary {
+        switch style {
+        case .primary:
             content.buttonStyle(PrimaryDestructiveButtonStyle())
-        } else {
+        case .secondary:
             content.buttonStyle(SecondaryDestructiveButtonStyle())
+        case .secondaryNeutral:
+            content.buttonStyle(SecondaryFillButtonStyle())
         }
     }
 }

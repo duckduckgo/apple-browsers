@@ -111,12 +111,5 @@
             }
         ],
         "expires": "2026-07-11"
-    },
-    "m_debug_legacy-data-clearing-single-tab-time-": {
-        "description": "Fires when website data clearing completes for a single-tab (limited scope) burn, reporting how long the operation took. Tracked separately from the burn-all timing because clearing a single tab must enumerate and selectively delete per-domain, making it inherently slower.",
-        "owners": ["hassaanelgarem"],
-        "triggers": ["other"],
-        "suffixes": ["time_bucket", "platform", "form_factor"],
-        "parameters": ["appVersion"]
     }
 }

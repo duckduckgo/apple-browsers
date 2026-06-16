@@ -135,8 +135,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Load favicon images from disk on demand and store them in an in-memory cache.
     case faviconLazyImageLoading
 
-    /// Downscale freshly downloaded favicons to <=64 px (longest side).
-    case faviconImageDownscaling
+    /// Favicon storing improvements: store only the favicons the browser displays, dropping and downscaling larger ones.
+    case faviconStoringImprovements
 
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly

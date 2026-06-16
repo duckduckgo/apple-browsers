@@ -136,6 +136,12 @@ extension FaviconManagement {
     }
 }
 
+/// Describes a favicon's pixel size and whether it's an SVG — the inputs to `FaviconManager.faviconsToKeep`.
+protocol FaviconSizeRepresentable {
+    var longestSide: CGFloat { get }
+    var isSVG: Bool { get }
+}
+
 final class FaviconManager: FaviconManagement {
 
     enum CacheType {
@@ -405,13 +411,10 @@ final class FaviconManager: FaviconManagement {
     private func fetchFavicons(faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> [Favicon] {
         guard !faviconLinks.isEmpty else { return [] }
 
-        // When the downscaling is enabled, cap freshly downloaded favicons at `maxStoredFaviconPixelSize`.
-        // Otherwise pass `nil` to store them at their original resolution.
-        let maxPixelSize: CGFloat? = featureFlagger.isFeatureOn(.faviconImageDownscaling)
-            ? NSImage.maxStoredFaviconPixelSize
-            : nil
-
-        return await withTaskGroup(of: Favicon?.self) { [faviconDownloader] group in
+        // Download and decode every favicon at full resolution first. We need each favicon's original
+        // size to decide which ones to keep — if we downscaled during the download (capping every favicon
+        // at `maxStoredFaviconPixelSize`) we could no longer tell the redundant large ones apart.
+        let fetched: [FetchedFavicon] = await withTaskGroup(of: FetchedFavicon?.self) { [faviconDownloader] group in
             for faviconLink in faviconLinks {
                 let faviconUrl = faviconLink.href
                 group.addTask {
@@ -426,34 +429,115 @@ final class FaviconManager: FaviconManagement {
                         guard !data.isEmpty else {
                             throw URLError(.zeroByteResource, userInfo: [NSURLErrorKey: faviconUrl])
                         }
-                        guard let image = NSImage(dataUsingCIImage: data, maxPixelSize: maxPixelSize) else {
+                        guard let image = NSImage(dataUsingCIImage: data, maxPixelSize: nil) else {
                             throw CocoaError(.fileReadCorruptFile, userInfo: [NSURLErrorKey: faviconUrl])
                         }
 
-                        let favicon = Favicon(identifier: UUID(),
-                                              url: faviconUrl,
-                                              image: image,
-                                              relationString: faviconLink.rel,
-                                              documentUrl: documentUrl,
-                                              dateCreated: Date())
-                        return favicon
+                        return FetchedFavicon(link: faviconLink, data: data, image: image)
                     } catch {
                         Logger.favicons.error("Error downloading Favicon from \(faviconUrl.absoluteString): \(error.localizedDescription)")
                         return nil
                     }
                 }
             }
-            var favicons = [Favicon]()
-            for await result in group {
+            var result = [FetchedFavicon]()
+            for await fetchedFavicon in group {
                 guard !Task.isCancelled else {
                     return []
                 }
-                if let favicon = result {
-                    favicons.append(favicon)
+                if let fetchedFavicon {
+                    result.append(fetchedFavicon)
                 }
             }
 
-            return favicons
+            return result
+        }
+
+        // With the storing improvements off, follow the pre-existing path: store every fetched favicon at
+        // its original resolution.
+        guard featureFlagger.isFeatureOn(.faviconStoringImprovements) else {
+            return fetched.map { fetchedFavicon in
+                Favicon(identifier: UUID(),
+                        url: fetchedFavicon.link.href,
+                        image: fetchedFavicon.image,
+                        relationString: fetchedFavicon.link.rel,
+                        documentUrl: documentUrl,
+                        dateCreated: Date())
+            }
+        }
+
+        // Storing improvements on: the browser never displays a favicon larger than `maxStoredFaviconPixelSize`
+        // (64px = 32@2x), so keep only the favicons we need (dropping redundant larger ones and unneeded SVGs)
+        // and downscale the single kept larger favicon to the max stored size.
+        return Self.faviconsToKeep(fetched, maxStoredSize: NSImage.maxStoredFaviconPixelSize).map { fetchedFavicon -> Favicon in
+            let image: NSImage
+            if fetchedFavicon.longestSide > NSImage.maxStoredFaviconPixelSize,
+               let downscaled = NSImage(dataUsingCIImage: fetchedFavicon.data, maxPixelSize: NSImage.maxStoredFaviconPixelSize) {
+                image = downscaled
+            } else {
+                image = fetchedFavicon.image
+            }
+            return Favicon(identifier: UUID(),
+                           url: fetchedFavicon.link.href,
+                           image: image,
+                           relationString: fetchedFavicon.link.rel,
+                           documentUrl: documentUrl,
+                           dateCreated: Date())
+        }
+    }
+
+    /// A favicon downloaded at full resolution, retained while we decide which favicons to keep.
+    private struct FetchedFavicon: FaviconSizeRepresentable {
+        let link: FaviconUserScript.FaviconLink
+        let data: Data
+        let image: NSImage
+
+        var longestSide: CGFloat { max(image.size.width, image.size.height) }
+
+        var isSVG: Bool {
+            if let type = link.type?.lowercased(), type.contains("svg") {
+                return true
+            }
+            return link.href.pathExtension.lowercased() == "svg"
+        }
+    }
+
+    /**
+     * Returns the favicons to keep, in their original order, given each favicon's longest-side pixel size
+     * and whether it's an SVG.
+     *
+     * The browser never displays a favicon larger than `maxStoredSize` (64px = 32@2x), so larger favicons
+     * are redundant. The rules:
+     * - every raster favicon up to and including `maxStoredSize` is kept;
+     * - if a raster favicon exactly `maxStoredSize` exists, all larger favicons are dropped;
+     * - otherwise the smallest raster favicon size larger than `maxStoredSize` is kept;
+     * - an SVG is kept only when no raster favicon reaches `maxStoredSize` (i.e. every raster is smaller),
+     *   since otherwise a raster already covers the largest size the browser displays;
+     * - duplicate raster favicons of the same pixel size are de-duplicated (only the first is kept).
+     */
+    static func faviconsToKeep<F: FaviconSizeRepresentable>(_ favicons: [F], maxStoredSize: CGFloat) -> [F] {
+        let hasExactMax = favicons.contains { !$0.isSVG && $0.longestSide == maxStoredSize }
+        // An SVG is only useful when no raster favicon already covers the largest displayed size, i.e. when
+        // every raster favicon is smaller than the max.
+        let hasRasterAtLeastMax = favicons.contains { !$0.isSVG && $0.longestSide >= maxStoredSize }
+
+        // When there's no exact-max raster favicon, the larger favicon we keep is the smallest larger size.
+        let smallestLargerSize: CGFloat? = hasExactMax ? nil : favicons.lazy
+            .filter { !$0.isSVG && $0.longestSide > maxStoredSize }
+            .map(\.longestSide)
+            .min()
+
+        // Keep the eligible favicons, de-duplicating raster favicons of the same pixel size (keep the first).
+        var keptRasterSizes = Set<CGFloat>()
+        return favicons.filter { favicon in
+            if favicon.isSVG {
+                return !hasRasterAtLeastMax
+            }
+            // Larger-than-max rasters are eligible only at the smallest larger size (and only when there's no
+            // exact-max favicon, in which case `smallestLargerSize` is nil and they're all dropped).
+            let isEligible = favicon.longestSide <= maxStoredSize || favicon.longestSide == smallestLargerSize
+            guard isEligible else { return false }
+            return keptRasterSizes.insert(favicon.longestSide).inserted
         }
     }
 

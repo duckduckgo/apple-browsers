@@ -253,9 +253,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215720761295352
     case faviconLazyImageLoading
 
-    /// Downscale freshly downloaded favicons to <=64 px (default-ON kill switch; off stores at original resolution).
+    /// Favicon storing improvements: store only the favicons the browser displays — drop favicons larger than the
+    /// max display size (64 px), downscaling the single kept larger one — instead of storing every fetched favicon.
+    /// Off follows the pre-existing path: every fetched favicon is stored at its original resolution.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215720760576164
-    case faviconImageDownscaling
+    case faviconStoringImprovements
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case aiChatSync
@@ -591,8 +593,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.memoryUsageReporting))
         case .faviconLazyImageLoading:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconLazyImageLoading))
-        case .faviconImageDownscaling:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconImageDownscaling))
+        case .faviconStoringImprovements:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconStoringImprovements))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:

@@ -162,6 +162,21 @@ struct SettingsRootView: View {
                                                              featureFlagger: viewModel.featureFlagger)
     }
 
+    @ViewBuilder func subscriptionWelcomeNavigationDestination() -> some View {
+        SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: nil,
+                                                             landingURL: AppDependencyProvider.shared.subscriptionManager.url(for: .welcome),
+                                                             navigationCoordinator: subscriptionNavigationCoordinator,
+                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                             subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                             subscriptionDataReporter: viewModel.subscriptionDataReporter,
+                                                             userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                             tld: AppDependencyProvider.shared.storageCache.tld,
+                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                             dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
+                                                             wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                             featureFlagger: viewModel.featureFlagger)
+    }
+
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
         SubscriptionContainerViewFactory.makePlansFlowV2(redirectURLComponents: redirectURLComponents,
                                                          navigationCoordinator: subscriptionNavigationCoordinator,
@@ -263,6 +278,9 @@ struct SettingsRootView: View {
                 SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }
+        case .subscriptionWelcome:
+            subscriptionWelcomeNavigationDestination()
+                .environmentObject(subscriptionNavigationCoordinator)
         }
     }
 }

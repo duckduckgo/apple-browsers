@@ -576,6 +576,10 @@ final class MainCoordinator {
         controller.segueToSubscriptionSettings()
     }
 
+    func segueToSubscriptionWelcome() {
+        controller.segueToSubscriptionWelcome()
+    }
+
     func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
         controller.presentNetworkProtectionStatusSettingsModal(origin: origin)
     }

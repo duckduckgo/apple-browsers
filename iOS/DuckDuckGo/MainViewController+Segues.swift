@@ -272,6 +272,14 @@ extension MainViewController {
         }, deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
     }
 
+    func segueToSubscriptionWelcome() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .subscriptionWelcome)
+        }, deepLinkTarget: .subscriptionWelcome)
+    }
+
     func segueToSubscriptionSettings() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()

@@ -53,6 +53,7 @@ enum SubscriptionContainerViewFactory {
     }
 
     static func makeSubscribeFlowV2(redirectURLComponents: URLComponents?,
+                                    landingURL: URL? = nil,
                                     navigationCoordinator: SubscriptionNavigationCoordinator,
                                     subscriptionManager: SubscriptionManager,
                                     subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -81,6 +82,7 @@ enum SubscriptionContainerViewFactory {
                                                                    pendingTransactionHandler: pendingTransactionHandler)
 
         let redirectPurchaseURL: URL? = {
+            if let landingURL { return landingURL }
             guard let redirectURLComponents else { return nil }
             return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
         }()

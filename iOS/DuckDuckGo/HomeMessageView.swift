@@ -108,7 +108,7 @@ struct HomeMessageView: View {
                 .scaledToFit()
                 .frame(maxHeight: Const.Size.imageMaxHeight)
         } else if let placeholderName = viewModel.image {
-            Image(placeholderName)
+            Image(rebrandable: placeholderName)
                     .scaledToFit()
                 .task {
                     loadedImage = await viewModel.loadRemoteImage?()

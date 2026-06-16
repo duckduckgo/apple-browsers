@@ -931,8 +931,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         duckPlayer = DuckPlayer(
             preferencesPersistor: DuckPlayerPreferencesUserDefaultsPersistor(),
             privacyConfigurationManager: privacyConfigurationManager,
-            internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger
+            internalUserDecider: internalUserDecider
         )
         newTabPageCustomizationModel = NewTabPageCustomizationModel(appearancePreferences: appearancePreferences)
 

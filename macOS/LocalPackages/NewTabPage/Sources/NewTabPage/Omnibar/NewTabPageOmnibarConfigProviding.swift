@@ -43,6 +43,12 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isWebSearchEnabled: Bool { get }
 
+    /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
+    /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
+    /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.
+    var isAttachTabsEnabled: Bool { get }
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
     /// Whether the 1-click voice-chat affordance is currently enabled. Published so the client
     /// can push an `omnibar_onConfigUpdate` when the underlying feature flag flips at runtime,
     /// keeping an open NTP in sync without a reload.

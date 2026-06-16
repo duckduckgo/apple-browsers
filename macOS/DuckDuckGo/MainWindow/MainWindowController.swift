@@ -127,6 +127,7 @@ final class MainWindowController: NSWindowController {
                 // Set onboarding settings so state is persisted across app re-launches during UI Tests
                 if isOnboardingCompleted {
                     OnboardingActionsManager.isOnboardingFinished = true
+                    OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
                 }
                 return !isOnboardingCompleted
             }
@@ -142,6 +143,7 @@ final class MainWindowController: NSWindowController {
         if !AppVersion.runType.allowsOnboarding {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             OnboardingActionsManager.isOnboardingFinished = true
+            OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
             return false
         } else {
             if AppVersion.runType == .uiTestsOnboarding {

@@ -594,6 +594,75 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         assertColor(rimShadowLayer.shadowColor, equals: expectedShadowColor)
     }
 
+    private let longURL = "https://www.cinemark.com/theatres/ca-playa-vista/cinemark-playa-vista-and-xd?showDate=2026-06-12"
+
+    func test_urlDoesNotExpandHeightInSearchModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.search)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(heightAfterTap, singleLineHeight, accuracy: 1)
+    }
+
+    func test_urlCanExpandInAIChatModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.aiChat)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertGreaterThan(heightAfterTap, singleLineHeight)
+    }
+
+    func test_urlCollapsesToSingleLineWhenModeSwitchesFromAIChatToSearch() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.aiChat)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let expandedHeight = applyFittingHeight(to: sut)
+
+        handler.setToggleState(.search)
+        sut.updatePoseForCurrentState()
+        let heightAfterSwitch = applyFittingHeight(to: sut)
+
+        XCTAssertGreaterThan(expandedHeight, heightAfterSwitch)
+    }
+
+    // Search-only: UTI shown without a toggle (AI chat unavailable). Even though the handler's
+    // toggle state may still be its `.aiChat` default, a tapped URL must stay single-line.
+    func test_urlDoesNotExpandHeightInSearchOnlyModeWithoutToggle() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(heightAfterTap, singleLineHeight, accuracy: 1)
+    }
+
     private func flushMainQueue() {
         let expectation = expectation(description: "main queue flushed")
         DispatchQueue.main.async {

@@ -117,6 +117,14 @@ enum SuggestionRowMapper {
             accessibilityID: "DuckAISuggestions.Chat-\(chat.id)")
     }
 
+    static func viewAllChatsRow(id: String) -> SuggestionRow {
+        SuggestionRow(
+            id: id,
+            icon: .chats,
+            title: UserText.aiChatViewAllChats,
+            accessibilityID: "DuckAISuggestions.ViewAllChats")
+    }
+
     static func searchRow(query: String, idPrefix: String) -> SuggestionRow {
         SuggestionRow(
             id: "\(idPrefix)-searchDuckDuckGo",

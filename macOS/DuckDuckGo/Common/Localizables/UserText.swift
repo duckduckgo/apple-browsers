@@ -1183,15 +1183,15 @@ struct UserText {
     static let general = NSLocalizedString("preferences.general", value: "General", comment: "Title of the option to show the General preferences")
     static let sync = NSLocalizedString("preferences.sync", value: "Sync & Backup", comment: "Title of the option to show the Sync preferences")
     static let syncAutoLockPrompt = NSLocalizedString("preferences.sync.auto-lock-prompt", value: "Unlock device to setup Sync & Backup", comment: "Reason for auth when setting up Sync")
-    static let syncPairingV2ConfirmationTitle = NotLocalizedString("sync.pairing-v2.confirmation.title", value: "Sync new device?", comment: "Title of the dialog to confirm sync setup with another device")
-    static let syncPairingV2ConfirmationAction = NotLocalizedString("sync.pairing-v2.confirmation.action", value: "Sync Now", comment: "Caption for a button to confirm sync setup with another device")
-    static let syncPairingV2UnknownPeerName = NotLocalizedString("sync.pairing-v2.unknown-peer-name", value: "the other device", comment: "Fallback device name for confirmation dialogs")
+    static let syncPairingV2ConfirmationTitle = NSLocalizedString("sync.pairing-v2.confirmation.title", value: "Sync new device?", comment: "Title of the dialog to confirm sync setup with another device")
+    static let syncPairingV2ConfirmationAction = NSLocalizedString("sync.pairing-v2.confirmation.action", value: "Sync Now", comment: "Caption for a button to confirm sync setup with another device")
+    static let syncPairingV2UnknownPeerName = NSLocalizedString("sync.pairing-v2.unknown-peer-name", value: "the other device", comment: "Fallback device name for confirmation dialogs")
     static func syncPairingV2ConfirmationMessage(_ peerName: String, isThirdPartyPeer: Bool) -> String {
-        let message = isThirdPartyPeer ? NotLocalizedString(
+        let message = isThirdPartyPeer ? NSLocalizedString(
             "sync.pairing-v2.confirmation.third-party.message",
             value: "\"%@\" will be able to access your synced Duck.ai chats.",
             comment: "Message for the dialog to confirm sync setup with a third-party device")
-        : NotLocalizedString(
+        : NSLocalizedString(
             "sync.pairing-v2.confirmation.ddg.message",
             value: "\"%@\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats.",
             comment: "Message for the dialog to confirm sync setup with another DuckDuckGo device")

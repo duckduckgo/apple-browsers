@@ -1748,7 +1748,7 @@ extension Pixel {
         case aiChatHistoryPinAdded
         case aiChatHistoryPinRemoved
         case aiChatHistoryDownloadStarted
-        case aiChatHistorySelectModeEntered
+        case aiChatHistoryEditModeEntered
         case aiChatHistoryNewChatTapped
 
         // MARK: AI Chat Recent Chats
@@ -3610,7 +3610,7 @@ extension Pixel.Event {
         case .aiChatHistoryPinAdded: return "aichat_history_pin_added"
         case .aiChatHistoryPinRemoved: return "aichat_history_pin_removed"
         case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
-        case .aiChatHistorySelectModeEntered: return "aichat_history_select_mode_entered"
+        case .aiChatHistoryEditModeEntered: return "aichat_history_edit_mode_entered"
         case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
 
         // MARK: AI Chat Recent Chats

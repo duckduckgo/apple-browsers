@@ -327,7 +327,7 @@ final class AIChatHistoryViewController: UIViewController {
             tableView.isEditing = false
             tableView.setEditing(true, animated: true)
             isEditingChats = true
-            viewModel.selectModeEntered()
+            viewModel.editModeEntered()
         }
         configureToolbar()
         configureRightBarButtonItem()

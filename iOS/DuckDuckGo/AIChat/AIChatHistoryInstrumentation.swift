@@ -38,7 +38,7 @@ protocol AIChatHistoryInstrumentation {
     func pinAdded()
     func pinRemoved()
     func downloadStarted()
-    func selectModeEntered()
+    func editModeEntered()
     func newChatTapped()
 }
 
@@ -92,8 +92,8 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
         fire(.aiChatHistoryDownloadStarted)
     }
 
-    func selectModeEntered() {
-        fire(.aiChatHistorySelectModeEntered)
+    func editModeEntered() {
+        fire(.aiChatHistoryEditModeEntered)
     }
 
     func newChatTapped() {

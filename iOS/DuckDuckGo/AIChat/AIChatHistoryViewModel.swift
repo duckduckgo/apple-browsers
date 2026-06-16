@@ -169,8 +169,8 @@ final class AIChatHistoryViewModel: ObservableObject {
         instrumentation.searchActivated()
     }
 
-    func selectModeEntered() {
-        instrumentation.selectModeEntered()
+    func editModeEntered() {
+        instrumentation.editModeEntered()
     }
 
     func fireAllTapped() {

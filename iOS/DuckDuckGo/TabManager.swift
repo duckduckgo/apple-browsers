@@ -802,6 +802,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if clearTabHistory {
             removeTabHistory(for: tabIDs)
         }
+
+        tabsCacheNeedsCleanup = true
     }
 
     private func removeTabHistory(for tabIDs: [String]) {

@@ -148,7 +148,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isModelChipHidden)
     }
 
-    func test_selectingSupportedModel_afterPresentingModelPicker_reHidesModelChip() {
+    func test_selectingSupportedModel_afterPresentingModelPicker_keepsModelChipVisible() {
         _ = sut.prepareExternalPromptSubmission()
         sut.presentModelPickerForActiveChat()
         XCTAssertFalse(sut.viewController.isModelChipHidden)
@@ -157,6 +157,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)
         ]
         sut.handleModelSelection("gpt-5")
+
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_submittingPrompt_afterPresentingModelPickerAndSelectingModel_hidesModelChip() {
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        sut.modelStore.models = [
+            AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)
+        ]
+        sut.handleModelSelection("gpt-5")
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
 
         XCTAssertTrue(sut.viewController.isModelChipHidden)
     }
@@ -2772,6 +2786,43 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertFalse(sut.isVoiceSessionActive)
         sut.activateForTab("tab-A")
         XCTAssertTrue(sut.isVoiceSessionActive)
+    }
+
+    func test_activateForTab_roundTripsModelPickerForcedVisible() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.activateForTab("tab-B")
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+
+        sut.activateForTab("tab-A")
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_bindToTab_afterActivateForTab_preservesModelPickerPin() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        let scriptA = makeTestUserScript()
+        let scriptB = makeTestUserScript()
+
+        sut.activateForTab("tab-A")
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        sut.bindToTab(scriptA, hasExistingChat: true)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.activateForTab("tab-B")
+        sut.bindToTab(scriptB, hasExistingChat: true)
+
+        sut.activateForTab("tab-A")
+        sut.bindToTab(scriptA, hasExistingChat: true)
+
+        XCTAssertFalse(sut.viewController.isModelChipHidden,
+                      "bindToTab must not reset the pin applyState restored — mirrors AI-tab → AI-tab switch")
     }
 
     func test_endToEnd_twoTabSwitches_preserveIndependentState() {

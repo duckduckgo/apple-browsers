@@ -79,7 +79,7 @@
         "suffixes": ["first_daily_count", "platform"],
         "parameters": ["appVersion"]
     },
-    "aichat_history_select_mode_entered": {
+    "aichat_history_edit_mode_entered": {
         "description": "User entered select/edit mode on the chat history screen via the toolbar button",
         "owners": ["sabrinstardio"],
         "triggers": ["other"],

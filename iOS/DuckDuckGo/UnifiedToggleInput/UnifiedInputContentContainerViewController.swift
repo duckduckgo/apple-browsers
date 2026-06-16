@@ -530,14 +530,17 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // one). The model notifies after refreshing its array, so the reads below are fresh.
         Publishers.CombineLatest4(
             switchBarHandler.toggleStatePublisher,
-            switchBarHandler.currentTextPublisher,
+            Publishers.CombineLatest(switchBarHandler.currentTextPublisher,
+                                     switchBarHandler.hasUserInteractedWithTextPublisher),
             duckAIStateRelay,
             searchStateChanged.prepend(())
         )
-        .map { mode, text, duckAIState, _ -> UnifiedSuggestionsInputs in
-            UnifiedSuggestionsInputsMerger.merge(
+        .map { mode, textState, duckAIState, _ -> UnifiedSuggestionsInputs in
+            let (text, hasUserInteractedWithText) = textState
+            return UnifiedSuggestionsInputsMerger.merge(
                 mode: mode,
                 text: text,
+                hasUserInteractedWithText: hasUserInteractedWithText,
                 search: .init(hasFavorites: hasFavorites(), hasMessages: hasMessages()),
                 duckAI: duckAIState)
         }
@@ -744,7 +747,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // when it resolves to `.logo`. Resolving both modes keeps the swipe-morph's two empty states
         // available; landscape suppresses both.
         func resolvesToLogo(_ mode: TextEntryMode) -> Bool {
-            let inputs = UnifiedSuggestionsInputsMerger.merge(mode: mode, text: text, search: searchState, duckAI: duckAIState)
+            let inputs = UnifiedSuggestionsInputsMerger.merge(
+                mode: mode,
+                text: text,
+                hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText,
+                search: searchState,
+                duckAI: duckAIState)
             return UnifiedSuggestionsContentResolver.resolve(inputs, previous: nil) == .logo
         }
 

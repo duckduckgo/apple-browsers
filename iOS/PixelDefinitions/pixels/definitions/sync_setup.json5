@@ -296,7 +296,16 @@
                 "key": "reason",
                 "type": "string",
                 "description": "The reason Sync setup failed, when it can be mapped safely.",
-                "enum": ["session_timeout", "transport_failure", "invalid_credentials", "already_upgraded", "already_paired", "account_creation_failed", "account_upgrade_failed", "protocol_error"]
+                "enum": [
+                    "session_timeout",
+                    "transport_failure",
+                    "invalid_credentials",
+                    "already_upgraded",
+                    "already_paired",
+                    "account_creation_failed",
+                    "account_upgrade_failed",
+                    "protocol_error"
+                ]
             }
         ]
     },

@@ -33,14 +33,14 @@ protocol CrashReportDetecting {
 
 final class MainBrowserCrashReportDetector: CrashReportDetecting {
 
-    private let keyValueStore: any ThrowingKeyValueStoring
+    private let settings: any ThrowingKeyedStoring<CrashReportingSettings>
     private let crashReportReader: CrashReportReader
     private let mainBundleIdentifier: String?
 
-    init(keyValueStore: any ThrowingKeyValueStoring,
+    init(settings: any ThrowingKeyedStoring<CrashReportingSettings>,
          crashReportReader: CrashReportReader = CrashReportReader(),
          mainBundleIdentifier: String? = Bundle.main.bundleIdentifier) {
-        self.keyValueStore = keyValueStore
+        self.settings = settings
         self.crashReportReader = crashReportReader
         self.mainBundleIdentifier = mainBundleIdentifier
     }
@@ -48,7 +48,6 @@ final class MainBrowserCrashReportDetector: CrashReportDetecting {
     func hasNewMainBrowserCrashReport() -> Bool {
         guard let mainBundleIdentifier else { return false }
 
-        let settings = keyValueStore.throwingKeyedStoring() as any ThrowingKeyedStoring<CrashReportingSettings>
         guard let lastCheckDate = try? settings.lastCrashReportCheckDate else {
             return false
         }
@@ -59,15 +58,15 @@ final class MainBrowserCrashReportDetector: CrashReportDetecting {
 
 final class UncleanExitRestartSourceResolver: UncleanExitRestartSourceResolving {
 
-    private let keyValueStore: any ThrowingKeyValueStoring
+    private let updateControllerSettings: any ThrowingKeyedStoring<UpdateControllerSettings>
     private let crashReportDetecting: CrashReportDetecting
     private let buildType: ApplicationBuildType
     private var sparklePendingUpdateSnapshot = false
 
-    init(keyValueStore: any ThrowingKeyValueStoring,
+    init(updateControllerSettings: any ThrowingKeyedStoring<UpdateControllerSettings>,
          crashReportDetecting: CrashReportDetecting,
          buildType: ApplicationBuildType) {
-        self.keyValueStore = keyValueStore
+        self.updateControllerSettings = updateControllerSettings
         self.crashReportDetecting = crashReportDetecting
         self.buildType = buildType
     }
@@ -78,9 +77,8 @@ final class UncleanExitRestartSourceResolver: UncleanExitRestartSourceResolving 
             return
         }
 
-        let settings = keyValueStore.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
-        let hasSourceVersion = (try? settings.pendingUpdateSourceVersion) != nil
-        let hasSourceBuild = (try? settings.pendingUpdateSourceBuild) != nil
+        let hasSourceVersion = (try? updateControllerSettings.pendingUpdateSourceVersion) != nil
+        let hasSourceBuild = (try? updateControllerSettings.pendingUpdateSourceBuild) != nil
         sparklePendingUpdateSnapshot = hasSourceVersion && hasSourceBuild
     }
 

@@ -249,6 +249,36 @@ final class AppStateRestorationManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenAppDidTerminateUnexpectedly_ThenResolverReceivesUpdateStatusFromDetector() throws {
+        try mockKeyValueStore.set(false, forKey: terminationFlagKey)
+        mockApplicationUpdateDetecting.updateStatus = .updated
+        mockRestartSourceResolver.resolvedSource = .appUpdate
+        mockPixelKit.expectedFireCalls = [
+            .init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: .appUpdate), frequency: .standard)
+        ]
+
+        appStateManager.applicationDidFinishLaunching()
+
+        XCTAssertEqual(mockRestartSourceResolver.lastResolvedUpdateStatus, .updated)
+        mockPixelKit.verifyExpectations()
+    }
+
+    @MainActor
+    func testWhenTerminationFlagWriteFailsOnApplicationDidFinishLaunching_ThenDebugWritePixelIsFired() throws {
+        try mockKeyValueStore.set(false, forKey: terminationFlagKey)
+        mockRestartSourceResolver.resolvedSource = .unknown
+        mockKeyValueStore.throwOnSet = MockError.error
+        mockPixelKit.expectedFireCalls = [
+            .init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: .unknown), frequency: .standard),
+            .init(pixel: DebugEvent(SessionRestorePromptPixel.appTerminationFlagWriteFailed, error: MockError.error), frequency: .standard)
+        ]
+
+        appStateManager.applicationDidFinishLaunching()
+
+        mockPixelKit.verifyExpectations()
+    }
+
+    @MainActor
     func testWhenAppDidNotTerminateUnexpectedly_ThenPixelIsNotFired() throws {
         try mockKeyValueStore.set(true, forKey: terminationFlagKey)
 
@@ -341,11 +371,13 @@ private final class MockApplicationUpdateDetecting: ApplicationUpdateDetecting {
 
 private final class MockUncleanExitRestartSourceResolver: UncleanExitRestartSourceResolving {
     var resolvedSource: UncleanExitRestartSource = .unknown
+    private(set) var lastResolvedUpdateStatus: AppUpdateStatus?
 
     func captureSparklePendingUpdateSnapshot() {}
 
     func resolve(updateStatus: AppUpdateStatus) -> UncleanExitRestartSource {
-        resolvedSource
+        lastResolvedUpdateStatus = updateStatus
+        return resolvedSource
     }
 }
 

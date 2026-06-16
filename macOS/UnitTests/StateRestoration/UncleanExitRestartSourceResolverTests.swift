@@ -5,26 +5,28 @@
 //
 
 import AppUpdaterShared
+import CrashReportingShared
 import Persistence
 import PersistenceTestingUtils
 import XCTest
 
+@testable import CrashReporting
 @testable import DuckDuckGo_Privacy_Browser
 
 final class UncleanExitRestartSourceResolverTests: XCTestCase {
 
     private var mockCrashReportDetecting: MockCrashReportDetecting!
     private var mockBuildType: MockApplicationBuildType!
-    private var mockKeyValueStore: MockKeyValueFileStore!
+    private var mockUpdateControllerSettings: MockKeyValueFileStore!
     private var resolver: UncleanExitRestartSourceResolver!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         mockCrashReportDetecting = MockCrashReportDetecting()
         mockBuildType = MockApplicationBuildType()
-        mockKeyValueStore = MockKeyValueFileStore()
+        mockUpdateControllerSettings = MockKeyValueFileStore()
         resolver = UncleanExitRestartSourceResolver(
-            keyValueStore: mockKeyValueStore,
+            updateControllerSettings: mockUpdateControllerSettings.throwingKeyedStoring(),
             crashReportDetecting: mockCrashReportDetecting,
             buildType: mockBuildType
         )
@@ -32,7 +34,7 @@ final class UncleanExitRestartSourceResolverTests: XCTestCase {
 
     override func tearDown() {
         resolver = nil
-        mockKeyValueStore = nil
+        mockUpdateControllerSettings = nil
         mockBuildType = nil
         mockCrashReportDetecting = nil
         super.tearDown()
@@ -48,12 +50,12 @@ final class UncleanExitRestartSourceResolverTests: XCTestCase {
         XCTAssertEqual(result, .crash)
     }
 
-    func testWhenCrashAndSparkleUpdateSnapshot_ThenCrashTakesPriority() {
+    func testWhenCrashAndSparkleUpdateSnapshot_ThenCrashTakesPriority() throws {
         mockCrashReportDetecting.shouldDetectCrashReport = true
         mockBuildType.isSparkleBuild = true
-        let settings = mockKeyValueStore.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
-        try? settings.set("1.0.0", for: \.pendingUpdateSourceVersion)
-        try? settings.set("100", for: \.pendingUpdateSourceBuild)
+        let settings = mockUpdateControllerSettings.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
+        try settings.set("1.0.0", for: \.pendingUpdateSourceVersion)
+        try settings.set("100", for: \.pendingUpdateSourceBuild)
         resolver.captureSparklePendingUpdateSnapshot()
 
         let result = resolver.resolve(updateStatus: .noChange)
@@ -61,13 +63,13 @@ final class UncleanExitRestartSourceResolverTests: XCTestCase {
         XCTAssertEqual(result, .crash)
     }
 
-    func testWhenSparkleSnapshotPresentAndNoCrash_ThenReturnsAppUpdate() {
+    func testWhenSparkleSnapshotPresentAndNoCrash_ThenReturnsAppUpdate() throws {
         mockCrashReportDetecting.shouldDetectCrashReport = false
         mockBuildType.isSparkleBuild = true
         mockBuildType.isAppStoreBuild = false
-        let settings = mockKeyValueStore.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
-        try? settings.set("1.0.0", for: \.pendingUpdateSourceVersion)
-        try? settings.set("100", for: \.pendingUpdateSourceBuild)
+        let settings = mockUpdateControllerSettings.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
+        try settings.set("1.0.0", for: \.pendingUpdateSourceVersion)
+        try settings.set("100", for: \.pendingUpdateSourceBuild)
         resolver.captureSparklePendingUpdateSnapshot()
 
         let result = resolver.resolve(updateStatus: .noChange)
@@ -75,11 +77,11 @@ final class UncleanExitRestartSourceResolverTests: XCTestCase {
         XCTAssertEqual(result, .appUpdate)
     }
 
-    func testWhenSparkleSnapshotMissingSourceBuild_ThenReturnsUnknown() {
+    func testWhenSparkleSnapshotMissingSourceBuild_ThenReturnsUnknown() throws {
         mockCrashReportDetecting.shouldDetectCrashReport = false
         mockBuildType.isSparkleBuild = true
-        let settings = mockKeyValueStore.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
-        try? settings.set("1.0.0", for: \.pendingUpdateSourceVersion)
+        let settings = mockUpdateControllerSettings.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
+        try settings.set("1.0.0", for: \.pendingUpdateSourceVersion)
         resolver.captureSparklePendingUpdateSnapshot()
 
         let result = resolver.resolve(updateStatus: .noChange)
@@ -104,6 +106,87 @@ final class UncleanExitRestartSourceResolverTests: XCTestCase {
         let result = resolver.resolve(updateStatus: .noChange)
 
         XCTAssertEqual(result, .unknown)
+    }
+}
+
+final class MainBrowserCrashReportDetectorTests: XCTestCase {
+
+    private let bundleIdentifier = "com.duckduckgo.macos.browser"
+
+    func testWhenLastCrashReportCheckDateIsMissing_ThenReturnsFalse() {
+        let settingsStore = MockKeyValueFileStore()
+        let detector = MainBrowserCrashReportDetector(
+            settings: settingsStore.throwingKeyedStoring(),
+            mainBundleIdentifier: bundleIdentifier
+        )
+
+        XCTAssertFalse(detector.hasNewMainBrowserCrashReport())
+    }
+
+    func testWhenMainBundleIdentifierIsMissing_ThenReturnsFalse() throws {
+        let settingsStore = MockKeyValueFileStore()
+        let settings = settingsStore.throwingKeyedStoring() as any ThrowingKeyedStoring<CrashReportingSettings>
+        try settings.set(Date(), for: \.lastCrashReportCheckDate)
+        let detector = MainBrowserCrashReportDetector(
+            settings: settings,
+            mainBundleIdentifier: nil
+        )
+
+        XCTAssertFalse(detector.hasNewMainBrowserCrashReport())
+    }
+
+    func testWhenNoNewCrashReportExists_ThenReturnsFalse() throws {
+        let settingsStore = MockKeyValueFileStore()
+        let settings = settingsStore.throwingKeyedStoring() as any ThrowingKeyedStoring<CrashReportingSettings>
+        let now = Date()
+        try settings.set(now.addingTimeInterval(-120), for: \.lastCrashReportCheckDate)
+
+        let mainBundleIdentifier = bundleIdentifier
+        let fileManager = MockFileManager()
+        let reader = CrashReportReader(
+            fileManager: fileManager,
+            validBundleIdentifierProvider: { [mainBundleIdentifier] in [mainBundleIdentifier] },
+            dateProvider: { now }
+        )
+        let detector = MainBrowserCrashReportDetector(
+            settings: settings,
+            crashReportReader: reader,
+            mainBundleIdentifier: mainBundleIdentifier
+        )
+
+        XCTAssertFalse(detector.hasNewMainBrowserCrashReport())
+    }
+
+    func testWhenNewCrashReportExists_ThenReturnsTrue() throws {
+        let settingsStore = MockKeyValueFileStore()
+        let settings = settingsStore.throwingKeyedStoring() as any ThrowingKeyedStoring<CrashReportingSettings>
+        let now = Date()
+        let lastCheckDate = now.addingTimeInterval(-120)
+        try settings.set(lastCheckDate, for: \.lastCrashReportCheckDate)
+
+        let mainBundleIdentifier = bundleIdentifier
+        let diagnosticReportsDirectory = FileManager.userDiagnosticReports
+        let fileManager = MockFileManager()
+        let reportURL = diagnosticReportsDirectory.appendingPathComponent("DuckDuckGo-new.ips")
+        fileManager.registerFile(
+            at: reportURL,
+            in: diagnosticReportsDirectory,
+            contents: #"{"bundleID":"\#(mainBundleIdentifier)"}"#,
+            creationDate: now.addingTimeInterval(-60)
+        )
+
+        let reader = CrashReportReader(
+            fileManager: fileManager,
+            validBundleIdentifierProvider: { [mainBundleIdentifier] in [mainBundleIdentifier] },
+            dateProvider: { now }
+        )
+        let detector = MainBrowserCrashReportDetector(
+            settings: settings,
+            crashReportReader: reader,
+            mainBundleIdentifier: mainBundleIdentifier
+        )
+
+        XCTAssertTrue(detector.hasNewMainBrowserCrashReport())
     }
 }
 

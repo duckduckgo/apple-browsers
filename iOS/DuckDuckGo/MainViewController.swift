@@ -725,11 +725,18 @@ class MainViewController: UIViewController {
     }
 
     private func configureStartupPresentation() {
+        let onboardingStatus = LaunchOptionsHandler().onboardingStatus
         let startupOnboardingDecision = StartupOnboardingDecision(
-            onboardingStatus: LaunchOptionsHandler().onboardingStatus,
+            onboardingStatus: onboardingStatus,
             tutorialSettings: tutorialSettings,
             resumeStepStore: onboardingResumeStepStore
         )
+
+        // Automation bypass: a UI-test override can mark onboarding already-completed without ever
+        // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
+        if case .overridden(.uiTests(completed: true)) = onboardingStatus {
+            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+        }
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
 
@@ -3920,6 +3927,10 @@ extension MainViewController: OmniBarDelegate {
         loadUrlRespectingAIBoundary(url)
     }
 
+    func onViewAllChatsSelected() {
+        openAIChatHistory()
+    }
+
     func onAIChatQueryUpdated(_ query: String) {
         iPadAIChatQuery = query
         iPadTabChatHistoryCoordinator.updateQuery(query)
@@ -5475,6 +5486,9 @@ extension MainViewController: TabDelegate {
     }
 
     func openAIChatHistory() {
+        // The native chat history sheet is an iPhone-only experience; entrypoints are hidden on iPad,
+        // and this guard ensures the sheet can never be presented there.
+        guard UIDevice.current.userInterfaceIdiom != .pad else { return }
         // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
         // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
         // configure at launch the cast yields `nil`, and the reader surfaces a
@@ -6470,6 +6484,9 @@ extension MainViewController: OnboardingDelegate {
 
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+
+        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+
         // Now that linear onboarding has finished, any experiment cohort
         // enrollment that occurred is in place. Run the unified-toggle-input
         // setup that was deferred at viewDidLoad.
@@ -7103,6 +7120,10 @@ extension MainViewController: AIChatHistoryManagerDelegate {
 
     func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
         onChatHistorySelected(url: url)
+    }
+
+    func aiChatHistoryManagerDidSelectViewAllChats(_ manager: AIChatHistoryManager) {
+        openAIChatHistory()
     }
 }
 

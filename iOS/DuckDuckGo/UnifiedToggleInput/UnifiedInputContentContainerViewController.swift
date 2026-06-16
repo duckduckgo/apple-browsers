@@ -39,6 +39,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion)
     func unifiedInputEditingStateDidRequestTextUpdate(_ text: String)
     func unifiedInputEditingStateDidSelectChatHistory(url: URL)
+    func unifiedInputEditingStateDidSelectViewAllChats()
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
     func unifiedInputEditingStateDidRequestTabSwitcher()
     func unifiedInputEditingStateDidRequestTryFireMode()
@@ -853,6 +854,7 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsSurfacePr
         case .chat(let chat): duckAISuggestionsDidSelectChat(chat)
         case .url(let suggestion): duckAISuggestionsDidSelectURL(suggestion)
         case .searchDuckDuckGo(let query): duckAISuggestionsDidSelectSearchDuckDuckGo(query: query)
+        case .viewAllChats: delegate?.unifiedInputEditingStateDidSelectViewAllChats()
         }
     }
 

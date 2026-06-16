@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Ricarica";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Ripristina lo zoom";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Seleziona";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Mostra tutte le schede";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Zoom avanti";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Zoom indietro";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Ultima elaborazione: %@";

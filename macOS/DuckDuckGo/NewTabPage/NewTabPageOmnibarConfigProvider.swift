@@ -236,6 +236,21 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
     }
 
+    var isAttachTabsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpAttachMoreTabs)
+    }
+
+    /// Re-emits the current `isAttachTabsEnabled` value whenever the feature-flagger reports any
+    /// change. The client uses this to push `omnibar_onConfigUpdate` so an open NTP shows or hides
+    /// the attach-tabs affordance without a reload when the flag flips.
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self?.isAttachTabsEnabled }
+            .prepend(isAttachTabsEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     var isVoiceChatAccessEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarVoiceChatAccess)
     }

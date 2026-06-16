@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Перезагрузить";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Сбросить масштаб";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Выбрать";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Показать все вкладки";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Увеличить масштаб";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Уменьшить масштаб";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Последняя обработка: %@";

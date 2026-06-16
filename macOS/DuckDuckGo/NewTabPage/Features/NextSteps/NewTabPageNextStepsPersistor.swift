@@ -24,6 +24,7 @@ protocol NewTabPageNextStepsCardsPersisting {
     var orderedCardIDs: [NewTabPageDataModel.CardID]? { get set }
     var firstCardLevel: NewTabPageDataModel.CardLevel { get set }
     var isFirstSession: Bool { get set }
+    var ntpImpressionCount: Int { get set }
 
     func timesShown(for card: NewTabPageDataModel.CardID) -> Int
     func setTimesShown(_ value: Int, for card: NewTabPageDataModel.CardID)
@@ -45,10 +46,20 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
         static let cardOrder = "new.tab.page.next.steps.card.order"
         static let firstCardLevel = "new.tab.page.next.steps.first.card.level"
         static let isFirstSession = "new.tab.page.next.steps.is.first.session"
+        static let ntpImpressionCount = "new.tab.page.next.steps.ntp.impression.count"
     }
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
+    }
+
+    var ntpImpressionCount: Int {
+        get {
+            return (try? keyValueStore.object(forKey: Keys.ntpImpressionCount) as? Int) ?? 0
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Keys.ntpImpressionCount)
+        }
     }
 
     var orderedCardIDs: [NewTabPageDataModel.CardID]? {
@@ -169,6 +180,7 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
         try? keyValueStore.removeObject(forKey: Keys.cardOrder)
         try? keyValueStore.removeObject(forKey: Keys.firstCardLevel)
         try? keyValueStore.removeObject(forKey: Keys.isFirstSession)
+        try? keyValueStore.removeObject(forKey: Keys.ntpImpressionCount)
     }
 
     private func shownKey(for card: NewTabPageDataModel.CardID) -> String {

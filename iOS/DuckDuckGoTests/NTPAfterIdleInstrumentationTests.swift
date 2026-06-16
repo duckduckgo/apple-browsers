@@ -273,6 +273,78 @@ struct NTPAfterIdleInstrumentationTests {
         #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab.name])
     }
 
+    // MARK: - escapeHatchShown / escapeHatchMenuShown
+
+    @available(iOS 16, *)
+    @Test("When escape hatch shown then fires the shown pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchShownThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchShown()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchShown.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When escape hatch menu shown then fires the menu_shown pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchMenuShownThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchMenuShown()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchMenuShown.name])
+    }
+
+    // MARK: - Menu-specific actions
+
+    @available(iOS 16, *)
+    @Test("When return to tab tapped from menu then fires the from_menu pixel", .timeLimit(.minutes(1)))
+    func whenReturnToTabTappedFromMenuThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchReturnToTabTappedFromMenu()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchReturnToTabTappedFromMenu.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When close tab tapped from menu then fires the from_menu pixel", .timeLimit(.minutes(1)))
+    func whenCloseTabTappedFromMenuThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchCloseTabTappedFromMenu()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchCloseTabTappedFromMenu.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When burn tapped from menu with confirmation then fires the with_confirmation_from_menu pixel", .timeLimit(.minutes(1)))
+    func whenBurnTappedFromMenuWithConfirmationThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTappedFromMenu(requiredConfirmation: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnWithConfirmationTappedFromMenu.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When burn tapped from menu immediately then fires the immediately_from_menu pixel", .timeLimit(.minutes(1)))
+    func whenBurnTappedFromMenuImmediatelyThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTappedFromMenu(requiredConfirmation: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnImmediatelyTappedFromMenu.name])
+    }
+
+    // MARK: - escapeHatchSwipeActionPerformed
+
+    @available(iOS 16, *)
+    @Test("When swipe action performed then fires the swipe pixel", .timeLimit(.minutes(1)))
+    func whenSwipeActionPerformedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchSwipeActionPerformed()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchSwipeActionPerformed.name])
+    }
+
+    // MARK: - escapeHatchBurnTappedFromButton
+
+    @available(iOS 16, *)
+    @Test("When burn tapped from button then fires the from_button pixel", .timeLimit(.minutes(1)))
+    func whenBurnTappedFromButtonThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTappedFromButton()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnTappedFromButton.name])
+    }
+
     // MARK: - Multiple calls accumulate
 
     @Test("When multiple methods called then all pixels are recorded")

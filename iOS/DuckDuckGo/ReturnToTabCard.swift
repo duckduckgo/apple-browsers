@@ -47,7 +47,7 @@ struct ReturnToTabCard: View {
 
     @ViewBuilder
     private func bodyWithActions(width: CGFloat) -> some View {
-        SwipeActionView(onCommit: model.primarySwipeAction.perform) {
+        SwipeActionView(onCommit: model.performPrimarySwipeAction) {
             contentView
         } actions: {
             swipeableActionsView
@@ -127,7 +127,7 @@ struct ReturnToTabCard: View {
     /// fire tabs burn immediately, everything else asks for confirmation (anchored to this button on iPad).
     private var fireButton: some View {
         Button(action: deleteTab) {
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.fireTabs)
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
                 .foregroundColor(Color(designSystemColor: .icons))
                 .padding(.horizontal, Metrics.actionIconPadding)
                 .frame(maxHeight: .infinity)
@@ -140,11 +140,7 @@ struct ReturnToTabCard: View {
     }
 
     private func deleteTab() {
-        if model.isFireTab {
-            model.onBurnTabImmediately()
-        } else {
-            model.onBurnTabWithConfirmation(fireButtonFrameInWindow)
-        }
+        model.burnFromButton(fireButtonFrameInWindow)
     }
 
     private var menuView: some View {
@@ -171,52 +167,72 @@ struct ReturnToTabCard: View {
                 text: UserText.escapeHatchMenuReturnToTab,
                 icon: DesignSystemImages.Glyphs.Size16.goBackCircle,
                 role: .none,
-                action: model.onCardTap
+                action: model.returnToTabFromMenu
             )
-            if model.isFireTab {
-                // When the Fire button is enabled, deleting a fire tab is handled by that button instead.
-                if !model.isFireButtonEnabled {
+            destructiveActionButtons
+            if model.isHideShortcutEnabled{
+                Section {
+                    afterInactivityPicker
                     MenuActionButton(
-                        text: UserText.escapeHatchMenuDeleteTab,
-                        icon: DesignSystemImages.Glyphs.Size16.fire,
-                        role: .destructive,
-                        action: model.onBurnTabImmediately
+                        text: UserText.escapeHatchMenuHideTheseShortcuts,
+                        icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
+                        role: .none,
+                        action: model.hideShortcut
                     )
                 }
             } else {
-                MenuActionButton(
-                    text: UserText.escapeHatchMenuCloseTab,
-                    icon: DesignSystemImages.Glyphs.Size16.closeOutline,
-                    role: .destructive,
-                    action: model.onCloseTab
-                )
-                // When the Fire button is enabled, deleting the tab is handled by that button instead.
-                if !model.isFireButtonEnabled {
-                    MenuActionButton(
-                        text: UserText.escapeHatchMenuDeleteTab,
-                        icon: DesignSystemImages.Glyphs.Size16.fire,
-                        role: .destructive,
-                        action: { model.onBurnTabWithConfirmation(menuFrameInWindow) }
-                    )
-                }
+                afterInactivityPicker
             }
-            Picker(selection: model.afterInactivityOptionBinding) {
-                ForEach(AfterInactivityOption.allCases, id: \.self) { option in
-                    Text(option.description)
-                        .tag(option)
-                }
-            } label: {
-                Text(UserText.settingsAfterInactivityLabel)
-                Text(model.afterInactivityOptionBinding.wrappedValue.description)
-                    .foregroundColor(.secondary)
-                    .font(.subheadline)
-
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
-                    .foregroundColor(Color(designSystemColor: .icons))
-
-            }
-            .pickerStyle(.menu)
         }
+        .onAppear { model.menuDidAppear() }
+    }
+
+    @ViewBuilder
+    private var destructiveActionButtons: some View {
+        if model.isFireTab {
+            // When the Fire button is enabled, deleting is handled by that button instead of the menu.
+            if !model.isFireButtonEnabled {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuDeleteTab,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
+                    role: .destructive,
+                    action: model.burnImmediatelyFromMenu
+                )
+            }
+        } else {
+            MenuActionButton(
+                text: UserText.escapeHatchMenuCloseTab,
+                icon: DesignSystemImages.Glyphs.Size16.closeOutline,
+                role: .destructive,
+                action: model.closeTabFromMenu
+            )
+            if !model.isFireButtonEnabled {
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuDeleteTab,
+                    icon: DesignSystemImages.Glyphs.Size16.fire,
+                    role: .destructive,
+                    action: { model.burnWithConfirmationFromMenu(menuFrameInWindow) }
+                )
+            }
+        }
+    }
+
+    private var afterInactivityPicker: some View {
+        Picker(selection: model.afterInactivityOptionBinding) {
+            ForEach(AfterInactivityOption.allCases, id: \.self) { option in
+                Text(option.description)
+                    .tag(option)
+            }
+        } label: {
+            Text(UserText.settingsAfterInactivityLabel)
+            Text(model.afterInactivityOptionBinding.wrappedValue.description)
+                .foregroundColor(.secondary)
+                .font(.subheadline)
+
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
+                .foregroundColor(Color(designSystemColor: .icons))
+        }
+        .pickerStyle(.menu)
     }
 
     private var swipeableActionsView: some View {

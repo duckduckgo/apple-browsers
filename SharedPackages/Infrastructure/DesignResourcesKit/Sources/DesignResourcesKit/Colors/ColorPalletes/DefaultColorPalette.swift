@@ -31,6 +31,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x404145 = Color(0x404145)
     private static let xE0E0E0 = Color(0xE0E0E0)
     private static let xF2F2F2 = Color(0xF2F2F2)
+    private static let xF3F6FF = Color(0xF3F6FF)
     private static let xF9F9F9 = Color(0xF9F9F9)
     private static let x000000 = Color(0x000000)
     private static let xFFFFFF = Color(0xFFFFFF)
@@ -63,6 +64,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
     private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x3D3D3D)
     private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let backgroundPromptMessage = DynamicColor(lightColor: xF3F6FF, darkColor: xFFFFFF.opacity(0.09))
 
     // Shadow
     private static let shadowPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.04), darkColor: .shade(0.16))
@@ -86,6 +88,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let textSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.72), darkColor: .tint(0.6))
     private static let textTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.36))
     private static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
+
+    // Container
+    private static let containerBorderPrimary = DynamicColor(lightColor: x000000.opacity(0.06), darkColor: xFFFFFF.opacity(0.09))
 
     // System
     private static let lines = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
@@ -177,12 +182,14 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .background: return background
         case .backgroundTertiary: return backgroundTertiary
         case .backgroundSheets: return backgroundSheets
+        case .backgroundPromptMessage: return backgroundPromptMessage
         case .backdrop: return backdrop
         case .panel: return background
         case .icons: return icons
         case .iconsSecondary: return iconsSecondary
         case .iconsTertiary: return iconsTertiary
         case .textPrimary: return textPrimary
+        case .containerBorderPrimary: return containerBorderPrimary
         case .lines: return lines
         case .shadowPrimary: return shadowPrimary
         case .shadowSecondary: return shadowSecondary
@@ -320,9 +327,9 @@ private extension DefaultColorPalette {
         case .accentPrimaryPressed:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)
         case .accentPrimaryText:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.GrayScale.white)
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .accentGlowPrimary:
-            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2))
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
         case .accentAltPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
         case .accentAltGlowPrimary:
@@ -332,28 +339,24 @@ private extension DefaultColorPalette {
         case .surfaceTertiary:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x011D34))
         case .buttonsPrimaryDefault:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen30)
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen40)
         case .buttonsPrimaryPressed:
-            // Figma --ds-accent-alt-tertiary (#9E2B08 = Mandarin70). Was Mandarin60 (#CC3B0A) previously.
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen40)
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen60)
         case .buttonsPrimaryText:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .buttonsSecondaryDefault:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.04))
         case .buttonsSecondaryPressed:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.12), darkColor: RebrandingColor.GrayScale.white.opacity(0.24))
         case .buttonsSecondaryText:
-            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.Eggshell.eggshell10)
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
         case .destructivePrimary:
-            // Figma --ds-destructive-primary (#D83544). Not a named shade in the Red palette.
-            return DynamicColor(lightColor: Color(0xD83544), darkColor: RebrandingColor.Red.red40)
+            return DynamicColor(lightColor: Color(0xD83544), darkColor: Color(0xE44D55))
         case .destructivePrimaryPressed:
-            // Figma --ds-destructive-tertiary (#A02231 = Red70).
             return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
         case .destructivePrimaryText:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.GrayScale.white)
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .destructiveGlowPrimary:
-            // Figma --ds-destructive-glow-primary (rgba(229,36,75,0.2) = #E5244B @ 20%).
             return DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xE5244B).opacity(0.2))
         case .controlsFillPrimary:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
@@ -363,6 +366,8 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.16), darkColor: RebrandingColor.GrayScale.white.opacity(0.09))
         case .backgroundAccent:
             return DynamicColor(lightColor: Color(0x7295F6).opacity(0.20), darkColor: Color(0x8FABF9).opacity(0.20))
+        case .alertGreen:
+            return DynamicColor(staticColor: RebrandingColor.Green.green40)
         }
     }
 

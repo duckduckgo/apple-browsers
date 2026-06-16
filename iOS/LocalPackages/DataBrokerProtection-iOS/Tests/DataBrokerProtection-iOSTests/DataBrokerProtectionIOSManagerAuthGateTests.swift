@@ -17,9 +17,10 @@
 //
 
 import XCTest
-@testable import DataBrokerProtection_iOS
+import Common
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
+@testable import DataBrokerProtection_iOS
 
 @MainActor
 final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
@@ -154,6 +155,50 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
         XCTAssertTrue(dependencies.queueManager.didCallStartScheduledScanOperationsIfPermitted)
         XCTAssertFalse(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
+    }
+
+    func testHandleBGProcessingTask_freemiumActivatedWithinBackgroundScanWindow_startsScanOnlyOperations() async {
+        let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: true)
+        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        dependencies.authenticationManager.isUserAuthenticatedValue = false
+        dependencies.freemiumDBPUserStateManager.didActivate = true
+        dependencies.freemiumDBPUserStateManager.firstProfileSavedTimestamp = Date()
+            .addingTimeInterval(-.days(6))
+
+        let mockTask = MockBGTask()
+        sut.handleBGProcessingTask(task: mockTask)
+
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertTrue(dependencies.queueManager.didCallStartScheduledScanOperationsIfPermitted)
+        XCTAssertFalse(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
+    }
+
+    func testHandleBGProcessingTask_freemiumActivatedAfterBackgroundScanWindow_doesNotStartOperations() async {
+        let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: true)
+        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        dependencies.authenticationManager.isUserAuthenticatedValue = false
+        dependencies.freemiumDBPUserStateManager.didActivate = true
+        dependencies.freemiumDBPUserStateManager.firstProfileSavedTimestamp = Date()
+            .addingTimeInterval(-.days(8))
+
+        let mockTask = MockBGTask()
+        sut.handleBGProcessingTask(task: mockTask)
+
+        await Task.yield()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertFalse(dependencies.queueManager.didCallStartScheduledScanOperationsIfPermitted)
+        XCTAssertFalse(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
+        XCTAssertEqual(mockTask.completedSuccess, true)
+
+        let backgroundTaskEvents = dependencies.database.backgroundTaskEventsToReturn
+        XCTAssertEqual(backgroundTaskEvents.map(\.eventType), [.started, .completed])
+        XCTAssertEqual(backgroundTaskEvents.first?.sessionId, backgroundTaskEvents.last?.sessionId)
+        XCTAssertNotNil(backgroundTaskEvents.last?.metadata)
     }
 
     // MARK: - dashboardDidOpen routing

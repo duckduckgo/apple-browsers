@@ -26,11 +26,9 @@ tags:
     file: ../shared/use_firebutton.yaml
 - assertVisible:
     id: "searchEntry"
+# Dismiss the focused address bar if present ("Cancel" classic / "Back" under the unified toggle input).
 - runFlow:
-    when:
-        visible: "Cancel"
-    commands:
-        - tapOn: "Cancel"
+    file: ../shared/dismiss_address_bar_editing.yaml
 - runFlow:
     file: ../shared/use_firebutton.yaml
 

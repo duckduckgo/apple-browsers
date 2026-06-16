@@ -106,7 +106,22 @@ Only check expiry dates on definitions that are added or modified in the PR, not
 
 ### Wide Event Definitions
 
-Wide events in `iOS/PixelDefinitions/wide_events/definitions/*.json5` use a different schema from regular pixels. They have `meta`, `feature`, and `feature.data` sections instead of `suffixes` and `parameters`. Validating wide event schema correctness is out of scope for automated review — leave wide event definitions to human reviewers. Only flag if a wide event is added in Swift but has no definition file at all.
+A wide event has **two parallel definition files, and they must be kept in sync** - neither should be added, removed, or changed without the other:
+- The **pixel definition** (`{iOS,macOS}/PixelDefinitions/pixels/definitions/*.json5`) declares the wide-event pixel with `feature.data.ext.*` parameters or `keyPattern`s.
+- The **wide-event source definition** (`{iOS,macOS}/PixelDefinitions/wide_events/definitions/*.json5`) declares the schema and generates `wide_events/generated_schemas/<meta-type>-<version>.json`, which is what remote validation uses.
+
+These two files are paired by `meta.type` - every wide-event pixel def has a `{ "key": "meta.type", "enum": ["<meta-type>"] }` parameter whose enum value matches the wide-event source's `meta.type`. (The pixel side is transitional and will eventually be retired in favour of the dedicated wide-event source format; until then, treat keeping the pair in sync as the rule.)
+
+CI runs `node scripts/check_wide_event_consistency.mjs` and `node scripts/check_wide_event_schema_immutability.mjs` for both platforms. The consistency check exists to enforce that the pixel and source definitions stay in sync: (1) a wide event must have **both** files - a PR that adds (or removes) one side without the other fails, though pre-existing single-sided definitions are grandfathered, so back-filling the missing half of an older definition is fine and expected; and (2) when one definition changes, its **paired definition must change too** - this is compared per `meta.type` definition, so unrelated edits to other pixels that merely share a `.json5` file are not flagged. Reinforce these in review, and still flag the patterns below:
+
+- A PR changes one half of a paired wide event (the pixel definition's `feature.data.ext.*` parameters, or the matching source definition's schema) without the corresponding change in the other half. The pixel and source describe the same event and must be kept in sync - both should move together (and a `meta.version` bump in the source is required if the schema shape changed).
+- A PR changes the **shape** of the wide-event source definition (renames / adds / removes a `feature.data.ext.*` field, changes a type or enum) without bumping that source definition's `meta.version`. Schema versions are immutable artifacts — the regenerator produces a new file per version, and editing an existing generated schema in place is forbidden.
+- A PR changes the **shape** of the Swift wide-event object/emitter (`WideEventData` stored properties that become `feature.data.ext.*`, `jsonParameters()` keys, status reasons, enum values, or field types) without bumping `WideEventMetadata.version` and the matching source definition's `meta.version`.
+- A PR modifies the Swift wide-event emitter (`jsonParameters()` keys, `WideEventMetadata.version`) and only one of the two definition files. All three (Swift emitter + pixel def + wide-event source) must agree.
+
+**Never hand-edit anything under `wide_events/generated_schemas/`.** Those files are generated artifacts - the pixel validator regenerates each one from its `wide_events/definitions/*.json5` source, and the filename encodes the version, so every version bump produces a brand-new file and leaves the old ones untouched. The only correct way to change a generated schema is to edit the source definition and bump its `meta.version`. Any diff that modifies an existing `generated_schemas/*.json` file in place is wrong - flag it unconditionally. (`scripts/check_wide_event_schema_immutability.mjs` enforces this on CI, but call it out in review too.)
+
+One more case to flag: a wide event added in Swift with no definition files at all. The only thing left to the human reviewer (not the automated checks or the rules above) is validating the deep shape of the schema itself, e.g. nested `ext.ipv4.http.status` - everything above should still be flagged in review.
 
 ### What NOT to Flag
 
@@ -163,4 +178,3 @@ then commit any changed `Package.resolved` files. This commonly appears on Depen
 - A `Package.swift` change that does not alter any dependency version (adding a target or product, source-only changes) - these need not produce a `Package.resolved` change.
 - Lockfile changes that differ **only** in the `originHash` field with no version or revision differences - `originHash` churns across Xcode versions and is not meaningful on its own.
 - A version change to a dependency that is not part of the app build graph (e.g. a test-only or tooling dependency in a package the apps do not link). If you cannot tell whether the dependency reaches the apps, frame the note as a question rather than a required change.
-

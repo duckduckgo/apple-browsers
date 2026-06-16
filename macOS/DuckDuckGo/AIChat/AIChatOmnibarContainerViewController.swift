@@ -669,8 +669,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.target = self
         imageUploadButton.action = #selector(attachButtonClicked)
         imageUploadButton.image = DesignSystemImages.Glyphs.Size16.attach
-        imageUploadButton.toolTip = UserText.aiChatImageUploadButtonTooltip
-        imageUploadButton.setAccessibilityLabel(UserText.aiChatImageUploadButtonTooltip)
+        updateAttachButtonTooltip()
         imageUploadButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.imageUploadButton) }
         containerView.addSubview(imageUploadButton)
 
@@ -1290,6 +1289,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         return names.isEmpty ? "PDFs" : names.joined(separator: ", ")
     }
 
+    /// Tooltip / accessibility label for the attach button. Uses the same adaptive copy as the
+    /// attach-menu item ("Add Images" / "Add PDFs" / "Add Images or PDFs") so the wording always
+    /// matches what the selected model accepts — never a misleading singular "Add image". When the
+    /// model accepts neither images nor files (only the tab picker is available), it falls back to
+    /// the page-content label.
+    private func attachButtonTooltip() -> String {
+        guard omnibarController.selectedModelSupportsImageUpload || omnibarController.selectedModelSupportsFileUpload else {
+            return UserText.aiChatAttachMenuPageContent
+        }
+        return attachMenuItemTitle()
+    }
+
+    private func updateAttachButtonTooltip() {
+        let tooltip = attachButtonTooltip()
+        imageUploadButton.toolTip = tooltip
+        imageUploadButton.setAccessibilityLabel(tooltip)
+    }
+
     private func buildAttachMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
@@ -1536,9 +1553,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // for both kinds — otherwise the default tooltip stays so the user knows they can
             // still attach the other kind.
             let allPickerPathsFull = isFull && (!omnibarController.selectedModelSupportsFileUpload || isFileAttachmentsFull)
-            imageUploadButton.toolTip = (allPickerPathsFull && !omnibarController.isOmnibarTabPickerEnabled)
-                ? UserText.aiChatAttachmentsLimitError
-                : UserText.aiChatImageUploadButtonTooltip
+            if allPickerPathsFull && !omnibarController.isOmnibarTabPickerEnabled {
+                imageUploadButton.toolTip = UserText.aiChatAttachmentsLimitError
+                imageUploadButton.setAccessibilityLabel(UserText.aiChatAttachmentsLimitError)
+            } else {
+                updateAttachButtonTooltip()
+            }
         }
 
         // Disable submit when too many images

@@ -51,7 +51,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     
     struct Constants {
 
-        static let buttonSize: CGFloat = 40
+        static let buttonWidth: CGFloat = 44
+        static let buttonHeight: CGFloat = 40
         static let stackSpacing: CGFloat = 12
         static let minItemWidth: CGFloat = 120
         static let maxItemWidthFraction: CGFloat = 1.0 / 3.0
@@ -171,10 +172,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
         tabSwitcherButton.delegate = self
 
-        // Set width equal to height for all icon buttons
+        // Set width and height for all icon buttons
+        // Width is set to 44 to properly align with OmniBar buttons that are displayed below
         [addTabButton, fireButton, tabSwitcherButton].forEach { button in
-            button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
-            button.widthAnchor.constraint(equalToConstant: Constants.buttonSize).isActive = true
+            button.heightAnchor.constraint(equalToConstant: Constants.buttonHeight).isActive = true
+            button.widthAnchor.constraint(equalToConstant: Constants.buttonWidth).isActive = true
         }
     }
 

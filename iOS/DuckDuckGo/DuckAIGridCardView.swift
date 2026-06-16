@@ -30,13 +30,16 @@ final class DuckAIGridCardView: UIView {
         static let contentHorizontalInset: CGFloat = 8
         static let contentBottomInset: CGFloat = 8
         static let titleSnippetSpacing: CGFloat = 4
+        static let imageVerticalSpacing: CGFloat = 12
         static let snippetChipSpacing: CGFloat = 4
         static let chipHeight: CGFloat = 22
+        static let thumbnailCornerRadius: CGFloat = 16
     }
 
     private let titleLabel = UILabel()
     private let snippetLabel = UILabel()
     private let chipView = ChipView()
+    private let thumbnailImageView = UIImageView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -56,22 +59,44 @@ final class DuckAIGridCardView: UIView {
             titleLabel.text = title
             snippetLabel.text = snippet
             snippetLabel.isHidden = false
-            chipView.configure(icon: DesignSystemImages.Glyphs.Size12.chat,
-                               label: UserText.aiChatTabSwitcherCardChipChat)
-            chipView.isHidden = false
+            configureChatChip()
+            setThumbnailVisible(false)
 
-        case .image(let title, _),
-             .voice(let title),
-             .empty(let title):
+        case .image(let title, _):
+            titleLabel.text = title
+            snippetLabel.text = nil
+            snippetLabel.isHidden = true
+            configureChatChip()
+            setThumbnailVisible(true)
+
+        case .voice(let title), .empty(let title):
             // Dedicated content views for these variants are not built yet; render
             // the title only so the cell scaffold still has something meaningful.
             titleLabel.text = title
             snippetLabel.text = nil
             snippetLabel.isHidden = true
             chipView.isHidden = true
+            setThumbnailVisible(false)
         }
 
         updateAccessibility(for: item)
+    }
+
+    /// Fills the thumbnail for the `.image` variant. Pass `nil` to clear (e.g. on cell reuse
+    /// before the async load completes).
+    func setThumbnail(_ image: UIImage?) {
+        thumbnailImageView.image = image
+    }
+
+    private func configureChatChip() {
+        chipView.configure(icon: DesignSystemImages.Glyphs.Size12.chat,
+                           label: UserText.aiChatTabSwitcherCardChipChat)
+        chipView.isHidden = false
+    }
+
+    private func setThumbnailVisible(_ visible: Bool) {
+        thumbnailImageView.isHidden = !visible
+        if !visible { thumbnailImageView.image = nil }
     }
 
     private func setupSubviews() {
@@ -100,6 +125,14 @@ final class DuckAIGridCardView: UIView {
         chipView.setContentCompressionResistancePriority(.required, for: .horizontal)
         addSubview(chipView)
 
+        thumbnailImageView.translatesAutoresizingMaskIntoConstraints = false
+        thumbnailImageView.contentMode = .scaleAspectFill
+        thumbnailImageView.clipsToBounds = true
+        thumbnailImageView.layer.cornerRadius = Metrics.thumbnailCornerRadius
+        thumbnailImageView.layer.cornerCurve = .continuous
+        thumbnailImageView.isHidden = true
+        addSubview(thumbnailImageView)
+
         // Snippet may have to shrink so the chip stays anchored to the bottom; let
         // it lose against the chip's bottom anchor instead of breaking the layout.
         let snippetBottom = snippetLabel.bottomAnchor.constraint(lessThanOrEqualTo: chipView.topAnchor,
@@ -118,7 +151,12 @@ final class DuckAIGridCardView: UIView {
 
             chipView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
             chipView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.contentBottomInset),
-            chipView.heightAnchor.constraint(equalToConstant: Metrics.chipHeight)
+            chipView.heightAnchor.constraint(equalToConstant: Metrics.chipHeight),
+
+            thumbnailImageView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Metrics.imageVerticalSpacing),
+            thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
+            thumbnailImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
+            thumbnailImageView.bottomAnchor.constraint(equalTo: chipView.topAnchor, constant: -Metrics.imageVerticalSpacing)
         ])
     }
 

@@ -250,7 +250,14 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
     case escapeHatchFireButton
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215530020470713?focus=true
+    case escapeHatchHideShortcut
+
     case crashReportOptInStatusResetting
+
+    /// Internal-only observability for the hard-to-reproduce "web view scroll frozen, taps still work" bug:
+    /// a passive scroll-failure observer plus a gesture watchdog. Off for the general population by default.
+    case webScrollFreezeObservability
 
     case screenTimeCleaning
 
@@ -454,6 +461,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
 
+    /// Controls pin/unpin updates of Synced chats
+    case supportsSyncChatsUpdate
+
     /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
     case settingsLinkInAiFeatures
 
@@ -544,6 +554,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// legacy App Group path.
     case nativeStoragePathMigration
 
+    /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
+    /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
+    /// screenshot preview.
+    case tabSwitcherRichCard
+
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg
@@ -626,6 +641,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case aiChatSyncPromo
     case simplifiedSyncSetupExperiment
     case allowSingleDeviceOnConnectScreen
+    case scopedAccessCredentials
+    case canUseV2ConnectFlow
+    case canShowV2ConnectCode
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

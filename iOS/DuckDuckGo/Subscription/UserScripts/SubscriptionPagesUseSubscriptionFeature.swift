@@ -814,7 +814,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     @MainActor
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async {
-        guard let webView = originalMessage.webView else { return }
+        guard let webView = originalMessage.webView else {
+            return
+        }
 
         pushAction(method: .onPurchaseUpdate, webView: webView, params: purchaseUpdate)
     }

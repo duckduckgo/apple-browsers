@@ -30,6 +30,7 @@ public extension URL {
 
     static let ddg = URL(string: URL.base)!
     static let duckAi = URL(string: URL.duckAiBase)!
+    static let duckAiSettings = URL(string: "\(URL.duckAiBase)/?settings=open")!
 
     static let autocomplete = URL(string: "\(base)/ac/")!
     static let emailProtection = URL(string: "\(base)/email")!

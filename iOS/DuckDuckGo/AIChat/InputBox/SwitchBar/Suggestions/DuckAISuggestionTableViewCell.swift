@@ -27,28 +27,37 @@ final class DuckAISuggestionTableViewCell: UITableViewCell {
         static let size: CGSize = CGSize(width: 44, height: 44)
     }
 
-    private lazy var deleteButton: UIButton = {
-        let fireImage = DesignSystemImages.Glyphs.Size16.fire.withRenderingMode(.alwaysTemplate)
-        let deleteAction = UIAction { [weak self] _ in
-            self?.onDeletePressed?()
+    private lazy var accessoryButton: UIButton = {
+        let action = UIAction { [weak self] _ in
+            guard let self else { return }
+            // Anchor on the image view rather than the (larger, trailing-aligned) button so the popover is positioned over the actual image.
+            self.onAccessoryButtonPressed?(self.accessoryButton.imageView ?? self.accessoryButton)
         }
 
         let button = UIButton(type: .system)
-        button.setImage(fireImage, for: .normal)
         button.frame.size = Metrics.size
         button.contentHorizontalAlignment = .trailing
-        button.tintColor = UIColor(designSystemColor: .icons)
-        button.addAction(deleteAction, for: .touchUpInside)
+        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        button.addAction(action, for: .touchUpInside)
         return button
     }()
 
-    var onDeletePressed: (() -> Void)?
-
-    var displaysDeleteButton: Bool = false {
-        didSet {
-            accessoryView = displaysDeleteButton ? deleteButton : nil
+    var accessoryButtonImage: UIImage? {
+        get {
+            accessoryButton.image(for: .normal)
+        }
+        set {
+            accessoryButton.setImage(newValue?.withRenderingMode(.alwaysTemplate), for: .normal)
         }
     }
+
+    var displaysAccessoryButton: Bool = false {
+        didSet {
+            accessoryView = displaysAccessoryButton ? accessoryButton : nil
+        }
+    }
+
+    var onAccessoryButtonPressed: ((UIView) -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -60,6 +69,6 @@ final class DuckAISuggestionTableViewCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        displaysDeleteButton = false
+        displaysAccessoryButton = false
     }
 }

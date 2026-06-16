@@ -74,6 +74,12 @@ public final class PixelKit {
         /// Sent with sampling - only N% of calls result in actual pixel firing
         case sample(percentage: Int)
 
+        /// Sent at most once per `seconds`-long window per pixel name: suppressed if the pixel was fired
+        /// less than `seconds` ago. The window is anchored to the last actual fire (a suppressed call does
+        /// not extend it). `seconds: 0` is an empty window and never suppresses. This is the PixelKit
+        /// equivalent of the legacy `Pixel.fire(debounce:)` parameter.
+        case debounce(seconds: TimeInterval)
+
         fileprivate var description: String {
             switch self {
             case .standard:
@@ -100,6 +106,8 @@ public final class PixelKit {
                 "Legacy Daily No Suffix"
             case .sample(let percentage):
                 "Sample (\(percentage)%)"
+            case .debounce(let seconds):
+                "Debounce (\(seconds)s)"
             }
         }
 
@@ -119,6 +127,7 @@ public final class PixelKit {
             case .legacyDaily: return "legacyDaily"
             case .legacyDailyAndCount: return "legacyDailyAndCount"
             case .sample(let percentage): return "sample(\(percentage))"
+            case .debounce: return "debounce"
             }
         }
     }
@@ -160,11 +169,20 @@ public final class PixelKit {
     }()
 
     private static let weeksToCoalesceCohort = 6
+
+    /// Stable, filename-safe identity for this instance's retry-queue store and throttle key, so each
+    /// process (browser, VPN agent, packet tunnel, …) gets its own queue even when they share a `defaults`
+    /// suite (e.g. `UserDefaults.netP`). Decoupled from the telemetry `source`: `setUp` callers pass an
+    /// explicit `session`; it falls back to `source` only for direct `init` construction (e.g. tests).
+    private static func retryQueueIdentitySuffix(session: String?, source: String?) -> String {
+        (session ?? source ?? "default").replacingOccurrences(of: "/", with: "-")
+    }
     private let dateGenerator: () -> Date
     public private(set) static var shared: PixelKit?
     private let appVersion: String
     private let defaultHeaders: [String: String]
     private let fireRequest: FireRequest
+    private let retryQueue: PixelRetryQueue?
     private var dryRun: Bool
     private let source: String?
     private let channel: String?
@@ -175,11 +193,13 @@ public final class PixelKit {
     /// - Parameters:
     /// - `dryRun`: if `true`, simulate requests and "send" them at an accelerated rate (once every 2 minutes instead of once a day)
     /// - `source`: if set, adds a `pixelSource` parameter to the pixel call; this can be used to specify which target is sending the pixel
+    /// - `session`: a stable, non-telemetry identifier for this PixelKit instance, used to key its retry queue's storage and throttle so distinct instances never share or overwrite one queue
     /// - `channel`: if set, adds a `channel` parameter to pixel calls (e.g. "canary" for internal users, "dev" for alpha/review builds); omit for production builds
     /// - `fireRequest`: this is not triggered when `dryRun` is `true`
     public static func setUp(dryRun: Bool,
                              appVersion: String,
                              source: String? = nil,
+                             session: String,
                              channel: String? = nil,
                              defaultHeaders: [String: String],
                              pixelCalendar: Calendar? = nil,
@@ -189,6 +209,7 @@ public final class PixelKit {
         shared = PixelKit(dryRun: dryRun,
                           appVersion: appVersion,
                           source: source,
+                          session: session,
                           channel: channel,
                           defaultHeaders: defaultHeaders,
                           pixelCalendar: pixelCalendar,
@@ -206,6 +227,7 @@ public final class PixelKit {
     public init(dryRun: Bool,
                 appVersion: String,
                 source: String? = nil,
+                session: String? = nil,
                 channel: String? = nil,
                 defaultHeaders: [String: String],
                 pixelCalendar: Calendar? = nil,
@@ -222,6 +244,25 @@ public final class PixelKit {
         self.dateGenerator = dateGenerator
         self.defaults = defaults
         self.fireRequest = fireRequest
+
+        if dryRun {
+            self.retryQueue = nil
+        } else {
+            // Wrap the network fire-request with a retry queue so failed pixels are persisted and re-sent
+            // after the next successful fire (28-day expiry) — which, for a launching app, happens as soon
+            // as it fires its first pixel. Reuses the same `defaults` for throttling state. This is internal
+            // to PixelKit and hidden from its consumers; creating the queue performs no I/O.
+            let identity = Self.retryQueueIdentitySuffix(session: session, source: source)
+            self.retryQueue = PixelRetryQueue(
+                fireRequest: fireRequest,
+                store: PixelRetryQueueFileStore(fileName: "pixelkit-retry-queue-\(identity).json"),
+                lastProcessingDateStorage: defaults,
+                lastProcessingDateKey: "com.duckduckgo.pixelkit.retry-queue.last-processing-timestamp.\(identity)",
+                calendar: self.pixelCalendar,
+                dateGenerator: dateGenerator
+            )
+        }
+
         logger.debug("👾 PixelKit initialised: dryRun: \(self.dryRun, privacy: .public) appVersion: \(self.appVersion, privacy: .public) source: \(self.source ?? "-", privacy: .public) channel: \(self.channel ?? "-", privacy: .public) defaultHeaders: \(self.defaultHeaders, privacy: .public) pixelCalendar: \(self.pixelCalendar, privacy: .public)")
     }
 
@@ -371,6 +412,8 @@ public final class PixelKit {
             handleLegacyDailyNoSuffix(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .sample(let percentage):
             handleSample(pixelName, headers, newParams, allowedQueryReservedCharacters, percentage, onComplete)
+        case .debounce(let seconds):
+            handleDebounce(pixelName, headers, newParams, allowedQueryReservedCharacters, seconds, onComplete)
         }
     }
 
@@ -470,6 +513,28 @@ public final class PixelKit {
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .daily, parameters: newParams, skipped: true)
+        }
+    }
+
+    private func handleDebounce(_ pixelName: String,
+                                _ headers: [String: String],
+                                _ newParams: [String: String],
+                                _ allowedQueryReservedCharacters: CharacterSet?,
+                                _ seconds: TimeInterval,
+                                _ onComplete: @escaping CompletionBlock) {
+        let frequency = Frequency.debounce(seconds: seconds)
+        if !pixelHasBeenFiredWithinDebounceInterval(pixelName, seconds: seconds) {
+            do {
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: frequency)
+                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, frequency, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName, frequency: frequency, parameters: newParams, skipped: true)
+                onComplete(false, nil)
+            }
+        } else {
+            printDebugInfo(pixelName: pixelName, frequency: frequency, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
     }
 
@@ -687,7 +752,8 @@ public final class PixelKit {
                 }
                 return
             }
-            fireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
+            let effectiveFireRequest = retryQueue?.fireRequest ?? fireRequest
+            effectiveFireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
         }
 
     private func prefixedAndSuffixedName(for event: PixelKitEvent, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> String {
@@ -828,6 +894,28 @@ public final class PixelKit {
         )
     }
 
+    /// Evaluates `within` against the stored last-fire date for `frequency`'s `mapKey`.
+    /// Returns `false` when there's no stored date for that frequency, and fails closed
+    /// (returns `true`, suppressing the pixel) on a storage read error.
+    private func pixelHasBeenFired(_ name: String, frequency: Frequency, within: (Date) -> Bool) -> Bool {
+        do {
+            let map = try migratedLastFireDateMap(forKey: userDefaultsKeyName(forPixelName: name))
+            guard let lastFireDate = map[frequency.mapKey] else { return false }
+            return within(lastFireDate)
+        } catch {
+            return true
+        }
+    }
+
+    /// Returns `true` if the pixel was last fired less than `seconds` ago (so it should be suppressed).
+    /// The stored fire date is shared across debounce intervals (mapKey `"debounce"`), and the window is
+    /// evaluated against the passed `seconds`. Fails closed (suppresses) on a storage read error.
+    private func pixelHasBeenFiredWithinDebounceInterval(_ name: String, seconds: TimeInterval) -> Bool {
+        pixelHasBeenFired(name, frequency: .debounce(seconds: seconds)) { lastFireDate in
+            lastFireDate > dateGenerator().addingTimeInterval(-seconds)
+        }
+    }
+
     private func pixelHasBeenFiredDailyToday(_ name: String) -> Bool {
         guard !dryRun else {
             if let lastFireDate = try? pixelLastFireDate(pixelName: name, frequency: .daily),
@@ -838,14 +926,8 @@ public final class PixelKit {
             return false
         }
 
-        do {
-            let map = try migratedLastFireDateMap(forKey: userDefaultsKeyName(forPixelName: name))
-            if let lastFireDate = map[Frequency.daily.mapKey] {
-                return pixelCalendar.isDate(dateGenerator(), inSameDayAs: lastFireDate)
-            }
-            return false
-        } catch {
-            return true
+        return pixelHasBeenFired(name, frequency: .daily) { lastFireDate in
+            pixelCalendar.isDate(dateGenerator(), inSameDayAs: lastFireDate)
         }
     }
 

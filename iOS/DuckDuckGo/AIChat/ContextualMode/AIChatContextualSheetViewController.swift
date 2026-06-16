@@ -185,7 +185,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var recentChatsButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size24.list, for: .normal)
+        button.setImage(DesignSystemImages.Glyphs.Size24.chats, for: .normal)
         button.tintColor = UIColor(designSystemColor: .textPrimary)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)

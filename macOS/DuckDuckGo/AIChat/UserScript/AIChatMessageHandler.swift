@@ -33,6 +33,13 @@ protocol AIChatMessageHandling {
     func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable?
     func setData(_ data: Any?, forMessageType type: AIChatMessageType)
+
+    /// Selection context is a list (not a single slot), so it has dedicated accessors rather than
+    /// going through `AIChatMessageType`. `appendSelectionContext` stores a pushed selection so a
+    /// later `getSelectionContexts` pull can return it; `clearSelectionContexts` resets on submit.
+    func appendSelectionContext(_ selection: AIChatSelectionContextData)
+    func getSelectionContexts() -> [AIChatSelectionContextData]
+    func clearSelectionContexts()
 }
 
 final class AIChatMessageHandler: AIChatMessageHandling {
@@ -41,6 +48,7 @@ final class AIChatMessageHandler: AIChatMessageHandling {
     private let payloadHandler: AIChatPayloadHandler
     private let chatRestorationDataHandler: AIChatRestorationDataHandler
     private let pageContextHandler: AIChatPageContextHandler
+    private let selectionContextHandler: AIChatSelectionContextHandler
     private let isNativeStorageBridgeAvailable: Bool
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
@@ -48,12 +56,14 @@ final class AIChatMessageHandler: AIChatMessageHandling {
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          chatRestorationDataHandler: AIChatRestorationDataHandler = AIChatRestorationDataHandler(),
          pageContextHandler: AIChatPageContextHandler = AIChatPageContextHandler(),
+         selectionContextHandler: AIChatSelectionContextHandler = AIChatSelectionContextHandler(),
          isNativeStorageBridgeAvailable: Bool = false) {
         self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
         self.payloadHandler = payloadHandler
         self.chatRestorationDataHandler = chatRestorationDataHandler
         self.pageContextHandler = pageContextHandler
+        self.selectionContextHandler = selectionContextHandler
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
     }
 
@@ -81,6 +91,18 @@ final class AIChatMessageHandler: AIChatMessageHandling {
         default:
             break
         }
+    }
+
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {
+        selectionContextHandler.append(selection)
+    }
+
+    func getSelectionContexts() -> [AIChatSelectionContextData] {
+        selectionContextHandler.getAll()
+    }
+
+    func clearSelectionContexts() {
+        selectionContextHandler.reset()
     }
 }
 

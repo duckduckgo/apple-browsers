@@ -196,6 +196,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openAIChatLink
         case .getAIChatPageContext:
             return handler.getAIChatPageContext
+        case .getAIChatSelectionContext:
+            return handler.getAIChatSelectionContext
         case .getAIChatOpenTabs:
             return handler.getAIChatOpenTabs
         case .getAIChatTabContent:

@@ -105,6 +105,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatSelectionContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
@@ -288,6 +289,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         return PageContextResponse(pageContext: pageContext)
+    }
+
+    func getAIChatSelectionContext(params: Any, message: any UserScriptMessage) -> Encodable? {
+        // Mirrors `getAIChatPageContext`: the FE pulls this on init to retrieve selections attached
+        // before it was ready to receive pushes. Returned non-destructively — the FE dedupes by `id`.
+        return SelectionContextResponse(selections: messageHandling.getSelectionContexts())
     }
 
     @MainActor
@@ -832,6 +839,8 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
+            // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
+            messageHandling.clearSelectionContexts()
             pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
@@ -840,6 +849,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
+            messageHandling.clearSelectionContexts()
             pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)

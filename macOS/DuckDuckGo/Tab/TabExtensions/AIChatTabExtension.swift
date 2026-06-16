@@ -124,7 +124,10 @@ final class AIChatTabExtension {
                 }
 
                 if let selections = self?.temporarySelectionContexts, !selections.isEmpty {
-                    selections.forEach { self?.aiChatUserScript?.handler.submitAIChatSelectionContext($0) }
+                    selections.forEach {
+                        self?.aiChatUserScript?.handler.messageHandling.appendSelectionContext($0)
+                        self?.aiChatUserScript?.handler.submitAIChatSelectionContext($0)
+                    }
                     self?.temporarySelectionContexts = []
                 }
 
@@ -261,6 +264,9 @@ final class AIChatTabExtension {
             return
         }
 
+        // Store for the `getAIChatSelectionContext` pull (covers the FE-not-ready-for-push race),
+        // then push for the already-live case. Mirrors `submitAIChatPageContext`.
+        aiChatUserScript.handler.messageHandling.appendSelectionContext(selection)
         aiChatUserScript.handler.submitAIChatSelectionContext(selection)
     }
 }

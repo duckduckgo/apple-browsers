@@ -198,6 +198,28 @@ public struct AIChatPageContextData: Codable, Equatable {
 
 // MARK: - Selection Context
 
+/// Accumulates user text selections attached to Duck.ai so a freshly-opened sidebar can pull the
+/// ones it missed (via `getAIChatSelectionContext`), mirroring how `AIChatPageContextHandler` backs
+/// `getAIChatPageContext`. Unlike the single-slot page-context handler, selections append and the
+/// list is read non-destructively (the FE dedupes by `id`); it's cleared when a prompt is submitted.
+public final class AIChatSelectionContextHandler {
+    private var selections: [AIChatSelectionContextData] = []
+
+    public init() {}
+
+    public func append(_ selection: AIChatSelectionContextData) {
+        selections.append(selection)
+    }
+
+    public func getAll() -> [AIChatSelectionContextData] {
+        selections
+    }
+
+    public func reset() {
+        selections = []
+    }
+}
+
 /// One user text selection attached to Duck.ai via "Attach to Duck.ai".
 ///
 /// Selections live on their own dedicated channel (`submitAIChatSelectionContext`), independent of

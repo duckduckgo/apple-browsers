@@ -63,9 +63,9 @@ final class NewTabPageOmnibarTabsProvider: NewTabPageOmnibarTabsProviding {
 
     @MainActor
     func tabContent(tabId: String, requestingWebView: WKWebView?) async -> NewTabPageDataModel.OmnibarPageContext? {
+        // Wakes the tab if it's suspended so its content can be extracted instead of being dropped.
         guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager),
-              let tab = AIChatTabPickerSource.attachableLoadedTab(withId: tabId, forOrigin: origin, in: windowControllersManager),
-              let pageContext = await AIChatUserScriptHandler.extractPageContext(from: tab) else {
+              let pageContext = await AIChatUserScriptHandler.extractPageContext(forTabId: tabId, origin: origin, in: windowControllersManager) else {
             return nil
         }
 

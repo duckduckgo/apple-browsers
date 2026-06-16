@@ -73,26 +73,38 @@ enum AIChatTabPickerSource {
         return result
     }
 
-    /// Loaded tabs across the origin-scoped collections (for content extraction), origin first.
-    static func attachableLoadedTabs(forOrigin origin: TabCollectionViewModel,
-                                     in windowControllersManager: WindowControllersManagerProtocol) -> [Tab] {
-        let collections = originFirst(tabCollections(forOrigin: origin, in: windowControllersManager), origin: origin)
-        var seen = Set<String>()
-        var result: [Tab] = []
-        for collection in collections {
-            let pinned = collection.pinnedTabsCollection?.loadedTabs ?? []
-            for tab in pinned + collection.tabCollection.loadedTabs where seen.insert(tab.uuid).inserted {
-                result.append(tab)
-            }
-        }
-        return result
+    /// The result of resolving a picked tab id to a live `Tab`.
+    struct ResolvedTab {
+        let tab: Tab
+        /// True when the tab was `.unloaded` (suspended or never-loaded) and we just materialized it —
+        /// the caller should trigger a load and wait for navigation before extracting content.
+        let wasMaterialized: Bool
     }
 
-    /// Loaded tab matching `id`, scoped the same way — for extracting content by tab id.
-    static func attachableLoadedTab(withId id: String,
-                                    forOrigin origin: TabCollectionViewModel,
-                                    in windowControllersManager: WindowControllersManagerProtocol) -> Tab? {
-        attachableLoadedTabs(forOrigin: origin, in: windowControllersManager).first { $0.uuid == id }
+    /// Locates the attachable tab with `id` across the origin-scoped collections — **including
+    /// suspended/unloaded tabs** — and materializes it into a live `Tab` without selecting or
+    /// focusing it. Applies the same URL + `shouldExcludeFromTabPicker` filter as `attachableTabs`,
+    /// so a tab the picker never offered can't be resolved here. Returns `nil` if nothing matches.
+    static func materializeAttachableTab(withId id: String,
+                                         forOrigin origin: TabCollectionViewModel,
+                                         in windowControllersManager: WindowControllersManagerProtocol) -> ResolvedTab? {
+        for collection in originFirst(tabCollections(forOrigin: origin, in: windowControllersManager), origin: origin) {
+            guard let index = collection.indexInAllTabs(where: { $0.uuid == id }),
+                  let anyTab = anyTab(at: index, in: collection) else { continue }
+            guard case .url(let url, _, _) = anyTab.content,
+                  !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
+            let wasUnloaded: Bool = { if case .unloaded = anyTab { return true } else { return false } }()
+            guard let tab = collection.materialize(at: index) else { return nil }
+            return ResolvedTab(tab: tab, wasMaterialized: wasUnloaded)
+        }
+        return nil
+    }
+
+    private static func anyTab(at index: TabIndex, in collection: TabCollectionViewModel) -> AnyTab? {
+        switch index {
+        case .pinned(let i): return collection.pinnedTabsCollection?.tabs[safe: i]
+        case .unpinned(let i): return collection.tabCollection.tabs[safe: i]
+        }
     }
 
     private static func originFirst(_ collections: [TabCollectionViewModel], origin: TabCollectionViewModel) -> [TabCollectionViewModel] {

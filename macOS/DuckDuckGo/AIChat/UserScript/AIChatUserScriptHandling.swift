@@ -433,15 +433,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatTabContentResponse(pageContext: nil)
         }
 
-        guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView, in: windowControllersManager),
-              let tab = AIChatTabPickerSource.attachableLoadedTab(withId: params.tabId, forOrigin: origin, in: windowControllersManager) else {
+        guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView, in: windowControllersManager) else {
             return AIChatTabContentResponse(pageContext: nil)
         }
 
-        // The JS-bridge consumer is always a tab-picker flow (sidebar's `@` picker), so the
-        // result is always a tab-picker context — stamp `tabId` so the duck.ai web app sees
-        // the discriminator and treats it as "additional context", not "current page".
-        let extracted = await Self.extractPageContext(from: tab)
+        // Wakes the tab if it's suspended so its content can be extracted instead of being dropped.
+        // The JS-bridge consumer is always a tab-picker flow (sidebar's `@` picker), so the result
+        // is always a tab-picker context — stamp `tabId` so the duck.ai web app sees the
+        // discriminator and treats it as "additional context", not "current page".
+        let extracted = await Self.extractPageContext(forTabId: params.tabId, origin: origin, in: windowControllersManager)
         return AIChatTabContentResponse(pageContext: extracted?.withTabId(params.tabId))
     }
 
@@ -492,6 +492,69 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 fullContentLength: ctx.fullContentLength,
                 attachable: ctx.attachable
             )
+        }
+    }
+
+    /// Resolves `tabId` to a live `Tab` within the origin scope — **waking a suspended/unloaded tab
+    /// if needed** — then extracts its page context. A freshly-woken tab's page isn't loaded yet, so
+    /// we trigger a load and wait (bounded) for navigation to finish before collecting; an
+    /// already-loaded tab (e.g. the current page) extracts immediately with no wait. Returns `nil`
+    /// if the tab can't be found, the wake fails, or the page doesn't load within the budget.
+    /// Never selects or focuses the tab.
+    @MainActor
+    static func extractPageContext(forTabId tabId: String,
+                                   origin: TabCollectionViewModel,
+                                   in windowControllersManager: WindowControllersManagerProtocol,
+                                   navigationTimeout: TimeInterval = 5,
+                                   collectTimeout: TimeInterval = 5) async -> AIChatPageContextData? {
+        guard let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: tabId, forOrigin: origin, in: windowControllersManager) else {
+            return nil
+        }
+
+        if resolved.wasMaterialized {
+            // Mirror `resumeTab(at:)`: a just-materialized tab won't auto-load, so kick a reload and
+            // wait for navigation to finish before collecting — otherwise an early empty JS response
+            // could win the `collectAndWait` race.
+            let didNavigate = await waitForNavigationFinish(tab: resolved.tab, timeout: navigationTimeout) {
+                resolved.tab.reload()
+            }
+            guard didNavigate else { return nil }
+        }
+
+        return await extractPageContext(from: resolved.tab, timeout: collectTimeout)
+    }
+
+    /// Subscribes to the tab's first finished navigation, runs `start()` (e.g. `reload()`), and
+    /// awaits the navigation bounded by `timeout`. Subscribing before `start()` avoids missing a
+    /// fast-finishing navigation. Returns `true` if navigation finished, `false` on timeout.
+    @MainActor
+    private static func waitForNavigationFinish(tab: Tab,
+                                                timeout: TimeInterval,
+                                                start: @escaping @MainActor () -> Void) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask { @MainActor in
+                var cancellable: AnyCancellable?
+                let finished: Bool = await withCheckedContinuation { continuation in
+                    var resumed = false
+                    cancellable = tab.webViewDidFinishNavigationPublisher
+                        .first()
+                        .sink { _ in
+                            guard !resumed else { return }
+                            resumed = true
+                            continuation.resume(returning: true)
+                        }
+                    start()
+                }
+                cancellable?.cancel()
+                return finished
+            }
+            group.addTask {
+                try? await Task.sleep(interval: timeout)
+                return false
+            }
+            let result = await group.next() ?? false
+            group.cancelAll()
+            return result
         }
     }
 

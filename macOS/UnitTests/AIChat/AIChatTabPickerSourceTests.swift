@@ -31,6 +31,73 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         TabCollectionViewModel(tabCollection: TabCollection(), burnerMode: BurnerMode(isBurner: true))
     }
 
+    /// A regular collection whose first tab is a loaded (selected) page and whose second tab is a
+    /// suspended/unloaded tab with the given id + url.
+    private func collectionWithSuspendedTab(id: String, url: String) -> TabCollectionViewModel {
+        let loaded = Tab(content: .url(URL(string: "https://selected.example")!, credential: nil, source: .ui))
+        let suspended = UnloadedTab(uuid: id, content: .url(URL(string: url)!, credential: nil, source: .ui), isSuspended: true)
+        return TabCollectionViewModel(tabCollection: TabCollection(tabs: [.loaded(loaded), .unloaded(suspended)]))
+    }
+
+    // MARK: - materializeAttachableTab (wake suspended tabs)
+
+    func testMaterializeWakesSuspendedTabWithoutChangingSelection() {
+        let collection = collectionWithSuspendedTab(id: "suspended-1", url: "https://apple.com")
+        let selectionBefore = collection.selectionIndex
+        let wcm = WindowControllersManagerMock()
+        wcm.customAllTabCollectionViewModels = [collection]
+
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-1", forOrigin: collection, in: wcm)
+
+        XCTAssertNotNil(resolved)
+        XCTAssertTrue(resolved?.wasMaterialized == true)
+        XCTAssertEqual(resolved?.tab.uuid, "suspended-1")
+        // The slot is now loaded...
+        if case .loaded(let tab) = collection.tabCollection.tabs[1] {
+            XCTAssertEqual(tab.uuid, "suspended-1")
+        } else {
+            XCTFail("Expected the suspended tab to be materialized to .loaded")
+        }
+        // ...and the user's selection did not change (no focus steal).
+        XCTAssertEqual(collection.selectionIndex, selectionBefore)
+    }
+
+    func testMaterializeReturnsAlreadyLoadedTabWithoutMaterializing() {
+        let collection = regularCollection(urls: ["https://apple.com"])
+        let id = collection.tabCollection.tabs[0].uuid
+        let wcm = WindowControllersManagerMock()
+        wcm.customAllTabCollectionViewModels = [collection]
+
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: collection, in: wcm)
+
+        XCTAssertEqual(resolved?.tab.uuid, id)
+        XCTAssertFalse(resolved?.wasMaterialized ?? true)
+    }
+
+    func testMaterializeFindsSuspendedTabInAnotherRegularWindow() {
+        let origin = regularCollection(urls: ["https://origin.example"])
+        let other = collectionWithSuspendedTab(id: "suspended-2", url: "https://apple.com")
+        let wcm = WindowControllersManagerMock()
+        wcm.customAllTabCollectionViewModels = [origin, other]
+
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-2", forOrigin: origin, in: wcm)
+
+        XCTAssertEqual(resolved?.tab.uuid, "suspended-2")
+        XCTAssertTrue(resolved?.wasMaterialized == true)
+    }
+
+    func testMaterializeDoesNotResolveRegularTabFromFireWindowOrigin() {
+        let regular = collectionWithSuspendedTab(id: "suspended-3", url: "https://apple.com")
+        let burner = burnerCollection()
+        let wcm = WindowControllersManagerMock()
+        wcm.customAllTabCollectionViewModels = [regular, burner]
+
+        // Origin is the Fire Window → it must not reach into the regular window's tabs.
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-3", forOrigin: burner, in: wcm)
+
+        XCTAssertNil(resolved)
+    }
+
     // MARK: - Scope
 
     func testRegularOriginSourcesAllRegularWindowsAndExcludesBurner() {

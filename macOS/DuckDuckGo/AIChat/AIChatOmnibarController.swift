@@ -593,8 +593,20 @@ final class AIChatOmnibarController {
             current.remove(at: index)
         } else {
             current.append(attachment)
+            prewarmAttachedTab(id: attachment.id)
         }
         persistTabAttachmentsToActiveTab(current)
+    }
+
+    /// Wakes a just-attached tab if it's suspended so its content is loaded by the time the user
+    /// submits, avoiding a submit-time wait. Fire-and-forget — `extractPageContextsForOmnibarSubmit`
+    /// re-resolves and wakes regardless, so this is purely a latency optimization.
+    private func prewarmAttachedTab(id: String) {
+        guard let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: tabCollectionViewModel, in: Application.appDelegate.windowControllersManager),
+              resolved.wasMaterialized else {
+            return
+        }
+        resolved.tab.reload()
     }
 
     /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
@@ -1028,9 +1040,10 @@ final class AIChatOmnibarController {
     /// stripped to the no-`tabId` form, marking it as "the page you're chatting about" per
     /// the tech design discriminator).
     ///
-    /// Per-tab extraction runs in parallel (`withTaskGroup`) with the same 5s timeout the
-    /// sidebar's JS-bridge uses. Suspended / unreachable tabs return `nil` from the shared
-    /// extractor and are dropped silently from the payload — same behavior the JS-bridge has.
+    /// Per-tab extraction runs in parallel (`withTaskGroup`). Each task resolves the tab by id via
+    /// the shared cross-window source (scoped to this controller's window as origin) and **wakes a
+    /// suspended tab** if needed so its content is extracted rather than dropped. Tabs that genuinely
+    /// can't be loaded return `nil` and are dropped from the payload — same as the JS-bridge.
     @MainActor
     private func extractPageContextsForOmnibarSubmit(
         tabAttachments: [AIChatTabAttachment],
@@ -1038,22 +1051,13 @@ final class AIChatOmnibarController {
     ) async -> AIChatPageContextPayload? {
         guard !tabAttachments.isEmpty else { return nil }
 
-        // Look up the actual `Tab` objects via the shared cross-window source (scoped to this
-        // controller's window as origin), matching the picker's `openTabsForOmnibarPicker()` scope
-        // and the JS-bridge's `getAIChatTabContent` lookup (loaded tabs only — unloaded tabs have
-        // no `PageContextUserScript` to invoke, so they'd return `nil` from the extractor anyway).
-        var tabsByUUID: [String: Tab] = [:]
-        for tab in AIChatTabPickerSource.attachableLoadedTabs(forOrigin: tabCollectionViewModel, in: Application.appDelegate.windowControllersManager) {
-            tabsByUUID[tab.uuid] = tab
-        }
-
+        let origin = tabCollectionViewModel
+        let windowControllersManager = Application.appDelegate.windowControllersManager
         let extracted: [(String, AIChatPageContextData?)] = await withTaskGroup(of: (String, AIChatPageContextData?).self) { group in
             for attachment in tabAttachments {
                 let tabId: String = attachment.id
-                let tab: Tab? = tabsByUUID[tabId]
                 group.addTask { @MainActor in
-                    guard let tab else { return (tabId, nil) }
-                    let ctx = await AIChatUserScriptHandler.extractPageContext(from: tab)
+                    let ctx = await AIChatUserScriptHandler.extractPageContext(forTabId: tabId, origin: origin, in: windowControllersManager)
                     return (tabId, ctx)
                 }
             }

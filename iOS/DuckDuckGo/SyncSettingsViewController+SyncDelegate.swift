@@ -590,6 +590,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func collectCode(showQRCode: Bool) {
+        pairingV2PeerKind = nil
         guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             legacyCollectCode(showQRCode: showQRCode)
             return
@@ -623,11 +624,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 stringForQRCode: stringForQRCode,
                 showQRCode: showQRCode,
                 source: source,
-                onPresentPixelInfo: .init(pixel: .syncSetupBarcodeScreenShown, source: source))
+                onPresentPixelInfo: .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion))
         }
     }
 
     private func legacyCollectCode(showQRCode: Bool) {
+        pairingV2PeerKind = nil
         Task {
             let stringForQRCode: String
             let codeForDisplayOrPasting: String
@@ -644,7 +646,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                     codeForDisplayOrPasting = pairingInfo.base64Code
                     source = showQRCode ? .connect : .recovery
-                    onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: source)
+                    onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion)
                 } catch {
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
@@ -701,7 +703,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             self.checkCameraPermission(model: model)
             if let onPresentPixelInfo {
                 let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
-                Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: [PixelParameters.source: pixelSource])
+                var parameters = [
+                    PixelParameters.source: pixelSource,
+                    SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg
+                ]
+                parameters[SyncSetupPixelInfo.Parameter.flowVersion] = onPresentPixelInfo.flowVersion
+                Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: parameters)
                 self.syncSetupExperimentPixels.fireBarcodeScreenShown()
             }
         }
@@ -738,6 +745,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         let isConfirmed = await presentPairingV2ConfirmationAlert(message: message)
         if !isConfirmed {
             dismissPairingV2UIAfterDeniedConfirmation()
+        } else {
+            pairingV2PeerKind = peerKind
         }
         return isConfirmed
     }
@@ -892,7 +901,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func codeEntryScreenShown() {
-        Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown,
+                   withAdditionalParameters: [
+                    SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
+                    SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion
+                   ],
+                   includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireManualCodeEntryScreenShown()
     }
 
@@ -1015,6 +1029,25 @@ private extension CodeCollectionSource {
 }
 
 private struct SyncSetupPixelInfo {
+    enum Parameter {
+        static let flowVersion = "flow_version"
+        static let myKind = "my_kind"
+    }
+
+    enum Value {
+        static let ddg = "ddg"
+        static let v1 = "v1"
+        static let v2 = "v2"
+    }
+
     let pixel: Pixel.Event
     let source: SyncSetupSource
+    let flowVersion: String?
+}
+
+extension SyncSettingsViewController {
+
+    var syncSetupPixelFlowVersion: String {
+        featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) ? SyncSetupPixelInfo.Value.v2 : SyncSetupPixelInfo.Value.v1
+    }
 }

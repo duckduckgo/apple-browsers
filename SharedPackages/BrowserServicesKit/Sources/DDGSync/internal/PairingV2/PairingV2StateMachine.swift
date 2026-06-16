@@ -174,6 +174,7 @@ enum PairingV2Error: Error, Equatable {
     case recoveryCodePreparationFailed
     case recoveryCodeSendFailed
     case loginFailed
+    case upgradeFailed
     case recoveryCodeDenied
     case recoveryCodeUnavailable
     case unsupportedVersion(String)

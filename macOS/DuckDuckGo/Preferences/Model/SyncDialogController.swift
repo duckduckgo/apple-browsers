@@ -89,6 +89,7 @@ final class SyncDialogController {
 
     private var cancellables = Set<AnyCancellable>()
     private var syncPromoSource: String?
+    private var pairingV2PeerKind: PairingV2DeviceKind?
 
     @Published var stringForQR: String?
     @Published var codeForDisplayOrPasting: String?
@@ -214,6 +215,7 @@ final class SyncDialogController {
     }
 
     private func startPollingForRecoveryKey(isRecovery: Bool) {
+        pairingV2PeerKind = nil
         Task { @MainActor in
             do {
                 let pairingInfo = try await connectionController.startConnectMode()
@@ -226,7 +228,7 @@ final class SyncDialogController {
                 } else {
                     self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
                 }
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.connect), doNotEnforcePrefix: true)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.connect, flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
             } catch {
                 if syncService.account == nil {
                     if isRecovery {
@@ -264,11 +266,16 @@ final class SyncDialogController {
     }
 
     private func fireCodeCopiedPixel(code: String) {
+        if URL(string: code)?.absoluteString.contains("code2=") == true {
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange, flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
+            return
+        }
+
         guard let syncCode = try? SyncCode.decodeBase64String(code) else { return }
         if syncCode.exchangeKey != nil {
-            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange), doNotEnforcePrefix: true)
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange, flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
         } else if syncCode.connect != nil {
-            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.connect), doNotEnforcePrefix: true)
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.connect, flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
         }
     }
 
@@ -302,6 +309,7 @@ final class SyncDialogController {
     }
 
     private func startPollingForPublicKey() {
+        pairingV2PeerKind = nil
         Task { @MainActor in
             do {
                 let pairingInfo = try await connectionController.startExchangeMode()
@@ -310,7 +318,7 @@ final class SyncDialogController {
                 self.codeForDisplayOrPasting = codeForDisplayOrPasting
                 self.stringForQR = stringForQR
                 self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange), doNotEnforcePrefix: true)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange, flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)
                 PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
@@ -507,15 +515,11 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     func userPressedCancel(from dialog: ManagementDialogKind) {
         switch dialog {
         case .syncWithAnotherDevice(_, let stringForQRCode), .enterRecoveryCode(let stringForQRCode):
-            guard let url = URL(string: stringForQRCode),
-                  let pairingInfo = PairingInfo(url: url),
-                  let syncCode = try? SyncCode.decodeBase64String(pairingInfo.base64Code) else {
-                return
-            }
-            if syncCode.connect != nil {
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.connect), doNotEnforcePrefix: true)
-            } else if syncCode.exchangeKey != nil {
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.exchange), doNotEnforcePrefix: true)
+            if let source = syncSetupSource(for: stringForQRCode, dialog: dialog) {
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(source,
+                                                                             flowVersion: syncSetupFlowVersion,
+                                                                             reason: SyncSetupPixelKitEvent.ParameterValue.scanningCancelled),
+                              doNotEnforcePrefix: true)
             }
         default:
             break
@@ -527,7 +531,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func enterCodeViewDidAppear() {
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntryScreenShown, doNotEnforcePrefix: true)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntryScreenShown(flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
     }
 
     func didEndFlow() {
@@ -603,6 +607,12 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     }
 
     func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(.exchange,
+                                                                      flowVersion: syncSetupFlowVersion,
+                                                                      peerKind: pairingV2PeerKind?.syncSetupPeerKind,
+                                                                      myRole: SyncSetupPixelKitEvent.ParameterValue.host),
+                      doNotEnforcePrefix: true)
+        pairingV2PeerKind = nil
         // Temporary handling as devices don't update when 3p device added to account
         if shouldWaitForDevicesToChange {
             waitForDevicesToChangeThenPresentSyncing()
@@ -615,8 +625,8 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         presentDialog(for: .prepareToSync)
     }
 
-    func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
-        sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
+    func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) async {
+        sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource, codeVersion: codeVersion)
         presentDialog(for: .prepareToSync)
     }
 
@@ -634,6 +644,8 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         let isConfirmed = await showPairingV2Confirmation(message: message)
         if !isConfirmed {
             managementDialogModel.endFlow()
+        } else {
+            pairingV2PeerKind = peerKind
         }
         return isConfirmed
     }
@@ -674,13 +686,20 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
         }
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(.connect,
+                                                                          flowVersion: syncSetupFlowVersion,
+                                                                          peerKind: pairingV2PeerKind?.syncSetupPeerKind,
+                                                                          myRole: SyncSetupPixelKitEvent.ParameterValue.joiner),
+                          doNotEnforcePrefix: true)
+            pairingV2PeerKind = nil
             return
         }
         sendSetupEndedSuccessfullyPixel(setupSource: syncSetupSource, codeSource: syncCodeSource)
     }
 
-    func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole _: SyncSetupRole) {
+    func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: SyncSetupRole) {
         managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .alreadyPairedWithAccount)
+        sendSetupEndedFailedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.alreadyPaired)
     }
 
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
@@ -693,24 +712,29 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         switch error {
         case .unableToRecognizeCode:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToRecognizeCode)
-            sendCodeParsingFailedPixel(setupRole: setupRole)
+            sendCodeParsingFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
         case .updateRequired:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .updateRequired)
-            sendCodeParsingFailedPixel(setupRole: setupRole)
+            sendCodeParsingFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
         case .unsupportedThirdPartyRecoveryCode:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unsupportedThirdPartyRecoveryCode)
-            sendCodeParsingFailedPixel(setupRole: setupRole)
+            sendCodeParsingFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
         case .thirdPartyAccountAlreadyUpgraded:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .thirdPartyAccountAlreadyUpgraded)
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
         case .syncCancelledFromOtherDevice:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .syncCancelledFromOtherDevice)
-        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
+            sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)
+        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey, .accountUpgradeFailed, .protocolError:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: underlyingError?.localizedDescription)
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: underlyingError ?? error)))
         case .failedToCreateAccount:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: underlyingError?.localizedDescription)
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             PixelKit.fire(DebugEvent(GeneralPixel.syncSignupError(error: underlyingError ?? error)))
         case .pollingForRecoveryKeyTimedOut:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             managementDialogModel.endFlow()
         }
     }
@@ -727,20 +751,52 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
     }
 
-    private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
+    private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) {
         guard case .pastedCode = codeSource else {
             // Others not supported by macOS
             return
         }
-        guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredSuccess(setupSource), doNotEnforcePrefix: true)
+        guard setupSource != .unknown else { return }
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredSuccess(setupSource,
+                                                                               flowVersion: syncSetupFlowVersion,
+                                                                               codeVersion: codeVersion.rawValue),
+                      doNotEnforcePrefix: true)
     }
 
-    private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole) {
-        guard case .receiver(_, let codeSource) = setupRole, case .pastedCode = codeSource else {
+    private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole, reason: String?) {
+        guard case .receiver(let setupSource, let codeSource) = setupRole, case .pastedCode = codeSource else {
             return
         }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed, doNotEnforcePrefix: true)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed(setupSource, flowVersion: syncSetupFlowVersion, reason: reason), doNotEnforcePrefix: true)
+    }
+
+    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?) {
+        switch setupRole {
+        case .receiver(let setupSource, _):
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedFailed(setupSource,
+                                                                      flowVersion: syncSetupFlowVersion,
+                                                                      peerKind: pairingV2PeerKind?.syncSetupPeerKind,
+                                                                      myRole: setupSource.syncSetupMyRole,
+                                                                      reason: reason),
+                          doNotEnforcePrefix: true)
+        case .sharer:
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedFailed(.exchange,
+                                                                      flowVersion: syncSetupFlowVersion,
+                                                                      peerKind: pairingV2PeerKind?.syncSetupPeerKind,
+                                                                      myRole: SyncSetupPixelKitEvent.ParameterValue.host,
+                                                                      reason: reason),
+                          doNotEnforcePrefix: true)
+        }
+        pairingV2PeerKind = nil
+    }
+
+    private func sendSetupEndedAbandonedPixel(setupRole: SyncSetupRole, reason: String?) {
+        switch setupRole {
+        case .receiver(let setupSource, _):
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(setupSource, flowVersion: syncSetupFlowVersion, reason: reason), doNotEnforcePrefix: true)
+        case .sharer:
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.exchange, flowVersion: syncSetupFlowVersion, reason: reason), doNotEnforcePrefix: true)
+        }
     }
 
     private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
@@ -748,8 +804,49 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             // Others not supported by macOS
             return
         }
-        guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource), doNotEnforcePrefix: true)
+        guard setupSource != .unknown else { return }
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource,
+                                                                      flowVersion: syncSetupFlowVersion,
+                                                                      peerKind: pairingV2PeerKind?.syncSetupPeerKind,
+                                                                      myRole: setupSource.syncSetupMyRole),
+                      doNotEnforcePrefix: true)
+        pairingV2PeerKind = nil
+    }
+
+    private var syncSetupFlowVersion: String {
+        featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) ? SyncSetupPixelKitEvent.ParameterValue.v2 : SyncSetupPixelKitEvent.ParameterValue.v1
+    }
+
+    private func syncSetupSource(for code: String, dialog: ManagementDialogKind) -> SyncSetupSource? {
+        let decodedCode: SyncCode?
+        if URL(string: code)?.absoluteString.contains("code2=") == true {
+            return .exchange
+        } else if let url = URL(string: code), let pairingInfo = PairingInfo(url: url) {
+            decodedCode = try? SyncCode.decodeBase64String(pairingInfo.base64Code)
+        } else {
+            decodedCode = try? SyncCode.decodeBase64String(code)
+        }
+
+        guard let decodedCode else {
+            return nil
+        }
+        if decodedCode.connect != nil {
+            return .connect
+        }
+        if decodedCode.exchangeKey != nil {
+            return .exchange
+        }
+        if decodedCode.recovery != nil {
+            switch dialog {
+            case .syncWithAnotherDevice:
+                return .exchange
+            case .enterRecoveryCode:
+                return .recovery
+            default:
+                return nil
+            }
+        }
+        return nil
     }
 
     private func showPairingV2Confirmation(message: String) async -> Bool {

@@ -25,7 +25,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 
     func controllerDidReceiveRecoveryKey()
 
-    func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async
+    func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) async
 
     func controllerWillPerformServerSyncOperation(setupRole: SyncSetupRole) async -> Bool
     func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
@@ -61,6 +61,9 @@ public enum SyncConnectionError: Error {
 
     case failedToCreateAccount
     case failedToTransmitConnectRecoveryKey
+
+    case accountUpgradeFailed
+    case protocolError
 
     case pollingForRecoveryKeyTimedOut
 }
@@ -263,7 +266,7 @@ public class SyncConnectionController: SyncConnectionControlling {
 
         if let exchangeKey = syncCode.exchangeKey {
             let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
-            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource, codeVersion: .v1)
             guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
                 return false
             }
@@ -271,14 +274,14 @@ public class SyncConnectionController: SyncConnectionControlling {
             return await handleExchangeKey(exchangeKey, codeSource: codeSource)
         } else if let connectKey = syncCode.connect {
             let setupRole: SyncSetupRole = .receiver(.connect, codeSource)
-            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource, codeVersion: .v1)
             guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
                 return false
             }
             await state.prepareForNewFlow()
             return await handleConnectKey(connectKey, codeSource: codeSource)
         } else {
-            await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource, codeVersion: .v1)
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, codeSource))
             return false
         }
@@ -345,7 +348,7 @@ public class SyncConnectionController: SyncConnectionControlling {
     private func handleDecodedSyncCode(_ syncCode: SyncCode, codeSource: SyncCodeSource) async -> Bool {
         if let exchangeKey = syncCode.exchangeKey {
             let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
-            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource, codeVersion: .v1)
             guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
                 return false
             }
@@ -355,7 +358,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             return await handleRecoveryCode(recovery, codeSource: codeSource)
         } else if let connectKey = syncCode.connect {
             let setupRole: SyncSetupRole = .receiver(.connect, codeSource)
-            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource, codeVersion: .v1)
             guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
                 return false
             }
@@ -393,7 +396,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: setupRole)
             return false
         }
-        await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)
+        await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource, codeVersion: .v2)
         guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
             return false
         }
@@ -656,7 +659,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             return false
         }
 
-        await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource)
+        await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource, codeVersion: recovery.syncSetupCodeVersion)
         guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
             return false
         }
@@ -733,6 +736,8 @@ public class SyncConnectionController: SyncConnectionControlling {
             return .failedToTransmitExchangeRecoveryKey
         case .loginFailed:
             return .failedToLogIn
+        case .upgradeFailed:
+            return .accountUpgradeFailed
         case .nativeCredentialAlreadyPresent:
             return .thirdPartyAccountAlreadyUpgraded
         case .recoveryCodeDenied, .recoveryCodeUnavailable:
@@ -741,7 +746,9 @@ public class SyncConnectionController: SyncConnectionControlling {
             return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
         case .v2ScanningDisabled, .unknownCode, .unsupportedFlow:
             return .unableToRecognizeCode
-        case .secondHello, .unexpectedEvent, .pairingSessionNotReady, .relayChannelUnavailable, .relayChannelExpired:
+        case .secondHello, .unexpectedEvent, .pairingSessionNotReady:
+            return .protocolError
+        case .relayChannelUnavailable, .relayChannelExpired:
             return .failedToFetchExchangeRecoveryKey
         case .cancelled:
             return .syncCancelledFromOtherDevice
@@ -765,6 +772,18 @@ public class SyncConnectionController: SyncConnectionControlling {
             return .unableToRecognizeCode
         }
         return .updateRequired
+    }
+}
+
+private extension SyncCode.Recovery {
+
+    var syncSetupCodeVersion: SyncSetupCodeVersion {
+        switch self {
+        case .v1:
+            return .v1
+        case .v2:
+            return .v2
+        }
     }
 }
 

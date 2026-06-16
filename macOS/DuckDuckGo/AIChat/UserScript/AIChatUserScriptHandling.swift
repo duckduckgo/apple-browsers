@@ -527,26 +527,31 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Subscribes to the tab's first finished navigation, runs `start()` (e.g. `reload()`), and
     /// awaits the navigation bounded by `timeout`. Subscribing before `start()` avoids missing a
     /// fast-finishing navigation. Returns `true` if navigation finished, `false` on timeout.
+    ///
+    /// The navigation signal is bridged through an `AsyncStream` (not `withCheckedContinuation`) so
+    /// that cancelling the task group on timeout actually tears the waiter down — a bare
+    /// continuation isn't cancellation-aware, so the timeout loser would otherwise hang the group
+    /// forever and leak the continuation. Mirrors `PageContextUserScript.collectAndWait`.
     @MainActor
     private static func waitForNavigationFinish(tab: Tab,
                                                 timeout: TimeInterval,
                                                 start: @escaping @MainActor () -> Void) async -> Bool {
-        await withTaskGroup(of: Bool.self) { group in
-            group.addTask { @MainActor in
-                var cancellable: AnyCancellable?
-                let finished: Bool = await withCheckedContinuation { continuation in
-                    var resumed = false
-                    cancellable = tab.webViewDidFinishNavigationPublisher
-                        .first()
-                        .sink { _ in
-                            guard !resumed else { return }
-                            resumed = true
-                            continuation.resume(returning: true)
-                        }
-                    start()
+        let navigationFinished = AsyncStream<Void> { continuation in
+            var cancellable: AnyCancellable?
+            cancellable = tab.webViewDidFinishNavigationPublisher
+                .first()
+                .sink { _ in
+                    continuation.yield(())
+                    continuation.finish()
                 }
-                cancellable?.cancel()
-                return finished
+            continuation.onTermination = { _ in cancellable?.cancel() }
+            start()
+        }
+
+        return await withTaskGroup(of: Bool.self) { group in
+            group.addTask {
+                for await _ in navigationFinished { return true }
+                return false
             }
             group.addTask {
                 try? await Task.sleep(interval: timeout)

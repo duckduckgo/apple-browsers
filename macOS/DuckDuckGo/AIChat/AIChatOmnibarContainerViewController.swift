@@ -1214,6 +1214,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                             pendingFiles: pendingFiles
                         )
                         if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
+                            PixelKit.fire(
+                                AIChatPixel.aiChatAddressBarFileValidationFailed(reason: error.reason.rawValue),
+                                frequency: .dailyAndCount,
+                                includeAppVersionParameter: true
+                            )
                             if firstFileError == nil { firstFileError = error.message }
                             continue
                         }

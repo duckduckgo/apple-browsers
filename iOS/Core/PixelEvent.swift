@@ -1737,6 +1737,20 @@ extension Pixel {
         case aiChatSingleDeleteSuccessful
         case aiChatSingleDeleteFailed
 
+        // MARK: AI Chat History Screen
+        case aiChatHistoryScreenShown
+        case aiChatHistoryChatOpened
+        case aiChatHistoryChatDeleted
+        case aiChatHistoryEmptyCTATapped
+        case aiChatHistorySearchActivated
+        case aiChatHistoryFireAllTapped
+        case aiChatHistoryFireAllConfirmed
+        case aiChatHistoryPinAdded
+        case aiChatHistoryPinRemoved
+        case aiChatHistoryDownloadStarted
+        case aiChatHistorySelectModeEntered
+        case aiChatHistoryNewChatTapped
+
         // MARK: AI Chat Recent Chats
         case aiChatRecentChatSelectedPinned
         case aiChatRecentChatSelected
@@ -3584,6 +3598,20 @@ extension Pixel.Event {
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
         case .aiChatSingleDeleteSuccessful: return "m_aichat_single_delete_successful"
         case .aiChatSingleDeleteFailed: return "m_aichat_single_delete_failed"
+
+        // MARK: AI Chat History Screen
+        case .aiChatHistoryScreenShown: return "aichat_history_screen_shown"
+        case .aiChatHistoryChatOpened: return "aichat_history_chat_opened"
+        case .aiChatHistoryChatDeleted: return "aichat_history_chat_deleted"
+        case .aiChatHistoryEmptyCTATapped: return "aichat_history_empty_cta_tapped"
+        case .aiChatHistorySearchActivated: return "aichat_history_search_activated"
+        case .aiChatHistoryFireAllTapped: return "aichat_history_fire_all_tapped"
+        case .aiChatHistoryFireAllConfirmed: return "aichat_history_fire_all_confirmed"
+        case .aiChatHistoryPinAdded: return "aichat_history_pin_added"
+        case .aiChatHistoryPinRemoved: return "aichat_history_pin_removed"
+        case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
+        case .aiChatHistorySelectModeEntered: return "aichat_history_select_mode_entered"
+        case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
 
         // MARK: AI Chat Recent Chats
         case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"

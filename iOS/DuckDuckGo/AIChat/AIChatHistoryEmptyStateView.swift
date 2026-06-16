@@ -39,7 +39,7 @@ struct AIChatHistoryEmptyStateView: View {
                     .multilineTextAlignment(.center)
             }
 
-            Button(action: viewModel.newChatTapped) {
+            Button(action: viewModel.emptyStateCTATapped) {
                 Text(UserText.aiChatHistoryEmptyStateOpenDuckAi)
             }
             .buttonStyle(PrimaryButtonStyle(fullWidth: false))

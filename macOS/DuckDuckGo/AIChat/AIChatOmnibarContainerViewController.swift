@@ -1300,7 +1300,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// model accepts neither images nor files (only the tab picker is available), it falls back to
     /// the page-content label.
     private func attachButtonTooltip() -> String {
-        guard omnibarController.selectedModelSupportsImageUpload || omnibarController.selectedModelSupportsFileUpload else {
+        // Reflect what the button can actually do *now*. When image/file picking is unavailable —
+        // unsupported by the model or both kinds at capacity — `shouldShowImageOrFileMenuItem` is
+        // false and the menu only offers page content, so the tooltip must match rather than read
+        // "Add Images or PDFs".
+        guard shouldShowImageOrFileMenuItem else {
             return UserText.aiChatAttachMenuPageContent
         }
         return attachMenuItemTitle()

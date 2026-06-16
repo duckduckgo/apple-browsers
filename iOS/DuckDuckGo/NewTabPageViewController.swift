@@ -58,7 +58,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private(set) var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
     private var didHideBarsForChatPathVisitSiteDialog = false
-
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
 
@@ -616,6 +615,12 @@ extension NewTabPageViewController {
             return
         }
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
+
+        // The EoJ ("High five!") dialog always surfaces with an active address bar so the user
+        // can immediately try a search — matching the linearOnboardingCompleted path's behaviour.
+        if spec == .final {
+            chromeDelegate?.omniBar.beginEditing(animated: true)
+        }
 
         let onDismiss: (_ activateSearch: Bool) -> Void = { [weak self] activateSearch in
             guard let self else { return }

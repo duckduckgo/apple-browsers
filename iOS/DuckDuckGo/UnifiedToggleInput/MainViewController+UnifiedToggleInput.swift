@@ -1158,6 +1158,15 @@ extension MainViewController {
         completion?()
     }
 
+    /// Focuses the Duck.ai Unified Toggle Input on the active AI tab in response to the FE's
+    /// `focusChatInput` message. Expands the bottom input bar and makes its text field first
+    /// responder — the Duck.ai-specific input — instead of activating the omnibar (the legacy
+    /// `beginSearch()` behavior). No-ops when the active tab isn't a Duck.ai tab.
+    func focusUnifiedToggleInputForActiveChat() {
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isAITabState else { return }
+        coordinator.showExpanded(inputMode: .aiChat)
+    }
+
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
         fireDirectDuckAINavigationPixelIfNeeded(for: query)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {

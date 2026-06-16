@@ -27,6 +27,7 @@ import PixelKit
 final class ConfigurationManager: DefaultConfigurationManager {
 
     private let privacyConfigManager: VPNPrivacyConfigurationManager
+    var onPrivacyConfigurationUpdated: (() -> Void)?
 
     init(privacyConfigManager: VPNPrivacyConfigurationManager,
          fetcher: ConfigurationFetching,
@@ -85,6 +86,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
             etag: store.loadEtag(for: .privacyConfiguration),
             data: store.loadData(for: .privacyConfiguration)
         )
+        onPrivacyConfigurationUpdated?()
     }
 }
 

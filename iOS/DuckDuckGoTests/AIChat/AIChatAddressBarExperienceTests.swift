@@ -216,6 +216,20 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
 
         XCTAssertFalse(testee.shouldShowDuckAIAddressBarButton)
     }
+
+    func testWhenIPadAndShortcutOnButDuckAIButtonHiddenThenAddressBarButtonStillShownAtNarrowWidth() {
+        // The omnibar button mirrors the master Tab Bar toggle: with the shortcut on it shows at
+        // narrow width even if one half (here the Duck.ai-open button) was hidden from the menu.
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatTabBarUserSettingsEnabled: true,
+                                                        isAIChatTabBarDuckAIButtonVisible: false)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
+
+        XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
+    }
 }
 
 private struct MockLargeWidthProvider: LargeWidthProviding {

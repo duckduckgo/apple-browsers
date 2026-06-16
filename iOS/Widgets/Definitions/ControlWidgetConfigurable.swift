@@ -153,7 +153,7 @@ struct VoiceSearchControlWidget: ControlWidgetConfigurable {
     let intent = OpenVoiceSearchIntent()
 
     struct OpenVoiceSearchIntent: AppIntent {
-        static var title: LocalizedStringResource = "Favorites"
+        static var title: LocalizedStringResource = "Voice Search"
         static var description: LocalizedStringResource = "Start a new voice search from the Control Center."
         static var openAppWhenRun: Bool = true
 

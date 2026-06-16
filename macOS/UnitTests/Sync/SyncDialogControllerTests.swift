@@ -57,7 +57,7 @@ final class SyncDialogControllerTests: XCTestCase {
     private var featureFlagger: MockSyncFeatureFlagger!
     private var syncDialogController: SyncDialogController!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
-    lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!
+    lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!.defaultCredentialRecoveryKey()
     var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -135,13 +135,18 @@ final class SyncDialogControllerTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 5.0)
     }
 
-    func test_recoverDevice_callsConnectionController() async {
+    func test_recoverDevice_routesPastedCodeThroughConnectionControllerWithURLScanning() async {
+        featureFlagger.isFeatureOn[FeatureFlag.canScanUrlBasedSyncSetupBarcodes.rawValue] = true
         let expectation = expectation(description: "callsConnectionController")
         connectionController.syncCodeEnteredCalled = { _, _, _ in
             expectation.fulfill()
         }
         syncDialogController.recoveryCodePasted(testRecoveryCode, fromRecoveryScreen: false)
         await fulfillment(of: [expectation], timeout: 5)
+
+        XCTAssertEqual(connectionController.spySyncCodeEnteredCode, testRecoveryCode)
+        XCTAssertEqual(connectionController.spySyncCodeEnteredCanScanLegacyURLBarcodes, true)
+        XCTAssertEqual(connectionController.spySyncCodeEnteredCodeSource, .pastedCode)
     }
 
     func test_controllerDidFindTwoAccountsDuringRecovery_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async throws {
@@ -154,7 +159,10 @@ final class SyncDialogControllerTests: XCTestCase {
             XCTAssert(ddgSyncing.disconnectCalled)
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
-        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.recovery, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: true)
         XCTAssert(didCallDDGSyncLogin)
     }
 
@@ -166,7 +174,10 @@ final class SyncDialogControllerTests: XCTestCase {
 
         ddgSyncing.stubLogin = [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
 
-        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.recovery, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: true)
 
         syncDialogController.$devices.sink {
             if $0.map(\.id) == ["1", "2"] {
@@ -188,7 +199,10 @@ final class SyncDialogControllerTests: XCTestCase {
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
 
-        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.recovery, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: true)
 
         XCTAssertNil(managementDialogModel.currentDialog)
     }
@@ -198,10 +212,41 @@ final class SyncDialogControllerTests: XCTestCase {
         ddgSyncing.account = SyncAccount(deviceId: "1", deviceName: "", deviceType: "", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         syncDialogController.devices = [SyncDevice(RegisteredDevice(id: "1", name: "iPhone", type: "iPhone")), SyncDevice(RegisteredDevice(id: "2", name: "iPhone", type: "iPhone"))]
 
-        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.recovery, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: true)
 
         XCTAssert(managementDialogModel.shouldShowErrorMessage)
         XCTAssert(managementDialogModel.shouldShowSwitchAccountsMessage)
+    }
+
+    func test_controllerDidFindTwoAccountsDuringRecovery_whenV2AndTwoOrMoreDevices_switchesWithoutAccountSwitchingMessage() async throws {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "1",
+            deviceName: "",
+            deviceType: "",
+            userId: "",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: nil,
+            state: .active)
+        syncDialogController.devices = [
+            SyncDevice(RegisteredDevice(id: "1", name: "iPhone", type: "iPhone")),
+            SyncDevice(RegisteredDevice(id: "2", name: "iPhone", type: "iPhone"))
+        ]
+        ddgSyncing.stubLogin = [
+            RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"),
+            RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")
+        ]
+
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .sharer,
+            shouldPromptBeforeSwitchingAccounts: false)
+
+        XCTAssertTrue(ddgSyncing.loginCalled)
+        XCTAssertFalse(managementDialogModel.shouldShowSwitchAccountsMessage)
     }
 
     func test_switchAccounts_disconnectsThenLogsInAgain() async throws {
@@ -772,11 +817,23 @@ final class SyncDialogControllerTests: XCTestCase {
     // MARK: - Connection Controller Delegate Methods
 
     func testControllerDidFinishTransmittingRecoveryKey_waitsForDevices() {
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey()
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
 
         // The method sets up a publisher to wait for device changes
         // We can verify this by checking that the devices publisher is being observed
         XCTAssertNotNil(syncDialogController)
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_whenNoDeviceChangeExpected_presentsNowSyncing() {
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .nowSyncing)
+    }
+
+    func testControllerWillBeginTransmittingRecoveryKey_presentsPrepareDialog() async {
+        await syncDialogController.controllerWillBeginTransmittingRecoveryKey()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
     }
 
     func testControllerDidReceiveRecoveryKey_presentsPrepareDialog() {
@@ -785,11 +842,17 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
     }
 
+    func testControllerDidRecognizeCode_presentsPrepareDialog() async {
+        await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .pastedCode)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+    }
+
     func testControllerDidCreateSyncAccount_presentsSaveRecoveryCodeDialog() {
         // Use the mock account that has a recovery code already set
         ddgSyncing.account = SyncAccount.mock
 
-        syncDialogController.controllerDidCreateSyncAccount()
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
 
         if case .saveRecoveryCode = managementDialogModel.currentDialog {
             // Success - don't check exact code since recoveryCode is read-only
@@ -823,6 +886,12 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, initialDialog)
     }
 
+    func testControllerDidCompletePairingWithAlreadyConnectedAccount_presentsAlreadyPairedError() {
+        syncDialogController.controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: .receiver(.exchange, .pastedCode))
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .alreadyPairedWithAccount)
+    }
+
     func testControllerDidCompleteLogin_updatesDevicesAndPresentsRecoveryDialog() async {
         ddgSyncing.account = SyncAccount.mock
 
@@ -851,6 +920,23 @@ final class SyncDialogControllerTests: XCTestCase {
         await syncDialogController.controllerDidError(.failedToLogIn, underlyingError: nil, setupRole: .sharer)
 
         XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
+    }
+
+    func testManagementDialogErrorDescription_whenDetailMatchesTypeDescription_doesNotDuplicateDescription() {
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .thirdPartyAccountAlreadyUpgraded)
+
+        let dialog = ManagementDialog(model: managementDialogModel)
+
+        XCTAssertEqual(dialog.errorDescription, SyncErrorType.thirdPartyAccountAlreadyUpgraded.description)
+    }
+
+    func testManagementDialogErrorDescription_whenDetailDiffersFromTypeDescription_preservesDetail() {
+        let detail = "The request timed out."
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: detail)
+
+        let dialog = ManagementDialog(model: managementDialogModel)
+
+        XCTAssertEqual(dialog.errorDescription, "\(SyncErrorType.unableToSyncToOtherDevice.description)\n\(detail)")
     }
 
     func testControllerDidError_pollingTimeout_endsFlow() async {
@@ -995,7 +1081,7 @@ private extension SyncCode.RecoveryKey {
     init(base64Code: String?) throws {
         let contents = try Data(base64Encoded: try XCTUnwrap(base64Code))
             .flatMap { try JSONDecoder.snakeCaseKeys.decode(SyncCode.self, from: $0) }
-        self = try XCTUnwrap(contents?.recovery)
+        self = try XCTUnwrap(contents?.recovery).defaultCredentialRecoveryKey()
     }
 }
 

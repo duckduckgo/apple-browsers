@@ -1,67 +1,29 @@
 appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
+    - release
     - unified_toggle_input
 name: test_ai_chat_tab_header
 
 ---
 
-# Launch with onboarding skipped and unifiedToggleInput feature flag enabled
-- launchApp:
-    appId: "com.duckduckgo.mobile.ios"
-    clearState: true
-    clearKeychain: true
-    arguments:
-        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
-        currentAppVariant: ${APP_VARIANT}
-        isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
-
-# Step 1: Navigate to Duck.ai tab
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-
-# Dismiss any web modals that appear (onboarding, promo, subscription etc.)
 - runFlow:
-    when:
-        visible: "Agree and Continue"
-    commands:
-        - tapOn: "Agree and Continue"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
-- runFlow:
-    when:
-        visible: "×"
-    commands:
-        - tapOn: "×"
+    file: ../shared/open_chat_tab.yaml
 
-# Step 2: Verify Chat Tab Header elements
-- assertVisible:
-    text: "Free Plan"
-- assertVisible:
-    text: "Upgrade"
-- assertVisible:
-    text: "Close tab"
-- assertVisible:
-    text: "Recent chats"
-- assertVisible:
-    text: "New"
+# Step 1: Verify Duck.ai chat tab header elements
+- assertVisible: "Free Plan"
+- assertVisible: "Upgrade"
+- assertVisible: "Close tab"
+- assertVisible: "Recent chats"
+- assertVisible: "New"
 
-# Step 3: Verify omnibar is hidden on Duck.ai tab
+# Step 2: Chat-mode input shows the model chip and NO Search/Duck.ai toggle
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
 - assertNotVisible:
-    id: "searchEntry"
+    id: "AddressBar.Button.DuckAI"
 
-# Step 4: Verify close-tab button dismisses the chat tab
-- tapOn:
-    text: "Close tab"
+# Step 3: Close-tab button dismisses the chat tab and restores the omnibar
+- tapOn: "Close tab"
 - assertVisible:
-    id: "searchEntry"
+    id: "Browser.OmniBar.Button.AIChat"

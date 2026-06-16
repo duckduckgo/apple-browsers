@@ -20,6 +20,7 @@ import AIChat
 import XCTest
 @testable import NewTabPage
 
+@MainActor
 final class NewTabPageOmnibarClientTests: XCTestCase {
 
     private var suggestionsProvider: MockNewTabPageOmnibarSuggestionsProvider!
@@ -528,6 +529,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
 }
 
+@MainActor
 private final class StubNewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
 

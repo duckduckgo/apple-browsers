@@ -76,6 +76,26 @@ class StatisticsLoaderTests: XCTestCase {
         XCTAssertFalse(firedOSDistributionMetrics.contains(.client))
     }
 
+    func testRefreshRetentionAtbOnDuckAIPromptSubmissionFiresExactlyOneSearchesOSDistributionPixel() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+
+        // The prompt path calls both refreshSearchRetentionAtb and refreshDuckAIRetentionAtb, but only
+        // the former fires .searches — so a single Duck.ai prompt must count as exactly one search event.
+        XCTAssertEqual(firedOSDistributionMetrics.filter { $0 == .searches }.count, 1,
+                       "A Duck.ai prompt must fire exactly one searches OS-distribution pixel. Fired: \(firedOSDistributionMetrics)")
+        XCTAssertFalse(firedOSDistributionMetrics.contains(.client))
+    }
+
     override func tearDown() {
         HTTPStubs.removeAllStubs()
         PixelFiringMock.tearDown()

@@ -54,10 +54,6 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
 
     }
 
-    func tabBarViewItemTogglePermissionAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
-
-    }
-
     func tabBarViewItemCloseOtherAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
     }

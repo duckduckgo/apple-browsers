@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import DDGSync
 import Combine
@@ -92,7 +93,7 @@ final class SyncDialogController {
     @Published var stringForQR: String?
     @Published var codeForDisplayOrPasting: String?
     private var recoveryCode: String? {
-        syncService.account?.recoveryCode
+        syncService.recoveryCode
     }
 
     private var isScreenLocked: Bool = false
@@ -203,7 +204,7 @@ final class SyncDialogController {
 
     private func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool, codeSource: SyncCodeSource) {
         Task {
-            await connectionController.syncCodeEntered(code: recoveryCode, canScanURLBarcodes: false, codeSource: codeSource)
+            await connectionController.syncCodeEntered(code: recoveryCode, canScanLegacyURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes), codeSource: codeSource)
         }
     }
 
@@ -423,7 +424,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func saveRecoveryPDF() {
-        guard let recoveryCode = syncService.account?.recoveryCode else {
+        guard let recoveryCode = syncService.recoveryCode else {
             assertionFailure()
             return
         }
@@ -493,7 +494,8 @@ extension SyncDialogController: ManagementDialogModelDelegate {
 
     func userConfirmedSwitchAccounts(recoveryCode: String) {
         PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserAcceptedSwitchingAccount, doNotEnforcePrefix: true)
-        guard let recoveryKey = try? SyncCode.decodeBase64String(recoveryCode).recovery else {
+        guard let syncCode = try? SyncCode.decodeBase64String(recoveryCode),
+              let recoveryKey = try? syncCode.recovery?.defaultCredentialRecoveryKey() else {
             return
         }
         Task {
@@ -597,11 +599,16 @@ extension SyncDialogController: SyncSettingsViewHandling {
 extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerWillBeginTransmittingRecoveryKey() async {
-        // no-op
+        presentDialog(for: .prepareToSync)
     }
 
-    func controllerDidFinishTransmittingRecoveryKey() {
-        waitForDevicesToChangeThenPresentSyncing()
+    func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
+        // Temporary handling as devices don't update when 3p device added to account
+        if shouldWaitForDevicesToChange {
+            waitForDevicesToChangeThenPresentSyncing()
+        } else {
+            presentDialog(for: .nowSyncing)
+        }
     }
 
     func controllerDidReceiveRecoveryKey() {
@@ -610,11 +617,40 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
+        presentDialog(for: .prepareToSync)
     }
 
-    func controllerDidCreateSyncAccount() {
+    func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
+        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind)
+    }
+
+    func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
+        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind)
+    }
+
+    private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
+        let peerName = pairingV2DisplayName(for: peerName)
+        let message = UserText.syncPairingV2ConfirmationMessage(peerName, isThirdPartyPeer: peerKind == .thirdParty)
+        let isConfirmed = await showPairingV2Confirmation(message: message)
+        if !isConfirmed {
+            managementDialogModel.endFlow()
+        }
+        return isConfirmed
+    }
+
+    private func pairingV2DisplayName(for peerName: String?) -> String {
+        guard let peerName = peerName?.trimmingCharacters(in: .whitespacesAndNewlines), !peerName.isEmpty else {
+            return UserText.syncPairingV2UnknownPeerName
+        }
+        return peerName
+    }
+
+    func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
         let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
         PixelKit.fire(GeneralPixel.syncSignupConnect, withAdditionalParameters: additionalParameters)
+        guard shouldShowSyncEnabled else {
+            return
+        }
         guard let code = recoveryCode else {
             return
         }
@@ -643,8 +679,14 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         sendSetupEndedSuccessfullyPixel(setupSource: syncSetupSource, codeSource: syncCodeSource)
     }
 
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {
-        await handleAccountAlreadyExists(recoveryKey)
+    func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole _: SyncSetupRole) {
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .alreadyPairedWithAccount)
+    }
+
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
+                                                    setupRole: SyncSetupRole,
+                                                    shouldPromptBeforeSwitchingAccounts: Bool) async {
+        await handleAccountAlreadyExists(recoveryKey, shouldPromptBeforeSwitchingAccounts: shouldPromptBeforeSwitchingAccounts)
     }
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
@@ -652,6 +694,16 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         case .unableToRecognizeCode:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToRecognizeCode)
             sendCodeParsingFailedPixel(setupRole: setupRole)
+        case .updateRequired:
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .updateRequired)
+            sendCodeParsingFailedPixel(setupRole: setupRole)
+        case .unsupportedThirdPartyRecoveryCode:
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unsupportedThirdPartyRecoveryCode)
+            sendCodeParsingFailedPixel(setupRole: setupRole)
+        case .thirdPartyAccountAlreadyUpgraded:
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .thirdPartyAccountAlreadyUpgraded)
+        case .syncCancelledFromOtherDevice:
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .syncCancelledFromOtherDevice)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: underlyingError?.localizedDescription)
             PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: underlyingError ?? error)))
@@ -663,8 +715,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         }
     }
 
-    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey) async {
-        if devices.count > 1 {
+    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey, shouldPromptBeforeSwitchingAccounts: Bool) async {
+        // For V2 we're intentionally not showing prompt here
+        if shouldPromptBeforeSwitchingAccounts && devices.count > 1 {
             managementDialogModel.showSwitchAccountsMessage()
             PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount, doNotEnforcePrefix: true)
         } else {
@@ -697,5 +750,16 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         }
         guard setupSource != .recovery, setupSource != .unknown else { return }
         PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource), doNotEnforcePrefix: true)
+    }
+
+    private func showPairingV2Confirmation(message: String) async -> Bool {
+        let alert = NSAlert.syncPairingV2Confirmation(message: message)
+
+        guard let parentWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window else {
+            return await alert.runModal() == .alertSecondButtonReturn
+        }
+
+        let presentationWindow = parentWindow.attachedSheet ?? parentWindow
+        return await alert.beginSheetModal(for: presentationWindow) == .alertSecondButtonReturn
     }
 }

@@ -50,10 +50,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     public static let viewDidLayoutNotification = Notification.Name("com.duckduckgo.app.TabsBarViewControllerViewDidLayout")
     
     struct Constants {
-        
-        static let minItemWidth: CGFloat = 68
+
         static let buttonSize: CGFloat = 40
         static let stackSpacing: CGFloat = 12
+        static let minItemWidth: CGFloat = 120
+        static let maxItemWidthFraction: CGFloat = 1.0 / 3.0
+        static let leadingInset: CGFloat = 16
     }
     
     enum NewTabType {
@@ -108,7 +110,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private var cancellables = Set<AnyCancellable>()
     
     private weak var pressedCell: TabsBarCell?
-    
+
     var tabsCount: Int {
         return tabsModel?.count ?? 0
     }
@@ -148,6 +150,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         collectionView.clipsToBounds = true
         collectionView.delegate = self
         collectionView.dataSource = self
+
+        collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.leadingInset).isActive = true
 
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
         fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
@@ -309,9 +313,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         let maxVisibleItems = min(maxItems, tabsCount)
         guard maxVisibleItems > 0 else { return }
 
-        var itemWidth = availableWidth / CGFloat(maxVisibleItems)
-        itemWidth = max(itemWidth, Constants.minItemWidth)
-        itemWidth = min(itemWidth, availableWidth / 2)
+        let itemWidth = Self.itemWidth(
+            availableWidth: availableWidth,
+            visibleItems: maxVisibleItems,
+            minWidth: Constants.minItemWidth,
+            maxWidthFraction: Constants.maxItemWidthFraction
+        )
 
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
             flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
@@ -332,6 +339,14 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         if availableWidth > 0, itemWidth > 0, CGFloat(tabsCount) * itemWidth > availableWidth {
             DailyPixel.fire(pixel: .tabBarOverflowDaily)
         }
+    }
+
+    static func itemWidth(availableWidth: CGFloat, visibleItems: Int, minWidth: CGFloat, maxWidthFraction: CGFloat) -> CGFloat {
+        guard visibleItems > 0 else { return 0 }
+        var width = availableWidth / CGFloat(visibleItems)
+        width = min(width, availableWidth * maxWidthFraction)
+        width = max(width, minWidth)
+        return width
     }
 
     private func reloadData() {

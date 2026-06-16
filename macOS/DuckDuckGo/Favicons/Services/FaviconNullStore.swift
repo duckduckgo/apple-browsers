@@ -16,13 +16,18 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import Combine
+import Foundation
 
 final class FaviconNullStore: FaviconStoring {
 
-    func loadFavicons() async throws -> [Favicon] {
+    func loadFaviconMetadata() async throws -> [FaviconMetadata] {
         return []
+    }
+
+    func loadImage(for identifier: UUID) throws -> NSImage? {
+        return nil
     }
 
     func save(_ favicons: [Favicon]) async throws {

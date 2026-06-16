@@ -64,6 +64,24 @@ final class FaviconsTabExtension {
             self?.content = content
         }
         .store(in: &cancellables)
+
+        // Re-resolve cached favicon once the favicon cache finishes loading.
+        // Tab.swift triggers `loadCachedFavicon` when the URL is set (e.g. for
+        // pinned tabs during state restoration), but at that moment the cache
+        // may not be loaded yet — `loadCachedFavicon` early-returns on
+        // `isCacheLoaded == false`. Without this subscription pinned tabs
+        // would render with the LetterView placeholder until something else
+        // re-triggered favicon resolution.
+        self.faviconManagement.faviconsLoadedPublisher
+            .removeDuplicates()
+            .filter { $0 }
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    guard let self, self.content != nil else { return }
+                    self.loadCachedFavicon(isBurner: false)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     @MainActor

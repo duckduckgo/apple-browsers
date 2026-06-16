@@ -16,15 +16,20 @@
 //  limitations under the License.
 //
 
+import AppKit
+import Combine
 import Foundation
 import XCTest
-import Combine
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FaviconStoringMock: FaviconStoring {
 
-    func loadFavicons() async throws -> [Favicon] {
+    func loadFaviconMetadata() async throws -> [FaviconMetadata] {
         []
+    }
+
+    func loadImage(for identifier: UUID) throws -> NSImage? {
+        nil
     }
 
     func save(_ favicons: [Favicon]) async throws {

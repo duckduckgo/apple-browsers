@@ -2107,6 +2107,8 @@
 		7B1522B22DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1522B02DE9CCA500887371 /* MockFeatureGatekeeper.swift */; };
 		7B1522B92DE9D19600887371 /* MockLoginItemsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1522B82DE9D19200887371 /* MockLoginItemsManager.swift */; };
 		7B1522BA2DE9D19600887371 /* MockLoginItemsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1522B82DE9D19200887371 /* MockLoginItemsManager.swift */; };
+		7B15FB6B2FACF8BF00019A26 /* FaviconMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B15FB6A2FACF8BF00019A26 /* FaviconMetadata.swift */; };
+		7B15FB6C2FACF8BF00019A26 /* FaviconMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B15FB6A2FACF8BF00019A26 /* FaviconMetadata.swift */; };
 		7B17AA872F757C350087A9ED /* UnloadedTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B17AA862F757C350087A9ED /* UnloadedTab.swift */; };
 		7B17AA882F757C350087A9ED /* UnloadedTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B17AA862F757C350087A9ED /* UnloadedTab.swift */; };
 		7B17AA8A2F757C3B0087A9ED /* AnyTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B17AA892F757C3B0087A9ED /* AnyTab.swift */; };
@@ -5640,6 +5642,7 @@
 		7B1522AD2DE9CBE300887371 /* VPNAppEventsHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAppEventsHandlerTests.swift; sourceTree = "<group>"; };
 		7B1522B02DE9CCA500887371 /* MockFeatureGatekeeper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFeatureGatekeeper.swift; sourceTree = "<group>"; };
 		7B1522B82DE9D19200887371 /* MockLoginItemsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLoginItemsManager.swift; sourceTree = "<group>"; };
+		7B15FB6A2FACF8BF00019A26 /* FaviconMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconMetadata.swift; sourceTree = "<group>"; };
 		7B17AA862F757C350087A9ED /* UnloadedTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnloadedTab.swift; sourceTree = "<group>"; };
 		7B17AA892F757C3B0087A9ED /* AnyTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnyTab.swift; sourceTree = "<group>"; };
 		7B17AA8C2F757C480087A9ED /* UnloadedTabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnloadedTabViewModel.swift; sourceTree = "<group>"; };
@@ -10891,6 +10894,7 @@
 				AA5FA696275F90C400DCE9C9 /* FaviconImageCache.swift */,
 				AA512D1324D99D9800230283 /* FaviconManager.swift */,
 				37F09AD22DDE433000643A1B /* FaviconManagerMock.swift */,
+				7B15FB6A2FACF8BF00019A26 /* FaviconMetadata.swift */,
 				AA222CB82760F74E00321475 /* FaviconReferenceCache.swift */,
 				AAEF6BC7276A081C0024DCF4 /* FaviconSelector.swift */,
 				AA6197C3276B314D008396F0 /* FaviconUrlReference.swift */,
@@ -15205,6 +15209,7 @@
 				3706FB2C293F65D500E42796 /* UserDefaultsWrapper.swift in Sources */,
 				BB53CF3F2E26CEED007F0B42 /* RequestNewFeatureFormView.swift in Sources */,
 				BB8E05722EE0D2B9006CD2E6 /* HomePageSubscriptionCardPersistor.swift in Sources */,
+				7B15FB6B2FACF8BF00019A26 /* FaviconMetadata.swift in Sources */,
 				3706FB2D293F65D500E42796 /* PasswordManagementPopover.swift in Sources */,
 				C1935A152C88F958001AD72D /* SyncPromoView.swift in Sources */,
 				1D955E273EB784CB1672BB43 /* AdBlockingDebugMenu.swift in Sources */,
@@ -17480,6 +17485,7 @@
 				319FCFF32CC81D54004F9288 /* AIChatRemoteSettings.swift in Sources */,
 				84F950B92F150E3D00863D32 /* PrivacyStatsAppTerminationDecider.swift in Sources */,
 				84CE00172DAE41F100852AA2 /* ResizablePreviewView.swift in Sources */,
+				7B15FB6C2FACF8BF00019A26 /* FaviconMetadata.swift in Sources */,
 				4B379C2427BDE1B0008A968E /* FlatButton.swift in Sources */,
 				B6FA8941269C425400588ECD /* PrivacyDashboardPopover.swift in Sources */,
 				1D5C232A2F150A680055046E /* AIChatSuggestionsView.swift in Sources */,

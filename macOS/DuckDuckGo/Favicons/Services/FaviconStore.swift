@@ -27,7 +27,8 @@ import os.log
 
 protocol FaviconStoring {
 
-    func loadFavicons() async throws -> [Favicon]
+    func loadFaviconMetadata() async throws -> [FaviconMetadata]
+    func loadImage(for identifier: UUID) throws -> NSImage?
     func save(_ favicons: [Favicon]) async throws
     func removeFavicons(_ favicons: [Favicon]) async throws
 
@@ -39,7 +40,7 @@ protocol FaviconStoring {
 
 }
 
-final class FaviconStore: FaviconStoring {
+final class FaviconStore: FaviconStoring, Sendable {
 
     enum FaviconStoreError: Error {
         case notLoadedYet
@@ -56,23 +57,47 @@ final class FaviconStore: FaviconStoring {
         self.context = context
     }
 
-    func loadFavicons() async throws -> [Favicon] {
-        try await withCheckedThrowingContinuation { [context] continuation in
-            context.perform {
-                let fetchRequest = FaviconManagedObject.fetchRequest() as NSFetchRequest<FaviconManagedObject>
-                fetchRequest.sortDescriptors = [NSSortDescriptor(key: #keyPath(FaviconManagedObject.dateCreated), ascending: true)]
-                fetchRequest.returnsObjectsAsFaults = false
-                do {
-                    let faviconMOs = try context.fetch(fetchRequest)
-                    Logger.favicons.debug("\(faviconMOs.count) favicons loaded")
-                    let favicons = faviconMOs.compactMap { Favicon(faviconMO: $0) }
+    func loadFaviconMetadata() async throws -> [FaviconMetadata] {
+        try await context.perform { [weak self] in
+            guard let self else {
+                return []
+            }
+            let fetchRequest = FaviconManagedObject.fetchRequest() as NSFetchRequest<FaviconManagedObject>
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: #keyPath(FaviconManagedObject.dateCreated), ascending: true)]
+            // returnsObjectsAsFaults stays at the default (true). The image
+            // blob (`imageEncrypted`) is never accessed during the metadata
+            // mapping below, so CoreData never realizes it from SQLite —
+            // this is what avoids the ~310 MB launch-time spike.
+            let faviconMOs = try context.fetch(fetchRequest)
+            Logger.favicons.debug("\(faviconMOs.count) favicon metadata entries loaded")
+            return faviconMOs.compactMap { FaviconMetadata(faviconMO: $0) }
+        }
+    }
 
-                    continuation.resume(returning: favicons)
-                } catch {
-                    continuation.resume(throwing: error)
+    func loadImage(for identifier: UUID) throws -> NSImage? {
+        var image: NSImage?
+        try context.performAndWait {
+            let fetchRequest = FaviconManagedObject.fetchRequest() as NSFetchRequest<FaviconManagedObject>
+            fetchRequest.predicate = NSPredicate(format: "%K == %@", #keyPath(FaviconManagedObject.identifier), identifier as NSUUID)
+            fetchRequest.fetchLimit = 1
+
+            let fetchResult: [FaviconManagedObject] = try context.fetch(fetchRequest)
+
+            // Reading `imageEncrypted` makes Core Data unarchive the stored NSImage. If the saved bitmap is corrupt,
+            // AppKit raises an Objective-C `NSInvalidUnarchiveOperationException` ("bad TIFF data") while unarchiving.
+            // Swift's `try`/`try?` cannot catch Objective-C exceptions, so this would otherwise crash the app.
+            // `NSException.catch` bridges it to a Swift error; on failure we use a nil image, which the favicon system
+            // re-fetches on the next visit.
+            do {
+                image = try NSException.catch {
+                    fetchResult.first?.imageEncrypted as? NSImage
                 }
+            } catch {
+                PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
+                throw error
             }
         }
+        return image
     }
 
     func removeFavicons(_ favicons: [Favicon]) async throws {
@@ -222,7 +247,7 @@ final class FaviconStore: FaviconStoring {
 
 }
 
-fileprivate extension Favicon {
+fileprivate extension FaviconMetadata {
 
     init?(faviconMO: FaviconManagedObject) {
         guard let identifier = faviconMO.identifier,
@@ -231,26 +256,11 @@ fileprivate extension Favicon {
               let dateCreated = faviconMO.dateCreated,
               let relation = Favicon.Relation(rawValue: Int(faviconMO.relation)) else {
             PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
-            assertionFailure("Favicon: Failed to init Favicon from FaviconManagedObject")
+            assertionFailure("FaviconMetadata: Failed to init from FaviconManagedObject")
             return nil
         }
 
-        // Reading `imageEncrypted` makes Core Data unarchive the stored NSImage. If the saved bitmap is corrupt,
-        // AppKit raises an Objective-C `NSInvalidUnarchiveOperationException` ("bad TIFF data") while unarchiving.
-        // Swift's `try`/`try?` cannot catch Objective-C exceptions, so this would otherwise crash the app.
-        // `NSException.catch` bridges it to a Swift error; on failure we use a nil image, which the favicon system
-        // re-fetches on the next visit.
-        let image: NSImage?
-        do {
-            image = try NSException.catch {
-                faviconMO.imageEncrypted as? NSImage
-            }
-        } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
-            image = nil
-        }
-
-        self.init(identifier: identifier, url: url, image: image, relation: relation, documentUrl: documentUrl, dateCreated: dateCreated)
+        self.init(identifier: identifier, url: url, documentUrl: documentUrl, dateCreated: dateCreated, relation: relation)
     }
 
 }

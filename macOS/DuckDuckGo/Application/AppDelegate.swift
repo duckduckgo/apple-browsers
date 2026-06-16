@@ -509,6 +509,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
+        if LaunchOptionsHandler().isInternalUserRequested {
+            internalUserDeciderStore.isInternalUser = true
+        }
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         if AppVersion.runType.requiresEnvironment {
@@ -923,8 +926,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         duckPlayer = DuckPlayer(
             preferencesPersistor: DuckPlayerPreferencesUserDefaultsPersistor(),
             privacyConfigurationManager: privacyConfigurationManager,
-            internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger
+            internalUserDecider: internalUserDecider
         )
         newTabPageCustomizationModel = NewTabPageCustomizationModel(appearancePreferences: appearancePreferences)
 
@@ -2069,6 +2071,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
+                       session: "macos-browser",
                        channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
@@ -2120,7 +2123,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             errorEvents: SyncErrorHandler(),
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             keyValueStore: keyValueStore,
-            environment: environment
+            environment: environment,
+            syncFeatureFlags: SyncFeatureFlagProvider(
+                isScopedAccessCredentialsEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncScopedAccessCredentials)
+                },
+                isPairingV2ScanningEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow)
+                },
+                isPairingV2CodeEnabled: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanShowV2ConnectCode)
+                }
+            )
         )
         let aiChatSyncCleaner = AIChatSyncCleaner(
             sync: syncService,

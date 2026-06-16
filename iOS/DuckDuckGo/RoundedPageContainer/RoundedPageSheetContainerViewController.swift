@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import MetricBuilder
 import UIKit
 
 protocol RoundedPageSheetContainerViewControllerDelegate: AnyObject {
@@ -124,7 +125,7 @@ final class RoundedPageSheetContainerViewController: UIViewController {
             contentViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
-        contentViewController.view.layer.cornerRadius = 20
+        contentViewController.view.layer.cornerRadius = SheetMetrics.cornerRadius
         contentViewController.view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         contentViewController.view.clipsToBounds = true
 

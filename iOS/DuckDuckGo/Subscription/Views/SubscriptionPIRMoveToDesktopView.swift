@@ -20,6 +20,7 @@
 import SwiftUI
 import Foundation
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 
 struct SubscriptionPIRMoveToDesktopView: View {
@@ -80,7 +81,7 @@ struct SubscriptionPIRMoveToDesktopView: View {
         
     private var baseView: some View {
         VStack(alignment: .center, spacing: Constants.generalSpacing) {
-            Image(.personalInformationHero)
+            Image(rebrandable: "Personal-Information-Remover-128")
                 .aspectRatio(contentMode: .fill)
                 .padding(.top, Constants.generalSpacing)
             VStack {

@@ -26,7 +26,7 @@ jobs:
           echo "$PR_BODY_MACOS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
       - name: Create PR for macOS
-        uses: peter-evans/create-pull-request@88bf0de51c7487d91e1abbb4899332e602c58bbf
+        uses: peter-evans/create-pull-request@v7
         id: create-pr
         with:
           path: apple-monorepo/

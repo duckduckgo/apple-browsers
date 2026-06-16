@@ -24,12 +24,17 @@ import FoundationExtensions
 public final class LaunchOptionsHandler {
     public static let isOnboardingCompleted = "isOnboardingCompleted"
     private static let automationPortKey = "automationPort"
+    private static let isInternalUserKey = "isInternalUser"
     private let userDefaults: UserDefaults
 
     public init(
         userDefaults: UserDefaults = .standard
     ) {
         self.userDefaults = userDefaults
+    }
+
+    public var isInternalUserRequested: Bool {
+        userDefaults.string(forKey: Self.isInternalUserKey)?.lowercased() == "true"
     }
 
     /// Returns the automation port if set, nil otherwise.

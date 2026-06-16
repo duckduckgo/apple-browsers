@@ -612,7 +612,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     }
 
     func controllerDidReceiveRecoveryKey() {
-        presentDialog(for: .prepareToSync(.singleDeviceOrRecovery))
+        presentDialog(for: .prepareToSync(.twoDevicePairing))
     }
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {

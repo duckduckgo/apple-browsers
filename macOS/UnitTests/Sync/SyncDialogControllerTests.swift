@@ -839,7 +839,7 @@ final class SyncDialogControllerTests: XCTestCase {
     func testControllerDidReceiveRecoveryKey_presentsPrepareDialog() {
         syncDialogController.controllerDidReceiveRecoveryKey()
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.singleDeviceOrRecovery))
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
     func testControllerDidRecognizeCode_presentsPrepareDialog() async {

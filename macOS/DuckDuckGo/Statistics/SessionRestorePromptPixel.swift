@@ -48,8 +48,8 @@ enum SessionRestorePromptPixel: PixelKitEvent {
         case .promptDismissedWithoutRestore: return "m_mac_unclean-exit_popup_dismissed_without-restore"
         case .promptDismissedWithRestore: return "m_mac_unclean-exit_popup_dismissed_with-restore"
         case .appTerminatedWhilePromptShowing: return "m_mac_unclean-exit_popup_browser-closed"
-        case .appTerminationFlagReadFailed: return "m_mac_debug_unclean-exit_flag-read-failed"
-        case .appTerminationFlagWriteFailed: return "m_mac_debug_unclean-exit_flag-write-failed"
+        case .appTerminationFlagReadFailed: return "unclean-exit_flag-read-failed"
+        case .appTerminationFlagWriteFailed: return "unclean-exit_flag-write-failed"
         }
     }
 

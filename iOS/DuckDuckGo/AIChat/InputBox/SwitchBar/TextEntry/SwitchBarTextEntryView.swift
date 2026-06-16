@@ -60,16 +60,16 @@ class SwitchBarTextEntryView: UIView {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
         static let minHeight: CGFloat = 44
-        static let minHeightAIChat: CGFloat = 68
+        static let minHeightAIChat: CGFloat = 58
         static let fontSize: CGFloat = 16
 
         // Text container insets
-        static let textTopInset: CGFloat = 12
-        static let textBottomInset: CGFloat = 12
+        static let textTopInset: CGFloat = 17
+        static let textBottomInset: CGFloat = 17
         static let textHorizontalInset: CGFloat = 12
 
         // Placeholder positioning
-        static let placeholderTopOffset: CGFloat = 12
+        static let placeholderTopOffset: CGFloat = 17
         static let placeholderHorizontalOffset: CGFloat = 16
 
         // Increased buttons spacing

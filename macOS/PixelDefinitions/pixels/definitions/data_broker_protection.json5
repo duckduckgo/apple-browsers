@@ -126,7 +126,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_email-receive": {
@@ -143,7 +144,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_email-confirm": {
@@ -160,7 +162,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_email-get-data": {
@@ -177,7 +180,8 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_validate": {
@@ -430,7 +434,8 @@
                 "key": "http_code",
                 "description": "HTTP status code from backend email generation",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_service_empty-auth-token": {
@@ -512,7 +517,8 @@
                 "description": "Backend item error code",
                 "type": "string",
                 "enum": ["server_error", "extraction_error", "request_error", "unknown"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_submit-awaiting-email-confirmation": {
@@ -578,7 +584,8 @@
             "dbpConfirmationAttemptNumber",
             "dbpAttemptDuration",
             "dbpAttemptId",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation_max-retries-exceeded": {
@@ -586,7 +593,7 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpBrokerVersion", "dbpAttemptId", "dbpActionId"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpBrokerVersion", "dbpAttemptId", "dbpActionId", "channel"]
     },
     "m_mac_dbp_service_email-confirmation_job-success": {
         "description": "Fired when the email confirmation job finishes successfully (after any number of attempts).",
@@ -1255,7 +1262,8 @@
                 "key": "optout_submit_success_rate",
                 "description": "The opt-out submission success rate for this broker",
                 "type": "number"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_custom_stats_optoutsubmit": {

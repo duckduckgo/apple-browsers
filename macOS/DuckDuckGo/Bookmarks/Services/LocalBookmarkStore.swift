@@ -832,6 +832,15 @@ final class LocalBookmarkStore: BookmarkStore {
 
         for bookmarkOrFolder in bookmarks {
 
+            // Drop bookmarks/favorites whose URL uses an unsafe scheme (e.g. javascript:/data:), which
+            // would execute content rather than navigate if the bookmark were later activated. Folders
+            // are exempt (mirrors iOS BookmarkOrFolder.isInvalidBookmark) so a folder is never dropped
+            // along with its children even if it carries a stray URL string.
+            if !bookmarkOrFolder.isFolder, bookmarkOrFolder.urlString?.hasUnsafeBookmarkImportScheme() == true {
+                total.failed += 1
+                continue
+            }
+
             let bookmarkManagedObject: BookmarkEntity
             if bookmarkOrFolder.isFolder {
                 bookmarkManagedObject = BookmarkEntity.makeFolder(title: bookmarkOrFolder.name,

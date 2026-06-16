@@ -687,6 +687,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         stateStore.update(snapshotCurrentState(), for: uid)
     }
 
+    /// `hide()` nils `currentTabUID`, so pin clears on submit cannot use `persistDraftToStore`.
+    /// Patch the stored pin directly for the tab we were last on.
+    private func persistModelPickerPinClearedAfterHideIfNeeded(hadPin: Bool) {
+        guard hadPin, currentTabUID == nil, let uid = lastActivatedTabUID else { return }
+        var state = stateStore.state(for: uid)
+        guard state.isModelPickerForcedVisible else { return }
+        state.isModelPickerForcedVisible = false
+        stateStore.update(state, for: uid)
+    }
+
     /// Persists a user-deliberate choice — toggle mode, model, reasoning, tool. These
     /// update the global last-used defaults and write through to the canonical global
     /// preference homes so other components (e.g. NTP omnibar) observe the change.
@@ -2337,7 +2347,9 @@ private extension UnifiedToggleInputCoordinator {
 
     private func markActiveChatPromptSubmitted() {
         hasSubmittedPrompt = true
+        let hadPinnedModelPicker = isModelPickerForcedVisible
         isModelPickerForcedVisible = false
+        persistModelPickerPinClearedAfterHideIfNeeded(hadPin: hadPinnedModelPicker)
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }

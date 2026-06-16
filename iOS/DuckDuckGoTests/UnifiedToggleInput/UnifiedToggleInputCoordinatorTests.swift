@@ -2929,6 +2929,20 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
     }
 
+    func test_submitAfterHide_clearsPersistedModelPickerPin() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        XCTAssertTrue(store.states["tab-A"]?.isModelPickerForcedVisible == true)
+
+        sut.hide()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertEqual(store.states["tab-A"]?.isModelPickerForcedVisible, false)
+    }
+
     // Regression: applyState must always sync the live model store from per-tab
     // state, even when state values are nil. Otherwise the previous tab's reasoning
     // mode (or model id) leaks through preferences, and the next snapshot writes

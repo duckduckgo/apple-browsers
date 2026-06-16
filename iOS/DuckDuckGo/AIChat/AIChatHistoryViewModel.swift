@@ -48,10 +48,16 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
+    /// Count of ALL persistent chats, independent of the active search filter. `burnAllChats`
+    /// clears every chat, so the confirmation must reflect the full scope — not just the matches
+    /// currently shown in `pinned`/`recent`.
+    private(set) var totalChatCount: Int = 0
+
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
-    private let downloadQueue: DispatchQueue
+    private let pinner: ChatPinning?
+    private let mutationQueue: DispatchQueue
     private var cancellables: Set<AnyCancellable> = []
 
     weak var delegate: AIChatHistoryViewModelDelegate?
@@ -60,12 +66,14 @@ final class AIChatHistoryViewModel: ObservableObject {
         reader: ChatHistoryReading,
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
-        downloadQueue: DispatchQueue = DispatchQueue.global(qos: .userInitiated)
+        pinner: ChatPinning? = nil,
+        mutationQueue: DispatchQueue = DispatchQueue(label: "chat-history.mutation", qos: .userInitiated)
     ) {
         self.reader = reader
         self.fireExecutor = fireExecutor
         self.downloader = downloader
-        self.downloadQueue = downloadQueue
+        self.pinner = pinner
+        self.mutationQueue = mutationQueue
 
         // `.failure` as a sentinel keeps the combined publisher alive for `loadFailed`.
         let chats: AnyPublisher<Result<[DuckAiChat], Error>, Never> = reader.chatsPublisher()
@@ -96,10 +104,12 @@ final class AIChatHistoryViewModel: ObservableObject {
                 ? allChats
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
             loadFailed = false
+            totalChatCount = allChats.count
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
         case .failure:
             loadFailed = true
+            totalChatCount = 0
             pinned = []
             recent = []
         }
@@ -156,14 +166,25 @@ final class AIChatHistoryViewModel: ObservableObject {
         // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
         Task { @MainActor in
-            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            guard case .success = result else { return }
+            // Flush the deletion to sync now so the FE doesn't re-pull the chat.
+            fireExecutor.scheduleSync()
         }
+    }
+
+    func burnAllChats() async {
+        guard let fireExecutor else { return }
+        let result = await fireExecutor.burnAllChats(isFireMode: false)
+        guard case .success = result else { return }
+        // Flush the clear to sync now so the FE doesn't re-pull the chats.
+        fireExecutor.scheduleSync()
     }
 
     func downloadChat(chatId: String) {
         // Image-gen exports do enough I/O to freeze the sheet — dispatch off-main.
         guard let downloader else { return }
-        downloadQueue.async { [weak self] in
+        mutationQueue.async { [weak self] in
             do {
                 let url = try downloader.downloadChat(chatId: chatId)
                 DispatchQueue.main.async { [weak self] in
@@ -174,6 +195,47 @@ final class AIChatHistoryViewModel: ObservableObject {
                 // Failure-state toast pairs with the pixels-pass follow-up (task #28).
             }
         }
+    }
+
+    func isPinned(chatId: String) -> Bool {
+        pinned.contains(where: { $0.chatId == chatId })
+    }
+
+    /// Optimistically moves the chat between sections and dispatches the storage write.
+    /// Returns the source + destination index paths for the table animation, or `nil` when
+    /// no move is possible (chat absent or pinner not wired).
+    @discardableResult
+    func togglePin(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
+        guard let pinner, let move = applyOptimisticPinToggle(chatId: chatId) else { return nil }
+        let newPinned = move.destination.section == Section.pinned.rawValue
+        mutationQueue.async {
+            do {
+                try pinner.setPinned(chatId: chatId, pinned: newPinned)
+            } catch {
+                Logger.aiChat.debug("Pin toggle failed: \(error.localizedDescription)")
+            }
+        }
+        return move
+    }
+
+    private func applyOptimisticPinToggle(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
+        if let row = pinned.firstIndex(where: { $0.chatId == chatId }) {
+            let chat = pinned.remove(at: row)
+            let toggled = chat.withPinned(false)
+            let insertIndex = recent.firstIndex(where: { $0.lastEdit < toggled.lastEdit }) ?? recent.count
+            recent.insert(toggled, at: insertIndex)
+            return (IndexPath(row: row, section: Section.pinned.rawValue),
+                    IndexPath(row: insertIndex, section: Section.recent.rawValue))
+        }
+        if let row = recent.firstIndex(where: { $0.chatId == chatId }) {
+            let chat = recent.remove(at: row)
+            let toggled = chat.withPinned(true)
+            let insertIndex = pinned.firstIndex(where: { $0.lastEdit < toggled.lastEdit }) ?? pinned.count
+            pinned.insert(toggled, at: insertIndex)
+            return (IndexPath(row: row, section: Section.recent.rawValue),
+                    IndexPath(row: insertIndex, section: Section.pinned.rawValue))
+        }
+        return nil
     }
 
     func updateQuery(_ newValue: String) {

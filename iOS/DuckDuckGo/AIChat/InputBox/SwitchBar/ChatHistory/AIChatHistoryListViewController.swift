@@ -107,6 +107,9 @@ final class AIChatHistoryListViewController: UIViewController {
         viewModel.filteredSuggestions
     }
 
+    /// Mirrors the view model's last `selectedIndex` so the observer can de-highlight the previous row.
+    private var previousSelectedIndex: Int?
+
     private var currentEscapeHatchModel: EscapeHatchModel?
     private var escapeHatchHostingController: UIHostingController<EscapeHatchView>?
 
@@ -188,6 +191,40 @@ final class AIChatHistoryListViewController: UIViewController {
                 self?.tableView.reloadData()
             }
             .store(in: &cancellables)
+
+        // Keyboard selection is owned by the view model; repaint the highlighted row as it moves.
+        viewModel.$selectedIndex
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] selectedIndex in
+                self?.applyHighlight(at: selectedIndex)
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Keyboard selection highlight
+
+    private func applyHighlight(at selectedIndex: Int?) {
+        if let previousSelectedIndex {
+            applyHighlightAppearance(atRow: previousSelectedIndex, isHighlighted: false)
+        }
+        previousSelectedIndex = selectedIndex
+        guard let selectedIndex else { return }
+        applyHighlightAppearance(atRow: selectedIndex, isHighlighted: true)
+        // The table reloads asynchronously, so guard against a row it hasn't inserted yet.
+        if tableView.numberOfSections > 0, selectedIndex < tableView.numberOfRows(inSection: 0) {
+            tableView.scrollToRow(at: IndexPath(row: selectedIndex, section: 0), at: .none, animated: false)
+        }
+    }
+
+    private func applyHighlightAppearance(atRow row: Int, isHighlighted: Bool) {
+        let indexPath = IndexPath(row: row, section: 0)
+        guard tableView.indexPathsForVisibleRows?.contains(indexPath) == true,
+              let cell = tableView.cellForRow(at: indexPath) else { return }
+        cell.backgroundColor = highlightBackgroundColor(isHighlighted: isHighlighted)
+    }
+
+    private func highlightBackgroundColor(isHighlighted: Bool) -> UIColor {
+        isHighlighted ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .surface)
     }
 
     func setScrollableTitle(_ title: String?) {
@@ -380,6 +417,8 @@ extension AIChatHistoryListViewController: UITableViewDataSource {
 
         let chat = chats[indexPath.row]
         configureCell(cell, with: chat)
+        // Re-apply the highlight so a reused cell renders correctly.
+        cell.backgroundColor = highlightBackgroundColor(isHighlighted: viewModel.selectedIndex == indexPath.row)
 
         return cell
     }
@@ -399,19 +438,8 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-
         guard indexPath.row < chats.count else { return }
-
-        let chat = chats[indexPath.row]
-        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
-        DailyPixel.fireDailyAndCount(pixel: pixel)
-
-        if isIPadExperience {
-            let iPadPixel: Pixel.Event = chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected
-            DailyPixel.fireDailyAndCount(pixel: iPadPixel)
-        }
-
-        onChatSelected(chat)
+        onChatSelected(chats[indexPath.row])
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

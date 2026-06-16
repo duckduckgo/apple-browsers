@@ -174,8 +174,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
                         return
                     }
-                    self.dismissPresentedViewController()
-                    self.showPreparingSync(nil)
+                    await self.dismissPresentedViewController()
+                    await self.showPreparingSync()
                     try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
@@ -240,7 +240,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 title: type.title,
                 message: [type.description, error?.localizedDescription].compactMap({ $0 }).joined(separator: "\n"),
                 preferredStyle: .alert)
-            let okAction = UIAlertAction(title: UserText.syncPausedAlertOkButton, style: .default, handler: nil)
+            let okAction = UIAlertAction(title: type.buttonTitle, style: .default, handler: nil)
             alertController.addAction(okAction)
 
             if type == .unableToSyncToServer || type == .unableToSyncWithDevice || type == .unableToMergeTwoAccounts {
@@ -488,17 +488,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         if useSimplifiedLayout {
             let controller = UIHostingController(rootView: SimplifiedConnectingSheetView())
             controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
-            if #available(iOS 16.4, *) {
-                controller.sizingOptions = .intrinsicContentSize
-            }
-            if #available(iOS 16.0, *) {
-                let fittingSize = controller.view.systemLayoutSizeFitting(
-                    CGSize(width: UIScreen.main.bounds.width, height: UIView.layoutFittingCompressedSize.height)
-                )
-                controller.sheetPresentationController?.detents = [
-                    .custom { _ in fittingSize.height }
-                ]
-            }
+            controller.sheetPresentationController?.detents = [.large()]
             navigationController?.present(controller, animated: true, completion: completion)
         } else {
             let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
@@ -734,6 +724,52 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
+    func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
+        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind)
+    }
+
+    func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
+        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind)
+    }
+
+    private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
+        let peerName = pairingV2DisplayName(for: peerName)
+        let message = UserText.syncPairingV2ConfirmationMessage(peerName, isThirdPartyPeer: peerKind == .thirdParty)
+        let isConfirmed = await presentPairingV2ConfirmationAlert(message: message)
+        if !isConfirmed {
+            dismissPairingV2UIAfterDeniedConfirmation()
+        }
+        return isConfirmed
+    }
+
+    private func presentPairingV2ConfirmationAlert(message: String) async -> Bool {
+        await withCheckedContinuation { continuation in
+            let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
+                continuation.resume(returning: false)
+            })
+            alert.addAction(UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { _ in
+                continuation.resume(returning: true)
+            })
+
+            let viewControllerToPresentFrom = navigationController?.presentedViewController ?? presentedViewController ?? self
+            viewControllerToPresentFrom.present(alert, animated: true)
+        }
+    }
+
+    private func pairingV2DisplayName(for peerName: String?) -> String {
+        guard let peerName = peerName?.trimmingCharacters(in: .whitespacesAndNewlines), !peerName.isEmpty else {
+            return UserText.syncPairingV2UnknownPeerName
+        }
+        return peerName
+    }
+
+    private func dismissPairingV2UIAfterDeniedConfirmation() {
+        DispatchQueue.main.async {
+            self.dismissPresentedViewController()
+        }
+    }
+
     func confirmAndDisableSync() async -> Bool {
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncTurnOffConfirmTitle,
@@ -862,7 +898,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func codeCopied(_ code: String) {
         fireBarcodeCodeCopiedPixel(for: code)
-        ActionMessageView.present(message: UserText.simplifiedCodeCopiedToast)
     }
 
     @MainActor

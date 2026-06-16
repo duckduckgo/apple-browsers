@@ -59,9 +59,32 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return super.keyCommands
         }
 
+        var commands = super.keyCommands ?? []
         let shiftEnter = UIKeyCommand(action: #selector(handleShiftEnter), input: "\r", modifierFlags: .shift)
         shiftEnter.wantsPriorityOverSystemBehavior = true
-        return (super.keyCommands ?? []) + [shiftEnter]
+        commands.append(shiftEnter)
+
+        // The text view is multi-line, so only claim the arrows when navigating the list or when the caret has no
+        // line to move into; otherwise they fall through to normal caret movement.
+        if omniBarView.aiChatTextView.isFirstResponder {
+            let hasHighlight = omniDelegate?.hasAIChatSuggestionsHighlight() ?? false
+            let canEnterList = omniDelegate?.isAIChatSuggestionsNavigationAvailable() ?? false
+            if hasHighlight || (canEnterList && omniBarView.aiChatTextView.isCaretOnLastLine) {
+                commands.append(.prioritizedArrow(input: UIKeyCommand.inputDownArrow, action: #selector(handleAIChatArrowDown)))
+            }
+            if hasHighlight {
+                commands.append(.prioritizedArrow(input: UIKeyCommand.inputUpArrow, action: #selector(handleAIChatArrowUp)))
+            }
+        }
+        return commands
+    }
+
+    @objc private func handleAIChatArrowDown() {
+        omniDelegate?.onAIChatSuggestionsMoveSelectionDown()
+    }
+
+    @objc private func handleAIChatArrowUp() {
+        omniDelegate?.onAIChatSuggestionsMoveSelectionUp()
     }
 
     @objc private func handleShiftEnter() {
@@ -72,12 +95,24 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         }
     }
 
+    @objc private func aiChatTextViewTapped() {
+        omniDelegate?.onAIChatSuggestionsClearHighlight()
+    }
+
     // MARK: - Initialization
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         omniBarView.duckAITextViewDelegate = self
+
+        // A tap in the text view dismisses any keyboard suggestion highlight, even when the caret does not move
+        // (so `textViewDidChangeSelection` would not fire) such as tapping an empty field.
+        let highlightDismissTap = UITapGestureRecognizer(target: self, action: #selector(aiChatTextViewTapped))
+        highlightDismissTap.cancelsTouchesInView = false
+        highlightDismissTap.delegate = self
+        omniBarView.aiChatTextView.addGestureRecognizer(highlightDismissTap)
+
         omniBarView.isAIVoiceChatEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             self?.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
@@ -638,6 +673,10 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            // A highlighted chat-history row claims Return instead of submitting the typed prompt.
+            if omniDelegate?.onAIChatSuggestionsActivateHighlight() == true {
+                return false
+            }
             submitIPadDuckAIText(from: textView)
             return false
         }
@@ -666,6 +705,11 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
         omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
+    }
+
+    func textViewDidChangeSelection(_ textView: UITextView) {
+        // Moving the caret in the text (e.g. tapping back into the field) dismisses the keyboard suggestion highlight.
+        omniDelegate?.onAIChatSuggestionsClearHighlight()
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -714,4 +758,37 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
         UniversalOmniBarEditingStateTransition(isPresenting: false,
                                                addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
+}
+
+extension DefaultOmniBarViewController: UIGestureRecognizerDelegate {
+
+    // Observe taps without consuming them, so the text view's own caret/selection gestures still run.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        true
+    }
+
+}
+
+private extension UITextView {
+
+    var isCaretOnLastLine: Bool {
+        // Subpixel tolerance absorbing rounding between the caret position and the end of the document.
+        let lastLineTolerance: CGFloat = 1
+        guard let selectedTextRange else { return true }
+        let caretMaxY = caretRect(for: selectedTextRange.end).maxY
+        let documentEndMaxY = caretRect(for: endOfDocument).maxY
+        return caretMaxY >= documentEndMaxY - lastLineTolerance
+    }
+
+}
+
+private extension UIKeyCommand {
+
+    static func prioritizedArrow(input: String, action: Selector) -> UIKeyCommand {
+        let command = UIKeyCommand(action: action, input: input, modifierFlags: [])
+        command.wantsPriorityOverSystemBehavior = true
+        return command
+    }
+
 }

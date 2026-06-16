@@ -176,15 +176,15 @@ enum WebExtensionPixel: PixelKitEvent {
         case .adBlockingDetectedBuffering:
             return "m_mac_web_extension_adblocking_detected_buffering"
         case .stateChecked:
-            return "m_mac_web_extension_state_checked"
+            return "web_extension_state_checked_macos"
         case .embeddedNotLoaded:
-            return "m_mac_web_extension_embedded_not_loaded"
+            return "web_extension_embedded_not_loaded_macos"
         case .darkReaderNotLoaded:
-            return "m_mac_web_extension_dark_reader_not_loaded"
+            return "web_extension_dark_reader_not_loaded_macos"
         case .adBlockingExtensionNotLoaded:
-            return "m_mac_web_extension_ad_blocking_not_loaded"
+            return "web_extension_ad_blocking_not_loaded_macos"
         case .adBlockingScriptletsNotFetched:
-            return "m_mac_web_extension_ad_blocking_scriptlets_not_fetched"
+            return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
         }
     }
 

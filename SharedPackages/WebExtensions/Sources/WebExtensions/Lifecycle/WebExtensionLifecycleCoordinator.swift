@@ -135,17 +135,17 @@ public final class WebExtensionLifecycleCoordinator {
         let expected = enabledTypesProvider()
         let loaded = manager.loadedEmbeddedExtensionTypes
 
-        Logger.webExtensions.debug("🩺 Web extension state check — expected: [\(expected.map(\.shortLabel).sorted().joined(separator: ", "), privacy: .public)], loaded: [\(loaded.map(\.shortLabel).sorted().joined(separator: ", "), privacy: .public)] — firing m_*_web_extension_state_checked")
+        Logger.webExtensions.debug("🩺 Web extension state check — expected: [\(expected.map(\.shortLabel).sorted().joined(separator: ", "), privacy: .public)], loaded: [\(loaded.map(\.shortLabel).sorted().joined(separator: ", "), privacy: .public)] — firing web_extension_state_checked")
         pixelFiring.fire(.stateChecked)
 
         for type in expected.subtracting(loaded) {
-            Logger.webExtensions.error("❌ Expected web extension not loaded: \(type.shortLabel, privacy: .public) — firing m_*_web_extension_*_not_loaded")
+            Logger.webExtensions.error("❌ Expected web extension not loaded: \(type.shortLabel, privacy: .public) — firing web_extension_*_not_loaded")
             pixelFiring.fire(.expectedExtensionNotLoaded(type: type))
         }
 
         if expected.contains(.adBlockingExtension), manager.adBlockingScriptletsVersion() == nil {
             let extensionLoaded = loaded.contains(.adBlockingExtension)
-            Logger.webExtensions.error("❌ Ad-blocking scriptlets not fetched (extensionLoaded: \(extensionLoaded, privacy: .public)) — firing m_*_web_extension_ad_blocking_scriptlets_not_fetched")
+            Logger.webExtensions.error("❌ Ad-blocking scriptlets not fetched (extensionLoaded: \(extensionLoaded, privacy: .public)) — firing web_extension_ad_blocking_scriptlets_not_fetched")
             pixelFiring.fire(.adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded))
         }
     }

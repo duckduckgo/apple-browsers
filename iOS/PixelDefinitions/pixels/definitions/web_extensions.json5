@@ -543,7 +543,7 @@
             }
         ]
     },
-    "m_web_extension_state_checked": {
+    "web_extension_state_checked": {
         "description": "Fires on each web-extension consistency check (denominator for the not-loaded rate).",
         "owners": ["miasma13"],
         "triggers": ["other"],
@@ -553,7 +553,7 @@
         ],
         "parameters": ["appVersion"]
     },
-    "m_web_extension_embedded_not_loaded": {
+    "web_extension_embedded_not_loaded": {
         "description": "Fires when the embedded (autoconsent) extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
@@ -563,7 +563,7 @@
         ],
         "parameters": ["appVersion"]
     },
-    "m_web_extension_dark_reader_not_loaded": {
+    "web_extension_dark_reader_not_loaded": {
         "description": "Fires when the Dark Reader extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
@@ -573,7 +573,7 @@
         ],
         "parameters": ["appVersion"]
     },
-    "m_web_extension_ad_blocking_not_loaded": {
+    "web_extension_ad_blocking_not_loaded": {
         "description": "Fires when the ad-blocking extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
@@ -583,7 +583,7 @@
         ],
         "parameters": ["appVersion"]
     },
-    "m_web_extension_ad_blocking_scriptlets_not_fetched": {
+    "web_extension_ad_blocking_scriptlets_not_fetched": {
         "description": "Fires when the ad-blocking extension is expected but its scriptlets have not been fetched.",
         "owners": ["miasma13"],
         "triggers": ["exception"],

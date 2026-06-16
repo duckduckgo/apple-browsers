@@ -833,19 +833,19 @@ final class SyncDialogControllerTests: XCTestCase {
     func testControllerWillBeginTransmittingRecoveryKey_presentsPrepareDialog() async {
         await syncDialogController.controllerWillBeginTransmittingRecoveryKey()
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
     func testControllerDidReceiveRecoveryKey_presentsPrepareDialog() {
         syncDialogController.controllerDidReceiveRecoveryKey()
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.singleDeviceOrRecovery))
     }
 
     func testControllerDidRecognizeCode_presentsPrepareDialog() async {
         await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .pastedCode)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
     func testControllerDidCreateSyncAccount_presentsSaveRecoveryCodeDialog() {

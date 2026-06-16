@@ -640,7 +640,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
             }
             do {
                 let device = Self.deviceInfo()
-                presentDialog(for: .prepareToSync)
+                presentDialog(for: .prepareToSync(.singleDeviceOrRecovery))
                 try await syncService.createAccount(deviceName: device.name, deviceType: device.type)
                 let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
                 PixelKit.fire(GeneralPixel.syncSignupDirect, withAdditionalParameters: additionalParameters)
@@ -962,7 +962,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
 extension LegacySyncPreferences: SyncConnectionControllerDelegate {
 
     func controllerWillBeginTransmittingRecoveryKey() async {
-        presentDialog(for: .prepareToSync)
+        presentDialog(for: .prepareToSync(.twoDevicePairing))
     }
 
     func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
@@ -975,12 +975,13 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
     }
 
     func controllerDidReceiveRecoveryKey() {
-        presentDialog(for: .prepareToSync)
+        presentDialog(for: .prepareToSync(.singleDeviceOrRecovery))
     }
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
-        presentDialog(for: .prepareToSync)
+        let mode: PreparingToSyncMode = setupSource == .recovery ? .singleDeviceOrRecovery : .twoDevicePairing
+        presentDialog(for: .prepareToSync(mode))
     }
 
     func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {

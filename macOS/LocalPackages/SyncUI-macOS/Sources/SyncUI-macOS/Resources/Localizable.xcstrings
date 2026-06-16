@@ -2219,62 +2219,98 @@
         }
       }
     },
+    "preferences.preparing-to-sync.dialog-subtitle" : {
+      "comment" : "Preparing to sync dialog subtitle during sync set up",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We're setting up the connection to synchronize your bookmarks and autofill data with the other device."
+          }
+        }
+      }
+    },
+    "preferences.preparing-to-sync.dialog-subtitle-updated" : {
+      "comment" : "Preparing to sync dialog subtitle during sync set up",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We're setting up the connection to synchronize your bookmarks, autofill data, and Duck.ai chats with the other device."
+          }
+        }
+      }
+    },
     "preferences.preparing-to-sync.dialog-title" : {
-      "comment" : "Preparing to sync dialog title during sync set up. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved.",
+      "comment" : "Preparing to sync dialog title during sync set up",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "„Sync & Backup“ auf beiden Geräten offen lassen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Keep “Sync & Backup” open on both devices"
+            "value" : "Preparing To Sync"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mantén «Sync & Backup» abierto en ambos dispositivos"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Gardez « Sync & Backup » ouvert sur les deux appareils"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mantieni aperto “Sync & Backup” su entrambi i dispositivi"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Houd 'Sync & Backup' open op beide apparaten"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zachowaj otwartą opcję „Sync & Backup” na obu urządzeniach"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mantenha “Sync & Backup” aberto em ambos os dispositivos"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Держите «Sync & Backup» открытыми на обоих устройствах"
+          }
+        }
+      }
+    },
+    "preferences.preparing-to-sync.two-device.dialog-title" : {
+      "comment" : "Preparing to sync dialog title during two-device sync set up. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep “Sync & Backup” open on both devices"
           }
         }
       }

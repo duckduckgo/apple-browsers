@@ -48,7 +48,10 @@ enum UserText {
     static let recoverDataLink = NSLocalizedString("preferences.recover-data.link-title", bundle: Bundle.module, value: "Recover Synced Data", comment: "Sync settings. Link to recover synced data.")
 
     // Preparing to sync dialog
-    static let preparingToSyncDialogTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-title", bundle: Bundle.module, value: "Keep “Sync & Backup” open on both devices", comment: "Preparing to sync dialog title during sync set up. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved.")
+    static let preparingToSyncDialogTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-title", bundle: Bundle.module, value: "Preparing To Sync", comment: "Preparing to sync dialog title during sync set up")
+    static let preparingToSyncDialogSubTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks and autofill data with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
+    static let preparingToSyncDialogSubTitleUpdated = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle-updated", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks, autofill data, and Duck.ai chats with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
+    static let preparingToSyncTwoDeviceDialogTitle = NSLocalizedString("preferences.preparing-to-sync.two-device.dialog-title", bundle: Bundle.module, value: "Keep “Sync & Backup” open on both devices", comment: "Preparing to sync dialog title during two-device sync set up. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved.")
     static let preparingToSyncDialogAction = NSLocalizedString("preferences.preparing-to-sync.dialog-action", bundle: Bundle.module, value: "Connecting…", comment: "Sync preparing to sync dialog action")
 
     // Enter recovery code dialog

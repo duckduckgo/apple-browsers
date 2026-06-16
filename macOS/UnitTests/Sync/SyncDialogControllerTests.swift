@@ -939,12 +939,12 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(dialog.errorDescription, "\(SyncErrorType.unableToSyncToOtherDevice.description)\n\(detail)")
     }
 
-    func testControllerDidError_pollingTimeout_endsFlow() async {
+    func testControllerDidError_pollingTimeout_presentsUnableToSyncWithDeviceError() async {
         managementDialogModel.currentDialog = .syncWithServer
 
         await syncDialogController.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: .sharer)
 
-        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
     }
 
     func testDidEndFlow_notifiesDelegate() async {

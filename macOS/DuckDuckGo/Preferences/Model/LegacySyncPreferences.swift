@@ -1079,7 +1079,7 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
         case .failedToCreateAccount:
             handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))
         case .pollingForRecoveryKeyTimedOut:
-            managementDialogModel.endFlow()
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
         }
     }
 

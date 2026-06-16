@@ -225,6 +225,35 @@ final class SafariArchiveImporterTests: XCTestCase {
 
         return archiveURL
     }
+
+    func testWhenDirectlySelectedFileHasDoubleExtensionThenItIsRejected() async throws {
+        // A standalone (non-archive) file with a disguising double extension is rejected:
+        // no content is read, so the import yields a failure rather than importing it.
+        let url = try writeTempFile(named: "bookmarks.evil.html", contents: "<html>bookmark data</html>")
+        let importer = makeImporter(fileURL: url)
+
+        let summary = await importer.importData(types: [.bookmarks]).task.value
+
+        guard case .failure? = summary[.bookmarks] else {
+            return XCTFail("Expected the double-extension file to be rejected")
+        }
+    }
+
+    // MARK: - ImportArchiveReader double-extension validation
+
+    func testWhenArchiveContainsDoubleExtensionEntryThenItIsSkippedButValidFileIsRead() throws {
+        let archiveURL = try createZipArchive(files: [
+            "evil.swift.html": "<html>disguised</html>",
+            "subfolder/payload.exe.csv": "user,pass",
+            "bookmarks.html": "<html>bookmark data</html>"
+        ])
+
+        let contents = try ImportArchiveReader().readContents(from: archiveURL)
+
+        XCTAssertEqual(contents.bookmarks, ["<html>bookmark data</html>"])
+        XCTAssertTrue(contents.passwords.isEmpty)
+        XCTAssertTrue(contents.creditCards.isEmpty)
+    }
 }
 
 // MARK: - Helpers

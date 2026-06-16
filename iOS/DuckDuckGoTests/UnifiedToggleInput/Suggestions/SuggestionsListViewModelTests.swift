@@ -117,4 +117,18 @@ final class SuggestionsListViewModelTests: XCTestCase {
         vm.moveSelectionUp()
         XCTAssertEqual(vm.selectedRowID, ids[0])
     }
+
+    func test_duckAISource_viewAllChatsRowShownOnlyForEmptyQuery() {
+        let snapshot = DuckAISuggestionsPipeline.Snapshot(
+            chats: [AIChatSuggestion(id: "1", title: "Recent", isPinned: false, chatId: "c")],
+            urls: [],
+            isPending: false
+        )
+
+        let withRecents = DuckAISuggestionsSource.sections(from: snapshot, query: "", viewAllChatsEnabled: true)
+        XCTAssertTrue(withRecents.first?.rows.contains { $0.id == "view-all-chats" } == true)
+
+        let whileSearching = DuckAISuggestionsSource.sections(from: snapshot, query: "rec", viewAllChatsEnabled: true)
+        XCTAssertFalse(whileSearching.first?.rows.contains { $0.id == "view-all-chats" } == true)
+    }
 }

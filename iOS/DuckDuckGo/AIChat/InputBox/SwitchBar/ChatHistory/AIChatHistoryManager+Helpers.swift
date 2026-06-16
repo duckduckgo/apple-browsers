@@ -61,7 +61,8 @@ extension AIChatHistoryManager {
                                            aiChatDeleter: chatDeleter,
                                            viewModel: viewModel,
                                            isIPadExperience: isIPadExperience,
-                                           isFireTab: isFireTab)
+                                           isFireTab: isFireTab,
+                                           featureFlagger: featureFlagger)
         return (manager, viewModel)
     }
 }

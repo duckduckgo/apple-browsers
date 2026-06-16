@@ -21,6 +21,7 @@ import Foundation
 import ZIPFoundation
 import os.log
 import PrivacyConfig
+import Common
 
 public protocol ImportArchiveReading {
     func readContents(from archiveURL: URL, featureFlagger: FeatureFlagger) throws -> ImportArchiveContents
@@ -78,6 +79,9 @@ public struct ImportArchiveReader: ImportArchiveReading {
 
         for entry in archive {
             let lowercasedPath = entry.path.lowercased()
+
+            // Reject entries with a disguising double extension (e.g. foo.swift.html).
+            guard !entry.path.hasMultipleFileExtensions else { continue }
 
             if lowercasedPath.hasSuffix(Constants.csvExtension),
                let content = extractFileContent(from: entry, in: archive) {

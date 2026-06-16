@@ -109,6 +109,16 @@ final class DataImportManagerTests: XCTestCase {
         XCTAssertEqual(summary, expectedSummary)
     }
 
+    func testWhenImportHtmlFileHasDoubleExtensionThenItIsRejected() async throws {
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("bookmarks.evil.html")
+        try "<html>bookmark data</html>".write(to: tempURL, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let result = try await dataImportManager.importFile(at: tempURL, for: .html)
+
+        XCTAssertNil(result)
+    }
+
     // MARK: - JSON Import Tests
 
     func testWhenImportingJSONFileThenCreditCardsSuccessfullyImported() async throws {

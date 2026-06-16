@@ -76,6 +76,10 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Posted by the FE when the subscription recovery card is dismissed for the active chat.
     case enableChatInput
 
+    /// Posted by the FE to request focus on the native address bar (omnibar).
+    /// Native honors this only when the Unified Toggle Input feature is enabled.
+    case focusChatInput
+
     // Sync
     case getSyncStatus
     case getScopedSyncAuthToken

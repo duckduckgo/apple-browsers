@@ -180,6 +180,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             Logger.aiChat.debug("AIChatUserScript: unhandled message: \(methodName)")
             return nil
         }
+        Logger.aiChat.debug("AIChatUserScript: handled message: \(methodName)")
 
         delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
@@ -250,6 +251,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.disableChatInput
         case .enableChatInput:
             return handler.enableChatInput
+        case .focusChatInput:
+            return handler.focusChatInput
         default:
             return nil
         }
@@ -277,6 +280,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func setFireModeProvider(_ provider: (() -> Bool)?) {
         handler.isFireModeProvider = provider
+    }
+
+    func setFocusChatInputHandler(_ handler: (@MainActor () -> Void)?) {
+        self.handler.focusChatInputHandler = handler
     }
 
     // MARK: - Input Box Event Subscription

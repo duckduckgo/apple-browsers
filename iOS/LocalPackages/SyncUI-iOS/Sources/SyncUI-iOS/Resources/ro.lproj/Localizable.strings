@@ -388,8 +388,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Se conectează...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Păstrează DuckDuckGo deschis pe ambele dispozitive";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Păstrează „Sync & Backup” deschis pe ambele dispozitive";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Revino la acest dispozitiv după ce lipești codul.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Lipește codul pe celălalt dispozitiv";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Introdu manual codul";
@@ -419,7 +425,7 @@
 "sync.simplified.scan-or-view-code.title" = "Sincronizează-ți dispozitivele";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Scanează sau lipește acest cod pe cealaltă pagină";
+"sync.simplified.scan-or-view-code.view.instructions" = "Scanează sau lipește acest cod pe celălalt dispozitiv";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sincronizare și copiere de rezervă";

@@ -148,6 +148,10 @@ public struct UserText {
     public static let aiChatHistoryDownloadSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.download.a11y", value: "Download chat", comment: "Accessibility label for the download action revealed by swiping a Duck.ai chat row. Not translated; final copy will land in a follow-up PR.")
     public static let aiChatHistoryPinSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.pin.a11y", value: "Pin chat", comment: "Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. Not translated; final copy will land in a follow-up PR.")
     public static let aiChatHistoryUnpinSwipeAccessibilityLabel = NotLocalizedString("aiChat.history.swipe.unpin.a11y", value: "Unpin chat", comment: "Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. Not translated; final copy will land in a follow-up PR.")
+    public static func aiChatHistoryDeleteAllConfirmationTitle(count: Int) -> String {
+        let value = count == 1 ? "Delete 1 chat?" : "Delete \(count) chats?"
+        return NotLocalizedString("aiChat.history.deleteAll.confirmation.title", value: value, comment: "Title of the confirmation shown when the user taps Fire in Duck.ai chat history to delete all chats; the number is the chat count. Not translated; final copy will land in a follow-up PR.")
+    }
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
@@ -1304,7 +1308,6 @@ public struct UserText {
     public static let simplifiedSyncTurnOffTitle = NSLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
     public static let simplifiedSyncTurnOffMessage = NSLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
     public static let simplifiedSyncTurnOffAction = NSLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
-    public static let simplifiedCodeCopiedToast = NSLocalizedString("sync.simplified.code.copied.toast", value: "Code copied", comment: "Toast message shown after copying sync code to clipboard")
     public static let simplifiedRecoveryCodeCopiedToast = NSLocalizedString("sync.simplified.recovery.code.copied.toast", value: "Recovery code copied", comment: "Toast message shown after copying recovery code to clipboard from settings")
     public static let simplifiedSyncSetupFailedToast = NSLocalizedString("sync.simplified.setup.failed.toast", value: "Couldn't enable Sync & Backup", comment: "Toast message shown when sync setup fails")
 

@@ -48,6 +48,11 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
+    /// Count of ALL persistent chats, independent of the active search filter. `burnAllChats`
+    /// clears every chat, so the confirmation must reflect the full scope — not just the matches
+    /// currently shown in `pinned`/`recent`.
+    private(set) var totalChatCount: Int = 0
+
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
@@ -99,10 +104,12 @@ final class AIChatHistoryViewModel: ObservableObject {
                 ? allChats
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
             loadFailed = false
+            totalChatCount = allChats.count
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
         case .failure:
             loadFailed = true
+            totalChatCount = 0
             pinned = []
             recent = []
         }
@@ -159,8 +166,19 @@ final class AIChatHistoryViewModel: ObservableObject {
         // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
         Task { @MainActor in
-            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            guard case .success = result else { return }
+            // Flush the deletion to sync now so the FE doesn't re-pull the chat.
+            fireExecutor.scheduleSync()
         }
+    }
+
+    func burnAllChats() async {
+        guard let fireExecutor else { return }
+        let result = await fireExecutor.burnAllChats(isFireMode: false)
+        guard case .success = result else { return }
+        // Flush the clear to sync now so the FE doesn't re-pull the chats.
+        fireExecutor.scheduleSync()
     }
 
     func downloadChat(chatId: String) {

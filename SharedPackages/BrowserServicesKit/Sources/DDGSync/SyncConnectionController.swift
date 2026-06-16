@@ -96,6 +96,7 @@ private actor SyncConnectionState {
     private var _exchanger: RemoteKeyExchanging?
     private var _connector: RemoteConnecting?
     private var _pairingV2Coordinator: PairingV2Coordinator?
+    private var _pairingV2PresenterPollingTask: Task<Void, Never>?
 
     func setCodeHandlingInFlight(_ value: Bool) {
         _isCodeHandlingInFlight = value
@@ -122,14 +123,29 @@ private actor SyncConnectionState {
     }
 
     func replacePairingV2Coordinator(with coordinator: PairingV2Coordinator) async {
-        await _pairingV2Coordinator?.cancel()
+        await cancelPairingV2()
         _pairingV2Coordinator = coordinator
+    }
+
+    func setPairingV2PresenterPollingTask(_ task: Task<Void, Never>, for coordinator: PairingV2Coordinator) {
+        guard _pairingV2Coordinator === coordinator else {
+            task.cancel()
+            return
+        }
+
+        _pairingV2PresenterPollingTask?.cancel()
+        _pairingV2PresenterPollingTask = task
+    }
+
+    func isActivePairingV2Coordinator(_ coordinator: PairingV2Coordinator) -> Bool {
+        _pairingV2Coordinator === coordinator
     }
 
     func clearPairingV2Coordinator(_ coordinator: PairingV2Coordinator) {
         guard _pairingV2Coordinator === coordinator else {
             return
         }
+        _pairingV2PresenterPollingTask = nil
         _pairingV2Coordinator = nil
     }
 
@@ -144,8 +160,12 @@ private actor SyncConnectionState {
     }
 
     func cancelPairingV2() async {
-        await _pairingV2Coordinator?.cancel()
+        let coordinator = _pairingV2Coordinator
         _pairingV2Coordinator = nil
+        _pairingV2PresenterPollingTask?.cancel()
+        _pairingV2PresenterPollingTask = nil
+
+        await coordinator?.cancel()
     }
 
     func prepareForNewFlow() async {
@@ -392,48 +412,14 @@ public class SyncConnectionController: SyncConnectionControlling {
             let completion = try await pollPairingV2UntilFinished(coordinator)
             await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             return true
-        } catch SyncError.pollingDidTimeOut {
-            await delegate?.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: setupRole)
-            await coordinator.cancel()
-            return false
-        } catch SyncError.accountAlreadyExists {
-            if let recoveryKey = coordinator.pendingRecoveryKey {
-                await delegate?.controllerDidFindTwoAccountsDuringRecovery(
-                    recoveryKey,
-                    setupRole: setupRole,
-                    shouldPromptBeforeSwitchingAccounts: false)
-            } else {
-                await delegate?.controllerDidError(.failedToLogIn, underlyingError: SyncError.accountAlreadyExists, setupRole: setupRole)
-            }
-            await coordinator.cancel()
-            return false
-        } catch let error as PairingV2Error {
-            guard error != .cancelled else {
-                return false
-            }
-            await delegate?.controllerDidError(pairingV2ConnectionError(for: error), underlyingError: nil, setupRole: setupRole)
-            await coordinator.cancel()
-            return false
-        } catch PairingV2MessageCryptoError.unsupportedVersion(let version) {
-            await delegate?.controllerDidError(
-                unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor),
-                underlyingError: PairingV2MessageCryptoError.unsupportedVersion(version),
-                setupRole: setupRole)
-            await coordinator.cancel()
-            return false
-        } catch let error as PairingV2MessageCryptoError {
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: setupRole)
-            await coordinator.cancel()
-            return false
         } catch {
-            await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
-            await coordinator.cancel()
+            await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
             return false
         }
     }
 
     private func startPairingV2PresenterPolling(_ coordinator: PairingV2Coordinator) {
-        Task { @MainActor in
+        let task = Task { @MainActor in
             defer {
                 Task {
                     await self.state.clearPairingV2Coordinator(coordinator)
@@ -451,38 +437,66 @@ public class SyncConnectionController: SyncConnectionControlling {
                     await self.delegate?.controllerWillBeginTransmittingRecoveryKey()
                 }
                 await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
-            } catch SyncError.pollingDidTimeOut {
-                await delegate?.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: setupRole)
-                await coordinator.cancel()
-            } catch SyncError.accountAlreadyExists {
-                if let recoveryKey = coordinator.pendingRecoveryKey {
-                    await delegate?.controllerDidFindTwoAccountsDuringRecovery(
-                        recoveryKey,
-                        setupRole: setupRole,
-                        shouldPromptBeforeSwitchingAccounts: false)
-                } else {
-                    await delegate?.controllerDidError(.failedToLogIn, underlyingError: SyncError.accountAlreadyExists, setupRole: setupRole)
-                }
-                await coordinator.cancel()
-            } catch let error as PairingV2Error {
-                guard error != .cancelled else {
-                    return
-                }
-                await delegate?.controllerDidError(pairingV2ConnectionError(for: error), underlyingError: nil, setupRole: setupRole)
-                await coordinator.cancel()
-            } catch PairingV2MessageCryptoError.unsupportedVersion(let version) {
-                await delegate?.controllerDidError(
-                    unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor),
-                    underlyingError: PairingV2MessageCryptoError.unsupportedVersion(version),
-                    setupRole: setupRole)
-                await coordinator.cancel()
-            } catch let error as PairingV2MessageCryptoError {
-                await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: setupRole)
-                await coordinator.cancel()
             } catch {
-                await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
-                await coordinator.cancel()
+                await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
             }
+        }
+
+        Task {
+            await state.setPairingV2PresenterPollingTask(task, for: coordinator)
+        }
+    }
+
+    private func handlePairingV2PollingError(_ error: Error, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+        if let pairingV2Error = error as? PairingV2Error, pairingV2Error == .cancelled {
+            return
+        }
+
+        guard await state.isActivePairingV2Coordinator(coordinator) else {
+            return
+        }
+
+        if let syncError = error as? SyncError {
+            await handlePairingV2SyncError(syncError, coordinator: coordinator, setupRole: setupRole)
+        } else if let pairingV2Error = error as? PairingV2Error {
+            await delegate?.controllerDidError(pairingV2ConnectionError(for: pairingV2Error), underlyingError: nil, setupRole: setupRole)
+        } else if let cryptoError = error as? PairingV2MessageCryptoError {
+            await delegate?.controllerDidError(pairingV2CryptoConnectionError(for: cryptoError), underlyingError: cryptoError, setupRole: setupRole)
+        } else {
+            await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
+        }
+
+        await coordinator.cancel()
+    }
+
+    private func handlePairingV2SyncError(_ error: SyncError, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+        switch error {
+        case .pollingDidTimeOut:
+            await delegate?.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: setupRole)
+        case .accountAlreadyExists:
+            await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
+        default:
+            await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
+        }
+    }
+
+    private func handlePairingV2AccountAlreadyExists(_ coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+        if let recoveryKey = coordinator.pendingRecoveryKey {
+            await delegate?.controllerDidFindTwoAccountsDuringRecovery(
+                recoveryKey,
+                setupRole: setupRole,
+                shouldPromptBeforeSwitchingAccounts: false)
+        } else {
+            await delegate?.controllerDidError(.failedToLogIn, underlyingError: SyncError.accountAlreadyExists, setupRole: setupRole)
+        }
+    }
+
+    private func pairingV2CryptoConnectionError(for error: PairingV2MessageCryptoError) -> SyncConnectionError {
+        switch error {
+        case .unsupportedVersion(let version):
+            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
+        default:
+            return .unableToRecognizeCode
         }
     }
 

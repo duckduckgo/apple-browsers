@@ -34,6 +34,7 @@ final class FaviconStoringMock: FaviconStoring {
     private(set) var loadFaviconMetadataCallCount = 0
     private(set) var loadImageCallCount = 0
     private(set) var loadImageIdentifiers: [UUID] = []
+    private(set) var removedFaviconIdentifiers: [UUID] = []
 
     func loadFavicons() async throws -> [Favicon] {
         loadFaviconsCallCount += 1
@@ -56,7 +57,7 @@ final class FaviconStoringMock: FaviconStoring {
     }
 
     func removeFavicons(_ favicons: [Favicon]) async throws {
-        ()
+        removedFaviconIdentifiers.append(contentsOf: favicons.map(\.identifier))
     }
 
     func loadFaviconReferences() async throws -> ([FaviconHostReference], [FaviconUrlReference]) {

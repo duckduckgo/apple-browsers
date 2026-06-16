@@ -696,3 +696,53 @@ extension NSImage {
         return "data:image/png;base64,\(pngData.base64EncodedString())"
     }
 }
+
+// MARK: - Favicon Browser (debug) support
+
+/**
+ * Read/delete access to the favicon store used by the debug-only Favicon Browser page (`duck://favicons`).
+ *
+ * Only `FaviconManager` conforms; `DuckURLSchemeHandler` downcasts its `FaviconManagement` to this
+ * protocol when serving the page, so the debug surface stays off the main `FaviconManagement` protocol
+ * (and its mocks). All access goes through the in-app favicon stack, which holds the decryption key, so
+ * the encrypted URL/image columns are handled transparently.
+ */
+@MainActor
+protocol FaviconManagementDebugging: AnyObject {
+
+    /// Metadata for every stored favicon image record (no image decode), ordered oldest-first.
+    func allFaviconsMetadata() async -> [FaviconMetadata]
+
+    /// The decoded image for a single favicon record, by its identifier, or nil if missing/undecodable.
+    func faviconImage(withIdentifier identifier: UUID) async -> NSImage?
+
+    /// Deletes the favicon image records with the given identifiers (memory + store).
+    func deleteFavicons(withIdentifiers identifiers: Set<UUID>) async
+
+    /// Deletes every favicon image record and every favicon reference (full reset).
+    func deleteAllFavicons() async
+}
+
+extension FaviconManager: FaviconManagementDebugging {
+
+    @MainActor
+    func allFaviconsMetadata() async -> [FaviconMetadata] {
+        (try? await store.loadFaviconMetadata()) ?? []
+    }
+
+    @MainActor
+    func faviconImage(withIdentifier identifier: UUID) async -> NSImage? {
+        try? await store.loadImage(for: identifier)
+    }
+
+    @MainActor
+    func deleteFavicons(withIdentifiers identifiers: Set<UUID>) async {
+        await imageCache.removeFavicons(withIdentifiers: identifiers)
+    }
+
+    @MainActor
+    func deleteAllFavicons() async {
+        await imageCache.removeAllFavicons()
+        await referenceCache.removeAllReferences()
+    }
+}

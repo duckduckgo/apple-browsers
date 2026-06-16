@@ -55,6 +55,10 @@ protocol FaviconReferenceCaching {
     func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async
     @MainActor
     func burnDomains(_ baseDomains: Set<String>, exceptBookmarks bookmarkManager: BookmarkManager, exceptSavedLogins logins: Set<String>, exceptHistoryDomains history: Set<String>, tld: TLD) async
+
+    /// Debug/admin: removes every host and URL favicon reference from memory + store.
+    @MainActor
+    func removeAllReferences() async
 }
 
 final class FaviconReferenceCache: FaviconReferenceCaching {
@@ -236,6 +240,14 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
             }
             return baseDomains.contains(host) && !bookmarkedHosts.contains(host) && !logins.contains(host) && !history.contains(host)
         }).value
+    }
+
+    // MARK: - Debug / admin removal
+
+    @MainActor
+    func removeAllReferences() async {
+        await removeHostReferences(filter: { _ in true }).value
+        await removeUrlReferences(filter: { _ in true }).value
     }
 
     // MARK: - Private

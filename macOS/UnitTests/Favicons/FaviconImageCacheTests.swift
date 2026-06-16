@@ -176,4 +176,68 @@ final class FaviconImageCacheTests: XCTestCase {
         XCTAssertNotNil(cached?.image)
         XCTAssertEqual(store.loadImageCallCount, 1)
     }
+
+    // MARK: debug / admin removal (Favicon Browser)
+
+    @MainActor
+    func testRemoveFaviconsWithIdentifiersDeletesFromCacheAndStoreAndNotifies() async throws {
+        let store = FaviconStoringMock()
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        let identifier = UUID()
+        store.metadataToLoad = [
+            FaviconMetadata(identifier: identifier, url: faviconURL, documentUrl: documentURL, dateCreated: Date(), relation: .favicon)
+        ]
+
+        let cache = FaviconImageCache(faviconStoring: store)
+        try await cache.load()
+
+        let cacheUpdated = expectation(forNotification: .faviconCacheUpdated, object: nil)
+        await cache.removeFavicons(withIdentifiers: [identifier])
+        await fulfillment(of: [cacheUpdated], timeout: 5)
+
+        // Removed from the in-memory metadata map and from the store.
+        XCTAssertNil(cache.get(faviconUrl: faviconURL))
+        XCTAssertEqual(store.removedFaviconIdentifiers, [identifier])
+    }
+
+    @MainActor
+    func testRemoveFaviconsWithUnknownIdentifierDoesNothing() async throws {
+        let store = FaviconStoringMock()
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        store.metadataToLoad = [
+            FaviconMetadata(identifier: UUID(), url: faviconURL, documentUrl: documentURL, dateCreated: Date(), relation: .favicon)
+        ]
+
+        let cache = FaviconImageCache(faviconStoring: store)
+        try await cache.load()
+
+        await cache.removeFavicons(withIdentifiers: [UUID()])
+
+        XCTAssertNotNil(cache.get(faviconUrl: faviconURL))
+        XCTAssertTrue(store.removedFaviconIdentifiers.isEmpty)
+    }
+
+    @MainActor
+    func testRemoveAllFaviconsDeletesEveryRecord() async throws {
+        let store = FaviconStoringMock()
+        let url1 = try XCTUnwrap("https://a.example/favicon.ico".url)
+        let url2 = try XCTUnwrap("https://b.example/favicon.ico".url)
+        let id1 = UUID()
+        let id2 = UUID()
+        store.metadataToLoad = [
+            FaviconMetadata(identifier: id1, url: url1, documentUrl: try XCTUnwrap("https://a.example".url), dateCreated: Date(), relation: .favicon),
+            FaviconMetadata(identifier: id2, url: url2, documentUrl: try XCTUnwrap("https://b.example".url), dateCreated: Date(), relation: .icon)
+        ]
+
+        let cache = FaviconImageCache(faviconStoring: store)
+        try await cache.load()
+
+        await cache.removeAllFavicons()
+
+        XCTAssertNil(cache.get(faviconUrl: url1))
+        XCTAssertNil(cache.get(faviconUrl: url2))
+        XCTAssertEqual(Set(store.removedFaviconIdentifiers), [id1, id2])
+    }
 }

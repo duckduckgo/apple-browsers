@@ -687,10 +687,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         stateStore.update(snapshotCurrentState(), for: uid)
     }
 
-    /// `hide()` nils `currentTabUID`, so pin clears on submit cannot use `persistDraftToStore`.
-    /// Patch the stored pin directly for the tab we were last on.
-    private func persistModelPickerPinClearedAfterHideIfNeeded(hadPin: Bool) {
-        guard hadPin, currentTabUID == nil, let uid = lastActivatedTabUID else { return }
+    /// `hide()` clears the live pin without updating `TabInputState`, so submit after `hide()`
+    /// (`currentTabUID` nil) must patch the stored pin directly for `lastActivatedTabUID`.
+    private func persistModelPickerPinClearedAfterHideIfNeeded() {
+        guard currentTabUID == nil, let uid = lastActivatedTabUID else { return }
         var state = stateStore.state(for: uid)
         guard state.isModelPickerForcedVisible else { return }
         state.isModelPickerForcedVisible = false
@@ -2347,9 +2347,8 @@ private extension UnifiedToggleInputCoordinator {
 
     private func markActiveChatPromptSubmitted() {
         hasSubmittedPrompt = true
-        let hadPinnedModelPicker = isModelPickerForcedVisible
         isModelPickerForcedVisible = false
-        persistModelPickerPinClearedAfterHideIfNeeded(hadPin: hadPinnedModelPicker)
+        persistModelPickerPinClearedAfterHideIfNeeded()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }

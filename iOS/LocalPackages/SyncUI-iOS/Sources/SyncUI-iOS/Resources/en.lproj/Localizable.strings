@@ -101,7 +101,7 @@
 "device.synced.sheet.button.get.other.devices" = "Get DuckDuckGo on Other Devices";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Your data is synced!";
+"device.synced.sheet.title" = "Device synced!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Done";
@@ -373,8 +373,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Connecting...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Keep DuckDuckGo open on both devices";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Keep “Sync & Backup” open on both devices";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Come back to this device after pasting the code.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Paste the code on your other device";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Manually Enter Code";
@@ -404,7 +410,7 @@
 "sync.simplified.scan-or-view-code.title" = "Sync Your Devices";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Scan or Paste this code on your other";
+"sync.simplified.scan-or-view-code.view.instructions" = "Scan or Paste this code in your other";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sync & Backup";

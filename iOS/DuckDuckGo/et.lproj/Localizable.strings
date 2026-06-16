@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Laadi uuesti";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Lähtesta suum";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Vali";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Kuva kõik vahekaardid";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Suurenda";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Vähenda";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Viimati töödeldud: %@";
@@ -4629,9 +4638,6 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Kas seade eemaldada?";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kood kopeeritud";
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Seade sünkrooniti edukalt!";

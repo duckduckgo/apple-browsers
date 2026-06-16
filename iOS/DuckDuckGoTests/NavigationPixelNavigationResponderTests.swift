@@ -51,6 +51,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
         PixelKit.setUp(
             dryRun: false,
             appVersion: "1.0.0",
+            session: "test",
             defaultHeaders: [:],
             defaults: defaults
         ) { [weak self] firedPixelName, _, firedParameters, _, _, completion in

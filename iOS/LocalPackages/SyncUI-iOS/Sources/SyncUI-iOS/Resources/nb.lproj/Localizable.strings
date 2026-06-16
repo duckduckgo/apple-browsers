@@ -388,8 +388,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Kobler til...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Hold DuckDuckGo åpen på begge enhetene";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Hold «Sync & Backup» åpen på begge enhetene";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kom tilbake til denne enheten etter at du har limt inn koden.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Lim inn koden på den andre enheten din";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Skriv inn koden manuelt";
@@ -419,7 +425,7 @@
 "sync.simplified.scan-or-view-code.title" = "Synkroniser enhetene dine";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Skann eller lim inn denne koden på din andre";
+"sync.simplified.scan-or-view-code.view.instructions" = "Skann eller lim inn denne koden i din andre";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Synkronisering og sikkerhetskopiering";

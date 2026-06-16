@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Презареждане";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Нулиране на мащаба";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Избор";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Показване на всички раздели";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Увеличаване";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Намаляване";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Последно обработено: %@";
@@ -4629,9 +4638,6 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Премахване на устройство?";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Кодът е копиран";
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Устройството е синхронизирано успешно!";

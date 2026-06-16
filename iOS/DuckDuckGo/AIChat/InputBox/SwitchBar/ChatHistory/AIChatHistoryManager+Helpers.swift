@@ -74,5 +74,7 @@ final class NilAIChatSyncCleaner: AIChatSyncCleaning {
     func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async {}
     func recordChatDeletion(chatID: String) async {}
     func deleteIfNeeded() async {}
+    func recordChatUpdate(chatID: String) async {}
+    func updateIfNeeded() async {}
     func scheduleSync() {}
 }

@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Ladda om";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Återställ zoom";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Välj";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Visa alla flikar";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Zooma in";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Zooma ut";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Senast bearbetad: %@";
@@ -4629,9 +4638,6 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Vill du ta bort enheten?";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kod kopierad";
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Enheten har synkroniserats!";

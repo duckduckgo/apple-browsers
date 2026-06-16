@@ -145,6 +145,23 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_addressbar_file_validation_failed": {
+        "description": "Fired when a file picked for the duck.ai omnibar is rejected at pick-time by the attachment validator (too large, over the total-size budget, too many pages, unsupported type, encrypted, or unreadable)",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "Reason for the file validation failure.",
+                "type": "string",
+                "enum": ["size_exceeded", "count_exceeded", "unsupported_type", "encrypted", "unreadable", "other"]
+            }
+        ]
+    },
     "m_mac_aichat_addressbar_attach_tabs_picker_shown": {
         "description": "Fired when user opens the duck.ai omnibar attach menu's 'Add Page Content' submenu, which lists open tabs whose page content can be attached",
         "owners": ["tomasstrba"],

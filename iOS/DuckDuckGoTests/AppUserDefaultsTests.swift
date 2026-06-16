@@ -254,7 +254,6 @@ class AppUserDefaultsTests: XCTestCase {
 
         XCTAssertEqual(appUserDefaults.duckPlayerMode, .alwaysAsk)
         XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .ask)
-        XCTAssertTrue(appUserDefaults.duckPlayerNativeUISERPEnabled)
     }
 
     func testWhenAdBlockingRolloutActiveThenOnboardingDefaultsDisableDuckPlayer() {
@@ -264,7 +263,6 @@ class AppUserDefaultsTests: XCTestCase {
 
         XCTAssertEqual(appUserDefaults.duckPlayerMode, .disabled)
         XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .never)
-        XCTAssertFalse(appUserDefaults.duckPlayerNativeUISERPEnabled)
     }
 
     // MARK: - Mock Creation

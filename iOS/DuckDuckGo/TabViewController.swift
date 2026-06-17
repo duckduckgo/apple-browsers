@@ -802,14 +802,17 @@ class TabViewController: UIViewController {
 
     @available(iOS 18.4, *)
     private func registerForWebExtensionNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(handleWebExtensionDashboardStateRefresh),
-                                               name: .webExtensionAutoconsentDashboardStateRefresh,
-                                               object: nil)
+        NotificationCenter.default
+            .publisher(for: .webExtensionAutoconsentDashboardStateRefresh)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                self?.handleWebExtensionDashboardStateRefresh(notification)
+            }
+            .store(in: &cancellables)
     }
 
     @available(iOS 18.4, *)
-    @objc private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
+    private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
         guard let url = notification.userInfo?[AutoconsentNotification.UserInfoKeys.url] as? URL,
               let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo else {
             return

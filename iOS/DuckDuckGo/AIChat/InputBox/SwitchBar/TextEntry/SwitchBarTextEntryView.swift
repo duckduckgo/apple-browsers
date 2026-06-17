@@ -545,9 +545,9 @@ class SwitchBarTextEntryView: UIView {
     }
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
-    /// A URL stays single-line unless it's an interactive AI-chat composer: search mode, or
-    /// search-only (no toggle, so AI chat is unavailable), or before the user interacts — all
-    /// single-line. Only an interacted AI-chat field (toggle present) lets a long URL expand.
+    /// A URL is single-line only before the user interacts; once tapped it expands to multiple lines
+    /// so the caret can reach the end to edit (the original behaviour, restored after #5373/#5429
+    /// made long URLs single-line and therefore not editable to the end).
     private func isUnexpandedURL() -> Bool {
         guard isURL else { return false }
         return currentMode == .search || !handler.isToggleEnabled || !hasBeenInteractedWith

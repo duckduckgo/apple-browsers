@@ -708,7 +708,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg
                 ]
                 parameters[SyncSetupPixelInfo.Parameter.flowVersion] = onPresentPixelInfo.flowVersion
-                Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+                Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
                 self.syncSetupExperimentPixels.fireBarcodeScreenShown()
             }
         }

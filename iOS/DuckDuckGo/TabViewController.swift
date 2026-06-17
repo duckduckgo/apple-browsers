@@ -2210,7 +2210,10 @@ extension TabViewController: WKNavigationDelegate {
               !url.isDuckAIURL,
               !url.isDuckPlayer,
               !(url.isYoutube && duckPlayerNavigationHandler.duckPlayer.settings.mode != .disabled) else {
-            dismissContextualOnboardingIfNeeded()
+            // Do not dismiss while the fire onboarding dialog is up
+            if !contextualOnboardingLogic.isShowingFireDialog {
+                dismissContextualOnboardingIfNeeded()
+            }
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }

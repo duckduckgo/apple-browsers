@@ -1718,6 +1718,7 @@
 		9FF967BB2E0E704000E45B54 /* DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967BA2E0E703C00E45B54 /* DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift */; };
 		9FF967BF2E0E7F5200E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967BE2E0E7F4F00E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift */; };
 		9FF967CE2E12183700E45B54 /* DefaultBrowserPromptDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967CD2E12183100E45B54 /* DefaultBrowserPromptDebugView.swift */; };
+		9FF9F2C32FE121F80026080A /* default-browser-tutorial-rebranded.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9FF9F2C22FE121F80026080A /* default-browser-tutorial-rebranded.mp4 */; };
 		9FFABF2A543E444D8A9127DE /* RebrandedOnboardingView+DaxAnimationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB842C9EB504CCBA5A14D4C /* RebrandedOnboardingView+DaxAnimationOverlay.swift */; };
 		9FFDA8372DFA885C007923F7 /* PictureInPictureControllerFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFDA8362DFA8854007923F7 /* PictureInPictureControllerFactoryTests.swift */; };
 		9FFDA8392DFA8DC2007923F7 /* VideoPlayerCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFDA8382DFA8DBC007923F7 /* VideoPlayerCoordinatorTests.swift */; };
@@ -4373,7 +4374,6 @@
 		9FC0E3D32FAAED9000B11ECD /* OnboardingIntroContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroContentProvider.swift; sourceTree = "<group>"; };
 		9FC0E3D62FAB04FF00B11ECD /* OnboardingIntroContentProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroContentProviderTests.swift; sourceTree = "<group>"; };
 		9FC0E3D82FAB05B200B11ECD /* MockOnboardingIntroContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockOnboardingIntroContentProvider.swift; sourceTree = "<group>"; };
-		9FC555C82E2F4AFC00763BEC /* en */ = {isa = PBXFileReference; lastKnownFileType = file; name = en; path = "en.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
 		9FC555C92E2F4AFC00763BEC /* de */ = {isa = PBXFileReference; lastKnownFileType = file; name = de; path = "de.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
 		9FC555CA2E2F4AFC00763BEC /* es */ = {isa = PBXFileReference; lastKnownFileType = file; name = es; path = "es.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
 		9FC555CB2E2F4AFC00763BEC /* fr */ = {isa = PBXFileReference; lastKnownFileType = file; name = fr; path = "fr.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
@@ -4442,6 +4442,14 @@
 		9FF967BA2E0E703C00E45B54 /* DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift; sourceTree = "<group>"; };
 		9FF967BE2E0E7F4F00E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift; sourceTree = "<group>"; };
 		9FF967CD2E12183100E45B54 /* DefaultBrowserPromptDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptDebugView.swift; sourceTree = "<group>"; };
+		9FF9F2C12FE121F80026080A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file; name = Base; path = "Base.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
+		9FF9F2C42FE122050026080A /* nl */ = {isa = PBXFileReference; lastKnownFileType = file; name = nl; path = "nl.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
+		9FF9F2C52FE1220E0026080A /* fr */ = {isa = PBXFileReference; lastKnownFileType = file; name = fr; path = "fr.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
+		9FF9F2C62FE1220F0026080A /* de */ = {isa = PBXFileReference; lastKnownFileType = file; name = de; path = "de.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
+		9FF9F2C72FE122110026080A /* it */ = {isa = PBXFileReference; lastKnownFileType = file; name = it; path = "it.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
+		9FF9F2C82FE122190026080A /* pt */ = {isa = PBXFileReference; lastKnownFileType = file; name = pt; path = "pt.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
+		9FF9F2C92FE1221C0026080A /* es */ = {isa = PBXFileReference; lastKnownFileType = file; name = es; path = "es.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
+		9FF9F2CA2FE122920026080A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file; name = Base; path = "Base.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
 		9FFDA8362DFA8854007923F7 /* PictureInPictureControllerFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureControllerFactoryTests.swift; sourceTree = "<group>"; };
 		9FFDA8382DFA8DBC007923F7 /* VideoPlayerCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerCoordinatorTests.swift; sourceTree = "<group>"; };
 		9FFDA83A2DFA8E4F007923F7 /* MockAVQueuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAVQueuePlayer.swift; sourceTree = "<group>"; };
@@ -8970,6 +8978,7 @@
 			isa = PBXGroup;
 			children = (
 				9FC555CF2E2F4AFC00763BEC /* default-browser-tutorial.mp4 */,
+				9FF9F2C22FE121F80026080A /* default-browser-tutorial-rebranded.mp4 */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -12331,6 +12340,7 @@
 				9FC555D12E2F4AFC00763BEC /* default-browser-tutorial.mp4 in Resources */,
 				F176699F1E40BC86003D3222 /* Settings.storyboard in Resources */,
 				BB6696372E9E6613003CB6AD /* WinBackOffer.xcassets in Resources */,
+				9FF9F2C32FE121F80026080A /* default-browser-tutorial-rebranded.mp4 in Resources */,
 				854A012F2A5563A400FCC628 /* FindInPage.xib in Resources */,
 				1E8AD1DD27C653F800ABA377 /* Downloads.xcassets in Resources */,
 				F1F533841F26ABAC00D80D4F /* Localizable.strings in Resources */,
@@ -15505,15 +15515,29 @@
 		9FC555CF2E2F4AFC00763BEC /* default-browser-tutorial.mp4 */ = {
 			isa = PBXVariantGroup;
 			children = (
-				9FC555C82E2F4AFC00763BEC /* en */,
 				9FC555C92E2F4AFC00763BEC /* de */,
 				9FC555CA2E2F4AFC00763BEC /* es */,
 				9FC555CB2E2F4AFC00763BEC /* fr */,
 				9FC555CC2E2F4AFC00763BEC /* it */,
 				9FC555CD2E2F4AFC00763BEC /* nl */,
 				9FC555CE2E2F4AFC00763BEC /* pt */,
+				9FF9F2CA2FE122920026080A /* Base */,
 			);
 			name = "default-browser-tutorial.mp4";
+			sourceTree = "<group>";
+		};
+		9FF9F2C22FE121F80026080A /* default-browser-tutorial-rebranded.mp4 */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9FF9F2C12FE121F80026080A /* Base */,
+				9FF9F2C42FE122050026080A /* nl */,
+				9FF9F2C52FE1220E0026080A /* fr */,
+				9FF9F2C62FE1220F0026080A /* de */,
+				9FF9F2C72FE122110026080A /* it */,
+				9FF9F2C82FE122190026080A /* pt */,
+				9FF9F2C92FE1221C0026080A /* es */,
+			);
+			name = "default-browser-tutorial-rebranded.mp4";
 			sourceTree = "<group>";
 		};
 		C1E4E9A42D0861AD00AA39AF /* InfoPlist.strings */ = {

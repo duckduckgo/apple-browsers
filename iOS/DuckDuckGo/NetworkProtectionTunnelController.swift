@@ -186,6 +186,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         do {
             try await startWithError()
+            completeAndCleanupConnectionWideEvent()
 
             persistentPixel.fire(
                 pixel: .networkProtectionControllerStartSuccess,
@@ -447,25 +448,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             switch session.status {
             case .connected:
-                completeAndCleanupConnectionWideEvent()
                 try await enableOnDemand(tunnelManager: manager)
-            case .disconnected, .invalid:
-                let disconnectError = await lastDisconnectError(from: session)
-                completeConnectionWideEventAsObservedFailure(with: disconnectError)
             default:
                 break
             }
 
-        }
-    }
-
-    private func lastDisconnectError(from session: NETunnelProviderSession) async -> Error? {
-        guard #available(iOS 16, *) else { return nil }
-        do {
-            try await session.fetchLastDisconnectError()
-            return nil
-        } catch {
-            return error
         }
     }
 
@@ -536,16 +523,6 @@ private extension NetworkProtectionTunnelController {
         } else {
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
         }
-        self.connectionWideEventData = nil
-    }
-
-    func completeConnectionWideEventAsObservedFailure(with error: Error? = nil) {
-        guard let data = self.connectionWideEventData else { return }
-        data.overallDuration?.complete()
-        if let error {
-            data.errorData = .init(error: error)
-        }
-        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
         self.connectionWideEventData = nil
     }
 }

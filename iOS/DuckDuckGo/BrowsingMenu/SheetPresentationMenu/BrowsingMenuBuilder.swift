@@ -93,7 +93,8 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil),
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
-            .init(entryBuilder.makeDownloadsEntry())
+            .init(entryBuilder.makeDownloadsEntry()),
+            .init(entryBuilder.makeDeferredReadingEntry())
         ].compactMap { $0 }
 
         // MARK: Privacy group
@@ -194,7 +195,8 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil),
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
-            .init(entryBuilder.makeDownloadsEntry())
+            .init(entryBuilder.makeDownloadsEntry()),
+            .init(entryBuilder.makeDeferredReadingEntry())
         ].compactMap { $0 }
 
         appendSection(shortcutItems, to: &sections)

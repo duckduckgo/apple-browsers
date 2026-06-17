@@ -21,7 +21,9 @@ import Foundation
 import Core
 import BrowserServicesKit
 import Combine
+import DeferredReadingCore
 
+@MainActor
 final class NewTabPageViewModel: ObservableObject {
 
     @Published var canEditFavorites = true
@@ -29,18 +31,35 @@ final class NewTabPageViewModel: ObservableObject {
     @Published var escapeHatch: EscapeHatchModel?
     @Published var sectionTitle: String?
     @Published var isLogoHidden: Bool = false
+    @Published private(set) var deferredReadingUnreadCount: Int = 0
+    @Published private(set) var isDeferredReadingEnabled: Bool = false
     private(set) var fireTab: Bool
 
     private(set) var isDragging: Bool = false
 
     private let pixelFiring: PixelFiring.Type
+    private var cancellables = Set<AnyCancellable>()
 
     init(fireTab: Bool,
+         deferredReadingController: DeferredReadingController? = nil,
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.fireTab = fireTab
         self.pixelFiring = pixelFiring
 
         isOnboarding = false
+
+        if let deferredReadingController {
+            isDeferredReadingEnabled = deferredReadingController.isEnabled
+            deferredReadingUnreadCount = deferredReadingController.isEnabled ? deferredReadingController.unreadCount : 0
+            deferredReadingController.$unreadCount
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self, weak deferredReadingController] count in
+                    guard let self, let deferredReadingController else { return }
+                    self.isDeferredReadingEnabled = deferredReadingController.isEnabled
+                    self.deferredReadingUnreadCount = deferredReadingController.isEnabled ? count : 0
+                }
+                .store(in: &cancellables)
+        }
     }
 
     func startOnboarding() {

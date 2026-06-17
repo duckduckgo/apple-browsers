@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DeferredReadingUI
 
 enum AfterInactivityOption: String, CaseIterable, CustomStringConvertible {
     case newTab
@@ -90,6 +91,17 @@ struct SettingsGeneralView: View {
                                              accessory: .toggle(isOn: viewModel.lastTabShortcutEnabledBinding))
                         }
                     }
+                }
+            }
+
+            if viewModel.shouldShowDeferredReadingSettings,
+               let settingsController = viewModel.deferredReadingSettingsController {
+                Section {
+                    NavigationLink(destination: DeferredReadingSettingsView(settingsController: settingsController)) {
+                        SettingsCellView(label: "Deferred Reading")
+                    }
+                } footer: {
+                    Text("Choose quiet periods and reminder time for deferred links.")
                 }
             }
 

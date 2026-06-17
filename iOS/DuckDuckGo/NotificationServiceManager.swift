@@ -23,6 +23,7 @@ import UIKit
 import NotificationCenter
 import Core
 import DataBrokerProtection_iOS
+import DeferredReadingCore
 
 protocol NotificationServiceManaging: UNUserNotificationCenterDelegate {}
 
@@ -60,6 +61,8 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
             if let identifier = DataBrokerProtectionNotificationIdentifier(rawValue: raw) {
                 handleDataBrokerProtectionNotification(identifier: identifier)
             }
+        case DeferredReadingController.Constants.notificationIdentifier:
+            handleDeferredReadingNotification()
         default:
             break
         }
@@ -102,5 +105,10 @@ private extension NotificationServiceManager {
         Pixel.fire(pixel: pixel)
 
         mainCoordinator.presentDataBrokerProtectionDashboard()
+    }
+
+    @MainActor
+    func handleDeferredReadingNotification() {
+        mainCoordinator.presentDeferredReadingList()
     }
 }

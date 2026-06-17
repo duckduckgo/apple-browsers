@@ -29,6 +29,7 @@ import Subscription
 import DDGSync
 import os.log
 import DataBrokerProtection_iOS
+import DeferredReadingUI
 
 extension MainViewController {
 
@@ -192,6 +193,19 @@ extension MainViewController {
         hideAllHighlightsIfNeeded()
 
         present(DownloadsListHostingController(), animated: true)
+    }
+
+    func segueToDeferredReadingList() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+
+        let listView = DeferredReadingListView(controller: deferredReadingController) { [weak self] url in
+            self?.dismiss(animated: true) {
+                self?.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil)
+            }
+        }
+        let controller = UIHostingController(rootView: listView)
+        present(controller, animated: true)
     }
 
     func segueToTabSwitcher(forceFireTabsTip: Bool = false) async {
@@ -499,7 +513,8 @@ extension MainViewController {
                                                   userScriptsDependencies: userScriptsDependencies,
                                                   whatsNewCoordinator: whatsNewCoordinator,
                                                   darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                                  adBlockingAvailability: adBlockingAvailability)
+                                                  adBlockingAvailability: adBlockingAvailability,
+                                                  deferredReadingSettingsController: deferredReadingController.settingsController)
 
         settingsViewModel.autoClearActionDelegate = self
         settingsViewModel.onRequestOpenDuckAIChat = { [weak self] in

@@ -37,6 +37,7 @@ import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
 import WebExtensions
+import DeferredReadingCore
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
@@ -214,9 +215,14 @@ final class SettingsViewModel: ObservableObject {
     }
 
     let darkReaderFeatureSettings: DarkReaderFeatureSettings
+    let deferredReadingSettingsController: DeferredReadingSettingsController?
 
     var isForceWebsiteDarkModeAvailable: Bool {
         darkReaderFeatureSettings.isFeatureEnabled
+    }
+
+    var shouldShowDeferredReadingSettings: Bool {
+        featureFlagger.isFeatureOn(.deferredReading) && deferredReadingSettingsController != nil
     }
 
     var isBlackFridayCampaignEnabled: Bool {
@@ -984,7 +990,8 @@ final class SettingsViewModel: ObservableObject {
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
-         adBlockingAvailability: AdBlockingAvailabilityProviding
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         deferredReadingSettingsController: DeferredReadingSettingsController? = nil
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -1028,6 +1035,7 @@ final class SettingsViewModel: ObservableObject {
         )
         self.whatsNewCoordinator = whatsNewCoordinator
         self.adBlockingAvailability = adBlockingAvailability
+        self.deferredReadingSettingsController = deferredReadingSettingsController
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
         startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)

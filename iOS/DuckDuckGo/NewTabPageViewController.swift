@@ -26,6 +26,7 @@ import DesignResourcesKit
 import Onboarding
 import RemoteMessaging
 import Subscription
+import DeferredReadingCore
 
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
@@ -84,6 +85,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
+         deferredReadingController: DeferredReadingController?,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
@@ -99,7 +101,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.internalUserCommands = internalUserCommands
         self.tutorialSettings = tutorialSettings
 
-        newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
+        newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab, deferredReadingController: deferredReadingController)
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader,
@@ -113,13 +115,21 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 fireModePromotionEligibility: fireModePromotionEligibility,
                                                 isOpenedAfterIdle: { [weak viewModel] in viewModel?.escapeHatch != nil })
 
+        var onOpenDeferredReadingAction: (() -> Void)?
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
                                             layoutConfiguration: unifiedToggleInputFeature.isAvailable ? .unifiedToggleInput : .standard,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
-                                            favoritesViewModel: self.favoritesModel))
+                                            favoritesViewModel: self.favoritesModel,
+                                            onOpenDeferredReading: {
+                                                onOpenDeferredReadingAction?()
+                                            }))
+        onOpenDeferredReadingAction = { [weak self] in
+            guard let self else { return }
+            self.delegate?.newTabPageDidRequestDeferredReadingList(self)
+        }
 
         assignFavoriteModelActions()
         messagesModel.onTryFireModeRequested = { [weak self] in

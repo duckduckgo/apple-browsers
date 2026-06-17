@@ -46,6 +46,7 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeShareEntry() -> BrowsingMenuEntry
     func makePrintEntry() -> BrowsingMenuEntry
     func makeDownloadsEntry() -> BrowsingMenuEntry
+    func makeDeferredReadingEntry() -> BrowsingMenuEntry?
     func makeAutoFillEntry() -> BrowsingMenuEntry?
     func makeVPNEntry() -> BrowsingMenuEntry?
     func makeOpenBookmarksEntry() -> BrowsingMenuEntry

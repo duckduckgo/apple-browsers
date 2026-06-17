@@ -604,6 +604,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,
+            deferredReadingController: ntpDeps.deferredReadingController,
             internalUserCommands: ntpDeps.internalUserCommands
         )
         controller.hideBorderView()

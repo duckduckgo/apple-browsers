@@ -333,6 +333,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
     case showNTPAfterIdleReturn
 
+    /// Internal-only opt-in feature for deferred reading of external URLs.
+    case deferredReading
+
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213821747548995?focus=true
     case escapeHatchActions
 
@@ -729,6 +732,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(TabSwitcherTrackerCountSubfeature.featureEnabled))
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
+        case .deferredReading:
+            Config(source: .disabled)
         case .escapeHatchActions:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchActions))
         case .escapeHatchFireButton:

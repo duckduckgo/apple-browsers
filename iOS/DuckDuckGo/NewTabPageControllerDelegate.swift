@@ -27,9 +27,11 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab)
     func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController)
     func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController)
+    func newTabPageDidRequestDeferredReadingList(_ controller: NewTabPageViewController)
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController)
 }
 
 extension NewTabPageControllerDelegate {
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) { }
+    func newTabPageDidRequestDeferredReadingList(_ controller: NewTabPageViewController) { }
 }

@@ -31,6 +31,7 @@ import RemoteMessaging
 import AIChat
 import Subscription
 import Onboarding
+import DeferredReadingCore
 
 /// Which suggestions surface the iPad popover currently shows.
 enum PopoverSuggestionsMode {
@@ -204,6 +205,7 @@ class SuggestionTrayViewController: UIViewController {
         let fireModePromotionEligibility: FireModePromotionCoordinating?
         let appSettings: AppSettings
         let subscriptionManager: any SubscriptionManager
+        let deferredReadingController: DeferredReadingController?
         let internalUserCommands: URLBasedDebugCommands
     }
 
@@ -490,6 +492,7 @@ class SuggestionTrayViewController: UIViewController {
             appSettings: dependencies.appSettings,
             faviconsCache: dependencies.faviconsCache,
             subscriptionManager: dependencies.subscriptionManager,
+            deferredReadingController: dependencies.deferredReadingController,
             internalUserCommands: dependencies.internalUserCommands
         )
 

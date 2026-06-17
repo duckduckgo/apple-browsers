@@ -425,11 +425,11 @@ extension URL {
     }
 
     public var isHttp: Bool {
-        scheme == "http"
+        scheme?.lowercased() == "http"
     }
 
     public var isHttps: Bool {
-        scheme == "https"
+        scheme?.lowercased() == "https"
     }
 
     // MARK: - Parameters

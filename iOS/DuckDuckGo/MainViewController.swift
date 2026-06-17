@@ -27,6 +27,7 @@ import FoundationExtensions
 import Configuration
 import Core
 import DataBrokerProtection_iOS
+import DeferredReadingCore
 import DDGSync
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -324,6 +325,14 @@ class MainViewController: UIViewController {
 
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
+    lazy var deferredReadingController: DeferredReadingController = {
+        DeferredReadingController(
+            keyValueStore: keyValueStore,
+            isFeatureEnabled: { [weak self] in
+                self?.featureFlagger.isFeatureOn(.deferredReading) ?? false
+            }
+        )
+    }()
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
     var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
@@ -616,6 +625,7 @@ class MainViewController: UIViewController {
             fireModePromotionEligibility: fireModePromotionEligibility,
             appSettings: appSettings,
             subscriptionManager: subscriptionManager,
+            deferredReadingController: deferredReadingController,
             internalUserCommands: internalUserCommands)
     }()
 
@@ -1723,6 +1733,7 @@ class MainViewController: UIViewController {
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,
+                                                  deferredReadingController: deferredReadingController,
                                                   internalUserCommands: internalUserCommands,
                                                   narrowLayoutInLandscape: narrowLayoutInLandscape
         )
@@ -5162,6 +5173,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         showTabSwitcher(forceFireTabsTip: true)
     }
 
+    func newTabPageDidRequestDeferredReadingList(_ controller: NewTabPageViewController) {
+        segueToDeferredReadingList()
+    }
+
 }
 
 extension MainViewController: TabDelegate {
@@ -5297,6 +5312,14 @@ extension MainViewController: TabDelegate {
 
     var isAIChatEnabled: Bool {
         return aiChatSettings.isAIChatEnabled
+    }
+
+    var deferredReadingIsEnabled: Bool {
+        featureFlagger.isFeatureOn(.deferredReading)
+    }
+
+    var deferredReadingUnreadCount: Int {
+        deferredReadingController.unreadCount
     }
     
     func tab(_ tab: TabViewController,
@@ -5549,6 +5572,10 @@ extension MainViewController: TabDelegate {
     
     func tabDidRequestDownloads(tab: TabViewController) {
         segueToDownloads()
+    }
+
+    func tabDidRequestDeferredReading(tab: TabViewController) {
+        segueToDeferredReadingList()
     }
     
     func tab(_ tab: TabViewController,

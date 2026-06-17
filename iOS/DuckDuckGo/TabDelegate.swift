@@ -91,6 +91,7 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestEditBookmark(tab: TabViewController)
     
     func tabDidRequestDownloads(tab: TabViewController)
+    func tabDidRequestDeferredReading(tab: TabViewController)
 
     func tabDidRequestAIChat(tab: TabViewController)
 
@@ -162,6 +163,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestNavigationToDifferentSite(tab: TabViewController)
     
     var isAIChatEnabled: Bool { get }
+    var deferredReadingIsEnabled: Bool { get }
+    var deferredReadingUnreadCount: Int { get }
 
     var isEmailProtectionSignedIn: Bool { get }
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
@@ -188,5 +191,11 @@ extension TabDelegate {
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
+
+    func tabDidRequestDeferredReading(tab: TabViewController) {}
+
+    var deferredReadingIsEnabled: Bool { false }
+
+    var deferredReadingUnreadCount: Int { 0 }
 
 }

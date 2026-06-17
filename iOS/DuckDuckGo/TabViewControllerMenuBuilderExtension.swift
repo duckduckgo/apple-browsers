@@ -247,6 +247,16 @@ extension TabViewController {
             self?.onOpenDownloadsAction()
         })
     }
+
+    private func buildDeferredReadingEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
+        guard delegate?.deferredReadingIsEnabled == true else { return nil }
+        return .regular(name: "Deferred Reading",
+                        image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
+                        showNotificationDot: (delegate?.deferredReadingUnreadCount ?? 0) > 0,
+                        action: { [weak self] in
+            self?.onOpenDeferredReadingAction()
+        })
+    }
     
     private func buildAutoFillEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAutofillLogins,
@@ -307,6 +317,10 @@ extension TabViewController {
         }
 
         entries.append(buildDownloadsEntry())
+
+        if let deferredReadingEntry = buildDeferredReadingEntry() {
+            entries.append(deferredReadingEntry)
+        }
 
         if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable {
             entries.append(buildVPNEntry())
@@ -823,6 +837,10 @@ extension TabViewController {
                    withAdditionalParameters: [PixelParameters.originatedFromMenu: "1"])
         delegate?.tabDidRequestDownloads(tab: self)
     }
+
+    private func onOpenDeferredReadingAction() {
+        delegate?.tabDidRequestDeferredReading(tab: self)
+    }
     
     private func onOpenAutofillLoginsAction() {
         Pixel.fire(pixel: .browsingMenuAutofill)
@@ -1076,6 +1094,10 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeDownloadsEntry() -> BrowsingMenuEntry {
         buildDownloadsEntry(useSmallIcon: false)
+    }
+
+    func makeDeferredReadingEntry() -> BrowsingMenuEntry? {
+        buildDeferredReadingEntry(useSmallIcon: false)
     }
     
     func makeOpenBookmarksEntry() -> BrowsingMenuEntry {

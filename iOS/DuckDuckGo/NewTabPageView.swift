@@ -18,6 +18,7 @@
 //
 
 import DuckUI
+import DeferredReadingUI
 import RemoteMessaging
 import SwiftUI
 import UIComponents
@@ -34,6 +35,7 @@ struct NewTabPageView: View {
     let narrowLayoutInLandscape: Bool
     let dismissKeyboardOnScroll: Bool
     let layoutConfiguration: NewTabPageLayoutConfiguration
+    let onOpenDeferredReading: () -> Void
 
     init(isFocussedState: Bool = false,
          narrowLayoutInLandscape: Bool = false,
@@ -41,7 +43,8 @@ struct NewTabPageView: View {
          layoutConfiguration: NewTabPageLayoutConfiguration = .standard,
          viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
-         favoritesViewModel: FavoritesViewModel) {
+         favoritesViewModel: FavoritesViewModel,
+         onOpenDeferredReading: @escaping () -> Void = {}) {
         self.isFocussedState = isFocussedState
         self.viewModel = viewModel
         self.messagesModel = messagesModel
@@ -49,6 +52,7 @@ struct NewTabPageView: View {
         self.narrowLayoutInLandscape = narrowLayoutInLandscape
         self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
         self.layoutConfiguration = layoutConfiguration
+        self.onOpenDeferredReading = onOpenDeferredReading
 
         self.messagesModel.load()
     }
@@ -216,6 +220,13 @@ private extension NewTabPageView {
 
     @ViewBuilder
     private var messagesSectionView: some View {
+        if viewModel.isDeferredReadingEnabled, viewModel.deferredReadingUnreadCount > 0 {
+            DeferredReadingBannerView(unreadCount: viewModel.deferredReadingUnreadCount) {
+                onOpenDeferredReading()
+            }
+            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+        }
+
         if messagesModel.isFirePromotionVisible {
             FireModePromotionCardView(
                 onTryFireTabs: {

@@ -551,11 +551,13 @@ final class TabBarItemCellView: NSView {
         faviconView.startSpinnerIfNeeded(isLoading: isLoading, url: url, error: error)
     }
 
-    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool, animated: Bool = true) {
+    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool) {
         guard displaysTabsAnimations else {
             return
         }
 
+        // Don't animate when switching Tabs via Keyboard Shortcuts
+        let animated = NSApp.currentEvent?.isMouse ?? true
         backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, animated: animated)
     }
 }

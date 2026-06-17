@@ -119,10 +119,19 @@ struct Launching: LaunchingHandling {
         let contentBlocking = ContentBlocking.shared
 
         onboardingManager = OnboardingManager(appDefaults: appSettings, featureFlagger: featureFlagger, variantManager: configuration.atbAndVariantConfiguration.variantManager, tutorialSettings: DefaultTutorialSettings())
+
+        // Construct the storage handler before SyncService so AIChatSyncCleaner has the
+        // storage hook it needs to flush pending pin updates on each sync cycle.
+        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(
+            featureFlagger: featureFlagger,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-                                      faviconStoring: favicons)
+                                      faviconStoring: favicons,
+                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let webExtensionManagerHolder = WebExtensionManagerHolder()
         let webExtensionAvailability = WebExtensionAvailability(
@@ -130,11 +139,6 @@ struct Launching: LaunchingHandling {
             webExtensionManagerProvider: {
                 webExtensionManagerHolder.manager
             }
-        )
-
-        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(
-            featureFlagger: featureFlagger,
-            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
         )
         let fireModeStorageController = FireModeNativeStorageController(
             featureFlagger: featureFlagger,

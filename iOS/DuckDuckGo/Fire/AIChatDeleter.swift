@@ -26,6 +26,13 @@ protocol AIChatDeleting {
     @discardableResult
     @MainActor
     func deleteChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error>
+
+    @discardableResult
+    @MainActor
+    func deleteAllChats(isFireMode: Bool) async -> Result<Void, Error>
+
+    @MainActor
+    func scheduleSync()
 }
 
 struct AIChatDeleter: AIChatDeleting {
@@ -45,17 +52,10 @@ struct AIChatDeleter: AIChatDeleting {
     @discardableResult
     @MainActor
     func deleteChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> {
-        let dataStore: WKWebsiteDataStore?
-        if isFireMode {
-            guard #available(iOS 17, *) else {
-                return .success(())
-            }
-            dataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
-        } else {
-            dataStore = nil
+        guard let cleaner = historyCleaner(isFireMode: isFireMode) else {
+            return .success(())
         }
 
-        let cleaner = historyCleanerProvider(dataStore, isFireMode)
         let result = await cleaner.deleteAIChat(chatID: chatID)
         switch result {
         case .success:
@@ -71,5 +71,44 @@ struct AIChatDeleter: AIChatDeleting {
             }
         }
         return result
+    }
+
+    @discardableResult
+    @MainActor
+    func deleteAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+        guard let cleaner = historyCleaner(isFireMode: isFireMode) else {
+            return .success(())
+        }
+
+        let result = await cleaner.cleanAIChatHistory()
+        switch result {
+        case .success:
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
+            if !isFireMode {
+                await aiChatSyncCleaner.recordLocalClear(date: Date())
+            }
+        case .failure(let error):
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+            Logger.aiChat.debug("Failed to clear AI Chat history: \(error.localizedDescription)")
+            if let userScriptError = error as? UserScriptError {
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
+            }
+        }
+        return result
+    }
+
+    @MainActor
+    func scheduleSync() {
+        aiChatSyncCleaner.scheduleSync()
+    }
+
+    @MainActor
+    private func historyCleaner(isFireMode: Bool) -> HistoryCleaning? {
+        if isFireMode {
+            guard #available(iOS 17, *) else { return nil }
+            let dataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
+            return historyCleanerProvider(dataStore, isFireMode)
+        }
+        return historyCleanerProvider(nil, isFireMode)
     }
 }

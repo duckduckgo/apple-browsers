@@ -208,6 +208,10 @@ enum Preferences {
                         guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
                         pixelHandler(.subscriptionWinBackOfferSettingsPageCTAClicked, .standard)
                         showTab(.subscription(url))
+                    case .didOpenSubscriptionPurchase:
+                        pixelHandler(.subscriptionEntrySettingsImpression, .standard)
+                    case .didClickPurchase:
+                        pixelHandler(.subscriptionEntrySettingsSubscriptionClick, .standard)
                     }
                 }
             }
@@ -381,7 +385,7 @@ enum Preferences {
                 showTab(.subscription(url))
 
                 if subscriptionURL == .purchase {
-                    pixelHandler(.subscriptionOfferScreenImpression, .standard)
+                    pixelHandler(.subscriptionOfferScreenImpression(origin: SubscriptionFunnelOrigin.appSettings.rawValue), .standard)
                 }
             }
         }

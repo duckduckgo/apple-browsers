@@ -1,4 +1,24 @@
 {
+    "m_settings_email_protection_open": {
+        "description": "Fires when the user opens the Email Protection settings pane.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "is_signed_in",
+                "type": "string",
+                "description": "Whether the user is signed in to Email Protection (1 = signed in, 0 = not signed in).",
+                "enum": ["0", "1"]
+            },
+            {
+                "key": "subscribed",
+                "type": "boolean",
+                "description": "Whether the user has an active subscription at the time the pixel fires."
+            }
+        ]
+    },
     "m_settings_refresh_button_position_address_bar": {
         "description": "Fires when the user sets the refresh button position to the address bar in settings",
         "owners": ["pikorddg"],
@@ -22,14 +42,14 @@
     },
     "m_settings_autoplay_open": {
         "description": "Fires when the user opens the Autoplay settings screen",
-        "owners": ["edulpn"],
+        "owners": ["samsymons"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_settings_autoplay_changed": {
         "description": "Fires when the user changes the autoplay blocking mode setting",
-        "owners": ["edulpn"],
+        "owners": ["samsymons"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [

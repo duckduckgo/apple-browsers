@@ -69,7 +69,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             appVersion: "1.0.0",
             source: "TESTS",
             defaultHeaders: [:],
-            dailyPixelCalendar: nil,
+            pixelCalendar: nil,
             dateGenerator: timeMachine.now,
             defaults: userDefaults,
             fireRequest: pixelHandler

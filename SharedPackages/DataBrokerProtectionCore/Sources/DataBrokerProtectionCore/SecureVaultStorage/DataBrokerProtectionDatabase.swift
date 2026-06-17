@@ -37,7 +37,11 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws
 
     func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData?
-    func fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: Bool) throws -> [BrokerProfileQueryData]
+    /// Includes removed brokers. Prefer `fetchActiveBrokerProfileQueryData()` unless your caller genuinely needs them.
+    /// The `reason` parameter is intentionally required so callers document why removed brokers are needed at the call site.
+    func fetchAllBrokerProfileQueryData(reason: BrokerProfileQueryDataFetchReason) throws -> [BrokerProfileQueryData]
+    func fetchActiveBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
+    func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
 
     func fetchAllDataBrokers() throws -> [DataBroker]
@@ -84,13 +88,13 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
 
     func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData?
 
-    func fetchFirstEligibleJobDate() throws -> Date?
+    func fetchFirstEligibleJobDate(isAuthenticatedUser: Bool) throws -> Date?
 
     func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws
     func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
     func deleteBackgroundTaskEvents(olderThan date: Date) throws
 
-    func haveAllScansRunAtLeastOnce() throws -> Bool
+    func haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: Bool) throws -> Bool
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -401,9 +405,21 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
-    public func fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: Bool) throws -> [BrokerProfileQueryData] {
+    public func fetchAllBrokerProfileQueryData(reason: BrokerProfileQueryDataFetchReason) throws -> [BrokerProfileQueryData] {
+        try fetchBrokerProfileQueryData { try vault.fetchAllBrokers() }
+    }
+
+    public func fetchActiveBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+        try fetchBrokerProfileQueryData { try vault.fetchAllNonRemovedBrokers() }
+    }
+
+    public func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData] {
+        try fetchActiveBrokerProfileQueryData().excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
+    }
+
+    private func fetchBrokerProfileQueryData(brokers: () throws -> [DataBroker]) throws -> [BrokerProfileQueryData] {
         do {
-            let brokers = shouldFilterRemovedBrokers ? try vault.fetchAllNonRemovedBrokers() : try vault.fetchAllBrokers()
+            let brokers = try brokers()
             let profileQueries = try vault.fetchAllProfileQueries(for: Self.profileId)
             var brokerProfileQueryDataList = [BrokerProfileQueryData]()
 
@@ -427,7 +443,7 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
 
             return brokerProfileQueryDataList
         } catch {
-            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllBrokerProfileQueryData")
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchBrokerProfileQueryData")
             throw error
         }
     }
@@ -657,7 +673,7 @@ extension DataBrokerProtectionDatabase {
 
         let newProfileQueries = profile.profileQueries
 
-        let databaseBrokerProfileQueryData = try fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
+        let databaseBrokerProfileQueryData = try fetchActiveBrokerProfileQueryData()
         let databaseProfileQueries = databaseBrokerProfileQueryData.map { $0.profileQuery }
 
         // The queries we need to create are the one that exist on the new ones but not in the database
@@ -746,8 +762,16 @@ extension DataBrokerProtectionDatabase {
         }
     }
 
-    public func fetchFirstEligibleJobDate() throws -> Date? {
-        try vault.fetchFirstEligibleJobDate()
+    public func fetchFirstEligibleJobDate(isAuthenticatedUser: Bool) throws -> Date? {
+        if isAuthenticatedUser {
+            return try vault.fetchFirstEligibleJobDate(excludingScanBrokerIDs: [], includesOptOuts: true)
+        }
+
+        let brokerIDsRequiringSubscription = try vault.fetchAllNonRemovedBrokers().compactMap { broker -> Int64? in
+            guard broker.scanRequiresSubscription else { return nil }
+            return broker.id
+        }
+        return try vault.fetchFirstEligibleJobDate(excludingScanBrokerIDs: brokerIDsRequiringSubscription, includesOptOuts: false)
     }
 
     public func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws {
@@ -866,14 +890,14 @@ extension DataBrokerProtectionDatabase {
         }
     }
 
-    public func haveAllScansRunAtLeastOnce() throws -> Bool {
+    public func haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: Bool) throws -> Bool {
         do {
-            let data = try fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
+            let data = try fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: isAuthenticatedUser)
             let scans = data.compactMap { $0.scanJobData }
             let scansNotRun = scans.filter { $0.lastRunDate == nil }
             return scansNotRun.count == 0
         } catch {
-            handleError(error, context: "DataBrokerProtectionDatabase.haveAllScansRunAtLeastOnce")
+            handleError(error, context: "DataBrokerProtectionDatabase.haveAllEligibleScansRunAtLeastOnce")
             throw error
         }
     }

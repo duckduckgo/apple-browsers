@@ -103,6 +103,8 @@ public extension SingleUseColor {
 
         case decorationPrimary
         case decorationSecondary
+
+        case alertGreen
     }
 
 }

@@ -994,10 +994,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private struct Metrics {
         static let itemSize: CGFloat = 44
         static let height: CGFloat = 60
-        static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+        static var cornerRadius: CGFloat { OmniBarMetrics.cornerRadius }
 
         /// Sits 2pt outside `cornerRadius` so the active outline stays concentric with the field.
-        static var activeBorderRadius: CGFloat { AppRebrand.isAppRebranded() ? 24 : 18 }
+        static var activeBorderRadius: CGFloat { OmniBarMetrics.cornerRadius + 2 }
         static let activeBorderWidth: CGFloat = 2
 
         static let textAreaHorizontalPadding: CGFloat = 16
@@ -1301,7 +1301,6 @@ extension DefaultOmniBarView {
 
     func updateSearchAreaExpansion(animated: Bool) {
         applyTextViewVisibility()
-        onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
 
         guard animated else {
             searchAreaContainerView.applyShadowOpacityMultiplier(1)
@@ -1312,10 +1311,19 @@ extension DefaultOmniBarView {
             applyExpansionConstraints()
             applyExpansionClipping()
             layoutIfNeeded()
+            // After layout so observers (the popover) anchor against the final frame.
+            onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
             if isSearchAreaExpanded, !aiChatTextView.isFirstResponder {
                 aiChatTextView.becomeFirstResponder()
             }
             return
+        }
+
+        // Collapsing: notify now so the popover hides as the bar shrinks. Expanding: notify on completion
+        // (below), once the expanded frame is laid out, so the popover anchors at the right Y instead of
+        // sliding from the collapsed position.
+        if !isSearchAreaExpanded {
+            onSearchAreaExpandedStateChanged?(false)
         }
 
         layoutIfNeeded()
@@ -1345,6 +1353,7 @@ extension DefaultOmniBarView {
                 self.onCollapseAnimationCompleted = nil
             } else {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.onSearchAreaExpandedStateChanged?(true)
             }
             if self.isSearchAreaExpanded {
                 self.aiChatTextView.becomeFirstResponder()

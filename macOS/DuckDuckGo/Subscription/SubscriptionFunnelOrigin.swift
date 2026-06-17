@@ -29,9 +29,6 @@ enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel via the Free Scan feature.
     case freeScan = "funnel_freescan_macos"
 
-    /// User entered the funnel via the VPN upsell.
-    case vpnUpsell = "funnel_toolbar_macos"
-
     // MARK: - Win-Back Offer Origins
 
     /// User entered via win-back offer launch prompt
@@ -51,6 +48,15 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered the funnel via the subscription promo on the Fire Window home page.
     case fireWindowPromo = "funnel_newtab_macos__firewindowvpn"
+
+    /// User entered the funnel via the VPN toolbar button upsell popover.
+    case vpnToolbarUpsell = "funnel_toolbar_macos__subscriptionvpnupsell"
+
+    /// User entered the funnel via the VPN toolbar button popover when their subscription was revoked.
+    case vpnToolbarRevoked = "funnel_toolbar_macos__subscriptionvpnrevoked"
+
+    /// User entered the funnel via the VPN menu-bar status item popover when their subscription was revoked.
+    case vpnMenuBarRevoked = "funnel_menubar_macos__subscriptionvpnrevoked"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

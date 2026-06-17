@@ -34,6 +34,9 @@ final class UnifiedToggleInputToggleView: UIView {
         static let iconTextSpacing: CGFloat = 4
         static let horizontalPadding: CGFloat = 2
         static let animationDuration: TimeInterval = 0.25
+        /// Horizontal drag speed (pt/s) above which a release commits in the flick direction,
+        /// regardless of whether the pill has crossed the midpoint.
+        static let flickVelocityThreshold: CGFloat = 300
     }
 
     // MARK: - Properties
@@ -41,6 +44,20 @@ final class UnifiedToggleInputToggleView: UIView {
     private(set) var selectedMode: TextEntryMode = .aiChat
 
     var onModeChanged: ((TextEntryMode) -> Void)?
+
+    /// Fires `true` when the user starts dragging the pill and `false` when the drag ends
+    /// (released, cancelled or failed). The content container observes this to suppress its own
+    /// swipe-between-modes gesture while the pill is in flight, so the two animations don't fight.
+    var onDragStateChanged: ((Bool) -> Void)?
+
+    // MARK: - Drag State
+
+    private var dragStartMode: TextEntryMode = .aiChat
+    /// Resting leading-x of the indicator for each mode, in this view's coordinate space,
+    /// captured at drag start so the gesture stays correct across resize / rotation / Dynamic Type.
+    private var dragSearchRestX: CGFloat = 0
+    private var dragDuckAIRestX: CGFloat = 0
+    private var dragIndicatorWidth: CGFloat = 0
 
     // MARK: - UI Components
 
@@ -65,11 +82,15 @@ final class UnifiedToggleInputToggleView: UIView {
         return view
     }()
 
-    private lazy var searchButton: UIButton = makeSegmentButton(
-        icon: DesignSystemImages.Glyphs.Size16.findSearch,
-        title: UserText.searchInputToggleSearchButtonTitle,
-        tag: 0
-    )
+    private lazy var searchButton: UIButton = {
+        let button = makeSegmentButton(
+            icon: DesignSystemImages.Glyphs.Size16.findSearch,
+            title: UserText.searchInputToggleSearchButtonTitle,
+            tag: 0
+        )
+        button.accessibilityIdentifier = "AddressBar.Button.Search"
+        return button
+    }()
 
     private lazy var duckAIButton: UIButton = {
         let button = makeSegmentButton(
@@ -172,6 +193,9 @@ final class UnifiedToggleInputToggleView: UIView {
             indicator.widthAnchor.constraint(equalTo: searchButton.widthAnchor),
         ])
 
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        addGestureRecognizer(panGesture)
+
         updateButtonAppearance()
     }
 
@@ -210,6 +234,70 @@ final class UnifiedToggleInputToggleView: UIView {
         onModeChanged?(mode)
     }
 
+    // MARK: - Drag
+
+    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            beginDrag()
+            onDragStateChanged?(true)
+        case .changed:
+            updateDrag(translationX: gesture.translation(in: self).x)
+        case .ended, .cancelled, .failed:
+            endDrag(velocityX: gesture.velocity(in: self).x)
+            onDragStateChanged?(false)
+        default:
+            break
+        }
+    }
+
+    private func beginDrag() {
+        dragStartMode = selectedMode
+        // Indicator rest positions equal the buttons' leading edges (see the indicator constraints).
+        dragSearchRestX = convert(searchButton.bounds, from: searchButton).minX
+        dragDuckAIRestX = convert(duckAIButton.bounds, from: duckAIButton).minX
+        dragIndicatorWidth = indicator.bounds.width
+    }
+
+    private func updateDrag(translationX: CGFloat) {
+        let travel = dragDuckAIRestX - dragSearchRestX
+        // Anchored at the drag-start side and clamped to the track, so the pill can reach the
+        // far end but never overshoot past either segment.
+        let clamped: CGFloat
+        if dragStartMode == .search {
+            clamped = min(max(translationX, 0), travel)
+        } else {
+            clamped = max(min(translationX, 0), -travel)
+        }
+        indicator.transform = CGAffineTransform(translationX: clamped, y: 0)
+    }
+
+    private func endDrag(velocityX: CGFloat) {
+        let anchorRestX = dragStartMode == .search ? dragSearchRestX : dragDuckAIRestX
+        let indicatorCenterX = anchorRestX + indicator.transform.tx + dragIndicatorWidth / 2
+        let midpointX = (dragSearchRestX + dragDuckAIRestX) / 2 + dragIndicatorWidth / 2
+        let target = resolveTargetMode(indicatorCenterX: indicatorCenterX, midpointX: midpointX, velocityX: velocityX)
+        commitDrag(to: target)
+    }
+
+    /// Decides which side the pill should settle on when the drag is released.
+    /// A fast flick wins outright; otherwise the nearer side (relative to the midpoint) is chosen.
+    func resolveTargetMode(indicatorCenterX: CGFloat, midpointX: CGFloat, velocityX: CGFloat) -> TextEntryMode {
+        if abs(velocityX) >= Constants.flickVelocityThreshold {
+            return velocityX > 0 ? .aiChat : .search
+        }
+        return indicatorCenterX < midpointX ? .search : .aiChat
+    }
+
+    private func commitDrag(to target: TextEntryMode) {
+        let modeChanged = target != selectedMode
+        selectedMode = target
+        updateIndicator(animated: true)
+        guard modeChanged else { return }
+        updateButtonAppearance()
+        onModeChanged?(target)
+    }
+
     // MARK: - Updates
 
     private func updateIndicator(animated: Bool) {
@@ -218,11 +306,13 @@ final class UnifiedToggleInputToggleView: UIView {
         indicatorToDuckAI.isActive = !isSearch
 
         guard animated else {
+            indicator.transform = .identity
             layoutIfNeeded()
             return
         }
 
         UIView.animate(withDuration: Constants.animationDuration, delay: 0, options: .curveEaseInOut) {
+            self.indicator.transform = .identity
             self.layoutIfNeeded()
         }
     }

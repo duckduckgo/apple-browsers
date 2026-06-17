@@ -29,6 +29,7 @@ import PrivacyDashboard
 import PrivacyStats
 import AutoconsentStats
 import SecureStorage
+import WebExtensions
 import WebKit
 
 protocol FireProtocol: AnyObject {
@@ -767,16 +768,20 @@ final class Fire: FireProtocol {
     // MARK: - Web Extensions
 
     @MainActor
-    private func unloadWebExtensions() {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            webExtensionManager.unloadAllExtensions()
+    private func unloadWebExtensions() async {
+        if #available(macOS 15.4, *) {
+            await NSApp.delegateTyped.webExtensionLifecycleCoordinator?.unload().value
         }
     }
 
     @MainActor
     private func reloadWebExtensions() async {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            await webExtensionManager.loadInstalledExtensions()
+        if #available(macOS 15.4, *), let coordinator = NSApp.delegateTyped.webExtensionLifecycleCoordinator {
+            if NSApp.delegateTyped.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {
+                await coordinator.reload().value
+            } else {
+                await coordinator.load().value
+            }
         }
     }
 

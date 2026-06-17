@@ -33,7 +33,7 @@ struct AutofillCreditCardListView: View {
             case .authLocked, .noAuthAvailable:
                 LockScreenView()
             case .empty:
-                EmptyStateView(viewModel: viewModel)
+                EmptyStateView(onAddCard: { viewModel.addCard() })
             case .showItems:
                 List {
                     Section {
@@ -61,7 +61,7 @@ struct AutofillCreditCardListView: View {
 }
 
 private struct EmptyStateView: View {
-    var viewModel: AutofillCreditCardListViewModel
+    let onAddCard: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
@@ -86,7 +86,7 @@ private struct EmptyStateView: View {
             .lineLimit(nil)
             
             Button {
-                viewModel.addCard()
+                onAddCard()
             } label: {
                 HStack {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.add)
@@ -103,3 +103,15 @@ private struct EmptyStateView: View {
         )
     }
 }
+
+#if DEBUG
+#Preview("Empty State / Light") {
+    EmptyStateView(onAddCard: {})
+        .preferredColorScheme(.light)
+}
+
+#Preview("Empty State / Dark") {
+    EmptyStateView(onAddCard: {})
+        .preferredColorScheme(.dark)
+}
+#endif

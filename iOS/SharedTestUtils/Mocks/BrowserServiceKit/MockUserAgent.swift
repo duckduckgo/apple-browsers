@@ -52,6 +52,10 @@ class MockUserAgentManager: UserAgentManaging {
         return userAgent.agent(forUrl: url, isDesktop: isDesktop)
     }
 
+    func safariOnlyUserAgent(isDesktop: Bool) -> String {
+        userAgent.safariOnlyAgent(isDesktop: isDesktop, privacyConfig: privacyConfig)
+    }
+
     public func update(request: inout URLRequest, isDesktop: Bool) {
         request.addValue(userAgent.agent(forUrl: nil, isDesktop: isDesktop, privacyConfig: privacyConfig), forHTTPHeaderField: "User-Agent")
     }
@@ -59,6 +63,10 @@ class MockUserAgentManager: UserAgentManaging {
     public func update(webView: WKWebView, isDesktop: Bool, url: URL?) {
         let agent = userAgent.agent(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
         webView.customUserAgent = agent
+    }
+
+    var applicationNameForUserAgent: String {
+        userAgent.applicationNameForUserAgent
     }
 
 }

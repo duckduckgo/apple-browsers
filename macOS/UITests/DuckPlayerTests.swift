@@ -37,7 +37,11 @@ class DuckPlayerTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["adBlockingExtension": false])
+
+        guard #available(macOS 15.4, *) else {
+            throw XCTSkip("Duck Player settings are reached via the YouTube Ad Blocking pane, which requires macOS 15.4+")
+        }
+        app = XCUIApplication.setUp(featureFlags: ["webExtensions": true, "adBlockingExtension": false])
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
     }
@@ -173,12 +177,6 @@ class DuckPlayerTests: UITestCase {
     // MARK: - Tests
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPOrganic() throws {
-        // Skip this test on macOS 13
-        let version = ProcessInfo.processInfo.operatingSystemVersion
-        if version.majorVersion == 13 {
-            throw XCTSkip("Test disabled on macOS 13")
-        }
-
         // Settings
         openYouTubeAdBlockingSettings()
         selectAlwaysOpenInDuckPlayer()
@@ -198,12 +196,6 @@ class DuckPlayerTests: UITestCase {
     }
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPVideos() throws {
-        // Skip this test on macOS 13
-        let version = ProcessInfo.processInfo.operatingSystemVersion
-        if version.majorVersion == 13 {
-            throw XCTSkip("Test disabled on macOS 13")
-        }
-
         // Settings
         openYouTubeAdBlockingSettings()
         selectAlwaysOpenInDuckPlayer()

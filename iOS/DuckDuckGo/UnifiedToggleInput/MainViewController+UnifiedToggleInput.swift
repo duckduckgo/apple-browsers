@@ -1071,6 +1071,13 @@ extension MainViewController {
             coordinator.contentViewController.daxLogoManager.setLogoYOffset(currentOffset + offset)
         }
 
+        // Favorites handoff: hide the real NTP favorites during the collapse so only the embedded
+        // (animating) copy is visible — they land aligned, so the real NTP is revealed at completion.
+        // Mirrors the logo handoff and avoids a mid-animation double image.
+        if !isLogoToLogo {
+            newTabPageViewController?.setFavoritesHidden(true)
+        }
+
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
         let revealBarView = viewCoordinator.omniBar?.barView
 
@@ -1082,12 +1089,13 @@ extension MainViewController {
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
-                // Mirror the focus path: push updated content insets so the suggestion
-                // tray content (including the escape hatch) animates with the bar collapse.
+                // Mirror the focus path: settle the collapsed bar layout first so `pushContentInsets`
+                // reads the *target* (collapsed) height, then push insets so the favorites/hatch
+                // animate with the collapse instead of snapping.
+                self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
-                if !isLogoToLogo {
-                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                }
+                // (Favorites case no longer fades the container — the embedded favorites stay visible
+                // and animate; the real NTP favorites, hidden above, are revealed at completion.)
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
@@ -1098,6 +1106,7 @@ extension MainViewController {
                 // content container, so the NTP Logo is rendered in the same frame
                 // and there's no one-frame gap where neither logo is visible.
                 self.newTabPageViewController?.setLogoHidden(false)
+                self.newTabPageViewController?.setFavoritesHidden(false)
                 self.newTabPageViewController?.view.setNeedsLayout()
                 self.newTabPageViewController?.view.layoutIfNeeded()
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true

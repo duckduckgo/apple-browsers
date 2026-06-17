@@ -422,6 +422,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         coordinator.animate { _ in
             self.adjustLayoutForViewSize(size)
+            // Orientation changes the bar position, hatch suppression and chrome insets, but only a
+            // bar push or mode toggle re-runs the inset pipeline — so rotation left the host's
+            // safe-area insets stale. Re-apply it here for the new orientation.
+            if self.isContentActive {
+                self.applyRequestedContentInset()
+            }
             self.view.layoutIfNeeded()
         }
     }

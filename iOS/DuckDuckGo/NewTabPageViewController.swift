@@ -43,6 +43,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         newTabPageViewModel.isLogoHidden = hidden
     }
 
+    func setFavoritesHidden(_ hidden: Bool) {
+        newTabPageViewModel.isFavoritesHidden = hidden
+    }
+
     private lazy var borderView = StyledTopBottomBorderView()
 
     private let newTabDialogFactory: any NewTabDaxDialogProviding

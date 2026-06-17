@@ -152,8 +152,9 @@ final class UnifiedSuggestionsHost {
     }
 
     private func applyCombinedInsets() {
+        let top = escapeHatchTopInset + contentInsets.top
         hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
-            top: escapeHatchTopInset + contentInsets.top,
+            top: top,
             left: contentInsets.left,
             bottom: contentInsets.bottom,
             right: contentInsets.right

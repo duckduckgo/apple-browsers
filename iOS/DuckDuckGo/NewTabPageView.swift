@@ -123,6 +123,7 @@ private extension NewTabPageView {
 
                     FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
+                        .opacity(viewModel.isFavoritesHidden ? 0 : 1)
                 }
                 .padding(.top, contentTopInset(in: proxy))
                 .padding(.bottom, sectionsViewPadding(in: proxy))

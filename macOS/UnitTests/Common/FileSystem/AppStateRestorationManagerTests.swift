@@ -269,8 +269,8 @@ final class AppStateRestorationManagerTests: XCTestCase {
         mockRestartSourceResolver.resolvedSource = .unknown
         mockKeyValueStore.throwOnSet = MockError.error
         mockPixelKit.expectedFireCalls = [
-            .init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: .unknown), frequency: .standard),
-            .init(pixel: DebugEvent(SessionRestorePromptPixel.appTerminationFlagWriteFailed, error: MockError.error), frequency: .standard)
+            .init(pixel: DebugEvent(SessionRestorePromptPixel.appTerminationFlagWriteFailed, error: MockError.error), frequency: .standard),
+            .init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: .unknown), frequency: .standard)
         ]
 
         appStateManager.applicationDidFinishLaunching()

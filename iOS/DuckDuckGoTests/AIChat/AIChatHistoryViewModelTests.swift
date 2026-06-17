@@ -494,16 +494,16 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(instrumentation.downloadStartedCount, 1)
     }
 
-    func testSearchAndSelectModeAndFireAll_fireTheirPixels() {
+    func testSearchAndEditModeAndFireAll_fireTheirPixels() {
         let instrumentation = MockAIChatHistoryInstrumentation()
         let sut = makeSUT(chats: [], instrumentation: instrumentation)
 
         sut.searchActivated()
-        sut.selectModeEntered()
+        sut.editModeEntered()
         sut.fireAllTapped()
 
         XCTAssertEqual(instrumentation.searchActivatedCount, 1)
-        XCTAssertEqual(instrumentation.selectModeEnteredCount, 1)
+        XCTAssertEqual(instrumentation.editModeEnteredCount, 1)
         XCTAssertEqual(instrumentation.fireAllTappedCount, 1)
     }
 
@@ -623,7 +623,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var pinAddedCount = 0
         private(set) var pinRemovedCount = 0
         private(set) var downloadStartedCount = 0
-        private(set) var selectModeEnteredCount = 0
+        private(set) var editModeEnteredCount = 0
         private(set) var newChatTappedCount = 0
 
         func screenShown(source: AIChatHistorySource) { screenShownSources.append(source) }
@@ -636,7 +636,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func pinAdded() { pinAddedCount += 1 }
         func pinRemoved() { pinRemovedCount += 1 }
         func downloadStarted() { downloadStartedCount += 1 }
-        func selectModeEntered() { selectModeEnteredCount += 1 }
+        func editModeEntered() { editModeEnteredCount += 1 }
         func newChatTapped() { newChatTappedCount += 1 }
     }
 }

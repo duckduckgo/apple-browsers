@@ -762,19 +762,19 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(setup.coordinator.state, .failed(.nativeCredentialAlreadyPresent))
     }
 
-    func testWhenThirdPartyUpgradeReportsGenericUpgradeErrorThenPairingFailsWithLoginFailed() async throws {
+    func testWhenThirdPartyUpgradeReportsGenericUpgradeErrorThenPairingFailsWithUpgradeFailed() async throws {
         let setup = try await makeNativeJoinerReadyForThirdPartyUpgrade(upgradeError: ThirdPartyAccountUpgradeError.noUsableThirdPartyProtectedKeys)
 
         do {
             try await setup.coordinator.pollOnce()
             XCTFail("Expected upgrade failure to abort pairing")
-        } catch PairingV2Error.loginFailed {
+        } catch PairingV2Error.upgradeFailed {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
 
         XCTAssertEqual(setup.upgradeCoordinator.upgradeThirdPartyAccountCalls.map(\.recoveryCode), ["third-party-recovery-code"])
-        XCTAssertEqual(setup.coordinator.state, .failed(.loginFailed))
+        XCTAssertEqual(setup.coordinator.state, .failed(.upgradeFailed))
     }
 
     func testWhenNativeJoinerConfirmationIsDeniedThenDoesNotLoginIfRecoveryCodeArrives() async throws {

@@ -843,7 +843,7 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     func testControllerDidRecognizeCode_presentsPrepareDialog() async {
-        await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .pastedCode)
+        await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .pastedCode, codeVersion: .v1)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }

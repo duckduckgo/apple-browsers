@@ -34,8 +34,7 @@ import PrivacyStats
 import Networking
 import WebExtensions
 import Onboarding
-import DeferredReadingUI
-import SwiftUI
+import UIKit
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -78,7 +77,6 @@ final class MainCoordinator {
     private let wideEvent: WideEventManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
-    private weak var deferredReadingDecisionHost: UIViewController?
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
@@ -717,33 +715,44 @@ extension MainCoordinator: URLHandling {
 
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
+        controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
         if featureFlagger.isFeatureOn(.deferredReading),
            url.isHttp || url.isHttps,
            controller.deferredReadingController.shouldPromptForExternalURLNow() {
-            presentDeferredReadingDecision(for: url)
-            return
+            let openedTab = controller.currentTab?.tabModel
+            presentDeferredReadingDecision(for: url, openedTab: openedTab)
         }
-        controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
     }
 
-    private func presentDeferredReadingDecision(for url: URL) {
-        let view = DeferredReadingDecisionView(
-            url: url,
-            onReadNow: { [weak self] in
-                guard let self else { return }
-                self.deferredReadingDecisionHost?.dismiss(animated: true)
-                self.controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
-            },
-            onDefer: { [weak self] in
-                guard let self else { return }
-                self.controller.deferredReadingController.deferURL(url)
-                self.deferredReadingDecisionHost?.dismiss(animated: true)
-            }
+    private func presentDeferredReadingDecision(for url: URL, openedTab: Tab?) {
+        let alert = UIAlertController(
+            title: "Open now or read later?",
+            message: url.host ?? url.absoluteString,
+            preferredStyle: .actionSheet
         )
-        let hostingController = UIHostingController(rootView: view)
-        hostingController.modalPresentationStyle = .pageSheet
-        deferredReadingDecisionHost = hostingController
-        controller.present(hostingController, animated: true)
+
+        alert.addAction(UIAlertAction(title: "Read Now", style: .default))
+        alert.addAction(UIAlertAction(title: "Read Later", style: .default) { [weak self] _ in
+            guard let self else { return }
+            self.controller.deferredReadingController.deferURL(url)
+            if let openedTab {
+                self.controller.closeTab(openedTab)
+            }
+        })
+        alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
+
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = controller.view
+            popover.sourceRect = CGRect(
+                x: controller.view.bounds.midX,
+                y: controller.view.bounds.maxY - 44,
+                width: 1,
+                height: 1
+            )
+            popover.permittedArrowDirections = []
+        }
+
+        controller.present(alert, animated: true)
     }
 
     private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {

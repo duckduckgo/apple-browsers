@@ -17,23 +17,36 @@ public struct DeferredReadingDecisionView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 16) {
-            Text("Read this now?")
+        VStack(spacing: 14) {
+            Capsule()
+                .fill(Color(designSystemColor: .textSecondary).opacity(0.3))
+                .frame(width: 36, height: 4)
+                .padding(.top, 8)
+
+            Text("Open now or read later?")
                 .font(.headline)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(url.host ?? url.absoluteString)
-                .font(.subheadline)
+                .font(.footnote)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button("Read Now", action: onReadNow)
-                .buttonStyle(.borderedProminent)
+            HStack(spacing: 10) {
+                Button("Read Later", action: onDefer)
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
 
-            Button("Defer to Later", action: onDefer)
-                .buttonStyle(.bordered)
+                Button("Read Now", action: onReadNow)
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.top, 2)
         }
-        .padding(20)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
         .background(Color(designSystemColor: .surface))
     }
 }

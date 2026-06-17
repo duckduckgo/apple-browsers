@@ -631,18 +631,20 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     }
 
     func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
-        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind)
+        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .sharer)
     }
 
     func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
-        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind)
+        // codeSource is unused for the abandonment pixel; only the source/role matter.
+        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, .qrCode))
     }
 
-    private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
+    private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {
         let peerName = pairingV2DisplayName(for: peerName)
         let message = UserText.syncPairingV2ConfirmationMessage(peerName, isThirdPartyPeer: peerKind == .thirdParty)
         let isConfirmed = await showPairingV2Confirmation(message: message)
         if !isConfirmed {
+            sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)
             managementDialogModel.endFlow()
         } else {
             pairingV2PeerKind = peerKind
@@ -797,6 +799,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         case .sharer:
             PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.exchange, flowVersion: syncSetupFlowVersion, reason: reason), doNotEnforcePrefix: true)
         }
+        pairingV2PeerKind = nil
     }
 
     private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {

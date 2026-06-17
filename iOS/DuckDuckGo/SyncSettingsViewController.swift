@@ -808,10 +808,18 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         pairingV2PeerKind = nil
     }
 
-    private func sendSetupEndedAbandonedPixel(setupRole: SyncSetupRole, reason: String?) {
+    func sendSetupEndedAbandonedPixel(setupRole: SyncSetupRole, reason: String?) {
+        let parameters: [String: String]
+        switch setupRole {
+        case .receiver(let setupSource, _):
+            parameters = syncSetupPixelParameters(setupSource: setupSource, reason: reason)
+        case .sharer:
+            parameters = syncSetupPixelParameters(setupSource: .exchange, reason: reason)
+        }
         Pixel.fire(pixel: .syncSetupEndedAbandoned,
-                   withAdditionalParameters: syncSetupPixelParameters(setupRole: setupRole, reason: reason),
+                   withAdditionalParameters: parameters,
                    includedParameters: [.appVersion])
+        pairingV2PeerKind = nil
     }
 
     private func syncSetupPixelParameters(setupRole: SyncSetupRole, reason: String?) -> [String: String] {
@@ -887,7 +895,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             return
         }
         Pixel.fire(pixel: .syncSetupBarcodeCodeCopied,
-                   withAdditionalParameters: syncSetupPixelParameters(setupSource: source, codeType: source.syncSetupCodeType))
+                   withAdditionalParameters: syncSetupPixelParameters(setupSource: source,
+                                                                      codeType: source.syncSetupCodeType))
         syncSetupExperimentPixels.fireBarcodeCodeCopied()
     }
 

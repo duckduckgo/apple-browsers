@@ -42,7 +42,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     private let isFakeBroker: Bool
     private let executionConfig: BrokerJobExecutionConfig
-    private var webViewConfiguration: WKWebViewConfiguration?
+    private(set) var webViewConfiguration: WKWebViewConfiguration?
     private var userContentController: DataBrokerUserContentController?
 
     private var webView: WebView?
@@ -64,7 +64,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 isFakeBroker: Bool = false,
                 executionConfig: BrokerJobExecutionConfig,
                 shouldContinueActionHandler: @escaping () -> Bool,
-                applicationNameForUserAgent: String?,
+                applicationNameForUserAgentProvider: () -> String?,
                 contentBlocking: DBPWebViewContentBlocking? = nil) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
@@ -77,7 +77,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                                                        contentBlocking: contentBlocking)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
-        if let applicationNameForUserAgent {
+        if let applicationNameForUserAgent = applicationNameForUserAgentProvider() {
             configuration.applicationNameForUserAgent = applicationNameForUserAgent
         }
 

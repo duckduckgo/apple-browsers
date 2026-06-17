@@ -554,10 +554,15 @@ extension TabViewController {
     }
 
     private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionChats,
-                 accessibilityLabel: UserText.actionChats,
-                 image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChatHistory : DesignSystemImages.Glyphs.Size24.aiChatHistory,
-                 action: { [weak self] in
+        // Size24 `chats` forced to `.alwaysTemplate` so it tints in dark mode; Size16 falls back
+        // to `aiChatHistory` (no `chats` glyph at 16px).
+        let image = smallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatHistory
+            : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        return .regular(name: UserText.actionChats,
+                        accessibilityLabel: UserText.actionChats,
+                        image: image,
+                        action: { [weak self] in
             self?.openAIChatHistory()
         })
     }

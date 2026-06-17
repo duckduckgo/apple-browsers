@@ -27,9 +27,20 @@ struct SuggestionRowView: View {
 
     let row: SuggestionRow
     let isAddressBarAtBottom: Bool
+    /// When the row is keyboard-/pointer-highlighted, content recolors to the on-accent color for contrast
+    /// against the filled highlight background (matches the legacy autocomplete row).
+    let isSelected: Bool
     let onTapAhead: () -> Void
     let onDelete: () -> Void
-    let onFire: () -> Void
+    /// Carries the 🔥 button's global frame so the iPad popover can anchor the delete confirmation to it.
+    let onFire: (CGRect) -> Void
+
+    @State private var fireButtonFrame: CGRect = .zero
+
+    private var titleColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .textPrimary) }
+    private var subtitleColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .textSecondary) }
+    private var iconColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .icons) }
+    private var accessoryColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .iconsSecondary) }
 
     private enum Metrics {
         static let iconSize: CGFloat = 24
@@ -44,7 +55,7 @@ struct SuggestionRowView: View {
             Image(uiImage: row.icon.glyph)
                 .resizable()
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .tintIfAvailable(Color(designSystemColor: .icons))
+                .tintIfAvailable(iconColor)
 
             VStack(alignment: .leading, spacing: 0) {
                 Group {
@@ -52,14 +63,14 @@ struct SuggestionRowView: View {
                     if let query = row.query, row.title.hasPrefix(query) {
                         Text(query)
                             .font(Font(uiFont: UIFont.daxBodyRegular()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .foregroundColor(titleColor)
                         + Text(row.title.dropping(prefix: query))
                             .font(Font(uiFont: UIFont.daxBodyBold()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .foregroundColor(titleColor)
                     } else {
                         Text(row.title)
                             .font(Font(uiFont: UIFont.daxBodyRegular()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .foregroundColor(titleColor)
                     }
                 }
                 .lineLimit(1)
@@ -67,7 +78,7 @@ struct SuggestionRowView: View {
                 if let subtitle = row.subtitle {
                     Text(subtitle)
                         .daxFootnoteRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .foregroundColor(subtitleColor)
                         .lineLimit(1)
                         .frame(minHeight: Metrics.subtitleMinHeight)
                 }
@@ -92,16 +103,22 @@ struct SuggestionRowView: View {
             Image(uiImage: isAddressBarAtBottom
                   ? DesignSystemImages.Glyphs.Size16.arrowCircleDownLeft
                   : DesignSystemImages.Glyphs.Size16.arrowCircleUpLeft)
-                .tintIfAvailable(Color(designSystemColor: .iconsSecondary))
+                .tintIfAvailable(accessoryColor)
                 .highPriorityGesture(TapGesture().onEnded { onTapAhead() })
         case .delete:
             deletionButton(glyph: DesignSystemImages.Glyphs.Size16.clear,
                            accessibilityID: "Autocomplete.Suggestions.ListItem.DeleteButton",
                            action: onDelete)
         case .fire:
-            deletionButton(glyph: DesignSystemImages.Glyphs.Size16.fire,
-                           accessibilityID: "Autocomplete.Suggestions.ListItem.FireDeleteButton",
-                           action: onFire)
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.fire)
+                .tintIfAvailable(accessoryColor)
+                .background(GeometryReader { proxy in
+                    Color.clear.preference(key: FireButtonFrameKey.self, value: proxy.frame(in: .global))
+                })
+                .onPreferenceChange(FireButtonFrameKey.self) { fireButtonFrame = $0 }
+                .highPriorityGesture(TapGesture().onEnded { onFire(fireButtonFrame) })
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.FireDeleteButton")
+                .accessibilityLabel(UserText.actionDelete)
         case .none:
             EmptyView()
         }
@@ -109,9 +126,14 @@ struct SuggestionRowView: View {
 
     private func deletionButton(glyph: UIImage, accessibilityID: String, action: @escaping () -> Void) -> some View {
         Image(uiImage: glyph)
-            .tintIfAvailable(Color(designSystemColor: .iconsSecondary))
+            .tintIfAvailable(accessoryColor)
             .highPriorityGesture(TapGesture().onEnded { action() })
             .accessibilityIdentifier(accessibilityID)
             .accessibilityLabel(UserText.actionDelete)
     }
+}
+
+private struct FireButtonFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) { value = nextValue() }
 }

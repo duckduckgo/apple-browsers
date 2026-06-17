@@ -501,8 +501,9 @@ extension DefaultOmniBarViewController {
         }
 
         // When switching to duck.ai without editing the auto-selected URL, clear it so
-        // the expanded view starts empty.
+        // the expanded view starts empty — but remember it so search restores it on the way back.
         if mode == .aiChat && shouldClearTextWhenSwitchingToDuckAI() {
+            modeToggleTextModel.rememberSearchTextToRestore(omniBarView.textField.text ?? "")
             omniBarView.textField.text = ""
         }
 
@@ -512,10 +513,17 @@ extension DefaultOmniBarViewController {
         if shouldTransferKeyboard {
             modeToggleTextModel.beginTransition()
 
+            // The collapse carries the duck.ai field's text into the search field — seed it with the
+            // destination text so the search field shows it straight away, never the placeholder.
+            omniBarView.aiChatTextView.text = transition.text
+
             omniBarView.onCollapseAnimationCompleted = { [weak self] in
                 guard let self else { return }
                 self.beginEditing(animated: false, forTextEntryMode: .search)
                 self.updateQuery(transition.text)
+                if transition.selectAllText {
+                    self.omniBarView.textField?.selectAll(nil)
+                }
                 self.modeToggleTextModel.endTransition()
             }
         }
@@ -544,16 +552,9 @@ extension DefaultOmniBarViewController {
             return false
         }
 
-        // If we're not editing, this is page URL display text.
-        guard textField.isEditing else { return true }
-
-        // If full URL text remains selected, user hasn't interacted with it yet.
-        guard let selectedTextRange = textField.selectedTextRange,
-              let selectedText = textField.text(in: selectedTextRange) else {
-            return false
-        }
-
-        return selectedText == text
+        // Clear the auto-displayed page URL, but never once the user has typed — a tap doesn't count as
+        // editing, and typing-then-deleting back to the URL still counts (the flag is sticky).
+        return !userDidEditText
     }
 
 }
@@ -656,8 +657,7 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onToggleModeSwitched(to mode: TextEntryMode) {
-        // Sync the editing state's toggle back to selectedTextEntryMode so that
-        // commitToggleStateToCurrentTab reads the correct value on submission.
+        // Keep selectedTextEntryMode in sync with the editing state's toggle.
         selectedTextEntryMode = mode
         omniDelegate?.onToggleModeSwitched()
     }
@@ -695,6 +695,10 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         let newQuery = textView.text ?? ""
 
         modeToggleTextModel.updateText(newQuery)
+        userDidEditText = true
+        // The user is editing the duck.ai field — their text now governs, so don't resurrect the
+        // page URL we cleared on the way in when toggling back to search.
+        modeToggleTextModel.invalidateSearchTextToRestore()
 
         if modeToggleTextModel.isTransitioning, !omniBarView.isSearchAreaExpanded {
             omniBarView.textField.text = newQuery

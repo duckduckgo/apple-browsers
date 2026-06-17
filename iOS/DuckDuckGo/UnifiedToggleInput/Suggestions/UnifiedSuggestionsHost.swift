@@ -178,7 +178,7 @@ final class UnifiedSuggestionsHost {
         listVM.onSelect = { surface.onSelectRow($0) }
         listVM.onTapAhead = { surface.onTapAheadRow($0) }
         listVM.onDelete = { surface.onDeleteRow($0) }
-        listVM.onFireDelete = { surface.onFireDeleteRow($0) }
+        listVM.onFireDelete = { id, _ in surface.onFireDeleteRow(id) }
         viewModel.setDuckAIListViewModel(listVM)
 
         surface.source.start(textPublisher: textPublisher)

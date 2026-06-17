@@ -462,7 +462,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         Task { @MainActor in
             do {
                 let device = Self.deviceInfo()
-                presentDialog(for: .prepareToSync)
+                presentDialog(for: .prepareToSync(.singleDeviceOrRecovery))
                 try await syncService.createAccount(deviceName: device.name, deviceType: device.type)
                 let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
                 PixelKit.fire(GeneralPixel.syncSignupDirect, withAdditionalParameters: additionalParameters)
@@ -599,7 +599,7 @@ extension SyncDialogController: SyncSettingsViewHandling {
 extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerWillBeginTransmittingRecoveryKey() async {
-        presentDialog(for: .prepareToSync)
+        presentDialog(for: .prepareToSync(.twoDevicePairing))
     }
 
     func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
@@ -612,12 +612,13 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     }
 
     func controllerDidReceiveRecoveryKey() {
-        presentDialog(for: .prepareToSync)
+        presentDialog(for: .prepareToSync(.twoDevicePairing))
     }
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
-        presentDialog(for: .prepareToSync)
+        let mode: PreparingToSyncMode = setupSource == .recovery ? .singleDeviceOrRecovery : .twoDevicePairing
+        presentDialog(for: .prepareToSync(mode))
     }
 
     func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
@@ -711,7 +712,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: underlyingError?.localizedDescription)
             PixelKit.fire(DebugEvent(GeneralPixel.syncSignupError(error: underlyingError ?? error)))
         case .pollingForRecoveryKeyTimedOut:
-            managementDialogModel.endFlow()
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
         }
     }
 

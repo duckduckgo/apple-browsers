@@ -228,6 +228,12 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         // When
         controller.openNewVoiceChat()
 
+        // `openNewVoiceChat` defers the open to the next main-queue turn; enqueue our wait behind it
+        // so FIFO ordering guarantees the deferred open has run by the time this fulfills.
+        let expectation = expectation(description: "deferred voice session open")
+        DispatchQueue.main.async { expectation.fulfill() }
+        waitForExpectations(timeout: 1)
+
         // Then — controller hands off to `openVoiceSession`, which encapsulates the
         // "focus existing voice tab in the same window if active, otherwise open new" decision.
         XCTAssertTrue(mockTabOpener.openVoiceSessionCalled)

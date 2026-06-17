@@ -545,11 +545,12 @@ class SwitchBarTextEntryView: UIView {
     }
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
+    /// A URL stays single-line unless it's an interactive AI-chat composer: search mode, or
+    /// search-only (no toggle, so AI chat is unavailable), or before the user interacts — all
+    /// single-line. Only an interacted AI-chat field (toggle present) lets a long URL expand.
     private func isUnexpandedURL() -> Bool {
         guard isURL else { return false }
-        // In search mode the address bar is always single-line; the interaction flag is irrelevant.
-        // In AI chat mode, URLs can expand once the user has actively started interacting.
-        return currentMode == .search || !hasBeenInteractedWith
+        return currentMode == .search || !handler.isToggleEnabled || !hasBeenInteractedWith
     }
 
     private func updateTextViewHeight() {
@@ -685,7 +686,6 @@ class SwitchBarTextEntryView: UIView {
                     let isNewLineInsertion = text == (self.textView.text ?? "") + "\n"
                     
                     guard !isUserActivelyTyping || isNewLineInsertion else { return }
-                    
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
                     self.updateTextViewHeight()
@@ -880,8 +880,11 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidChangeSelection(_ textView: UITextView) {
         guard canExpandOnSelectionChange else { return }
-        textViewDidChange(textView)
         canExpandOnSelectionChange = false
+        // A selection change (e.g. the select-all on focus) only needs the expandable-height
+        // recompute — it is NOT a text edit, so it must not run the full `textViewDidChange`
+        // (which marks user interaction and would flash suggestions over favorites/logo).
+        updateTextViewHeight()
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {

@@ -17,7 +17,6 @@
 //
 
 import SwiftUI
-import BrowserServicesKit
 import SwiftUIExtensions
 
 struct LoginFaviconView: View {
@@ -26,7 +25,7 @@ struct LoginFaviconView: View {
     let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
     @State private var image: NSImage?
-    /// helper variable to improve reloading a favicon on update while the view is on screen.
+    /// Bumped from the `.faviconCacheUpdated` observer to re-run the loader while the placeholder is shown.
     @State private var reloadCount = 0
 
     var body: some View {
@@ -43,21 +42,21 @@ struct LoginFaviconView: View {
                     .padding(.leading, 8)
             }
         }
-        // Favicon images are decoded lazily off-main. Await the decode on appear / domain change, and
-        // re-resolve when a favicon for this domain becomes available later while the row is on screen
-        // (bumping `reloadCount` from the `.faviconCacheUpdated` observer below). Keying the task on both
-        // inputs makes SwiftUI cancel the in-flight load whenever either changes, so a stale or cancelled
-        // load can't overwrite a newer one; clearing first avoids briefly showing a recycled row's
-        // previous favicon (a no-op on the reload path, where we only get here while the image is nil).
+        // Favicon images are decoded lazily off-main, so await the decode on appear / domain change, and
+        // re-resolve when this row's favicon arrives later (the `.faviconCacheUpdated` observer bumps
+        // `reloadCount`). Keying the task on both cancels any in-flight load when either changes, so a
+        // stale result can't overwrite a newer one; clearing first avoids flashing a recycled row's icon.
         .task(id: ReloadKey(domain: domain, reloadCount: reloadCount)) {
             image = nil
             let resolved = await faviconManagement.resolvedCachedFaviconSafeForRendering(for: domain, sizeCategory: .small)?.image
             guard !Task.isCancelled else { return }
             image = resolved
         }
-        .onReceive(NotificationCenter.default.publisher(for: .faviconCacheUpdated)) { _ in
-            // Only react while we still show the placeholder; once we have an image we're done.
-            guard image == nil else { return }
+        .onReceive(NotificationCenter.default.publisher(for: .faviconCacheUpdated)) { notification in
+            // Re-resolve only while the placeholder is shown and the update's affected domains include this row's.
+            guard image == nil,
+                  let update = notification.faviconsCacheUpdate,
+                  update.hosts.contains(domain) else { return }
             reloadCount += 1
         }
     }

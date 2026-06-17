@@ -117,11 +117,17 @@ public struct SyncAccount: Codable, Sendable {
 }
 
 public struct RegisteredDevice: Codable, Sendable {
-
     public let id: String
     public let name: String
     public let type: String
+    public let credentialId: String?
 
+    public init(id: String, name: String, type: String, credentialId: String? = nil) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.credentialId = credentialId
+    }
 }
 
 public struct AccountCreationKeys {
@@ -233,9 +239,9 @@ public struct PairingInfo {
 
 // MARK: - Scoped Access Credentials
 
-enum SyncCredentialID {
-    static let defaultCredential = "ddg"
-    static let thirdParty = "3party"
+public enum SyncCredentialID {
+    public static let defaultCredential = "ddg"
+    public static let thirdParty = "3party"
 }
 
 // AccessCredential is decoded from API responses using JSONDecoder.snakeCaseKeys. The server key

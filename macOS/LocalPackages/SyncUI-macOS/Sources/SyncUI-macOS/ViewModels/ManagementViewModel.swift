@@ -104,8 +104,12 @@ public enum SyncErrorType {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertTitle
+        case .updateRequired:
+            return UserText.syncUpdateRequiredTitle
         case .alreadyPairedWithAccount:
             return UserText.syncAlreadyPairedWithAccountTitle
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeTitle
         case .syncCancelledFromOtherDevice:
             return UserText.syncCancelledFromOtherDeviceTitle
         default:

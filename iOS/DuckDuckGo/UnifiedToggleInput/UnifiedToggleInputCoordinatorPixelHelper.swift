@@ -46,6 +46,9 @@ private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
             self = .webSearch
         case .imageGeneration:
             self = .imageGeneration
+        case .customizeResponses:
+            // Not a model tool — never produced from a selected tool, so it never reports as one.
+            self = .none
         }
     }
 }
@@ -68,6 +71,7 @@ extension UTIToolsMenu.Item.Identifier {
         switch self {
         case .imageGeneration: return true
         case .webSearch: return false
+        case .customizeResponses: return false
         }
     }
 }
@@ -120,6 +124,10 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         default:
             break
         }
+    }
+
+    static func fireCustomizeResponsesSelectedPixel() {
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputCustomizeResponsesSelected)
     }
 
     static func fireUnifiedPromptSubmittedPixel(

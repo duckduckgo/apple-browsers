@@ -123,6 +123,10 @@ class TabViewCell: UICollectionViewCell {
     /// Container for the Duck.ai rich tab grid card content (text/image/voice/empty).
     var richCardContainer: DuckAIGridCardView?
 
+    /// File-ref token guarding the in-flight thumbnail load.
+    private var currentThumbnailFileRef: String?
+    private var thumbnailLoadTask: Task<Void, Never>?
+
     weak var previewAspectRatio: NSLayoutConstraint?
     var previewTopConstraint: NSLayoutConstraint?
     var previewBottomConstraint: NSLayoutConstraint?
@@ -482,7 +486,8 @@ class TabViewCell: UICollectionViewCell {
                 isSelectionModeEnabled: Bool,
                 preview: UIImage?,
                 isFireModeEnabled: Bool,
-                duckAIGridItem: DuckAIGridItem? = nil) {
+                duckAIGridItem: DuckAIGridItem? = nil,
+                thumbnailLoader: DuckAIThumbnailLoading? = nil) {
         self.tab = tab
         self.isSelectionModeEnabled = isSelectionModeEnabled
         self.isFireModeEnabled = isFireModeEnabled
@@ -504,9 +509,12 @@ class TabViewCell: UICollectionViewCell {
 
         unread.isHidden = tab.viewed
 
-        // Reset rich-card / preview visibility on every reuse
+        // Reset rich-card / preview visibility on every reuse; cancel any in-flight
+        // thumbnail load and clear the cached image so the next item starts clean.
         richCardContainer?.isHidden = true
         self.preview?.isHidden = false
+        cancelThumbnailLoad()
+        richCardContainer?.setThumbnail(nil)
 
         if tab.isAITab {
             let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
@@ -532,6 +540,7 @@ class TabViewCell: UICollectionViewCell {
                 richCardContainer?.configure(with: item)
                 richCardContainer?.isHidden = false
                 self.preview?.isHidden = true
+                startThumbnailLoadIfNeeded(for: item, loader: thumbnailLoader)
             } else if let preview = preview {
                 self.updatePreviewToDisplay(image: preview)
                 self.preview?.contentMode = .scaleAspectFill
@@ -591,6 +600,35 @@ class TabViewCell: UICollectionViewCell {
         }
     }
     
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        cancelThumbnailLoad()
+        richCardContainer?.setThumbnail(nil)
+    }
+
+    private func cancelThumbnailLoad() {
+        thumbnailLoadTask?.cancel()
+        thumbnailLoadTask = nil
+        currentThumbnailFileRef = nil
+    }
+
+    private func startThumbnailLoadIfNeeded(for item: DuckAIGridItem,
+                                            loader: DuckAIThumbnailLoading?) {
+        guard case .image(_, let fileRef) = item, let loader else { return }
+        currentThumbnailFileRef = fileRef
+        thumbnailLoadTask = Task { @MainActor [weak self, weak loader] in
+            guard let loader else { return }
+            let image = await loader.loadImage(fileRef: fileRef)
+            // Drop the result on cell reuse / item change. Identity check is on the
+            // file ref token, not just `Task.isCancelled`, so we also discard stale
+            // loads when a new image item replaced this one without a full reuse.
+            guard let self,
+                  !Task.isCancelled,
+                  self.currentThumbnailFileRef == fileRef else { return }
+            self.richCardContainer?.setThumbnail(image)
+        }
+    }
+
     private func updateEmptyTabLabel(for tab: Tab) {
         if isFireModeEnabled {
             title.text = tab.fireTab ? UserText.fireTabTitle : UserText.newTabTitle

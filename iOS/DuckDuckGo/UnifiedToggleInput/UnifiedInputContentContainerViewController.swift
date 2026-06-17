@@ -39,6 +39,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion)
     func unifiedInputEditingStateDidRequestTextUpdate(_ text: String)
     func unifiedInputEditingStateDidSelectChatHistory(url: URL)
+    func unifiedInputEditingStateDidSelectViewAllChats()
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
     func unifiedInputEditingStateDidRequestTabSwitcher()
     func unifiedInputEditingStateDidRequestTryFireMode()
@@ -199,6 +200,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// long-lived data source reflects add/remove since the last editing session. Called on each
     /// omnibar-editing show — legacy got this for free by building a fresh data source per session.
     func refreshSuggestionsCaches() {
+        // Drop the persistent Search loader's stale results so they don't flash for the new query
+        // (e.g. after burning all tabs). The Duck.ai surface is rebuilt per session, so it needs none.
+        searchLoader?.reset()
         searchDataSource?.refreshCaches()
         duckAISurface?.refreshCaches()
     }
@@ -530,14 +534,17 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // one). The model notifies after refreshing its array, so the reads below are fresh.
         Publishers.CombineLatest4(
             switchBarHandler.toggleStatePublisher,
-            switchBarHandler.currentTextPublisher,
+            Publishers.CombineLatest(switchBarHandler.currentTextPublisher,
+                                     switchBarHandler.hasUserInteractedWithTextPublisher),
             duckAIStateRelay,
             searchStateChanged.prepend(())
         )
-        .map { mode, text, duckAIState, _ -> UnifiedSuggestionsInputs in
-            UnifiedSuggestionsInputsMerger.merge(
+        .map { mode, textState, duckAIState, _ -> UnifiedSuggestionsInputs in
+            let (text, hasUserInteractedWithText) = textState
+            return UnifiedSuggestionsInputsMerger.merge(
                 mode: mode,
                 text: text,
+                hasUserInteractedWithText: hasUserInteractedWithText,
                 search: .init(hasFavorites: hasFavorites(), hasMessages: hasMessages()),
                 duckAI: duckAIState)
         }
@@ -744,7 +751,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // when it resolves to `.logo`. Resolving both modes keeps the swipe-morph's two empty states
         // available; landscape suppresses both.
         func resolvesToLogo(_ mode: TextEntryMode) -> Bool {
-            let inputs = UnifiedSuggestionsInputsMerger.merge(mode: mode, text: text, search: searchState, duckAI: duckAIState)
+            let inputs = UnifiedSuggestionsInputsMerger.merge(
+                mode: mode,
+                text: text,
+                hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText,
+                search: searchState,
+                duckAI: duckAIState)
             return UnifiedSuggestionsContentResolver.resolve(inputs, previous: nil) == .logo
         }
 
@@ -853,6 +865,7 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsSurfacePr
         case .chat(let chat): duckAISuggestionsDidSelectChat(chat)
         case .url(let suggestion): duckAISuggestionsDidSelectURL(suggestion)
         case .searchDuckDuckGo(let query): duckAISuggestionsDidSelectSearchDuckDuckGo(query: query)
+        case .viewAllChats: delegate?.unifiedInputEditingStateDidSelectViewAllChats()
         }
     }
 

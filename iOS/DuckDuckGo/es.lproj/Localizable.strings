@@ -358,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Accede a tus chats en todos tus dispositivos usando Sync & Backup.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Establecer tono, duración y comportamiento";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personaliza las respuestas";
 

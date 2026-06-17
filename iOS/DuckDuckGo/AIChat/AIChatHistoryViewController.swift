@@ -101,6 +101,7 @@ final class AIChatHistoryViewController: UIViewController {
 
         setupViews()
         configureToolbar()
+        decorateBarsIfNeeded()
         bindViewModel()
     }
 
@@ -137,17 +138,33 @@ final class AIChatHistoryViewController: UIViewController {
         tableView.tableHeaderView = headerView
     }
     
+    private lazy var doneBarButtonItem: UIBarButtonItem = {
+        let item = UIBarButtonItem(
+            title: UserText.navigationTitleDone,
+            style: .done,
+            target: self,
+            action: #selector(doneButtonTapped)
+        )
+        if #available(iOS 26, *) {
+            item.style = .plain
+        }
+        return item
+    }()
+
     private func configureRightBarButtonItem() {
         if isEditingChats {
             navigationItem.rightBarButtonItem = nil
         } else {
-            navigationItem.rightBarButtonItem = UIBarButtonItem(
-                title: UserText.navigationTitleDone,
-                style: .plain,
-                target: self,
-                action: #selector(doneButtonTapped)
-            )
+            navigationItem.rightBarButtonItem = doneBarButtonItem
         }
+    }
+
+    /// Pre-iOS 26 sheets default bar button items to the system accent (blue). Match Bookmarks
+    /// by applying theme tints; iOS 26 liquid-glass toolbar styling is left to the system.
+    private func decorateBarsIfNeeded() {
+        if #available(iOS 26, *) { return }
+        decorateNavigationBar()
+        decorateToolbar()
     }
 
     private func configureToolbar() {

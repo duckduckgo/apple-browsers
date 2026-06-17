@@ -19,7 +19,6 @@
 import Foundation
 import DDGSyncCrypto
 import Networking
-import os.log
 
 struct AccountManager: AccountManaging {
 
@@ -28,7 +27,21 @@ struct AccountManager: AccountManaging {
     let endpoints: Endpoints
     let api: RemoteAPIRequestCreating
     let crypter: CryptingInternal
+    let registeredDeviceMapper: any RegisteredDeviceMapping
     let isScopedAccessCredentialsEnabled: () -> Bool
+
+    init(endpoints: Endpoints,
+         api: RemoteAPIRequestCreating,
+         crypter: CryptingInternal,
+         registeredDeviceMapper: (any RegisteredDeviceMapping)? = nil,
+         isScopedAccessCredentialsEnabled: @escaping () -> Bool) {
+        self.endpoints = endpoints
+        self.api = api
+        self.crypter = crypter
+        self.registeredDeviceMapper = registeredDeviceMapper ?? RegisteredDeviceMapper(crypter: crypter,
+                                                                                       isScopedAccessCredentialsEnabled: isScopedAccessCredentialsEnabled)
+        self.isScopedAccessCredentialsEnabled = isScopedAccessCredentialsEnabled
+    }
 
     func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
         let deviceId = UUID().uuidString
@@ -128,15 +141,25 @@ struct AccountManager: AccountManaging {
             throw SyncError.unableToDecodeResponse("Failed to decode devices")
         }
 
-        var devices = [RegisteredDevice]()
+        // Scoped access enabled: never auto-logout. Prefer entries_v2; otherwise map legacy entries with
+        // decrypt-or-generic-fallback (undecryptable native -> "Unknown", undecryptable 3party -> "Browser").
+        if isScopedAccessCredentialsEnabled() {
+            let entries: [RegisteredDeviceEntry]
+            if let entriesV2 = result.devices?.entriesV2, !entriesV2.isEmpty {
+                entries = entriesV2
+            } else {
+                entries = result.devices?.entries ?? []
+            }
+            return await registeredDeviceMapper.registeredDevices(from: entries, account: account)
+        }
+
+        // Legacy behaviour (scoped access disabled): invalid native devices are automatically logged out.
+        var devices: [RegisteredDevice] = []
         if let entries = result.devices?.entries {
             for device in entries {
-                do {
-                    let name = try crypter.base64DecodeAndDecrypt(device.name, using: account.primaryKey)
-                    let type = try crypter.base64DecodeAndDecrypt(device.type, using: account.primaryKey)
-                    devices.append(RegisteredDevice(id: device.id, name: name, type: type))
-                } catch {
-                    // Invalid devices should be automatically logged out
+                if let registeredDevice = registeredDeviceMapper.registeredDevice(fromLegacyEntry: device, account: account) {
+                    devices.append(registeredDevice)
+                } else {
                     try await logout(deviceId: device.id, token: token)
                 }
             }
@@ -219,14 +242,10 @@ struct AccountManager: AccountManaging {
                 state: .addingNewDevice
             ),
             devices: result.devices.compactMap { device in
-                // Prevent devices with `null` type from blocking login while the V2 device payload is in flux.
-                guard let encryptedType = device.type,
-                      let name = try? crypter.base64DecodeAndDecrypt(device.name, using: info.primaryKey),
-                      let type = try? crypter.base64DecodeAndDecrypt(encryptedType, using: info.primaryKey) else {
-                    return nil
-                }
-
-                return RegisteredDevice(id: device.id, name: name, type: type)
+                registeredDeviceMapper.registeredDevice(fromDefaultCredentialLoginEntryWithID: device.id,
+                                                        encryptedName: device.name,
+                                                        encryptedType: device.type,
+                                                        primaryKey: info.primaryKey)
             },
             keys: result.keys,
             accessCredentials: result.accessCredentials
@@ -293,7 +312,8 @@ struct AccountManager: AccountManaging {
     struct FetchDevicesResult: Decodable {
         struct DeviceWrapper: Decodable {
             var lastModified: String?
-            var entries: [RegisteredDevice]
+            var entries: [RegisteredDeviceEntry]?
+            var entriesV2: [RegisteredDeviceEntry]?
         }
 
         var devices: DeviceWrapper?

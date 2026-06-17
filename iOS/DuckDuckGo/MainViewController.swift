@@ -3567,6 +3567,8 @@ class MainViewController: UIViewController {
             ) == .openInNewTab
         }()
         if shouldOpenInNewTab, let currentTab {
+            // Dismiss contextual onboarding before opening duck.ai via UTI.
+            currentTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: currentTab)
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
             // Mirror the in-place `.barUsed` so the new-tab branch keeps idle-session parity.
             // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
@@ -3829,6 +3831,10 @@ extension MainViewController: BrowserChromeDelegate {
         )
         switch decision {
         case .openInNewTab:
+            // Dismiss contextual onboarding before duck.ai opens via UTI.
+            if let tab = currentTab {
+                tab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: tab)
+            }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
             loadUrl(url, fromExternalLink: fromExternalLink)
@@ -5134,7 +5140,7 @@ extension MainViewController: TabDelegate {
     var isEmailProtectionSignedIn: Bool {
         emailManager.isSignedIn
     }
-    
+
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
         newEmailAddress()
     }

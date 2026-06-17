@@ -2209,6 +2209,7 @@ extension TabViewController: WKNavigationDelegate {
               !url.isDuckAIURL,
               !url.isDuckPlayer,
               !(url.isYoutube && duckPlayerNavigationHandler.duckPlayer.settings.mode != .disabled) else {
+            dismissContextualOnboardingIfNeeded()
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }

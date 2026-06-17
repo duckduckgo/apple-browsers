@@ -61,6 +61,40 @@ class FaviconManagerTests: XCTestCase {
         XCTAssertNotNil(faviconManager.store as? FaviconNullStore)
     }
 
+    // MARK: - resolvedCachedFavicon(for host:)
+
+    @MainActor
+    func testResolvedCachedFaviconForHostResolvesURLViaHostReferenceAndReturnsDecodedImage() async throws {
+        let host = "example.com"
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        let image = NSImage(size: NSSize(width: 16, height: 16))
+
+        referenceCache.getFaviconURLForHost = { requestedHost, sizeCategory in
+            requestedHost == host && sizeCategory == .small ? faviconURL : nil
+        }
+        imageCache.getFaviconWithURL = { url in
+            url == faviconURL ? Favicon(identifier: UUID(), url: faviconURL, image: image, relation: .favicon, documentUrl: documentURL, dateCreated: Date()) : nil
+        }
+
+        let favicon = await faviconManager.resolvedCachedFavicon(for: host, sizeCategory: .small)
+
+        XCTAssertEqual(favicon?.url, faviconURL)
+        XCTAssertEqual(favicon?.image, image)
+        XCTAssertEqual(referenceCache.getFaviconURLForHostCalls.map(\.host), [host])
+        XCTAssertEqual(imageCache.getFaviconWithURLCalls, [faviconURL])
+    }
+
+    @MainActor
+    func testResolvedCachedFaviconForHostReturnsNilWhenHostHasNoReference() async {
+        referenceCache.getFaviconURLForHost = { _, _ in nil }
+
+        let favicon = await faviconManager.resolvedCachedFavicon(for: "unknown.example", sizeCategory: .small)
+
+        XCTAssertNil(favicon)
+        XCTAssertTrue(imageCache.getFaviconWithURLCalls.isEmpty)
+    }
+
     // MARK: - fallBackToSmaller
 
     // MARK: getCachedFaviconURLForDocumentURL

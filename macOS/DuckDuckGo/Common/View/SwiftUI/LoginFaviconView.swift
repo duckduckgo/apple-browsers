@@ -27,17 +27,9 @@ struct LoginFaviconView: View {
 
     @State private var image: NSImage?
 
-    private var displayableFaviconImage: NSImage? {
-        faviconManagement.getCachedFaviconSafeForRendering(for: domain, sizeCategory: .small)?.image
-    }
-
-    private func refreshImage() {
-        image = displayableFaviconImage
-    }
-
     var body: some View {
         Group {
-            if let image = image {
+            if let image {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -48,23 +40,12 @@ struct LoginFaviconView: View {
                 LetterIconView(title: generatedIconLetters, font: .system(size: 32, weight: .semibold))
                     .padding(.leading, 8)
             }
-        }.onAppear {
-            refreshImage()
-        }.onReceive(NotificationCenter.default.publisher(for: .faviconCacheUpdated)) { note in
-            // The favicon image may be decoded lazily after first appearance; re-read when the update
-            // is relevant to this view's domain (or defensively if no payload is present).
-            guard let update = note.faviconsCacheUpdate else {
-                refreshImage()
-                return
-            }
-            if update.hosts.contains(domain) {
-                refreshImage()
-            }
         }
-    }
-
-    var favicon: NSImage? {
-        return displayableFaviconImage ?? .login
+        // The favicon image is decoded lazily off-main, so await it and show the icon once it's ready.
+        // `.task(id:)` re-runs if this row is recycled with a different domain.
+        .task(id: domain) {
+            image = await faviconManagement.resolvedCachedFaviconSafeForRendering(for: domain, sizeCategory: .small)?.image
+        }
     }
 
 }

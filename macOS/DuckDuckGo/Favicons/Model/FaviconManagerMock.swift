@@ -64,6 +64,12 @@ final class FaviconManagerMock: FaviconManagement {
         return Favicon(identifier: UUID(), url: documentUrl, image: image, relation: .icon, documentUrl: documentUrl, dateCreated: Date())
     }
 
+    func resolvedCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) async -> Favicon? {
+        guard let image = imagesByHost[host] else { return nil }
+        let url = URL(string: "https://\(host)") ?? URL(string: "about:blank")!
+        return Favicon(identifier: UUID(), url: url, image: image, relation: .icon, documentUrl: url, dateCreated: Date())
+    }
+
     func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
         guard let image = imagesByHost[host] else { return nil }
         let url = URL(string: "https://\(host)") ?? URL(string: "about:blank")!

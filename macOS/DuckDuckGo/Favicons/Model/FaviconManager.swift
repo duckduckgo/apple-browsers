@@ -55,6 +55,11 @@ protocol FaviconManagement: AnyObject {
     @MainActor
     func resolvedCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) async -> Favicon?
 
+    /// Awaits the favicon image decode for a host-keyed lookup (used by `LoginFaviconView` so it shows
+    /// the image once decoded instead of relying on a cache-update notification).
+    @MainActor
+    func resolvedCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) async -> Favicon?
+
     @MainActor
     func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon?
 
@@ -105,6 +110,15 @@ extension FaviconManagement {
         }
 
         return getCachedFavicon(for: host, sizeCategory: sizeCategory)
+    }
+
+    @MainActor
+    func resolvedCachedFaviconSafeForRendering(for host: String, sizeCategory: Favicon.SizeCategory) async -> Favicon? {
+        guard shouldRenderFavicon else {
+            return nil
+        }
+
+        return await resolvedCachedFavicon(for: host, sizeCategory: sizeCategory)
     }
 
     @MainActor
@@ -306,6 +320,15 @@ final class FaviconManager: FaviconManagement {
     func resolvedCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) async -> Favicon? {
         await awaitFaviconsLoaded()
         guard let faviconURL = getCachedFaviconURL(for: documentUrl, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) else {
+            return nil
+        }
+        return await imageCache.resolvedFavicon(faviconUrl: faviconURL)
+    }
+
+    @MainActor
+    func resolvedCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) async -> Favicon? {
+        await awaitFaviconsLoaded()
+        guard let faviconURL = referenceCache.getFaviconUrl(for: host, sizeCategory: sizeCategory) else {
             return nil
         }
         return await imageCache.resolvedFavicon(faviconUrl: faviconURL)

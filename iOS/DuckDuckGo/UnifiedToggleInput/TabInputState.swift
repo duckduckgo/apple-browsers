@@ -34,6 +34,9 @@ struct TabInputState: Equatable {
     /// Driven by FE `voiceSessionStarted` / `voiceSessionEnded` user-script messages. Hides the
     /// header chats/compose pill while voice is active; orthogonal to `aiChatInputBoxVisibility`.
     var isVoiceSessionActive: Bool
+    /// Recovery `showModelPicker` pin: keeps the model chip visible mid-chat until prompt submit.
+    /// Used when the user has lost access to the selected model.
+    var isModelPickerForcedVisible: Bool
 
     init(
         text: String = "",
@@ -43,7 +46,8 @@ struct TabInputState: Equatable {
         selectedReasoningMode: AIChatReasoningMode? = nil,
         selectedTool: AIChatRAGTool? = nil,
         aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown,
-        isVoiceSessionActive: Bool = false
+        isVoiceSessionActive: Bool = false,
+        isModelPickerForcedVisible: Bool = false
     ) {
         self.text = text
         self.toggleMode = toggleMode
@@ -53,6 +57,7 @@ struct TabInputState: Equatable {
         self.selectedTool = selectedTool
         self.aiChatInputBoxVisibility = aiChatInputBoxVisibility
         self.isVoiceSessionActive = isVoiceSessionActive
+        self.isModelPickerForcedVisible = isModelPickerForcedVisible
     }
 
     static func == (lhs: TabInputState, rhs: TabInputState) -> Bool {
@@ -64,6 +69,7 @@ struct TabInputState: Equatable {
             && lhs.selectedTool == rhs.selectedTool
             && lhs.aiChatInputBoxVisibility == rhs.aiChatInputBoxVisibility
             && lhs.isVoiceSessionActive == rhs.isVoiceSessionActive
+            && lhs.isModelPickerForcedVisible == rhs.isModelPickerForcedVisible
     }
 
     /// Compact, privacy-aware description for debug logs. Reports text length and
@@ -76,6 +82,6 @@ struct TabInputState: Equatable {
         let model = selectedModelID ?? "nil"
         let reasoning = selectedReasoningMode?.rawValue ?? "nil"
         let tool = selectedTool?.rawValue ?? "nil"
-        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue) voice=\(isVoiceSessionActive)"
+        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue) voice=\(isVoiceSessionActive) modelPickerPin=\(isModelPickerForcedVisible)"
     }
 }

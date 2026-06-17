@@ -148,7 +148,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isModelChipHidden)
     }
 
-    func test_selectingSupportedModel_afterPresentingModelPicker_reHidesModelChip() {
+    func test_selectingSupportedModel_afterPresentingModelPicker_keepsModelChipVisible() {
         _ = sut.prepareExternalPromptSubmission()
         sut.presentModelPickerForActiveChat()
         XCTAssertFalse(sut.viewController.isModelChipHidden)
@@ -157,6 +157,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)
         ]
         sut.handleModelSelection("gpt-5")
+
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_submittingPrompt_afterPresentingModelPickerAndSelectingModel_hidesModelChip() {
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        sut.modelStore.models = [
+            AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)
+        ]
+        sut.handleModelSelection("gpt-5")
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
 
         XCTAssertTrue(sut.viewController.isModelChipHidden)
     }
@@ -2774,6 +2788,43 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertTrue(sut.isVoiceSessionActive)
     }
 
+    func test_activateForTab_roundTripsModelPickerForcedVisible() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.activateForTab("tab-B")
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+
+        sut.activateForTab("tab-A")
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_bindToTab_afterActivateForTab_preservesModelPickerPin() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        let scriptA = makeTestUserScript()
+        let scriptB = makeTestUserScript()
+
+        sut.activateForTab("tab-A")
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        sut.bindToTab(scriptA, hasExistingChat: true)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.activateForTab("tab-B")
+        sut.bindToTab(scriptB, hasExistingChat: true)
+
+        sut.activateForTab("tab-A")
+        sut.bindToTab(scriptA, hasExistingChat: true)
+
+        XCTAssertFalse(sut.viewController.isModelChipHidden,
+                      "bindToTab must not reset the pin applyState restored — mirrors AI-tab → AI-tab switch")
+    }
+
     func test_endToEnd_twoTabSwitches_preserveIndependentState() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)
@@ -2876,6 +2927,20 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
 
         XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
+    }
+
+    func test_submitAfterHide_clearsPersistedModelPickerPin() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        XCTAssertTrue(store.states["tab-A"]?.isModelPickerForcedVisible == true)
+
+        sut.hide()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertEqual(store.states["tab-A"]?.isModelPickerForcedVisible, false)
     }
 
     // Regression: applyState must always sync the live model store from per-tab

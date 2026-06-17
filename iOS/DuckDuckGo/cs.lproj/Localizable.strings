@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Načíst znovu";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Obnovit zoom";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Zvolit";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Zobrazit všechny karty";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Přiblížit";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Oddálit";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Naposledy zpracováno: %@";

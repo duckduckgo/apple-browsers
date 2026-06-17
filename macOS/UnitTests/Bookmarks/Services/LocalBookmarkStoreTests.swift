@@ -1490,6 +1490,68 @@ final class LocalBookmarkStoreTests: XCTestCase {
         waitForExpectations(timeout: 3, handler: nil)
     }
 
+    func testWhenBookmarksAreImported_AndURLUsesUnsafeScheme_ThenBookmarkIsDroppedAndCountedAsFailed() {
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        let javascriptBookmark = ImportedBookmarks.BookmarkOrFolder(name: "JS", type: .bookmark, urlString: "javascript:alert(1)", children: nil)
+        let dataBookmark = ImportedBookmarks.BookmarkOrFolder(name: "Data", type: .bookmark, urlString: "data:text/html,<script>alert(1)</script>", children: nil)
+        let safeBookmark = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [javascriptBookmark, dataBookmark, safeBookmark])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        let result = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.safari))
+
+        XCTAssertEqual(result.successful, 1)
+        XCTAssertEqual(result.failed, 2)
+
+        let loadingExpectation = self.expectation(description: "Loading")
+
+        bookmarkStore.loadAll(type: .bookmarks) { bookmarks, error in
+            XCTAssertNotNil(bookmarks)
+            XCTAssertNil(error)
+            // Only the safe bookmark should be persisted; the unsafe-scheme ones are dropped.
+            XCTAssert(bookmarks?.count == 1)
+
+            loadingExpectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 3, handler: nil)
+    }
+
+    func testWhenImportedFolderCarriesUnsafeSchemeURLThenFolderAndChildrenAreStillImported() {
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        let child = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
+        // Malformed input: a folder carrying a javascript: URL string. The folder (and its children)
+        // must NOT be dropped — the unsafe-scheme check applies to bookmarks/favorites only.
+        let folder = ImportedBookmarks.BookmarkOrFolder(name: "Folder", type: .folder, urlString: "javascript:alert(1)", children: [child])
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [folder])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        _ = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.safari))
+
+        let loadingExpectation = self.expectation(description: "Loading")
+
+        bookmarkStore.loadAll(type: .bookmarks) { bookmarks, error in
+            XCTAssertNotNil(bookmarks)
+            XCTAssertNil(error)
+            // The safe child survived: the folder was not dropped. Without the folder exemption this would be 0.
+            XCTAssert(bookmarks?.count == 1)
+
+            loadingExpectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 3, handler: nil)
+    }
+
     @MainActor
     func testWhenBookmarksAreImported_AndDuplicatesExist_ThenBookmarksAreStillImported() async throws {
         let context = container.viewContext

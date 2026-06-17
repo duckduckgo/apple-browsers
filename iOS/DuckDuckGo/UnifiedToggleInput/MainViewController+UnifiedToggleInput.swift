@@ -1336,6 +1336,10 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         onChatHistorySelected(url: url)
     }
 
+    func unifiedInputEditingStateDidSelectViewAllChats() {
+        openAIChatHistory()
+    }
+
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {
         onSwitchToTab(tab)
     }

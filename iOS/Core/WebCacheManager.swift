@@ -294,7 +294,7 @@ extension WebCacheManager {
         observationsInterval.complete()
 
         let totalTime = CACurrentMediaTime() - startTime
-        Pixel.fire(pixel: .clearDataInDefaultPersistence(.init(number: totalTime)))
+        fireDataClearingTimePixel(scope: scope, totalTime: totalTime)
 
         return WebsiteDataClearingResult(
             safelyRemovableData: ActionResult(result: safelyRemovableResult, measuredInterval: safelyRemovableInterval),
@@ -303,6 +303,16 @@ extension WebCacheManager {
             observationsData: ActionResult(result: observationsResult, measuredInterval: observationsInterval),
             removeAllContainersAfterDelay: nil
         )
+    }
+
+    // Fire a separate pixel per scope
+    private func fireDataClearingTimePixel(scope: Scope, totalTime: Double) {
+        switch scope {
+        case .all:
+            Pixel.fire(pixel: .clearDataInDefaultPersistence(.init(number: totalTime)))
+        case .limited:
+            Pixel.fire(pixel: .clearDataInDefaultPersistenceSingleTab(.init(number: totalTime)))
+        }
     }
 
     @MainActor

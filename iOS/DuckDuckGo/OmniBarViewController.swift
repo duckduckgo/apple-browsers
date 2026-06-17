@@ -403,8 +403,13 @@ class OmniBarViewController: UIViewController, OmniBar {
         refreshState(state.onEnterAIChatState)
     }
 
+    /// Sticky flag: true once the user types in the field, until the page URL is (re)displayed. A tap or
+    /// cursor move doesn't set it. Lets callers tell an unedited page URL from a user-entered query.
+    var userDidEditText = false
+
     func refreshText(forUrl url: URL?, forceFullURL: Bool) {
         guard !textField.isEditing else { return }
+        userDidEditText = false
         guard let url = url else {
             textField.text = nil
             return
@@ -875,7 +880,13 @@ class OmniBarViewController: UIViewController, OmniBar {
         expandableBarView?.aiChatTextView.text = nil
         expandableBarView?.updateTextFieldPlaceholderVisibility(hasText: false)
         expandableBarView?.updateAIChatSendButton(hasText: false)
-        omniDelegate?.onOmniQueryUpdated("")
+        // Notify the active mode's delegate so its suggestions refresh for the now-empty query — Duck.ai
+        // text changes route through `onAIChatQueryUpdated`, which `onOmniQueryUpdated` ignores.
+        if selectedTextEntryMode == .aiChat {
+            omniDelegate?.onAIChatQueryUpdated("")
+        } else {
+            omniDelegate?.onOmniQueryUpdated("")
+        }
     }
 
     private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {
@@ -1065,6 +1076,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
 extension OmniBarViewController: UITextFieldDelegate {
     @objc func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        userDidEditText = true
         self.refreshState(self.state.onEditingStartedState)
         return true
     }

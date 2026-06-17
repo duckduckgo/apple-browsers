@@ -567,7 +567,9 @@ final class MockAIChatsHandling: AIChatsHandling {
 
     private(set) var deleteCalls: [(until: Date, token: String)] = []
     private(set) var deleteChatIdsCalls: [(chatIds: [String], token: String)] = []
+    private(set) var patchCalls: [(updates: [AIChatUpdate], token: String)] = []
     var deleteError: Error?
+    var patchError: Error?
 
     func delete(until: Date, token: String) async throws {
         deleteCalls.append((until: until, token: token))
@@ -580,6 +582,13 @@ final class MockAIChatsHandling: AIChatsHandling {
         deleteChatIdsCalls.append((chatIds: chatIds, token: token))
         if let deleteError {
             throw deleteError
+        }
+    }
+
+    func patch(updates: [AIChatUpdate], token: String) async throws {
+        patchCalls.append((updates: updates, token: token))
+        if let patchError {
+            throw patchError
         }
     }
 }

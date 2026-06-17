@@ -763,8 +763,7 @@
 		84E341961E2F7EFB00BDBA6F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E341951E2F7EFB00BDBA6F /* AppDelegate.swift */; };
 		84E341A01E2F7EFB00BDBA6F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 84E3419E1E2F7EFB00BDBA6F /* LaunchScreen.storyboard */; };
 		84EFBCC92D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84EFBCC52D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift */; };
-		84EFBCCC2D817CB500706739 /* InlineSnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 84EFBCCB2D817CB500706739 /* InlineSnapshotTesting */; };
-		84EFBCCE2D817CB500706739 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 84EFBCCD2D817CB500706739 /* SnapshotTesting */; };
+		A7B000012F6A000100000001 /* SnapshotTestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A7B000032F6A000100000001 /* SnapshotTestingSupport */; };
 		85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85010501292FB1000033978F /* FireproofFaviconUpdater.swift */; };
 		85010504292FFB080033978F /* FireproofFaviconUpdaterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85010503292FFB080033978F /* FireproofFaviconUpdaterTests.swift */; };
 		85011867290028C400BDEE27 /* BookmarksDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8501186529001D6900BDEE27 /* BookmarksDatabase.swift */; };
@@ -5453,14 +5452,13 @@
 				C118DAD42F1007C6004F403A /* AIChatTestingUtilities in Frameworks */,
 				4BC95EAD2D7417A0002FAB32 /* Subscription in Frameworks */,
 				31C71A782E6F4F5B004D503F /* RemoteMessagingTestsUtils in Frameworks */,
-				84EFBCCE2D817CB500706739 /* SnapshotTesting in Frameworks */,
+				A7B000012F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
 				9F5412772E3998B000DBF008 /* SetDefaultBrowserTestSupport in Frameworks */,
 				4BC95EAB2D74179B002FAB32 /* PersistenceTestingUtils in Frameworks */,
 				5654CF572E22A9820074E806 /* BrowserServicesKitTestsUtils in Frameworks */,
 				4BB88F3F2E5D701200DE539A /* PixelKitTestingUtilities in Frameworks */,
 				4BC95EA52D741787002FAB32 /* Common in Frameworks */,
 				374E760C2EF56D7F00F8AADE /* PrivacyConfigTestsUtils in Frameworks */,
-				84EFBCCC2D817CB500706739 /* InlineSnapshotTesting in Frameworks */,
 				4BC95EA72D74178C002FAB32 /* ContentBlocking in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -11823,8 +11821,7 @@
 				4BC95EAA2D74179B002FAB32 /* PersistenceTestingUtils */,
 				4BC95EAC2D7417A0002FAB32 /* Subscription */,
 				4BC95EAE2D7417A8002FAB32 /* SubscriptionTestingUtilities */,
-				84EFBCCB2D817CB500706739 /* InlineSnapshotTesting */,
-				84EFBCCD2D817CB500706739 /* SnapshotTesting */,
+				A7B000032F6A000100000001 /* SnapshotTestingSupport */,
 				BD408CEC2DCDB17900265476 /* ZIPFoundation */,
 				7BC26CB12DFC155500E52480 /* VPNTestUtils */,
 				5654CF562E22A9820074E806 /* BrowserServicesKitTestsUtils */,
@@ -12219,12 +12216,12 @@
 				F1D43AF82B99C1D300BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */,
 				9F8FE9472BAE50E50071E372 /* XCRemoteSwiftPackageReference "lottie-spm" */,
 				4BC8948A2C7902E6009AA141 /* XCRemoteSwiftPackageReference "wireguard-apple" */,
-				84EFBCCA2D817CB500706739 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 				9FDD72032D895D8C0016246B /* XCRemoteSwiftPackageReference "combine-schedulers" */,
 				BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "LocalPackages/DuckUI" */,
 				7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */,
 				9FADFC482F5FC56400CA16F7 /* XCRemoteSwiftPackageReference "native-apps-ducksans" */,
 				315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */,
+				A7B000022F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */,
 			);
 			productRefGroup = 84E341931E2F7EFB00BDBA6F /* Products */;
 			projectDirPath = "";
@@ -18212,6 +18209,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/AutomationServer;
 		};
+		A7B000022F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/SnapshotTestingSupport;
+		};
 		BD0C4D872DC54508001F034F /* XCLocalSwiftPackageReference "LocalPackages/DuckUI" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/DuckUI;
@@ -18233,14 +18234,6 @@
 			requirement = {
 				kind = exactVersion;
 				version = 1.1.3;
-			};
-		};
-		84EFBCCA2D817CB500706739 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
-			requirement = {
-				kind = exactVersion;
-				version = 1.19.2;
 			};
 		};
 		854007E52B57FB020001BD98 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
@@ -18633,15 +18626,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = VPNTestUtils;
 		};
-		84EFBCCB2D817CB500706739 /* InlineSnapshotTesting */ = {
+		A7B000032F6A000100000001 /* SnapshotTestingSupport */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 84EFBCCA2D817CB500706739 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = InlineSnapshotTesting;
-		};
-		84EFBCCD2D817CB500706739 /* SnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 84EFBCCA2D817CB500706739 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = SnapshotTesting;
+			package = A7B000022F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */;
+			productName = SnapshotTestingSupport;
 		};
 		854D67922F6DDFCA008707A3 /* ScreenTimeDataCleaner */ = {
 			isa = XCSwiftPackageProductDependency;

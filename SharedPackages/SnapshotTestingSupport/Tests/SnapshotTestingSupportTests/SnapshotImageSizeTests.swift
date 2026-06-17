@@ -53,7 +53,7 @@ final class SnapshotImageSizeTests: XCTestCase {
                 defaultSize: SnapshotDevice.iPhoneDefault.size
             )
         )
-        XCTAssertEqual(SnapshotImageSize.constrainedWidth.constrainedWidth, SnapshotDevice.iPhoneDefault.size.width)
+        XCTAssertEqual(SnapshotImageSize.constrainedWidth.fixedConstrainedWidth, SnapshotDevice.iPhoneDefault.size.width)
     }
 
     func testScreenUsesConfigurationDeviceSize() {
@@ -84,7 +84,7 @@ final class SnapshotImageSizeTests: XCTestCase {
             ),
             SnapshotDevice.iPadDefault.size
         )
-        XCTAssertNil(SnapshotImageSize.sheet.constrainedWidth)
+        XCTAssertNil(SnapshotImageSize.sheet.fixedConstrainedWidth)
         XCTAssertTrue(SnapshotImageSize.sheet.usesDefaultIOSDevices)
     }
 

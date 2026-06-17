@@ -21,10 +21,6 @@ public enum SnapshotImageStrategy: Equatable {
     case allAppearances
     case custom([SnapshotImageConfiguration])
 
-    public var configurations: [SnapshotImageConfiguration] {
-        configurations(for: .macOS, size: .intrinsicContentSize)
-    }
-
     public func configurations(
         for platform: SnapshotPlatform,
         size: SnapshotImageSize

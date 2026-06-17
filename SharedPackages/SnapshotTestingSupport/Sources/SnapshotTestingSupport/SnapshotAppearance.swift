@@ -17,8 +17,18 @@
 //
 
 import Foundation
+import SwiftUI
 
 public enum SnapshotAppearance: String, CaseIterable, Equatable {
     case light
     case dark
+}
+
+extension SnapshotAppearance {
+    var colorScheme: ColorScheme {
+        switch self {
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
 }

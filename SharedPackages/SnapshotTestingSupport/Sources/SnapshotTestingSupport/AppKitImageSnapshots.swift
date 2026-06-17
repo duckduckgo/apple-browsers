@@ -119,7 +119,7 @@ public extension XCTestCase {
         configuration: SnapshotImageConfiguration,
         size: SnapshotImageSize
     ) -> CGSize {
-        if let width = size.constrainedWidth {
+        if let width = size.fixedConstrainedWidth {
             return constrainedSize(for: view, width: width)
         }
 
@@ -157,15 +157,6 @@ public extension XCTestCase {
 }
 
 private extension SnapshotAppearance {
-    var colorScheme: ColorScheme {
-        switch self {
-        case .light:
-            return .light
-        case .dark:
-            return .dark
-        }
-    }
-
     var nsAppearance: NSAppearance? {
         let name: NSAppearance.Name
         switch self {

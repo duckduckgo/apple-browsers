@@ -34,7 +34,7 @@ public enum SnapshotImageSize: Equatable {
         }
     }
 
-    var constrainedWidth: CGFloat? {
+    var fixedConstrainedWidth: CGFloat? {
         switch self {
         case .constrainedWidth:
             return SnapshotDevice.iPhoneDefault.size.width

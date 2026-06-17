@@ -63,7 +63,10 @@ class PixelTests: XCTestCase {
             (.unifiedToggleInputStopGenerationTapped, "m_aichat_unified_input_stop_generation_tapped"),
             (.unifiedToggleInputSubscriptionUpsellTriggered, "m_aichat_unified_input_subscription_upsell_triggered"),
             (.unifiedToggleInputChatHeaderUpgradeTapped, "m_aichat_unified_input_chat_header_upgrade_tapped"),
-            (.unifiedToggleInputPromptSubmitted, "m_aichat_unified_input_prompt_submitted")
+            (.unifiedToggleInputPromptSubmitted, "m_aichat_unified_input_prompt_submitted"),
+            (.unifiedToggleInputShowModelPicker, "aichat_unified_input_show_model_picker"),
+            (.unifiedToggleInputSubmitChangeModel, "aichat_unified_input_submit_change_model"),
+            (.unifiedToggleInputSubmitChangeModelPromptSent, "aichat_unified_input_submit_change_model_prompt_sent")
         ]
 
         for (event, expectedName) in expectedNames {

@@ -55,7 +55,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         static let buttonHeight: CGFloat = 40
         static let stackSpacing: CGFloat = 12
         static let minItemWidth: CGFloat = 120
-        static let maxItemWidthFraction: CGFloat = 1.0 / 3.0
+        static let maxItemWidthFraction: CGFloat = 0.33
+        static let narrowMaxItemWidthFraction: CGFloat = 0.5
         static let leadingInset: CGFloat = 16
     }
     
@@ -319,12 +320,26 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
             availableWidth: availableWidth,
             visibleItems: maxVisibleItems,
             minWidth: Constants.minItemWidth,
-            maxWidthFraction: Constants.maxItemWidthFraction
+            maxWidth: maxItemWidth(forStripWidth: availableWidth)
         )
 
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
             flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
         }
+    }
+
+    /// Half the strip, but in landscape also capped at a third of the full-screen strip so a resize
+    /// to full width eases to a third instead of snapping.
+    private func maxItemWidth(forStripWidth availableWidth: CGFloat) -> CGFloat {
+        let half = availableWidth * Constants.narrowMaxItemWidthFraction
+        guard let window = view.window, let windowScene = window.windowScene,
+              windowScene.interfaceOrientation.isLandscape else {
+            return half
+        }
+        let chrome = window.bounds.width - availableWidth
+        let screenBounds = windowScene.screen.bounds
+        let landscapeFullStripWidth = max(screenBounds.width, screenBounds.height) - chrome
+        return min(half, landscapeFullStripWidth * Constants.maxItemWidthFraction)
     }
 
     /// Once-per-day baseline snapshots: open-tab count (bucketed) and whether the strip overflows
@@ -343,10 +358,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
 
-    static func itemWidth(availableWidth: CGFloat, visibleItems: Int, minWidth: CGFloat, maxWidthFraction: CGFloat) -> CGFloat {
+    /// Equal share of the strip, capped at `maxWidth` then floored at `minWidth` (floor wins).
+    static func itemWidth(availableWidth: CGFloat, visibleItems: Int, minWidth: CGFloat, maxWidth: CGFloat) -> CGFloat {
         guard visibleItems > 0 else { return 0 }
         var width = availableWidth / CGFloat(visibleItems)
-        width = min(width, availableWidth * maxWidthFraction)
+        width = min(width, maxWidth)
         width = max(width, minWidth)
         return width
     }

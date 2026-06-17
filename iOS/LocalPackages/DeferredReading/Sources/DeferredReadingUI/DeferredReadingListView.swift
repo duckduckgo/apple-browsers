@@ -2,16 +2,20 @@ import DeferredReadingCore
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
+import UIKit
 
 public struct DeferredReadingListView: View {
 
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var controller: DeferredReadingController
     private let onOpenURL: (URL) -> Void
+    private let faviconLoader: ((URL, @escaping (UIImage?) -> Void) -> Void)?
 
     public init(controller: DeferredReadingController,
+                faviconLoader: ((URL, @escaping (UIImage?) -> Void) -> Void)? = nil,
                 onOpenURL: @escaping (URL) -> Void) {
         self.controller = controller
+        self.faviconLoader = faviconLoader
         self.onOpenURL = onOpenURL
     }
 
@@ -84,14 +88,83 @@ public struct DeferredReadingListView: View {
                 onOpenURL(url)
             }
         } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.title ?? item.url?.host ?? item.urlString)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .lineLimit(2)
-                Text(item.addedAt, style: .date)
-                    .font(.caption)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+            HStack(alignment: .top, spacing: 10) {
+                faviconView(for: item)
+                    .frame(width: 24, height: 24)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title ?? item.url?.host ?? item.urlString)
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .lineLimit(2)
+                    Text(item.addedAt, style: .date)
+                        .font(.caption)
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+    }
+
+    @ViewBuilder
+    private func faviconView(for item: DeferredReadingItem) -> some View {
+        if let itemURL = item.url, let faviconLoader {
+            DeferredReadingFaviconView(url: itemURL,
+                                       faviconLoader: faviconLoader)
+        } else {
+            placeholderFaviconView
+        }
+    }
+
+    private var placeholderFaviconView: some View {
+        Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
+            .resizable()
+            .scaledToFit()
+            .foregroundColor(Color(designSystemColor: .icons))
+            .padding(3)
+            .background(Color(designSystemColor: .surface))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+}
+
+private struct DeferredReadingFaviconView: View {
+
+    let url: URL
+    let faviconLoader: (URL, @escaping (UIImage?) -> Void) -> Void
+
+    @State private var image: UIImage?
+    @State private var requested = false
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                placeholderFaviconView
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .task {
+            guard !requested else { return }
+            requested = true
+            faviconLoader(url) { loadedImage in
+                guard let loadedImage else { return }
+                DispatchQueue.main.async {
+                    image = loadedImage
+                }
+            }
+        }
+    }
+
+    private var placeholderFaviconView: some View {
+        Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
+            .resizable()
+            .scaledToFit()
+            .foregroundColor(Color(designSystemColor: .icons))
+            .padding(3)
+            .background(Color(designSystemColor: .surface))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }

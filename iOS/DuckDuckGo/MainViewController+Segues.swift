@@ -199,7 +199,19 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let listView = DeferredReadingListView(controller: deferredReadingController) { [weak self] url in
+        let listView = DeferredReadingListView(controller: deferredReadingController, faviconLoader: { [weak self] url, completion in
+            guard let self else {
+                completion(nil)
+                return
+            }
+
+            self.favicons.loadFavicon(forDomain: url.host,
+                                      fromURL: url,
+                                      intoCache: .tabs,
+                                      fromCache: .tabs,
+                                      queue: DispatchQueue.main,
+                                      completion: completion)
+        }) { [weak self] url in
             self?.dismiss(animated: true) {
                 self?.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil)
             }

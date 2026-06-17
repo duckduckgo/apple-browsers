@@ -136,6 +136,7 @@ final class UnifiedSuggestionsHost {
         applyCombinedInsets()
     }
 
+
     /// Updates the tap-ahead arrow direction to match the UTI's current position.
     func setIsAddressBarAtBottom(_ value: Bool) {
         guard isAddressBarAtBottom != value else { return }

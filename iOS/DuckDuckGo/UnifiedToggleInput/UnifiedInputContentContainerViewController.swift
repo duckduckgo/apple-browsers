@@ -129,6 +129,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
     private var escapeHatchModel: EscapeHatchModel?
+    /// The non-typing chrome (escape hatch + Duck.ai sync-promo) is pinned to the bar (not rendered
+    /// inside the SwiftUI host) so it rides the bar's animation in the same layout pass — constant gap,
+    /// no cross-framework sync. Its measured height is reserved in the content inset.
+    private var chromeHostingController: UIHostingController<FocusedChromeView>?
+    private var chromeTopConstraint: NSLayoutConstraint?
+    private var chromeHeightConstraint: NSLayoutConstraint?
+    /// Async-measured chrome height — used only for the variable-height sync-promo case (Duck.ai).
+    private var chromeMeasuredHeight: CGFloat = 0
+    private var isSyncPromoCardVisible = false
 
     private(set) var daxLogoManager: DaxLogoManager
     private var isDaxLogoForcedHidden = false
@@ -264,6 +273,23 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
+    /// TEMP diagnostic (uti-host-stable-frame): top Y of the suggestion list's scroll view in window
+    /// coordinates, from its presentation layer (true mid-animation value).
+    func debugSuggestionsListTopInWindow() -> CGFloat? {
+        guard let scrollView = Self.firstScrollView(in: contentContainerView),
+              let superview = scrollView.superview else { return nil }
+        let frame = scrollView.layer.presentation()?.frame ?? scrollView.frame
+        return superview.convert(frame, to: nil).minY
+    }
+
+    private static func firstScrollView(in view: UIView) -> UIScrollView? {
+        for subview in view.subviews {
+            if let scroll = subview as? UIScrollView { return scroll }
+            if let found = firstScrollView(in: subview) { return found }
+        }
+        return nil
+    }
+
     func refreshVisibleContentIfNeeded() {
         guard isContentActive else { return }
         guard needsVisibleRefresh else { return }
@@ -274,15 +300,109 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
-        // Fire tabs render their own empty state via DaxLogoManager — suppress the hatch to avoid stacking affordances.
-        let nonFireHatchModel = switchBarHandler.isFireTab ? nil : model
-        unifiedSuggestionsHost?.setEscapeHatch(nonFireHatchModel)
+        // The chrome (hatch + sync-promo) is pinned to the bar by the container (below), not rendered
+        // in the SwiftUI host, so the host header stays empty.
+        unifiedSuggestionsHost?.setEscapeHatch(nil)
+        updatePinnedChrome()
         updateSingleHostTopOffset()
         // The dax offset depends on hatch presence (`hatchClearance` is added when present),
         // so refresh visibility when the hatch is added or removed mid-session.
         if hatchPresenceChanged {
             updateDaxVisibility()
         }
+        if isContentActive {
+            applyRequestedContentInset()
+        }
+    }
+
+    /// Creates / updates / removes the bar-pinned chrome hosting controller and rebinds its content
+    /// (hatch + sync-promo) to the current state.
+    private func updatePinnedChrome() {
+        let hatchModel = shouldShowPinnedHatch ? escapeHatchModel : nil
+        let promo: AnyView? = isSyncPromoCardVisible ? syncPromoView : nil
+        guard hatchModel != nil || promo != nil || chromeHostingController != nil else { return }
+
+        let rootView = FocusedChromeView(
+            hatchModel: hatchModel,
+            syncPromo: promo,
+            topInset: chromeTopInsetForPosition,
+            onHeightChange: { [weak self] height in
+                guard let self, self.chromeMeasuredHeight != height else { return }
+                self.chromeMeasuredHeight = height
+                // Only the sync-promo case relies on the measured height; the hatch-only case uses a
+                // synchronous known height (so favorites slide without a late jump).
+                guard self.isSyncPromoCardVisible else { return }
+                self.chromeHeightConstraint?.constant = self.currentChromeReservedHeight
+                self.applyHostContentInsets()
+            })
+
+        if let hostingController = chromeHostingController {
+            hostingController.rootView = rootView
+        } else {
+            installPinnedChrome(rootView: rootView)
+        }
+    }
+
+    private func installPinnedChrome(rootView: FocusedChromeView) {
+        let hostingController = UIHostingController(rootView: rootView)
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        addChild(hostingController)
+        contentContainerView.addSubview(hostingController.view)
+        let top = hostingController.view.topAnchor.constraint(equalTo: contentContainerView.topAnchor, constant: pinnedChromeTopConstant)
+        chromeTopConstraint = top
+        let height = hostingController.view.heightAnchor.constraint(equalToConstant: currentChromeReservedHeight)
+        chromeHeightConstraint = height
+        NSLayoutConstraint.activate([
+            top,
+            height,
+            hostingController.view.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor)
+        ])
+        hostingController.didMove(toParent: self)
+        contentContainerView.bringSubviewToFront(hostingController.view)
+        chromeHostingController = hostingController
+    }
+
+    private var chromeTopInsetForPosition: CGFloat {
+        isUsingTopBarPosition ? Metrics.hatchTopInsetTopBar : Metrics.hatchTopInsetBottomBar
+    }
+
+    /// Pins the chrome at the bar's edge. `requestedContentInset.top` is the bar height on a top bar
+    /// (so the chrome tracks it) and 0 on a bottom bar (chrome sits at the content top).
+    private var pinnedChromeTopConstant: CGFloat {
+        topBarContentGap + requestedContentInset.top
+    }
+
+    /// The hatch shows in the non-typing empty/branding states — using the same not-typing rule as the
+    /// resolver so it never diverges from the host's content (e.g. a pre-filled, unedited URL).
+    private var shouldShowPinnedHatch: Bool {
+        escapeHatchModel != nil
+            && !switchBarHandler.isFireTab
+            && !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
+                                                        hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
+            && !requiresHorizontallyCompactLayout(for: view.bounds.size)
+    }
+
+    /// Height to reserve below the bar for the pinned chrome. The hatch is a fixed height (reserved
+    /// synchronously so favorites slide without a late jump); the variable sync-promo uses the
+    /// async-measured height (Duck.ai only, where favorites never show).
+    private var currentChromeReservedHeight: CGFloat {
+        if isSyncPromoCardVisible {
+            return chromeMeasuredHeight
+        } else if shouldShowPinnedHatch {
+            return chromeTopInsetForPosition + TabSwitcherPill.compactSize + FocusedChromeView.Metrics.bottomInset
+        } else {
+            return 0
+        }
+    }
+
+    /// Sets the host's content inset so the list/favorites start below the bar + pinned chrome.
+    private func applyHostContentInsets() {
+        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: requestedContentInset.top + currentChromeReservedHeight,
+                                                              left: 0,
+                                                              bottom: requestedContentInset.bottom,
+                                                              right: 0))
     }
 
     func setText(_ text: String) {
@@ -503,15 +623,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // top safe-area inset of its own.
         host.setAdditionalTopInset(0)
         updateSingleHostTopOffset()
-        host.setEscapeHatch(switchBarHandler.isFireTab ? nil : escapeHatchModel)
+        // Chrome (hatch + sync-promo) is pinned to the bar by the container, not rendered in the host.
+        host.setEscapeHatch(nil)
         unifiedSuggestionsHost = host
+        updatePinnedChrome()
     }
 
     /// Single-host path: the suggestions container aligns with the new-tab page (the favorites
     /// surface IS the NTP, and the hatch lines up with the NTP hatch), so it rides the requested
     /// inset directly. The constant animates natively, so the hatch glides with the input.
     private func updateSingleHostTopOffset() {
-        unifiedSuggestionsTopConstraint?.constant = requestedContentInset.top + topBarContentGap
+        // EXPERIMENT (uti-host-stable-frame): the host FRAME stays fixed; the bar-height top inset is
+        // applied as the host's safe-area top inset instead (see `applyRequestedContentInset`). This
+        // keeps the frame from moving when the bar height changes on a Search↔Duck.ai toggle.
+        unifiedSuggestionsTopConstraint?.constant = topBarContentGap
     }
 
     /// With a top address bar the input sits above the content, so the content needs a small gap
@@ -716,10 +841,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         )
         insets.top += Metrics.contentTopInset
         daxLogoManager.setFireTabContentInsets(insets)
-        // Top offset → container constraint (UIKit glide); only the bottom inset stays on the
-        // hosting view. layoutIfNeeded inside the active animation makes the constraint glide.
+        // The host frame stays fixed (uti-host-stable-frame); the bar-height offset rides the host's
+        // safe-area inset (top for a top bar, bottom for a bottom bar) so the scroll view animates it
+        // in lockstep with the bar.
         updateSingleHostTopOffset()
-        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: 0, left: 0, bottom: insets.bottom, right: 0))
+
+        // Pinned chrome: track the bar (the constant updates inside the bar's animation here, so it
+        // glides in the same pass), rebind its content for the current state, and reserve its measured
+        // height in the content inset so the list/favorites start below it.
+        chromeTopConstraint?.constant = pinnedChromeTopConstant
+        updatePinnedChrome()
+        chromeHeightConstraint?.constant = currentChromeReservedHeight
+        applyHostContentInsets()
         contentContainerView.layoutIfNeeded()
     }
 
@@ -768,18 +901,19 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// Shows the Duck.ai sync-promo card below the escape hatch in the not-typing state, mirroring
     /// the legacy Duck.ai suggestions header. Gated by the sync-promo manager + recents count.
     private func updateSyncPromo() {
-        guard let promoViewModel = aiChatSyncPromoViewModel, let host = unifiedSuggestionsHost else { return }
-        // Install the card once (the host guards on presence); its show/hide is then a reactive
-        // view-model change driven by `setSyncPromoVisible`.
-        host.setSyncPromo(syncPromoView)
+        guard let promoViewModel = aiChatSyncPromoViewModel else { return }
 
-        let isTyping = !switchBarHandler.currentText.isEmpty
+        let isTyping = UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
+                                                              hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
         let shouldShow = switchBarHandler.currentToggleState == .aiChat
             && !switchBarHandler.isFireTab
             && (duckAISurface?.isAttached ?? false)
             && promoViewModel.shouldShowPromo(isQueryActive: isTyping, chatCount: duckAISurface?.recentsCount ?? 0)
 
-        host.setSyncPromoVisible(shouldShow)
+        // The sync-promo rides the bar-pinned chrome (not the host), so toggling its visibility just
+        // rebinds the chrome; the content inset follows from the chrome's reported height.
+        isSyncPromoCardVisible = shouldShow
+        updatePinnedChrome()
         promoViewModel.recordImpressionIfNeeded(isVisibleContent: isContentActive, isPromoVisible: shouldShow)
     }
 
@@ -811,6 +945,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let topBarContentClearance: CGFloat = 4
         static let toolbarCompensationOffset: CGFloat = 80
         static let hatchClearance: CGFloat = 50
+        /// Gap between the bar's edge and the pinned chrome (Figma). The chrome owns its other metrics.
+        static let hatchTopInsetTopBar: CGFloat = 6
+        static let hatchTopInsetBottomBar: CGFloat = 16
     }
 }
 

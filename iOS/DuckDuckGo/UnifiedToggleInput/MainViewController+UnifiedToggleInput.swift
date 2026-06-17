@@ -27,6 +27,9 @@ import Suggestions
 import UIKit
 import WebKit
 
+/// TEMP diagnostic (uti-host-stable-frame): logs the UTI-bar-bottom ↔ list-top gap per frame.
+private let utiGapDiagnostic = UTIGapDiagnostic()
+
 // MARK: - Unified Toggle Input Setup
 
 extension MainViewController {
@@ -904,9 +907,13 @@ extension MainViewController {
             coordinator.pushContentInsets()
             viewCoordinator.showUnifiedInputContent()
             coordinator.contentViewController.refreshVisibleContentIfNeeded()
+            utiGapDiagnostic.start(bar: viewCoordinator.navigationBarContainer) { [weak coordinator] in
+                coordinator?.contentViewController.debugSuggestionsListTopInWindow()
+            }
         } else {
             coordinator.contentViewController.setActive(false)
             viewCoordinator.hideUnifiedInputContent()
+            utiGapDiagnostic.stop()
         }
 
         if isOnAITab {

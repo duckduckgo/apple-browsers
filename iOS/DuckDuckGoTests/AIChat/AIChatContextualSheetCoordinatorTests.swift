@@ -79,6 +79,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             didRequestExpandURLs.append(url)
         }
 
+        var viewAllChatsCallCount = 0
+
+        func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {
+            viewAllChatsCallCount += 1
+        }
+
         func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator) {
             openSettingsCallCount += 1
         }

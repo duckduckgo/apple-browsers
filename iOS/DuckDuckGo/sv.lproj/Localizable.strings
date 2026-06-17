@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Ladda om";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Återställ zoom";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Välj";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Visa alla flikar";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Zooma in";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Zooma ut";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Senast bearbetad: %@";

@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Ponovno naloži";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Ponastavi prikaz";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Izberi";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Prikaži vse zavihke";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Povečaj";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Pomanjšaj";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Zadnja obdelava: %@";

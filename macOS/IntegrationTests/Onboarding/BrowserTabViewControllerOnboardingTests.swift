@@ -194,8 +194,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 duckPlayer: DuckPlayer(
                     preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                    internalUserDecider: featureFlagger.internalUserDecider,
-                    featureFlagger: featureFlagger
+                    internalUserDecider: featureFlagger.internalUserDecider
                 ),
                 pinningManager: MockPinningManager()
             )

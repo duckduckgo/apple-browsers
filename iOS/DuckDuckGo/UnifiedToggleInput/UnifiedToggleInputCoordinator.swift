@@ -272,9 +272,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
     private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
-    /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared once a
-    /// supported model is applied or the session resets.
-    private var isModelPickerForcedVisible = false
+    /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
+    /// submit or session reset.
+    private var isModelPickerForcedVisible: Bool = false {
+        didSet {
+            guard oldValue != isModelPickerForcedVisible else { return }
+            guard !isClearingModelPickerPinWithoutPersist else { return }
+            persistDraftToStore()
+        }
+    }
+    /// Scoped guard for `hide()`: clear the live pin without writing `false` to `TabInputState`
+    /// (the per-tab pin must survive so `activateForTab` can restore the recovery chip).
+    private var isClearingModelPickerPinWithoutPersist = false
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -625,6 +634,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
         isVoiceSessionActive = state.isVoiceSessionActive
+        isModelPickerForcedVisible = state.isModelPickerForcedVisible
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
@@ -664,7 +674,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool,
             aiChatInputBoxVisibility: aiChatInputBoxVisibility,
-            isVoiceSessionActive: isVoiceSessionActive
+            isVoiceSessionActive: isVoiceSessionActive,
+            isModelPickerForcedVisible: isModelPickerForcedVisible
         )
     }
 
@@ -674,6 +685,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func persistDraftToStore() {
         guard !isApplyingState, !isPerformingDismissCleanup, let uid = currentTabUID else { return }
         stateStore.update(snapshotCurrentState(), for: uid)
+    }
+
+    /// `hide()` clears the live pin without updating `TabInputState`, so submit after `hide()`
+    /// (`currentTabUID` nil) must patch the stored pin directly for `lastActivatedTabUID`.
+    private func persistModelPickerPinClearedAfterHideIfNeeded() {
+        guard currentTabUID == nil, let uid = lastActivatedTabUID else { return }
+        var state = stateStore.state(for: uid)
+        guard state.isModelPickerForcedVisible else { return }
+        state.isModelPickerForcedVisible = false
+        stateStore.update(state, for: uid)
     }
 
     /// Persists a user-deliberate choice — toggle mode, model, reasoning, tool. These
@@ -767,7 +788,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
+        isClearingModelPickerPinWithoutPersist = true
         isModelPickerForcedVisible = false
+        isClearingModelPickerPinWithoutPersist = false
         isSubmitBlockedByRecoveryCard = false
         syncInputBehaviorToHandler()
         isInputVisibleForKeyboard = true
@@ -1160,9 +1183,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             toolsSelected: false,
             attachmentsSelected: false
         )
-        hasSubmittedPrompt = true
-        updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
+        markActiveChatPromptSubmitted()
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
         showCollapsed()
@@ -1173,9 +1194,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
         let configuration = promptSubmissionConfiguration
-        hasSubmittedPrompt = true
-        updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
+        markActiveChatPromptSubmitted()
         return (configuration.modelId, configuration.reasoningEffort)
     }
 
@@ -1411,9 +1430,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if model.entityHasAccess {
             let isNewSelection = modelId != modelStore.persistedModelId
             pendingGatedModelId = nil
-            if isModelPickerForcedVisible {
-                isModelPickerForcedVisible = false
-            }
             // Supported model picked in the native picker — the recovery card's reason to block
             // submit is gone, so drop the block (no-op when it wasn't set).
             isSubmitBlockedByRecoveryCard = false
@@ -1526,13 +1542,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         let isNewSelection = modelId != modelStore.persistedModelId
         pendingGatedModelId = nil
-        // Mirror the direct-selection path: the gated model the recovery-card flow was waiting on
-        // is now accessible (post-purchase), so drop the forced reveal and let the chip re-hide.
-        if isModelPickerForcedVisible {
-            isModelPickerForcedVisible = false
-        }
-        // The gated model the recovery flow waited on is now accessible (post-purchase); it
-        // becomes the active supported model, so lift the recovery-card submit block too.
+        // Mirror the direct-selection path: the gated model in the recovery-card
+        // is now accessible (post-purchase), so drop the recovery-card submit block.
         isSubmitBlockedByRecoveryCard = false
         updateSelectedModel(modelId)
         if isNewSelection {
@@ -1911,9 +1922,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if isOmnibarNewAIChatPrompt {
                 viewController.prepareToolbarSubmitStyleForDismissal()
             }
-            hasSubmittedPrompt = true
-            updateModelChipVisibility()
-            syncHasSubmittedPromptToHandler()
+            markActiveChatPromptSubmitted()
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
@@ -2336,6 +2345,14 @@ private extension UnifiedToggleInputCoordinator {
         updateFloatingReturnKeyState()
     }
 
+    private func markActiveChatPromptSubmitted() {
+        hasSubmittedPrompt = true
+        isModelPickerForcedVisible = false
+        persistModelPickerPinClearedAfterHideIfNeeded()
+        updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
+    }
+
     func syncInputBehaviorToHandler() {
         viewController.handler.submitsAIChatOnKeyboardReturn = isOmnibarNewAIChatPrompt
     }
@@ -2345,7 +2362,10 @@ private extension UnifiedToggleInputCoordinator {
         aiChatStatus = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
-        isModelPickerForcedVisible = false
+        // Do not clear the model-picker pin here. It is stored per tab in TabInputState and
+        // restored by applyState during activateForTab. bindToTab calls resetSessionState
+        // immediately after that restore when switching Duck.ai tabs, so resetting the pin
+        // here would undo the value we just loaded for the incoming tab.
         isSubmitBlockedByRecoveryCard = false
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()

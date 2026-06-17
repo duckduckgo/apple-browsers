@@ -315,7 +315,11 @@ public extension DesignSystemImages {
                     ? .init(resource: .identityTheftRestorationColor24)
                     : .init(resource: .identityTheftRestorationColor24Legacy)
             }
-            public static var `import`: DesignSystemImage { .init(resource: .importColor24) }
+            public static var `import`: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .importColor24)
+                    : .init(resource: .importColor24Legacy)
+            }
             public static var info: DesignSystemImage { .init(resource: .infoRecolorable24)}
             public static var key: DesignSystemImage {
                 AppRebrand.isAppRebranded()

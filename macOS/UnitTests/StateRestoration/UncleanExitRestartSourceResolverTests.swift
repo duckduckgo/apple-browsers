@@ -101,13 +101,13 @@ final class UncleanExitRestartSourceResolverTests: XCTestCase {
         XCTAssertEqual(result, .unknown)
     }
 
-    func testWhenAppStoreBuildUpdatedAndNoCrash_ThenReturnsAppUpdate() {
+    func testWhenAppStoreBuildUpdatedAndNoCrash_ThenReturnsUnknownWithAppUpdate() {
         mockCrashReportDetecting.shouldDetectCrashReport = false
         mockBuildType.isSparkleBuild = false
         mockBuildType.isAppStoreBuild = true
 
-        XCTAssertEqual(resolver.resolve(updateStatus: .updated), .appUpdate)
-        XCTAssertEqual(resolver.resolve(updateStatus: .downgraded), .appUpdate)
+        XCTAssertEqual(resolver.resolve(updateStatus: .updated), .unknownWithAppUpdate)
+        XCTAssertEqual(resolver.resolve(updateStatus: .downgraded), .unknownWithAppUpdate)
     }
 
     func testWhenNoSignals_ThenReturnsUnknown() {

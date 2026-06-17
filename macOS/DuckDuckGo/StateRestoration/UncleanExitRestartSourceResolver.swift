@@ -95,7 +95,7 @@ final class UncleanExitRestartSourceResolver: UncleanExitRestartSourceResolving 
         }
 
         if buildType.isAppStoreBuild, updateStatus == .updated || updateStatus == .downgraded {
-            return .appUpdate
+            return .unknownWithAppUpdate
         }
 
         return .unknown

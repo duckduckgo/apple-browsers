@@ -249,6 +249,21 @@ final class AppStateRestorationManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenAppDidTerminateUnexpectedlyAfterUnknownWithAppUpdate_ThenPixelIsFiredAndPromptIsShown() throws {
+        try mockKeyValueStore.set(false, forKey: terminationFlagKey)
+        mockRestartSourceResolver.resolvedSource = .unknownWithAppUpdate
+        addMockSessionData()
+        mockPixelKit.expectedFireCalls = [
+            .init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: .unknownWithAppUpdate), frequency: .standard)
+        ]
+
+        appStateManager.applicationDidFinishLaunching()
+
+        mockPixelKit.verifyExpectations()
+        XCTAssertTrue(mockPromptCoordinator.sessionPromptShown)
+    }
+
+    @MainActor
     func testWhenAppDidTerminateUnexpectedly_ThenResolverReceivesUpdateStatusFromDetector() throws {
         try mockKeyValueStore.set(false, forKey: terminationFlagKey)
         mockApplicationUpdateDetecting.updateStatus = .updated

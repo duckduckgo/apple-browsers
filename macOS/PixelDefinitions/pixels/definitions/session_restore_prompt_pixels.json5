@@ -9,9 +9,9 @@
             "channel",
             {
                 "key": "restart-source-attribution",
-                "description": "Why the unclean exit and subsequent restart occurred.",
+                "description": "Why the unclean exit and subsequent restart occurred. app_update is Sparkle-only (confirmed pending update). unknown_with_app_update is App Store-only (version changed; exit cause undetermined).",
                 "type": "string",
-                "enum": ["crash", "app_update", "unknown"]
+                "enum": ["crash", "app_update", "unknown_with_app_update", "unknown"]
             }
         ]
     },

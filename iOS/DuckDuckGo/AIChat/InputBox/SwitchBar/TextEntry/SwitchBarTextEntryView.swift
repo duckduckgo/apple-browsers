@@ -63,16 +63,16 @@ class SwitchBarTextEntryView: UIView {
         static let minHeightAIChat: CGFloat = 56
         static let fontSize: CGFloat = 16
 
-        // Text container insets — vary by expandability (see the `textTopInset` / `textBottomInset` computed properties).
-        static let textTopInsetCompact: CGFloat = 12
-        static let textTopInsetExpandable: CGFloat = 17
-        static let textBottomInsetCompact: CGFloat = 12
-        static let textBottomInsetExpandable: CGFloat = 17
+        // Text container insets — vary by whether the toggle is enabled (see the `textTopInset` / `textBottomInset` computed properties).
+        static let textTopInsetToggleDisabled: CGFloat = 12
+        static let textTopInsetToggleEnabled: CGFloat = 17
+        static let textBottomInsetToggleDisabled: CGFloat = 12
+        static let textBottomInsetToggleEnabled: CGFloat = 17
         static let textHorizontalInset: CGFloat = 12
 
-        // Placeholder positioning — top offset varies by expandability (see the `placeholderTopOffset` computed property).
-        static let placeholderTopOffsetCompact: CGFloat = 12
-        static let placeholderTopOffsetExpandable: CGFloat = 17
+        // Placeholder positioning — top offset varies by whether the toggle is enabled (see the `placeholderTopOffset` computed property).
+        static let placeholderTopOffsetToggleDisabled: CGFloat = 12
+        static let placeholderTopOffsetToggleEnabled: CGFloat = 17
         static let placeholderHorizontalOffset: CGFloat = 16
 
         // Increased buttons spacing
@@ -117,18 +117,18 @@ class SwitchBarTextEntryView: UIView {
         return .compact
     }
 
-    /// Text-container and placeholder insets differ by expandability: the compact (single-line) field
-    /// uses a tighter inset, the expandable field a taller one.
+    /// Text-container and placeholder insets differ by toggle state: when the toggle is enabled the
+    /// field uses a taller inset, when disabled a tighter one.
     private var textTopInset: CGFloat {
-        isToggleEnabled ? Constants.textTopInsetExpandable : Constants.textTopInsetCompact
+        isToggleEnabled ? Constants.textTopInsetToggleEnabled : Constants.textTopInsetToggleDisabled
     }
 
     private var textBottomInset: CGFloat {
-        isToggleEnabled ? Constants.textBottomInsetExpandable : Constants.textBottomInsetCompact
+        isToggleEnabled ? Constants.textBottomInsetToggleEnabled : Constants.textBottomInsetToggleDisabled
     }
 
     private var placeholderTopOffset: CGFloat {
-        isToggleEnabled ? Constants.placeholderTopOffsetExpandable : Constants.placeholderTopOffsetCompact
+        isToggleEnabled ? Constants.placeholderTopOffsetToggleEnabled : Constants.placeholderTopOffsetToggleDisabled
     }
 
     private var currentMinHeight: CGFloat {

@@ -421,7 +421,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
                 completion(true)
             })
         }
-        action.image = DesignSystemImages.Glyphs.Size24.pin
+        action.image = wasPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin
         action.accessibilityLabel = wasPinned
             ? UserText.aiChatHistoryUnpinSwipeAccessibilityLabel
             : UserText.aiChatHistoryPinSwipeAccessibilityLabel

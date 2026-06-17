@@ -173,17 +173,12 @@ jobs:
             modes='["production"]'
             ;;
         esac
-        # iPhone tests exclude iPad-tagged tests; iPad tests exclude iPhone-tagged tests.
+        # TEMPORARY: scope reduced to firebutton.yaml + local-storage.yaml to validate
+        # the firebutton flake fix in CI without paying for the full matrix. Revert
+        # this block (and the `firebutton_validation` tags on those two YAMLs) before
+        # merging.
         base='[
-          {"test-tag":"release","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
-          {"test-tag":"privacy","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
-          {"test-tag":"securityTest","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
-          {"test-tag":"adClick","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
-          {"test-tag":"duckplayer_native","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
-          {"test-tag":"device_info","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
-          {"test-tag":"device_info","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
-          {"test-tag":"duckplayer_classic","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
-          {"test-tag":"duckai_chrome_shortcut","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"}
+          {"test-tag":"firebutton_validation","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"}
         ]'
         include=$(echo "$base" | jq -c --argjson modes "$modes" '[.[] as $b | $modes[] | $b + {"user-mode": .}]')
         echo "include=$include" >> $GITHUB_OUTPUT

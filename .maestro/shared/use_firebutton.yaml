@@ -7,4 +7,11 @@ appId: com.duckduckgo.mobile.ios
     id: "Browser.Toolbar.Button.Fire"
 - tapOn:
     id: "alert.forget-data.confirm"
-- waitForAnimationToEnd
+# Wait for the post-burn toast to appear and disappear. This spans the sheet
+# dismissal, fire animation, and data-clearing tail
+- extendedWaitUntil:
+    visible: "\\d+ tabs? and (its|their) data deleted"
+    timeout: 5000
+- extendedWaitUntil:
+    notVisible: "\\d+ tabs? and (its|their) data deleted"
+    timeout: 5000

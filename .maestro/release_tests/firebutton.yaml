@@ -3,6 +3,8 @@ appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
     - release
+    # Temporary tag for CI scope reduction during firebutton flake fix validation.
+    - firebutton_validation
 
 ---
 
@@ -18,12 +20,17 @@ tags:
 - inputText: "https://privacy-test-pages.site/features/local-storage.html"
 - pressKey: Enter
 
+# Wait for the page to finish loading (Manual Increment is a page-rendered button)
+# before asserting on counter values, otherwise the assertion can race the page load.
+- extendedWaitUntil:
+    visible: "Manual Increment"
+    timeout: 5000
+
 # Add a cookie
 - assertVisible: "Storage Counter: undefined"
 - assertVisible: "Cookie Counter:"
 - assertNotVisible: "Cookie Counter: 1"
 - assertNotVisible: "Storage Counter: 1"
-- assertVisible: "Manual Increment"
 - tapOn: "Manual Increment"
 - assertVisible: "Cookie Counter: 1"
 - assertVisible: "Storage Counter: 1"
@@ -42,6 +49,13 @@ tags:
 
 # Close tab
 - tapOn: "Tab Switcher"
+# Wait for the page <title> to propagate via WKWebView KVO into the tab cell's
+# accessibility label. The body H1 ("Example Domain") paints before the title
+# reaches the tab model, so on slower runners the close-button label is still
+# the host fallback ("Close \"example.com\" at example.com") at this point.
+- extendedWaitUntil:
+    visible: "Close \"Example Domain\" at example.com"
+    timeout: 5000
 - tapOn: "Close \"Example Domain\" at example.com"
 - tapOn: "New Tab"
 
@@ -83,6 +97,9 @@ tags:
 
 - inputText: "https://privacy-test-pages.site/features/local-storage.html"
 - pressKey: Enter
+- extendedWaitUntil:
+    visible: "Manual Increment"
+    timeout: 5000
 - assertVisible: "Storage Counter: undefined"
 - assertVisible: "Cookie Counter:"
 
@@ -117,6 +134,9 @@ tags:
 
 - inputText: "https://privacy-test-pages.site/features/local-storage.html"
 - pressKey: Enter
+- extendedWaitUntil:
+    visible: "Manual Increment"
+    timeout: 5000
 - assertVisible: "Storage Counter: undefined"
 - assertVisible: "Cookie Counter:"
 
@@ -133,6 +153,9 @@ tags:
     id: "alert.forget-data.confirm"
 - waitForAnimationToEnd:
     timeout: 5000
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 1000
 - tapOn: "Settings"
 - tapOn: "Done"
 

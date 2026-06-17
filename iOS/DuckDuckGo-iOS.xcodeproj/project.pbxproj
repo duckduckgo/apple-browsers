@@ -2189,6 +2189,8 @@
 		CB6D17B42FB000000ECD5AE /* AIChatSyncPromoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */; };
 		CB6D17B72FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */; };
 		CB6D17B82FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B92FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift */; };
+		CB6D17C22FB000000ECD5AE /* AIChatSyncPromoViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17C12FB000000ECD5AE /* AIChatSyncPromoViewTests.swift */; };
+		CB6D17D42FB000000ECD5AE /* AIChatSyncIntroSheetViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17D32FB000000ECD5AE /* AIChatSyncIntroSheetViewTests.swift */; };
 		CB6D17C02FB488BE00ECD5AE /* UTIDismissSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17BF2FB488BE00ECD5AE /* UTIDismissSnapshot.swift */; };
 		CB6EF0492FDC01E8000C75BA /* SuggestionsListHeightCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6EF0482FDC01E8000C75BA /* SuggestionsListHeightCalculator.swift */; };
 		CB6EF04B2FDC0203000C75BA /* PopoverSuggestionsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6EF04A2FDC0203000C75BA /* PopoverSuggestionsController.swift */; };
@@ -4926,6 +4928,8 @@
 		CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoViewModel.swift; sourceTree = "<group>"; };
 		CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoViewModelTests.swift; sourceTree = "<group>"; };
 		CB6D17B92FB100000ECD5AE /* AIChatSyncIntroSheetPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncIntroSheetPresenter.swift; sourceTree = "<group>"; };
+		CB6D17C12FB000000ECD5AE /* AIChatSyncPromoViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoViewTests.swift; sourceTree = "<group>"; };
+		CB6D17D32FB000000ECD5AE /* AIChatSyncIntroSheetViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncIntroSheetViewTests.swift; sourceTree = "<group>"; };
 		CB6D17BF2FB488BE00ECD5AE /* UTIDismissSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIDismissSnapshot.swift; sourceTree = "<group>"; };
 		CB6EF0482FDC01E8000C75BA /* SuggestionsListHeightCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsListHeightCalculator.swift; sourceTree = "<group>"; };
 		CB6EF04A2FDC0203000C75BA /* PopoverSuggestionsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverSuggestionsController.swift; sourceTree = "<group>"; };
@@ -5986,6 +5990,7 @@
 				97C00D052F97ACD100593A53 /* DaxLogoManagerTests.swift */,
 				310EEA2E2CFFCDBF0043CA1A /* AIChatSettingsTests.swift */,
 				C124F0552E6879E7008D0F49 /* SwitchBarFunnelTests.swift */,
+				CB6D17D02FB000000ECD5AE /* InputBox */,
 				C14414782EB11A100057F921 /* AIChatFullModeFeatureTests.swift */,
 				C14414822EB11A100057F921 /* AIChatIPadTabFeatureTests.swift */,
 				312F78692F28C32D006903C7 /* AIChatHistoryManagerTests.swift */,
@@ -9673,7 +9678,6 @@
 				C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */,
 				C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */,
 				CB6D178A2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift */,
-				CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */,
 				CB6D179A2FA2524F00ECD5AE /* EmptySuggestionLoadingDataSource.swift */,
 				CB6D17A12FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift */,
 				CB22D7A12FC603EB00128979 /* MainViewControllerRefreshActionTests.swift */,
@@ -10167,6 +10171,32 @@
 				CB6D17A32FA3983100ECD5AE /* UnifiedToggleInputPageContextChipViewModel.swift */,
 			);
 			path = PageContextChip;
+			sourceTree = "<group>";
+		};
+		CB6D17D02FB000000ECD5AE /* InputBox */ = {
+			isa = PBXGroup;
+			children = (
+				CB6D17D12FB000000ECD5AE /* SwitchBar */,
+			);
+			path = InputBox;
+			sourceTree = "<group>";
+		};
+		CB6D17D12FB000000ECD5AE /* SwitchBar */ = {
+			isa = PBXGroup;
+			children = (
+				CB6D17D22FB000000ECD5AE /* Suggestions */,
+			);
+			path = SwitchBar;
+			sourceTree = "<group>";
+		};
+		CB6D17D22FB000000ECD5AE /* Suggestions */ = {
+			isa = PBXGroup;
+			children = (
+				CB6D17D32FB000000ECD5AE /* AIChatSyncIntroSheetViewTests.swift */,
+				CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */,
+				CB6D17C12FB000000ECD5AE /* AIChatSyncPromoViewTests.swift */,
+			);
+			path = Suggestions;
 			sourceTree = "<group>";
 		};
 		CBAA195627BFDD9800A4BD49 /* SmarterEncryption */ = {
@@ -14105,6 +14135,8 @@
 				BBF1BDF32EA6333000358243 /* MockWinBackOfferService.swift in Sources */,
 				CB6D178B2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift in Sources */,
 				CB6D17B72FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift in Sources */,
+				CB6D17C22FB000000ECD5AE /* AIChatSyncPromoViewTests.swift in Sources */,
+				CB6D17D42FB000000ECD5AE /* AIChatSyncIntroSheetViewTests.swift in Sources */,
 				C1C725B82D63810D00361B81 /* ImportArchiveReaderTests.swift in Sources */,
 				C1C725BA2D63810D00361B81 /* DataImportManagerTests.swift in Sources */,
 				D1A0B0152F92000100A1B001 /* DataImportMocks.swift in Sources */,

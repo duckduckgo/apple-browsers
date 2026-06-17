@@ -1,5 +1,6 @@
 import DeferredReadingCore
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 
 public struct DeferredReadingListView: View {
@@ -56,14 +57,18 @@ public struct DeferredReadingListView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu("Actions") {
+                    Menu {
                         Button("Clear Read") {
                             controller.clearRead()
                         }
                         Button("Clear All", role: .destructive) {
                             controller.clearAll()
                         }
+                    } label: {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.moreApple)
+                            .foregroundColor(Color(designSystemColor: .icons))
                     }
+                    .accessibilityLabel("Actions")
                 }
             }
             .listStyle(.insetGrouped)

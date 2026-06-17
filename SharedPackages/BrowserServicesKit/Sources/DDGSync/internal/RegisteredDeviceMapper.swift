@@ -26,7 +26,6 @@ protocol RegisteredDeviceMapping {
                           encryptedName: String,
                           encryptedType: String?,
                           primaryKey: Data) -> RegisteredDevice?
-    func registeredDevice(fromThirdPartyLoginEntryWithID id: String, encodedName: String, encodedType: String?) -> RegisteredDevice
 }
 
 /// Maps raw Sync device payloads into app-facing devices without hiding entries that cannot be decrypted locally.
@@ -80,14 +79,6 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
                                                          encryptedType: encryptedType,
                                                          primaryKey: primaryKey,
                                                          credentialId: SyncCredentialID.defaultCredential)
-    }
-
-    func registeredDevice(fromThirdPartyLoginEntryWithID id: String, encodedName: String, encodedType: String?) -> RegisteredDevice {
-        // Login-response 3party fields are base64-encoded plaintext (not a JWE like device-list entries); fall back to the raw value if it isn't base64.
-        RegisteredDevice(id: id,
-                         name: Self.utf8String(fromBase64EncodedString: encodedName) ?? encodedName,
-                         type: encodedType.flatMap { Self.utf8String(fromBase64EncodedString: $0) } ?? encodedType ?? "",
-                         credentialId: SyncCredentialID.thirdParty)
     }
 
     private func registeredDevice(from entry: RegisteredDeviceEntry, account: SyncAccount, thirdPartyMainKey: Data?) -> RegisteredDevice {
@@ -214,12 +205,6 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
                                 credentialId: credentialId)
     }
 
-    private static func utf8String(fromBase64EncodedString value: String) -> String? {
-        guard let data = Data(base64Encoded: value) else {
-            return nil
-        }
-        return String(data: data, encoding: .utf8)
-    }
 }
 
 struct RegisteredDeviceEntry: Decodable {

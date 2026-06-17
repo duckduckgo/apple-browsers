@@ -151,21 +151,6 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         XCTAssertEqual(devices.map { $0.credentialId }, ["future"])
     }
 
-    func testWhenMappingThirdPartyLoginEntryThenDecodesBase64PlaintextFields() {
-        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(), isScopedAccessCredentialsEnabled: { true })
-        let encodedName = Data("Python Client".utf8).base64EncodedString()
-        let encodedType = Data("browser".utf8).base64EncodedString()
-
-        let device = mapper.registeredDevice(fromThirdPartyLoginEntryWithID: "third-party-device",
-                                             encodedName: encodedName,
-                                             encodedType: encodedType)
-
-        XCTAssertEqual(device.id, "third-party-device")
-        XCTAssertEqual(device.name, "Python Client")
-        XCTAssertEqual(device.type, "browser")
-        XCTAssertEqual(device.credentialId, SyncCredentialID.thirdParty)
-    }
-
     private func makeAccount() -> SyncAccount {
         SyncAccount(deviceId: "device-1",
                     deviceName: "Mac",

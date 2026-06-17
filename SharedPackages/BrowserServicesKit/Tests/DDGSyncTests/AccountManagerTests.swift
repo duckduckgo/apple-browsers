@@ -593,10 +593,4 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
                          credentialId: SyncCredentialID.defaultCredential)
     }
 
-    func registeredDevice(fromThirdPartyLoginEntryWithID id: String, encodedName: String, encodedType: String?) -> RegisteredDevice {
-        RegisteredDevice(id: id,
-                         name: encodedName,
-                         type: encodedType ?? "",
-                         credentialId: SyncCredentialID.thirdParty)
-    }
 }

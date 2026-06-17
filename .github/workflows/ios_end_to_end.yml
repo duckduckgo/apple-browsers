@@ -17,6 +17,11 @@ on:
         - production
         - internal
         - both
+      test_tags:
+        description: "Comma-separated suite tags to run in isolation (e.g. 'release' or 'release,privacy'). Empty = all suites. Valid: release, privacy, securityTest, adClick, duckplayer_native, device_info, duckplayer_classic, duckai_chrome_shortcut."
+        type: string
+        default: ""
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -158,6 +163,7 @@ jobs:
       run: |
         event="${{ github.event_name }}"
         input_modes="${{ inputs.user_modes }}"
+        input_tags="${{ inputs.test_tags }}"
         case "$event" in
           schedule)
             modes='["production", "internal"]'
@@ -185,15 +191,34 @@ jobs:
           {"test-tag":"duckplayer_classic","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
           {"test-tag":"duckai_chrome_shortcut","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"}
         ]'
-        include=$(echo "$base" | jq -c --argjson modes "$modes" '[.[] as $b | $modes[] | $b + {"user-mode": .}]')
+        # Comma-separated suite tags from dispatch -> trimmed JSON array; empty = all suites.
+        tags=$(jq -nc --arg s "$input_tags" '$s | split(",") | map(gsub("^\\s+|\\s+$";"")) | map(select(length > 0))')
+        # Fail fast on a typo'd tag rather than silently running fewer (or zero) suites.
+        if [ "$tags" != "[]" ]; then
+          valid=$(echo "$base" | jq -c '[.[]."test-tag"] | unique')
+          unknown=$(jq -nc --argjson req "$tags" --argjson ok "$valid" '$req - $ok')
+          if [ "$unknown" != "[]" ]; then
+            echo "::error::Unknown test_tags $unknown. Valid: $(echo "$valid" | jq -r 'join(", ")')"
+            exit 1
+          fi
+        fi
+        include=$(echo "$base" | jq -c \
+          --argjson modes "$modes" \
+          --argjson tags "$tags" \
+          '[ .[]
+             | select(($tags | length) == 0 or (.["test-tag"] as $t | $tags | index($t) != null))
+             | . as $b
+             | $modes[]
+             | $b + {"user-mode": .} ]')
         echo "include=$include" >> $GITHUB_OUTPUT
+        echo "Requested tags: $tags"
         echo "Resolved include: $include"
 
   end-to-end-tests:
     name: "E2E: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }}"
     needs: [build-end-to-end-tests, setup-matrix]
     runs-on: macos-26
-    timeout-minutes: 300
+    timeout-minutes: 160
 
     env:
       RUNS_ON: macos-26 # keep this in sync with runs-on above
@@ -201,7 +226,9 @@ jobs:
     strategy:
       matrix:
         include: ${{ fromJSON(needs.setup-matrix.outputs.include) }}
-      max-parallel: 1 # Uncomment this line to run tests sequentially.
+      # We have 2 Maestro Cloud runners; legs beyond that just queue cloud-side,
+      # so 2 is the effective ceiling until we provision more runners.
+      max-parallel: 2
       fail-fast: false
 
     steps:
@@ -228,7 +255,7 @@ jobs:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
         name: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device-name }}_${{ github.sha }}
-        timeout: 300
+        timeout: 150
         app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro
         include-tags: ${{ matrix.test-tag }}

@@ -57,4 +57,16 @@ public enum SERPSettingsConstants {
     /// This key identifies the JSON blob containing all SERP settings in
     /// the native storage. The blob contains only non-default setting values.
     public static let serpSettingsStorage = "serp.settings.native.storage"
+
+    /// SERP settings key for the Search Assist frequency control (duckAssistFrequency).
+    ///
+    /// Stored inside the `serpSettingsStorage` blob. See `SearchAssistFrequency` for the
+    /// allowed values and default.
+    public static let searchAssistKey = "kbe"
+
+    /// SERP settings key for the Hide AI-Generated Images control.
+    ///
+    /// Stored inside the `serpSettingsStorage` blob. See `HideAIGeneratedImages` for the
+    /// value encoding and default.
+    public static let hideAIGeneratedImagesKey = "kbj"
 }

@@ -171,6 +171,100 @@ public extension SERPSettingsProviding {
         return aiChatPreferencesStorage.isAIFeaturesEnabled
     }
 #endif
+
+    // MARK: - Per-key native-originated access
+
+    /// Reads a single SERP setting value from the stored blob.
+    ///
+    /// - Parameter key: The SERP setting key (e.g. `SERPSettingsConstants.searchAssistKey`).
+    /// - Returns: The stored value, or `nil` if the key is absent.
+    func serpSettingValue(forKey key: String) -> String? {
+        return readSERPSettingsDictionary()?[key]
+    }
+
+    /// Writes a single SERP setting value into the stored blob, merging with existing keys.
+    ///
+    /// Passing `nil` removes the key. This is the native-originated write path: it merges into
+    /// the existing blob so it never clobbers sibling keys, and is deliberately separate from
+    /// `storeSERPSettings(settings:)` (the SERP full-snapshot replace path).
+    ///
+    /// - Parameters:
+    ///   - value: The value to store, or `nil` to remove the key.
+    ///   - key: The SERP setting key.
+    func setSERPSetting(_ value: String?, forKey key: String) {
+        var dictionary = readSERPSettingsDictionary() ?? [:]
+        if let value {
+            dictionary[key] = value
+        } else {
+            dictionary.removeValue(forKey: key)
+        }
+        writeSERPSettingsDictionary(dictionary)
+    }
+
+    /// Search Assist (`kbe`) frequency, backed by native storage.
+    ///
+    /// Reads fall back to `SearchAssistFrequency.defaultValue` when the key is absent. Setting the
+    /// default removes the key, mirroring the SERP (which omits defaults) so the two stay consistent.
+    var searchAssistFrequency: SearchAssistFrequency {
+        get {
+            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey),
+                  let frequency = SearchAssistFrequency(rawValue: rawValue) else {
+                return .defaultValue
+            }
+            return frequency
+        }
+        set {
+            let value = newValue == .defaultValue ? nil : newValue.rawValue
+            setSERPSetting(value, forKey: SERPSettingsConstants.searchAssistKey)
+        }
+    }
+
+    /// Whether AI-generated images are hidden (`kbj`), backed by native storage.
+    ///
+    /// Reads fall back to `HideAIGeneratedImages.defaultValue` when the key is absent. Setting the
+    /// default removes the key.
+    var hideAIGeneratedImages: Bool {
+        get {
+            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey),
+                  let hidden = HideAIGeneratedImages.isHidden(fromRawValue: rawValue) else {
+                return HideAIGeneratedImages.defaultValue
+            }
+            return hidden
+        }
+        set {
+            let value = newValue == HideAIGeneratedImages.defaultValue ? nil : HideAIGeneratedImages.rawValue(forHidden: newValue)
+            setSERPSetting(value, forKey: SERPSettingsConstants.hideAIGeneratedImagesKey)
+        }
+    }
+
+    // MARK: - Blob read/write helpers
+
+    private func readSERPSettingsDictionary() -> [String: String]? {
+        do {
+            guard let stringData = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String,
+                  let data = stringData.data(using: .utf8) else {
+                return nil
+            }
+            return try JSONDecoder().decode([String: String].self, from: data)
+        } catch {
+            eventMapper?.fire(.keyValueStoreReadError, error: error)
+            return nil
+        }
+    }
+
+    private func writeSERPSettingsDictionary(_ dictionary: [String: String]) {
+        do {
+            let data = try JSONEncoder().encode(dictionary)
+            guard let stringData = String(data: data, encoding: .utf8) else { return }
+            do {
+                try keyValueStore?.set(stringData, forKey: SERPSettingsConstants.serpSettingsStorage)
+            } catch {
+                eventMapper?.fire(.keyValueStoreWriteError, error: error)
+            }
+        } catch {
+            eventMapper?.fire(.serializationFailed, error: error)
+        }
+    }
 }
 
 /// Internal for testing purposes

@@ -174,15 +174,19 @@ public struct SyncSettingsView: View {
     // At some point work out how to change at least the fallback image to a resource.
     @ViewBuilder
     func deviceTypeImage(_ device: SyncSettingsViewModel.Device) -> some View {
-        switch device.type {
-        case "desktop":
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceDesktop)
+        if device.isThirdParty {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceAll)
+        } else {
+            switch device.type {
+            case "desktop":
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceDesktop)
 
-        case "tablet":
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceTablet)
+            case "tablet":
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceTablet)
 
-        default: // including phone
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
+            default: // including phone
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
+            }
         }
 
     }

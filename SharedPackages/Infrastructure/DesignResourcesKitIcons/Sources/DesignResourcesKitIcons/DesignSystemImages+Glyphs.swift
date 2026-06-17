@@ -483,6 +483,7 @@ public extension DesignSystemImages {
             public static var crossRecolorable: DesignSystemImage { .init(resource: .crossRecolorable24) }
             public static var crossSolidSmall: DesignSystemImage { .init(resource: .crossSolidSmall24) }
             public static var cut: DesignSystemImage { .init(resource: .cut24) }
+            public static var deviceAll: DesignSystemImage { .init(resource: .deviceAll24) }
             public static var deviceDesktop: DesignSystemImage { .init(resource: .deviceDesktop24) }
             public static var deviceMobile: DesignSystemImage { .init(resource: .deviceMobile24) }
             public static var deviceMobileDouble: DesignSystemImage { .init(resource: .deviceMobileDouble24) }

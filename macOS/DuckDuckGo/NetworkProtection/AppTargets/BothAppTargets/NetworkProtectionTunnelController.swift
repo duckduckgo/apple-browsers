@@ -321,7 +321,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         // enforceRoutes is bound to the NECP session when it's created, so re-saving the protocol
         // only affects the next connection. If a tunnel is currently up, fully restart it so the
         // new value takes effect now rather than on the next manual connect.
-        if await status == .connected {
+        if await isConnected {
             await restart()
         }
     }

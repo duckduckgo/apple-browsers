@@ -1,6 +1,5 @@
 import DeferredReadingCore
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import SwiftUI
 
 public struct DeferredReadingBannerView: View {
@@ -16,7 +15,7 @@ public struct DeferredReadingBannerView: View {
     public var body: some View {
         Button(action: onOpen) {
             HStack(spacing: 12) {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.downloads)
+                Image(systemName: "globe.badge.clock.fill")
                     .foregroundColor(Color(designSystemColor: .accent))
                 Text(title)
                     .foregroundColor(Color(designSystemColor: .textPrimary))

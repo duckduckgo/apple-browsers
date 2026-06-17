@@ -250,8 +250,9 @@ extension TabViewController {
 
     private func buildDeferredReadingEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
         guard delegate?.deferredReadingIsEnabled == true else { return nil }
+        let icon = UIImage(systemName: "globe.badge.clock.fill") ?? (useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads)
         return .regular(name: "Deferred Reading",
-                        image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
+                        image: icon,
                         showNotificationDot: (delegate?.deferredReadingUnreadCount ?? 0) > 0,
                         action: { [weak self] in
             self?.onOpenDeferredReadingAction()

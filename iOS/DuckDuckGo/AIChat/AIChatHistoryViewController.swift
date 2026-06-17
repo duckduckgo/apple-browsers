@@ -54,6 +54,8 @@ final class AIChatHistoryViewController: UIViewController {
         // row stable across trailing swipe-action animations — match Bookmarks' storyboard.
         table.clipsToBounds = true
         table.sectionFooterHeight = 18
+        // Dismiss the keyboard when the list is dragged, matching system search screens.
+        table.keyboardDismissMode = .onDrag
         return table
     }()
 
@@ -92,9 +94,10 @@ final class AIChatHistoryViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let backgroundColor: UIColor = .systemGroupedBackground
+        let backgroundColor = UIColor(designSystemColor: .background)
         view.backgroundColor = backgroundColor
         navigationController?.view.backgroundColor = backgroundColor
+        tableView.backgroundColor = backgroundColor
 
         title = UserText.actionChats
         configureRightBarButtonItem()
@@ -452,10 +455,26 @@ extension AIChatHistoryViewController: UITableViewDelegate {
 extension AIChatHistoryViewController: UISearchBarDelegate {
 
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchBar.setShowsCancelButton(true, animated: true)
         viewModel.searchActivated()
+    }
+
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        searchBar.setShowsCancelButton(false, animated: true)
     }
 
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         viewModel.updateQuery(searchText)
+    }
+
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
+
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.text = nil
+        searchBar.setShowsCancelButton(false, animated: true)
+        searchBar.resignFirstResponder()
+        viewModel.updateQuery("")
     }
 }

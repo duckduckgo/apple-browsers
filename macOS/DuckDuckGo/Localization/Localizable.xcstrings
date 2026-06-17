@@ -27879,7 +27879,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Attach to Duck.ai"
+            "value" : "Ask Duck.ai about selected content"
           }
         }
       }

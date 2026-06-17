@@ -38,7 +38,6 @@ public extension DesignSystemImages {
             public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight12) }
             public static var assist: DesignSystemImage { .init(resource: .assist12) }
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt12) }
-            public static var attach: DesignSystemImage { .init(resource: .attach12) }
             public static var audio: DesignSystemImage { .init(resource: .audio12) }
             public static var audioMute: DesignSystemImage { .init(resource: .audioMute12) }
             public static var battery: DesignSystemImage { .init(resource: .battery12) }
@@ -127,6 +126,7 @@ public extension DesignSystemImages {
             public static var subscription: DesignSystemImage { .init(resource: .subscription12) }
             public static var sync: DesignSystemImage { .init(resource: .sync12) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew12) }
+            public static var textSelectedRight: DesignSystemImage { .init(resource: .textSelectedRight12) }
             public static var thumbsDown: DesignSystemImage { .init(resource: .thumbsDown12) }
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp12) }
             public static var toolbar: DesignSystemImage { .init(resource: .toolbar12) }

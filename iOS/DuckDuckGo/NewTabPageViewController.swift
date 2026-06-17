@@ -536,16 +536,11 @@ extension NewTabPageViewController {
                     if let mainVC = self.parent as? MainViewController {
                         mainVC.viewCoordinator.unifiedInputContentContainer.alpha = 0
                     }
-                    self.dismissHostingController(didFinishNTPOnboarding: true)
-                    // Defer showNextDaxDialog to the collapse completion so that
-                    // coordinator.deactivateToOmnibar() has already run before the
-                    // promo appears.  Without this, tapping "No thanks" quickly
-                    // while the collapse animation is still running causes
-                    // launchNewSearch() to find isOmnibarSession = true and call
-                    // activateInput() instead of omniBar.beginEditing(); the collapse
-                    // completion then cancels that session, leaving an empty NTP.
                     collapseUTI { [weak self] in
+                        self?.dismissHostingController(didFinishNTPOnboarding: false,
+                                                       updateUnifiedInputContentOverlaySuppression: false)
                         self?.showNextDaxDialog()
+                        self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
                     }
                 } else {
                     self.daxDialogsManager.dismiss()
@@ -565,10 +560,6 @@ extension NewTabPageViewController {
             // can check subscriptionPromotionPending before deciding whether to animate.
             self.daxDialogsManager.setFinalOnboardingDialogSeen()
             if self.daxDialogsManager.subscriptionPromotionPending {
-                // Skip the 0.2s fade: the UTI Dax would appear through the fading dialog
-                // before the subscription promo covers it.  An instant dismiss avoids the
-                // blink and matches the desired UX ("should disappear right away").
-                hostingView.alpha = 0
                 finishDismissal()
             } else {
                 UIView.animate(withDuration: 0.2, animations: { hostingView.alpha = 0 },

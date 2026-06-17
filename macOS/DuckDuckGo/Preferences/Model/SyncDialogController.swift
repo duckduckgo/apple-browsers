@@ -90,6 +90,7 @@ final class SyncDialogController {
     private var cancellables = Set<AnyCancellable>()
     private var syncPromoSource: String?
     private var pairingV2PeerKind: PairingV2DeviceKind?
+    private var displayedCodeSetupSource: SyncSetupSource?
 
     @Published var stringForQR: String?
     @Published var codeForDisplayOrPasting: String?
@@ -223,6 +224,7 @@ final class SyncDialogController {
                 let stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                 self.codeForDisplayOrPasting = codeForDisplayOrPasting
                 self.stringForQR = stringForQR
+                self.displayedCodeSetupSource = .connect
                 if isRecovery {
                     self.presentDialog(for: .enterRecoveryCode(stringForQRCode: stringForQR))
                 } else {
@@ -265,9 +267,9 @@ final class SyncDialogController {
         PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedAccount, doNotEnforcePrefix: true)
     }
 
-    private func fireCodeCopiedPixel(code: String) {
+    private func fireCodeCopiedPixel(code: String, sourceHint: SyncSetupSource?) {
         if let url = URL(string: code), PairingInfo.isPairingV2URL(url) {
-            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange, flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(sourceHint ?? .exchange, flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
             return
         }
 
@@ -303,6 +305,7 @@ final class SyncDialogController {
         let recoveryCode = recoveryCode ?? "" // Only called if Sync enabled therefore will never be blank
         codeForDisplayOrPasting = recoveryCode
         stringForQR = recoveryCode
+        displayedCodeSetupSource = .exchange
         Task {
             presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: recoveryCode, stringForQRCode: recoveryCode))
         }
@@ -317,6 +320,7 @@ final class SyncDialogController {
                 let stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                 self.codeForDisplayOrPasting = codeForDisplayOrPasting
                 self.stringForQR = stringForQR
+                self.displayedCodeSetupSource = .exchange
                 self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
                 PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange, flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
             } catch {
@@ -493,7 +497,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         let pasteboard = NSPasteboard.general
         pasteboard.declareTypes([.string], owner: nil)
         pasteboard.setString(code, forType: .string)
-        fireCodeCopiedPixel(code: code)
+        fireCodeCopiedPixel(code: code, sourceHint: displayedCodeSetupSource)
     }
 
     func openSystemPasswordSettings() {
@@ -515,7 +519,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     func userPressedCancel(from dialog: ManagementDialogKind) {
         switch dialog {
         case .syncWithAnotherDevice(_, let stringForQRCode), .enterRecoveryCode(let stringForQRCode):
-            if let source = syncSetupSource(for: stringForQRCode, dialog: dialog) {
+            if let source = syncSetupSource(for: stringForQRCode, dialog: dialog, sourceHint: displayedCodeSetupSource) {
                 PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(source,
                                                                              flowVersion: syncSetupFlowVersion,
                                                                              reason: SyncSetupPixelKitEvent.ParameterValue.scanningCancelled),
@@ -821,10 +825,10 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) ? SyncSetupPixelKitEvent.ParameterValue.v2 : SyncSetupPixelKitEvent.ParameterValue.v1
     }
 
-    private func syncSetupSource(for code: String, dialog: ManagementDialogKind) -> SyncSetupSource? {
+    private func syncSetupSource(for code: String, dialog: ManagementDialogKind, sourceHint: SyncSetupSource?) -> SyncSetupSource? {
         let decodedCode: SyncCode?
         if let url = URL(string: code), PairingInfo.isPairingV2URL(url) {
-            return .exchange
+            return sourceHint ?? .exchange
         } else if let url = URL(string: code), let pairingInfo = PairingInfo(url: url) {
             decodedCode = try? SyncCode.decodeBase64String(pairingInfo.base64Code)
         } else {

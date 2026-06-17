@@ -948,7 +948,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
     }
 
     private func fireCodeCopiedPixel(code: String) {
-        if URL(string: code)?.absoluteString.contains("code2=") == true {
+        if let url = URL(string: code), PairingInfo.isPairingV2URL(url) {
             PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange, flowVersion: syncSetupFlowVersion), doNotEnforcePrefix: true)
             return
         }
@@ -1179,7 +1179,7 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
 
     private func syncSetupSource(for code: String, dialog: ManagementDialogKind) -> SyncSetupSource? {
         let decodedCode: SyncCode?
-        if URL(string: code)?.absoluteString.contains("code2=") == true {
+        if let url = URL(string: code), PairingInfo.isPairingV2URL(url) {
             return .exchange
         } else if let url = URL(string: code), let pairingInfo = PairingInfo(url: url) {
             decodedCode = try? SyncCode.decodeBase64String(pairingInfo.base64Code)

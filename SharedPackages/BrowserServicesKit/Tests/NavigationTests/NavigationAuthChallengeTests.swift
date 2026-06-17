@@ -56,7 +56,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }, { [data] request in
             return .ok(.html(data.html.utf8String()!))
@@ -118,12 +118,12 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
             guard request.path == "/3" else { return nil }
             guard request.headers["authorization"] == nil else { return .ok(.data(data.html)) }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }, { [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }, { [data] request in
             return .ok(.data(data.htmlWithIframe3))
@@ -181,7 +181,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }]
         try server.start(8084)
@@ -221,7 +221,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }]
         try server.start(8084)
@@ -263,7 +263,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }]
         try server.start(8084)

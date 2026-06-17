@@ -51,7 +51,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
             return
         }
 
@@ -124,7 +124,9 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?,
                     mode: String?,
                     toolChoice: [String]?,
-                    reasoningEffort: String?) {
+                    reasoningEffort: String?,
+                    pageContexts: [NewTabPage.NewTabPageDataModel.OmnibarPageContext]?,
+                    files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?) {
         firePixel(NewTabPagePixel.promptSubmitted)
 
         if let images, !images.isEmpty {
@@ -164,18 +166,38 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
 
-        // Re-set prompt after tab opener to include images, mode, tool choice, model selection,
-        // and reasoning effort (tab opener overwrites with a plain query)
+        // Re-set prompt after tab opener to include images, files, attached page contexts, mode,
+        // tool choice, model selection, and reasoning effort (tab opener overwrites with a plain query)
         let nativeImages = images?.map { AIChatNativePrompt.NativePromptImage(data: $0.data, format: $0.format) }
+        let nativeFiles = files?.map { AIChatNativePrompt.NativePromptFile(data: $0.data, fileName: $0.fileName, mimeType: $0.mimeType) }
         let nativeReasoningEffort = reasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+        let pageContextPayload = (pageContexts?.map(Self.pageContextData(from:))).flatMap { $0.isEmpty ? nil : AIChatPageContextPayload.multiple($0) }
         let nativePrompt = AIChatNativePrompt.queryPrompt(chat,
                                                           autoSubmit: true,
                                                           toolChoice: toolChoice,
                                                           images: nativeImages,
+                                                          files: nativeFiles,
                                                           modelId: modelId,
+                                                          pageContext: pageContextPayload,
                                                           mode: mode,
                                                           reasoningEffort: nativeReasoningEffort)
         promptHandler.setData(nativePrompt)
+    }
+
+    /// Converts a web-echoed `OmnibarPageContext` (the shape native originally returned from
+    /// `omnibar_getTabContent`) into the `AIChatPageContextData` the Duck.ai native prompt carries.
+    /// The base64 favicon `src` round-trips back into a `PageContextFavicon` href.
+    private static func pageContextData(from context: NewTabPage.NewTabPageDataModel.OmnibarPageContext) -> AIChatPageContextData {
+        let favicon = context.favicon.map { [AIChatPageContextData.PageContextFavicon(href: $0.src, rel: "icon")] } ?? []
+        return AIChatPageContextData(
+            title: context.title,
+            favicon: favicon,
+            url: context.url,
+            content: context.content ?? "",
+            truncated: context.truncated ?? false,
+            fullContentLength: context.fullContentLength ?? 0,
+            tabId: context.tabId
+        )
     }
 
     @MainActor

@@ -528,6 +528,7 @@ extension AppDelegate {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         OnboardingActionsManager.isOnboardingFinished = true
+        OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
         Application.appDelegate.windowControllersManager.updatePreventUserInteraction(prevent: false)
         Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
@@ -1645,7 +1646,7 @@ extension MainViewController {
         let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         persistor.continueSetUpCardsLastDemonstrated = (persistor.continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
         NSApp.delegateTyped.appearancePreferences.continueSetUpCardsViewDidAppear()
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @objc func debugShiftNewTabOpeningDateNtimes(_ sender: Any?) {

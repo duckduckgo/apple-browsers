@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Lataa uudelleen";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Nollaa zoomaus";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Valitse";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Näytä kaikki välilehdet";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Lähennä";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Loitonna";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Viimeksi käsitelty: %@";

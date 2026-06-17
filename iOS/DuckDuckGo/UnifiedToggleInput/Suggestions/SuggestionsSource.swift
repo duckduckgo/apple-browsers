@@ -45,7 +45,8 @@ final class DuckAISuggestionsSource: SuggestionsSource {
          urlLoader: DuckAIURLSuggestionsLoader,
          chatManager: AIChatHistoryManager,
          query: @escaping () -> String,
-         deleteEnabled: @escaping () -> Bool = { false }) {
+         deleteEnabled: @escaping () -> Bool = { false },
+         viewAllChatsEnabled: @escaping () -> Bool = { false }) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.chatManager = chatManager
@@ -59,7 +60,7 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         )
 
         sectionsPublisher = pipeline.snapshotPublisher
-            .map { snapshot in Self.sections(from: snapshot, query: query(), deleteEnabled: deleteEnabled()) }
+            .map { snapshot in Self.sections(from: snapshot, query: query(), deleteEnabled: deleteEnabled(), viewAllChatsEnabled: viewAllChatsEnabled()) }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
@@ -88,14 +89,18 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         static let chatPrefix = "chat-"
         static let urlsPrefix = SectionID.urls + "-"
         static let searchDuckDuckGo = SectionID.search + "-searchDuckDuckGo"
+        static let viewAllChats = "view-all-chats"
     }
 
-    static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String, deleteEnabled: Bool = false) -> [SuggestionSection] {
+    static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String, deleteEnabled: Bool = false, viewAllChatsEnabled: Bool = false) -> [SuggestionSection] {
         var sections: [SuggestionSection] = []
         if !snapshot.chats.isEmpty {
-            sections.append(SuggestionSection(
-                id: SectionID.chats,
-                rows: snapshot.chats.map { SuggestionRowMapper.row(for: $0, includesFireDelete: deleteEnabled) }))
+            var chatRows = snapshot.chats.map { SuggestionRowMapper.row(for: $0, includesFireDelete: deleteEnabled) }
+            // Append the "View all chats" entry when browsing recents; hide it while the user is searching.
+            if viewAllChatsEnabled && query.isEmpty {
+                chatRows.append(SuggestionRowMapper.viewAllChatsRow(id: RowID.viewAllChats))
+            }
+            sections.append(SuggestionSection(id: SectionID.chats, rows: chatRows))
         }
         if !snapshot.urls.isEmpty {
             sections.append(SuggestionSection(
@@ -118,6 +123,9 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         let urls = urlLoader.topURLs
         let q = query()
 
+        if id == RowID.viewAllChats {
+            return .viewAllChats
+        }
         if id.hasPrefix(RowID.chatPrefix) {
             let chatID = String(id.dropFirst(RowID.chatPrefix.count))
             return chats.first { $0.id == chatID }.map { .chat($0) }
@@ -135,6 +143,11 @@ final class DuckAISuggestionsSource: SuggestionsSource {
     /// Triggers a fresh URL suggestions fetch; call after a history deletion.
     func fetchURLSuggestions(query: String) {
         urlLoader.fetch(query: query)
+    }
+
+    /// Deletes a recent-chat suggestion via the backing chat manager (after delete confirmation).
+    func deleteChat(_ chat: AIChatSuggestion) {
+        chatManager.deleteChatSuggestion(suggestion: chat)
     }
 }
 

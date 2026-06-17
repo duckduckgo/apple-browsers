@@ -2196,7 +2196,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
     public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
     public var featureFlagger: DBPFeatureFlagging
-    public var applicationNameForUserAgent: String?
+    public var applicationNameForUserAgentProvider: () -> String? = { nil }
     public var wideEvent: WideEventManaging?
     public var contentBlocking: DBPWebViewContentBlocking?
     public var isAuthenticatedUserProvider: () async -> Bool = { true }

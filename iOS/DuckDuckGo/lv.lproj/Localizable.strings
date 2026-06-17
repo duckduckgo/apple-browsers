@@ -2659,11 +2659,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Pārlādēt";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Atiestatīt pietuvinājumu";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Atlasīt";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Rādīt visas cilnes";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Tuvināt";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Tālināt";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Pēdējo reizi apstrādāts: %@";

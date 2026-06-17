@@ -24,6 +24,7 @@ final class CSVLoginExporter {
 
     enum CSVLoginExportError: Error {
         case failedToEncodeLogins
+        case failedToWriteFile
     }
 
     private let secureVault: any AutofillSecureVault
@@ -58,24 +59,30 @@ final class CSVLoginExporter {
     }
 
     private func save(credentials: [SecureVaultModels.WebsiteCredentials], to url: URL) throws {
+        // Every field is wrapped in quotes, so any quote within a field must be escaped by doubling it.
+        // Escaping only the password leaves quotes in the title, url, username or notes to break CSV
+        // parsing and shift the columns when the file is re-imported.
+        func csvEscaped(_ value: String) -> String {
+            value.replacingOccurrences(of: "\"", with: "\"\"")
+        }
+
         let credentialsAsCSVRows: [String] = credentials.compactMap { credential in
-            let title = credential.account.title ?? ""
-            let domain = credential.account.domain ?? ""
-            let username = credential.account.username ?? ""
-            let password = credential.password?.utf8String() ?? ""
-            let notes = credential.account.notes ?? ""
+            let title = csvEscaped(credential.account.title ?? "")
+            let domain = csvEscaped(credential.account.domain ?? "")
+            let username = csvEscaped(credential.account.username ?? "")
+            let password = csvEscaped(credential.password?.utf8String() ?? "")
+            let notes = csvEscaped(credential.account.notes ?? "")
 
-            // Ensure that exported passwords escape any quotes they contain
-            let escapedPassword = password.replacingOccurrences(of: "\"", with: "\"\"")
-
-            return "\"\(title)\",\"\(domain)\",\"\(username)\",\"\(escapedPassword)\",\"\(notes)\""
+            return "\"\(title)\",\"\(domain)\",\"\(username)\",\"\(password)\",\"\(notes)\""
         }
 
         let headerRow = ["\"title\",\"url\",\"username\",\"password\",\"notes\""]
         let csvString = (headerRow + credentialsAsCSVRows).joined(separator: "\n")
 
         let stringData = csvString.utf8data
-        _ = fileStore.persist(stringData, url: url)
+        guard fileStore.persist(stringData, url: url) else {
+            throw CSVLoginExportError.failedToWriteFile
+        }
     }
 
 }

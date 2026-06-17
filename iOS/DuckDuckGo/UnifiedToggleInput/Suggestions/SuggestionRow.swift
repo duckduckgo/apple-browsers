@@ -32,6 +32,8 @@ enum SuggestionRowIcon: Equatable {
     case search
     case aiChat
     case pin
+    /// Double speech-bubble glyph for the "View all chats" row.
+    case chats
 }
 
 /// One row in the unified UTI suggestions list. Pure data — carries no actions.

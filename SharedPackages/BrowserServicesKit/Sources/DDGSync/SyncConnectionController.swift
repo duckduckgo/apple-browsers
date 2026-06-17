@@ -735,8 +735,10 @@ public class SyncConnectionController: SyncConnectionControlling {
             return .failedToLogIn
         case .nativeCredentialAlreadyPresent:
             return .thirdPartyAccountAlreadyUpgraded
-        case .recoveryCodeDenied, .recoveryCodeUnavailable:
+        case .recoveryCodeDenied:
             return .syncCancelledFromOtherDevice
+        case .recoveryCodeUnavailable:
+            return .failedToFetchExchangeRecoveryKey
         case .unsupportedVersion(let version):
             return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
         case .v2ScanningDisabled, .unknownCode, .unsupportedFlow:

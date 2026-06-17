@@ -89,10 +89,12 @@ public extension DuckAiChat {
 
 extension DuckAiChat {
 
-    /// Decodes a `DuckAiChat` and its first user message content from a raw JSON data blob
-    /// as stored in the native data store's `duck_ai_chats` table. Throws when the data is
-    /// not valid JSON or is missing required fields (e.g. `chatId`).
-    public static func decode(from data: Data) throws -> (chat: DuckAiChat, firstUserMessageContent: String?) {
+    /// Decodes a `DuckAiChat`, the text of the first user message, and the text of the last
+    /// message (regardless of role) from a raw JSON data blob as stored in the native data
+    /// store's `duck_ai_chats` table. Throws on invalid JSON or missing required fields.
+    public static func decode(from data: Data) throws -> (chat: DuckAiChat,
+                                                          firstUserMessageContent: String?,
+                                                          lastMessageContent: String?) {
         let blob = try JSONDecoder().decode(ChatBlob.self, from: data)
 
         let chat = DuckAiChat(
@@ -108,9 +110,13 @@ extension DuckAiChat {
 
         let firstUserMessage = blob.messages?
             .first(where: { $0.role == "user" })?
-            .content?.textValue
+            .effectiveTextContent
 
-        return (chat: chat, firstUserMessageContent: firstUserMessage)
+        let lastMessage = blob.messages?.last?.effectiveTextContent
+
+        return (chat: chat,
+                firstUserMessageContent: firstUserMessage,
+                lastMessageContent: lastMessage)
     }
 }
 
@@ -146,11 +152,31 @@ private struct MessageBlob: Decodable {
     /// `messages` array.
     let content: MessageContent?
     let parts: [MessagePart]?
+
+    /// Returns the visible text of the message. Prefers `content` (used by most chats and
+    /// by all user messages); falls back to concatenating `parts[].text` of `type == "text"`
+    /// because reasoning-model assistant messages (e.g. `gpt-5-mini`) ship with `content == ""`
+    /// and carry the actual response in `parts`. Returns `nil` when neither path produces text.
+    var effectiveTextContent: String? {
+        if let direct = content?.textValue, !direct.isEmpty {
+            return direct
+        }
+        guard let parts else { return nil }
+        let textParts = parts.compactMap { part -> String? in
+            guard part.type == "text", let text = part.text, !text.isEmpty else { return nil }
+            return text
+        }
+        guard !textParts.isEmpty else { return nil }
+        return textParts.joined(separator: "\n\n")
+    }
 }
 
 private struct MessagePart: Decodable {
     let type: String?
     let name: String?
+    /// Visible text payload of a `type == "text"` part. Other part types (`reasoning`,
+    /// `ui-component`, `tool-invocation`) don't carry user-visible text and leave this nil.
+    let text: String?
 }
 
 /// Handles polymorphic message content: either a plain string or a rich object with a `text` field.

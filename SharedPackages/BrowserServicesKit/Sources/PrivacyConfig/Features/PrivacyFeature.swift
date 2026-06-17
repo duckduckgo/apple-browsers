@@ -461,6 +461,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
 
+    /// Controls pin/unpin updates of Synced chats
+    case supportsSyncChatsUpdate
+
     /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
     case settingsLinkInAiFeatures
 
@@ -491,6 +494,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
     case omnibarAttachMoreTabs
+
+    /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
+    case ntpAttachMoreTabs
 
     /// Enables page context feature on iPad
     case iPadPageContext

@@ -93,9 +93,14 @@ public struct DeferredReadingListView: View {
                     .frame(width: 24, height: 24)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.title ?? item.url?.host ?? item.urlString)
+                    Text(primaryTitle(for: item))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .lineLimit(2)
+                    Text(secondaryURLText(for: item))
+                        .font(.caption)
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                     Text(item.addedAt, style: .date)
                         .font(.caption)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -123,6 +128,18 @@ public struct DeferredReadingListView: View {
             .padding(3)
             .background(Color(designSystemColor: .surface))
             .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    private func primaryTitle(for item: DeferredReadingItem) -> String {
+        if let title = item.title?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !title.isEmpty {
+            return title
+        }
+        return item.url?.host ?? item.urlString
+    }
+
+    private func secondaryURLText(for item: DeferredReadingItem) -> String {
+        item.url?.absoluteString ?? item.urlString
     }
 
 }

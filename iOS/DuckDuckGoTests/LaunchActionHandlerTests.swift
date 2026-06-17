@@ -191,10 +191,12 @@ final class LaunchActionHandlerTests {
     }
 
     @Test(
-        "Fire App Launched From external pixel when scheme is http or https",
+        "Fire App Launched From external pixel when scheme is http, https or ddgQuickLink",
         arguments: [
             "http://www.example.com",
             "https://www.example.com",
+            "ddgQuickLink://http://www.example.com",
+            "ddgQuickLink://https://www.example.com",
         ]
     )
     func fireAppLaunchedFromExternalPixelWhenSchemeIsHttpOrHttps(_ path: String) throws {
@@ -212,13 +214,13 @@ final class LaunchActionHandlerTests {
     }
 
     @Test(
-        "Fire App Launched From external pixel when scheme is http or https",
+        "Fire App Launched From share extension pixel when scheme is ddg quick/action link",
         arguments: [
-            "ddgQuickLink://http://www.example.com",
-            "ddgQuickLink:/https://www.example.com",
+            "ddgActionLink://http://www.example.com",
+            "ddgActionLink://https://www.example.com",
         ]
     )
-    func fireAppLaunchedFromExternalPixelWhenSchemeIsDDGQuickLink(_ path: String) throws {
+    func fireAppLaunchedFromExternalPixelWhenSchemeIsDDGQuickOrActionLink(_ path: String) throws {
         // GIVEN
         let url = try #require(URL(string: path))
         let action = LaunchAction.openURL(url)

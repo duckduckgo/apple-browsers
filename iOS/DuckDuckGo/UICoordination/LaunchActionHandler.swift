@@ -139,11 +139,12 @@ final class LaunchActionHandler: LaunchActionHandling {
     }
 
     private func fireAppLaunchedWithExternalLinkPixel(url: URL) {
-        // Websites or searches opened via share extensions have `ddgQuickLink` scheme.
+        // Websites or searches opened via action/share extensions have `ddgActionLink` scheme.
         // If scheme is either `http` or `https` we know the app has been opened by clicking directly an external link.
-        if url.scheme == "http" || url.scheme == "https" {
+        // `ddgQuickLink` may also be used by other apps so we need to support and report on it, but can just treat it as external.
+        if url.scheme == "http" || url.scheme == "https" || url.scheme == AppDeepLinkSchemes.quickLink.rawValue {
             pixelFiring.fire(.appLaunchFromExternalLink, withAdditionalParameters: [:])
-        } else if url.scheme == AppDeepLinkSchemes.quickLink.rawValue {
+        } else if url.scheme == AppDeepLinkSchemes.actionLink.rawValue {
             pixelFiring.fire(.appLaunchFromShareExtension, withAdditionalParameters: [:])
         }
     }

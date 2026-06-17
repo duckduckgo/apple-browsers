@@ -716,12 +716,7 @@ extension MainCoordinator: URLHandling {
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
         controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
-        if featureFlagger.isFeatureOn(.deferredReading),
-           url.isHttp || url.isHttps,
-           controller.deferredReadingController.shouldPromptForExternalURLNow() {
-            let openedTab = controller.currentTab?.tabModel
-            presentDeferredReadingDecision(for: url, openedTab: openedTab)
-        }
+        presentDeferredReadingDecisionIfNeeded(for: url)
     }
 
     private func presentDeferredReadingDecision(for url: URL, openedTab: Tab?) {
@@ -755,6 +750,17 @@ extension MainCoordinator: URLHandling {
         controller.present(alert, animated: true)
     }
 
+    private func presentDeferredReadingDecisionIfNeeded(for url: URL) {
+        guard featureFlagger.isFeatureOn(.deferredReading),
+              url.isHttp || url.isHttps,
+              controller.deferredReadingController.shouldPromptForExternalURLNow() else {
+            return
+        }
+
+        let openedTab = controller.currentTab?.tabModel
+        presentDeferredReadingDecision(for: url, openedTab: openedTab)
+    }
+
     private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {
         guard url.absoluteString.starts(with: URL.emailProtection.absoluteString),
               let navViewController = controller.presentedViewController as? UINavigationController,
@@ -781,9 +787,12 @@ extension MainCoordinator: URLHandling {
             controller.enterSearch()
         case .favorites:
             controller.newTab(reuseExisting: true, allowingKeyboard: false)
-        case .quickLink:
+        case .quickLink, .actionLink:
             let query = AppDeepLinkSchemes.query(fromQuickLink: url)
             controller.loadQueryInNewTab(query, reuseExisting: .any)
+            if let openedURL = URL(string: query) {
+                presentDeferredReadingDecisionIfNeeded(for: openedURL)
+            }
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:

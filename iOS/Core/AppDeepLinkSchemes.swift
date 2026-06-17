@@ -27,6 +27,7 @@ public enum AppDeepLinkSchemes: String, CaseIterable {
     case favorites = "ddgFavorites"
     case newEmail = "ddgNewEmail"
     case quickLink = "ddgQuickLink"
+    case actionLink = "ddgActionLink"
     case addFavorite = "ddgAddFavorite"
     case openVPN = "ddgOpenVPN"
     case openPasswords = "ddgOpenPasswords"
@@ -49,8 +50,12 @@ public enum AppDeepLinkSchemes: String, CaseIterable {
     }
 
     public static func query(fromQuickLink url: URL) -> String {
+        guard let deepLinkScheme = fromURL(url), deepLinkScheme == .quickLink || deepLinkScheme == .actionLink else {
+            return fixURLScheme(url.absoluteString)
+        }
+
         let query = url.absoluteString
-            .replacingOccurrences(of: AppDeepLinkSchemes.quickLink.url.absoluteString,
+            .replacingOccurrences(of: deepLinkScheme.url.absoluteString,
                                   with: "",
                                   options: .caseInsensitive)
 

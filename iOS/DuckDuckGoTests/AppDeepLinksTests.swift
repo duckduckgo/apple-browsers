@@ -37,6 +37,11 @@ class AppDeepLinksTests: XCTestCase {
                        .quickLink)
     }
 
+    func testWhenLinkIsCamelCaseActionLinkThenDetected() {
+        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgActionLink://foo.bar")!),
+                       .actionLink)
+    }
+
     func testWhenLinkIsNotKnownSchemeThenNotDetected() {
         XCTAssertNil(AppDeepLinkSchemes.fromURL(URL(string: "someOtherType://foo.bar")!))
     }
@@ -51,6 +56,10 @@ class AppDeepLinksTests: XCTestCase {
 
     func testWhenLinkIsCamelCaseQuickLinkThenQueryIsExtracted() {
         XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "ddgQuickLink://foo.bar")!), "foo.bar")
+    }
+
+    func testWhenLinkIsCamelCaseActionLinkThenQueryIsExtracted() {
+        XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "ddgActionLink://foo.bar")!), "foo.bar")
     }
 
     func testWhenLinkIsNotQuickLinkThenQueryIsSame() {

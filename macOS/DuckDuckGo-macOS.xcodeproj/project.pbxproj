@@ -1317,7 +1317,6 @@
 		37BE514E3007C5A100D9E176 /* FireButtonPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BE514C3007C58F00D9E176 /* FireButtonPixel.swift */; };
 		37BF3F14286D8A6500BD9014 /* PinnedTabsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BF3F13286D8A6500BD9014 /* PinnedTabsManager.swift */; };
 		37C320FA2F1E80A1008F4604 /* AppKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320BB2F1E80A1008F4604 /* AppKitExtensions */; };
-		37C320FB2F1E80A1008F4604 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320B92F1E80A1008F4604 /* SnapshotTesting */; };
 		37C320FC2F1E80A1008F4604 /* SharedTestUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320BD2F1E80A1008F4604 /* SharedTestUtilities */; };
 		37C320FD2F1E80A1008F4604 /* Utilities in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320BE2F1E80A1008F4604 /* Utilities */; };
 		37C320FE2F1E80A1008F4604 /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320BC2F1E80A1008F4604 /* Common */; };
@@ -2614,7 +2613,6 @@
 		84CE00172DAE41F100852AA2 /* ResizablePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84CE00152DAE41EA00852AA2 /* ResizablePreviewView.swift */; };
 		84D0B9812E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */; };
 		84D0B9822E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */; };
-		84D6780C2D842DBE0030BC82 /* InlineSnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 84D6780B2D842DBE0030BC82 /* InlineSnapshotTesting */; };
 		84DBC84E2DA6587100903C7B /* LinkOpenBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */; };
 		84DBC84F2DA6587100903C7B /* LinkOpenBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */; };
 		84DD63DA2E9662700043A25E /* FoundationExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9F5003282E8D1B73002F98D1 /* FoundationExtensions */; };
@@ -2641,6 +2639,8 @@
 		84E9D4BC2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E9D4BB2E6B07D400E7CC5B /* FireproofDomainCellView.swift */; };
 		84E9D4BD2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E9D4BB2E6B07D400E7CC5B /* FireproofDomainCellView.swift */; };
 		84EFBCD02D817CC400706739 /* InlineSnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 84EFBCCF2D817CC400706739 /* InlineSnapshotTesting */; };
+		84F1C8CF2C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */; };
+		84F1C8D02C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */; };
 		84F1C8DE2C774D4200716446 /* NSTableViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8DD2C774D4200716446 /* NSTableViewExtension.swift */; };
 		84F1C8DF2C774D4200716446 /* NSTableViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8DD2C774D4200716446 /* NSTableViewExtension.swift */; };
 		84F950AF2F150D0200863D32 /* ApplicationTerminationDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F950AE2F150D0200863D32 /* ApplicationTerminationDecider.swift */; };
@@ -2745,7 +2745,6 @@
 		9CA57666309146C3A9EA7C63 /* OnboardingChromeExtensionExperimentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E1C6F6843A455BA63258FB /* OnboardingChromeExtensionExperimentTests.swift */; };
 		9D84E42C2CD4E66F0046CD8B /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4072CD4E66F0046CD8B /* Common */; };
 		9D84E42D2CD4E66F0046CD8B /* PixelKitTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4042CD4E66F0046CD8B /* PixelKitTestingUtilities */; };
-		9D84E42E2CD4E66F0046CD8B /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4022CD4E66F0046CD8B /* SnapshotTesting */; };
 		9D84E42F2CD4E66F0046CD8B /* AppKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4062CD4E66F0046CD8B /* AppKitExtensions */; };
 		9D84E4302CD4E66F0046CD8B /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E3FF2CD4E66F0046CD8B /* OHHTTPStubs */; };
 		9D84E4312CD4E66F0046CD8B /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4012CD4E66F0046CD8B /* OHHTTPStubsSwift */; };
@@ -3281,7 +3280,8 @@
 		B64C853D26944B940048FEBE /* PermissionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C853C26944B940048FEBE /* PermissionStore.swift */; };
 		B64CE01E2B8622D700126CA5 /* AddressBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */; };
 		B64CE01F2B8622D700126CA5 /* AddressBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */; };
-		B64E42872B908501006C1346 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B65CD8D22B316E1700A595BB /* SnapshotTesting */; };
+		A7B000042F6A000100000001 /* SnapshotTestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A7B000062F6A000100000001 /* SnapshotTestingSupport */; };
+		A7B000072F6A000100000001 /* SnapshotTestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A7B000062F6A000100000001 /* SnapshotTestingSupport */; };
 		B65211252B29A42C00B30633 /* BookmarkStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA652CDA25DDAB32009059CC /* BookmarkStoreMock.swift */; };
 		B65211262B29A42E00B30633 /* BookmarkStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA652CDA25DDAB32009059CC /* BookmarkStoreMock.swift */; };
 		B65349AA265CF45000DCC645 /* DispatchQueueExtensionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65349A9265CF45000DCC645 /* DispatchQueueExtensionsTests.swift */; };
@@ -3296,10 +3296,6 @@
 		B658BAB72B0F848D00D1F2C7 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B658BAB52B0F845D00D1F2C7 /* Localizable.xcstrings */; };
 		B65C7DFB2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65C7DFA2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift */; };
 		B65C7DFC2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65C7DFA2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift */; };
-		B65CD8CB2B316DF100A595BB /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B65CD8CA2B316DF100A595BB /* SnapshotTesting */; };
-		B65CD8CD2B316DFC00A595BB /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B65CD8CC2B316DFC00A595BB /* SnapshotTesting */; };
-		B65CD8CF2B316E0200A595BB /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B65CD8CE2B316E0200A595BB /* SnapshotTesting */; };
-		B65CD8D12B316E0C00A595BB /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B65CD8D02B316E0C00A595BB /* SnapshotTesting */; };
 		B65CD8D52B316FCA00A595BB /* __Snapshots__ in Resources */ = {isa = PBXBuildFile; fileRef = B65CD8D42B316FCA00A595BB /* __Snapshots__ */; };
 		B65CD8D62B316FCA00A595BB /* __Snapshots__ in Resources */ = {isa = PBXBuildFile; fileRef = B65CD8D42B316FCA00A595BB /* __Snapshots__ */; };
 		B65DA5EF2A77CC3A00CBEE8D /* Bundle+NetworkProtectionExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B602E81F2A1E2603006D261F /* Bundle+NetworkProtectionExtensions.swift */; };
@@ -7228,7 +7224,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3706FE88293F661700E42796 /* OHHTTPStubs in Frameworks */,
-				B65CD8CF2B316E0200A595BB /* SnapshotTesting in Frameworks */,
+				A7B000072F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
 				845F57072E97BFF100C7F78A /* SharedTestUtilities in Frameworks */,
 				CC55B2362E82BD160032E8BD /* BrowserServicesKitTestsUtils in Frameworks */,
 				9DC5FACD2C6B8E620011F068 /* AppKitExtensions in Frameworks */,
@@ -7236,7 +7232,6 @@
 				8448016E2E3BA42400E8A2C1 /* Clocks in Frameworks */,
 				F1A9DD032E9E42C900D37BE0 /* AttributedMetricTestsUtils in Frameworks */,
 				F158DE062E9E9DF100628DD0 /* ContentBlocking in Frameworks */,
-				84D6780C2D842DBE0030BC82 /* InlineSnapshotTesting in Frameworks */,
 				374EFDF12D01C70A00B30939 /* Utilities in Frameworks */,
 				4B9EE3702D76CB5600DDC75C /* PixelKitTestingUtilities in Frameworks */,
 				F124E0E72D6E122F0035C7BA /* NetworkingTestingUtils in Frameworks */,
@@ -7261,7 +7256,6 @@
 			files = (
 				844801702E3BA42800E8A2C1 /* Clocks in Frameworks */,
 				845F57152E97CE8E00C7F78A /* NoARCObjCTestUtilities in Frameworks */,
-				B65CD8D12B316E0C00A595BB /* SnapshotTesting in Frameworks */,
 				F124E0ED2D6E123A0035C7BA /* PersistenceTestingUtils in Frameworks */,
 				9F33033C2E8E606400D6F0C9 /* RemoteMessagingTestsUtils in Frameworks */,
 				9DC5FACF2C6BA23C0011F068 /* AppKitExtensions in Frameworks */,
@@ -7290,7 +7284,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				37C320FA2F1E80A1008F4604 /* AppKitExtensions in Frameworks */,
-				37C320FB2F1E80A1008F4604 /* SnapshotTesting in Frameworks */,
 				37C320FC2F1E80A1008F4604 /* SharedTestUtilities in Frameworks */,
 				37C320FD2F1E80A1008F4604 /* Utilities in Frameworks */,
 				37C320FE2F1E80A1008F4604 /* Common in Frameworks */,
@@ -7303,7 +7296,6 @@
 			files = (
 				8448016C2E3BA41F00E8A2C1 /* Clocks in Frameworks */,
 				845F57192E97CE9600C7F78A /* NoARCObjCTestUtilities in Frameworks */,
-				B65CD8CD2B316DFC00A595BB /* SnapshotTesting in Frameworks */,
 				F124E0E52D6E12260035C7BA /* SubscriptionTestingUtilities in Frameworks */,
 				9F0F46A22E865BEC00A9FC4D /* RemoteMessagingTestsUtils in Frameworks */,
 				F124E0E32D6E12260035C7BA /* PersistenceTestingUtils in Frameworks */,
@@ -7446,7 +7438,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				9D9DE57F2C63B64F00D20B15 /* AppKitExtensions in Frameworks */,
-				B64E42872B908501006C1346 /* SnapshotTesting in Frameworks */,
 				845F57352E98036F00C7F78A /* SharedTestUtilities in Frameworks */,
 				CCC403462ED5E00400381DBB /* Utilities in Frameworks */,
 				84AA551A2E3256BA009FCC70 /* Common in Frameworks */,
@@ -7474,7 +7465,6 @@
 				9D84E42C2CD4E66F0046CD8B /* Common in Frameworks */,
 				84BDE72A2E1BE3C60082075D /* NoARCObjCTestUtilities in Frameworks */,
 				9D84E42D2CD4E66F0046CD8B /* PixelKitTestingUtilities in Frameworks */,
-				9D84E42E2CD4E66F0046CD8B /* SnapshotTesting in Frameworks */,
 				9D84E42F2CD4E66F0046CD8B /* AppKitExtensions in Frameworks */,
 				9D84E4302CD4E66F0046CD8B /* OHHTTPStubs in Frameworks */,
 				845F573D2E982B2600C7F78A /* SharedTestUtilities in Frameworks */,
@@ -7608,7 +7598,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B6DA44172616C13800DD1EC2 /* OHHTTPStubs in Frameworks */,
-				B65CD8CB2B316DF100A595BB /* SnapshotTesting in Frameworks */,
+				A7B000042F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
 				845F56FF2E97BFD100C7F78A /* SharedTestUtilities in Frameworks */,
 				CC55B2342E82BD0D0032E8BD /* BrowserServicesKitTestsUtils in Frameworks */,
 				4B9EE36A2D76CB2300DDC75C /* PixelKitTestingUtilities in Frameworks */,
@@ -7616,7 +7606,6 @@
 				8448016A2E3BA41A00E8A2C1 /* Clocks in Frameworks */,
 				F1A9DD012E9E42C400D37BE0 /* AttributedMetricTestsUtils in Frameworks */,
 				F158DE022E9E992C00628DD0 /* ContentBlocking in Frameworks */,
-				84EFBCD02D817CC400706739 /* InlineSnapshotTesting in Frameworks */,
 				4B9EE3682D76CB1600DDC75C /* SubscriptionTestingUtilities in Frameworks */,
 				374EFDEF2D01C70300B30939 /* Utilities in Frameworks */,
 				F124E0DD2D6E12190035C7BA /* NetworkingTestingUtils in Frameworks */,
@@ -13498,14 +13487,13 @@
 			packageProductDependencies = (
 				3706FDD6293F661700E42796 /* OHHTTPStubs */,
 				3706FDD8293F661700E42796 /* OHHTTPStubsSwift */,
-				B65CD8CE2B316E0200A595BB /* SnapshotTesting */,
+				A7B000062F6A000100000001 /* SnapshotTestingSupport */,
 				9DC5FACC2C6B8E620011F068 /* AppKitExtensions */,
 				374EFDF02D01C70A00B30939 /* Utilities */,
 				F124E0E62D6E122F0035C7BA /* NetworkingTestingUtils */,
 				F124E0E82D6E122F0035C7BA /* PersistenceTestingUtils */,
 				4B9EE36F2D76CB5600DDC75C /* PixelKitTestingUtilities */,
 				4B9EE3712D76CB5F00DDC75C /* SubscriptionTestingUtilities */,
-				84D6780B2D842DBE0030BC82 /* InlineSnapshotTesting */,
 				8448016D2E3BA42400E8A2C1 /* Clocks */,
 				7B4659A32FAC000000CCB375 /* AddressBarPerformance */,
 				D668401B2E82BE31007DAAB2 /* PerformanceTest */,
@@ -13543,7 +13531,6 @@
 			);
 			name = "Integration Tests App Store";
 			packageProductDependencies = (
-				B65CD8D02B316E0C00A595BB /* SnapshotTesting */,
 				9DC5FACE2C6BA23C0011F068 /* AppKitExtensions */,
 				84B49F0C2CB10F0900FF08BB /* OHHTTPStubs */,
 				84B49F0E2CB10F0900FF08BB /* OHHTTPStubsSwift */,
@@ -13598,7 +13585,6 @@
 			);
 			name = "Performance Tests";
 			packageProductDependencies = (
-				37C320B92F1E80A1008F4604 /* SnapshotTesting */,
 				37C320BB2F1E80A1008F4604 /* AppKitExtensions */,
 				37C320BC2F1E80A1008F4604 /* Common */,
 				37C320BD2F1E80A1008F4604 /* SharedTestUtilities */,
@@ -13626,7 +13612,6 @@
 			packageProductDependencies = (
 				B6AE39F229374AEC00C37AA4 /* OHHTTPStubs */,
 				B6AE39F429374AEC00C37AA4 /* OHHTTPStubsSwift */,
-				B65CD8CC2B316DFC00A595BB /* SnapshotTesting */,
 				9DC5FAC82C6B8B910011F068 /* AppKitExtensions */,
 				F124E0E02D6E12260035C7BA /* NetworkingTestingUtils */,
 				F124E0E22D6E12260035C7BA /* PersistenceTestingUtils */,
@@ -13847,7 +13832,6 @@
 			);
 			name = "UI Tests";
 			packageProductDependencies = (
-				B65CD8D22B316E1700A595BB /* SnapshotTesting */,
 				9D9DE57E2C63B64F00D20B15 /* AppKitExtensions */,
 				84AA55192E3256BA009FCC70 /* Common */,
 				84AA551B2E9999990099FCFF /* FoundationExtensions */,
@@ -13900,7 +13884,6 @@
 			packageProductDependencies = (
 				9D84E3FF2CD4E66F0046CD8B /* OHHTTPStubs */,
 				9D84E4012CD4E66F0046CD8B /* OHHTTPStubsSwift */,
-				9D84E4022CD4E66F0046CD8B /* SnapshotTesting */,
 				9D84E4042CD4E66F0046CD8B /* PixelKitTestingUtilities */,
 				9D84E4062CD4E66F0046CD8B /* AppKitExtensions */,
 				9D84E4072CD4E66F0046CD8B /* Common */,
@@ -14097,14 +14080,13 @@
 			packageProductDependencies = (
 				B6DA44162616C13800DD1EC2 /* OHHTTPStubs */,
 				B6DA44182616C13800DD1EC2 /* OHHTTPStubsSwift */,
-				B65CD8CA2B316DF100A595BB /* SnapshotTesting */,
+				A7B000062F6A000100000001 /* SnapshotTestingSupport */,
 				9DC5FACA2C6B8E050011F068 /* AppKitExtensions */,
 				374EFDEE2D01C70300B30939 /* Utilities */,
 				F124E0DC2D6E12190035C7BA /* NetworkingTestingUtils */,
 				F124E0DE2D6E12190035C7BA /* PersistenceTestingUtils */,
 				4B9EE3672D76CB1600DDC75C /* SubscriptionTestingUtilities */,
 				4B9EE3692D76CB2300DDC75C /* PixelKitTestingUtilities */,
-				84EFBCCF2D817CC400706739 /* InlineSnapshotTesting */,
 				844801692E3BA41A00E8A2C1 /* Clocks */,
 				7B4659A72FAC000000CCB375 /* AddressBarPerformance */,
 				D66840192E82BE25007DAAB2 /* PerformanceTest */,
@@ -14259,7 +14241,6 @@
 			packageReferences = (
 				B6DA44152616C13800DD1EC2 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				B6EC37F529B5DAAC001ACE79 /* XCRemoteSwiftPackageReference "swifter" */,
-				B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 				B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */,
 				F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */,
 				9FF521422BAA8FF300B9819B /* XCRemoteSwiftPackageReference "lottie-spm" */,
@@ -14275,6 +14256,7 @@
 				CCF78AD42F34996900263097 /* XCRemoteSwiftPackageReference "combine-schedulers" */,
 				A1A1A1A12F50000600A0A0A0 /* XCLocalSwiftPackageReference "LocalPackages/CrashReporting" */,
 				315E395D2F86A36200D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */,
+				A7B000052F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */,
 			);
 			productRefGroup = AA585D7F248FD31100E9A3E2 /* Products */;
 			projectDirPath = "";
@@ -20527,6 +20509,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/AutomationServer;
 		};
+		A7B000052F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/SnapshotTestingSupport;
+		};
 		7BBE51062DC27EAB004F08B3 /* XCLocalSwiftPackageReference "LocalPackages/BuildToolPlugins" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/BuildToolPlugins;
@@ -20574,14 +20560,6 @@
 				version = 9.1.0;
 			};
 		};
-		37C320BA2F1E80A1008F4604 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
-			requirement = {
-				kind = exactVersion;
-				version = 1.18.7;
-			};
-		};
 		3FFD51CF7C19ACBDB9687474 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/BrowserServicesKit";
@@ -20620,14 +20598,6 @@
 			requirement = {
 				kind = exactVersion;
 				version = 4.5.2;
-			};
-		};
-		B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
-			requirement = {
-				kind = exactVersion;
-				version = 1.19.2;
 			};
 		};
 		B6DA44152616C13800DD1EC2 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
@@ -20853,11 +20823,6 @@
 		379C3E4D2E7238E100058C52 /* URLPredictor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = URLPredictor;
-		};
-		37C320B92F1E80A1008F4604 /* SnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 37C320BA2F1E80A1008F4604 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = SnapshotTesting;
 		};
 		37C320BB2F1E80A1008F4604 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -21707,16 +21672,6 @@
 			package = 84C1764C2DF044D5001DEEC7 /* XCLocalSwiftPackageReference "LocalPackages/LetsMove" */;
 			productName = LetsMove;
 		};
-		84D6780B2D842DBE0030BC82 /* InlineSnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = InlineSnapshotTesting;
-		};
-		84EFBCCF2D817CC400706739 /* InlineSnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = InlineSnapshotTesting;
-		};
 		84F0B5C22E1409000026F17F /* SwiftLintTool */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */;
@@ -21746,10 +21701,6 @@
 		9D84E4012CD4E66F0046CD8B /* OHHTTPStubsSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OHHTTPStubsSwift;
-		};
-		9D84E4022CD4E66F0046CD8B /* SnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SnapshotTesting;
 		};
 		9D84E4042CD4E66F0046CD8B /* PixelKitTestingUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -21917,30 +21868,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = SERPInstallOrigin;
 		};
-		B65CD8CA2B316DF100A595BB /* SnapshotTesting */ = {
+		A7B000062F6A000100000001 /* SnapshotTestingSupport */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = SnapshotTesting;
-		};
-		B65CD8CC2B316DFC00A595BB /* SnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = SnapshotTesting;
-		};
-		B65CD8CE2B316E0200A595BB /* SnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = SnapshotTesting;
-		};
-		B65CD8D02B316E0C00A595BB /* SnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = SnapshotTesting;
-		};
-		B65CD8D22B316E1700A595BB /* SnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = SnapshotTesting;
+			package = A7B000052F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */;
+			productName = SnapshotTestingSupport;
 		};
 		B6AE39F229374AEC00C37AA4 /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;

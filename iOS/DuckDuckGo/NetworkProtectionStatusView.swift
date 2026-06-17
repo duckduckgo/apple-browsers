@@ -146,7 +146,7 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func statusBadge(isConnected: Bool) -> some View {
         Circle()
-            .foregroundStyle(isConnected ? .green : .yellow)
+            .foregroundStyle(isConnected ? Color(designSystemColor: .alertGreen) : Color(designSystemColor: .alertYellow))
             .frame(width: 8, height: 8)
     }
 

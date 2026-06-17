@@ -85,12 +85,22 @@ public class SyncSettingsViewModel: ObservableObject {
         public let id: String
         public let name: String
         public let type: String
+        public let credentialId: String?
         public let isThisDevice: Bool
 
-        public init(id: String, name: String, type: String, isThisDevice: Bool) {
+        // Keep these values aligned with DDGSync.SyncCredentialID without coupling SyncUI_iOS to DDGSync.
+        public static let defaultCredentialId = "ddg"
+        public static let thirdPartyCredentialId = "3party"
+
+        public var isThirdParty: Bool {
+            credentialId == Self.thirdPartyCredentialId
+        }
+
+        public init(id: String, name: String, type: String, credentialId: String? = nil, isThisDevice: Bool) {
             self.id = id
             self.name = name
             self.type = type
+            self.credentialId = credentialId
             self.isThisDevice = isThisDevice
         }
 

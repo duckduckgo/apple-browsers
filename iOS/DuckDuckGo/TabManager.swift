@@ -755,6 +755,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func cleanupTabsFaviconCache() {
+        guard featureFlagger.isFeatureOn(.staleFaviconCleanup) else { return }
         guard tabsCacheNeedsCleanup else { return }
 
         DispatchQueue.global(qos: .background).async { [weak self] in

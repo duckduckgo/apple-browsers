@@ -219,6 +219,11 @@ extension MainViewController {
             return
         }
 
+        let duckAIGridContentProvider = DuckAIGridContentResolver(
+            featureFlagger: featureFlagger,
+            storageHandler: duckAiNativeStorageHandler
+        )
+
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
         guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
             TabSwitcherViewController(coder: coder,
@@ -235,7 +240,8 @@ extension MainViewController {
                                       fireproofing: self.fireproofing,
                                       keyValueStore: self.keyValueStore,
                                       daxDialogsManager: self.daxDialogsManager,
-                                      initialTrackerCountState: initialTrackerCountState)
+                                      initialTrackerCountState: initialTrackerCountState,
+                                      duckAIGridContentProvider: duckAIGridContentProvider)
         }) else {
             assertionFailure()
             return

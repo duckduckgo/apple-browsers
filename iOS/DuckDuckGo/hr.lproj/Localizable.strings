@@ -358,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Pristupi svojim čavrljanjima na svim uređajima pomoću opcije Sync & Backup.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Postavi ton, duljinu i ponašanje";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odgovore";
 
@@ -2659,11 +2662,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Ponovno učitaj";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Poništi zumiranje";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Odabir";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Prikaži sve kartice";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Povećaj";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Smanji";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Posljednja obrada: %@";

@@ -358,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Kasuta funktsiooni „Sync & Backup“, et pääseda oma vestlustele ligi kõikidelt seadmetelt.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Määra toon, pikkus ja käitumine";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Kohanda vastuseid";
 
@@ -2659,11 +2662,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Laadi uuesti";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Lähtesta suum";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Vali";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Kuva kõik vahekaardid";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Suurenda";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Vähenda";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Viimati töödeldud: %@";

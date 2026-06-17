@@ -358,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Можете да отваряте своите чатове на всички устройства, като използвате Sync & Backup.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Задаване на тон, продължителност и поведение";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Персонализиране на отговорите";
 
@@ -2659,11 +2662,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Презареждане";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Нулиране на мащаба";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Избор";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Показване на всички раздели";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Увеличаване";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Намаляване";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Последно обработено: %@";

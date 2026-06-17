@@ -39,6 +39,9 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         static let sectionHeaderBottomPadding: CGFloat = 10
         static let sectionHeaderLeading: CGFloat = 8
         static let cellIconSize: CGFloat = 20
+        /// The `chats` glyph has a 24pt artboard (vs the 20pt single-`chat` glyph), so it needs a
+        /// larger frame to render at the same optical size as the other rows' icons.
+        static let viewAllChatsIconSize: CGFloat = 24
         static let cellIconGap: CGFloat = 8
         static let cellVerticalPadding: CGFloat = 10
         static let cellLeadingPadding: CGFloat = 6
@@ -297,7 +300,7 @@ private extension AIChatRecentChatsPopupViewController {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = UIColor(designSystemColor: .icons)
-        iconView.image = DesignSystemImages.Glyphs.Size24.list.withRenderingMode(.alwaysTemplate)
+        iconView.image = DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -311,10 +314,12 @@ private extension AIChatRecentChatsPopupViewController {
         NSLayoutConstraint.activate([
             iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Constants.cellLeadingPadding),
             iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: Constants.cellIconSize),
-            iconView.heightAnchor.constraint(equalToConstant: Constants.cellIconSize),
+            iconView.widthAnchor.constraint(equalToConstant: Constants.viewAllChatsIconSize),
+            iconView.heightAnchor.constraint(equalToConstant: Constants.viewAllChatsIconSize),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: Constants.cellIconGap),
+            // Keep the title aligned with the other rows despite the wider icon frame.
+            titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor,
+                                                constant: Constants.cellLeadingPadding + Constants.cellIconSize + Constants.cellIconGap),
             titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
 

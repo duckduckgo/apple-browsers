@@ -27,6 +27,7 @@ final class UnifiedSuggestionsInputsMergerTests: XCTestCase {
     func test_search_blank_withFavorites_resolvesFavoritesInputs() {
         let i = Merger.merge(
             mode: .search, text: "",
+            hasUserInteractedWithText: false,
             search: .init(hasFavorites: true, hasMessages: false),
             duckAI: nil)
         XCTAssertEqual(i, UnifiedSuggestionsInputs(
@@ -38,6 +39,7 @@ final class UnifiedSuggestionsInputsMergerTests: XCTestCase {
     func test_search_typing_isTyping_andNeverHasRecents() {
         let i = Merger.merge(
             mode: .search, text: "abc",
+            hasUserInteractedWithText: true,
             search: .init(hasFavorites: true, hasMessages: true),
             duckAI: .init(hasRecents: true, settled: false))
         XCTAssertTrue(i.isTyping)
@@ -46,9 +48,40 @@ final class UnifiedSuggestionsInputsMergerTests: XCTestCase {
         XCTAssertEqual(i.mode, .search)
     }
 
+    // A typed (non-URL) query shows suggestions immediately — the interaction flag isn't required.
+    func test_search_typedNonURL_isTyping_withoutInteractionFlag() {
+        let i = Merger.merge(
+            mode: .search, text: "cats",
+            hasUserInteractedWithText: false,
+            search: .init(hasFavorites: true, hasMessages: false),
+            duckAI: nil)
+        XCTAssertTrue(i.isTyping)
+    }
+
+    // Pre-filled, unedited URL (omnibar tapped on a loaded page) stays not-typing so favorites show.
+    func test_search_prefilledURL_notInteracted_isNotTyping() {
+        let i = Merger.merge(
+            mode: .search, text: "https://example.com",
+            hasUserInteractedWithText: false,
+            search: .init(hasFavorites: true, hasMessages: false),
+            duckAI: nil)
+        XCTAssertFalse(i.isTyping)
+    }
+
+    // Once the user edits the pre-filled URL, suggestions take over.
+    func test_search_prefilledURL_afterInteraction_isTyping() {
+        let i = Merger.merge(
+            mode: .search, text: "https://example.com",
+            hasUserInteractedWithText: true,
+            search: .init(hasFavorites: true, hasMessages: false),
+            duckAI: nil)
+        XCTAssertTrue(i.isTyping)
+    }
+
     func test_aichat_blank_withRecents_setsHasRecents() {
         let i = Merger.merge(
             mode: .aiChat, text: "",
+            hasUserInteractedWithText: false,
             search: .init(hasFavorites: false, hasMessages: false),
             duckAI: .init(hasRecents: true, settled: true))
         XCTAssertEqual(i.mode, .aiChat)
@@ -60,6 +93,7 @@ final class UnifiedSuggestionsInputsMergerTests: XCTestCase {
     func test_aichat_typing_unsettled_setsResultsPending() {
         let i = Merger.merge(
             mode: .aiChat, text: "foo",
+            hasUserInteractedWithText: true,
             search: .init(hasFavorites: false, hasMessages: false),
             duckAI: .init(hasRecents: false, settled: false))
         XCTAssertTrue(i.isTyping)
@@ -69,6 +103,7 @@ final class UnifiedSuggestionsInputsMergerTests: XCTestCase {
     func test_aichat_typing_settled_clearsResultsPending() {
         let i = Merger.merge(
             mode: .aiChat, text: "foo",
+            hasUserInteractedWithText: true,
             search: .init(hasFavorites: false, hasMessages: false),
             duckAI: .init(hasRecents: false, settled: true))
         XCTAssertTrue(i.isTyping)
@@ -78,6 +113,7 @@ final class UnifiedSuggestionsInputsMergerTests: XCTestCase {
     func test_aichat_withoutDuckAISource_hasNoRecentsOrPending() {
         let i = Merger.merge(
             mode: .aiChat, text: "foo",
+            hasUserInteractedWithText: true,
             search: .init(hasFavorites: true, hasMessages: false),
             duckAI: nil)
         XCTAssertFalse(i.hasRecents)

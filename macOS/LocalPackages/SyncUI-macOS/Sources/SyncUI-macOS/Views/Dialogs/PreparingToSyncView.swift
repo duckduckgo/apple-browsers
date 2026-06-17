@@ -20,15 +20,28 @@ import SwiftUI
 import SwiftUIExtensions
 
 struct PreparingToSyncView: View {
+    let mode: PreparingToSyncMode
+
     @EnvironmentObject var model: ManagementDialogModel
 
     var body: some View {
         SyncDialog(spacing: 20.0, bottomText: UserText.preparingToSyncDialogAction) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.sync96)
-                SyncUIViews.TextHeader(text: UserText.preparingToSyncDialogTitle)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.center)
+                switch mode {
+                case .singleDeviceOrRecovery:
+                    let preparingToSyncDialogSubtitle = model.isAIChatSyncEnabled
+                        ? UserText.preparingToSyncDialogSubTitleUpdated
+                        : UserText.preparingToSyncDialogSubTitle
+                    SyncUIViews.TextHeader(text: UserText.preparingToSyncDialogTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.center)
+                    SyncUIViews.TextDetailMultiline(text: preparingToSyncDialogSubtitle)
+                case .twoDevicePairing:
+                    SyncUIViews.TextHeader(text: UserText.preparingToSyncTwoDeviceDialogTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.center)
+                }
             }
             .frame(width: 320)
         } buttons: {

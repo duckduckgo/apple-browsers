@@ -110,6 +110,7 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
+                applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                 freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService,
@@ -154,7 +155,7 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     }
 
     var isWebViewUserAgentOn: Bool {
-        false
+        appDependencies.featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
     var isContentBlockingOn: Bool {

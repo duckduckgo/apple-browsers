@@ -113,10 +113,10 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
     }
 
     private func decryptedDefaultCredentialRegisteredDevice(id: String,
-                                                           encryptedName: String?,
-                                                           encryptedType: String?,
-                                                           primaryKey: Data,
-                                                           credentialId: String?) -> RegisteredDevice? {
+                                                            encryptedName: String?,
+                                                            encryptedType: String?,
+                                                            primaryKey: Data,
+                                                            credentialId: String?) -> RegisteredDevice? {
         guard let encryptedName,
               let encryptedType,
               let name = try? crypter.base64DecodeAndDecrypt(encryptedName, using: primaryKey),

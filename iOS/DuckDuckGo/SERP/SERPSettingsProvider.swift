@@ -24,11 +24,13 @@ import AIChat
 import Persistence
 import UserScript
 import SERPSettings
+import Combine
 
 final class SERPSettingsProvider: SERPSettingsProviding {
     var keyValueStore: ThrowingKeyValueStoring?
     var eventMapper: EventMapping<SERPSettingsError>?
     var aiChatProvider: AIChatSettingsProvider
+    let settingsDidChangeSubject = PassthroughSubject<Void, Never>()
 
     init(eventMapper: EventMapping<SERPSettingsError>? = SERPSettingsEventHandler(),
          aiChatProvider: AIChatSettingsProvider) {

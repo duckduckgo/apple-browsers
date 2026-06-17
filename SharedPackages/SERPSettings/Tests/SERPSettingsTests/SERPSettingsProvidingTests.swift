@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Persistence
 import PersistenceTestingUtils
 import XCTest
@@ -122,5 +123,46 @@ final class SERPSettingsProvidingTests: XCTestCase {
 
         provider.setSERPSetting("0", forKey: SERPSettingsConstants.hideAIGeneratedImagesKey)
         XCTAssertFalse(provider.hideAIGeneratedImages)
+    }
+
+    // MARK: - Snapshot
+
+    func testSnapshot_returnsDefaults_whenNothingStored() {
+        let snapshot = provider.currentNativeSettingsSnapshot()
+        XCTAssertEqual(snapshot[SERPSettingsConstants.searchAssistKey], "2")
+        XCTAssertEqual(snapshot[SERPSettingsConstants.hideAIGeneratedImagesKey], "-1")
+    }
+
+    func testSnapshot_reflectsStoredValues() {
+        provider.searchAssistFrequency = .often
+        provider.hideAIGeneratedImages = true
+
+        let snapshot = provider.currentNativeSettingsSnapshot()
+        XCTAssertEqual(snapshot[SERPSettingsConstants.searchAssistKey], "3")
+        XCTAssertEqual(snapshot[SERPSettingsConstants.hideAIGeneratedImagesKey], "1")
+    }
+
+    // MARK: - Change publisher
+
+    func testSetSERPSetting_emitsChangePerWrite() {
+        var emissions = 0
+        let cancellable = provider.settingsDidChangePublisher.sink { emissions += 1 }
+        defer { cancellable.cancel() }
+
+        provider.searchAssistFrequency = .often
+        provider.hideAIGeneratedImages = true
+
+        XCTAssertEqual(emissions, 2)
+    }
+
+    func testStoreSERPSettings_doesNotEmitChange() {
+        var emissions = 0
+        let cancellable = provider.settingsDidChangePublisher.sink { emissions += 1 }
+        defer { cancellable.cancel() }
+
+        // The SERP-originated full-snapshot path must not echo a change back to the SERP.
+        provider.storeSERPSettings(settings: [SERPSettingsConstants.searchAssistKey: "3"])
+
+        XCTAssertEqual(emissions, 0)
     }
 }

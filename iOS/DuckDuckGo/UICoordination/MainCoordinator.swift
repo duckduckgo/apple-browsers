@@ -35,6 +35,8 @@ import Networking
 import WebExtensions
 import Onboarding
 import UIKit
+import SwiftUI
+import DeferredReadingUI
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -98,6 +100,7 @@ final class MainCoordinator {
     private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let onboardingManager: OnboardingFlowManaging
+    private var deferredReadingPromptObserver: DeferredReadingPromptTabObserver?
 
     private var hasPresentedOnboarding = false
 
@@ -720,34 +723,65 @@ extension MainCoordinator: URLHandling {
     }
 
     private func presentDeferredReadingDecision(for url: URL, openedTab: Tab?) {
-        let alert = UIAlertController(
-            title: "Open now or read later?",
-            message: url.host ?? url.absoluteString,
-            preferredStyle: .actionSheet
-        )
-
-        alert.addAction(UIAlertAction(title: "Read Now", style: .default))
-        alert.addAction(UIAlertAction(title: "Read Later", style: .default) { [weak self] _ in
-            guard let self else { return }
-            self.controller.deferredReadingController.deferURL(url)
-            if let openedTab {
-                self.controller.closeTab(openedTab)
+        let promptState = DeferredReadingPromptState(initialURL: url)
+        deferredReadingPromptObserver = DeferredReadingPromptTabObserver(
+            tab: openedTab,
+            state: promptState
+        ) { [weak self] pageURL, completion in
+            guard let self else {
+                completion(nil)
+                return
             }
-        })
-        alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
-
-        if let popover = alert.popoverPresentationController {
-            popover.sourceView = controller.view
-            popover.sourceRect = CGRect(
-                x: controller.view.bounds.midX,
-                y: controller.view.bounds.maxY - 44,
-                width: 1,
-                height: 1
-            )
-            popover.permittedArrowDirections = []
+            self.controller.favicons.loadFavicon(forDomain: pageURL.host,
+                                                 fromURL: pageURL,
+                                                 intoCache: .tabs,
+                                                 fromCache: .tabs,
+                                                 queue: DispatchQueue.main,
+                                                 completion: completion)
+        }
+        let clearPromptObserver = { [weak self] in
+            self?.deferredReadingPromptObserver?.stop()
+            self?.deferredReadingPromptObserver = nil
         }
 
-        controller.present(alert, animated: true)
+        let promptView = DeferredReadingPromptSheetView(
+            state: promptState,
+            onReadNow: { [weak self] in
+                clearPromptObserver()
+                self?.controller.presentedViewController?.dismiss(animated: true)
+            },
+            onReadLater: { [weak self] in
+                guard let self else { return }
+                clearPromptObserver()
+                self.controller.deferredReadingController.deferURL(promptState.currentURL, title: promptState.title)
+                self.controller.presentedViewController?.dismiss(animated: true) {
+                    if let openedTab {
+                        self.controller.closeTab(openedTab)
+                    }
+                }
+            },
+            onDisappear: clearPromptObserver
+        )
+
+        let promptController = UIHostingController(rootView: promptView)
+        promptController.modalPresentationStyle = .pageSheet
+
+        if let sheetPresentationController = promptController.sheetPresentationController {
+            if #available(iOS 16.0, *) {
+                let compactDetent = UISheetPresentationController.Detent.custom(
+                    identifier: .init("deferredReadingPromptCompact")
+                ) { _ in
+                    200
+                }
+                sheetPresentationController.detents = [compactDetent]
+            } else {
+                sheetPresentationController.detents = [.medium()]
+            }
+            sheetPresentationController.prefersGrabberVisible = true
+            sheetPresentationController.prefersScrollingExpandsWhenScrolledToEdge = false
+        }
+
+        controller.present(promptController, animated: true)
     }
 
     private func presentDeferredReadingDecisionIfNeeded(for url: URL) {
@@ -862,6 +896,64 @@ extension MainCoordinator: URLHandling {
           }
           Pixel.fire(pixel: .openAIChatFromIconShortcut)
       }
+}
+
+@MainActor
+private final class DeferredReadingPromptTabObserver: TabObserver {
+    private weak var tab: Tab?
+    private let faviconLoader: (URL, @escaping (UIImage?) -> Void) -> Void
+    private var faviconDomain: String?
+    private let state: DeferredReadingPromptState
+
+    init(tab: Tab?,
+         state: DeferredReadingPromptState,
+         faviconLoader: @escaping (URL, @escaping (UIImage?) -> Void) -> Void) {
+        self.tab = tab
+        self.state = state
+        self.faviconLoader = faviconLoader
+
+        tab?.addObserver(self)
+        refresh()
+    }
+
+    deinit {
+        tab?.removeObserver(self)
+    }
+
+    nonisolated func didChange(tab: Tab) {
+        Task { @MainActor [weak self] in
+            self?.refresh()
+        }
+    }
+
+    private func refresh() {
+        let latestURL = tab?.link?.url ?? state.currentURL
+        let latestTitle = tab?.link?.displayTitle ?? tab?.link?.title
+        state.updatePage(title: latestTitle, url: latestURL)
+        refreshFavicon(for: latestURL)
+    }
+
+    private func refreshFavicon(for url: URL) {
+        let currentDomain = url.host
+        if currentDomain == faviconDomain, state.favicon != nil {
+            return
+        }
+        faviconDomain = currentDomain
+        state.updateFavicon(nil)
+        if currentDomain == nil {
+            return
+        }
+
+        faviconLoader(url) { [weak self] image in
+            guard let self else { return }
+            guard self.state.currentURL.host == currentDomain else { return }
+            self.state.updateFavicon(image)
+        }
+    }
+
+    func stop() {
+        tab?.removeObserver(self)
+    }
 }
 
 extension MainCoordinator: ShortcutItemHandling {

@@ -246,8 +246,13 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
 
     @MainActor
     func removeAllReferences() async {
-        await removeHostReferences(filter: { _ in true }).value
-        await removeUrlReferences(filter: { _ in true }).value
+        // Resolve from the store (the source of truth) so a full reset also clears references this
+        // in-memory cache may not have loaded yet, rather than only the in-memory ones.
+        let (storedHostReferences, storedUrlReferences) = (try? await storing.loadFaviconReferences()) ?? ([], [])
+        hostReferences.removeAll()
+        urlReferences.removeAll()
+        await removeHostReferencesFromStore(storedHostReferences)
+        await removeUrlReferencesFromStore(storedUrlReferences)
     }
 
     // MARK: - Private

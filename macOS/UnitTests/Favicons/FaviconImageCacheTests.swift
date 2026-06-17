@@ -240,4 +240,38 @@ final class FaviconImageCacheTests: XCTestCase {
         XCTAssertNil(cache.get(faviconUrl: url2))
         XCTAssertEqual(Set(store.removedFaviconIdentifiers), [id1, id2])
     }
+
+    @MainActor
+    func testRemoveFaviconsWithIdentifiersDeletesFromStoreEvenBeforeCacheLoaded() async throws {
+        let store = FaviconStoringMock()
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        let identifier = UUID()
+        store.metadataToLoad = [
+            FaviconMetadata(identifier: identifier, url: faviconURL, documentUrl: documentURL, dateCreated: Date(), relation: .favicon)
+        ]
+
+        let cache = FaviconImageCache(faviconStoring: store)
+        // Intentionally not loaded: the in-memory metadata map is empty, but the store has the row.
+        await cache.removeFavicons(withIdentifiers: [identifier])
+
+        XCTAssertEqual(store.removedFaviconIdentifiers, [identifier])
+    }
+
+    @MainActor
+    func testRemoveAllFaviconsDeletesFromStoreEvenBeforeCacheLoaded() async throws {
+        let store = FaviconStoringMock()
+        let id1 = UUID()
+        let id2 = UUID()
+        store.metadataToLoad = [
+            FaviconMetadata(identifier: id1, url: try XCTUnwrap("https://a.example/favicon.ico".url), documentUrl: try XCTUnwrap("https://a.example".url), dateCreated: Date(), relation: .favicon),
+            FaviconMetadata(identifier: id2, url: try XCTUnwrap("https://b.example/favicon.ico".url), documentUrl: try XCTUnwrap("https://b.example".url), dateCreated: Date(), relation: .icon)
+        ]
+
+        let cache = FaviconImageCache(faviconStoring: store)
+        // Intentionally not loaded.
+        await cache.removeAllFavicons()
+
+        XCTAssertEqual(Set(store.removedFaviconIdentifiers), [id1, id2])
+    }
 }

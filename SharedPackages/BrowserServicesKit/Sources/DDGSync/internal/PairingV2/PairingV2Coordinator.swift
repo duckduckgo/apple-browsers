@@ -342,7 +342,7 @@ final class PairingV2Coordinator {
                 case .nativeCredentialAlreadyPresent:
                     pairingError = .nativeCredentialAlreadyPresent
                 default:
-                    pairingError = .loginFailed
+                    pairingError = .upgradeFailed
                 }
                 try await execute(stateMachine.handle(.failed(pairingError)))
                 throw pairingError
@@ -350,8 +350,8 @@ final class PairingV2Coordinator {
                 try await execute(stateMachine.handle(.failed(error)))
                 throw error
             } catch {
-                try await execute(stateMachine.handle(.failed(.loginFailed)))
-                throw PairingV2Error.loginFailed
+                try await execute(stateMachine.handle(.failed(.upgradeFailed)))
+                throw PairingV2Error.upgradeFailed
             }
             try await execute(stateMachine.handle(.loginSucceeded))
 

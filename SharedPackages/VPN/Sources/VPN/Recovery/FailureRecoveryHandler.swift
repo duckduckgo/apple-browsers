@@ -102,6 +102,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                     to: lastConnectedServer,
                     excludeLocalNetworks: excludeLocalNetworks,
                     dnsSettings: dnsSettings)
+                try Task.checkCancellation()
                 switch result {
                 case .noRecoveryNecessary:
                     eventHandler(.completed(.healthy))

@@ -47,4 +47,18 @@ final class PacketTunnelProviderTests: XCTestCase {
         XCTAssertFalse(NEPacketTunnelProvider.isTunnelInterfaceName("lo0"))
         XCTAssertFalse(NEPacketTunnelProvider.isTunnelInterfaceName("ipsec0"))
     }
+
+    func testConnectionAttemptSourcePreservesFailureRecoveryOnlyForFailureRecoveryReassertUpdate() {
+        XCTAssertTrue(PacketTunnelProvider.ConnectionAttemptSource.failureRecovery.preservesFailureRecoveryDuringReassertUpdate)
+
+        let supersedingSources: [PacketTunnelProvider.ConnectionAttemptSource] = [
+            .start,
+            .rekey,
+            .serverChange,
+            .locationChange,
+            .adapterRestart,
+            .serverMigration
+        ]
+        XCTAssertTrue(supersedingSources.allSatisfy { !$0.preservesFailureRecoveryDuringReassertUpdate })
+    }
 }

@@ -903,6 +903,7 @@ extension Pixel {
         case cookieDeletionTime(_ time: BucketAggregation)
         case cookieDeletionLeftovers
         case clearDataInDefaultPersistence(_ time: BucketAggregation)
+        case clearDataInDefaultPersistenceSingleTab(_ time: BucketAggregation)
 
         case webkitWarmupStart(appState: String)
         case webkitWarmupFinished(appState: String)
@@ -2828,7 +2829,9 @@ extension Pixel.Event {
         case .cookieDeletionTime(let aggregation):
             return "m_debug_cookie-clearing-time-\(aggregation)"
         case .clearDataInDefaultPersistence(let aggregation):
-            return "m_debug_legacy-data-clearing-time-\(aggregation)"
+            return "data-clearing_all-tabs-time-\(aggregation)"
+        case .clearDataInDefaultPersistenceSingleTab(let aggregation):
+            return "data-clearing_single-tab-time-\(aggregation)"
         case .cookieDeletionLeftovers: return "m_cookie_deletion_leftovers"
 
         case .webkitWarmupStart(let appState):

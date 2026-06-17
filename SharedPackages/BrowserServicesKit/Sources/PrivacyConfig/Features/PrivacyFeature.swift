@@ -565,6 +565,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg
+
+    /// Replaces the web-link Search Assist and Hide AI-Generated Images rows on the AI Features
+    /// settings screen with native controls, regroups the main AI settings at the top, and adds the
+    /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
+    case aiFeaturesNativeControls
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

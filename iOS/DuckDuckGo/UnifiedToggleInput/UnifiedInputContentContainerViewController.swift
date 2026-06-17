@@ -200,6 +200,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// long-lived data source reflects add/remove since the last editing session. Called on each
     /// omnibar-editing show — legacy got this for free by building a fresh data source per session.
     func refreshSuggestionsCaches() {
+        // Drop the persistent Search loader's stale results so they don't flash for the new query
+        // (e.g. after burning all tabs). The Duck.ai surface is rebuilt per session, so it needs none.
+        searchLoader?.reset()
         searchDataSource?.refreshCaches()
         duckAISurface?.refreshCaches()
     }

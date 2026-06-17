@@ -432,6 +432,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215798369772677
+    /// Replaces the web-link Search Assist and Hide AI-Generated Images rows on the AI Features
+    /// settings screen with native controls, regroups the main AI settings at the top, and adds the
+    /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
+    case aiFeaturesNativeControls
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214777651593367?focus=true
     case omniBarLongPressMenu
 
@@ -791,6 +797,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeStoragePathMigration))
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess))
+        case .aiFeaturesNativeControls:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.aiFeaturesNativeControls))
         case .omniBarLongPressMenu:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.omniBarLongPressMenu))
         case .customProductPageDuckAiChat:

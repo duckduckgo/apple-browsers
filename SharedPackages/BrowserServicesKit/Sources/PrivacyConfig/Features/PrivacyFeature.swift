@@ -640,6 +640,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Kill switch for the orphaned-proxy full-bypass behavior.
     /// Off by default → bypass engages when an orphaned proxy is detected; enable remotely to disable it.
     case orphanProxyBypassKillSwitch
+
+    /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
+    case showCopyDiagnosticsButton
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {

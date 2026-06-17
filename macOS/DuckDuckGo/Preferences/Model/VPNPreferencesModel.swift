@@ -127,6 +127,10 @@ final class VPNPreferencesModel: ObservableObject {
 
     @Published private(set) var copySupportInfoState: CopySupportInfoState = .idle
 
+    var showsCopyDiagnosticsButton: Bool {
+        featureFlagger.isFeatureOn(.vpnShowCopyDiagnosticsButton)
+    }
+
     private var onboardingStatus: OnboardingStatus {
         didSet {
             showUninstallVPN = DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled

@@ -206,17 +206,19 @@ extension Preferences {
 
                 // SECTION: Diagnostics
 
-                PreferencePaneSection {
-                    Button(copyDiagnosticsButtonTitle) {
-                        Task { @MainActor in
-                            await model.copySupportInfo()
+                if model.showsCopyDiagnosticsButton {
+                    PreferencePaneSection {
+                        Button(copyDiagnosticsButtonTitle) {
+                            Task { @MainActor in
+                                await model.copySupportInfo()
+                            }
                         }
-                    }
-                    .disabled(model.copySupportInfoState != .idle)
+                        .disabled(model.copySupportInfoState != .idle)
 
-                    TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
+                        TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
+                    }
+                    .padding(.bottom, 12)
                 }
-                .padding(.bottom, 12)
 
                 // SECTION: Uninstall
 

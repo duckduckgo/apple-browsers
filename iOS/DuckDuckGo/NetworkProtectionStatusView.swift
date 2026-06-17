@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Networking
@@ -49,6 +50,10 @@ struct NetworkProtectionStatusView: View {
 
     @State private var copySupportInfoState = CopySupportInfoState.idle
 
+    private var showsCopyDiagnosticsButton: Bool {
+        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnShowCopyDiagnosticsButton)
+    }
+
     var tipsModel: VPNTipsModel {
         statusModel.tipsModel
     }
@@ -74,7 +79,9 @@ struct NetworkProtectionStatusView: View {
 
             settings()
             about()
-            diagnostics()
+            if showsCopyDiagnosticsButton {
+                diagnostics()
+            }
         }
         .padding(.top, statusModel.error == nil ? 0 : -20)
         .if(statusModel.animationsOn, transform: {

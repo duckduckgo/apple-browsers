@@ -42,10 +42,10 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
 
     func codeCollectionCancelled(source: CodeCollectionSource)
     func gotoSettings()
-    func shareCode(_ code: String)
+    func shareCode(_ code: String, source: CodeCollectionSource)
 
     func codeEntryScreenShown()
-    func codeCopied(_ code: String)
+    func codeCopied(_ code: String, source: CodeCollectionSource)
 }
 
 public class ScanOrPasteCodeViewModel: ObservableObject {
@@ -102,7 +102,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
         guard showQRCodeModel.codeForDisplayOrPasting.isEmpty == false else { return }
         showQRCodeModel.copy()
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        delegate?.codeCopied(showQRCodeModel.codeForDisplayOrPasting)
+        delegate?.codeCopied(showQRCodeModel.codeForDisplayOrPasting, source: source)
     }
 
     @MainActor
@@ -131,7 +131,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func showShareCodeSheet() {
-        delegate?.shareCode(showQRCodeModel.codeForDisplayOrPasting)
+        delegate?.shareCode(showQRCodeModel.codeForDisplayOrPasting, source: source)
     }
 
     func endConnectMode() {

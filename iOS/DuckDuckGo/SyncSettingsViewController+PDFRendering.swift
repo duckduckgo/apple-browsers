@@ -80,7 +80,7 @@ extension SyncSettingsViewController {
         }
     }
 
-    func shareCode(_ code: String) {
+    func shareCode(_ code: String, source: CodeCollectionSource) {
 
         navigationController?.visibleViewController?.presentShareSheet(withItems: [code],
                                                                        fromView: view,
@@ -89,7 +89,7 @@ extension SyncSettingsViewController {
             guard case .copyToPasteboard = activity, didComplete else {
                 return
             }
-            self.fireBarcodeCodeCopiedPixel(for: code)
+            self.fireBarcodeCodeCopiedPixel(for: code, sourceHint: source)
         }
     }
 

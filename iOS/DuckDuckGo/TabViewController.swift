@@ -3602,7 +3602,8 @@ extension TabViewController: UserContentControllerDelegate {
         
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
         userScripts.aiChatUserScript.setFocusChatInputHandler { [weak self] in
-            (self?.parent as? MainViewController)?.focusUnifiedToggleInputForActiveChat()
+            guard let self else { return }
+            (self.parent as? MainViewController)?.focusUnifiedToggleInputForActiveChat(from: self.webView)
         }
         userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
             guard let self else { return .notFireMode }

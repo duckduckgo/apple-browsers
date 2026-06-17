@@ -122,7 +122,7 @@ private func resolvedSize(
     configuration: SnapshotImageConfiguration,
     size: SnapshotImageSize
 ) -> CGSize? {
-    if let width = size.constrainedWidth {
+    if let width = size.fixedConstrainedWidth {
         return constrainedSize(for: view, width: width)
     }
 
@@ -139,7 +139,7 @@ private func resolvedSize(
 ) -> CGSize? {
     viewController.loadViewIfNeeded()
 
-    if let width = size.constrainedWidth {
+    if let width = size.fixedConstrainedWidth {
         return constrainedSize(for: viewController.view, width: width)
     }
 
@@ -313,15 +313,6 @@ private struct SheetSnapshotContainer<Content: SwiftUI.View>: SwiftUI.View {
 }
 
 private extension SnapshotAppearance {
-    var colorScheme: ColorScheme {
-        switch self {
-        case .light:
-            return .light
-        case .dark:
-            return .dark
-        }
-    }
-
     var traits: UITraitCollection {
         UITraitCollection(
             traitsFrom: [

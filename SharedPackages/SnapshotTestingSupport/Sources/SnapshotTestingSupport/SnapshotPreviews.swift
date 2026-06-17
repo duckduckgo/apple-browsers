@@ -36,18 +36,14 @@ public struct SnapshotPreviewConfiguration<State> {
 
 public struct SnapshotPreviews<State> {
     public let configurations: [SnapshotPreviewConfiguration<State>]
-    private let configureView: (State) -> AnyView
+    public let configure: (State) -> AnyView
 
     public init<Content: View>(
         configurations: [SnapshotPreviewConfiguration<State>],
         configure: @escaping (State) -> Content
     ) {
         self.configurations = configurations
-        self.configureView = { AnyView(configure($0)) }
-    }
-
-    public func configure(_ state: State) -> AnyView {
-        configureView(state)
+        self.configure = { AnyView(configure($0)) }
     }
 }
 

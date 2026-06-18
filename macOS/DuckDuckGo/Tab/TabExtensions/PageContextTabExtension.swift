@@ -65,6 +65,11 @@ final class PageContextTabExtension {
     /// The flag is automatically cleared after receiving a `collectionResult` message.
     private var shouldForceContextCollection: Bool = false
 
+    /// Set when we trigger a collection purely to harvest Content-Scope-Scripts page-type signals
+    /// while auto-attach is OFF. The collectionResult is then delivered as a signals-only payload
+    /// (content stripped, attached:false). Cleared when that result arrives.
+    private var pendingSignalsOnlyCollection: Bool = false
+
     /// Set when the user explicitly removes page context from the chat.
     /// Suppresses auto-collection on the current page until the next navigation.
     private var userRemovedContext: Bool = false
@@ -133,6 +138,7 @@ final class PageContextTabExtension {
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
+                self.requestSignalsOnlyCollectionIfNeeded()
             }
             .store(in: &cancellables)
 
@@ -160,6 +166,7 @@ final class PageContextTabExtension {
                     }
                 } else {
                     sendNonAttachableContextIfNeeded()
+                    requestSignalsOnlyCollectionIfNeeded()
                 }
             }
             .store(in: &cancellables)
@@ -196,14 +203,20 @@ final class PageContextTabExtension {
                 guard let self else {
                     return
                 }
-                /// Only process the collection result when auto-collect is enabled or the user
-                /// explicitly requested context. Unsolicited results from the page script
-                /// should not overwrite previously attached context with nil.
-                guard self.isContextCollectionEnabled else {
-                    return
-                }
-                Task {
-                    await self.handle(pageContext)
+                /// Process full collection when auto-collect is enabled (or the user explicitly
+                /// requested context). When auto-collect is OFF but we requested a signals-only
+                /// collection, deliver just the page-type signals (content stripped). Otherwise
+                /// ignore unsolicited results so they can't overwrite attached context with nil.
+                if self.isContextCollectionEnabled {
+                    self.pendingSignalsOnlyCollection = false
+                    Task {
+                        await self.handle(pageContext)
+                    }
+                } else if self.pendingSignalsOnlyCollection {
+                    self.pendingSignalsOnlyCollection = false
+                    Task {
+                        await self.handleSignalsOnly(pageContext)
+                    }
                 }
             }
             .store(in: &userScriptCancellables)
@@ -257,6 +270,8 @@ final class PageContextTabExtension {
             return
         }
         shouldForceContextCollection = false
+        // Page-type signals (for duck.ai page shortcuts) ride the collected payload from
+        // Content-Scope-Scripts (includePageTypeSignals) and are preserved through favicon encoding.
         cachedPageContext = replaceFaviconURLWithEncodedData(pageContext)
         if let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController {
             chatViewController.setPageContext(cachedPageContext)
@@ -427,8 +442,56 @@ final class PageContextTabExtension {
             content: pageContext.content,
             truncated: pageContext.truncated,
             fullContentLength: pageContext.fullContentLength,
-            attachable: pageContext.attachable
+            attachable: pageContext.attachable,
+            tabId: pageContext.tabId,
+            pageTypeSignals: pageContext.pageTypeSignals,
+            attached: pageContext.attached
         )
+    }
+
+    // MARK: - Page Type Signals (duck.ai page shortcuts)
+
+    /// When auto-attach is OFF, trigger a page-context collection solely to harvest
+    /// Content-Scope-Scripts page-type signals; the result is delivered as a signals-only payload
+    /// (content stripped) via `handleSignalsOnly`. No-op when auto-attach is ON (the full-content
+    /// path already carries the signals) or when off a real web page.
+    private func requestSignalsOnlyCollectionIfNeeded() {
+        guard featureFlagger.isFeatureOn(.aiChatPageContext),
+              featureFlagger.isFeatureOn(.sidebarSuggestedPrompts),
+              case .url = content,
+              !isContextCollectionEnabled,
+              aiChatSessionStore.sessions[tabID]?.chatViewController != nil,
+              let pageContextUserScript else {
+            return
+        }
+        pendingSignalsOnlyCollection = true
+        pageContextUserScript.collect()
+    }
+
+    /// Delivers a signals-only payload from a collected context: keeps the Content-Scope-Scripts
+    /// page-type signals + metadata, strips the page content, and marks `attached:false` /
+    /// `attachable:true` so the duck.ai web app shows page shortcuts plus the Ask-About-Page chip
+    /// without attaching content.
+    @MainActor
+    private func handleSignalsOnly(_ pageContext: AIChatPageContextData?) async {
+        guard featureFlagger.isFeatureOn(.aiChatPageContext),
+              let pageContext,
+              let session = aiChatSessionStore.sessions[tabID],
+              session.chatViewController != nil else {
+            return
+        }
+        let signalsOnly = AIChatPageContextData(
+            title: pageContext.title,
+            favicon: [],
+            url: pageContext.url,
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            attachable: true,
+            pageTypeSignals: pageContext.pageTypeSignals,
+            attached: false
+        )
+        session.chatViewController?.setPageContext(signalsOnly)
     }
 }
 

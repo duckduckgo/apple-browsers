@@ -284,8 +284,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         let pageContext = messageHandling.getDataForMessageType(.pageContext) as? AIChatPageContextData
 
-        if pageContext == nil, payload.reason == "userAction" {
-            pageContextRequestedSubject.send()
+        // On an explicit user action (Ask-About-Page chip or tapping a suggestion), the user wants
+        // the page CONTENT attached. If we only have a signals-only payload (auto-attach off) or no
+        // context, trigger a fresh collection; the full content arrives via the submit push.
+        if payload.reason == "userAction" {
+            let hasAttachedContent = pageContext != nil
+                && pageContext?.attached != false
+                && !(pageContext?.content.isEmpty ?? true)
+            if !hasAttachedContent {
+                pageContextRequestedSubject.send()
+                return PageContextResponse(pageContext: nil)
+            }
         }
 
         return PageContextResponse(pageContext: pageContext)

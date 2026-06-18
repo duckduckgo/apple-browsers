@@ -99,6 +99,9 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsMultipleContexts: Bool
     public let supportsTabPicker: Bool
     public let supportsNativeStorage: Bool
+    /// `true` when the native side supplies page-type signals so the duck.ai web app can render
+    /// page-tailored suggested prompts ("suggestions").
+    public let supportsSuggestions: Bool
     /// `true` when the native app handles the "voice chat start failed" remediation UI
     /// (e.g. surfaces the OS microphone-disabled prompt). When this is `true` the FE
     /// must suppress its own in-page tooltip and post `voiceChatStartFailed` to native
@@ -173,6 +176,7 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsMultipleContexts: Bool = false,
                 supportsTabPicker: Bool = false,
                 supportsNativeStorage: Bool = false,
+                supportsSuggestions: Bool = false,
                 supportsNativeVoicePermissionHandler: Bool = false,
                 installType: AIChatInstallType = .new,
                 installAge: Int = 0) {
@@ -195,6 +199,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
         self.supportsNativeStorage = supportsNativeStorage
+        self.supportsSuggestions = supportsSuggestions
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
         self.installType = installType
         self.installAge = installAge

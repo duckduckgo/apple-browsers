@@ -50,18 +50,4 @@ final class NewTabPageSectionsAvailabilityProviderTests: XCTestCase {
         XCTAssertFalse(provider.isOmnibarAvailable)
     }
 
-    func testIsNextStepsListWidgetAvailable_WhenFeatureFlagIsOn_ReturnsTrue() {
-        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
-        provider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
-
-        XCTAssertTrue(provider.isNextStepsListWidgetAvailable)
-    }
-
-    func testIsNextStepsListWidgetAvailable_WhenFeatureFlagIsOff_ReturnsFalse() {
-        featureFlagger.enabledFeatureFlags = []
-        provider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
-
-        XCTAssertFalse(provider.isNextStepsListWidgetAvailable)
-    }
-
 }

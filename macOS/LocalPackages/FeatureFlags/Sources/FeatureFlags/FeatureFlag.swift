@@ -266,10 +266,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534812?focus=true
     case heuristicAction
 
-    /// Enables Next Steps List widget with a single card displayed at a time on New Tab page
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
-    case nextStepsListWidget
-
     /// Enables advanced card ordering for the Next Steps List widget
     /// This flag is disabled by default to allow testing the new widget design with current ordering logic
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
@@ -608,8 +604,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
-        case .nextStepsListWidget:
-            Config(defaultValue: .enabled, source: .remoteReleasable(HtmlNewTabPageSubfeature.nextStepsListWidget))
         case .nextStepsListAdvancedCardOrdering:
             Config(source: .disabled)
         case .crashCollectionLimitCallStackTreeDepth:

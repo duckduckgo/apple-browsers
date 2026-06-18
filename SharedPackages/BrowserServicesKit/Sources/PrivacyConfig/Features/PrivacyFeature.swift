@@ -40,7 +40,6 @@ public enum PrivacyFeature: String {
     case windowsWaitlist
     case windowsDownloadLink
     case incontextSignup
-    case newTabContinueSetUp
     case newTabSearchField
     case dbp
     case sync
@@ -594,9 +593,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
-
-    /// Controls whether the Next Steps List widget is enabled on New Tab Page
-    case nextStepsListWidget
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

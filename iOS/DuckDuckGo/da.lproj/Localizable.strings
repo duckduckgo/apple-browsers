@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datamængde";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Anbefales slået fra, så al din trafik går gennem VPN. Hvis du har problemer med funktioner som wi-fi-opkald, beskeder eller telefonsvarer, kan du prøve at aktivere det.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Udeluk Carrier Services";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Lad lokal trafik omgå VPN'en og oprette forbindelse til enheder på dit lokale netværk, f.eks. en printer.";
 

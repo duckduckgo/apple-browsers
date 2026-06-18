@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datamäärä";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Suositellaan pitämään pois päältä, jotta kaikki liikenteesi kulkee VPN:n kautta. Jos sinulla on ongelmia ominaisuuksien, kuten Wi-Fi-puheluiden, viestien tai vastaajaviestien, kanssa, kokeile ottaa sen käyttöön.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Sulje pois operaattoripalvelut";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Anna paikallisen liikenteen ohittaa VPN ja muodosta yhteys lähiverkkosi laitteisiin, kuten tulostimeen.";
 

@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Όγκος δεδομένων";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Συνιστάται να απενεργοποιηθεί, ώστε το σύνολο της επισκεψιμότητάς σας να περνάει μέσω του VPN. Εάν αντιμετωπίζετε προβλήματα με λειτουργίες όπως κλήσεις Wi-Fi, ανταλλαγή μηνυμάτων ή φωνητικά μηνύματα, δοκιμάστε να προβείτε σε ενεργοποίηση.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Εξαίρεση Υπηρεσιών Παρόχου";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Επιτρέψτε στην τοπική κυκλοφορία να παρακάμψει το VPN και να συνδεθεί σε συσκευές του τοπικού δικτύου σας, όπως ένας εκτυπωτής.";
 

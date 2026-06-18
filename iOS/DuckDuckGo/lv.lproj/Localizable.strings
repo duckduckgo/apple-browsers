@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datu apjoms";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Ieteicams izslēgt, lai visa tava datplūsma notiktu caur VPN. Ja rodas problēmas ar tādām funkcijām kā Wi-Fi zvani, ziņojumapmaiņa vai balss pasts, mēģini to ieslēgt.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Neietvert operatora pakalpojumus";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Ļauj vietējai datplūsmai apiet VPN un izveidot savienojumu ar ierīcēm tavā vietējā tīklā, piemēram, printeri.";
 

@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Dátový objem";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Odporúča sa vypnúť, aby všetok prenos prechádzal cez VPN. Ak máš problémy s funkciami, ako sú volania cez Wi-Fi, správy alebo hlasová schránka, skús ich zapnúť.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Vylúčiť služby operátora";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Umožnite miestnej prevádzke obísť sieť VPN sieť a pripojiť sa k zariadeniam v miestnej sieti, napríklad k tlačiarni.";
 

@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Objem dat";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Doporučujeme vypnout, aby veškerý tvůj provoz procházel přes VPN. Pokud máš problémy s funkcemi, jako je volání přes Wi-Fi, zasílání zpráv nebo hlasová schránka, zkus toto nastavení zapnout.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Vyloučit služby operátorů";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Místní provoz může obejít síť VPN a připojit se k zařízením v místní síti, třeba k tiskárně.";
 
@@ -3155,7 +3161,7 @@
 "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "pokročilou soukromou AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "volitelného předplatného";
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "volitelné předplatné";
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
 "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";

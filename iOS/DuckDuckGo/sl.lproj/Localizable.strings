@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Podatkovni nosilec";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Priporočamo izklop, da ves vaš promet poteka prek VPN. Če imate težave s funkcijami, kot so klicanje prek Wi-Fi, sporočanje ali glasovna pošta, poskusite to funkcijo vklopiti.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Izključi storitve operaterja";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Omogočite, da lahko lokalni promet zaobide omrežje VPN in se poveže z napravami v lokalnem omrežju, na primer s tiskalnikom.";
 

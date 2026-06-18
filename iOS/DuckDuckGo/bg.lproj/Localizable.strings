@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Обем от данни";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Препоръчително е да е изключено, така че целият ти трафик да минава през VPN. Ако имаш проблеми с функции като обаждания през Wi-Fi, съобщения или гласова поща, опитай да го включиш.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Изключване на услугите на оператора";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Можете да разрешите локалният трафик да заобикаля VPN услугата при свързване с устройства в локалната мрежа, като принтер например.";
 

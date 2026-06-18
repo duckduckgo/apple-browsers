@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Volumen de datos";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Se recomienda desactivarlo para que todo tu tráfico pase por la VPN. Si tienes problemas con funciones como las llamadas por Wi-Fi, la mensajería o el buzón de voz, intenta encenderlo.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Excluir servicios de operadoras";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Deja que el tráfico local sortee la VPN y conéctate a dispositivos de tu red local, como una impresora.";
 

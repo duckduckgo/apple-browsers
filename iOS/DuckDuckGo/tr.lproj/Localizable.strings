@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Veri Hacmi";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "VPN'i kapatmanız önerilir, böylece tüm trafiğiniz VPN üzerinden geçer. Wi-Fi araması, mesajlaşma veya sesli mesaj gibi özelliklerle ilgili sorun yaşıyorsanız bu özelliği açmayı deneyin.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Operatör Hizmetlerini Hariç Tut";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Yerel trafiğin VPN'i atlamasını ve yerel ağınızdaki yazıcı gibi cihazlara bağlanmasını sağlayın.";
 

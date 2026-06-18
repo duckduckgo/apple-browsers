@@ -2956,6 +2956,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Duomenų kiekis";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Rekomenduojama išjungti, kad visas tavo srautas eitų per VPN. Jei kyla problemų dėl tokių funkcijų kaip „Wi-Fi“ skambučiai, pranešimai ar balso paštas, pabandyk šią parinktį įjungti.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Išskirti operatoriaus paslaugas";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Leiskite vietiniam srautui apeiti VPN ir prisijungti prie vietinio tinklo įrenginių, pavyzdžiui, spausdintuvo.";
 
@@ -3155,7 +3161,7 @@
 "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "pažangus, privatus dirbtinis intelektas";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "pasirenkama mokama prenumerata";
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "pasirenkomą mokamą prenumeratą";
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
 "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";

@@ -31,9 +31,6 @@ struct UnifiedSuggestionsHostConfig {
     let onSelectRow: (String) -> Void
     let onDeleteRow: (String) -> Void
     let onTapAheadRow: (String) -> Void
-    /// Imperative facts the container reads for Dax visibility.
-    let hasContent: () -> Bool
-    let hasSettled: (String) -> Bool
 }
 
 /// The lazily-attached duck.ai surface for the single-host path. Carries its own source +

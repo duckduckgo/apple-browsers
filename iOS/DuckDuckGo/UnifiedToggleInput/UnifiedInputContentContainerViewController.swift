@@ -590,12 +590,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 case .website(let url): self?.delegate?.unifiedInputEditingStateDidRequestTextUpdate(url.absoluteString)
                 default: break
                 }
-            },
-            hasContent: { [weak self] in
-                !(self?.switchBarHandler.currentText.isEmpty ?? true)
-            },
-            hasSettled: { [weak loader] query in
-                loader?.lastCompletedFetchQuery == query
             }
         )
 

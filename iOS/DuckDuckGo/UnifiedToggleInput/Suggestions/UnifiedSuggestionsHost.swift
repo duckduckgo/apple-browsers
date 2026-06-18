@@ -64,10 +64,6 @@ final class UnifiedSuggestionsHost {
 
     // MARK: - Container-facing surface
 
-    var hasContent: Bool { config.hasContent() }
-
-    func hasSettled(forQuery query: String) -> Bool { config.hasSettled(query) }
-
     func start<P: Publisher>(in containerView: UIView,
                              parentViewController: UIViewController,
                              textPublisher: P) where P.Output == String, P.Failure == Never {
@@ -159,9 +155,6 @@ final class UnifiedSuggestionsHost {
         // container's layoutIfNeeded) so the content glides inside the UTI's height animation.
         hostingController?.view.layoutIfNeeded()
     }
-
-    /// No-op: visibility gating is handled by `DaxLogoManager` + `hasContent`/`hasSettled`.
-    func setIsVisibleContent(_ visible: Bool) {}
 
     // MARK: - Duck.ai surface (single-host path)
 

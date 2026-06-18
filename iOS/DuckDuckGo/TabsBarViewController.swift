@@ -125,10 +125,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         return tabsModel?.currentIndex
     }
 
-    var maxItems: Int {
-        return Int(collectionView.frame.size.width / Constants.minItemWidth)
-    }
-
     static func createFromXib() -> TabsBarViewController {
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
         let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
@@ -314,14 +310,22 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     }
 
+    /// Scrolls the current tab the minimum amount needed to be fully visible (empty scroll position),
+    /// rather than pinning it to an edge. Used after a resize/rotation reflows the strip.
+    func scrollCurrentTabIntoView() {
+        DispatchQueue.main.async {
+            guard let currentIndex = self.currentIndex else { return }
+            self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
+        }
+    }
+
     private func recomputeItemSize() {
         let availableWidth = collectionView.frame.size.width
-        let maxVisibleItems = min(maxItems, tabsCount)
-        guard maxVisibleItems > 0 else { return }
+        guard tabsCount > 0 else { return }
 
         let itemWidth = Self.itemWidth(
             availableWidth: availableWidth,
-            visibleItems: maxVisibleItems,
+            visibleItems: tabsCount,
             minWidth: Constants.minItemWidth,
             maxWidth: maxItemWidth(forStripWidth: availableWidth)
         )

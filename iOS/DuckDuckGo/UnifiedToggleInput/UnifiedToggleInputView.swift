@@ -109,6 +109,9 @@ final class UnifiedToggleInputView: UIView {
         static let inlineDismissLeadingPadding: CGFloat = 8
         static let toggleInlineDismissSpacing: CGFloat = 8
         static let aiTabCollapsedAccessorySize: CGFloat = 48
+        static let aiTabExpandedInputTopPadding: CGFloat = 9
+        static let aiTabExpandedInputBottomPadding: CGFloat = 6
+        static let aiTabExpandedWithToggleInputTopPadding: CGFloat = 0
         /// Spacing between the inline dismiss button and the field's leading content when the
         /// dismiss shares the field row (toggle disabled, top position).
         static let fieldRowInlineDismissSpacing: CGFloat = 4
@@ -158,6 +161,10 @@ final class UnifiedToggleInputView: UIView {
             refreshInlineDismissPresentation()
         }
     }
+
+    /// True when hosted by a Duck.ai tab. Drives the extra 3pt the text view gets above and below
+    /// itself while expanded. Set before `applyCardLayout` so the layout pass reads the right value.
+    var isAITab: Bool = false
 
     var text: String {
         get { handler.currentText }
@@ -494,6 +501,7 @@ final class UnifiedToggleInputView: UIView {
     private var inlineDismissTopConstraint: NSLayoutConstraint!
     private var inlineDismissCenterYConstraint: NSLayoutConstraint!
     private var inputTopConstraint: NSLayoutConstraint!
+    private var inputBottomConstraint: NSLayoutConstraint!
     private var textEntryViewLeadingConstraint: NSLayoutConstraint!
     private var textEntryViewTrailingConstraint: NSLayoutConstraint!
     private var toolbarBottomConstraint: NSLayoutConstraint!
@@ -672,16 +680,33 @@ final class UnifiedToggleInputView: UIView {
         updateToggleDisabledSearchPadding(for: mode)
     }
 
+    /// Extra breathing room above the text view while expanded on a Duck.ai tab; zero otherwise.
+    private var inputExtraPaddingTop: CGFloat {
+        guard isExpanded && isAITab else {
+            return 0
+        }
+
+        return currentLayout.showsToggle ? Constants.aiTabExpandedWithToggleInputTopPadding : Constants.aiTabExpandedInputTopPadding
+    }
+
+    /// Extra breathing room below the text view while expanded on a Duck.ai tab; zero otherwise.
+    private var inputExtraPaddingBottom: CGFloat {
+        isExpanded && isAITab ? Constants.aiTabExpandedInputBottomPadding : 0
+    }
+
     private func updateToggleDisabledSearchPadding(for mode: TextEntryMode) {
         guard isExpanded else { return }
 
         let showToolbar = mode == .aiChat
+
         if isToggleEnabled {
-            inputTopConstraint.constant = Constants.toggleBottomPadding
+            inputTopConstraint.constant = Constants.toggleBottomPadding + inputExtraPaddingTop
+            inputBottomConstraint.constant = inputExtraPaddingBottom
             toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         } else {
             let padding = Constants.toggleDisabledSearchTopPadding
-            inputTopConstraint.constant = padding
+            inputTopConstraint.constant = padding + inputExtraPaddingTop
+            inputBottomConstraint.constant = 0
             toolbarBottomConstraint.constant = showToolbar ? 0 : -padding
         }
     }
@@ -828,7 +853,9 @@ final class UnifiedToggleInputView: UIView {
             // doesn't sit flush against the edges.
             let toggleDisabledPadding = expanded && !self.isToggleEnabled
             let toggleEnabledNoToolbarPadding = expanded && showsToggle && !showToolbar
-            self.inputTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledPadding ? Constants.toggleDisabledSearchTopPadding : 0)
+
+            self.inputTopConstraint.constant = ((expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledPadding ? Constants.toggleDisabledSearchTopPadding : 0)) + self.inputExtraPaddingTop
+            self.inputBottomConstraint.constant = self.inputExtraPaddingBottom
             self.toolbarBottomConstraint.constant = toggleDisabledPadding
                 ? (showToolbar ? 0 : -Constants.toggleDisabledSearchTopPadding)
                 : (toggleEnabledNoToolbarPadding ? -Constants.inputBottomPadding : 0)
@@ -1360,6 +1387,7 @@ private extension UnifiedToggleInputView {
         inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
+        inputBottomConstraint = pageContextChip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
         textEntryViewLeadingConstraint = textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor)
         textEntryViewTrailingConstraint = textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
@@ -1387,7 +1415,7 @@ private extension UnifiedToggleInputView {
             textEntryViewLeadingConstraint,
             textEntryViewTrailingConstraint,
 
-            pageContextChip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+            inputBottomConstraint,
             pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.cardHorizontalMargin),
             pageContextChipHeightConstraint,
 

@@ -257,6 +257,16 @@ jobs:
           brew install coreutils
         fi
 
+    - name: Prepare Maestro workspace config for the CLI
+      # The committed .maestro/config.yaml is in the legacy Robin format (appStartup/appSize keys),
+      # which the action-maestro-cloud action consumed itself. The bare `maestro cloud` CLI cannot
+      # parse those keys, so it treats config.yaml as a flow and aborts ("Config Field Required").
+      # Rewrite it (job-local, never committed) to a current-format workspace config that recurses
+      # into the flow subdirectories. ios_sync_end_to_end.yml still uses the old action in its own
+      # checkout, so this runtime rewrite does not affect it.
+      run: |
+        printf 'flows:\n  - "**"\n' > ../.maestro/config.yaml
+
     - name: Run Maestro tests (${{ matrix.device-name }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }})
       id: upload
       env:

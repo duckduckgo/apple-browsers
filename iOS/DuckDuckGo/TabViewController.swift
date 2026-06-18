@@ -755,6 +755,10 @@ class TabViewController: UIViewController {
         registerForAddressBarLocationNotifications()
         registerForAutofillNotifications()
 
+        if #available(iOS 18.4, *) {
+            registerForWebExtensionNotifications()
+        }
+
         if #available(iOS 16.4, *) {
             registerForInspectableWebViewNotifications()
         }
@@ -794,6 +798,27 @@ class TabViewController: UIViewController {
                                                 #selector(onAddressBarPositionChanged),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
                                                object: nil)
+    }
+
+    @available(iOS 18.4, *)
+    private func registerForWebExtensionNotifications() {
+        NotificationCenter.default
+            .publisher(for: .webExtensionAutoconsentDashboardStateRefresh)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                self?.handleWebExtensionDashboardStateRefresh(notification)
+            }
+            .store(in: &cancellables)
+    }
+
+    @available(iOS 18.4, *)
+    private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
+        guard let url = notification.userInfo?[AutoconsentNotification.UserInfoKeys.url] as? URL,
+              let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo else {
+            return
+        }
+
+        privacyInfo?.updateCookieConsentManagedForWebExtensionDashboardState(url: url, consentStatus: consentStatus)
     }
 
     @available(iOS 16.4, *)
@@ -3784,6 +3809,40 @@ extension TabViewController: AutoconsentUserScriptDelegate {
     
     func autoconsentUserScript(consentStatus: CookieConsentInfo) {
         privacyInfo?.cookieConsentManaged = consentStatus
+    }
+}
+
+
+@available(iOS 18.4, *)
+extension PrivacyInfo {
+    func updateCookieConsentManagedForWebExtensionDashboardState(url refreshURL: URL, consentStatus: ConsentStatusInfo) {
+        guard url.host == refreshURL.host,
+              normalizedPath(url.path) == normalizedPath(refreshURL.path) else {
+            return
+        }
+
+        cookieConsentManaged = consentStatus.toCookieConsentInfo()
+    }
+
+    private func normalizedPath(_ path: String) -> String {
+        path.isEmpty ? "/" : path
+    }
+}
+
+// MARK: - ConsentStatusInfo to CookieConsentInfo Conversion
+
+@available(iOS 18.4, *)
+extension ConsentStatusInfo {
+    func toCookieConsentInfo() -> CookieConsentInfo {
+        CookieConsentInfo(
+            consentManaged: consentManaged,
+            cosmetic: cosmetic,
+            optoutFailed: optoutFailed,
+            selftestFailed: selftestFailed,
+            consentReloadLoop: consentReloadLoop,
+            consentRule: consentRule,
+            consentHeuristicEnabled: consentHeuristicEnabled
+        )
     }
 }
 

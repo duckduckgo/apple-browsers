@@ -41,13 +41,4 @@ final class SwitchBarTextField: UITextField {
         guard !hasHiddenAncestor else { return false }
         return super.becomeFirstResponder()
     }
-
-    private var hasHiddenAncestor: Bool {
-        var view: UIView? = self
-        while let current = view {
-            if current.isHidden { return true }
-            view = current.superview
-        }
-        return false
-    }
 }

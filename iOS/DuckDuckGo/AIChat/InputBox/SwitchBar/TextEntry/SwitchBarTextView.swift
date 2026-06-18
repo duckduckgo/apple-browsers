@@ -40,7 +40,10 @@ final class SwitchBarTextView: UITextView {
         return super.becomeFirstResponder()
     }
 
-    private var hasHiddenAncestor: Bool {
+}
+
+extension UIView {
+    var hasHiddenAncestor: Bool {
         var view: UIView? = self
         while let current = view {
             if current.isHidden { return true }
@@ -48,5 +51,4 @@ final class SwitchBarTextView: UITextView {
         }
         return false
     }
-
 }

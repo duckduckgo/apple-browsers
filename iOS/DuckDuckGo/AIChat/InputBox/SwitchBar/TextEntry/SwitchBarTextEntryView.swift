@@ -468,7 +468,6 @@ class SwitchBarTextEntryView: UIView {
         textField.accessibilityIdentifier = useField ? "searchEntry" : nil
     }
 
-
     // Keeps in-flight color-transition overlays in sync so their captured text doesn't
     // composite over the new text mid-animation.
     private func setPlaceholderText(_ text: String) {

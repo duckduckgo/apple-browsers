@@ -103706,66 +103706,6 @@
         }
       }
     },
-    "subscription.upsell.popover.plus.features.pir.subtitle" : {
-      "comment" : "Subtitle for the Private Information Removal feature listed in the VPN Upsell popover",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "derzeit verfügbar auf Mac & Windows"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "currently available on Mac & Windows"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "actualmente disponible en Mac y Windows"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "actuellement disponible sur Mac et Windows"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "attualmente disponibile su Mac e Windows"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "nu beschikbaar op Mac en Windows"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "obecnie dostępna na komputerach Mac i Windows"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "atualmente disponível no Mac e no Windows"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "сейчас доступно на Mac и Windows"
-          }
-        }
-      }
-    },
     "subscription.upsell.popover.plus.features.pir.title" : {
       "comment" : "Title for the Private Information Removal feature listed in the VPN Upsell popover",
       "extractionState" : "extracted_with_value",

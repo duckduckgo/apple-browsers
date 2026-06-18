@@ -2269,7 +2269,6 @@ struct UserText {
     static let aiChatFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.ai.chat.title", value: "Chat privately with advanced AI models", comment: "Title for the AI chat feature listed in the VPN Upsell popover")
     static let identityTheftProtectionFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.identity.theft.protection.title", value: "Restore your identity if it's stolen", comment: "Title for the identity theft protection feature listed in the VPN Upsell popover")
     static let pirFeatureTitle = NSLocalizedString("subscription.upsell.popover.plus.features.pir.title", value: "Remove info from sites that sell it", comment: "Title for the Private Information Removal feature listed in the VPN Upsell popover")
-    static let pirFeatureSubtitle = NSLocalizedString("subscription.upsell.popover.plus.features.pir.subtitle", value: "currently available on Mac & Windows", comment: "Subtitle for the Private Information Removal feature listed in the VPN Upsell popover")
 
     // Mark: Sync Promo
     static let syncPromoBookmarksTitle = NSLocalizedString("sync.promo.bookmarks.title", value: "Sync & Back Up Your Bookmarks", comment: "Title for the Sync Promotion banner")

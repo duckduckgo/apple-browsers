@@ -892,6 +892,7 @@ extension Pixel {
         case webKitDidTerminate
         case webKitTerminationDidReloadCurrentTab
         case webKitDidTerminateDuringWarmup
+        case webContentProcessTerminated(reason: String)
 
         case webKitWarmupUnexpectedDidFinish
         case webKitWarmupUnexpectedDidTerminate
@@ -1680,6 +1681,7 @@ extension Pixel {
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
         case aiChatTabDidReloadAfterTermination
+        case aiChatWebContentProcessTerminated(reason: String)
 
         case aiChatReportMetricDecodeError
         case aiChatResponseStateDecodeError
@@ -2844,6 +2846,7 @@ extension Pixel.Event {
         case .webKitDidTerminate: return "m_d_wkt"
         case .webKitDidTerminateDuringWarmup: return "m_d_webkit-terminated-during-warmup"
         case .webKitTerminationDidReloadCurrentTab: return "m_d_wktct"
+        case .webContentProcessTerminated(let reason): return "m_tab_terminated_\(reason)"
 
         case .webKitWarmupUnexpectedDidFinish: return "m_d_webkit-warmup-unexpected-did-finish"
         case .webKitWarmupUnexpectedDidTerminate: return "m_d_webkit-warmup-unexpected-did-terminate"
@@ -3565,6 +3568,7 @@ extension Pixel.Event {
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"
         case .aiChatTabDidReloadAfterTermination: return "m_aichat_tab_did_reload_after_terminate"
+        case .aiChatWebContentProcessTerminated(let reason): return "m_aichat_tab_terminated_\(reason)"
 
         case .aiChatReportMetricDecodeError: return "m_aichat_report_metric_decode_error"
         case .aiChatResponseStateDecodeError: return "m_aichat_response_state_decode_error"

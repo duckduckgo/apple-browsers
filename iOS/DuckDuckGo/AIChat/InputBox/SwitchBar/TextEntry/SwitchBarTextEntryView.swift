@@ -63,16 +63,13 @@ class SwitchBarTextEntryView: UIView {
         static let minHeightAIChat: CGFloat = 56
         static let fontSize: CGFloat = 16
 
-        // Text container insets — vary by whether the toggle is enabled (see the `textTopInset` / `textBottomInset` computed properties).
-        static let textTopInsetToggleDisabled: CGFloat = 12
-        static let textTopInsetToggleEnabled: CGFloat = 17
-        static let textBottomInsetToggleDisabled: CGFloat = 12
-        static let textBottomInsetToggleEnabled: CGFloat = 17
+        // Text container insets
+        static let textTopInset: CGFloat = 12
+        static let textBottomInset: CGFloat = 12
         static let textHorizontalInset: CGFloat = 12
 
-        // Placeholder positioning — top offset varies by whether the toggle is enabled (see the `placeholderTopOffset` computed property).
-        static let placeholderTopOffsetToggleDisabled: CGFloat = 12
-        static let placeholderTopOffsetToggleEnabled: CGFloat = 17
+        // Placeholder positioning
+        static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
 
         // Increased buttons spacing
@@ -117,20 +114,6 @@ class SwitchBarTextEntryView: UIView {
         return .compact
     }
 
-    /// Text-container and placeholder insets differ by toggle state: when the toggle is enabled the
-    /// field uses a taller inset, when disabled a tighter one.
-    private var textTopInset: CGFloat {
-        isToggleEnabled ? Constants.textTopInsetToggleEnabled : Constants.textTopInsetToggleDisabled
-    }
-
-    private var textBottomInset: CGFloat {
-        isToggleEnabled ? Constants.textBottomInsetToggleEnabled : Constants.textBottomInsetToggleDisabled
-    }
-
-    private var placeholderTopOffset: CGFloat {
-        isToggleEnabled ? Constants.placeholderTopOffsetToggleEnabled : Constants.placeholderTopOffsetToggleDisabled
-    }
-
     private var currentMinHeight: CGFloat {
         if currentPose == .tallTopAlignedAIChat {
             return currentPose.minHeight
@@ -168,10 +151,6 @@ class SwitchBarTextEntryView: UIView {
 
     private var isUsingBottomBarIncreasedHeight: Bool {
         handler.isUsingExpandedBottomBarHeight
-    }
-
-    private var isToggleEnabled: Bool {
-        handler.isToggleEnabled
     }
 
     private var usesTopAlignedPlaceholder: Bool {
@@ -351,7 +330,7 @@ class SwitchBarTextEntryView: UIView {
 
         buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         buttonsTrailingConstraint?.isActive = true
-        let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: placeholderTopOffset)
+        let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
         let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
         self.placeholderTopConstraint = placeholderTopConstraint
         self.placeholderCenterYConstraint = placeholderCenterYConstraint
@@ -511,7 +490,6 @@ class SwitchBarTextEntryView: UIView {
         guard placeholderTopConstraint?.isActive != usesTopAlignedPlaceholder else { return }
 
         if usesTopAlignedPlaceholder {
-            placeholderTopConstraint?.constant = placeholderTopOffset
             placeholderCenterYConstraint?.isActive = false
             placeholderTopConstraint?.isActive = true
         } else {
@@ -542,9 +520,9 @@ class SwitchBarTextEntryView: UIView {
         let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
 
         textView.textContainerInset = UIEdgeInsets(
-            top: textTopInset,
+            top: Constants.textTopInset,
             left: Constants.textHorizontalInset,
-            bottom: textBottomInset,
+            bottom: Constants.textBottomInset,
             right: rightInset
         )
     }
@@ -641,10 +619,10 @@ class SwitchBarTextEntryView: UIView {
     /// Computes the min height for one line given current fonts/insets, using the larger of the text view or placeholder font.
     private func requiredHeightForSingleLineContent() -> CGFloat {
         let textLineHeight = (textView.font ?? UIFont.systemFont(ofSize: Constants.fontSize)).lineHeight
-        let textNeeded = textLineHeight + textTopInset + textBottomInset
+        let textNeeded = textLineHeight + Constants.textTopInset + Constants.textBottomInset
 
         let placeholderLineHeight = placeholderLabel.font.lineHeight
-        let placeholderNeeded = placeholderLineHeight + placeholderTopOffset + textBottomInset
+        let placeholderNeeded = placeholderLineHeight + Constants.placeholderTopOffset + Constants.textBottomInset
 
         return ceil(max(textNeeded, placeholderNeeded))
     }

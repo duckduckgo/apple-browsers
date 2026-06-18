@@ -332,13 +332,6 @@ public enum KeyboardBehavior: Equatable {
 
 public extension View {
 
-    // Linear-style backgrounds that fill the container width are positioned by the
-    // ZStack alignment rather than by a keyboard-driven offset, so keyboard adjustment
-    // is disabled for them (calculateImageOffset returns 0 via the .ignoreKeyboard guard).
-    private func keyboardBehavior(for backgroundType: ContextualOnboardingBackgroundType) -> KeyboardBehavior {
-        backgroundType.fillsContainerWidth ? .ignoreKeyboard : .adjustForKeyboard
-    }
-
     /// Applies a keyboard-aware background for new tab page onboarding dialogs.
     ///
     /// This modifier is designed for onboarding dialogs shown on the new tab page where
@@ -347,16 +340,19 @@ public extension View {
     ///
     /// The background appears immediately without entrance animation.
     ///
-    /// - Parameter backgroundType: The type of background illustration to display.
+    /// - Parameters:
+    ///   - backgroundType: The type of background illustration to display.
+    ///   - keyboardBehavior: How the background responds to keyboard appearance. Defaults to `.adjustForKeyboard`.
     func applyNewTabOnboardingBackground(
-        backgroundType: ContextualOnboardingBackgroundType
+        backgroundType: ContextualOnboardingBackgroundType,
+        keyboardBehavior: KeyboardBehavior = .adjustForKeyboard
     ) -> some View {
 #if os(iOS)
         self.modifier(
             OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
                 backgroundType: backgroundType,
                 imageOffsetY: 0,
-                keyboardBehavior: keyboardBehavior(for: backgroundType)
+                keyboardBehavior: keyboardBehavior
             )
         )
 #elseif os(macOS)

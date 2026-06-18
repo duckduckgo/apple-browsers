@@ -20234,7 +20234,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-clocks.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.1.0;
+				version = 1.0.6;
 			};
 		};
 		9FF521422BAA8FF300B9819B /* XCRemoteSwiftPackageReference "lottie-spm" */ = {

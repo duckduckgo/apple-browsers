@@ -310,12 +310,18 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     }
 
-    /// Scrolls the current tab the minimum amount needed to be fully visible (empty scroll position),
-    /// rather than pinning it to an edge. Used after a resize/rotation reflows the strip.
+    /// After a resize/rotation reflows the strip, nudge the current tab fully into view, but only if
+    /// it ended up partially clipped. If it's already fully visible there's nothing to do; if the
+    /// user had scrolled it entirely out of view, their scroll position is left untouched.
     func scrollCurrentTabIntoView() {
         DispatchQueue.main.async {
             guard let currentIndex = self.currentIndex else { return }
-            self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
+            let indexPath = IndexPath(row: currentIndex, section: 0)
+            guard let attributes = self.collectionView.layoutAttributesForItem(at: indexPath) else { return }
+            let visibleRect = CGRect(origin: self.collectionView.contentOffset, size: self.collectionView.bounds.size)
+            let isPartiallyClipped = visibleRect.intersects(attributes.frame) && !visibleRect.contains(attributes.frame)
+            guard isPartiallyClipped else { return }
+            self.collectionView.scrollToItem(at: indexPath, at: [], animated: true)
         }
     }
 

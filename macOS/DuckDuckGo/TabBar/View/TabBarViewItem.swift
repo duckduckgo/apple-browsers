@@ -290,7 +290,7 @@ final class TabBarItemCellView: NSView {
     }()
 
     private var mustLayoutCloseButton: Bool {
-        closeButtons.isShown || !widthStage.isCloseButtonHidden || NSApp.isCommandPressed
+        closeButton.isShown || !widthStage.isCloseButtonHidden || NSApp.isCommandPressed
     }
 
     convenience init() {

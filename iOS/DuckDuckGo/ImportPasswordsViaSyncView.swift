@@ -163,11 +163,15 @@ struct NumberBadge: View {
             .daxHeadline()
             .background(
                 Circle()
-                    .fill(colorScheme == .dark ? darkBulletColor : lightBulletColor)
+                    .fill(AppRebrand.isAppRebranded() ?
+                          Color(designSystemColor: .accentGlowSecondary)
+                          : colorScheme == .dark ? darkBulletColor : lightBulletColor)
                     .frame(width: 24, height: 24)
             )
             .frame(width: 10)
-            .foregroundColor(Color(designSystemColor: .accentPrimary))
+            .foregroundColor(AppRebrand.isAppRebranded() ?
+                             Color(designSystemColor: .accentTextPrimary)
+                             : Color(designSystemColor: .accentPrimary))
             .fixedSize()
             .padding(10)
     }

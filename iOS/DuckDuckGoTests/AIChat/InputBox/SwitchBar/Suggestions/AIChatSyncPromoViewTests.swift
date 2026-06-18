@@ -25,8 +25,8 @@ import XCTest
 final class AIChatSyncPromoViewTests: XCTestCase {
 
     func testAIChatSyncPromoViewSnapshots() {
-        assertImageSnapshot(
-            matching: AIChatSyncPromoView(onCTATap: {}, onCloseTap: {}),
+        assertImageSnapshots(
+            AIChatSyncPromoView_Previews.snapshots,
             size: .constrainedWidth
         )
     }

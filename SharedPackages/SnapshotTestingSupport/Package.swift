@@ -28,6 +28,10 @@ let package = Package(
     ],
     products: [
         .library(
+            name: "PreviewSnapshots",
+            targets: ["PreviewSnapshots"]
+        ),
+        .library(
             name: "SnapshotTestingSupport",
             targets: ["SnapshotTestingSupport"]
         ),
@@ -36,9 +40,11 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.2"),
     ],
     targets: [
+        .target(name: "PreviewSnapshots"),
         .target(
             name: "SnapshotTestingSupport",
             dependencies: [
+                "PreviewSnapshots",
                 .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
             ]

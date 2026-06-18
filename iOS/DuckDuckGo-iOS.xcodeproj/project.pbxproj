@@ -764,6 +764,7 @@
 		84E341A01E2F7EFB00BDBA6F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 84E3419E1E2F7EFB00BDBA6F /* LaunchScreen.storyboard */; };
 		84EFBCC92D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84EFBCC52D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift */; };
 		A7B000012F6A000100000001 /* SnapshotTestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A7B000032F6A000100000001 /* SnapshotTestingSupport */; };
+		A7B000082F6A000100000001 /* PreviewSnapshots in Frameworks */ = {isa = PBXBuildFile; productRef = A7B000092F6A000100000001 /* PreviewSnapshots */; };
 		85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85010501292FB1000033978F /* FireproofFaviconUpdater.swift */; };
 		85010504292FFB080033978F /* FireproofFaviconUpdaterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85010503292FFB080033978F /* FireproofFaviconUpdaterTests.swift */; };
 		85011867290028C400BDEE27 /* BookmarksDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8501186529001D6900BDEE27 /* BookmarksDatabase.swift */; };
@@ -5423,6 +5424,7 @@
 				BBD9C3972E9D73610060A6E8 /* SERPSettings in Frameworks */,
 				7B2CCBA52D11ABBA00FE5852 /* VPNWidgetSupport in Frameworks */,
 				F19B98672EAFA799000FF209 /* AttributedMetric in Frameworks */,
+				A7B000082F6A000100000001 /* PreviewSnapshots in Frameworks */,
 				4BC5E8632E174D5400391C19 /* DesignResourcesKit in Frameworks */,
 				9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */,
 				F143C2EB1E4A4CD400CFDE3A /* Core.framework in Frameworks */,
@@ -11824,6 +11826,7 @@
 				315E39642F86ABEE00D2289D /* DebugServer */,
 				3C12C8760D7AF6C888DAD36A /* AIChatDebugServer */,
 				5B7CA46A2FAE693000D69C83 /* ICSParser */,
+				A7B000092F6A000100000001 /* PreviewSnapshots */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -18662,6 +18665,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A7B000022F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */;
 			productName = SnapshotTestingSupport;
+		};
+		A7B000092F6A000100000001 /* PreviewSnapshots */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A7B000022F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */;
+			productName = PreviewSnapshots;
 		};
 		854D67922F6DDFCA008707A3 /* ScreenTimeDataCleaner */ = {
 			isa = XCSwiftPackageProductDependency;

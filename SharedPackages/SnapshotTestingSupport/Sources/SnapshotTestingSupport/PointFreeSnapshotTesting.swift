@@ -16,5 +16,6 @@
 //  limitations under the License.
 //
 
+@_exported import PreviewSnapshots
 @_exported import InlineSnapshotTesting
 @_exported import SnapshotTesting

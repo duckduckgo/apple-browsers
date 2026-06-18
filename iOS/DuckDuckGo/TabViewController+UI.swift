@@ -31,6 +31,7 @@ extension TabViewController {
         buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var transformed = incoming
             transformed.font = UIFont.daxButton()
+            transformed.kern = -0.23
             return transformed
         }
         errorActionButton.configuration = buttonConfiguration
@@ -58,6 +59,7 @@ extension TabViewController {
         buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var transformed = incoming
             transformed.font = UIFont.daxButton()
+            transformed.kern = -0.23
             return transformed
         }
         errorReportBrokenSiteButton.configuration = buttonConfiguration
@@ -183,14 +185,16 @@ extension TabViewController {
         errorContentStack.addArrangedSubview(labelsStack)
         errorContentStack.addArrangedSubview(errorActionButton)
         errorContentStack.addArrangedSubview(errorReportBrokenSiteButton)
+        errorContentStack.setCustomSpacing(24, after: labelsStack)
+        errorContentStack.setCustomSpacing(8, after: errorActionButton)
 
         let safeArea = rootView.safeAreaLayoutGuide
         let minHeightConstraint = error.heightAnchor.constraint(equalToConstant: 400)
         minHeightConstraint.priority = .defaultLow
-        let errorActionButtonFullWidthConstraint = errorActionButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
-        errorActionButtonFullWidthConstraint.priority = .defaultHigh
-        let errorReportBrokenSiteButtonFullWidthConstraint = errorReportBrokenSiteButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
-        errorReportBrokenSiteButtonFullWidthConstraint.priority = .defaultHigh
+        let errorActionButtonFillWidthConstraint = errorActionButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
+        errorActionButtonFillWidthConstraint.priority = .defaultHigh
+        let errorReportBrokenSiteButtonFillWidthConstraint = errorReportBrokenSiteButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
+        errorReportBrokenSiteButtonFillWidthConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
             error.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
             error.centerYAnchor.constraint(equalTo: safeArea.centerYAnchor),
@@ -205,10 +209,18 @@ extension TabViewController {
             errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: error.bottomAnchor),
 
             labelsStack.widthAnchor.constraint(lessThanOrEqualToConstant: 400),
-            errorActionButtonFullWidthConstraint,
-            errorActionButton.widthAnchor.constraint(lessThanOrEqualToConstant: 640),
-            errorReportBrokenSiteButtonFullWidthConstraint,
-            errorReportBrokenSiteButton.widthAnchor.constraint(lessThanOrEqualToConstant: 640)
+            errorActionButtonFillWidthConstraint,
+            errorActionButton.widthAnchor.constraint(lessThanOrEqualToConstant: 360),
+            errorActionButton.heightAnchor.constraint(equalToConstant: 50),
+            errorActionButton.centerXAnchor.constraint(equalTo: errorContentStack.centerXAnchor),
+            errorActionButton.leadingAnchor.constraint(greaterThanOrEqualTo: error.leadingAnchor, constant: 32),
+            errorActionButton.trailingAnchor.constraint(lessThanOrEqualTo: error.trailingAnchor, constant: -32),
+            errorReportBrokenSiteButtonFillWidthConstraint,
+            errorReportBrokenSiteButton.widthAnchor.constraint(lessThanOrEqualToConstant: 360),
+            errorReportBrokenSiteButton.heightAnchor.constraint(equalToConstant: 50),
+            errorReportBrokenSiteButton.centerXAnchor.constraint(equalTo: errorContentStack.centerXAnchor),
+            errorReportBrokenSiteButton.leadingAnchor.constraint(greaterThanOrEqualTo: error.leadingAnchor, constant: 32),
+            errorReportBrokenSiteButton.trailingAnchor.constraint(lessThanOrEqualTo: error.trailingAnchor, constant: -32)
         ])
     }
 

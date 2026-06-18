@@ -18,7 +18,7 @@ on:
         - internal
         - both
       test_tags:
-        description: "Comma-separated suite tags to run in isolation (e.g. 'release' or 'release,privacy'). Leave empty to run all suites.
+        description: "Comma-separated suite tags to run in isolation (e.g. 'release' or 'release,privacy'). Leave empty to run all suites."
         type: string
         default: ""
         required: false

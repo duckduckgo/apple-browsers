@@ -5321,6 +5321,10 @@ extension MainViewController: TabDelegate {
     var deferredReadingUnreadCount: Int {
         deferredReadingController.unreadCount
     }
+
+    var deferredReadingItemCount: Int {
+        deferredReadingController.items.count
+    }
     
     func tab(_ tab: TabViewController,
              didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration,

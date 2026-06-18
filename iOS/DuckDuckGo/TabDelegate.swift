@@ -164,6 +164,7 @@ protocol TabDelegate: AnyObject {
     
     var isAIChatEnabled: Bool { get }
     var deferredReadingIsEnabled: Bool { get }
+    var deferredReadingItemCount: Int { get }
     var deferredReadingUnreadCount: Int { get }
 
     var isEmailProtectionSignedIn: Bool { get }
@@ -195,6 +196,8 @@ extension TabDelegate {
     func tabDidRequestDeferredReading(tab: TabViewController) {}
 
     var deferredReadingIsEnabled: Bool { false }
+
+    var deferredReadingItemCount: Int { 0 }
 
     var deferredReadingUnreadCount: Int { 0 }
 

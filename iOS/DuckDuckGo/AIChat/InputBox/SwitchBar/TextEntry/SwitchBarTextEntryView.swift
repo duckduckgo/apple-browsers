@@ -189,7 +189,6 @@ class SwitchBarTextEntryView: UIView {
 
     func updatePoseForCurrentState() {
         updatePlaceholderVerticalAlignment()
-        adjustTextViewContentInset()
         updateTextViewHeight()
     }
 

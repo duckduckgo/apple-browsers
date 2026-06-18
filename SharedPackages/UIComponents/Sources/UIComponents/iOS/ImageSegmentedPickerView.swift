@@ -285,6 +285,8 @@ private struct CustomPickerButton: View {
                     Text(text)
                         .font(configuration.font)
                         .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
             .contentShape(Rectangle())

@@ -41,7 +41,7 @@ extension OnboardingView {
         static let disabledPrimaryActionOpacity: CGFloat = 0.3
 
         // MARK: Sizing
-        static let pickerWidth: CGFloat = 216
+        static let pickerMaxWidth: CGFloat = 320
         static let pickerHeight: CGFloat = 38
         static let pickerContainerHeight: CGFloat = 40
         static let pickerVerticalPadding: CGFloat = 0.5
@@ -187,9 +187,9 @@ extension OnboardingView {
                     if content.isToggleVisible {
                         // Search / Duck.ai segmented control.
                         ImageSegmentedPickerView(viewModel: pickerViewModel)
-                            .frame(width: Metrics.pickerWidth, height: Metrics.pickerHeight)
+                            .frame(maxWidth: Metrics.pickerMaxWidth, minHeight: Metrics.pickerHeight, maxHeight: Metrics.pickerHeight)
                             .padding(.vertical, Metrics.pickerVerticalPadding)
-                            .frame(width: Metrics.pickerWidth, height: Metrics.pickerContainerHeight)
+                            .frame(maxWidth: Metrics.pickerMaxWidth, minHeight: Metrics.pickerContainerHeight, maxHeight: Metrics.pickerContainerHeight)
                         // Drive content mode (Search vs Duck.ai) from user picker selection.
                             .onChange(of: pickerViewModel.selectedItem) { [reduceMotion] selectedItem in
                                 let newMode: DuckAIQueryMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
@@ -529,15 +529,17 @@ private struct OnboardingQueryField: UIViewRepresentable {
         context.coordinator.placeholderLabel.text = placeholder
         context.coordinator.placeholderLabel.font = textView.font
         context.coordinator.placeholderLabel.textColor = UIColor(designSystemColor: .textTertiary)
+        context.coordinator.placeholderLabel.numberOfLines = isSingleLine ? 1 : 0
         context.coordinator.placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
         textView.addSubview(context.coordinator.placeholderLabel)
 
-        let placeholderTopConstraint = context.coordinator.placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor)
+        let placeholderTopConstraint = context.coordinator.placeholderLabel.topAnchor.constraint(equalTo: textView.frameLayoutGuide.topAnchor)
         context.coordinator.placeholderTopConstraint = placeholderTopConstraint
 
         NSLayoutConstraint.activate([
-            context.coordinator.placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor),
+            context.coordinator.placeholderLabel.leadingAnchor.constraint(equalTo: textView.frameLayoutGuide.leadingAnchor),
+            context.coordinator.placeholderLabel.trailingAnchor.constraint(equalTo: textView.frameLayoutGuide.trailingAnchor),
             placeholderTopConstraint
         ])
 
@@ -556,6 +558,7 @@ private struct OnboardingQueryField: UIViewRepresentable {
 
         if context.coordinator.isSingleLine != isSingleLine {
             context.coordinator.isSingleLine = isSingleLine
+            context.coordinator.placeholderLabel.numberOfLines = isSingleLine ? 1 : 0
             applyModeConfiguration(to: textView, isSingleLine: isSingleLine, context: context)
         }
 

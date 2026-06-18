@@ -3016,6 +3016,12 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Skratky";
 
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Odporúčané v sieťach, ktorým nedôveruješ, napr. verejné wifi v hoteloch, baroch atď. Ak máš problémy s funkciami (ako napríklad CarPlay, AirDrop, atď.) alebo s pripojením k iným zariadeniam, skús ich vypnúť. [Viac informácií](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Prísne smerovanie";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potvrdiť";
 

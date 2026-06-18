@@ -3016,6 +3016,12 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Saīsnes";
 
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Ieteicama tīklos, kuriem neuzticies, piemēram, publiskam Wi-Fi viesnīcās, bāros u.tml. Ja rodas problēmas ar funkcijām (piemēram, CarPlay, AirDrop u.c.) vai savienošanos ar citām ierīcēm, pamēģini to izslēgt. [Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Stingra maršrutēšana";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Apstiprināt";
 

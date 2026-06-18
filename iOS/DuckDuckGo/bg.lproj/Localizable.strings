@@ -3016,6 +3016,12 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Бързи Връзки";
 
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Препоръчва се в мрежи, на които не се доверяваш, напр. обществен Wi-Fi в хотели, барове и др. Ако имаш проблеми с функции (като CarPlay, AirDrop и др.) или свързването с други устройства, опитай да го изключиш. [Научи повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Стриктна маршрутизация";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Потвърдете";
 

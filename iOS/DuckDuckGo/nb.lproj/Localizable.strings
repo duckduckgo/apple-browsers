@@ -3016,6 +3016,12 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Snarveier";
 
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Anbefales på nettverk du ikke stoler på, f.eks. offentlig wifi på hoteller, barer osv. Hvis du har problemer med funksjoner (som CarPlay, AirDrop osv.) eller med å koble til andre enheter, kan du prøve å slå det av. [Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Streng ruting";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bekreft";
 

@@ -141,7 +141,7 @@ final class FaviconImageCache: FaviconImageCaching {
                 await MainActor.run {
                     NotificationCenter.default.postFaviconCacheUpdated(
                         faviconURLs: Set(favicons.map(\.url)),
-                        documentURLs: Set(favicons.map(\.documentUrl))
+                        documentURLs: favicons.map(\.documentUrl)
                     )
                 }
             } catch {
@@ -440,7 +440,7 @@ final class EagerFaviconImageCache: FaviconImageCaching {
                 await MainActor.run {
                     NotificationCenter.default.postFaviconCacheUpdated(
                         faviconURLs: Set(favicons.map(\.url)),
-                        documentURLs: Set(favicons.map(\.documentUrl))
+                        documentURLs: favicons.map(\.documentUrl)
                     )
                 }
             } catch {

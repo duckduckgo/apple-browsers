@@ -91,7 +91,7 @@ struct FaviconView: View {
                 refreshImage()
                 return
             }
-            if (url.map(update.documentURLs.contains) == true) || ((url?.host).map(update.hosts.contains) == true) {
+            if (url?.host).map(update.hosts.contains) == true {
                 refreshImage()
             }
         }

@@ -813,7 +813,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         pairingV2PeerKind = nil
     }
 
-    func sendSetupEndedAbandonedPixel(setupRole: SyncSetupRole, reason: String?) {
+    private func sendSetupEndedAbandonedPixel(setupRole: SyncSetupRole, reason: String?) {
         let parameters: [String: String]
         switch setupRole {
         case .receiver(let setupSource, _):

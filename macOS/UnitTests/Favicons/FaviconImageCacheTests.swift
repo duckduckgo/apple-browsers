@@ -176,4 +176,92 @@ final class FaviconImageCacheTests: XCTestCase {
         XCTAssertNotNil(cached?.image)
         XCTAssertEqual(store.loadImageCallCount, 1)
     }
+
+    // MARK: undecodable image cleanup
+
+    @MainActor
+    func testAsyncGetDeletesFaviconWhenImageIsUndecodable() async throws {
+        let store = FaviconStoringMock()
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        let identifier = UUID()
+        store.metadataToLoad = [
+            FaviconMetadata(identifier: identifier, url: faviconURL, documentUrl: documentURL, dateCreated: Date(), relation: .favicon)
+        ]
+        // The stored bitmap can't be decoded: loadImage reports a decoding failure.
+        store.loadImageError = FaviconStore.FaviconStoreError.imageDecodingFailed
+
+        let cache = FaviconImageCache(faviconStoring: store)
+        try await cache.load()
+
+        let favicon = await cache.resolvedFavicon(faviconUrl: faviconURL)
+        XCTAssertNil(favicon?.image)
+
+        // The corrupt favicon is deleted from the store...
+        XCTAssertEqual(store.removeFaviconsCallCount, 1)
+        XCTAssertEqual(store.removedFaviconIdentifiers, [identifier])
+        // ...and dropped from the in-memory caches so it's no longer served.
+        XCTAssertNil(cache.get(faviconUrl: faviconURL))
+    }
+
+    @MainActor
+    func testLazyCacheColdPathDeletesFaviconWhenImageIsUndecodable() async throws {
+        let store = FaviconStoringMock()
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        let identifier = UUID()
+        store.metadataToLoad = [
+            FaviconMetadata(identifier: identifier, url: faviconURL, documentUrl: documentURL, dateCreated: Date(), relation: .favicon)
+        ]
+        // The stored bitmap can't be decoded: loadImage reports a decoding failure.
+        store.loadImageError = FaviconStore.FaviconStoreError.imageDecodingFailed
+
+        let cache = FaviconImageCache(faviconStoring: store)
+        try await cache.load()
+
+        // The off-main removal is asynchronous; wait until the store delete is invoked.
+        let removed = expectation(description: "corrupt favicon removed from store")
+        store.removeFaviconsExpectation = removed
+
+        // Cold path kicks off the off-main decode, which fails.
+        let cold = cache.get(faviconUrl: faviconURL)
+        XCTAssertNil(cold?.image)
+
+        await fulfillment(of: [removed], timeout: 5)
+
+        // The corrupt favicon is deleted from the store...
+        XCTAssertEqual(store.removeFaviconsCallCount, 1)
+        XCTAssertEqual(store.removedFaviconIdentifiers, [identifier])
+        // ...and dropped from the in-memory caches so it's no longer served.
+        XCTAssertNil(cache.get(faviconUrl: faviconURL))
+    }
+
+    @MainActor
+    func testAsyncGetKeepsFaviconWhenImageLoadFailsWithTransientError() async throws {
+        let store = FaviconStoringMock()
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        let identifier = UUID()
+        store.metadataToLoad = [
+            FaviconMetadata(identifier: identifier, url: faviconURL, documentUrl: documentURL, dateCreated: Date(), relation: .favicon)
+        ]
+        // A transient failure (e.g. a Core Data fetch error), NOT an undecodable image.
+        store.loadImageError = TestError.transientFailure
+
+        let cache = FaviconImageCache(faviconStoring: store)
+        try await cache.load()
+
+        let favicon = await cache.resolvedFavicon(faviconUrl: faviconURL)
+        XCTAssertNil(favicon?.image)
+
+        // A transient failure must NOT delete the favicon...
+        XCTAssertEqual(store.removeFaviconsCallCount, 0)
+        XCTAssertTrue(store.removedFaviconIdentifiers.isEmpty)
+        // ...and the favicon must still be served from the cache.
+        XCTAssertNotNil(cache.get(faviconUrl: faviconURL))
+    }
+}
+
+private enum TestError: Error {
+    case transientFailure
 }

@@ -52,6 +52,10 @@ final class FaviconStore: FaviconStoring, Sendable {
     enum FaviconStoreError: Error {
         case notLoadedYet
         case savingFailed
+        /// The stored favicon bitmap could not be decoded (corrupt image data). This is
+        /// distinct from transient failures such as a Core Data fetch error, so callers
+        /// can safely drop the corrupt favicon while leaving recoverable failures alone.
+        case imageDecodingFailed
     }
 
     private let context: NSManagedObjectContext
@@ -132,20 +136,24 @@ final class FaviconStore: FaviconStoring, Sendable {
                 #keyPath(FaviconManagedObject.imageEncrypted)
             ]
 
+            // A Core Data fetch failure here is transient (e.g. an I/O error) and is
+            // rethrown as-is, so callers do NOT treat it as a corrupt favicon.
             let fetchResult: [FaviconManagedObject] = try context.fetch(fetchRequest)
 
             // If the saved bitmap is corrupt, AppKit raises an Objective-C
             // `NSInvalidUnarchiveOperationException` ("bad TIFF data") while unarchiving.
             // Swift's `try`/`try?` cannot catch Objective-C exceptions, so this would otherwise crash the app.
-            // `NSException.catch` bridges it to a Swift error; on failure we use a nil image, which the favicon system
-            // re-fetches on the next visit.
+            // `NSException.catch` bridges it to a Swift error, which we surface as
+            // `FaviconStoreError.imageDecodingFailed` so the caller can delete the corrupt
+            // favicon and have the favicon system re-fetch it on the next visit.
             do {
                 return try NSException.catch {
                     fetchResult.first?.imageEncrypted as? NSImage
                 }
             } catch {
+                Logger.favicons.error("Decoding stored favicon image failed for \(identifier.uuidString): \(error.localizedDescription)")
                 PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
-                throw error
+                throw FaviconStoreError.imageDecodingFailed
             }
         }
     }

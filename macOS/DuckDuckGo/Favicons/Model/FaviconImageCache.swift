@@ -181,7 +181,15 @@ final class FaviconImageCache: FaviconImageCaching {
         let image: NSImage?
         do {
             image = try await storing.loadImage(for: metadata.identifier)
+        } catch FaviconStore.FaviconStoreError.imageDecodingFailed {
+            Logger.favicons.error("Favicon image undecodable for \(metadata.url.absoluteString); removing corrupt favicon")
+            // The stored image is corrupt and can't be decoded. Drop it from the store
+            // and caches so the favicon is re-fetched on the next visit.
+            await removeUndecodableFavicon(metadata)
+            return Favicon(metadata: metadata, image: nil)
         } catch {
+            // A transient failure (e.g. a Core Data fetch error). Keep the favicon and
+            // serve a nil image for now; it will be retried on a later request.
             Logger.favicons.error("Loading favicon image failed for \(metadata.url.absoluteString): \(error.localizedDescription)")
             image = nil
         }
@@ -203,7 +211,18 @@ final class FaviconImageCache: FaviconImageCaching {
             let image: NSImage?
             do {
                 image = try await storing.loadImage(for: metadata.identifier)
+            } catch FaviconStore.FaviconStoreError.imageDecodingFailed {
+                Logger.favicons.error("Favicon image undecodable for \(metadata.url.absoluteString); removing corrupt favicon")
+                _ = await MainActor.run {
+                    self.inFlightImageLoads.remove(faviconUrl)
+                }
+                // The stored image is corrupt and can't be decoded. Drop it from the store
+                // and caches so the favicon is re-fetched on the next visit.
+                await self.removeUndecodableFavicon(metadata)
+                return
             } catch {
+                // A transient failure (e.g. a Core Data fetch error). Keep the favicon; it
+                // will be retried on a later request.
                 Logger.favicons.error("Loading favicon image failed for \(metadata.url.absoluteString): \(error.localizedDescription)")
                 image = nil
             }
@@ -219,6 +238,19 @@ final class FaviconImageCache: FaviconImageCaching {
                 )
             }
         }
+    }
+
+    /// Removes a favicon whose stored image could not be decoded.
+    ///
+    /// A decode failure means the persisted bitmap is corrupt, so we drop it from the
+    /// in-memory caches and the store; the favicon is re-fetched on the next visit. No
+    /// `.faviconCacheUpdated` is posted — an undecodable favicon isn't showing in the UI,
+    /// so there's nothing for consumers to re-resolve.
+    @MainActor
+    private func removeUndecodableFavicon(_ metadata: FaviconMetadata) async {
+        entries[metadata.url] = nil
+        imageCache.removeObject(forKey: metadata.url as NSURL)
+        await removeFaviconsFromStore([metadata])
     }
 
     func getFavicons(with urls: some Sequence<URL>) -> [Favicon]? {

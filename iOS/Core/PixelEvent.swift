@@ -1115,6 +1115,7 @@ extension Pixel {
         case syncSetupManualCodeEnteredSuccess
         case syncSetupManualCodeEnteredFailed
         case syncSetupEndedAbandoned
+        case syncSetupEndedFailed
         case syncSetupEndedSuccessful
         case syncSetupDeepLinkFlowStarted
         case syncSetupDeepLinkFlowSuccess
@@ -3084,6 +3085,7 @@ extension Pixel.Event {
         case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
         case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
         case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
+        case .syncSetupEndedFailed: return "sync_setup_ended_failed"
         case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
         case .syncSetupDeepLinkFlowStarted: return "sync_setup_deep_link_flow_started"
         case .syncSetupDeepLinkFlowSuccess: return "sync_setup_deep_link_flow_success"

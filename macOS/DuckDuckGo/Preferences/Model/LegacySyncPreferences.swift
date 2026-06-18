@@ -1074,7 +1074,7 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .thirdPartyAccountAlreadyUpgraded)
         case .syncCancelledFromOtherDevice:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .syncCancelledFromOtherDevice)
-        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
+        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey, .accountUpgradeFailed, .protocolError:
             handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
         case .failedToCreateAccount:
             handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))

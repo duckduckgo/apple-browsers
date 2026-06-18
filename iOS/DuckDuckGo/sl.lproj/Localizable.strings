@@ -376,6 +376,15 @@
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Obstoječi zaznamki ne bodo podvojeni.";
 
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "Razumem";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "S tem računom ste že povezani na obeh napravah.";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "Že seznanjeno";
+
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Nekateri zaznamki so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
 
@@ -384,6 +393,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "Sinhronizacija zaznamkov je zaustavljena";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "Razumem";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "Poskusite znova.";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "Sinhronizacija je bila preklicana iz vaše druge naprave.";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "V brskalniku obiščite duck.ai, pojdite v Nastavitve, nato v razdelku »Sync & Backup« izberite »Vklopi« in nato »Sinhroniziraj z drugo napravo«.";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Optično preberite to kodo iz nastavitev Duck.ai.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Nekatera gesla so napačno oblikovana ali predolga in niso bila sinhronizirana.";
@@ -408,6 +432,9 @@
 
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Nastavitve sinhronizacije";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "Sinhronizirajte to napravo iz že povezanega brskalnika DuckDuckGo na drugi napravi.";
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sinhronizacija je bila začasno zaustavljena. Če želite še naprej sinhronizirati to napravo, znova vzpostavite povezavo z uporabo druge naprave ali obnovitvene kode.";
@@ -441,6 +468,12 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sinhronizacija in varnostno kopiranje sta začasno nedostopna.";
+
+/* Description for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-description" = "Ta koda ni podprta v trenutni različici aplikacije.";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "Posodobite brskalnik DuckDuckGo in poskusite znova.";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "Napaka pri sinhronizaciji";
@@ -4566,6 +4599,21 @@
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Želite izbrisati podatke strežnika?";
+
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "Sinhroniziraj zdaj";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "Naprava »%@« bo lahko dostopala do tvojih sinhroniziranih gesel DuckDuckGo, podatkov za samodejno izpolnjevanje in klepetov Duck.ai.";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "Naprava »%@« bo lahko dostopala do vaših sinhroniziranih klepetov Duck.ai.";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "Želite sinhronizirati novo napravo?";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "druga naprava";
 
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Račun ni potreben. Celovito šifriranje pomeni, da nihče (niti mi) razen vas ne more videti vaših zaznamkov.";

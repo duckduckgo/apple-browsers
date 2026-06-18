@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Získat DuckDuckGo na jiných zařízeních";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Tvoje data už se zase synchronizují!";
+"device.synced.sheet.title" = "Zařízení synchronizováno!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Hotovo";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Nastavení synchronizace a zálohování";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Příprava na synchronizaci";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Obnovit synchronizovaná data";
@@ -389,13 +392,13 @@
 "sync.simplified.scan-or-view-code.connecting.status" = "Připojování...";
 
 /* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Nechte na obou zařízeních otevřenou „Sync & Backup“";
+"sync.simplified.scan-or-view-code.connecting.title" = "Nech na obou zařízeních otevřenou sekci „Sync & Backup“";
 
 /* Message of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Po vložení kódu se vraťte k tomuto zařízení.";
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Po vložení kódu se vrať zpět na toto zařízení.";
 
 /* Title of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Vložte kód do svého druhého zařízení";
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Vlož kód do svého druhého zařízení.";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Ruční zadání kódu";
@@ -425,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Synchronizace tvých zařízení";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Naskenuj nebo vlož tento kód na druhém zařízení";
+"sync.simplified.scan-or-view-code.view.instructions" = "Naskenuj nebo vlož tento kód na druhém zařízení.";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Synchronizace a zálohování";

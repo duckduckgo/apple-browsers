@@ -422,7 +422,8 @@ class SwitchBarTextEntryView: UIView {
             // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
-            buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor)
+            // Pin to the top row so the button stays top-right when the field grows multi-line.
+            buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: Constants.minHeight / 2)
         ])
     }
 

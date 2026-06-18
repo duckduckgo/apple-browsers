@@ -35,10 +35,6 @@ struct FocusedDaxLogoView: View {
     /// (shorter) bar collapse instead of being cut off.
     var animationSpeed: Double = 1
 
-    /// The morph asset's natural duration (16 frames @ 30fps), so callers can derive a speed that fits
-    /// a target window.
-    static let transitionDuration: TimeInterval = 16.0 / 30.0
-
     private var animationName: String {
         colorScheme == .dark ? Constant.darkAnimationName : Constant.animationName
     }

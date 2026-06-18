@@ -1024,17 +1024,9 @@ extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
 
-        // Pick the NTP handoff from the host's *current* content (not the NTP's, which can differ
-        // mid-typing). The focused logo and favorites already rest at the NTP's anchors by construction.
-        // - logo→logo: morph the focused logo to the Dax mark so it lands identical to the NTP logo
-        //   (no crossfade flash). The NTP logo is hidden during the collapse so the static Dax behind
-        //   it doesn't ghost the morph; revealed at completion.
-        // - favorites→favorites: the embedded copy animates; the real NTP favorites are hidden and
-        //   revealed at completion to avoid a double image.
-        // - everything else (list, or logo over NTP favorites): fade the focused content out over the
-        //   still-visible NTP content.
-        // The NTP's `isShowingLogo`/`isShowingFavorites` are unreliable here — the focus handoff
-        // hid one of them for the session — so key off its *resting* content instead.
+        // Pick the NTP handoff from the host's current content + the NTP's *resting* content (the NTP's
+        // `isShowing*` is unreliable here — the focus handoff hid one for the session). logo→logo morphs
+        // to the Dax mark, favorites→favorites hands the embedded copy over, everything else fades.
         let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent

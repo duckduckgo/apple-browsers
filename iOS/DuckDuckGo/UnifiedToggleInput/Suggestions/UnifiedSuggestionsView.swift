@@ -158,9 +158,9 @@ struct UnifiedSuggestionsView: View {
                 restingAt: UIScreen.main.bounds.midY - Metrics.logoScreenCenterOffset,
                 topChromeBottom: frame.minY + viewModel.chromeInsetTop,
                 barTop: frame.maxY)
-            FocusedDaxLogoView(progress: viewModel.logoProgress,
-                               morph: viewModel.animatesLogoMorph,
-                               animationSpeed: viewModel.logoMorphSpeed)
+            FocusedDaxLogoView(progress: viewModel.logoModel.progress,
+                               morph: viewModel.logoModel.morphs,
+                               animationSpeed: viewModel.logoModel.morphSpeed)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .offset(y: targetCenterY - frame.midY)
                 // Match the bar's toggle animation (0.2s easeInOut) so the logo settles with it, not after.

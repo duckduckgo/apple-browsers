@@ -33,21 +33,18 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         case none
         /// Fade the transient content (logo / suggestion list) out as the NTP content takes over.
         case fadeOut
-        /// Logo→logo: morph the logo back to the Dax mark and keep it visible. `speed` (>1) fits the
-        /// bar's collapse so the morph isn't cut off.
-        case morphHome(speed: Double)
+        /// Logo→logo: morph the logo back to the Dax mark and keep it visible (the morph itself lives
+        /// in `logoModel`).
+        case morphHome
     }
 
     @Published private(set) var content: UnifiedSuggestionsContentKind = .logo
     /// Reactive sync-promo visibility (driven by the container) so show/hide animates with the
     /// content crossfade instead of snapping via a root-view rebuild.
     @Published var showsSyncPromo = false
-    /// Morph target for the empty-state logo: 0 = Dax/search, 1 = Duck.ai. Derived from the mode.
-    @Published private(set) var logoProgress: CGFloat = 0
-    /// Whether to animate the Dax↔Duck.ai morph. Only when the logo shows in *both* the previous and
-    /// next state (logo→logo). When it appears from / disappears to favorites or a list, it just
-    /// crossfades at the target mark instead of morphing.
-    @Published private(set) var animatesLogoMorph = false
+    /// The empty-state logo's presentation (mark / morph / speed). All its transitions are pure, so
+    /// the morph rules are tested in `FocusedLogoModelTests`.
+    @Published private(set) var logoModel = FocusedLogoModel()
     /// How the content collapses back to the omnibar. Cleared on the next focus.
     @Published private(set) var dismissBehavior: DismissBehavior = .none
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
@@ -83,16 +80,15 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
                 // tail). Unfreezes on the next focus.
                 guard self.dismissBehavior != .fadeOut else { return }
                 let resolved = UnifiedSuggestionsContentResolver.resolve(inputs, previous: self.content)
-                // Morph only for an in-session logo→logo change. The first resolve after a focus snaps
-                // (the logo was hidden in between), so a refocus never replays a stale morph.
-                self.animatesLogoMorph = self.content == .logo && resolved == .logo && self.hasResolvedSinceActivation
-                self.hasResolvedSinceActivation = true
-                // Only retarget the morph while the logo is (or is becoming) visible. When it's hiding to
-                // favorites/list, keep its current mark so it fades out as-is instead of snapping to the
-                // other mode's mark first. While morphing home, the target is pinned to the Dax mark.
-                if resolved == .logo, !self.isMorphingHome {
-                    self.logoProgress = inputs.mode == .aiChat ? 1 : 0
+                // Morph-home pins the logo to the Dax mark for the collapse; all other resolves drive its
+                // mark/morph (see `FocusedLogoModel`).
+                if self.dismissBehavior != .morphHome {
+                    self.logoModel.update(wasLogo: self.content == .logo,
+                                          isLogo: resolved == .logo,
+                                          isDuckAI: inputs.mode == .aiChat,
+                                          isFirstSinceActivation: !self.hasResolvedSinceActivation)
                 }
+                self.hasResolvedSinceActivation = true
                 self.apply(resolved, modeChanged: inputs.mode != self.previousMode)
                 self.previousMode = inputs.mode
             }
@@ -128,17 +124,6 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// True while the focused content is fading out (drives `DismissFade`).
     var isFadingOut: Bool { dismissBehavior == .fadeOut }
 
-    /// Playback rate for the morph; >1 during a morph-home dismiss so it fits the bar's collapse.
-    var logoMorphSpeed: Double {
-        if case .morphHome(let speed) = dismissBehavior { return speed }
-        return 1
-    }
-
-    private var isMorphingHome: Bool {
-        if case .morphHome = dismissBehavior { return true }
-        return false
-    }
-
     /// List/logo→favorites (or recents) collapse: fade the focused content out.
     func beginDismissFade() {
         dismissBehavior = .fadeOut
@@ -147,9 +132,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// Logo→logo collapse: morph the focused logo back to the Dax mark and keep it visible (no fade).
     /// `collapseDuration` is the bar's collapse time — the morph is sped up to finish within it.
     func morphLogoHomeForDismiss(matching collapseDuration: TimeInterval) {
-        dismissBehavior = .morphHome(speed: max(1, FocusedDaxLogoView.transitionDuration / collapseDuration))
-        animatesLogoMorph = true
-        logoProgress = 0
+        dismissBehavior = .morphHome
+        logoModel.morphToDax(matching: collapseDuration)
     }
 
     /// Resets the dismiss state on each focus so the next session starts clean. The reset snaps

@@ -229,7 +229,7 @@ extension OnboardingRebranding.OnboardingStyles {
         /// Height cap for linear-flow backgrounds reused in the contextual NTP dialog.
         /// Matches `chooseSearchExperienceDialog.backgroundMaxHeight` from the linear onboarding
         /// and is sized to show the illustration correctly at each form factor.
-        private static let maxHeightLinearStyleNTPAssets = MetricBuilder<CGFloat?>(default: 296).iPad(294).iPhone(landscape: 200)
+        private static let maxHeightLinearStyleNTPAssets = MetricBuilder<CGFloat?>(default: 296).iPad(294).iPhone(landscape: 294)
         #endif
 
         /// Pushes the modifier's frame past the home-indicator inset on iPhone landscape so

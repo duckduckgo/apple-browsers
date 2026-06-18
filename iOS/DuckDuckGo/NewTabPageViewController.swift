@@ -607,9 +607,9 @@ extension NewTabPageViewController {
         }
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
 
-        // The EoJ ("High five!") dialog always surfaces with an active address bar so the user
+        // The EoJ ("High five!") dialog surfaces with an active address bar in UTI mode so the user
         // can immediately try a search — matching the linearOnboardingCompleted path's behaviour.
-        if spec == .final {
+        if spec == .final, UnifiedToggleInputFeature().isAvailable {
             chromeDelegate?.omniBar.beginEditing(animated: true)
         }
 

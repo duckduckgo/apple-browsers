@@ -3161,7 +3161,7 @@
 "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "geavanceerde, privé AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "optioneel betaald abonnement";
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "Optioneel betaald abonnement.";
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
 "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
@@ -3293,7 +3293,7 @@
 "onboarding.subscription.promo.message" = "DuckDuckGo heeft ook een beveiligde %1$@, verkrijgbaar met een %2$@.";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "optioneel betaald abonnement";
+"onboarding.subscription.promo.message.optional-subscription-bold" = "Optioneel betaald abonnement.";
 
 /* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
 "onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + nog 2 premium beveiligingen";

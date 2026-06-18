@@ -106,6 +106,11 @@ final class UnifiedSuggestionsHost {
     var isShowingLogo: Bool { viewModel.isShowingLogo }
     var isShowingFavorites: Bool { viewModel.isShowingFavorites }
 
+    /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
+    func setIsFireTab(_ value: Bool) {
+        viewModel.isFireTab = value
+    }
+
     /// List/logo→favorites collapse: fade the focused content out as the NTP content takes over.
     func beginDismissFade() {
         viewModel.beginDismissFade()

@@ -36,7 +36,29 @@ struct UnifiedSuggestionsView: View {
         ZStack(alignment: .bottom) {
             contentArea
             logoLayer
+            fireLayer
         }
+    }
+
+    /// On a fire tab every non-typing state is the full fire screen — favorites/recents/logo never show
+    /// there (matching the legacy behaviour, where the opaque fire screen covered them). Only the typing
+    /// suggestion list shows; otherwise this opaque layer covers the content beneath.
+    @ViewBuilder
+    private var fireLayer: some View {
+        if viewModel.isFireTab {
+            let showsFire = !isTypingList
+            FireModeEmptyStateView(type: .tab)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(designSystemColor: .background))
+                .opacity(showsFire ? 1 : 0)
+                .allowsHitTesting(showsFire)
+        }
+    }
+
+    /// The active typing states (the search / duck.ai suggestion lists); recents and empty states aren't.
+    private var isTypingList: Bool {
+        if case .list(let kind) = viewModel.content { return kind == .search || kind == .duckAI }
+        return false
     }
 
     private var contentArea: some View {
@@ -127,7 +149,8 @@ struct UnifiedSuggestionsView: View {
                 .animation(.easeInOut(duration: 0.2), value: targetCenterY)
                 // Show/hide is instant (matches the favorites overlay) so the logo doesn't linger over
                 // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.
-                .opacity(isShowingLogo ? 1 : 0)
+                // Suppressed on fire tabs — the fire empty state takes the `.logo` slot there.
+                .opacity(isShowingLogo && !viewModel.isFireTab ? 1 : 0)
                 .animation(nil, value: isShowingLogo)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.

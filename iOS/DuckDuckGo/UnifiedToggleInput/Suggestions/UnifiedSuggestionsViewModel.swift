@@ -44,6 +44,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     @Published private(set) var logoModel = FocusedLogoModel()
     /// How the content collapses back to the omnibar. Cleared on the next focus.
     @Published private(set) var dismissBehavior: DismissBehavior = .none
+    /// On a fire tab the empty state is the fire screen, not the Dax logo. Set by the container.
+    @Published var isFireTab = false
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
     /// moves in the same pass, and only when the chrome is actually close (never in Search).

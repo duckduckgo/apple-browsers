@@ -160,7 +160,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
-        self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
+        // The fire empty state is now rendered by the SwiftUI host (`FireModeEmptyStateView`), so the
+        // manager is always the (suppressed) morph logo here — never the fire content. It stays only for
+        // Architecture A; the UTI path no longer renders through it.
+        self.daxLogoManager = DaxLogoManager(isFireTab: false)
         self.daxLogoManager.usesLottieTransition = true
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
@@ -239,20 +242,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func refreshFireMode(fireMode: Bool) {
-        rebuildDaxLogoManager(isFireTab: fireMode)
+        // The fire empty state is a SwiftUI host content state now — just flip the flag; no manager rebuild.
+        unifiedSuggestionsHost?.setIsFireTab(fireMode)
         rebuildDuckAISuggestionsCoordinator()
-    }
-
-    private func rebuildDaxLogoManager(isFireTab: Bool) {
-        daxLogoManager.tearDown()
-        daxLogoManager = DaxLogoManager(isFireTab: isFireTab)
-        daxLogoManager.usesLottieTransition = true
-        // Replay cached forcedHidden so rebuilds don't silently un-hide the dax logo / fire empty state.
-        daxLogoManager.setForcedHidden(isDaxLogoForcedHidden)
-        guard isViewLoaded else { return }
-        installDaxLogoView()
-        applyRequestedContentInset()
-        updateDaxVisibility()
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
@@ -272,6 +264,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         isContentActive = active
         markNeedsVisibleRefresh()
         if active {
+            unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
             unifiedSuggestionsHost?.prepareForActivation()
             // Re-resolve now (synchronously, before the host is shown) so the prior session's stale
             // content isn't flashed. Runs after `prepareForActivation` clears the dismiss freeze.
@@ -629,6 +622,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // The top offset rides the container constraint (UIKit glide); the hosting view keeps no
         // top safe-area inset of its own.
         host.setAdditionalTopInset(0)
+        host.setIsFireTab(switchBarHandler.isFireTab)
         updateSingleHostTopOffset()
         unifiedSuggestionsHost = host
         updatePinnedChrome()
@@ -866,42 +860,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             markNeedsVisibleRefresh()
             return
         }
-
-        let hasFavorites: Bool
-        let hasRemoteMessages: Bool
-        if let deps = suggestionTrayDependencies {
-            hasFavorites = !deps.favoritesViewModel.favorites.isEmpty
-            hasRemoteMessages = !deps.newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
-        } else {
-            hasFavorites = false
-            hasRemoteMessages = false
-        }
-
-        let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
-        let text = switchBarHandler.currentText
-        let searchState = UnifiedSuggestionsInputsMerger.SearchState(hasFavorites: hasFavorites, hasMessages: hasRemoteMessages)
-        let duckAIState = duckAIStateRelay.value
-
-        // The dax derives from the SAME resolver that decides content: a side shows its logo exactly
-        // when it resolves to `.logo`. Resolving both modes keeps the swipe-morph's two empty states
-        // available; landscape suppresses both.
-        func resolvesToLogo(_ mode: TextEntryMode) -> Bool {
-            let inputs = UnifiedSuggestionsInputsMerger.merge(
-                mode: mode,
-                text: text,
-                hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText,
-                search: searchState,
-                duckAI: duckAIState)
-            return UnifiedSuggestionsContentResolver.resolve(inputs, previous: nil) == .logo
-        }
-
-        // The focused Dax logo is now rendered by FocusedDaxLogoView inside the SwiftUI host. Suppress
-        // the manager's Dax logo on the UTI path so we never get two; the fire empty-state still uses it.
-        let swiftUILogoHandlesDax = !switchBarHandler.isFireTab
-        let isHomeDaxVisible = !swiftUILogoHandlesDax && !isHorizontallyCompactLayoutEnabled && resolvesToLogo(.search)
-        let isAIDaxVisible = !swiftUILogoHandlesDax && !isHorizontallyCompactLayoutEnabled && resolvesToLogo(.aiChat)
-
-        daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible, committedMode: switchBarHandler.currentToggleState)
+        // The focused empty state — Dax/Duck.ai logo AND the fire screen — renders in the SwiftUI host
+        // now, so the manager stays hidden on the UTI path (it remains only for Architecture A).
+        daxLogoManager.updateVisibility(isHomeDaxVisible: false, isAIDaxVisible: false, committedMode: switchBarHandler.currentToggleState)
         daxLogoManager.setEscapeHatchBaseOffset(daxVerticalOffset(hasEscapeHatch: escapeHatchModel != nil))
         updateSyncPromo()
     }

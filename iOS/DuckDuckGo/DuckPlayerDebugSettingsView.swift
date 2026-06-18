@@ -21,6 +21,7 @@
 import SwiftUI
 import Core
 import DuckUI
+import DesignResourcesKit
 
 /// A debug settings view for DuckPlayer that provides options to reset and manage DuckPlayer-specific settings.
 struct DuckPlayerDebugSettingsView: View {
@@ -49,6 +50,24 @@ struct DuckPlayerDebugSettingsView: View {
                     resetEntryPillSettings()
                 } label: {
                     Text("Reset Pill Dismiss Count")
+                }
+            }
+
+            Section(header: Text("Previews")) {
+                NavigationLink("Entry Pill") {
+                    DuckPlayerEntryPillView(viewModel: DuckPlayerEntryPillViewModel(onOpen: {}))
+                        .frame(height: 300)
+                        .padding(.bottom, 300)
+                    .navigationTitle("Entry Pill")
+                    .navigationBarTitleDisplayMode(.inline)
+                }
+                NavigationLink("Welcome Pill") {
+                    DuckPlayerWelcomePillView(viewModel: DuckPlayerWelcomePillViewModel(onOpen: {}, onClose: {}))
+                        .padding()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(designSystemColor: .background))
+                        .navigationTitle("Welcome Pill")
+                        .navigationBarTitleDisplayMode(.inline)
                 }
             }
         }

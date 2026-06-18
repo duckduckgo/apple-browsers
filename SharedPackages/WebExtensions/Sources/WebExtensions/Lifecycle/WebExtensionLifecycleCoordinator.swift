@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 /// Serializes every web-extension lifecycle operation (load, sync, reload, unload) through a single
 /// FIFO async chain so exactly one runs at a time. This prevents `WebExtensionManager`'s
@@ -29,6 +30,7 @@ public final class WebExtensionLifecycleCoordinator {
 
     private let manager: WebExtensionManaging
     private let enabledTypesProvider: @MainActor () -> Set<DuckDuckGoWebExtensionType>
+    private let pixelFiring: WebExtensionPixelFiring
 
     /// Tail of the serial chain; each enqueued op awaits the previous one.
     private var tail: Task<Void, Never>?
@@ -44,9 +46,11 @@ public final class WebExtensionLifecycleCoordinator {
     private var generation = 0
 
     public init(manager: WebExtensionManaging,
-                enabledTypesProvider: @escaping @MainActor () -> Set<DuckDuckGoWebExtensionType>) {
+                enabledTypesProvider: @escaping @MainActor () -> Set<DuckDuckGoWebExtensionType>,
+                pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) {
         self.manager = manager
         self.enabledTypesProvider = enabledTypesProvider
+        self.pixelFiring = pixelFiring
     }
 
     /// Full load followed by embedded sync, as one indivisible chain entry. Launch / re-init.
@@ -58,6 +62,8 @@ public final class WebExtensionLifecycleCoordinator {
             await self.manager.loadInstalledExtensions()
             guard !Task.isCancelled else { return }
             await self.manager.syncEmbeddedExtensions(enabledTypes: self.enabledTypesProvider())
+            guard !Task.isCancelled else { return }
+            self.reportConsistency()
         }
         pendingLoadAndSync = task
         return task
@@ -70,6 +76,8 @@ public final class WebExtensionLifecycleCoordinator {
         let task = enqueue(clearPendingOnStart: { [weak self] in self?.pendingSync = nil }) { [weak self] in
             guard let self else { return }
             await self.manager.syncEmbeddedExtensions(enabledTypes: self.enabledTypesProvider())
+            guard !Task.isCancelled else { return }
+            self.reportConsistency()
         }
         pendingSync = task
         return task
@@ -79,7 +87,10 @@ public final class WebExtensionLifecycleCoordinator {
     @discardableResult
     public func load() -> Task<Void, Never> {
         enqueue { [weak self] in
-            await self?.manager.loadInstalledExtensions()
+            guard let self else { return }
+            await self.manager.loadInstalledExtensions()
+            guard !Task.isCancelled else { return }
+            self.reportConsistency()
         }
     }
 
@@ -87,7 +98,10 @@ public final class WebExtensionLifecycleCoordinator {
     @discardableResult
     public func reload() -> Task<Void, Never> {
         enqueue { [weak self] in
-            await self?.manager.reloadInstalledExtensions()
+            guard let self else { return }
+            await self.manager.reloadInstalledExtensions()
+            guard !Task.isCancelled else { return }
+            self.reportConsistency()
         }
     }
 
@@ -99,6 +113,13 @@ public final class WebExtensionLifecycleCoordinator {
         }
     }
 
+    /// Runs a standalone consistency check on the serial chain. For the debug menu, tests, and a
+    /// possible future periodic backstop.
+    @discardableResult
+    public func verify() -> Task<Void, Never> {
+        enqueue { [weak self] in self?.reportConsistency() }
+    }
+
     /// Cancels the in-flight tail and prevents every queued operation from running. Used on
     /// feature-flag disable / teardown.
     public func cancelAll() {
@@ -107,6 +128,26 @@ public final class WebExtensionLifecycleCoordinator {
         tail = nil
         pendingSync = nil
         pendingLoadAndSync = nil
+    }
+
+    /// Compares enabled embedded types against loaded ones and fires pixels. Runs on the chain.
+    private func reportConsistency() {
+        let expected = enabledTypesProvider()
+        let loaded = manager.loadedEmbeddedExtensionTypes
+
+        Logger.webExtensions.debug("🩺 Web extension state check — expected: [\(expected.map(\.shortLabel).sorted().joined(separator: ", "), privacy: .public)], loaded: [\(loaded.map(\.shortLabel).sorted().joined(separator: ", "), privacy: .public)] — firing web_extension_state_checked")
+        pixelFiring.fire(.stateChecked)
+
+        for type in expected.subtracting(loaded) {
+            Logger.webExtensions.error("❌ Expected web extension not loaded: \(type.shortLabel, privacy: .public) — firing web_extension_*_not_loaded")
+            pixelFiring.fire(.expectedExtensionNotLoaded(type: type))
+        }
+
+        if expected.contains(.adBlockingExtension), manager.adBlockingScriptletsVersion() == nil {
+            let extensionLoaded = loaded.contains(.adBlockingExtension)
+            Logger.webExtensions.error("❌ Ad-blocking scriptlets not fetched (extensionLoaded: \(extensionLoaded, privacy: .public)) — firing web_extension_ad_blocking_scriptlets_not_fetched")
+            pixelFiring.fire(.adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded))
+        }
     }
 
     // MARK: - Serial chain

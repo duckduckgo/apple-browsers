@@ -34,6 +34,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case getAiChats = "omnibar_getAiChats"
         case openAiChat = "omnibar_openAiChat"
         case viewAllAIChats = "omnibar_viewAllAIChats"
+        case getOpenTabs = "omnibar_getOpenTabs"
+        case getTabContent = "omnibar_getTabContent"
     }
 
     private let configProvider: NewTabPageOmnibarConfigProviding
@@ -41,18 +43,21 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private let aiChatsProvider: NewTabPageOmnibarAiChatsProviding
     private let modelsProvider: NewTabPageOmnibarModelsProviding?
     private let actionHandler: NewTabPageOmnibarActionsHandling
+    private let tabsProvider: NewTabPageOmnibarTabsProviding
     private var cancellables = Set<AnyCancellable>()
 
     public init(configProvider: NewTabPageOmnibarConfigProviding,
                 suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
                 aiChatsProvider: NewTabPageOmnibarAiChatsProviding,
                 modelsProvider: NewTabPageOmnibarModelsProviding? = nil,
-                actionHandler: NewTabPageOmnibarActionsHandling) {
+                actionHandler: NewTabPageOmnibarActionsHandling,
+                tabsProvider: NewTabPageOmnibarTabsProviding) {
         self.configProvider = configProvider
         self.suggestionsProvider = suggestionsProvider
         self.aiChatsProvider = aiChatsProvider
         self.modelsProvider = modelsProvider
         self.actionHandler = actionHandler
+        self.tabsProvider = tabsProvider
         super.init()
 
         Publishers.MergeMany(
@@ -63,7 +68,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.selectedModelIdPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.selectedReasoningEffortPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isVoiceChatAccessEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.showAskAiSuggestionPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.showAskAiSuggestionPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.isAttachTabsEnabledPublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -92,7 +98,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.submitChat.rawValue: { [weak self] in try await self?.submitChat(params: $0, original: $1) },
             MessageName.getAiChats.rawValue: { [weak self] in try await self?.getAiChats(params: $0, original: $1) },
             MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) },
-            MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) }
+            MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) },
+            MessageName.getOpenTabs.rawValue: { [weak self] in try await self?.getOpenTabs(params: $0, original: $1) },
+            MessageName.getTabContent.rawValue: { [weak self] in try await self?.getTabContent(params: $0, original: $1) }
         ])
     }
 
@@ -113,7 +121,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(aiModelSections),
-            selectedReasoningEffort: configProvider.selectedReasoningEffort
+            selectedReasoningEffort: configProvider.selectedReasoningEffort,
+            enableAttachTabs: configProvider.isAttachTabsEnabled
         )
     }
 
@@ -186,7 +195,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(modelsProvider?.lastFetchedSections),
-            selectedReasoningEffort: configProvider.selectedReasoningEffort
+            selectedReasoningEffort: configProvider.selectedReasoningEffort,
+            enableAttachTabs: configProvider.isAttachTabsEnabled
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -209,7 +219,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
                         isEnabled: item.isEnabled,
                         supportsImageUpload: item.supportsImageUpload,
                         supportedTools: item.supportedTools,
-                        supportedReasoningEffort: []
+                        supportedReasoningEffort: [],
+                        supportedFileTypes: item.supportedFileTypes
                     )
                 }
             )
@@ -250,9 +261,24 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             images: action.images,
             mode: action.mode,
             toolChoice: action.toolChoice,
-            reasoningEffort: reasoningEffortForSubmission(action: action)
+            reasoningEffort: reasoningEffortForSubmission(action: action),
+            pageContexts: action.pageContext,
+            files: action.files
         )
         return nil
+    }
+
+    @MainActor
+    private func getOpenTabs(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        return NewTabPageDataModel.OmnibarGetOpenTabsResponse(tabs: await tabsProvider.openTabs(requestingWebView: original.webView))
+    }
+
+    @MainActor
+    private func getTabContent(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: NewTabPageDataModel.OmnibarGetTabContentRequest = DecodableHelper.decode(from: params) else {
+            return NewTabPageDataModel.OmnibarGetTabContentResponse(pageContext: nil)
+        }
+        return NewTabPageDataModel.OmnibarGetTabContentResponse(pageContext: await tabsProvider.tabContent(tabId: request.tabId, requestingWebView: original.webView))
     }
 
     /// Returns the reasoning effort to attach to this submission, or `nil` if the feature is

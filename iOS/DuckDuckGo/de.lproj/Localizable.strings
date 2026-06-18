@@ -358,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Mit Sync & Backup kannst du geräteübergreifend auf deine Chats zugreifen.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Ton, Länge und Verhalten festlegen";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Antworten anpassen";
 
@@ -2659,11 +2662,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Neu laden";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Zoom zurücksetzen";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Auswählen";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Alle Tabs anzeigen";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Heranzoomen";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Herauszoomen";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Zuletzt verarbeitet: %@";

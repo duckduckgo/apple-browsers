@@ -358,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Pasiek savo pokalbius visuose įrenginiuose – naudok „Sync & Backup“.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Nustatykite toną, ilgį ir elgseną";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tinkinti atsakymus";
 
@@ -2659,11 +2662,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Įkelti iš naujo";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Atstatyti mastelį";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Pasirinkti";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Rodyti visus skirtukus";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Didinti";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Mažinti";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Paskutinį kartą apdorota: %@";

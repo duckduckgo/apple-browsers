@@ -117,11 +117,17 @@ public struct SyncAccount: Codable, Sendable {
 }
 
 public struct RegisteredDevice: Codable, Sendable {
-
     public let id: String
     public let name: String
     public let type: String
+    public let credentialId: String?
 
+    public init(id: String, name: String, type: String, credentialId: String? = nil) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.credentialId = credentialId
+    }
 }
 
 public struct AccountCreationKeys {
@@ -164,6 +170,7 @@ public struct PairingInfo {
 
     enum Keys {
         static let code = "code"
+        static let pairingV2Code = "code2"
         static let deviceName = "deviceName"
     }
 
@@ -178,15 +185,7 @@ public struct PairingInfo {
         guard let fragment = URLComponents(url: url, resolvingAgainstBaseURL: false)?.fragment else {
             return nil
         }
-        let params = fragment
-            .split(separator: "&")
-            .compactMap { part -> (String, String)? in
-                let keyValue = part.split(separator: "=", maxSplits: 1).map(String.init)
-                guard keyValue.count == 2 else { return nil }
-                return (keyValue[0], keyValue[1].removingPercentEncoding ?? keyValue[1])
-            }
-
-        let dict = Dictionary(uniqueKeysWithValues: params)
+        let dict = Self.fragmentParameters(from: fragment)
         guard let code = dict[Keys.code], let deviceName = dict[Keys.deviceName] else {
             return nil
         }
@@ -216,8 +215,29 @@ public struct PairingInfo {
         return urlComponents?.url ?? url
     }
 
+    public static func isPairingV2URL(_ url: URL) -> Bool {
+        guard Self.isPairing(url: url),
+              let fragment = URLComponents(url: url, resolvingAgainstBaseURL: false)?.fragment else {
+            return false
+        }
+
+        return Self.fragmentParameters(from: fragment)[Keys.pairingV2Code] != nil
+    }
+
     private static func isPairing(url: URL) -> Bool {
         url.pathComponents.contains("sync") && url.pathComponents.last == "pairing" && url.isPart(ofDomain: "duckduckgo.com")
+    }
+
+    private static func fragmentParameters(from fragment: String) -> [String: String] {
+        let params = fragment
+            .split(separator: "&")
+            .compactMap { part -> (String, String)? in
+                let keyValue = part.split(separator: "=", maxSplits: 1).map(String.init)
+                guard keyValue.count == 2 else { return nil }
+                return (keyValue[0], keyValue[1].removingPercentEncoding ?? keyValue[1])
+            }
+
+        return Dictionary(uniqueKeysWithValues: params)
     }
 
     private static func restoreBase64(from base64URLCode: String) -> String {
@@ -233,9 +253,9 @@ public struct PairingInfo {
 
 // MARK: - Scoped Access Credentials
 
-enum SyncCredentialID {
-    static let defaultCredential = "ddg"
-    static let thirdParty = "3party"
+public enum SyncCredentialID {
+    public static let defaultCredential = "ddg"
+    public static let thirdParty = "3party"
 }
 
 // AccessCredential is decoded from API responses using JSONDecoder.snakeCaseKeys. The server key

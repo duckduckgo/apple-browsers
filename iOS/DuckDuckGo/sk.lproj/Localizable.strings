@@ -358,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Pristupuj k svojim chatom zo všetkých zariadení pomocou funkcie Sync & Backup.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Nastav tón, dĺžku a správanie";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prispôsobiť odpovede";
 
@@ -2659,11 +2662,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Znovu načítať";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Obnoviť priblíženie";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Vybrať";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Zobraziť všetky karty";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Priblížiť";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Zmenšiť";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Naposledy spracované: %@";

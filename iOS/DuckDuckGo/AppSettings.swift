@@ -159,3 +159,19 @@ protocol OnboardingDebugAppSettings {
     /// Sets the `OnboardingFlowType` for  DEBUG/ALPHA builds. Used `OnboardingManager.configureOnboardingFlow(from:)`
     var onboardingFlowType: OnboardingFlowType? { get set }
 }
+
+// MARK: - AppSettings + ad-blocking rollout defaults
+
+extension AppSettings {
+
+    /// Applies the Duck Player defaults dictated by the ad-blocking defaults rollout for a
+    /// newly-onboarded user (Duck Player off) when `rolloutActive` is true. Invoked from every iOS
+    /// onboarding-completion path (normal completion/skip and the automation/UI-test bypass).
+    /// Disables both the classic (iPad) and native (iPhone) settings so the active one is off
+    /// regardless of device or the native-UI feature flag.
+    func applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: Bool) {
+        guard rolloutActive else { return }
+        duckPlayerMode = .disabled
+        duckPlayerNativeYoutubeMode = .never
+    }
+}

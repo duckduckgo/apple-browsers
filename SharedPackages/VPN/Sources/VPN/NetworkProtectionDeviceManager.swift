@@ -360,6 +360,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
 
         peerConfiguration.allowedIPs = [IPAddressRange(from: "0.0.0.0/0")!, IPAddressRange(from: "::/0")!]
         peerConfiguration.endpoint = serverEndpoint
+        peerConfiguration.persistentKeepAlive = 25
 
         return peerConfiguration
     }

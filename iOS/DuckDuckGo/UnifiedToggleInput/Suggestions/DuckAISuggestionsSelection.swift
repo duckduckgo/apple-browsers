@@ -25,4 +25,6 @@ enum DuckAISuggestionsSelection: Equatable {
     case chat(AIChatSuggestion)
     case url(Suggestion)
     case searchDuckDuckGo(String)
+    /// The "View all chats" row that opens the native chat history page.
+    case viewAllChats
 }

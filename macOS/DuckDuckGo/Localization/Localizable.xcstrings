@@ -104186,6 +104186,306 @@
         }
       }
     },
+    "sync.pairing-v2.confirmation.action" : {
+      "comment" : "Caption for a button to confirm sync setup with another device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt synchronisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync Now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser maintenant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza adesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nu synchroniseren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj teraz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar agora"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать"
+          }
+        }
+      }
+    },
+    "sync.pairing-v2.confirmation.ddg.message" : {
+      "comment" : "Message for the dialog to confirm sync setup with another DuckDuckGo device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%@“ kann auf deine synchronisierten DuckDuckGo-Passwörter, Autofill-Daten und Duck.ai-Chats zugreifen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"%@\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» podrá acceder a tus contraseñas sincronizadas de DuckDuckGo, a los datos de autocompletado y a los chats de Duck.ai."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "« %@ » pourra accéder à vos mots de passe DuckDuckGo synchronisés, à vos données de remplissage automatique et à vos conversations Duck.ai."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" potrà accedere alle tue password DuckDuckGo sincronizzate, ai dati di compilazione automatica e alle chat di Duck.ai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" krijgt toegang tot je gesynchroniseerde DuckDuckGo-wachtwoorden, gegevens voor automatisch invullen en Duck.ai-chats."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%@” będzie mieć dostęp do zsynchronizowanych haseł DuckDuckGo, danych automatycznego uzupełniania i czatów Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" poderá aceder às tuas palavras-passe sincronizadas do DuckDuckGo, aos dados de preenchimento automático e aos chats do Duck.ai."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» сможет получить доступ к синхронизированным паролям DuckDuckGo, данным автозаполнения и чатам Duck.ai."
+          }
+        }
+      }
+    },
+    "sync.pairing-v2.confirmation.third-party.message" : {
+      "comment" : "Message for the dialog to confirm sync setup with a third-party device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%@“ kann auf deine synchronisierten Duck.ai-Chats zugreifen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"%@\" will be able to access your synced Duck.ai chats."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» podrá acceder a tus chats sincronizados de Duck.ai."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "« %@ » pourra accéder à vos conversations Duck.ai synchronisées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" potrà accedere alle tue chat sincronizzate di Duck.ai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" krijgt toegang tot je gesynchroniseerde Duck.ai-chats."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%@” będzie mieć dostęp do zsynchronizowanych danych Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" poderá aceder aos teus chats sincronizados no Duck.ai."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» сможет получить доступ к вашим синхронизированным чатам Duck.ai."
+          }
+        }
+      }
+    },
+    "sync.pairing-v2.confirmation.title" : {
+      "comment" : "Title of the dialog to confirm sync setup with another device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues Gerät synchronisieren?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync new device?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Sincronizar nuevo dispositivo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser un nouvel appareil ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizzare nuovo dispositivo?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw apparaat synchroniseren?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizować nowe urządzenie?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar novo dispositivo?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать новое устройство?"
+          }
+        }
+      }
+    },
+    "sync.pairing-v2.unknown-peer-name" : {
+      "comment" : "Fallback device name for confirmation dialogs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "das andere Gerät"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the other device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "el otro dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l'autre appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l'altro dispositivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "het andere apparaat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "drugiego urządzenia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "o outro dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "другое устройство"
+          }
+        }
+      }
+    },
     "sync.promo.autofill.title" : {
       "comment" : "Title for the Sync Promotion banner",
       "extractionState" : "extracted_with_value",

@@ -272,7 +272,7 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
                                                    defaultLabel: rolloutDefaultsActive ? "true" : "false")
         duckPlayerModeItem.title = title(for: "duckPlayerMode",
                                          value: duckPlayerModeLabel(for: UserDefaults.standard.object(forKey: Self.duckPlayerModeDefaultsKey) as? Bool),
-                                         defaultLabel: rolloutDefaultsActive ? ".disabled" : ".alwaysAsk")
+                                         defaultLabel: ".alwaysAsk")
         analyticsItem.title = "youTubeAnalyticsEnabled: \(string(for: settings.youTubeAnalyticsEnabled))"
         disclosureItem.title = "shouldHideDisclosure: \(string(for: settings.shouldHideYouTubeAdBlockingDisclosure))"
         unavailableNoticeItem.title = "Unavailable notice shown: \(string(for: settings.youTubeAdBlockUnavailableNoticeShown))"

@@ -358,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Få tillgång till dina chattar på alla dina enheter med Sync & Backup.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Ställ in ton, längd och beteende";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Anpassa svar";
 
@@ -2659,11 +2662,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Ladda om";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Återställ zoom";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Välj";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Visa alla flikar";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Zooma in";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Zooma ut";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Senast bearbetad: %@";

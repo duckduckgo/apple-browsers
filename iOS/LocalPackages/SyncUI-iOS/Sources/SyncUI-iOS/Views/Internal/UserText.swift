@@ -123,7 +123,7 @@ public struct UserText {
     static let autoRestoreFooter = NSLocalizedString("auto.restore.toggle.footer", bundle: Bundle.module, value: "Restore your data automatically if you reinstall the app. Sync & Backup data can’t be recovered after 18 months of inactivity.", comment: "Auto-restore section - Footer")
 
     // Device Synced Sheet
-    static let deviceSyncedSheetTitle = NSLocalizedString("device.synced.sheet.title", bundle: Bundle.module, value: "Your data is synced!", comment: "Device SyncedSheet - Title")
+    static let deviceSyncedSheetTitle = NSLocalizedString("device.synced.sheet.title", bundle: Bundle.module, value: "Device synced!", comment: "Device SyncedSheet - Title")
     static let deviceSyncedSheetGetOnOtherDevicesButton = NSLocalizedString("device.synced.sheet.button.get.other.devices", bundle: Bundle.module, value: "Get DuckDuckGo on Other Devices", comment: "Device SyncedSheet Button to go get DuckDuckGo on other devices")
 
     // Recover Synced Data Sheet
@@ -134,6 +134,7 @@ public struct UserText {
     static let autoRestoreReadyDescription = NSLocalizedString("auto.restore.ready.description", bundle: Bundle.module, value: "Resume your Sync & Backup session to restore your bookmarks, passwords, and more, or continue with a new setup.", comment: "Auto-Restore Ready Sheet - Description")
     static let autoRestoreReadyRestoreButton = NSLocalizedString("auto.restore.ready.restore.button", bundle: Bundle.module, value: "Resume Sync & Backup", comment: "Auto-Restore Ready Sheet - Restore Button")
     static let autoRestoreReadyScanCodeLink = NSLocalizedString("auto.restore.ready.scan.code.link", bundle: Bundle.module, value: "Continue Setup", comment: "Auto-Restore Ready Sheet - Scan Code Link")
+    static let preparingToSyncTitle = NotLocalizedString("preparing.to.sync.title", bundle: Bundle.module, value: "Preparing to sync", comment: "Preparing to sync title")
     static let recoveringDataTitle = NSLocalizedString("recovering.data.title", bundle: Bundle.module, value: "Recovering Data", comment: "Recovering Data Sheet - Title")
     static let recoveringDataDescription = NSLocalizedString("recovering.data.description", bundle: Bundle.module, value: "Reconnecting to sync your bookmarks, saved logins, and other devices.", comment: "Recovering Data Sheet - Description")
     static let recoveringDataStatus = NSLocalizedString("recovering.data.status", bundle: Bundle.module, value: "Connecting...", comment: "Recovering Data Sheet - Status")

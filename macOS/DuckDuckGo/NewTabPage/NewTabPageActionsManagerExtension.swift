@@ -228,7 +228,8 @@ extension NewTabPageActionsManager {
                                     suggestionsProvider: suggestionsProvider,
                                     aiChatsProvider: aiChatsProvider,
                                     modelsProvider: NewTabPageOmnibarModelsProvider(),
-                                    actionHandler: omnibarActionHandler),
+                                    actionHandler: omnibarActionHandler,
+                                    tabsProvider: NewTabPageOmnibarTabsProvider(windowControllersManager: windowControllersManager)),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])
     }

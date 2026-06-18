@@ -1158,6 +1158,14 @@ extension MainViewController {
         completion?()
     }
 
+    func focusUnifiedToggleInputForActiveChat(from webView: WKWebView) {
+        guard let controller = tabManager.controller(forWebView: webView),
+              controller === currentTab,
+              let coordinator = unifiedToggleInputCoordinator,
+              coordinator.isAITabState else { return }
+        coordinator.showExpanded(inputMode: .aiChat)
+    }
+
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
         fireDirectDuckAINavigationPixelIfNeeded(for: query)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
@@ -1334,6 +1342,10 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 
     func unifiedInputEditingStateDidSelectChatHistory(url: URL) {
         onChatHistorySelected(url: url)
+    }
+
+    func unifiedInputEditingStateDidSelectViewAllChats() {
+        openAIChatHistory(source: .addressBar)
     }
 
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {

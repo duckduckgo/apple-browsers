@@ -343,6 +343,8 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isAIChatToolsEnabled: Bool = false
     var isImageGenerationEnabled: Bool = false
     var isWebSearchEnabled: Bool = false
+    var isAttachTabsEnabled: Bool = false
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var selectedModelId: String?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> {Just(nil).eraseToAnyPublisher() }
     var selectedModelShortName: String?

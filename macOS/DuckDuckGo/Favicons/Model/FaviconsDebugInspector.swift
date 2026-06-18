@@ -298,11 +298,18 @@ private enum Page {
           return r.blob();
         }).then(function(blob) {
           var bytes = blob.size;
+          var url = URL.createObjectURL(blob);
           img.onload = function() {
+            URL.revokeObjectURL(url);
             state.sizes[id] = { w: img.naturalWidth, h: img.naturalHeight, px: img.naturalWidth * img.naturalHeight, bytes: bytes };
             sizeCell.textContent = img.naturalWidth + "×" + img.naturalHeight + " · " + humanBytes(bytes);
           };
-          img.src = URL.createObjectURL(blob);
+          img.onerror = function() {
+            URL.revokeObjectURL(url);
+            state.sizes[id] = { w: 0, h: 0, px: -1, bytes: -1 };
+            sizeCell.textContent = "—";
+          };
+          img.src = url;
         }).catch(function() {
           state.sizes[id] = { w: 0, h: 0, px: -1, bytes: -1 };
           sizeCell.textContent = "—";

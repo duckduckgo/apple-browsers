@@ -23,6 +23,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
 import PrivacyConfig
+import MetricBuilder
 
 struct SubscriptionRestoreView: View {
 
@@ -232,7 +233,6 @@ struct SubscriptionRestoreView: View {
 private struct RoundedCardView: View {
 
     private enum Constants {
-        static let cornerRadius = 12.0
         static let cardPadding = EdgeInsets(top: 16,
                                             leading: 16,
                                             bottom: 16,
@@ -297,6 +297,6 @@ private struct RoundedCardView: View {
         .padding(Constants.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(designSystemColor: .surface))
-        .cornerRadius(Constants.cornerRadius)
+        .cornerRadius(ContainerMetrics.cornerRadius)
     }
 }

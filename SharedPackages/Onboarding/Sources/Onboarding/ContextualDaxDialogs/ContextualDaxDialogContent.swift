@@ -295,7 +295,7 @@ enum Metrics {
     let extraView = {
         HStack {
             Spacer()
-            Image("Sync-Desktop-New-128")
+            Image("Desktop-Sync-Passwords-128")
             Spacer()
         }
     }()

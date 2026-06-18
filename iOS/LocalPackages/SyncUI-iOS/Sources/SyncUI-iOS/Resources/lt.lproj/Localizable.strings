@@ -388,14 +388,20 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Jungiamasi...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Palik „DuckDuckGo“ atidarytą abiejuose įrenginiuose";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Abiejuose įrenginiuose palik atidarytą „Sync & Backup“";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Įklijavęs kodą, grįžk prie šio įrenginio.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Įklijuokite kodą kitame įrenginyje";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Įveskite kodą ranka";
 
 /* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
-"sync.simplified.scan-or-view-code.paste.code.instructions" = "Eik į „Nuostatos > Sinchronizavimas ir atsarginis kopijavimas > Sinchronizuoti su kitu įrenginiu“, kitame sinchronizuotame įrenginyje „DuckDuckGo“ programėlėje pasirink Rodyti tekstinį kodą ir įklijuok jį čia įrenginiui sinchronizuoti.";
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Eik į „**Nuostatos > Sinchronizavimas ir atsarginis kopijavimas > Sinchronizuoti su kitu įrenginiu**“, kitame sinchronizuotame įrenginyje „DuckDuckGo“ programėlėje pasirink **Rodyti tekstinį kodą** ir įklijuok jį čia įrenginiui sinchronizuoti.";
 
 /* Status text while verifying a pasted sync code */
 "sync.simplified.scan-or-view-code.paste.code.verifying" = "Tikrinamas kodas";

@@ -67,6 +67,7 @@ final class WideEventSenderTests: XCTestCase {
             dryRun: false,
             appVersion: "1.0.0",
             source: "test-suite",
+            session: "test",
             defaultHeaders: [:],
             dateGenerator: Date.init,
             defaults: testDefaults,

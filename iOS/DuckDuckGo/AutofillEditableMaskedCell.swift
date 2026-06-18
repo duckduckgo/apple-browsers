@@ -115,3 +115,17 @@ struct AutofillEditableMaskedCell: View {
         }
     }
 }
+
+#Preview {
+    List {
+        AutofillEditableMaskedCell(
+            title: "Card Number",
+            placeholderText: "Card Number",
+            unmaskedString: .constant("4111 1111 1111 1111"),
+            maskedString: .constant("•••• •••• •••• 1111"),
+            isMasked: .constant(true),
+            selectedCell: .constant(nil),
+            textFieldAccessibilityIdentifier: "preview.cardNumber"
+        )
+    }
+}

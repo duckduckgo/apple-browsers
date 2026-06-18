@@ -52,15 +52,18 @@ final class NextStepsListUITests: UITestCase {
     func testNextStepsCardDisappearsAfterDismissal() throws {
         app.openNewTab()
 
-        // Confirm first Next Steps card is visible, using its CTA button
-        XCTAssertTrue(nextStepsFirstCardCTAButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "First card in Next Steps List should be visible on New Tab Page")
+        XCTAssertTrue(nextStepsCardDismissButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "A Next Steps card should be visible on the New Tab Page")
 
+        let buttonsBeforeDismissal = visibleWebViewButtonTitles()
         nextStepsCardDismissButton.tap()
 
-        // Confirm first Next Steps card is dismissed
-        XCTAssertTrue(nextStepsFirstCardCTAButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
-                      "First card in Next Steps List should be dismissed after tapping dismiss button")
+        let dismissedCardCycledAway = webView.wait(for: NSPredicate { _, _ in
+            !buttonsBeforeDismissal.subtracting(self.visibleWebViewButtonTitles()).isEmpty
+        })
+
+        XCTAssertTrue(dismissedCardCycledAway,
+                      "The dismissed card should no longer be visible after tapping dismiss")
     }
 
     func testNextStepsListWidgetDisappearsAfterMaxDemonstrationDays() throws {
@@ -93,12 +96,15 @@ private extension NextStepsListUITests {
         webView.staticTexts["Next Steps"]
     }
 
-    var nextStepsFirstCardCTAButton: XCUIElement {
-        webView.buttons["Get Email Protection"]
-    }
-
     var nextStepsCardDismissButton: XCUIElement {
         webView.buttons["No Thanks"]
+    }
+
+    func visibleWebViewButtonTitles() -> Set<String> {
+        Set(webView.buttons.allElementsBoundByIndex.compactMap { button in
+            let title = button.title.isEmpty ? button.label : button.title
+            return title.isEmpty ? nil : title
+        })
     }
 
     func resetNextSteps() {

@@ -259,6 +259,52 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
+    // Subscription Funnel Entry-Point Pixels (App Menu, App Settings)
+    "m_subscription_appmenu_impression": {
+        "description": "Fired when the VPN/subscription entry is rendered in the iOS overflow menu to a non-subscriber. Gated on the vpnMenuItem feature flag, App Store products availability, and non-subscribed status. Used to count subscription-funnel entry-point exposure.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_appmenu_subscription_click": {
+        "description": "Fired when the user taps the VPN/subscription entry in the iOS overflow menu. Used to count subscription-funnel entry-point click-through.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_settings_impression": {
+        "description": "Fired when the Subscribe-to-DuckDuckGo row is rendered in iOS Settings to a non-subscriber. Used to count subscription-funnel entry-point exposure.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_settings_subscription_click": {
+        "description": "Fired when the user taps the Subscribe-to-DuckDuckGo row in iOS Settings. Used to count subscription-funnel entry-point click-through.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    // VPN Access-Revoked Alert Pixels
+    "m_vpn_access_revoked_alert_shown": {
+        "description": "Fired when the VPN access-revoked alert is presented to the user after their subscription expired. Used to count exposure of the revoked-subscription funnel entry-point on iOS.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_vpn_access_revoked_alert_subscribe_button_clicked": {
+        "description": "Fired when the user taps the Subscribe button in the VPN access-revoked alert. Used to count revoked-subscription funnel click-through on iOS.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
     // Onboarding Subscription Promotion Pixels
     "m_privacy-pro_onboarding_promotion_impression": {
         "description": "Fired when the subscription promotion is shown during onboarding",
@@ -359,32 +405,27 @@
         ]
     },
 
+    "m_privacy-pro_offer_screen_impression": {
+        "description": "Fired when the subscription offer page is shown to the user. Mid-funnel pixel that closes the loop between an entry-point click and the purchase attempt.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+    },
+    "m_privacy-pro_terms-conditions_subscribe_click": {
+        "description": "Fired when the user taps the Subscribe CTA on the subscription offer page. Mid-funnel pixel preceding the purchase attempt outcome.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor", "daily"],
+        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+    },
+
     "m_subscribe": {
         "description": "Fired when a subscription purchase is completed successfully. Used for attribution tracking.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "origin",
-                "type": "string",
-                "description": "Purchase funnel entry point",
-                "enum": [
-                    "funnel_onboarding_ios",
-                    "funnel_modal_ios__skippedonboardingupsell",
-                    "funnel_appsettings_ios",
-                    "funnel_appmenu_ios",
-                    "funnel_applaunch_ios_winback",
-                    "funnel_appsettings_ios_winback",
-                    "funnel_canceldowngrade_ios",
-                    "funnel_purchaseoffer_ios",
-                    "funnel_prepurchasecheck_ios"
-                ]
-            },
-            "locale",
-            "freeTrial"
-        ]
+        "parameters": ["appVersion", "subscriptionFunnelOrigin", "locale", "freeTrial"]
     },
 
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232

@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
 import DuckUI
+import MetricBuilder
 
 struct GranularFireConfirmationView: View {
     
@@ -29,12 +30,12 @@ struct GranularFireConfirmationView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: Constants.mainSectionSpacing) {
+            VStack(spacing: SheetMetrics.contentSpacing) {
                 headerSection
                 optionsList
                 footerButtons
             }
-            .padding(.horizontal, Constants.mainViewPadding.leading)
+            .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
             .padding(.vertical, Constants.mainViewPadding.top)
         }
         .background(Color(designSystemColor: .backgroundTertiary))
@@ -43,7 +44,7 @@ struct GranularFireConfirmationView: View {
     
     /// Header with title and large icon
     private var headerSection: some View {
-        VStack(spacing: Constants.headerSectionSpacing) {
+        VStack(spacing: SheetMetrics.contentSpacing) {
             Image(uiImage: DesignSystemImages.Color.Size72.fire)
                 .resizable()
                 .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
@@ -102,7 +103,7 @@ struct GranularFireConfirmationView: View {
     }
     
     private var footerButtons: some View {
-        VStack(spacing: Constants.footerButtonsSpacing) {
+        VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
             // Delete button
             Button(action: {
                 viewModel.confirm()
@@ -129,11 +130,9 @@ struct GranularFireConfirmationView: View {
 private extension GranularFireConfirmationView {
     enum Constants {
         // Main View
-        static let mainSectionSpacing: CGFloat = 24
-        static let mainViewPadding: EdgeInsets = .init(top: 24, leading: 32, bottom: 24, trailing: 32)
+        static let mainViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         
         // Header section
-        static let headerSectionSpacing: CGFloat = 8
         static let headerIconSize: CGFloat = 96
         
         // Options List
@@ -141,9 +140,6 @@ private extension GranularFireConfirmationView {
         static let optionsListCornerRadius: CGFloat = 10
         static let dividerHeight: CGFloat = 0.5
         static let dividerLeadingSpace: CGFloat = 52
-        
-        // Footer Buttons
-        static let footerButtonsSpacing: CGFloat = 8
     }
 }
 
@@ -195,3 +191,89 @@ private struct ToggleRow: View {
         static let toggleTrailingPadding: CGFloat = 16
     }
 }
+
+#if DEBUG
+import AIChat
+import History
+import Persistence
+
+private final class PreviewTabsModel: TabsModelReading {
+    var count: Int { 3 }
+    var tabs: [Tab] { [] }
+}
+
+private final class PreviewHistoryManager: HistoryManaging {
+    var isEnabledByUser: Bool { false }
+    var history: BrowsingHistory? { nil }
+    @MainActor func removeAllHistory() async -> Result<Void, Error> { .success(()) }
+    @MainActor func deleteHistoryForURL(_ url: URL) async {}
+    @MainActor func addVisit(of url: URL, tabID: String?, fireTab: Bool) {}
+    @MainActor func updateTitleIfNeeded(title: String, url: URL) {}
+    @MainActor func commitChanges(url: URL) {}
+    @MainActor func tabHistory(tabID: String) async throws -> [URL] { [] }
+    @MainActor func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> { .success(()) }
+    @MainActor func removeBrowsingHistory(tabID: String) async -> ActionResult? { nil }
+}
+
+private final class PreviewFireproofing: Fireproofing {
+    var loginDetectionEnabled: Bool = false
+    var allowedDomains: [String] { [] }
+    func isAllowed(cookieDomain: String) -> Bool { false }
+    func isAllowed(fireproofDomain domain: String) -> Bool { false }
+    func addToAllowed(domain: String) {}
+    func remove(domain: String) {}
+    func clearAll() {}
+    func displayDomain(for domain: String) -> String { domain }
+    func migrateFireproofDomainsToETLDPlus1IfNeeded() -> Bool { false }
+}
+
+private final class PreviewAIChatSettings: AIChatSettingsProvider {
+    var aiChatURL: URL { URL(string: "https://duckduckgo.com")! }
+    var isAIChatEnabled: Bool { true }
+    var sessionTimerInMinutes: Int { 0 }
+    var isAIChatAddressBarUserSettingsEnabled: Bool { false }
+    var isAIChatSearchInputUserSettingsEnabled: Bool { false }
+    var isAIChatSearchInputUserSettingsDisabledByUser: Bool { false }
+    var isAIChatBrowsingMenuUserSettingsEnabled: Bool { false }
+    var isAIChatVoiceSearchUserSettingsEnabled: Bool { false }
+    var isAIChatTabSwitcherUserSettingsEnabled: Bool { false }
+    var isAIChatTabBarUserSettingsEnabled: Bool { false }
+    var isAIChatTabBarDuckAIButtonVisible: Bool { true }
+    var isAIChatTabBarContextualSheetButtonVisible: Bool { true }
+    var isAutomaticContextAttachmentEnabled: Bool { false }
+    var isChatSuggestionsEnabled: Bool { false }
+    func enableAIChat(enable: Bool) {}
+    func enableAIChatBrowsingMenuUserSettings(enable: Bool) {}
+    func enableAIChatAddressBarUserSettings(enable: Bool) {}
+    func enableAIChatVoiceSearchUserSettings(enable: Bool) {}
+    func enableAIChatTabSwitcherUserSettings(enable: Bool) {}
+    func enableAIChatTabBarUserSettings(enable: Bool) {}
+    func setAIChatTabBarDuckAIButtonVisible(_ visible: Bool) {}
+    func setAIChatTabBarContextualSheetButtonVisible(_ visible: Bool) {}
+    func enableAIChatSearchInputUserSettings(enable: Bool) {}
+    func enableAutomaticContextAttachment(enable: Bool) {}
+    func enableChatSuggestions(enable: Bool) {}
+    var defaultOmnibarMode: DefaultOmnibarMode { .search }
+    func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {}
+}
+
+private final class PreviewThrowingKeyValueStore: ThrowingKeyValueStoring {
+    func object(forKey defaultName: String) throws -> Any? { nil }
+    func set(_ value: Any?, forKey defaultName: String) throws {}
+    func removeObject(forKey defaultName: String) throws {}
+}
+
+#Preview {
+    GranularFireConfirmationView(
+        viewModel: GranularFireConfirmationViewModel(
+            tabsModel: PreviewTabsModel(),
+            historyManager: PreviewHistoryManager(),
+            fireproofing: PreviewFireproofing(),
+            aiChatSettings: PreviewAIChatSettings(),
+            keyValueFilesStore: PreviewThrowingKeyValueStore(),
+            onConfirm: { _ in },
+            onCancel: {}
+        )
+    )
+}
+#endif

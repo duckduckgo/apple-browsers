@@ -60,6 +60,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             dryRun: false, // We set a mock `fireRequest` value to ensure no network requests are actually sent
             appVersion: "1.0.0",
             source: "test",
+            session: "test",
             defaultHeaders: [:],
             dateGenerator: Date.init,
             defaults: testDefaults,

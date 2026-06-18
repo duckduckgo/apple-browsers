@@ -256,7 +256,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier)
             }
 
-            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess)
+            let origin = await originFrom(originalMessage: original)
+            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess(origin: origin))
 
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
@@ -272,7 +273,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     // swiftlint:disable:next cyclomatic_complexity
     func subscriptionSelected(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        PixelKit.fire(SubscriptionPixel.subscriptionPurchaseAttempt, frequency: .legacyDailyAndCount)
         struct SubscriptionSelection: Decodable {
             let id: String
         }
@@ -280,6 +280,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         let message = original
 
         let origin = await setPixelOrigin(from: message)
+        PixelKit.fire(SubscriptionPixel.subscriptionPurchaseAttempt(origin: origin), frequency: .legacyDailyAndCount)
 
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
             // 1: Parse subscription selection from message object
@@ -340,7 +341,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 reportPurchaseFlowError(error)
 
                 if error != .cancelledByUser {
-                    await showSomethingWentWrongAlert()
+                    await showSomethingWentWrongAlert(originalMessage: message)
                 } else {
                     await uiHandler.dismissProgressViewController()
                 }
@@ -458,7 +459,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: success.purchaseUpdate)
             case .failure(let error):
-                await showSomethingWentWrongAlert()
+                await showSomethingWentWrongAlert(originalMessage: message)
                 switch error {
                 case .noProductsFound, .tieredProductsApiCallFailed, .tieredProductsEmptyProductsFromAPI, .tieredProductsEmptyAfterFiltering, .tieredProductsTierCreationFailed:
                     subscriptionEventReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
@@ -550,7 +551,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             } catch {
                 Logger.subscription.error("[TierChange] Failed to get token for Stripe tier change: \(error, privacy: .public)")
                 subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
-                await showSomethingWentWrongAlert()
+                await showSomethingWentWrongAlert(originalMessage: message)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
 
                 wideData.markAsFailed(at: SubscriptionPlanChangeWideEventData.FailingStep.payment, error: error)
@@ -747,12 +748,13 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     // MARK: - UI interactions
 
-    func showSomethingWentWrongAlert() async {
+    func showSomethingWentWrongAlert(originalMessage: WKScriptMessage) async {
         switch await uiHandler.dismissProgressViewAndShow(alertType: .somethingWentWrong, text: nil) {
         case .alertFirstButtonReturn:
-            let url = subscriptionManager.url(for: .purchase)
+            let origin = await originFrom(originalMessage: originalMessage)
+            let url = subscriptionManager.url(for: .purchase).appendingOriginParameterIfPresent(origin)
             await uiHandler.showTab(with: .subscription(url))
-            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
+            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: origin))
         default: return
         }
     }

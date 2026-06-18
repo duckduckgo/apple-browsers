@@ -17,8 +17,6 @@
 //  limitations under the License.
 //
 
-#if DEBUG
-
 import SwiftUI
 import DesignResourcesKit
 
@@ -27,19 +25,19 @@ import DesignResourcesKit
 /// relies on each style's `pressed: Bool` init parameter so the press state can be
 /// rendered statically (SwiftUI doesn't let us synthesize a pressed
 /// `ButtonStyleConfiguration` from outside).
-private struct IOSButtonsDebugView: View {
+public struct IOSButtonsDebugView: View {
     @StateObject private var override: RebrandPreviewOverride
 
-    init() {
+    public init() {
         _override = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: true))
     }
 
     private let iconName = "face.smiling"
 
-    var body: some View {
+    public var body: some View {
         ScrollView([.horizontal, .vertical]) {
             VStack(alignment: .leading, spacing: 56) {
-                Text("iOS Buttons")
+                Text(verbatim: "iOS Buttons")
                     .font(.system(size: 44, weight: .bold))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
 
@@ -59,7 +57,7 @@ private struct IOSButtonsDebugView: View {
 
     private func columnHeader(_ title: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+            Text(verbatim: title)
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Rectangle()
@@ -70,7 +68,7 @@ private struct IOSButtonsDebugView: View {
     }
 
     private func caption(_ text: String) -> some View {
-        Text(text)
+        Text(verbatim: text)
             .font(.system(size: 14))
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .fixedSize(horizontal: false, vertical: true)
@@ -171,7 +169,7 @@ private struct IOSButtonsDebugView: View {
         HStack(spacing: 8) {
             Image(systemName: iconName)
                 .font(.system(size: compact ? 16 : 24))
-            Text(text)
+            Text(verbatim: text)
         }
     }
 
@@ -198,40 +196,44 @@ private struct IOSButtonsDebugView: View {
 
     @ViewBuilder
     private func statesStack(label: String, inactive: Bool) -> some View {
+        let title = inactive ? "Inactive" : "Pressed"
         VStack(alignment: .leading, spacing: 12) {
             caption(label)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(BrandButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(PrimaryButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(SecondaryFillButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(GhostButtonStyle(disabled: inactive, pressed: !inactive))
                 .fixedSize(horizontal: true, vertical: false)
 
             Spacer().frame(height: 16)
 
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(PrimaryDestructiveButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(SecondaryDestructiveButtonStyle(disabled: inactive, fullWidth: false, pressed: !inactive))
-            Button("Pressed") {}
+            Button(title) {}
                 .buttonStyle(DestructiveGhostButtonStyle(disabled: inactive, pressed: !inactive))
                 .fixedSize(horizontal: true, vertical: false)
         }
     }
 }
 
+#if DEBUG
 #Preview("iOS Buttons (Figma) / Light") {
     IOSButtonsDebugView()
+        .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
 }
 
 #Preview("iOS Buttons (Figma) / Dark") {
     IOSButtonsDebugView()
+        .environment(\.colorScheme, .dark)
         .preferredColorScheme(.dark)
 }
 

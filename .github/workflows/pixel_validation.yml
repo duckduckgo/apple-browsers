@@ -10,6 +10,8 @@ on:
       - 'macOS/PixelDefinitions/**'
       - 'iOS/package*'
       - 'iOS/PixelDefinitions/**'
+      - 'scripts/check_wide_event_*.mjs'
+      - '.github/workflows/pixel_validation.yml'
 
 jobs:
   pixel-validation:
@@ -20,6 +22,8 @@ jobs:
         platform: [ 'macOS', 'iOS' ]
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -45,4 +49,7 @@ jobs:
         working-directory: ${{ matrix.platform }}
       - name: Run validation with GitHub user map
         run: npm run validate-defs-without-formatting -- -g ../internal-github-asana-utils/user_map.yml
+        working-directory: ${{ matrix.platform }}
+      - name: Check wide event consistency and schema immutability
+        run: npm run check-wide-events
         working-directory: ${{ matrix.platform }}

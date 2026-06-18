@@ -200,6 +200,8 @@ class SubscriptionManagerTests: XCTestCase {
         let subscription = try await subscriptionManager.getSubscription(forceRefresh: true)
         XCTAssertNotNil(subscription)
         XCTAssertTrue(subscription!.isActive)
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.subscriptionIsActive))
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.osDistributionActiveSubscription))
     }
 
     func testRefreshCachedSubscription_ExpiredSubscription() async throws {
@@ -226,6 +228,8 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertNotNil(subscription, "Expired subscription should still be returned")
         XCTAssertFalse(subscription!.isActive, "Expired subscription should not be active")
         XCTAssertEqual(subscription!.status, .expired)
+        XCTAssertFalse(mockPixelHandler.handledPixels.contains(.osDistributionActiveSubscription),
+                       "OS-distribution pixel must not fire for an inactive subscription")
     }
 
     func testGetSubscription_NoDataOnBackend_ReturnsNil() async throws {

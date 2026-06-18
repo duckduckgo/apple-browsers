@@ -348,7 +348,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         guard let cached = await subscriptionCachingService.get() else {
             throw fallbackError
         }
-        if cached.isActive { pixelHandler.handle(pixel: .subscriptionIsActive) }
+        if cached.isActive {
+            pixelHandler.handle(pixel: .subscriptionIsActive)
+            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
+        }
         return cached
     }
 
@@ -419,7 +422,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             subscription = finalSubscription
         }
 
-        if subscription.isActive { pixelHandler.handle(pixel: .subscriptionIsActive) }
+        if subscription.isActive {
+            pixelHandler.handle(pixel: .subscriptionIsActive)
+            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
+        }
         return subscription
     }
 

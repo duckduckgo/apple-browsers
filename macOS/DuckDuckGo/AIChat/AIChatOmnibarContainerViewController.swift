@@ -65,10 +65,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let attachmentsBottomSpacing: CGFloat = 16
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
         static let attachmentsErrorHeight: CGFloat = 18
-        // Display caps mirror the per-conversation maxes (`max + 1`) so the picker can render
-        // exactly one item over the limit as a visible cue, with the error label calling it out.
-        static let imageAttachmentsDisplayCap: Int = AIChatOmnibarController.imageAttachmentsDisplayCap
-        static let fileAttachmentsDisplayCap: Int = AIChatOmnibarController.fileAttachmentsDisplayCap
         /// Carousel's outer height when populated — includes the row content height plus an
         /// internal shadow-margin band on top and bottom, so card shadows render without clipping.
         static let attachmentsCarouselRowHeight: CGFloat = AIChatAttachmentsCarouselView.expandedHeight
@@ -130,6 +126,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// data still updates immediately so the menu's checkmarks stay in sync; only the panel
     /// growth is held back.
     private var isDeferringCarouselLayout = false
+
+    /// Sticky error from the most recent file pick that was rejected at pick-time (too large, too
+    /// many pages, encrypted/unreadable, unsupported, or over the count limit). Shown in the
+    /// attachments error label and cleared when the user next changes attachments or the model.
+    private var lastAttachmentError: String?
 
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
@@ -243,10 +244,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if !attachmentsCarouselView.attachments.isEmpty {
             height += Constants.attachmentsCarouselTotalPanelReservation
         }
-        if hasVisibleImageExcess || hasVisibleFileExcess {
+        if shouldShowAttachmentError {
             height += Constants.attachmentsErrorHeight
         }
         return height
+    }
+
+    /// Whether the attachments error label should be visible — either a sticky pick-time rejection
+    /// or a live count-excess cue (one over the cap).
+    private var shouldShowAttachmentError: Bool {
+        lastAttachmentError != nil || hasVisibleImageExcess || hasVisibleFileExcess
     }
 
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
@@ -500,12 +507,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// File-side analogue of `omnibarController.isActiveTabImageAttachmentsFull` — at or above the per-conversation cap.
     private var isFileAttachmentsFull: Bool {
-        omnibarController.activeFileAttachments.count >= AIChatOmnibarController.maxFileAttachments
+        omnibarController.activeFileAttachments.count >= omnibarController.maxFileAttachments
     }
 
     /// File-side analogue of `omnibarController.hasExcessActiveTabImageAttachments` — strictly over cap.
     private var hasExcessFileAttachments: Bool {
-        omnibarController.activeFileAttachments.count > AIChatOmnibarController.maxFileAttachments
+        omnibarController.activeFileAttachments.count > omnibarController.maxFileAttachments
     }
 
     /// The attach button is now multi-purpose: it triggers either the legacy image-and-file
@@ -662,8 +669,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.target = self
         imageUploadButton.action = #selector(attachButtonClicked)
         imageUploadButton.image = DesignSystemImages.Glyphs.Size16.attach
-        imageUploadButton.toolTip = UserText.aiChatImageUploadButtonTooltip
-        imageUploadButton.setAccessibilityLabel(UserText.aiChatImageUploadButtonTooltip)
+        updateAttachButtonTooltip()
         imageUploadButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.imageUploadButton) }
         containerView.addSubview(imageUploadButton)
 
@@ -735,6 +741,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         attachmentsCarouselView.onImageAttachmentRemoveRequested = { [weak self] id in
             guard let self else { return }
             PixelKit.fire(AIChatPixel.aiChatAddressBarImageRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self.lastAttachmentError = nil
             self.resizeTasks[id]?.cancel()
             self.resizeTasks.removeValue(forKey: id)
             self.omnibarController.removeImageAttachmentFromActiveTab(id: id)
@@ -751,6 +758,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         attachmentsCarouselView.onFileAttachmentRemoveRequested = { [weak self] id in
             PixelKit.fire(AIChatPixel.aiChatAddressBarFileRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self?.lastAttachmentError = nil
             self?.omnibarController.removeFileAttachmentFromActiveTab(id: id)
         }
         containerView.addSubview(attachmentsCarouselView)
@@ -993,6 +1001,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // intact — cleanup is panel teardown, not a user-driven clear.
         cancelAllImageResizeTasks()
 
+        // The pick-time rejection error is transient panel UI, so drop it on teardown rather than
+        // letting it resurface when the panel is reopened.
+        lastAttachmentError = nil
+
         // Restore model picker to persisted value
         modelPickerButton.modelName = persistedModelShortName
 
@@ -1158,25 +1170,72 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard let window = view.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK else { return }
-            // Hold per-kind slot consumption so we never overshoot either cap. Both kinds use
-            // a `displayCap = max + 1` so the carousel can render exactly one item past the
-            // limit as a visible cue, with the error label calling it out.
+            self.addPickedAttachments(from: panel.urls)
+        }
+    }
+
+    /// Adds picked images / files, enforcing the API-driven limits at pick-time. A file that
+    /// violates a limit (unsupported type, too large, over the total-size budget, too many pages,
+    /// encrypted / unreadable, or over the count limit) is not attached — the first such reason is
+    /// surfaced in the error label. Limits are evaluated cumulatively so a multi-select batch can't
+    /// collectively overshoot. Images keep the `displayCap` (one-over) cue since they have no
+    /// size / page dimension and a single submission is bounded to the per-turn image count.
+    private func addPickedAttachments(from urls: [URL]) {
+        // Reading bytes off disk and parsing PDFs (page count / encryption) is offloaded to a
+        // background task per file — a large PDF would otherwise block the main thread. Validation,
+        // attachment, and label updates stay on the main actor; files are processed in order so the
+        // cumulative count / total-size checks remain correct.
+        Task { @MainActor [weak self] in
+            guard let self else { return }
             var imagesAdded = self.omnibarController.activeImageAttachments.count
-            let imageCap = Constants.imageAttachmentsDisplayCap
-            var filesAdded = self.omnibarController.activeFileAttachments.count
-            let fileCap = Constants.fileAttachmentsDisplayCap
-            for url in panel.urls {
+            let imageCap = self.omnibarController.imageAttachmentsDisplayCap
+            var pendingFiles = self.omnibarController.activeFileAttachments.map(AIChatAttachmentValidator.FileDescriptor.init)
+            var firstFileError: String?
+
+            for url in urls {
                 let utType = UTType(filenameExtension: url.pathExtension.lowercased())
                 if let utType, utType.conforms(to: .image) {
                     guard imagesAdded < imageCap else { continue }
                     self.addImageAttachment(from: url)
                     imagesAdded += 1
                 } else {
-                    guard filesAdded < fileCap else { continue }
-                    self.addFileAttachment(from: url)
-                    filesAdded += 1
+                    guard let attachment = await Task.detached(priority: .userInitiated, operation: {
+                        Self.makeFileAttachment(from: url)
+                    }).value else { continue }
+                    let descriptor = AIChatAttachmentValidator.FileDescriptor(attachment)
+
+                    // Size / total-size / page / type / encryption reject the file outright. Count is
+                    // handled separately by the `displayCap` (one-over) cue below, so we pass
+                    // `enforceCount: false` here — otherwise an over-count file would be rejected with a
+                    // count message instead of getting the "+1" visual cue that images also use.
+                    if self.omnibarController.attachmentLimits != nil {
+                        let validator = self.omnibarController.makeAttachmentValidator(
+                            pendingImageCount: imagesAdded,
+                            pendingFiles: pendingFiles
+                        )
+                        if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
+                            PixelKit.fire(
+                                AIChatPixel.aiChatAddressBarFileValidationFailed(reason: error.reason.rawValue),
+                                frequency: .dailyAndCount,
+                                includeAppVersionParameter: true
+                            )
+                            if firstFileError == nil { firstFileError = error.message }
+                            continue
+                        }
+                    }
+
+                    // Count cue: allow up to `displayCap` (one over the limit) so the carousel renders
+                    // the over-limit state and the error label calls it out; submit stays blocked while over.
+                    guard pendingFiles.count < self.omnibarController.fileAttachmentsDisplayCap else { continue }
+
+                    self.omnibarController.addFileAttachmentToActiveTab(attachment)
+                    PixelKit.fire(AIChatPixel.aiChatAddressBarFileAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                    pendingFiles.append(descriptor)
                 }
             }
+
+            self.lastAttachmentError = firstFileError
+            self.updateAttachmentsLayout()
         }
     }
 
@@ -1205,13 +1264,65 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// omitted when the model doesn't support image upload, because the omnibar attach button is
     /// also visible in that case (purely for tab attachment), and showing a non-functional item
     /// would be confusing.
+    /// Label for the image/file picker menu item, adapted to what the selected model supports:
+    /// "Add Images" (image-only), "Add PDFs" (file-only), or "Add Images or PDFs" (both). When the
+    /// model advertises a non-PDF file type, the file noun is generalized from the accepted types.
+    private func attachMenuItemTitle() -> String {
+        let supportsImages = omnibarController.selectedModelSupportsImageUpload
+        let supportsFiles = omnibarController.selectedModelSupportsFileUpload
+        let fileTypes = omnibarController.selectedModelSupportedFileTypes
+        let isPDFOnly = fileTypes == ["application/pdf"]
+
+        switch (supportsImages, supportsFiles) {
+        case (true, true):
+            return isPDFOnly
+                ? UserText.aiChatAttachMenuImageOrFile
+                : UserText.aiChatAttachMenuImagesOrFilesTyped(fileTypesNoun(fileTypes))
+        case (true, false):
+            return UserText.aiChatAttachMenuImages
+        case (false, true):
+            return isPDFOnly
+                ? UserText.aiChatAttachMenuFiles
+                : UserText.aiChatAttachMenuFilesTyped(fileTypesNoun(fileTypes))
+        case (false, false):
+            return UserText.aiChatAttachMenuImageOrFile
+        }
+    }
+
+    private func fileTypesNoun(_ mimeTypes: [String]) -> String {
+        let names = mimeTypes.map(AIChatAttachmentValidator.fileTypeName(for:))
+        return names.isEmpty ? "PDFs" : names.joined(separator: ", ")
+    }
+
+    /// Tooltip / accessibility label for the attach button. Uses the same adaptive copy as the
+    /// attach-menu item ("Add Images" / "Add PDFs" / "Add Images or PDFs") so the wording always
+    /// matches what the selected model accepts — never a misleading singular "Add image". When the
+    /// model accepts neither images nor files (only the tab picker is available), it falls back to
+    /// the page-content label.
+    private func attachButtonTooltip() -> String {
+        // Reflect what the button can actually do *now*. When image/file picking is unavailable —
+        // unsupported by the model or both kinds at capacity — `shouldShowImageOrFileMenuItem` is
+        // false and the menu only offers page content, so the tooltip must match rather than read
+        // "Add Images or PDFs".
+        guard shouldShowImageOrFileMenuItem else {
+            return UserText.aiChatAttachMenuPageContent
+        }
+        return attachMenuItemTitle()
+    }
+
+    private func updateAttachButtonTooltip() {
+        let tooltip = attachButtonTooltip()
+        imageUploadButton.toolTip = tooltip
+        imageUploadButton.setAccessibilityLabel(tooltip)
+    }
+
     private func buildAttachMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
         if shouldShowImageOrFileMenuItem {
             let imageItem = NSMenuItem(
-                title: UserText.aiChatAttachMenuImageOrFile,
+                title: attachMenuItemTitle(),
                 action: #selector(attachMenuImageOrFileClicked),
                 keyEquivalent: ""
             )
@@ -1306,25 +1417,31 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Attempts to add an image attachment from a drag-and-drop operation.
     /// - Returns: `true` if the image was accepted, `false` if attachments are full.
     func addImageAttachmentFromDrop(_ url: URL) -> Bool {
-        guard omnibarController.activeImageAttachments.count < Constants.imageAttachmentsDisplayCap else { return false }
+        guard omnibarController.activeImageAttachments.count < omnibarController.imageAttachmentsDisplayCap else { return false }
+        // A successful drop is a pick action from the user's perspective, so clear any stale
+        // pick-time rejection error (matching the file/image picker path).
+        lastAttachmentError = nil
         addImageAttachment(from: url)
+        updateAttachmentsLayout()
         return true
     }
 
-    /// Reads file bytes off disk and adds them to the active tab as a file attachment (PDFs etc.).
-    /// MIME type comes from the URL's UTType so the duck.ai server-side validation against the
-    /// model's `supportedFileTypes` (which are MIME types) matches.
-    private func addFileAttachment(from url: URL) {
-        guard let data = try? Data(contentsOf: url) else { return }
+    /// Reads file bytes off disk and builds a file attachment (PDFs etc.), inspecting PDFs for page
+    /// count / encryption so the validator can enforce the page-count limit and reject encrypted or
+    /// unreadable files. MIME type comes from the URL's UTType so it matches the model's
+    /// `supportedFileTypes` (which are MIME types). Returns `nil` if the bytes can't be read.
+    private nonisolated static func makeFileAttachment(from url: URL) -> AIChatFileAttachment? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
         let mimeType = UTType(filenameExtension: url.pathExtension.lowercased())?.preferredMIMEType
             ?? "application/octet-stream"
-        let attachment = AIChatFileAttachment(
+        let inspection = AIChatPDFInspector.inspect(data: data, mimeType: mimeType)
+        return AIChatFileAttachment(
             data: data,
             fileName: url.lastPathComponent,
-            mimeType: mimeType
+            mimeType: mimeType,
+            pageCount: inspection.pageCount,
+            isEncrypted: inspection.isEncrypted
         )
-        omnibarController.addFileAttachmentToActiveTab(attachment)
-        PixelKit.fire(AIChatPixel.aiChatAddressBarFileAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     private func addImageAttachment(from url: URL) {
@@ -1374,6 +1491,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // is handled by the controller calling `persistAttachmentsToActiveTab([])` directly.
         omnibarController.onAttachmentsClearRequested = { [weak self] in
             self?.cancelAllImageResizeTasks()
+            // Submit clears all attachments, so a leftover pick-time rejection no longer applies.
+            self?.lastAttachmentError = nil
+            self?.updateAttachmentsLayout()
         }
         // Block submit until in-flight resize tasks finish so the prompt carries the resized
         // image, not the placeholder.
@@ -1412,12 +1532,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // overlap the tools row below. Keeping the two decisions in sync prevents that.
         let visibleImageExcess = hasVisibleImageExcess
         let visibleFileExcess = hasVisibleFileExcess
-        // File excess takes priority — the file copy is more recently introduced and the more
-        // likely thing a user has just done; image copy fires when only images are over.
-        attachmentsErrorLabel.isHidden = !(visibleImageExcess || visibleFileExcess)
-        attachmentsErrorLabel.stringValue = visibleFileExcess
-            ? UserText.aiChatFileAttachmentsLimitError
-            : UserText.aiChatAttachmentsLimitError
+        // A sticky pick-time rejection (size / pages / unsupported / count) takes priority — it
+        // names the precise reason the file the user just chose wasn't added. Otherwise fall back
+        // to the live count-excess copy; file excess wins over image excess as it's the more
+        // recently introduced and likely thing the user has just done.
+        attachmentsErrorLabel.isHidden = !shouldShowAttachmentError
+        if let lastAttachmentError {
+            attachmentsErrorLabel.stringValue = lastAttachmentError
+        } else if visibleFileExcess {
+            // API-driven so the copy names the real per-conversation cap (3 free / 5 paid) rather
+            // than a hardcoded "3 files".
+            attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentFileCountLimit(
+                maxFilesPerConversation: omnibarController.maxFileAttachments
+            )
+        } else {
+            attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentImageTurnLimit(
+                maxImagesPerTurn: omnibarController.maxImageAttachments
+            )
+        }
 
         // Disable the upload button only when *no* attach path can accept one more attachment.
         // The button stays enabled if image room remains, file room remains, OR the tab picker
@@ -1430,9 +1562,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // for both kinds — otherwise the default tooltip stays so the user knows they can
             // still attach the other kind.
             let allPickerPathsFull = isFull && (!omnibarController.selectedModelSupportsFileUpload || isFileAttachmentsFull)
-            imageUploadButton.toolTip = (allPickerPathsFull && !omnibarController.isOmnibarTabPickerEnabled)
-                ? UserText.aiChatAttachmentsLimitError
-                : UserText.aiChatImageUploadButtonTooltip
+            if allPickerPathsFull && !omnibarController.isOmnibarTabPickerEnabled {
+                imageUploadButton.toolTip = UserText.aiChatAttachmentsLimitError
+                imageUploadButton.setAccessibilityLabel(UserText.aiChatAttachmentsLimitError)
+            } else {
+                updateAttachButtonTooltip()
+            }
         }
 
         // Disable submit when too many images
@@ -1649,6 +1784,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {
         guard omnibarController.isOmnibarToolsEnabled else { return }
+
+        // A model switch changes what's acceptable, so a stale pick-time error no longer applies.
+        lastAttachmentError = nil
 
         let showImageSide = supportsImageUpload || omnibarController.isImageGenerationMode
         // The attach BUTTON should remain visible when *any* attach mode is available — image,

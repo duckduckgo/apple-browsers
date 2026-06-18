@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import Core
+import DesignResourcesKitIcons
 
 protocol ImportPasswordsViaSyncViewModelDelegate: AnyObject {
     func importPasswordsViaSyncViewModelDidRequestOpenSync(_ viewModel: ImportPasswordsViaSyncViewModel)
@@ -80,11 +81,6 @@ final class ImportPasswordsViaSyncViewModel {
     /// Keeping track on whether or not either button was pressed on this screen
     /// so that a pixel can be fired if the user navigates away without taking any action
     private(set) var buttonWasPressed: Bool = false
-
-    func maxButtonWidth() -> CGFloat {
-        let maxWidth = AutofillViews.maxWidthFor(title1: ButtonType.getBrowser.title, title2: ButtonType.sync.title, font: UIFont.boldAppFont(ofSize: 16))
-        return min(maxWidth, 300)
-    }
 
     func buttonPressed(_ type: ButtonType) {
         buttonWasPressed = true

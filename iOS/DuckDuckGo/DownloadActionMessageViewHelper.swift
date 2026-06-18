@@ -27,8 +27,14 @@ struct DownloadActionMessageViewHelper {
     }
     
     static func makeDownloadFinishedMessage(for download: Download) -> NSAttributedString {
-        let downloadStartedMessage = UserText.messageDownloadComplete(for: download.filename)
-        return Self.boldDownloadFilenameInMessage(downloadStartedMessage, filename: download.filename)
+        makeDownloadFinishedMessage(forFilename: download.filename)
+    }
+
+    /// Variant for callers that have already produced the file on disk (e.g. chat-history
+    /// export) and only have the resulting filename — no `Download` object exists.
+    static func makeDownloadFinishedMessage(forFilename filename: String) -> NSAttributedString {
+        let message = UserText.messageDownloadComplete(for: filename)
+        return Self.boldDownloadFilenameInMessage(message, filename: filename)
     }
     
     private static func boldDownloadFilenameInMessage(_ message: String, filename: String) -> NSAttributedString {

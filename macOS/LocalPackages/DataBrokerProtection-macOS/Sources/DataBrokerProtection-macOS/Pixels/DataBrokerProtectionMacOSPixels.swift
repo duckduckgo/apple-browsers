@@ -63,7 +63,7 @@ public enum DataBrokerProtectionMacOSPixels {
     // Web UI - loading errors
     case webUILoadingStarted(environment: String)
     case webUILoadingFailed(errorCategory: String)
-    case webUILoadingSuccess(environment: String)
+    case webUILoadingSuccess(environment: String, subscribed: Bool)
 
     // Home View
     case homeViewShowNoPermissionError
@@ -159,8 +159,11 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
         switch self {
         case .webUILoadingStarted(let environment):
             return [DataBrokerProtectionSharedPixels.Consts.environmentKey: environment]
-        case .webUILoadingSuccess(let environment):
-            return [DataBrokerProtectionSharedPixels.Consts.environmentKey: environment]
+        case .webUILoadingSuccess(let environment, let subscribed):
+            return [
+                DataBrokerProtectionSharedPixels.Consts.environmentKey: environment,
+                DataBrokerProtectionSharedPixels.Consts.subscribedKey: String(subscribed)
+            ]
         case .webUILoadingFailed(let error):
             return [DataBrokerProtectionSharedPixels.Consts.errorCategoryKey: error]
         case .mainAppSetUpFailedSecureVaultInitFailed,

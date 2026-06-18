@@ -235,7 +235,20 @@ fileprivate extension Favicon {
             return nil
         }
 
-        let image = faviconMO.imageEncrypted as? NSImage
+        // Reading `imageEncrypted` makes Core Data unarchive the stored NSImage. If the saved bitmap is corrupt,
+        // AppKit raises an Objective-C `NSInvalidUnarchiveOperationException` ("bad TIFF data") while unarchiving.
+        // Swift's `try`/`try?` cannot catch Objective-C exceptions, so this would otherwise crash the app.
+        // `NSException.catch` bridges it to a Swift error; on failure we use a nil image, which the favicon system
+        // re-fetches on the next visit.
+        let image: NSImage?
+        do {
+            image = try NSException.catch {
+                faviconMO.imageEncrypted as? NSImage
+            }
+        } catch {
+            PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
+            image = nil
+        }
 
         self.init(identifier: identifier, url: url, image: image, relation: relation, documentUrl: documentUrl, dateCreated: dateCreated)
     }

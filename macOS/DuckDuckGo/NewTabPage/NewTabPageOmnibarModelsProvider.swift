@@ -23,6 +23,7 @@ import Subscription
 
 /// Fetches AI models from the duck.ai API and builds sectioned model lists
 /// using the shared section builder for the NTP dropdown.
+@MainActor
 final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
     private(set) var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
@@ -62,7 +63,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
                             isEnabled: model.entityHasAccess,
                             supportsImageUpload: model.supportsImageUpload,
                             supportedTools: model.supportedTools.map(\.rawValue),
-                            supportedReasoningEffort: model.supportedReasoningEffort.map(\.rawValue)
+                            supportedReasoningEffort: model.supportedReasoningEffort.map(\.rawValue),
+                            supportedFileTypes: model.supportedFileTypes
                         )
                     }
                 )

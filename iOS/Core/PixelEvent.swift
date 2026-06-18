@@ -216,7 +216,13 @@ extension Pixel {
         case bookmarksButtonPressed
         case tabBarBookmarksLongPressed
         case tabBarTabSwitcherOpened
-        
+
+        case tabBarTabSelected
+        case tabBarTabClosed
+        case tabBarNewTab
+        case tabBarOverflowDaily
+        case tabBarOpenTabCountDaily
+
         case homeScreenShown
         case homeScreenEditFavorite
         case homeScreenDeleteFavorite
@@ -897,6 +903,7 @@ extension Pixel {
         case cookieDeletionTime(_ time: BucketAggregation)
         case cookieDeletionLeftovers
         case clearDataInDefaultPersistence(_ time: BucketAggregation)
+        case clearDataInDefaultPersistenceSingleTab(_ time: BucketAggregation)
 
         case webkitWarmupStart(appState: String)
         case webkitWarmupFinished(appState: String)
@@ -924,6 +931,7 @@ extension Pixel {
 
         case debugTabSwitcherDidChangeInvalidState
         case debugTabsModelCrossModeMismatch
+        case debugTabsBarCellIndexOutOfRange
 
         case debugBookmarksInitialStructureQueryFailed
         case debugBookmarksStructureLost
@@ -960,6 +968,9 @@ extension Pixel {
         case debugBreakageExperiment
 
         case debugWebViewInVisibleTabHidden
+
+        case debugInteractionRepeatedFailedScroll
+        case debugInteractionWedgedRecognizer
 
         case debugPromptCoordinationFailedToSaveLastPresentationDate
         case debugPromptCoordinationFailedToRetrieveLastPresentationDate
@@ -1344,6 +1355,16 @@ extension Pixel {
         case subscriptionWinBackOfferSubscriptionSettingsShown
         case subscriptionWinBackOfferSubscriptionSettingsCTAClicked
 
+        // Subscription Funnel Entry Points (App Menu, App Settings)
+        case subscriptionEntryAppMenuImpression
+        case subscriptionEntryAppMenuSubscriptionClick
+        case subscriptionEntrySettingsImpression
+        case subscriptionEntrySettingsSubscriptionClick
+
+        // VPN Access-Revoked Alert (subscription expired)
+        case vpnAccessRevokedAlertShown
+        case vpnAccessRevokedAlertSubscribeButtonClicked
+
         // Free Trial Journey
         case privacyProFreeTrialStart
         case privacyProFreeTrialVPNActivation
@@ -1467,9 +1488,20 @@ extension Pixel {
         case ntpAfterIdleEscapeHatchBurnImmediatelyTapped
         case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab
         case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab
+        case ntpAfterIdleEscapeHatchHiddenFromMenu
+        case ntpAfterIdleEscapeHatchShown
+        case ntpAfterIdleEscapeHatchMenuShown
+        case ntpAfterIdleEscapeHatchReturnToTabTappedFromMenu
+        case ntpAfterIdleEscapeHatchCloseTabTappedFromMenu
+        case ntpAfterIdleEscapeHatchBurnWithConfirmationTappedFromMenu
+        case ntpAfterIdleEscapeHatchBurnImmediatelyTappedFromMenu
+        case ntpAfterIdleEscapeHatchSwipeActionPerformed
+        case ntpAfterIdleEscapeHatchBurnTappedFromButton
         case ntpAfterIdleSettingChangedToNewTab
         case ntpAfterIdleSettingChangedToLastUsedTab
         case ntpAfterIdleSettingIdleIntervalChanged
+        case ntpAfterIdleLastTabShortcutSettingEnabled
+        case ntpAfterIdleLastTabShortcutSettingDisabled
 
         // MARK: DuckPlayer
 
@@ -1706,9 +1738,26 @@ extension Pixel {
         case aiChatSingleDeleteSuccessful
         case aiChatSingleDeleteFailed
 
+        // MARK: AI Chat History Screen
+        case aiChatHistoryScreenShown
+        case aiChatHistoryChatOpened
+        case aiChatHistoryChatDeleted
+        case aiChatHistoryEmptyCTATapped
+        case aiChatHistorySearchActivated
+        case aiChatHistoryFireAllTapped
+        case aiChatHistoryFireAllConfirmed
+        case aiChatHistoryPinAdded
+        case aiChatHistoryPinRemoved
+        case aiChatHistoryDownloadStarted
+        case aiChatHistoryEditModeEntered
+        case aiChatHistoryNewChatTapped
+
         // MARK: AI Chat Recent Chats
         case aiChatRecentChatSelectedPinned
         case aiChatRecentChatSelected
+        case aiChatRecentChatDeleteButtonTapped
+        case aiChatRecentChatDeleteConfirmed
+        case aiChatRecentChatDeleteCancelled
 
         // MARK: AI Chat Contextual Mode
         case aiChatContextualSheetOpened
@@ -1743,6 +1792,7 @@ extension Pixel {
         case unifiedToggleInputWebSearchSelected
         case unifiedToggleInputWebSearchDeselected
         case unifiedToggleInputWebSearchSubmitted
+        case unifiedToggleInputCustomizeResponsesSelected
         case unifiedToggleInputModelSelected
         case unifiedToggleInputReasoningEffortSelected
         case unifiedToggleInputImageAttached
@@ -1755,6 +1805,10 @@ extension Pixel {
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
         case unifiedToggleInputPromptSubmitted
+        case unifiedToggleInputShowModelPicker
+        case unifiedToggleInputSubmitChangeModel
+        case unifiedToggleInputSubmitChangeModelPromptSent
+        case unifiedToggleInputDuckAIDirectNavigation
 
         // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
         case autocompleteDuckAIClickWebsite
@@ -1890,6 +1944,8 @@ extension Pixel {
         case webExtensionUninstallAllError
         case webExtensionLoaded
         case webExtensionLoadError
+        case webExtensionDeferredProtectedDataUnavailable
+        case webExtensionResumedProtectedDataAvailable
         case webExtensionEmbeddedInstalled
         case webExtensionEmbeddedUpgraded
         case webExtensionEmbeddedInstallError
@@ -1899,6 +1955,12 @@ extension Pixel {
         case webExtensionDarkReaderInstallError
         case webExtensionDarkReaderEnabled
         case webExtensionDarkReaderDisabled
+
+        case webExtensionStateChecked
+        case webExtensionEmbeddedNotLoaded
+        case webExtensionDarkReaderNotLoaded
+        case webExtensionAdBlockingNotLoaded
+        case webExtensionAdBlockingScriptletsNotFetched
 
         case webExtensionAdBlockingInstalled
         case webExtensionAdBlockingUpgraded
@@ -2149,6 +2211,11 @@ extension Pixel.Event {
         case .bookmarksButtonPressed: return "mt_bm"
         case .tabBarBookmarksLongPressed: return "mt_bl"
         case .tabBarTabSwitcherOpened: return "m_tab_manager_opened"
+        case .tabBarTabSelected: return "m_tab_bar_tab_selected"
+        case .tabBarTabClosed: return "m_tab_bar_tab_closed"
+        case .tabBarNewTab: return "m_tab_bar_new_tab"
+        case .tabBarOverflowDaily: return "m_tab_bar_overflow_daily"
+        case .tabBarOpenTabCountDaily: return "m_tab_bar_open_tab_count_daily"
 
         case .bookmarkLaunchList: return "m_bookmark_launch_list"
         case .bookmarkLaunchScored: return "m_bookmark_launch_scored"
@@ -2738,6 +2805,7 @@ extension Pixel.Event {
 
         case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
         case .debugTabsModelCrossModeMismatch: return "m_debug_tabs-model_cross-mode-mismatch"
+        case .debugTabsBarCellIndexOutOfRange: return "debug_tabs-bar_cell-index-out-of-range"
 
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             
@@ -2785,7 +2853,9 @@ extension Pixel.Event {
         case .cookieDeletionTime(let aggregation):
             return "m_debug_cookie-clearing-time-\(aggregation)"
         case .clearDataInDefaultPersistence(let aggregation):
-            return "m_debug_legacy-data-clearing-time-\(aggregation)"
+            return "data-clearing_all-tabs-time-\(aggregation)"
+        case .clearDataInDefaultPersistenceSingleTab(let aggregation):
+            return "data-clearing_single-tab-time-\(aggregation)"
         case .cookieDeletionLeftovers: return "m_cookie_deletion_leftovers"
 
         case .webkitWarmupStart(let appState):
@@ -2882,6 +2952,9 @@ extension Pixel.Event {
             // MARK: Debug Web View
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
+
+        case .debugInteractionRepeatedFailedScroll: return "m_debug_interaction_repeated_failed_scroll"
+        case .debugInteractionWedgedRecognizer: return "m_debug_interaction_wedged_recognizer"
 
             // MARK: - Debug Prompt Coordination
 
@@ -3170,6 +3243,16 @@ extension Pixel.Event {
         case .subscriptionWinBackOfferSubscriptionSettingsShown: return "m_privacy-pro_winback_subscription_settings_shown"
         case .subscriptionWinBackOfferSubscriptionSettingsCTAClicked: return "m_privacy-pro_winback_subscription_settings_clicked"
 
+        // Subscription Funnel Entry Points (App Menu, App Settings)
+        case .subscriptionEntryAppMenuImpression: return "m_subscription_appmenu_impression"
+        case .subscriptionEntryAppMenuSubscriptionClick: return "m_subscription_appmenu_subscription_click"
+        case .subscriptionEntrySettingsImpression: return "m_subscription_settings_impression"
+        case .subscriptionEntrySettingsSubscriptionClick: return "m_subscription_settings_subscription_click"
+
+        // VPN Access-Revoked Alert
+        case .vpnAccessRevokedAlertShown: return "m_vpn_access_revoked_alert_shown"
+        case .vpnAccessRevokedAlertSubscribeButtonClicked: return "m_vpn_access_revoked_alert_subscribe_button_clicked"
+
         // Free Trial Journey
         case .privacyProFreeTrialStart: return "m_privacy-pro_freetrial_start"
         case .privacyProFreeTrialVPNActivation: return "m_privacy-pro_freetrial_vpn_activation"
@@ -3288,9 +3371,20 @@ extension Pixel.Event {
         case .ntpAfterIdleEscapeHatchBurnImmediatelyTapped: return "m_ntp_after_idle_escape_hatch_burn_immediately_tapped"
         case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_new_tab"
         case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_last_used_tab"
+        case .ntpAfterIdleEscapeHatchHiddenFromMenu: return "m_ntp_after_idle_escape_hatch_hidden_from_menu"
+        case .ntpAfterIdleEscapeHatchShown: return "m_ntp_after_idle_escape_hatch_shown"
+        case .ntpAfterIdleEscapeHatchMenuShown: return "m_ntp_after_idle_escape_hatch_menu_shown"
+        case .ntpAfterIdleEscapeHatchReturnToTabTappedFromMenu: return "m_ntp_after_idle_escape_hatch_return_to_tab_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchCloseTabTappedFromMenu: return "m_ntp_after_idle_escape_hatch_close_tab_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchBurnWithConfirmationTappedFromMenu: return "m_ntp_after_idle_escape_hatch_burn_with_confirmation_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchBurnImmediatelyTappedFromMenu: return "m_ntp_after_idle_escape_hatch_burn_immediately_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchSwipeActionPerformed: return "m_ntp_after_idle_escape_hatch_swipe_action_performed"
+        case .ntpAfterIdleEscapeHatchBurnTappedFromButton: return "m_ntp_after_idle_escape_hatch_burn_tapped_from_button"
         case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
         case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
         case .ntpAfterIdleSettingIdleIntervalChanged: return "m_ntp_after_idle_setting_idle_interval_changed"
+        case .ntpAfterIdleLastTabShortcutSettingEnabled: return "m_ntp_after_idle_last_tab_shortcut_setting_enabled"
+        case .ntpAfterIdleLastTabShortcutSettingDisabled: return "m_ntp_after_idle_last_tab_shortcut_setting_disabled"
 
         // MARK: DuckPlayer
         case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
@@ -3518,9 +3612,26 @@ extension Pixel.Event {
         case .aiChatSingleDeleteSuccessful: return "m_aichat_single_delete_successful"
         case .aiChatSingleDeleteFailed: return "m_aichat_single_delete_failed"
 
+        // MARK: AI Chat History Screen
+        case .aiChatHistoryScreenShown: return "aichat_history_screen_shown"
+        case .aiChatHistoryChatOpened: return "aichat_history_chat_opened"
+        case .aiChatHistoryChatDeleted: return "aichat_history_chat_deleted"
+        case .aiChatHistoryEmptyCTATapped: return "aichat_history_empty_cta_tapped"
+        case .aiChatHistorySearchActivated: return "aichat_history_search_activated"
+        case .aiChatHistoryFireAllTapped: return "aichat_history_fire_all_tapped"
+        case .aiChatHistoryFireAllConfirmed: return "aichat_history_fire_all_confirmed"
+        case .aiChatHistoryPinAdded: return "aichat_history_pin_added"
+        case .aiChatHistoryPinRemoved: return "aichat_history_pin_removed"
+        case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
+        case .aiChatHistoryEditModeEntered: return "aichat_history_edit_mode_entered"
+        case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
+
         // MARK: AI Chat Recent Chats
         case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
         case .aiChatRecentChatSelected: return "m_aichat_recent_chat_selected"
+        case .aiChatRecentChatDeleteButtonTapped: return "m_aichat_recent_chat_delete_button_tapped"
+        case .aiChatRecentChatDeleteConfirmed: return "m_aichat_recent_chat_delete_confirmed"
+        case .aiChatRecentChatDeleteCancelled: return "m_aichat_recent_chat_delete_cancelled"
 
         // MARK: AI Chat Contextual Mode
         case .aiChatContextualSheetOpened: return "m_aichat_contextual_sheet_opened"
@@ -3555,6 +3666,7 @@ extension Pixel.Event {
         case .unifiedToggleInputWebSearchSelected: return "m_aichat_unified_input_web_search_selected"
         case .unifiedToggleInputWebSearchDeselected: return "m_aichat_unified_input_web_search_deselected"
         case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
+        case .unifiedToggleInputCustomizeResponsesSelected: return "m_aichat_unified_input_customize_responses_selected"
         case .unifiedToggleInputModelSelected: return "m_aichat_unified_input_model_selected"
         case .unifiedToggleInputReasoningEffortSelected: return "m_aichat_unified_input_reasoning_effort_selected"
         case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
@@ -3567,6 +3679,10 @@ extension Pixel.Event {
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
         case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
+        case .unifiedToggleInputShowModelPicker: return "aichat_unified_input_show_model_picker"
+        case .unifiedToggleInputSubmitChangeModel: return "aichat_unified_input_submit_change_model"
+        case .unifiedToggleInputSubmitChangeModelPromptSent: return "aichat_unified_input_submit_change_model_prompt_sent"
+        case .unifiedToggleInputDuckAIDirectNavigation: return "m_aichat_unified_input_duck_ai_direct_navigation"
 
         case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
         case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"
@@ -3762,6 +3878,8 @@ extension Pixel.Event {
         case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
         case .webExtensionLoaded: return "m_web_extension_loaded"
         case .webExtensionLoadError: return "m_web_extension_load_error"
+        case .webExtensionDeferredProtectedDataUnavailable: return "m_web_extension_deferred_protected_data_unavailable"
+        case .webExtensionResumedProtectedDataAvailable: return "m_web_extension_resumed_protected_data_available"
         case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
         case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
         case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"
@@ -3771,6 +3889,12 @@ extension Pixel.Event {
         case .webExtensionDarkReaderInstallError: return "m_web_extension_dark_reader_install_error"
         case .webExtensionDarkReaderEnabled: return "m_web_extension_dark_reader_enabled"
         case .webExtensionDarkReaderDisabled: return "m_web_extension_dark_reader_disabled"
+
+        case .webExtensionStateChecked: return "web_extension_state_checked"
+        case .webExtensionEmbeddedNotLoaded: return "web_extension_embedded_not_loaded"
+        case .webExtensionDarkReaderNotLoaded: return "web_extension_dark_reader_not_loaded"
+        case .webExtensionAdBlockingNotLoaded: return "web_extension_ad_blocking_not_loaded"
+        case .webExtensionAdBlockingScriptletsNotFetched: return "web_extension_ad_blocking_scriptlets_not_fetched"
 
         case .webExtensionAdBlockingInstalled: return "m_web_extension_ad_blocking_installed"
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"

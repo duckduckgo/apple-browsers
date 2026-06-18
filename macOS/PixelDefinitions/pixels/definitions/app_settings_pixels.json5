@@ -1,5 +1,19 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
+    "settings_email_protection_opened": {
+        "description": "Fires when the user opens the Email Protection settings pane.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "subscribed"]
+    },
+    "browser_menu_email_protection": {
+        "description": "Fires when the user clicks the Email Protection submenu item in the browser overflow menu.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "subscribed"]
+    },
     "m_mac_settings_sync_app_icon_with_theme_turned_on": {
         "description": "Fired when the user turns on the setting to sync the app icon with the selected theme",
         "owners": ["Bunn"],

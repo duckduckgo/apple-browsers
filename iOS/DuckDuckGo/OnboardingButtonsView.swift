@@ -62,3 +62,14 @@ extension OnboardingActions {
         }
     }
 }
+
+#if DEBUG
+#Preview {
+    OnboardingActions(
+        viewModel: OnboardingActions.Model(primaryButtonTitle: "Continue", secondaryButtonTitle: "Skip"),
+        primaryAction: {},
+        secondaryAction: {}
+    )
+    .padding()
+}
+#endif

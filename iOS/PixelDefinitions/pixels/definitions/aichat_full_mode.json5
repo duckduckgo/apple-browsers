@@ -76,5 +76,26 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_aichat_recent_chat_delete_button_tapped": {
+        "description": "Fired when user taps the delete (fire) icon on a recent chat row in the Duck.ai suggestions list",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_recent_chat_delete_confirmed": {
+        "description": "Fired when user confirms deletion of a recent chat from the Duck.ai suggestions list",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_recent_chat_delete_cancelled": {
+        "description": "Fired when user cancels deletion of a recent chat from the Duck.ai suggestions list",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

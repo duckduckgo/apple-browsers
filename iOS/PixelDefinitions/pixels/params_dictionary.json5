@@ -314,6 +314,13 @@
         "type": "boolean",
         "description": "Whether the user is eligible for a free trial"
     },
+    "subscriptionFunnelOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Values follow the convention `funnel_<entry-point>_<platform>[_<modifier>]`.",
+        "pattern": "^funnel_",
+        "examples": ["funnel_appmenu_ios", "funnel_appsettings_ios", "funnel_onboarding_ios", "funnel_appsettings_ios_winback"]
+    },
     "locale": {
         "key": "locale",
         "type": "string",

@@ -18,6 +18,11 @@
 //
 
 import UIKit
+import DesignResourcesKitIcons
+
+enum OmniBarMetrics {
+    static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+}
 
 enum OmniBarLayoutMode {
     /// No external buttons visible, full-width search bar (iPhone portrait, iPad compact, editing)

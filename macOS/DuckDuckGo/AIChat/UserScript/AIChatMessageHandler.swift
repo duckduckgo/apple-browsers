@@ -18,6 +18,7 @@
 
 import AIChat
 import Common
+import Foundation
 import FoundationExtensions
 import PrivacyConfig
 import UserScript
@@ -50,6 +51,8 @@ final class AIChatMessageHandler: AIChatMessageHandling {
     private let pageContextHandler: AIChatPageContextHandler
     private let selectionContextHandler: AIChatSelectionContextHandler
     private let isNativeStorageBridgeAvailable: Bool
+    private let installDateProvider: () -> Date?
+    private let installTypeProvider: () -> AIChatInstallType
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
@@ -57,7 +60,15 @@ final class AIChatMessageHandler: AIChatMessageHandling {
          chatRestorationDataHandler: AIChatRestorationDataHandler = AIChatRestorationDataHandler(),
          pageContextHandler: AIChatPageContextHandler = AIChatPageContextHandler(),
          selectionContextHandler: AIChatSelectionContextHandler = AIChatSelectionContextHandler(),
-         isNativeStorageBridgeAvailable: Bool = false) {
+         isNativeStorageBridgeAvailable: Bool = false,
+         installDateProvider: @escaping () -> Date? = { LocalStatisticsStore().installDate },
+         installTypeProvider: @escaping () -> AIChatInstallType = {
+             // App Store builds can't detect reinstalls, so report `.unknown` rather than misreporting `.new`.
+             guard StandardApplicationBuildType().isSparkleBuild else { return .unknown }
+             let isReturning = DefaultReinstallUserDetection(
+                keyValueStore: Application.appDelegate.keyValueStore).isReinstallingUser
+             return isReturning ? .returning : .new
+         }) {
         self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
         self.payloadHandler = payloadHandler
@@ -65,6 +76,8 @@ final class AIChatMessageHandler: AIChatMessageHandling {
         self.pageContextHandler = pageContextHandler
         self.selectionContextHandler = selectionContextHandler
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
+        self.installDateProvider = installDateProvider
+        self.installTypeProvider = installTypeProvider
     }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
@@ -130,7 +143,9 @@ extension AIChatMessageHandler {
             supportsMultipleContexts: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
             supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatSidebarAttachMoreTabs),
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
-            supportsNativeVoicePermissionHandler: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
+            supportsNativeVoicePermissionHandler: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
+            installType: installTypeProvider(),
+            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
         )
     }
 

@@ -378,7 +378,14 @@ final class SubscriptionFlowViewModel: ObservableObject {
         await self.setupTransactionObserver()
         await self.setupWebViewObservers()
         if let pixel = flowType.impressionPixel {
-            Pixel.fire(pixel: pixel)
+            let origin = URLComponents(url: purchaseURL, resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .first(where: { $0.name == AttributionParameter.origin })?
+                .value
+            Pixel.fire(
+                pixel: pixel,
+                withAdditionalParameters: origin.map { [AttributionParameter.origin: $0] } ?? [:]
+            )
         }
     }
 

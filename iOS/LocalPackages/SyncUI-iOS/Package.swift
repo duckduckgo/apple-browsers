@@ -35,6 +35,7 @@ let package = Package(
         .package(path: "../DuckUI"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/UIComponents"),
         .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.1"),
     ],
     targets: [
@@ -43,7 +44,8 @@ let package = Package(
             dependencies: [
                 .product(name: "DuckUI", package: "DuckUI"),
                 "DesignResourcesKit",
-                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons")
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
+                .product(name: "UIComponents", package: "UIComponents")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

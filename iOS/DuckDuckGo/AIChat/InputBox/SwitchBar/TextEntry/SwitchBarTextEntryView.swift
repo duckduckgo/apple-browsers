@@ -97,24 +97,36 @@ class SwitchBarTextEntryView: UIView {
     var style: Style = .multiLine {
         didSet {
             guard style != oldValue else { return }
-            // Resign the outgoing control before hiding it. style is already
-            // updated to the new value in didSet, so usesTextField reflects the
-            // incoming control — check both explicitly rather than routing via
-            // the override, which would resign the wrong one.
             let wasFirstResponder = textView.isFirstResponder || textField.isFirstResponder
-            if textView.isFirstResponder { _ = textView.resignFirstResponder() }
-            if textField.isFirstResponder { _ = textField.resignFirstResponder() }
+
+            // Unhide and populate the incoming control before touching first responder.
             if style == .singleLine {
                 textField.text = handler.currentText
+                textField.isHidden = false
             } else {
                 textView.text = handler.currentText
+                textView.isHidden = false
             }
-            syncActiveControl()
+
+            // Transfer FR while both controls are visible so UIKit keeps the keyboard alive
+            // without a dismiss/re-present cycle.
+            if wasFirstResponder { _ = becomeFirstResponder() }
+
+            // Now hide the outgoing control — it has already lost first responder above.
+            if style == .singleLine {
+                textView.isHidden = true
+                textView.accessibilityIdentifier = nil
+                textField.accessibilityIdentifier = "searchEntry"
+            } else {
+                textField.isHidden = true
+                textField.accessibilityIdentifier = nil
+                textView.accessibilityIdentifier = "searchEntry"
+            }
+
             updatePlaceholderVisibility()
             updateKeyboardConfiguration()
             updateTextViewHeight()
             adjustTextViewContentInset()
-            if wasFirstResponder { _ = becomeFirstResponder() }
         }
     }
 
@@ -328,7 +340,6 @@ class SwitchBarTextEntryView: UIView {
             : UIColor(designSystemColor: .accent)
         textField.font = textFont
         textField.adjustsFontForContentSizeCategory = true
-        textField.backgroundColor = .clear
         textField.textColor = UIColor(designSystemColor: .textPrimary)
         textField.tintColor = tintColor
         textField.autocorrectionType = .no
@@ -452,6 +463,9 @@ class SwitchBarTextEntryView: UIView {
                 textField.text = currentText
                 updatePlaceholderVisibility()
             }
+            // Sync button state to handler so textRightInset reflects any text already set
+            // by the coordinator before this method was called.
+            updateButtonState(animated: false)
         } else {
             if textView.text != currentText {
                 textView.text = currentText
@@ -566,10 +580,26 @@ class SwitchBarTextEntryView: UIView {
         }
 
         if animated {
-            UIView.transition(with: buttonsView,
-                              duration: Constants.buttonStateAnimationDuration,
-                              options: .transitionCrossDissolve,
-                              animations: apply)
+            if usesTextField {
+                // Apply the inset change before the crossfade so the text area
+                // is already at its final width when the button fades in —
+                // UITextField's editingRect is crisp and the shrink is visible.
+                UIView.performWithoutAnimation {
+                    self.currentButtonState = newButtonState
+                    self.adjustTextViewContentInset()
+                    self.updatePlaceholderAlignment()
+                    self.layoutIfNeeded()
+                }
+                UIView.transition(with: buttonsView,
+                                  duration: Constants.buttonStateAnimationDuration,
+                                  options: .transitionCrossDissolve,
+                                  animations: {})
+            } else {
+                UIView.transition(with: buttonsView,
+                                  duration: Constants.buttonStateAnimationDuration,
+                                  options: .transitionCrossDissolve,
+                                  animations: apply)
+            }
         } else {
             apply()
         }
@@ -612,8 +642,9 @@ class SwitchBarTextEntryView: UIView {
         let fragmentPadding = textView.textContainer.lineFragmentPadding
 
         if usesTextField {
-            let buttonsIntersectionWidth = textField.frame.intersection(buttonsView.frame).width
-            let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
+            let fittingWidth = buttonsView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
+            let buttonsWidth = currentButtonState.showsAnyButton ? fittingWidth : 0
+            let rightInset = buttonsWidth > 0 ? buttonsWidth : Constants.textHorizontalInset
             textField.textLeftInset = Constants.textHorizontalInset + fragmentPadding
             textField.textRightInset = rightInset + fragmentPadding
         } else {
@@ -631,7 +662,11 @@ class SwitchBarTextEntryView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        adjustTextViewContentInset()
+        // UITextField inset is pre-computed from intrinsic button sizes and only changes when
+        // button state changes — skip recomputing on every animation-frame layout pass.
+        if !usesTextField {
+            adjustTextViewContentInset()
+        }
         if !hasBeenInteractedWith {
             updateTextViewHeight()
         }

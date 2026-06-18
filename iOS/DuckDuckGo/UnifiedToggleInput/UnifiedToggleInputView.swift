@@ -508,7 +508,7 @@ final class UnifiedToggleInputView: UIView {
         self.isToggleEnabled = isToggleEnabled
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
-        textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
+        textEntryView.style = (isToggleEnabled && handler.currentToggleState == .aiChat) ? .multiLine : .singleLine
         setupUI()
         setupSubscriptions()
     }
@@ -652,7 +652,7 @@ final class UnifiedToggleInputView: UIView {
     func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
-        textEntryView.style = enabled ? .multiLine : .singleLine
+        textEntryView.style = (enabled && handler.currentToggleState == .aiChat) ? .multiLine : .singleLine
         if isExpanded {
             applyCardLayout(.collapsed, animated: false)
             applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: showsToolbar), animated: false)
@@ -665,6 +665,7 @@ final class UnifiedToggleInputView: UIView {
         }
         if isToggleEnabled {
             toggleView.setMode(mode, animated: animated)
+            textEntryView.style = mode == .aiChat ? .multiLine : .singleLine
         }
         // Drive textView pose synchronously inside the caller's UIView.animate so the
         // placeholder constraint switch animates rather than snapping when the publisher
@@ -884,6 +885,19 @@ final class UnifiedToggleInputView: UIView {
             applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
         case (_, _):
             applyCardLayout(.collapsed, animated: false)
+            // For toggle-disabled: the inline dismiss button shifts the textEntryView's leading
+            // edge inward (reducing its width) when expanded. Pre-apply that constraint here,
+            // before the UIView.animate block, so the text area is already at its final width
+            // when the card height animation begins — without this the width change animates
+            // alongside card expansion and text visibly shrinks from the right.
+            if !isToggleEnabled {
+                UIView.performWithoutAnimation {
+                    self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: true)
+                    self.applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: true)
+                    self.layoutIfNeeded()
+                }
+            }
+            textEntryView.clearDismissSnapshot()
         }
         alignWithOmnibarChrome()
     }

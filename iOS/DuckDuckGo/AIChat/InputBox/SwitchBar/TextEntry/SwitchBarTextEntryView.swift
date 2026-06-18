@@ -97,6 +97,10 @@ class SwitchBarTextEntryView: UIView {
     var style: Style = .multiLine {
         didSet {
             guard style != oldValue else { return }
+            // Resign the outgoing control before hiding it — a hidden view that
+            // remains first responder keeps the keyboard attached but unreachable.
+            let wasFirstResponder = isFirstResponder
+            if wasFirstResponder { _ = resignFirstResponder() }
             if style == .singleLine {
                 textField.text = handler.currentText
             } else {
@@ -107,6 +111,7 @@ class SwitchBarTextEntryView: UIView {
             updateKeyboardConfiguration()
             updateTextViewHeight()
             adjustTextViewContentInset()
+            if wasFirstResponder { _ = becomeFirstResponder() }
         }
     }
 
@@ -987,10 +992,8 @@ class SwitchBarTextEntryView: UIView {
                 // edge (textLeftInset), not firstRect — UITextField's firstRect can reflect internal
                 // scroll state and give wrong values during dismiss.
                 return textField.convert(CGPoint(x: textField.textLeftInset, y: 0), to: nil).x
-            }
-            if !usesTextField,
-               let end = textView.position(from: textView.beginningOfDocument, offset: 1),
-               let range = textView.textRange(from: textView.beginningOfDocument, to: end) {
+            } else if let end = textView.position(from: textView.beginningOfDocument, offset: 1),
+                      let range = textView.textRange(from: textView.beginningOfDocument, to: end) {
                 return textView.convert(textView.firstRect(for: range).origin, to: nil).x
             }
         }
@@ -1080,6 +1083,7 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
     }
 
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        guard usesTextField else { return false }
         fireKeyboardGoPressedPixel()
         let currentText = textField.text ?? ""
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

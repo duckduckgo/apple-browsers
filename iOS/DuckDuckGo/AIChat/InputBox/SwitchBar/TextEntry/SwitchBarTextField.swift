@@ -1,8 +1,8 @@
 //
-//  SwitchBarTextView.swift
+//  SwitchBarTextField.swift
 //  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,24 +17,26 @@
 //  limitations under the License.
 //
 
-
 import UIKit
-import SwiftUI
-import Combine
-import DesignResourcesKitIcons
 
-final class SwitchBarTextView: UITextView {
+/// Single-line UITextField used in place of `SwitchBarTextView` when Duck.ai is off or toggle is disabled.
+final class SwitchBarTextField: UITextField {
 
-    var onTouchesBeganHandler: (() -> Void)?
+    var textLeftInset: CGFloat = 0
+    var textRightInset: CGFloat = 0
 
-    /// You'd think a gesture would be useful here, but it stops the menu from appearing, even if you tell it not to cancel touches, or if you tell it to delay touch begin/end.
-    ///   So this is a little work around that does the job.
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesBegan(touches, with: event)
-        onTouchesBeganHandler?()
+    override func textRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: UIEdgeInsets(top: 0, left: textLeftInset, bottom: 0, right: textRightInset))
     }
 
-    /// Block FR when any ancestor is hidden — covers iOS's modal-dismiss FR restoration path.
+    override func editingRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: UIEdgeInsets(top: 0, left: textLeftInset, bottom: 0, right: textRightInset))
+    }
+
+    override var canBecomeFirstResponder: Bool {
+        !hasHiddenAncestor && super.canBecomeFirstResponder
+    }
+
     override func becomeFirstResponder() -> Bool {
         guard !hasHiddenAncestor else { return false }
         return super.becomeFirstResponder()
@@ -48,5 +50,4 @@ final class SwitchBarTextView: UITextView {
         }
         return false
     }
-
 }

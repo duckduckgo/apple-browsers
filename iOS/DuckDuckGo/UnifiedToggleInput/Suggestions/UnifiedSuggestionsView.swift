@@ -163,19 +163,20 @@ struct UnifiedSuggestionsView: View {
         .ignoresSafeArea(.container, edges: .top)
     }
 
-    /// The logo's screen-center Y: it rests at `restCenterY` (the NTP anchor) but keeps clear of the
-    /// chrome on both sides — pushed down off the top chrome (`topChromeBottom`, e.g. the top-bar hatch)
-    /// by `topChromeGap`, and up off the bar's top edge (`barTop`, e.g. the bottom-bar omnibar) by the
-    /// larger `bottomBarGap` (the bottom bar is tall, so the logo needs more breathing room above it).
-    /// With room on both sides the pushes are zero and it stays at rest; the two net out so it degrades
-    /// gracefully when the band is tighter than the logo itself.
+    /// The logo's screen-center Y: it rests at `restCenterY` (the NTP anchor) but is clamped into the band
+    /// between the chrome — pulled up to keep `bottomBarGap` above the bar/keyboard top edge (`barTop`), and
+    /// held at least `topChromeGap` below the top chrome (`topChromeBottom`, e.g. the hatch). On a short
+    /// screen where the band can't fit the logo plus both gaps, it centers the logo between the two chrome
+    /// edges instead — clearing the keyboard and the hatch as evenly as possible rather than slipping under
+    /// either (the wordmark must not hide behind the keyboard).
     private static func logoCenterY(restingAt restCenterY: CGFloat,
                                     topChromeBottom: CGFloat,
                                     barTop: CGFloat) -> CGFloat {
         let halfHeight = Metrics.logoHeight / 2
-        let downPush = max(0, topChromeBottom + Metrics.topChromeGap - (restCenterY - halfHeight))
-        let upPush = max(0, (restCenterY + halfHeight) + Metrics.bottomBarGap - barTop)
-        return restCenterY + downPush - upPush
+        let barLimit = barTop - Metrics.bottomBarGap - halfHeight
+        let hatchFloor = topChromeBottom + Metrics.topChromeGap + halfHeight
+        guard hatchFloor <= barLimit else { return (topChromeBottom + barTop) / 2 }
+        return min(max(restCenterY, hatchFloor), barLimit)
     }
 
     private enum Metrics {

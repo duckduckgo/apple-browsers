@@ -23,8 +23,9 @@ import UIKit
 extension TabViewController {
 
     func setupErrorActionButton() {
-        var buttonConfiguration = UIButton.Configuration.plain()
-        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostText)
+        var buttonConfiguration = UIButton.Configuration.filled()
+        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
+        buttonConfiguration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
         buttonConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24)
         buttonConfiguration.background.cornerRadius = 8
         buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
@@ -37,35 +38,6 @@ extension TabViewController {
         errorActionButton.configurationUpdateHandler = { button in
             guard var configuration = button.configuration else { return }
             if !button.isEnabled {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostTextDisabled)
-                configuration.background.backgroundColor = .clear
-            } else if button.isHighlighted {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostTextPressed)
-                configuration.background.backgroundColor = UIColor(designSystemColor: .buttonsGhostPressedFill)
-            } else {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostText)
-                configuration.background.backgroundColor = .clear
-            }
-            button.configuration = configuration
-        }
-    }
-
-    func setupErrorReportBrokenSiteButton() {
-        var buttonConfiguration = UIButton.Configuration.filled()
-        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
-        buttonConfiguration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
-        buttonConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24)
-        buttonConfiguration.background.cornerRadius = 8
-        buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var transformed = incoming
-            transformed.font = UIFont.daxButton()
-            transformed.kern = -0.23
-            return transformed
-        }
-        errorReportBrokenSiteButton.configuration = buttonConfiguration
-        errorReportBrokenSiteButton.configurationUpdateHandler = { button in
-            guard var configuration = button.configuration else { return }
-            if !button.isEnabled {
                 configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryTextDisabled)
                 configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDisabled)
             } else if button.isHighlighted {
@@ -75,6 +47,25 @@ extension TabViewController {
                 configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
                 configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
             }
+            button.configuration = configuration
+        }
+    }
+
+    func setupErrorReportBrokenSiteButton() {
+        var buttonConfiguration = UIButton.Configuration.plain()
+        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .textLink)
+        buttonConfiguration.contentInsets = .zero
+        buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var transformed = incoming
+            transformed.font = UIFont.daxBodyRegular()
+            return transformed
+        }
+        errorReportBrokenSiteButton.configuration = buttonConfiguration
+        errorReportBrokenSiteButton.contentHorizontalAlignment = .center
+        errorReportBrokenSiteButton.configurationUpdateHandler = { button in
+            guard var configuration = button.configuration else { return }
+            configuration.baseForegroundColor = UIColor(designSystemColor: .textLink).withAlphaComponent(button.isHighlighted ? 0.7 : 1)
+            configuration.background.backgroundColor = .clear
             button.configuration = configuration
         }
     }
@@ -185,16 +176,14 @@ extension TabViewController {
         errorContentStack.addArrangedSubview(labelsStack)
         errorContentStack.addArrangedSubview(errorReportBrokenSiteButton)
         errorContentStack.addArrangedSubview(errorActionButton)
-        errorContentStack.setCustomSpacing(24, after: labelsStack)
-        errorContentStack.setCustomSpacing(8, after: errorReportBrokenSiteButton)
+        errorContentStack.setCustomSpacing(8, after: labelsStack)
+        errorContentStack.setCustomSpacing(32, after: errorReportBrokenSiteButton)
 
         let safeArea = rootView.safeAreaLayoutGuide
         let minHeightConstraint = error.heightAnchor.constraint(equalToConstant: 400)
         minHeightConstraint.priority = .defaultLow
         let errorActionButtonFillWidthConstraint = errorActionButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
         errorActionButtonFillWidthConstraint.priority = .defaultHigh
-        let errorReportBrokenSiteButtonFillWidthConstraint = errorReportBrokenSiteButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
-        errorReportBrokenSiteButtonFillWidthConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
             error.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
             error.centerYAnchor.constraint(equalTo: safeArea.centerYAnchor),
@@ -215,12 +204,7 @@ extension TabViewController {
             errorActionButton.centerXAnchor.constraint(equalTo: errorContentStack.centerXAnchor),
             errorActionButton.leadingAnchor.constraint(greaterThanOrEqualTo: error.leadingAnchor, constant: 32),
             errorActionButton.trailingAnchor.constraint(lessThanOrEqualTo: error.trailingAnchor, constant: -32),
-            errorReportBrokenSiteButtonFillWidthConstraint,
-            errorReportBrokenSiteButton.widthAnchor.constraint(lessThanOrEqualToConstant: 360),
-            errorReportBrokenSiteButton.heightAnchor.constraint(equalToConstant: 50),
-            errorReportBrokenSiteButton.centerXAnchor.constraint(equalTo: errorContentStack.centerXAnchor),
-            errorReportBrokenSiteButton.leadingAnchor.constraint(greaterThanOrEqualTo: error.leadingAnchor, constant: 32),
-            errorReportBrokenSiteButton.trailingAnchor.constraint(lessThanOrEqualTo: error.trailingAnchor, constant: -32)
+            errorReportBrokenSiteButton.centerXAnchor.constraint(equalTo: errorContentStack.centerXAnchor)
         ])
     }
 

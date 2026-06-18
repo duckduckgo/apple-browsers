@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Скачать DuckDuckGo на другие устройства";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Данные синхронизированы!";
+"device.synced.sheet.title" = "Устройство синхронизировано!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Готово";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Настройка синхронизации и резервного копирования";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Подготовка к синхронизации";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Восстановить синхронизированные данные";
@@ -389,13 +392,13 @@
 "sync.simplified.scan-or-view-code.connecting.status" = "Выполняется подключение...";
 
 /* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Держите «Sync & Backup» открытым на обоих устройствах";
+"sync.simplified.scan-or-view-code.connecting.title" = "Держите приложения «Sync & Backup» открытыми на обоих устройствах";
 
 /* Message of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Вернись к этому устройству после вставки кода.";
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "После вставки кода вернитесь к этому устройству.";
 
 /* Title of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Вставь код на другое устройство";
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Вставьте код на другом устройстве";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Ввести код вручную";

@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Atsisiųskite „DuckDuckGo“ į kitus įrenginius";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Jūsų duomenys sinchronizuoti!";
+"device.synced.sheet.title" = "Įrenginys sinchronizuotas!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Atlikta";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Sinchronizavimo ir atsarginės kopijos kūrimo nustatymas";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Ruošiamasi sinchronizuoti";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Atkurti sinchronizuotus duomenis";
@@ -389,13 +392,13 @@
 "sync.simplified.scan-or-view-code.connecting.status" = "Jungiamasi...";
 
 /* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Abiejuose įrenginiuose palik atidarytą „Sync & Backup“";
+"sync.simplified.scan-or-view-code.connecting.title" = "Palik „Sync & Backup“ atidarytą abiejuose įrenginiuose";
 
 /* Message of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Įklijavęs kodą, grįžk prie šio įrenginio.";
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kai įklijuosi kodą, grįžk prie šio įrenginio.";
 
 /* Title of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Įklijuokite kodą kitame įrenginyje";
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Įklijuok kodą kitame savo įrenginyje";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Įveskite kodą ranka";
@@ -425,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Sinchronizuok įrenginius";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Nuskaityk arba įklijuok šį kodą kitame įrenginyje";
+"sync.simplified.scan-or-view-code.view.instructions" = "Nuskaityk arba įklijuok šį kodą kitame savo";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sinchronizuoti ir kurti atsarginę kopiją";

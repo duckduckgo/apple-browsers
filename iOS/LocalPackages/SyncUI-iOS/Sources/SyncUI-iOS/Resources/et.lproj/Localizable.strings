@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Hangi DuckDuckGo teistele seadmetele";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Sinu andmed on sünkroonitud!";
+"device.synced.sheet.title" = "Seade sünkroonitud!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Valmis";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Sünkroonimise ja varundamise seadistamine";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Sünkroonimiseks ettevalmistumine";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Taasta sünkroonitud andmed";
@@ -389,13 +392,13 @@
 "sync.simplified.scan-or-view-code.connecting.status" = "Ühendamine...";
 
 /* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Hoia mõlemas seadmes „Sync & Backup” avatud";
+"sync.simplified.scan-or-view-code.connecting.title" = "Hoia „Sync & Backup” mõlemas seadmes avatud";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Pärast koodi kleepimist tule selle seadme juurde tagasi.";
 
 /* Title of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Kleepige kood oma teise seadmesse";
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Kopeeri kood teise seadmesse";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Sisesta kood käsitsi";
@@ -425,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Sünkrooni oma seadmed";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Skanni või kleebi see kood oma teisele seadmele";
+"sync.simplified.scan-or-view-code.view.instructions" = "Skanni või kopeeri see kood oma teise seadmesse";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sünkroonimine ja varundamine";

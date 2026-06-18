@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "他のデバイスでDuckDuckGoを入手";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "データが同期されました！";
+"device.synced.sheet.title" = "デバイスを同期しました！";
 
 /* Standard Buttons - Done Button */
 "done.button" = "完了";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "同期とバックアップの設定";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "同期の準備中";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "同期データを復元";
@@ -389,13 +392,13 @@
 "sync.simplified.scan-or-view-code.connecting.status" = "接続中...";
 
 /* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "両方のデバイスで「Sync & Backup」を開いたままにします。";
+"sync.simplified.scan-or-view-code.connecting.title" = "両方のデバイスでSync & Backupを開いたままにします";
 
 /* Message of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.message" = "コードを貼り付けた後、このデバイスに戻ってきてください。";
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "コードを貼り付けたら、このデバイスに戻ります。";
 
 /* Title of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.title" = "コードを別のデバイスに貼り付けてください";
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "コードを別のデバイスに貼り付ける";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "コードを手動で入力する";
@@ -425,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "デバイスを同期";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "このコードをスキャンするか、もう一方に貼り付けてください";
+"sync.simplified.scan-or-view-code.view.instructions" = "このコードをスキャンするか、もうひとつのデバイスに貼り付けます";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sync & Backup";

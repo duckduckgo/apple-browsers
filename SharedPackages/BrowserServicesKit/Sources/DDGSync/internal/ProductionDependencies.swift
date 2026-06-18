@@ -84,8 +84,17 @@ struct ProductionDependencies: SyncDependencies {
         payloadCompressor = SyncGzipPayloadCompressor()
 
         crypter = Crypter(secureStore: secureStore)
-        account = AccountManager(endpoints: endpoints, api: api, crypter: crypter, isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() })
-        scopedAccess = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let scopedAccess = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let registeredDeviceMapper = RegisteredDeviceMapper(crypter: crypter,
+                                                            scopedAccess: scopedAccess,
+                                                            cachedScopedPassword: secureStore.scopedPassword,
+                                                            isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() })
+        account = AccountManager(endpoints: endpoints,
+                                 api: api,
+                                 crypter: crypter,
+                                 registeredDeviceMapper: registeredDeviceMapper,
+                                 isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() })
+        self.scopedAccess = scopedAccess
         scheduler = SyncScheduler()
     }
 

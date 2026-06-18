@@ -34,7 +34,11 @@ class EditDeviceViewModel: ObservableObject {
     }
 
     func save() {
-        onSave(.init(id: device.id, name: name, type: device.type, isThisDevice: device.isThisDevice))
+        onSave(.init(id: device.id,
+                     name: name,
+                     type: device.type,
+                     credentialId: device.credentialId,
+                     isThisDevice: device.isThisDevice))
     }
     
 }

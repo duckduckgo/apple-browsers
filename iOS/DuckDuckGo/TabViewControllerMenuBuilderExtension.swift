@@ -843,7 +843,7 @@ extension TabViewController {
     }
 
     private func openAIChatHistory() {
-        delegate?.tabDidRequestAIChatHistory(tab: self)
+        delegate?.tabDidRequestAIChatHistory(tab: self, source: .browserMenu)
     }
 
     private func buildToggleProtectionEntry(forDomain domain: String, useSmallIcon: Bool = true) -> BrowsingMenuEntry {

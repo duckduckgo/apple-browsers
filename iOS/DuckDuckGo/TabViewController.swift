@@ -3425,7 +3425,7 @@ extension TabViewController: WKUIDelegate {
         if webView.url?.isDuckAIURL == true {
             DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])
         }
-        Pixel.fire(pixel: .webKitDidTerminate)
+        DailyPixel.fireDailyAndCount(pixel: .webKitDidTerminate, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         delegate?.tabContentProcessDidTerminate(tab: self)
     }
     

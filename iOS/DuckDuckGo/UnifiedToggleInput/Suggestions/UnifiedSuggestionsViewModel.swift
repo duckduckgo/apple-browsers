@@ -48,6 +48,9 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// `setFireTab` (which no-ops on an unchanged value, so repeated per-focus sets don't invalidate
     /// the view body).
     @Published private(set) var isFireTab = false
+    /// iPhone landscape suppresses the empty state entirely (no room) — matches the unfocused NTP and
+    /// the legacy `DaxLogoManager` horizontal-compact gate. Set by the container.
+    @Published private(set) var isLandscape = false
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
     /// moves in the same pass, and only when the chrome is actually close (never in Search).
@@ -76,19 +79,16 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         cancellable = inputsPublisher
             .sink { [weak self] inputs in
                 guard let self else { return }
-                // While the host is fading out, freeze the resolved content: a mid-collapse text-clear
-                // would otherwise flip the fading list to a spurious logo (briefly visible in the fade
-                // tail). Unfreezes on the next focus.
-                guard self.dismissBehavior != .fadeOut else { return }
+                // Freeze while the host is collapsing (fade-out OR morph-home): a mid-collapse input
+                // (text clear, mode change) would otherwise swap `content`/the logo out from under the
+                // handoff — a fading list flipping to a spurious logo, or morph-home drifting off `.logo`.
+                // Unfreezes on the next focus.
+                guard self.dismissBehavior == .none else { return }
                 let resolved = UnifiedSuggestionsContentResolver.resolve(inputs, previous: self.content)
-                // Morph-home pins the logo to the Dax mark for the collapse; all other resolves drive its
-                // mark/morph (see `FocusedLogoModel`).
-                if self.dismissBehavior != .morphHome {
-                    self.logoModel.update(wasLogo: self.content == .logo,
-                                          isLogo: resolved == .logo,
-                                          isDuckAI: inputs.mode == .aiChat,
-                                          isFirstSinceActivation: !self.hasResolvedSinceActivation)
-                }
+                self.logoModel.update(wasLogo: self.content == .logo,
+                                      isLogo: resolved == .logo,
+                                      isDuckAI: inputs.mode == .aiChat,
+                                      isFirstSinceActivation: !self.hasResolvedSinceActivation)
                 self.hasResolvedSinceActivation = true
                 self.apply(resolved, modeChanged: inputs.mode != self.previousMode)
                 self.previousMode = inputs.mode
@@ -147,6 +147,12 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     func setFireTab(_ value: Bool) {
         guard isFireTab != value else { return }
         isFireTab = value
+    }
+
+    /// No-ops on an unchanged value (see `setFireTab`).
+    func setLandscape(_ value: Bool) {
+        guard isLandscape != value else { return }
+        isLandscape = value
     }
 
     func setDuckAIListViewModel(_ viewModel: SuggestionsListViewModel?) {

@@ -249,6 +249,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         markNeedsVisibleRefresh()
         if active {
             unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
+            unifiedSuggestionsHost?.setLandscape(isLandscapeOrientation)
             unifiedSuggestionsHost?.prepareForActivation()
             // Re-resolve now (synchronously, before the host is shown) so the prior session's stale
             // content isn't flashed. Runs after `prepareForActivation` clears the dismiss freeze.
@@ -433,6 +434,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func adjustLayoutForViewSize(_ size: CGSize) {
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: size)
         self.isLandscapeOrientation = isHorizontallyCompactLayoutEnabled
+        unifiedSuggestionsHost?.setLandscape(isHorizontallyCompactLayoutEnabled)
 
         let horizontalMargin: CGFloat = isHorizontallyCompactLayoutEnabled ? Metrics.horizontalMarginForCompactLayout : 0
         self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
@@ -605,6 +607,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // top safe-area inset of its own.
         host.setAdditionalTopInset(0)
         host.setIsFireTab(switchBarHandler.isFireTab)
+        host.setLandscape(isLandscapeOrientation)
         updateSingleHostTopOffset()
         unifiedSuggestionsHost = host
         updatePinnedChrome()

@@ -42,10 +42,11 @@ struct UnifiedSuggestionsView: View {
 
     /// On a fire tab every non-typing state is the full fire screen — favorites/recents/logo never show
     /// there (matching the legacy behaviour, where the opaque fire screen covered them). Only the typing
-    /// suggestion list shows; otherwise this opaque layer covers the content beneath.
+    /// suggestion list shows; otherwise this opaque layer covers the content beneath. Suppressed in
+    /// landscape, where the empty state has no room (matches the unfocused NTP / legacy gate).
     @ViewBuilder
     private var fireLayer: some View {
-        if viewModel.isFireTab {
+        if viewModel.isFireTab, !viewModel.isLandscape {
             let showsFire = !isTypingList
             FireModeEmptyStateView(type: .tab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -149,8 +150,9 @@ struct UnifiedSuggestionsView: View {
                 .animation(.easeInOut(duration: 0.2), value: targetCenterY)
                 // Show/hide is instant (matches the favorites overlay) so the logo doesn't linger over
                 // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.
-                // Suppressed on fire tabs — the fire empty state takes the `.logo` slot there.
-                .opacity(isShowingLogo && !viewModel.isFireTab ? 1 : 0)
+                // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches
+                // the unfocused NTP / legacy gate).
+                .opacity(isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
                 .animation(nil, value: isShowingLogo)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.

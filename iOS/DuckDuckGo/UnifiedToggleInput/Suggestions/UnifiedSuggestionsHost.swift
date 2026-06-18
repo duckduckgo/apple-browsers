@@ -111,6 +111,11 @@ final class UnifiedSuggestionsHost {
         viewModel.setFireTab(value)
     }
 
+    /// iPhone landscape suppresses the empty state (no room) — matches the unfocused NTP.
+    func setLandscape(_ value: Bool) {
+        viewModel.setLandscape(value)
+    }
+
     /// List/logo→favorites collapse: fade the focused content out as the NTP content takes over.
     func beginDismissFade() {
         viewModel.beginDismissFade()

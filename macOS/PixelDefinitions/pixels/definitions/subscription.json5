@@ -907,5 +907,89 @@
                 "enum": ["d1", "d2_to_d7"]
             }
         ]
+    },
+    "m_mac_direct_privacy-pro_auth_invalid_refresh_token_detected": {
+        "description": "Fired when the server rejects the stored refresh token (OAuthClientError.invalidTokenRequest), before recovery is attempted. Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "The app component where the rejection was detected, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            },
+            {
+                "key": "token_status",
+                "description": "The TokenStatus the server reported for the rejected refresh token",
+                "type": "string",
+                "enum": ["invalid", "expired", "reused", "logged_out", "fraud_detected", "unknown"]
+            }
+        ]
+    },
+    "m_mac_store_privacy-pro_auth_invalid_refresh_token_detected": {
+        "description": "Fired when the server rejects the stored refresh token (OAuthClientError.invalidTokenRequest), before recovery is attempted. App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "The app component where the rejection was detected, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            },
+            {
+                "key": "token_status",
+                "description": "The TokenStatus the server reported for the rejected refresh token",
+                "type": "string",
+                "enum": ["invalid", "expired", "reused", "logged_out", "fraud_detected", "unknown"]
+            }
+        ]
+    },
+    "m_mac_direct_privacy-pro_auth_invalid_refresh_token_signed_out": {
+        "description": "Fired when the user is signed out because the rejected refresh token could not be recovered. Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "The app component where the sign-out happened, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            },
+            {
+                "key": "token_status",
+                "description": "The TokenStatus the server reported for the rejected refresh token",
+                "type": "string",
+                "enum": ["invalid", "expired", "reused", "logged_out", "fraud_detected", "unknown"]
+            }
+        ]
+    },
+    "m_mac_store_privacy-pro_auth_invalid_refresh_token_signed_out": {
+        "description": "Fired when the user is signed out because the rejected refresh token could not be recovered. App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "The app component where the sign-out happened, like MainApp, SysExt, VPNApp or DBP",
+                "type": "string"
+            },
+            {
+                "key": "token_status",
+                "description": "The TokenStatus the server reported for the rejected refresh token",
+                "type": "string",
+                "enum": ["invalid", "expired", "reused", "logged_out", "fraud_detected", "unknown"]
+            }
+        ]
     }
 }

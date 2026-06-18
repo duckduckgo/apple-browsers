@@ -73,12 +73,13 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testInvalidRefreshTokenDetectedPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .invalidRefreshToken)
+        handler.handle(pixel: .invalidRefreshToken(tokenStatus: nil))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenDetected(subscriptionSource).name,
+            baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenDetected(subscriptionSource, tokenStatus: nil).name,
             expectedParameters: [
                 "source": subscriptionSource.description,
+                "token_status": "unknown",
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0"
             ]
@@ -131,11 +132,13 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testInvalidRefreshTokenSignedOutPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .invalidRefreshTokenSignedOut)
+        handler.handle(pixel: .invalidRefreshTokenSignedOut(tokenStatus: nil))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut.name,
+            baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut(subscriptionSource, tokenStatus: nil).name,
             expectedParameters: [
+                "source": subscriptionSource.description,
+                "token_status": "unknown",
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0"
             ]

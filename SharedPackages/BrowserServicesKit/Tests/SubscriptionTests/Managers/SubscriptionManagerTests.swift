@@ -122,7 +122,7 @@ class SubscriptionManagerTests: XCTestCase {
         }
 
         assertGetTokensErrorPixel(policy: .localValid)
-        XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
+        XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshToken(tokenStatus: nil)))
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_Pixels() async throws {
@@ -134,9 +134,9 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(result, recoveredTokenContainer)
 
         assertGetTokensErrorPixel(policy: .localValid)
-        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken(tokenStatus: nil)))
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
-        XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
+        XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut(tokenStatus: nil)))
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_Pixels() async throws {
@@ -153,8 +153,8 @@ class SubscriptionManagerTests: XCTestCase {
         }
 
         assertGetTokensErrorPixel(policy: .localValid)
-        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
-        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken(tokenStatus: nil)))
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut(tokenStatus: nil)))
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
     }
 
@@ -172,7 +172,7 @@ class SubscriptionManagerTests: XCTestCase {
         }
 
         assertGetTokensErrorPixel(policy: .localValid)
-        XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
+        XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshToken(tokenStatus: nil)))
     }
 
     // MARK: - Subscription Status Tests

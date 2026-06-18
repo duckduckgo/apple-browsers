@@ -47,16 +47,16 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
 
     public func handle(pixel: Subscription.SubscriptionPixelType) {
         switch pixel {
-        case .invalidRefreshToken:
-            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
+        case .invalidRefreshToken(let tokenStatus):
+            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenDetected(source, tokenStatus: tokenStatus), frequency: .dailyAndCount)
         case .subscriptionIsActive:
             pixelKit?.fire(SubscriptionPixel.subscriptionActive(AuthVersion.v2), frequency: .legacyDaily)
         case .osDistributionActiveSubscription:
             pixelKit?.fireOSDistributionPixel(metric: .activeSubscriptions)
         case .getTokensError(let policy, let error):
             pixelKit?.fire(SubscriptionPixel.subscriptionAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
-        case .invalidRefreshTokenSignedOut:
-            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
+        case .invalidRefreshTokenSignedOut(let tokenStatus):
+            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut(source, tokenStatus: tokenStatus), frequency: .dailyAndCount)
         case .invalidRefreshTokenRecovered:
             pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
         case .purchaseSuccessAfterPendingTransaction:

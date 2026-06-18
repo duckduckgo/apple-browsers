@@ -606,15 +606,15 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 await signOut(notifyUI: true, userInitiated: false)
                 throw SubscriptionManagerError.noTokenAvailable
 
-            case OAuthClientError.invalidTokenRequest:
-                pixelHandler.handle(pixel: .invalidRefreshToken)
+            case OAuthClientError.invalidTokenRequest(let tokenStatus):
+                pixelHandler.handle(pixel: .invalidRefreshToken(tokenStatus: tokenStatus))
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     return recoveredTokenContainer
                 } catch {
                     await signOut(notifyUI: false, userInitiated: false)
-                    pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
+                    pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut(tokenStatus: tokenStatus))
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 

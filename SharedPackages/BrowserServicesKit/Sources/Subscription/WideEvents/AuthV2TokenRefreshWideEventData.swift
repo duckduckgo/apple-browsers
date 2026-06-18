@@ -148,7 +148,7 @@ extension AuthV2TokenRefreshWideEventData {
                 }
             case .tokenRefreshFailed(let refreshID, let error):
                 if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
-                    data.errorData = WideEventErrorData(error: error)
+                    data.errorData = WideEventErrorData(error: error, description: (error as? any DDGError)?.description)
                     wideEvent.updateFlow(data)
                     wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
                 }

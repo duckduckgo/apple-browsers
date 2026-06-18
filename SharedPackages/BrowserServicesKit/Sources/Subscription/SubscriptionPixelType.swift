@@ -20,11 +20,11 @@ import Foundation
 import Networking
 
 public enum SubscriptionPixelType: Equatable {
-    case invalidRefreshToken
+    case invalidRefreshToken(tokenStatus: OAuthRequest.TokenStatus?)
     case subscriptionIsActive
     case osDistributionActiveSubscription
     case getTokensError(AuthTokensCachePolicy, Error)
-    case invalidRefreshTokenSignedOut
+    case invalidRefreshTokenSignedOut(tokenStatus: OAuthRequest.TokenStatus?)
     case invalidRefreshTokenRecovered
     case purchaseSuccessAfterPendingTransaction
     case pendingTransactionApproved

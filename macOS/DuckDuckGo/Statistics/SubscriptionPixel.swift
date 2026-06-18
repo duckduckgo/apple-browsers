@@ -85,8 +85,8 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionUpgradeClick
     case subscriptionCancelPendingDowngradeClick
     // Auth
-    case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
-    case subscriptionInvalidRefreshTokenSignedOut
+    case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source, tokenStatus: OAuthRequest.TokenStatus?)
+    case subscriptionInvalidRefreshTokenSignedOut(SubscriptionPixelHandler.Source, tokenStatus: OAuthRequest.TokenStatus?)
     case subscriptionInvalidRefreshTokenRecovered
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
     // Pending Transaction
@@ -266,6 +266,7 @@ enum SubscriptionPixel: PixelKitEvent {
     private struct SubscriptionPixelsDefaults {
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
+        static let tokenStatusKey = "token_status"
         static let platformKey = "platform"
         static let activationDayKey = "activation_day"
         static let statusKey = "status"
@@ -273,8 +274,11 @@ enum SubscriptionPixel: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
-        case .subscriptionInvalidRefreshTokenDetected(let source),
-                .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
+        case .subscriptionInvalidRefreshTokenDetected(let source, let tokenStatus),
+                .subscriptionInvalidRefreshTokenSignedOut(let source, let tokenStatus):
+            return [SubscriptionPixelsDefaults.sourceKey: source.description,
+                    SubscriptionPixelsDefaults.tokenStatusKey: tokenStatus?.subscriptionPixelValue ?? "unknown"]
+        case .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
                 .subscriptionPendingTransactionApproved(let source),
                 .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
                 .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
@@ -435,4 +439,17 @@ enum SubscriptionErrorPixel: PixelKitEvent {
         }
     }
 
+}
+
+private extension OAuthRequest.TokenStatus {
+    /// Stable string value reported in the `token_status` pixel parameter.
+    var subscriptionPixelValue: String {
+        switch self {
+        case .invalid: return "invalid"
+        case .expired: return "expired"
+        case .reused: return "reused"
+        case .loggedOut: return "logged_out"
+        case .fraudDetected: return "fraud_detected"
+        }
+    }
 }

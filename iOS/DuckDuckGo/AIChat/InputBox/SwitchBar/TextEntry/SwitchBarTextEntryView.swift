@@ -113,15 +113,7 @@ class SwitchBarTextEntryView: UIView {
             if wasFirstResponder { _ = becomeFirstResponder() }
 
             // Now hide the outgoing control — it has already lost first responder above.
-            if style == .singleLine {
-                textView.isHidden = true
-                textView.accessibilityIdentifier = nil
-                textField.accessibilityIdentifier = "searchEntry"
-            } else {
-                textField.isHidden = true
-                textField.accessibilityIdentifier = nil
-                textView.accessibilityIdentifier = "searchEntry"
-            }
+            syncActiveControl()
 
             updatePlaceholderVisibility()
             updateKeyboardConfiguration()
@@ -471,6 +463,7 @@ class SwitchBarTextEntryView: UIView {
                 textView.text = currentText
                 updatePlaceholderVisibility()
             }
+            updateButtonState(animated: false)
         }
     }
 
@@ -584,12 +577,7 @@ class SwitchBarTextEntryView: UIView {
                 // Apply the inset change before the crossfade so the text area
                 // is already at its final width when the button fades in —
                 // UITextField's editingRect is crisp and the shrink is visible.
-                UIView.performWithoutAnimation {
-                    self.currentButtonState = newButtonState
-                    self.adjustTextViewContentInset()
-                    self.updatePlaceholderAlignment()
-                    self.layoutIfNeeded()
-                }
+                apply()
                 UIView.transition(with: buttonsView,
                                   duration: Constants.buttonStateAnimationDuration,
                                   options: .transitionCrossDissolve,
@@ -1040,9 +1028,9 @@ class SwitchBarTextEntryView: UIView {
     @objc private func textFieldEditingChanged() {
         hasBeenInteractedWith = true
         updatePlaceholderVisibility()
+        handler.updateCurrentText((textField.text ?? "").strippingDictationPlaceholder)
         updateButtonState()
         updateTextViewHeight()
-        handler.updateCurrentText((textField.text ?? "").strippingDictationPlaceholder)
         handler.markUserInteraction()
     }
 

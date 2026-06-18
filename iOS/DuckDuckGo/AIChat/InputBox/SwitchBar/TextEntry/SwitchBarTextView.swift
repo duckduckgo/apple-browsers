@@ -50,3 +50,33 @@ final class SwitchBarTextView: UITextView {
     }
 
 }
+
+/// Single-line UITextField used in place of `SwitchBarTextView` when Duck.ai is off
+/// (`!isToggleEnabled`). Native horizontal scroll replaces UITextView's truncation.
+final class SwitchBarTextField: UITextField {
+
+    var textLeftInset: CGFloat = 0
+    var textRightInset: CGFloat = 0
+
+    override func textRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: UIEdgeInsets(top: 0, left: textLeftInset, bottom: 0, right: textRightInset))
+    }
+
+    override func editingRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: UIEdgeInsets(top: 0, left: textLeftInset, bottom: 0, right: textRightInset))
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        guard !hasHiddenAncestor else { return false }
+        return super.becomeFirstResponder()
+    }
+
+    private var hasHiddenAncestor: Bool {
+        var view: UIView? = self
+        while let current = view {
+            if current.isHidden { return true }
+            view = current.superview
+        }
+        return false
+    }
+}

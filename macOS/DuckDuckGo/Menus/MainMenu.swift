@@ -697,12 +697,7 @@ final class MainMenu: NSMenu {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loaded in
                 guard let self, loaded else { return }
-                if self.isLazyMenuRebuild {
-                    self.bookmarkFaviconsNeedUpdate = true
-                } else {
-                    self.updateFavicons(in: bookmarksMenu)
-                    self.updateFavicons(in: favoritesMenu)
-                }
+                self.bookmarkFaviconsNeedUpdate = true
             }
 
         // `faviconsLoadedPublisher` fires when favicon metadata loads, before the
@@ -712,12 +707,7 @@ final class MainMenu: NSMenu {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                if self.isLazyMenuRebuild {
-                    self.bookmarkFaviconsNeedUpdate = true
-                } else {
-                    self.updateFavicons(in: bookmarksMenu)
-                    self.updateFavicons(in: favoritesMenu)
-                }
+                self.bookmarkFaviconsNeedUpdate = true
             }
     }
 

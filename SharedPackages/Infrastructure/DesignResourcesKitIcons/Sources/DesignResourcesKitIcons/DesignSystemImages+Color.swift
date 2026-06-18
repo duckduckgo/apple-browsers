@@ -487,6 +487,11 @@ public extension DesignSystemImages {
                     ? .init(resource: .fire128)
                     : .init(resource: .fire128Legacy)
             }
+            public static var lockLocked: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .lockLocked128)
+                    : .init(resource: .lockLocked128Legacy)
+            }
             public static var networkProtectionVPN: DesignSystemImage { .init(resource: .networkProtectionVPN128) }
             public static var networkProtectionVPNDisabled: DesignSystemImage { .init(resource: .networkProtectionVPNDisabled128) }
             public static var youTubeAdBlockWarning: DesignSystemImage {

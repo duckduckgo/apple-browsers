@@ -75,6 +75,22 @@ class FaviconReferenceCacheTests: XCTestCase {
         XCTAssertEqual(URL.aFaviconUrl1, referenceCache.getFaviconUrl(for: URL.aDocumentUrl1.host!, sizeCategory: .small))
         XCTAssertEqual(URL.aFaviconUrl1, referenceCache.getFaviconUrl(for: URL.aDocumentUrl2, sizeCategory: .small))
     }
+
+    @MainActor
+    func testRemoveAllReferencesDeletesFromStoreEvenBeforeCacheLoaded() async throws {
+        let store = FaviconStoringMock()
+        let hostReference = FaviconHostReference(identifier: UUID(), smallFaviconUrl: URL.aFaviconUrl1, mediumFaviconUrl: nil, host: "fav.com", documentUrl: URL.aDocumentUrl1, dateCreated: Date())
+        let urlReference = FaviconUrlReference(identifier: UUID(), smallFaviconUrl: URL.aFaviconUrl2, mediumFaviconUrl: nil, documentUrl: URL.aDocumentUrl2, dateCreated: Date())
+        store.hostReferencesToLoad = [hostReference]
+        store.urlReferencesToLoad = [urlReference]
+
+        let referenceCache = FaviconReferenceCache(faviconStoring: store)
+        // Intentionally not loaded: the in-memory reference maps are empty, but the store has the rows.
+        await referenceCache.removeAllReferences()
+
+        XCTAssertEqual(store.removedHostReferenceIdentifiers, [hostReference.identifier])
+        XCTAssertEqual(store.removedUrlReferenceIdentifiers, [urlReference.identifier])
+    }
 }
 
 private extension URL {

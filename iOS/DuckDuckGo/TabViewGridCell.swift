@@ -35,6 +35,7 @@ final class TabViewGridCell: TabViewCell {
         static let unreadOffset: CGFloat = 7
         static let previewHorizontalInset: CGFloat = 8
         static let previewBottomPadding: CGFloat = 4
+        static let richCardInset: UIEdgeInsets = .init(top: 4, left: 8, bottom: 8, right: 8)
     }
 
     static let reuseIdentifier = "TabViewGridCell"
@@ -81,6 +82,15 @@ final class TabViewGridCell: TabViewCell {
         previewImageView.clipsToBounds = true
         previewClipView.addSubview(previewImageView)
         preview = previewImageView
+
+        // Rich Duck.ai grid card container. Occupies the same slot as the screenshot
+        // preview; visibility is toggled in `TabViewCell.update(...)` based on the
+        // resolved `DuckAIGridItem`.
+        let richCard = DuckAIGridCardView()
+        richCard.translatesAutoresizingMaskIntoConstraints = false
+        richCard.isHidden = true
+        background.addSubview(richCard)
+        richCardContainer = richCard
 
         let spacing = buttonContainer.leadingAnchor.constraint(equalTo: headerStack.trailingAnchor,
                                                                constant: TabViewCell.Constants.removeButtonTextSpacingRegular)
@@ -129,6 +139,11 @@ final class TabViewGridCell: TabViewCell {
             previewImageView.leadingAnchor.constraint(equalTo: previewClipView.leadingAnchor),
             pvBottom,
             pvTrailing,
+
+            richCard.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: Constants.richCardInset.top),
+            richCard.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: Constants.richCardInset.left),
+            richCard.trailingAnchor.constraint(equalTo: background.trailingAnchor, constant: -Constants.richCardInset.right),
+            richCard.bottomAnchor.constraint(equalTo: background.bottomAnchor, constant: -Constants.richCardInset.bottom),
         ])
     }
 }

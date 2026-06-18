@@ -154,7 +154,11 @@ public extension DesignSystemImages {
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat16) }
             public static var aiChatOnboarding: DesignSystemImage { .init(resource: .aiChatOnboarding16) }
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd16) }
-            public static var aiChatGradientColor: DesignSystemImage { .init(resource: .aiChatGradientColor16) }
+            public static var aiChatGradientColor: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .aiChatColor16)
+                    : .init(resource: .aiChatGradientColor16)
+            }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory16) }
             public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings16) }
             public static var aiModelClaude: DesignSystemImage { .init(resource: .aiModelClaude16) }
@@ -483,6 +487,7 @@ public extension DesignSystemImages {
             public static var crossRecolorable: DesignSystemImage { .init(resource: .crossRecolorable24) }
             public static var crossSolidSmall: DesignSystemImage { .init(resource: .crossSolidSmall24) }
             public static var cut: DesignSystemImage { .init(resource: .cut24) }
+            public static var deviceAll: DesignSystemImage { .init(resource: .deviceAll24) }
             public static var deviceDesktop: DesignSystemImage { .init(resource: .deviceDesktop24) }
             public static var deviceMobile: DesignSystemImage { .init(resource: .deviceMobile24) }
             public static var deviceMobileDouble: DesignSystemImage { .init(resource: .deviceMobileDouble24) }

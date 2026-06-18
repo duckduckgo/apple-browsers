@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import DesignResourcesKit
 import SwiftUI
 
@@ -38,23 +39,34 @@ struct SuggestionsListView: View {
     }
 
     var body: some View {
-        List {
-            ForEach(viewModel.sections) { section in
-                Section {
-                    rows(for: section)
-                } header: {
-                    sectionHeader(section.title)
+        ScrollViewReader { proxy in
+            List {
+                ForEach(viewModel.sections) { section in
+                    Section {
+                        rows(for: section)
+                    } header: {
+                        sectionHeader(section.title)
+                    }
                 }
             }
+            .listStyle(.insetGrouped)
+            .modifier(CompactSectionSpacingModifier())
+            // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
+            // input on the top bar; 0 on the bottom bar, where the input sits below the list).
+            .modifier(ListTopContentMarginModifier(top: isAddressBarAtBottom ? 0 : Metrics.listTopInset))
+            .hideScrollContentBackground()
+            .background(Color(designSystemColor: .background))
+            .scrollDismissesKeyboardIfAvailable()
+            // Pointer (trackpad/mouse) leaving the list clears the hover highlight. Touch never fires onHover.
+            .onHover { isHovering in
+                if !isHovering { viewModel.selectedRowID = nil }
+            }
+            // Keep the keyboard-/pointer-highlighted row scrolled into view.
+            .onReceive(viewModel.$selectedRowID) { id in
+                guard let id else { return }
+                withAnimation { proxy.scrollTo(id) }
+            }
         }
-        .listStyle(.insetGrouped)
-        .modifier(CompactSectionSpacingModifier())
-        // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
-        // input on the top bar; 0 on the bottom bar, where the input sits below the list).
-        .modifier(ListTopContentMarginModifier(top: isAddressBarAtBottom ? 0 : Metrics.listTopInset))
-        .hideScrollContentBackground()
-        .background(Color(designSystemColor: .background))
-        .scrollDismissesKeyboardIfAvailable()
     }
 
     @ViewBuilder
@@ -66,15 +78,29 @@ struct SuggestionsListView: View {
                 SuggestionRowView(
                     row: row,
                     isAddressBarAtBottom: isAddressBarAtBottom,
+                    isSelected: row.id == viewModel.selectedRowID,
                     onTapAhead: { viewModel.tapAheadRow(id: row.id) },
                     onDelete: { viewModel.deleteRow(id: row.id) },
-                    onFire: { viewModel.fireDeleteRow(id: row.id) })
+                    onFire: { frame in viewModel.fireDeleteRow(id: row.id, sourceRect: frame) })
             }
             .accessibilityIdentifier(row.accessibilityID)
             .listRowInsets(rowInsets(for: row))
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(rowBackground(for: row))
             .modifier(SeparatorTrailingToContentModifier())
+            // Pointer hover highlights the row, reusing the keyboard-selection highlight (matches the
+            // legacy autocomplete). Touch never fires onHover, so this is pointer-only.
+            .onHover { isHovering in
+                if isHovering { viewModel.selectedRowID = row.id }
+            }
         }
+    }
+
+    /// Highlights the hardware-keyboard-selected row (iPad popover); plain surface otherwise.
+    /// `selectedRowID` stays nil on iPhone (no arrow-key navigation), so this is inert there.
+    private func rowBackground(for row: SuggestionRow) -> Color {
+        row.id == viewModel.selectedRowID
+            ? Color(designSystemColor: .accent)
+            : Color(designSystemColor: .surface)
     }
 
     /// Vertical padding per Figma; horizontal inset (on top of the list's 24pt content margin) keeps

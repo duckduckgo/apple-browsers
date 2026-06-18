@@ -65,5 +65,26 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "freeTrial"]
+    },
+    "m_mac_firewindow_opened": {
+        "description": "Aggregate daily pixel — fires once per user per day on any Fire Window open (manual or automatic).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_firewindow_opened_manual": {
+        "description": "Fires when the user explicitly opens a Fire Window via a menu, context menu, popover, history view, or similar UI action.",
+        "owners": ["alessandroboron"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_firewindow_opened_automatic": {
+        "description": "Fires when a Fire Window is opened without an explicit \"Open Fire Window\" choice (e.g. Open Fire Window by default preference, or startup window type set to Fire Window).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

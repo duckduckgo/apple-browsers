@@ -65,6 +65,7 @@ final class WindowsManager {
                              aiChatSessionStore: AIChatSessionStoring = Application.appDelegate.aiChatSessionStore,
                              fireCoordinator: FireCoordinator = Application.appDelegate.fireCoordinator,
                              burnerMode: BurnerMode? = nil,
+                             isOpenedAutomatically: Bool = false, // `true` when the window is opened by app logic rather than a direct user gesture
                              droppingPoint: NSPoint? = nil,
                              contentSize: NSSize? = nil,
                              showWindow: Bool = true,
@@ -76,9 +77,15 @@ final class WindowsManager {
         // Determine effective burner mode based on user preference
         let effectiveBurnerMode = burnerModeForNewWindow(burnerMode: burnerMode)
         assert(tabCollectionViewModel == nil || tabCollectionViewModel!.isPopup == popUp)
+        let fireWindowOpenTrigger = Self.fireWindowOpenTrigger(
+            isBurner: effectiveBurnerMode.isBurner,
+            burnerModeWasExplicitlyProvided: burnerMode != nil,
+            isOpenedAutomatically: isOpenedAutomatically
+        )
         let mainWindowController = makeNewWindow(tabCollectionViewModel: tabCollectionViewModel,
                                                  popUp: popUp,
                                                  burnerMode: effectiveBurnerMode,
+                                                 fireWindowOpenTrigger: fireWindowOpenTrigger,
                                                  autofillPopoverPresenter: autofillPopoverPresenter,
                                                  fireCoordinator: fireCoordinator,
                                                  aiChatSessionStore: aiChatSessionStore)
@@ -251,6 +258,7 @@ final class WindowsManager {
     private class func makeNewWindow(tabCollectionViewModel: TabCollectionViewModel? = nil,
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
+                                     fireWindowOpenTrigger: FireWindowOpenTrigger?,
                                      autofillPopoverPresenter: AutofillPopoverPresenter,
                                      fireCoordinator: FireCoordinator,
                                      aiChatSessionStore: AIChatSessionStoring) -> MainWindowController {
@@ -284,10 +292,31 @@ final class WindowsManager {
         return MainWindowController(
             mainViewController: mainViewController,
             fireWindowSession: fireWindowSession,
+            fireWindowOpenTrigger: fireWindowOpenTrigger,
             fireViewModel: fireCoordinator.fireViewModel,
             themeManager: NSApp.delegateTyped.themeManager,
             featureFlagger: NSApp.delegateTyped.featureFlagger
         )
+    }
+
+    /// Classifies how a Fire Window was opened given inputs available at `openNewWindow`'s call site.
+    /// - Returns:
+    ///   - `nil` when the open is not for a Fire Window.
+    ///   - `.manual` for explicit user actions that requested a burner mode.
+    ///   - `.automatic` when the open was driven by app logic (`isOpenedAutomatically == true`, e.g.
+    ///     startup or a ⌘N press promoted by the "Open Fire Window by default" preference) or when the
+    ///     caller didn't pass a burner mode (preference fallback).
+    static func fireWindowOpenTrigger(
+        isBurner: Bool,
+        burnerModeWasExplicitlyProvided: Bool,
+        isOpenedAutomatically: Bool
+    ) -> FireWindowOpenTrigger? {
+        guard isBurner else { return nil }
+
+        if isOpenedAutomatically || !burnerModeWasExplicitlyProvided {
+            return .automatic
+        }
+        return .manual
     }
 
 }

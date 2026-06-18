@@ -72,4 +72,63 @@ final class SuggestionsListViewModelTests: XCTestCase {
         let sections = DuckAISuggestionsSource.sections(from: snapshot, query: "")
         XCTAssertEqual(sections.map(\.id), ["urls"])
     }
+
+    // MARK: - Keyboard/pointer selection
+
+    /// Builds a list view model backed by `count` recent chats and returns it with its row ids in order.
+    private func makeSelectionViewModel(count: Int) -> (SuggestionsListViewModel, [String]) {
+        let chats = (0..<count).map { AIChatSuggestion(id: "\($0)", title: "R\($0)", isPinned: false, chatId: "c\($0)") }
+        let vm = AIChatSuggestionsViewModel()
+        vm.setChats(pinned: [], recent: chats)
+        let listVM = SuggestionsListViewModel(source: RecentsSuggestionsSource(viewModel: vm))
+        let ids = listVM.sections.flatMap { $0.rows.map(\.id) }
+        return (listVM, ids)
+    }
+
+    func test_moveSelectionDown_fromNoSelection_selectsFirstRow() {
+        let (vm, ids) = makeSelectionViewModel(count: 3)
+        vm.moveSelectionDown()
+        XCTAssertEqual(vm.selectedRowID, ids.first)
+    }
+
+    func test_moveSelectionDown_atLastRow_staysOnLastRow() {
+        let (vm, ids) = makeSelectionViewModel(count: 3)
+        vm.selectedRowID = ids.last
+        vm.moveSelectionDown()
+        XCTAssertEqual(vm.selectedRowID, ids.last)
+    }
+
+    func test_moveSelectionUp_fromNoSelection_isNoOp() {
+        let (vm, _) = makeSelectionViewModel(count: 3)
+        vm.moveSelectionUp()
+        XCTAssertNil(vm.selectedRowID)
+    }
+
+    func test_moveSelectionUp_fromFirstRow_clearsSelection() {
+        let (vm, ids) = makeSelectionViewModel(count: 3)
+        vm.selectedRowID = ids.first
+        vm.moveSelectionUp()
+        XCTAssertNil(vm.selectedRowID, "Up from the first row should clear the highlight (focus returns to input)")
+    }
+
+    func test_moveSelectionUp_fromMiddle_movesUp() {
+        let (vm, ids) = makeSelectionViewModel(count: 3)
+        vm.selectedRowID = ids[1]
+        vm.moveSelectionUp()
+        XCTAssertEqual(vm.selectedRowID, ids[0])
+    }
+
+    func test_duckAISource_viewAllChatsRowShownOnlyForEmptyQuery() {
+        let snapshot = DuckAISuggestionsPipeline.Snapshot(
+            chats: [AIChatSuggestion(id: "1", title: "Recent", isPinned: false, chatId: "c")],
+            urls: [],
+            isPending: false
+        )
+
+        let withRecents = DuckAISuggestionsSource.sections(from: snapshot, query: "", viewAllChatsEnabled: true)
+        XCTAssertTrue(withRecents.first?.rows.contains { $0.id == "view-all-chats" } == true)
+
+        let whileSearching = DuckAISuggestionsSource.sections(from: snapshot, query: "rec", viewAllChatsEnabled: true)
+        XCTAssertFalse(whileSearching.first?.rows.contains { $0.id == "view-all-chats" } == true)
+    }
 }

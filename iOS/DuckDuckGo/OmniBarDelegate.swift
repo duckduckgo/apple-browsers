@@ -107,6 +107,9 @@ protocol OmniBarDelegate: AnyObject {
     /// Called when user selects a chat from the AI Chat history list
     func onChatHistorySelected(url: URL)
 
+    /// Called when user taps the "View all chats" row to open the native chat history page
+    func onViewAllChatsSelected()
+
     // MARK: - iPad Expanded Omnibar
     func onOmniBarExpandedStateChanged(isExpanded: Bool)
 
@@ -232,6 +235,9 @@ extension OmniBarDelegate {
     }
 
     func onChatHistorySelected(url: URL) {
+    }
+
+    func onViewAllChatsSelected() {
     }
 
     func onOmniBarExpandedStateChanged(isExpanded: Bool) {}

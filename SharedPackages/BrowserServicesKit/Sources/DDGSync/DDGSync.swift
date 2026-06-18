@@ -196,6 +196,16 @@ public class DDGSync: DDGSyncing {
         }
     }
 
+    public func patchAIChats(updates: [AIChatUpdate]) async throws {
+        guard let account = account else { throw SyncError.accountNotFound }
+        guard let token = account.token else { throw SyncError.noToken }
+        do {
+            try await dependencies.createAIChats().patch(updates: updates, token: token)
+        } catch {
+            throw handleUnauthenticatedAndMap(error, policy: .doNotLogoutOn401)
+        }
+    }
+
     public func setAIChatHistoryEnabled(_ enabled: Bool) {
         try? dependencies.keyValueStore.set(enabled, forKey: Constants.aiChatHistoryEnabledKey)
     }

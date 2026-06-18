@@ -31,6 +31,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x404145 = Color(0x404145)
     private static let xE0E0E0 = Color(0xE0E0E0)
     private static let xF2F2F2 = Color(0xF2F2F2)
+    private static let xF3F6FF = Color(0xF3F6FF)
     private static let xF9F9F9 = Color(0xF9F9F9)
     private static let x000000 = Color(0x000000)
     private static let xFFFFFF = Color(0xFFFFFF)
@@ -63,6 +64,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
     private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x3D3D3D)
     private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let backgroundPromptMessage = DynamicColor(lightColor: xF3F6FF, darkColor: xFFFFFF.opacity(0.09))
 
     // Shadow
     private static let shadowPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.04), darkColor: .shade(0.16))
@@ -86,6 +88,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let textSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.72), darkColor: .tint(0.6))
     private static let textTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.36))
     private static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
+
+    // Container
+    private static let containerBorderPrimary = DynamicColor(lightColor: x000000.opacity(0.06), darkColor: xFFFFFF.opacity(0.09))
 
     // System
     private static let lines = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
@@ -177,12 +182,14 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .background: return background
         case .backgroundTertiary: return backgroundTertiary
         case .backgroundSheets: return backgroundSheets
+        case .backgroundPromptMessage: return backgroundPromptMessage
         case .backdrop: return backdrop
         case .panel: return background
         case .icons: return icons
         case .iconsSecondary: return iconsSecondary
         case .iconsTertiary: return iconsTertiary
         case .textPrimary: return textPrimary
+        case .containerBorderPrimary: return containerBorderPrimary
         case .lines: return lines
         case .shadowPrimary: return shadowPrimary
         case .shadowSecondary: return shadowSecondary
@@ -277,6 +284,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: background.darkColor)
         case .duckAIContextualSheetBackground:
             return DynamicColor(lightColor: .white, darkColor: .x161616)
+        case .duckAIWebViewBackground:
+            return DynamicColor(lightColor: .white, darkColor: .x111111)
         case .unifiedToggleInputCardBackground:
             return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
         case .unifiedToggleInputStopButtonBackground:

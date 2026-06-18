@@ -85,7 +85,7 @@ public struct RecoveryPDFGenerator {
                 .font: helper.textCodeFont,
                 .foregroundColor: helper.textCodeColor,
                 .paragraphStyle: paragraphStyle,
-                .kern: 2
+                .kern: 1.5
             ])
 
         // Draw the QRCode

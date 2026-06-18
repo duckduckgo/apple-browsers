@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import AIChat
+import AIChatTestingUtilities
 
 final class ChatPinnerTests: XCTestCase {
 
@@ -131,6 +132,45 @@ final class ChatPinnerTests: XCTestCase {
         XCTAssertThrowsError(try pinner.setPinned(chatId: "c1", pinned: true)) { error in
             XCTAssertEqual(error as? ChatPinningError, .invalidChatBlob)
         }
+    }
+
+    // MARK: - Sync integration
+
+    func testSetPinned_onSuccess_callsRecordChatUpdateOnSyncCleaner() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putChat(chatId: "c1", data: Self.chatJSON(chatId: "c1", pinned: false))
+        let cleaner = MockAIChatSyncCleaning()
+        let pinner = ChatPinner(storageHandler: storage, syncCleaner: cleaner)
+
+        try pinner.setPinned(chatId: "c1", pinned: true)
+
+        // The record is fired off in a Task — give it a chance to run before asserting.
+        try await waitForCondition(timeout: 1.0) { await cleaner.recordChatUpdateCalls == ["c1"] }
+    }
+
+    func testSetPinned_onFailure_doesNotCallRecordChatUpdate() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        // Missing chat → setPinned throws → no record should fire.
+        let cleaner = MockAIChatSyncCleaning()
+        let pinner = ChatPinner(storageHandler: storage, syncCleaner: cleaner)
+
+        XCTAssertThrowsError(try pinner.setPinned(chatId: "missing", pinned: true))
+
+        // Brief wait to make sure no late Task fires anyway.
+        try await Task.sleep(nanoseconds: 50_000_000)
+        await MainActor.run {}
+        XCTAssertEqual(cleaner.recordChatUpdateCalls, [])
+    }
+
+    /// Polls a predicate until it returns true or the timeout elapses. Lets us assert on
+    /// the outcome of a fire-and-forget Task without depending on a specific scheduler tick.
+    private func waitForCondition(timeout: TimeInterval, _ predicate: () async -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if await predicate() { return }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        XCTFail("Condition not met within \(timeout)s")
     }
 
     // MARK: - Fixtures

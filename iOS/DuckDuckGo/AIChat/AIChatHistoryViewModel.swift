@@ -48,11 +48,18 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
+    /// Count of ALL persistent chats, independent of the active search filter. `burnAllChats`
+    /// clears every chat, so the confirmation must reflect the full scope — not just the matches
+    /// currently shown in `pinned`/`recent`.
+    private(set) var totalChatCount: Int = 0
+
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
     private let pinner: ChatPinning?
     private let mutationQueue: DispatchQueue
+    private let instrumentation: AIChatHistoryInstrumentation
+    private let source: AIChatHistorySource
     private var cancellables: Set<AnyCancellable> = []
 
     weak var delegate: AIChatHistoryViewModelDelegate?
@@ -62,13 +69,17 @@ final class AIChatHistoryViewModel: ObservableObject {
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
         pinner: ChatPinning? = nil,
-        mutationQueue: DispatchQueue = DispatchQueue(label: "chat-history.mutation", qos: .userInitiated)
+        source: AIChatHistorySource = .browserMenu,
+        mutationQueue: DispatchQueue = DispatchQueue(label: "chat-history.mutation", qos: .userInitiated),
+        instrumentation: AIChatHistoryInstrumentation = DefaultAIChatHistoryInstrumentation()
     ) {
         self.reader = reader
         self.fireExecutor = fireExecutor
         self.downloader = downloader
         self.pinner = pinner
+        self.source = source
         self.mutationQueue = mutationQueue
+        self.instrumentation = instrumentation
 
         // `.failure` as a sentinel keeps the combined publisher alive for `loadFailed`.
         let chats: AnyPublisher<Result<[DuckAiChat], Error>, Never> = reader.chatsPublisher()
@@ -99,10 +110,12 @@ final class AIChatHistoryViewModel: ObservableObject {
                 ? allChats
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
             loadFailed = false
+            totalChatCount = allChats.count
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
         case .failure:
             loadFailed = true
+            totalChatCount = 0
             pinned = []
             recent = []
         }
@@ -147,25 +160,64 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     // MARK: - Intents
 
+    /// Call once when the screen is first presented. Fires the screen-shown impression.
+    func screenDidLoad() {
+        instrumentation.screenShown(source: source)
+    }
+
+    func searchActivated() {
+        instrumentation.searchActivated()
+    }
+
+    func editModeEntered() {
+        instrumentation.editModeEntered()
+    }
+
+    func fireAllTapped() {
+        instrumentation.fireAllTapped()
+    }
+
     func newChatTapped() {
+        instrumentation.newChatTapped()
+        delegate?.viewModelDidRequestOpenNewChat()
+    }
+
+    func emptyStateCTATapped() {
+        instrumentation.emptyCTATapped()
         delegate?.viewModelDidRequestOpenNewChat()
     }
 
     func openChat(chatId: String) {
+        instrumentation.chatOpened()
         delegate?.viewModelDidRequestOpenChat(chatId: chatId)
     }
 
     func deleteChat(chatId: String) {
         // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
+        instrumentation.chatDeleted()
         Task { @MainActor in
-            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            guard case .success = result else { return }
+            // Flush the deletion to sync now so the FE doesn't re-pull the chat.
+            fireExecutor.scheduleSync()
         }
+    }
+
+    func burnAllChats() async {
+        guard let fireExecutor else { return }
+        // Reached only after the user confirms the delete-all action.
+        instrumentation.fireAllConfirmed()
+        let result = await fireExecutor.burnAllChats(isFireMode: false)
+        guard case .success = result else { return }
+        // Flush the clear to sync now so the FE doesn't re-pull the chats.
+        fireExecutor.scheduleSync()
     }
 
     func downloadChat(chatId: String) {
         // Image-gen exports do enough I/O to freeze the sheet — dispatch off-main.
         guard let downloader else { return }
+        instrumentation.downloadStarted()
         mutationQueue.async { [weak self] in
             do {
                 let url = try downloader.downloadChat(chatId: chatId)
@@ -190,6 +242,11 @@ final class AIChatHistoryViewModel: ObservableObject {
     func togglePin(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
         guard let pinner, let move = applyOptimisticPinToggle(chatId: chatId) else { return nil }
         let newPinned = move.destination.section == Section.pinned.rawValue
+        if newPinned {
+            instrumentation.pinAdded()
+        } else {
+            instrumentation.pinRemoved()
+        }
         mutationQueue.async {
             do {
                 try pinner.setPinned(chatId: chatId, pinned: newPinned)

@@ -43,7 +43,7 @@
         "description": "Fired when the Privacy Pro toolbar button popover is displayed to a user",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     "m_mac_store_subscription_toolbar_vpn_popover_shown": {
@@ -65,14 +65,14 @@
         "description": "Fired when the dismiss button is clicked in the Privacy Pro toolbar button upsell popover",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     "m_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked": {
         "description": "Fired when the proceed button is clicked in the Privacy Pro toolbar button upsell popover",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     "m_mac_store_subscription_toolbar_vpn_popover_expired_view_shown": {

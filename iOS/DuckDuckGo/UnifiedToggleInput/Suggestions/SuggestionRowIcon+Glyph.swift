@@ -32,6 +32,7 @@ extension SuggestionRowIcon {
         case .search: return DesignSystemImages.Glyphs.Size24.findSearchSmall
         case .aiChat: return DesignSystemImages.Glyphs.Size24.aiChat
         case .pin: return DesignSystemImages.Glyphs.Size24.pin
+        case .chats: return DesignSystemImages.Glyphs.Size24.chats
         }
     }
 }

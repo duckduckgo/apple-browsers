@@ -64,6 +64,22 @@ final class MockDDGSyncing: DDGSyncing {
         }
     }
 
+    // MARK: - Patch AI Chats
+
+    var patchAIChatsCallCount = 0
+    var patchAIChatsUpdates: [AIChatUpdate]?
+    var patchAIChatsError: Error?
+    var onPatchAIChats: (() -> Void)?
+
+    func patchAIChats(updates: [AIChatUpdate]) async throws {
+        patchAIChatsCallCount += 1
+        patchAIChatsUpdates = updates
+        onPatchAIChats?()
+        if let error = patchAIChatsError {
+            throw error
+        }
+    }
+
     // MARK: - Token Rescope
 
     var mainTokenRescopeResult: String?
@@ -117,7 +133,8 @@ final class MockDDGSyncing: DDGSyncing {
     var featureFlags: SyncFeatureFlags = .all
     var featureFlagsPublisher: AnyPublisher<SyncFeatureFlags, Never> { Just(featureFlags).eraseToAnyPublisher() }
     var authStatePublisher: AnyPublisher<SyncAuthState, Never> { Just(authState).eraseToAnyPublisher() }
-    var scheduler: Scheduling { MockScheduling() }
+    let mockScheduler = MockScheduling()
+    var scheduler: Scheduling { mockScheduler }
     var syncDailyStats: SyncDailyStats { fatalError("Not implemented") }
     var isSyncInProgress: Bool { false }
     var isSyncInProgressPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
@@ -149,7 +166,8 @@ final class MockDDGSyncing: DDGSyncing {
 // MARK: - Mock Scheduling
 
 final class MockScheduling: Scheduling {
-    func notifyDataChanged() {}
+    private(set) var notifyDataChangedCallCount = 0
+    func notifyDataChanged() { notifyDataChangedCallCount += 1 }
     func notifyAppLifecycleEvent() {}
     func requestSyncImmediately() {}
     func cancelSyncAndSuspendSyncQueue() {}

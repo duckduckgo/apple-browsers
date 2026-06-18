@@ -46,10 +46,18 @@ struct NetworkProtectionVPNSettingsView: View {
                 if viewModel.isStrictRoutingAvailable {
                     toggleSection(
                         text: UserText.netPStrictRoutingSettingTitle,
-                        headerText: nil,
                         footerText: UserText.netPStrictRoutingSettingFooter
                     ) {
                         Toggle("", isOn: $viewModel.enforceRoutes)
+                    }
+                }
+
+                if viewModel.isExcludeCGNATAvailable {
+                    toggleSection(
+                        text: UserText.netPExcludeCGNATSettingTitle,
+                        footerText: UserText.netPExcludeCGNATSettingFooter
+                    ) {
+                        Toggle("", isOn: $viewModel.excludeCGNAT)
                     }
                 }
 
@@ -94,44 +102,31 @@ struct NetworkProtectionVPNSettingsView: View {
     }
 
     @ViewBuilder
-    func toggleSection(text: String, headerText: String?, footerText: String, @ViewBuilder toggle: () -> some View) -> some View {
-        let row = HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(text)
-                    .daxBodyRegular()
-                    .foregroundColor(.init(designSystemColor: .textPrimary))
-                    .layoutPriority(1)
+    func toggleSection(text: String, headerText: String? = nil, footerText: String, @ViewBuilder toggle: () -> some View) -> some View {
+        Section {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(text)
+                        .daxBodyRegular()
+                        .foregroundColor(.init(designSystemColor: .textPrimary))
+                        .layoutPriority(1)
+                }
+
+                toggle()
+                    .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
             }
-
-            toggle()
-                .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
-        }
-
-        let footer = Text(LocalizedStringKey(footerText))
-            .foregroundColor(.init(designSystemColor: .textSecondary))
-            .accentColor(Color(designSystemColor: .accent))
-            .daxFootnoteRegular()
-            .padding(.top, 6)
-
-        // An empty-string header still lays out a (blank) section header and reserves its space, so
-        // when there's no header text we omit the header entirely to match a regular section's spacing.
-        if let headerText {
-            Section {
-                row
-            } header: {
+        } header: {
+            if let headerText {
                 Text(headerText)
-            } footer: {
-                footer
             }
-            .listRowBackground(Color(designSystemColor: .surface))
-        } else {
-            Section {
-                row
-            } footer: {
-                footer
-            }
-            .listRowBackground(Color(designSystemColor: .surface))
+        } footer: {
+            Text(LocalizedStringKey(footerText))
+                .foregroundColor(.init(designSystemColor: .textSecondary))
+                .accentColor(Color(designSystemColor: .accent))
+                .daxFootnoteRegular()
+                .padding(.top, 6)
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder

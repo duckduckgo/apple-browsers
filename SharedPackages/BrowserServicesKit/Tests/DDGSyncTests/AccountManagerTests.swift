@@ -383,6 +383,152 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertNil(result.accessCredentials)
     }
 
+    func testWhenFetchingDevicesWithScopedAccessEnabledThenPrefersEntriesV2OverLegacyEntries() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let mapper = RegisteredDeviceMappingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            registeredDeviceMapper: mapper,
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
+        {
+            "devices": {
+                "entries": [
+                    {
+                        "id": "legacy-device",
+                        "name": "encrypted_Legacy",
+                        "type": "encrypted_desktop"
+                    }
+                ],
+                "entries_v2": [
+                    {
+                        "id": "v2-device",
+                        "name": "encrypted_V2",
+                        "type": "encrypted_browser",
+                        "credential_id": "3party"
+                    }
+                ]
+            }
+        }
+        """)
+
+        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+
+        XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["v2-device"])
+        XCTAssertEqual(devices.map(\.id), ["v2-device"])
+        XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
+    }
+
+    func testWhenFetchingDevicesWithScopedAccessEnabledAndEntriesV2IsEmptyThenFallsBackToLegacyEntries() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let mapper = RegisteredDeviceMappingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            registeredDeviceMapper: mapper,
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
+        {
+            "devices": {
+                "entries": [
+                    {
+                        "id": "legacy-device",
+                        "name": "encrypted_Legacy",
+                        "type": "encrypted_desktop"
+                    }
+                ],
+                "entries_v2": []
+            }
+        }
+        """)
+
+        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+
+        XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["legacy-device"])
+        XCTAssertEqual(devices.map(\.id), ["legacy-device"])
+        XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
+    }
+
+    func testWhenFetchingDevicesWithScopedAccessEnabledThenFallsBackUndecryptableEntriesWithoutLogout() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        var crypter = CryptingMock()
+        crypter._base64DecodeAndDecrypt = { _ in
+            throw SyncError.failedToDecryptValue("test")
+        }
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: crypter,
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
+        {
+            "devices": {
+                "entries_v2": [
+                    {
+                        "id": "third-party-device",
+                        "name": "undecryptable-name",
+                        "type": "undecryptable-type",
+                        "credential_id": "3party"
+                    },
+                    {
+                        "id": "native-device",
+                        "name": "undecryptable-name",
+                        "type": "undecryptable-type",
+                        "credential_id": "ddg"
+                    }
+                ]
+            }
+        }
+        """)
+
+        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+
+        XCTAssertEqual(devices.map(\.id), ["third-party-device", "native-device"])
+        XCTAssertEqual(devices.map(\.name), ["Browser", "Unknown"])
+        XCTAssertEqual(devices.map(\.type), ["unknown", "unknown"])
+        XCTAssertEqual(devices.map(\.credentialId), [SyncCredentialID.thirdParty, SyncCredentialID.defaultCredential])
+        XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
+    }
+
+    func testWhenFetchingDevicesWithScopedAccessDisabledThenLegacyUndecryptableDeviceIsLoggedOut() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        var crypter = CryptingMock()
+        crypter._base64DecodeAndDecrypt = { _ in
+            throw SyncError.failedToDecryptValue("test")
+        }
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: crypter,
+                                            isScopedAccessCredentialsEnabled: { false })
+        api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
+        {
+            "devices": {
+                "entries": [
+                    {
+                        "id": "invalid-native-device",
+                        "name": "undecryptable-name",
+                        "type": "undecryptable-type"
+                    }
+                ]
+            }
+        }
+        """)
+        api.fakeRequests[endpoints.logoutDevice] = makeJSONRequest("""
+        {
+            "device_id": "invalid-native-device"
+        }
+        """)
+
+        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+
+        XCTAssertTrue(devices.isEmpty)
+        XCTAssertTrue(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
+    }
+
     private func makeAccount(primaryKey: Data) -> SyncAccount {
         SyncAccount(deviceId: "device-1",
                     deviceName: "iPhone",
@@ -398,6 +544,10 @@ final class AccountManagerTests: XCTestCase {
         HTTPRequestingMock(result: .init(data: Data(json.utf8), response: .init()))
     }
 
+    private func devicesURL(for endpoints: Endpoints) -> URL {
+        endpoints.syncGet.appendingPathComponent("devices")
+    }
+
     private func makeSignupBody(from api: RemoteAPIRequestCreatingMock) throws -> [String: Any] {
         let requestBody = try XCTUnwrap(api.createRequestCallArgs.last?.body)
         let json = try JSONSerialization.jsonObject(with: requestBody)
@@ -408,6 +558,39 @@ final class AccountManagerTests: XCTestCase {
         let requestBody = try XCTUnwrap(api.createRequestCallArgs.last?.body)
         let json = try JSONSerialization.jsonObject(with: requestBody)
         return try XCTUnwrap(json as? [String: Any])
+    }
+
+}
+
+private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
+
+    private(set) var registeredDevicesCallEntryIDs: [String] = []
+
+    func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice] {
+        registeredDevicesCallEntryIDs = entries.map(\.id)
+        return entries.map { entry in
+            RegisteredDevice(id: entry.id,
+                             name: entry.name ?? "",
+                             type: entry.type ?? "",
+                             credentialId: entry.credentialId)
+        }
+    }
+
+    func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? {
+        RegisteredDevice(id: entry.id,
+                         name: entry.name ?? "",
+                         type: entry.type ?? "",
+                         credentialId: entry.credentialId)
+    }
+
+    func registeredDevice(fromDefaultCredentialLoginEntryWithID id: String,
+                          encryptedName: String,
+                          encryptedType: String?,
+                          primaryKey: Data) -> RegisteredDevice? {
+        RegisteredDevice(id: id,
+                         name: encryptedName,
+                         type: encryptedType ?? "",
+                         credentialId: SyncCredentialID.defaultCredential)
     }
 
 }

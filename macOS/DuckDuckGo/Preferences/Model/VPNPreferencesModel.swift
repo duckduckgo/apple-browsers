@@ -68,6 +68,20 @@ final class VPNPreferencesModel: ObservableObject {
 
     @Published private(set) var isStrictRoutingAvailable: Bool
 
+    @Published var excludeCGNAT: Bool {
+        didSet {
+            guard settings.excludeCGNAT != excludeCGNAT else {
+                return
+            }
+            settings.excludeCGNAT = excludeCGNAT
+            reloadVPN()
+        }
+    }
+
+    var isExcludeCGNATAvailable: Bool {
+        featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle)
+    }
+
     @Published var showInMenuBar: Bool {
         didSet {
             settings.showInMenuBar = showInMenuBar
@@ -163,6 +177,7 @@ final class VPNPreferencesModel: ObservableObject {
         excludeLocalNetworks = settings.excludeLocalNetworks
         enforceRoutes = settings.enforceRoutes
         isStrictRoutingAvailable = featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+        excludeCGNAT = settings.excludeCGNAT
         notifyStatusChanges = settings.notifyStatusChanges
         showInMenuBar = settings.showInMenuBar
         showInBrowserToolbar = pinningManager.isPinned(.networkProtection)
@@ -181,6 +196,7 @@ final class VPNPreferencesModel: ObservableObject {
         subscribeToExcludeLocalNetworksSettingChanges()
         subscribeToEnforceRoutesSettingChanges()
         subscribeToStrictRoutingAvailabilityChanges()
+        subscribeToExcludeCGNATSettingChanges()
         subscribeToShowInMenuBarSettingChanges()
         subscribeToShowInBrowserToolbarSettingsChanges()
         subscribeToLocationSettingChanges()
@@ -245,6 +261,12 @@ final class VPNPreferencesModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    private func subscribeToExcludeCGNATSettingChanges() {
+        settings.excludeCGNATPublisher
+            .assign(to: \.excludeCGNAT, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
     private func subscribeToShowInMenuBarSettingChanges() {
         settings.showInMenuBarPublisher
             .removeDuplicates()
@@ -295,6 +317,11 @@ final class VPNPreferencesModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    @MainActor
+    func onViewAppeared() {
+        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
     }
 
     func reloadVPN() {

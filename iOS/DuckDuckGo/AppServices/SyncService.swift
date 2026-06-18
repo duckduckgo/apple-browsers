@@ -45,6 +45,7 @@ final class SyncService {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
          faviconStoring: FaviconStoring,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          application: UIApplication = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          autoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager) {
@@ -103,10 +104,14 @@ final class SyncService {
         aiChatSyncCleaner = AIChatSyncCleaner(sync: sync,
                                               keyValueStore: keyValueStore,
                                               featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
+                                              storageHandler: duckAiNativeStorageHandler,
                                               httpRequestErrorHandler: { error in
             errorHandler.handleAiChatsError(error)
         })
-        sync.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatSyncCleaner)])
+        sync.setCustomOperations([
+            AIChatDeleteOperation(cleaner: aiChatSyncCleaner),
+            AIChatUpdateOperation(cleaner: aiChatSyncCleaner)
+        ])
 
         isSyncInProgressCancellable = sync.isSyncInProgressPublisher
             .filter { $0 }

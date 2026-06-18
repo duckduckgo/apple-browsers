@@ -325,6 +325,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
+        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
+
         var options = [String: NSObject]()
 
         if Self.shouldSimulateFailure {

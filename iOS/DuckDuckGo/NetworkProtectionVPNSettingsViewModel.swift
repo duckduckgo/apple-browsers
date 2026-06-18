@@ -20,7 +20,9 @@
 import Combine
 import CombineExtensions
 import ConcurrencyExtensions
+import Core
 import Foundation
+import PrivacyConfig
 import UserNotifications
 import VPN
 import BrowserServicesKit
@@ -40,6 +42,10 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
 
     @Published private(set) var isStrictRoutingAvailable: Bool
+
+    var isExcludeCGNATAvailable: Bool {
+        featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle)
+    }
 
     private var notificationsAuthorization: NotificationsAuthorizationControlling
     @Published var viewKind: NetworkProtectionNotificationsViewKind = .loading
@@ -75,6 +81,21 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
         }
     }
 
+    @Published public var excludeCGNAT: Bool {
+        didSet {
+            guard settings.excludeCGNAT != excludeCGNAT else {
+                return
+            }
+
+            settings.excludeCGNAT = excludeCGNAT
+
+            Task {
+                try await Task.sleep(interval: 0.1)
+                try await controller.command(.restartAdapter)
+            }
+        }
+    }
+
     @Published public var usesCustomDNS = false
     @Published public var dnsServers: String = UserText.vpnSettingDNSServerDefaultValue
 
@@ -89,6 +110,7 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
 
         self.excludeLocalNetworks = settings.excludeLocalNetworks
         self.enforceRoutes = settings.enforceRoutes
+        self.excludeCGNAT = settings.excludeCGNAT
         self.settings = settings
         self.notificationsAuthorization = notificationsAuthorization
 
@@ -99,6 +121,10 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
         settings.enforceRoutesPublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.enforceRoutes, onWeaklyHeld: self)
+            .store(in: &cancellables)
+        settings.excludeCGNATPublisher
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.excludeCGNAT, onWeaklyHeld: self)
             .store(in: &cancellables)
         settings.dnsSettingsPublisher
             .receive(on: DispatchQueue.main)
@@ -124,6 +150,7 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
 
     @MainActor
     func onViewAppeared() async {
+        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
         let status = await notificationsAuthorization.authorizationStatus
         updateViewKind(for: status)
     }

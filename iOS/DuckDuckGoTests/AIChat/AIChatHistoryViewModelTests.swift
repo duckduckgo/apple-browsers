@@ -147,6 +147,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(fireExecutor.burnedChatIds, ["p1"])
         XCTAssertEqual(fireExecutor.burnedIsFireMode, [false],
                        "chat-history sheet only ever deletes persistent chats; never fire-mode")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 1,
+                       "a successful delete must flush sync so the deletion isn't re-pulled")
     }
 
     func testDeleteChat_noFireExecutor_isNoOp() {
@@ -155,6 +157,46 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         // beyond that.
         sut.deleteChat(chatId: "p1")
         processMainQueue()
+    }
+
+    func testBurnAllChats_invokesFireExecutorAndFlushesSync() {
+        let fireExecutor = MockChatHistoryFireExecutor()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor)
+
+        let done = expectation(description: "burnAllChats")
+        Task { await sut.burnAllChats(); done.fulfill() }
+        wait(for: [done], timeout: 1)
+
+        XCTAssertEqual(fireExecutor.burnedAllChatsIsFireMode, [false],
+                       "chat-history sheet only ever clears persistent chats; never fire-mode")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 1,
+                       "a successful clear must flush sync so the deletion isn't re-pulled")
+    }
+
+    func testBurnAllChats_noFireExecutor_isNoOp() {
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: nil)
+        // No fire executor — must not crash.
+        let done = expectation(description: "burnAllChats")
+        Task { await sut.burnAllChats(); done.fulfill() }
+        wait(for: [done], timeout: 1)
+    }
+
+    func testTotalChatCount_reflectsAllChats_notTheSearchFilteredView() {
+        let sut = makeSUT(chats: [
+            chat(id: "a", title: "alpha", pinned: true),
+            chat(id: "b", title: "beta", pinned: false),
+            chat(id: "c", title: "gamma", pinned: false)
+        ])
+        XCTAssertEqual(sut.totalChatCount, 3)
+
+        sut.updateQuery("alpha")
+        waitForDebounce()
+
+        // The visible list is filtered to the single match...
+        XCTAssertEqual(sut.pinned.count + sut.recent.count, 1)
+        // ...but "Delete All" clears every chat, so the count must stay the full total.
+        XCTAssertEqual(sut.totalChatCount, 3,
+                       "totalChatCount must reflect all chats so the Fire confirmation can't understate the delete scope during a search")
     }
 
     func testDownloadChat_onSuccess_notifiesDelegateWithWrittenFilename() {
@@ -360,6 +402,111 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(sut.effectiveQuery, "foo")
     }
 
+    // MARK: - Instrumentation
+
+    func testScreenDidLoad_firesScreenShownWithConfiguredSource() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [], source: .contextualChat, instrumentation: instrumentation)
+
+        sut.screenDidLoad()
+
+        XCTAssertEqual(instrumentation.screenShownSources, [.contextualChat])
+    }
+
+    func testOpenChat_firesChatOpened() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], instrumentation: instrumentation)
+
+        sut.openChat(chatId: "r1")
+
+        XCTAssertEqual(instrumentation.chatOpenedCount, 1)
+    }
+
+    func testDeleteChat_firesChatDeleted() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], instrumentation: instrumentation)
+
+        sut.deleteChat(chatId: "p1")
+        processMainQueue()
+
+        XCTAssertEqual(instrumentation.chatDeletedCount, 1)
+    }
+
+    func testNewChatTapped_firesNewChatTapped() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [], instrumentation: instrumentation)
+
+        sut.newChatTapped()
+
+        XCTAssertEqual(instrumentation.newChatTappedCount, 1)
+    }
+
+    func testEmptyStateCTATapped_firesEmptyCTATappedAndOpensNewChat() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [], instrumentation: instrumentation)
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.emptyStateCTATapped()
+
+        XCTAssertEqual(instrumentation.emptyCTATappedCount, 1)
+        XCTAssertTrue(delegate.didRequestOpenNewChat)
+    }
+
+    func testBurnAllChats_firesFireAllConfirmed() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], instrumentation: instrumentation)
+
+        let done = expectation(description: "burnAllChats")
+        Task { await sut.burnAllChats(); done.fulfill() }
+        wait(for: [done], timeout: 1)
+
+        XCTAssertEqual(instrumentation.fireAllConfirmedCount, 1)
+    }
+
+    func testTogglePin_pinningFiresPinAdded_unpinningFiresPinRemoved() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(
+            chats: [chat(id: "r1", pinned: false), chat(id: "p1", pinned: true)],
+            pinner: StubPinner(),
+            instrumentation: instrumentation
+        )
+
+        sut.togglePin(chatId: "r1")
+        XCTAssertEqual(instrumentation.pinAddedCount, 1)
+        XCTAssertEqual(instrumentation.pinRemovedCount, 0)
+
+        sut.togglePin(chatId: "p1")
+        XCTAssertEqual(instrumentation.pinRemovedCount, 1)
+        XCTAssertEqual(instrumentation.pinAddedCount, 1)
+    }
+
+    func testDownloadChat_firesDownloadStarted() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let queue = DispatchQueue(label: "test.download")
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)],
+                          downloader: StubDownloader(),
+                          mutationQueue: queue,
+                          instrumentation: instrumentation)
+
+        sut.downloadChat(chatId: "r1")
+
+        XCTAssertEqual(instrumentation.downloadStartedCount, 1)
+    }
+
+    func testSearchAndEditModeAndFireAll_fireTheirPixels() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [], instrumentation: instrumentation)
+
+        sut.searchActivated()
+        sut.editModeEntered()
+        sut.fireAllTapped()
+
+        XCTAssertEqual(instrumentation.searchActivatedCount, 1)
+        XCTAssertEqual(instrumentation.editModeEnteredCount, 1)
+        XCTAssertEqual(instrumentation.fireAllTappedCount, 1)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(
@@ -367,14 +514,18 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         fireExecutor: FireExecuting? = MockChatHistoryFireExecutor(),
         downloader: ChatHistoryDownloading? = nil,
         pinner: ChatPinning? = nil,
-        mutationQueue: DispatchQueue = .main
+        source: AIChatHistorySource = .browserMenu,
+        mutationQueue: DispatchQueue = .main,
+        instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation()
     ) -> AIChatHistoryViewModel {
         let sut = AIChatHistoryViewModel(
             reader: MockChatHistoryReader(chats: chats),
             fireExecutor: fireExecutor,
             downloader: downloader,
             pinner: pinner,
-            mutationQueue: mutationQueue
+            source: source,
+            mutationQueue: mutationQueue,
+            instrumentation: instrumentation
         )
         processMainQueue() // reader delivers on the main queue; let it drain before asserting
         return sut
@@ -418,6 +569,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         weak var delegate: FireExecutorDelegate?
         private(set) var burnedChatIds: [String] = []
         private(set) var burnedIsFireMode: [Bool] = []
+        private(set) var burnedAllChatsIsFireMode: [Bool] = []
+        private(set) var scheduleSyncCallCount = 0
 
         func prepare(for request: FireRequest) { }
         func burn(request: FireRequest, applicationState: DataStoreWarmup.ApplicationState) async { }
@@ -426,6 +579,14 @@ final class AIChatHistoryViewModelTests: XCTestCase {
             burnedChatIds.append(chatID)
             burnedIsFireMode.append(isFireMode)
             return .success(())
+        }
+        @discardableResult
+        func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+            burnedAllChatsIsFireMode.append(isFireMode)
+            return .success(())
+        }
+        func scheduleSync() {
+            scheduleSyncCallCount += 1
         }
     }
 
@@ -449,5 +610,33 @@ final class AIChatHistoryViewModelTests: XCTestCase {
             calls.append((chatId, pinned))
             if let throwsError { throw throwsError }
         }
+    }
+
+    private final class MockAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
+        private(set) var screenShownSources: [AIChatHistorySource] = []
+        private(set) var chatOpenedCount = 0
+        private(set) var chatDeletedCount = 0
+        private(set) var emptyCTATappedCount = 0
+        private(set) var searchActivatedCount = 0
+        private(set) var fireAllTappedCount = 0
+        private(set) var fireAllConfirmedCount = 0
+        private(set) var pinAddedCount = 0
+        private(set) var pinRemovedCount = 0
+        private(set) var downloadStartedCount = 0
+        private(set) var editModeEnteredCount = 0
+        private(set) var newChatTappedCount = 0
+
+        func screenShown(source: AIChatHistorySource) { screenShownSources.append(source) }
+        func chatOpened() { chatOpenedCount += 1 }
+        func chatDeleted() { chatDeletedCount += 1 }
+        func emptyCTATapped() { emptyCTATappedCount += 1 }
+        func searchActivated() { searchActivatedCount += 1 }
+        func fireAllTapped() { fireAllTappedCount += 1 }
+        func fireAllConfirmed() { fireAllConfirmedCount += 1 }
+        func pinAdded() { pinAddedCount += 1 }
+        func pinRemoved() { pinRemovedCount += 1 }
+        func downloadStarted() { downloadStartedCount += 1 }
+        func editModeEntered() { editModeEnteredCount += 1 }
+        func newChatTapped() { newChatTappedCount += 1 }
     }
 }

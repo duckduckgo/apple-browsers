@@ -44,6 +44,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user taps expand to open duck.ai in a new tab with the current chat URL
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL)
 
+    /// Called when the user taps "View all chats" and the native chat history page should open.
+    func aiChatContextualSheetViewControllerDidRequestViewAllChats(_ viewController: AIChatContextualSheetViewController)
+
     /// Called when the user requests to open AI Chat settings
     func aiChatContextualSheetViewControllerDidRequestOpenSettings(_ viewController: AIChatContextualSheetViewController)
 
@@ -182,7 +185,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var recentChatsButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size24.list, for: .normal)
+        button.setImage(DesignSystemImages.Glyphs.Size24.chats, for: .normal)
         button.tintColor = UIColor(designSystemColor: .textPrimary)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)
@@ -812,8 +815,14 @@ extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDe
     func recentChatsPopupDidSelectViewAll() {
         dismissRecentChatsPopup()
         pixelHandler.fireViewAllChatsTapped()
-        let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
-        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+        // The native chat history page is an iPhone-only experience; fall back to the duck.ai sidebar
+        // when the flag is off or on iPad.
+        if featureFlagger.isFeatureOn(.aiChatNativeChatHistory), UIDevice.current.userInterfaceIdiom != .pad {
+            delegate?.aiChatContextualSheetViewControllerDidRequestViewAllChats(self)
+        } else {
+            let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
+            delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+        }
     }
 
     func recentChatsPopupDidDismiss() {

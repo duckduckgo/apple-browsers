@@ -103,6 +103,13 @@ public final class DataImportManager: DataImportManaging {
     public func importFile(at url: URL, for fileType: DataImportFileType) async throws -> DataImportSummary? {
         defer { cleanupImporters() }
 
+        // Reject a directly-selected file with a disguising double extension (e.g. foo.swift.html).
+        // Archive entries are validated separately inside ImportArchiveReader.
+        guard !url.lastPathComponent.hasMultipleFileExtensions else {
+            Logger.autofill.debug("Rejected import file with multiple extensions: \(url.lastPathComponent)")
+            return nil
+        }
+
         switch fileType {
         case .csv:
             csvImporter = createCSVImporter(url: url)

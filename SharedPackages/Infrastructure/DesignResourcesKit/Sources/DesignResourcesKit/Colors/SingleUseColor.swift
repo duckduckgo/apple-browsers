@@ -33,6 +33,9 @@ public enum SingleUseColor {
     /// Duck.ai contextual background color
     case duckAIContextualSheetBackground
 
+    /// Duck.ai web view background color (#FFFFFF light / #111111 dark)
+    case duckAIWebViewBackground
+
     /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
     case unifiedToggleInputCardBackground
     case unifiedToggleInputAttachmentErrorBannerBackground

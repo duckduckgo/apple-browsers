@@ -37,8 +37,8 @@ struct SettingsAIExperimentalPickerView: View {
         HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
             PickerOptionView(
                 isSelected: !isDuckAISelected,
-                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAIActive : rebrandableImage(.inputToggleSearchSelected, legacy: .inputToggleSearchSelectedLegacy),
-                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAI : rebrandableImage(.inputToggleSearchLight, legacy: .inputToggleSearchLightLegacy),
+                selectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadSearchSelected, legacy: .inputToggleIPadSearchSelectedLegacy) : rebrandableImage(.inputToggleSearchSelected, legacy: .inputToggleSearchSelectedLegacy),
+                unselectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadSearchLight, legacy: .inputToggleIPadSearchLightLegacy) : rebrandableImage(.inputToggleSearchLight, legacy: .inputToggleSearchLightLegacy),
                 title: UserText.Onboarding.SearchExperience.searchOnlyOption,
                 showNewBadge: false,
                 titleMinHeight: maxOptionTitleHeight
@@ -50,8 +50,8 @@ struct SettingsAIExperimentalPickerView: View {
 
             PickerOptionView(
                 isSelected: isDuckAISelected,
-                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAIActive : rebrandableImage(.inputToggleAISelectedLight, legacy: .inputToggleAISelectedLightLegacy),
-                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAI : rebrandableImage(.inputToggleAILight, legacy: .inputToggleAILightLegacy),
+                selectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadAISelectedLight, legacy: .inputToggleIPadAISelectedLightLegacy) : rebrandableImage(.inputToggleAISelectedLight, legacy: .inputToggleAISelectedLightLegacy),
+                unselectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadAILight, legacy: .inputToggleIPadAILightLegacy) : rebrandableImage(.inputToggleAILight, legacy: .inputToggleAILightLegacy),
                 title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
                 showNewBadge: false,
                 titleMinHeight: maxOptionTitleHeight

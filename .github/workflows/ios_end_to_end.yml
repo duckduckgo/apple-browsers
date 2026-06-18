@@ -270,6 +270,7 @@ jobs:
     - name: Run Maestro tests (${{ matrix.device-name }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }})
       id: upload
       env:
+        MAESTRO_CLI_NO_ANALYTICS: "1"
         MAESTRO_API_KEY: ${{ secrets.ROBIN_API_KEY }}
         PROJECT_ID: ${{ vars.ROBIN_PROJECT_KEY }}
         UPLOAD_NAME: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device-name }}_${{ github.sha }}

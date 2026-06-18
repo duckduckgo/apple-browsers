@@ -97,10 +97,13 @@ class SwitchBarTextEntryView: UIView {
     var style: Style = .multiLine {
         didSet {
             guard style != oldValue else { return }
-            // Resign the outgoing control before hiding it — a hidden view that
-            // remains first responder keeps the keyboard attached but unreachable.
-            let wasFirstResponder = isFirstResponder
-            if wasFirstResponder { _ = resignFirstResponder() }
+            // Resign the outgoing control before hiding it. style is already
+            // updated to the new value in didSet, so usesTextField reflects the
+            // incoming control — check both explicitly rather than routing via
+            // the override, which would resign the wrong one.
+            let wasFirstResponder = textView.isFirstResponder || textField.isFirstResponder
+            if textView.isFirstResponder { _ = textView.resignFirstResponder() }
+            if textField.isFirstResponder { _ = textField.resignFirstResponder() }
             if style == .singleLine {
                 textField.text = handler.currentText
             } else {

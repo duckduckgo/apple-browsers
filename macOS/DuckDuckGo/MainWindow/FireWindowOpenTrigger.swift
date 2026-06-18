@@ -1,7 +1,7 @@
 //
-//  SyncDevice.swift
+//  FireWindowOpenTrigger.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,23 +18,15 @@
 
 import Foundation
 
-public struct SyncDevice: Identifiable, Equatable {
+/// Identifies how a Fire Window was opened.
+enum FireWindowOpenTrigger: String, CustomStringConvertible {
+    var description: String { rawValue }
 
-    public enum Kind: Equatable {
-        case current, desktop, mobile, thirdParty
-    }
+    /// User explicitly chose to open a Fire Window — e.g. overflow menu,
+    /// main menu, dock menu, context menu, Fire popover, history view.
+    case manual
 
-    public let kind: Kind
-    public let name: String
-    public let id: String
-
-    public init(kind: Kind, name: String, id: String) {
-        self.kind = kind
-        self.name = name
-        self.id = id
-    }
-
-    public var isCurrent: Bool {
-        kind == .current
-    }
+    /// Fire Window opened without an explicit "Open Fire Window" choice —
+    /// "Open Fire Window by default" preference or the startup window type set to Fire Window.
+    case automatic
 }

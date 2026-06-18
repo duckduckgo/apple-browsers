@@ -358,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Do klepetov lahko dostopate v vseh napravah z uporabo funkcije Sync & Backup.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Določite ton, dolžino in vedenje";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odzive";
 

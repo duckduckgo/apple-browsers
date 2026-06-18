@@ -903,6 +903,7 @@ extension Pixel {
         case cookieDeletionTime(_ time: BucketAggregation)
         case cookieDeletionLeftovers
         case clearDataInDefaultPersistence(_ time: BucketAggregation)
+        case clearDataInDefaultPersistenceSingleTab(_ time: BucketAggregation)
 
         case webkitWarmupStart(appState: String)
         case webkitWarmupFinished(appState: String)
@@ -1791,6 +1792,7 @@ extension Pixel {
         case unifiedToggleInputWebSearchSelected
         case unifiedToggleInputWebSearchDeselected
         case unifiedToggleInputWebSearchSubmitted
+        case unifiedToggleInputCustomizeResponsesSelected
         case unifiedToggleInputModelSelected
         case unifiedToggleInputReasoningEffortSelected
         case unifiedToggleInputImageAttached
@@ -1803,6 +1805,9 @@ extension Pixel {
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
         case unifiedToggleInputPromptSubmitted
+        case unifiedToggleInputShowModelPicker
+        case unifiedToggleInputSubmitChangeModel
+        case unifiedToggleInputSubmitChangeModelPromptSent
         case unifiedToggleInputDuckAIDirectNavigation
 
         // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
@@ -1950,6 +1955,12 @@ extension Pixel {
         case webExtensionDarkReaderInstallError
         case webExtensionDarkReaderEnabled
         case webExtensionDarkReaderDisabled
+
+        case webExtensionStateChecked
+        case webExtensionEmbeddedNotLoaded
+        case webExtensionDarkReaderNotLoaded
+        case webExtensionAdBlockingNotLoaded
+        case webExtensionAdBlockingScriptletsNotFetched
 
         case webExtensionAdBlockingInstalled
         case webExtensionAdBlockingUpgraded
@@ -2842,7 +2853,9 @@ extension Pixel.Event {
         case .cookieDeletionTime(let aggregation):
             return "m_debug_cookie-clearing-time-\(aggregation)"
         case .clearDataInDefaultPersistence(let aggregation):
-            return "m_debug_legacy-data-clearing-time-\(aggregation)"
+            return "data-clearing_all-tabs-time-\(aggregation)"
+        case .clearDataInDefaultPersistenceSingleTab(let aggregation):
+            return "data-clearing_single-tab-time-\(aggregation)"
         case .cookieDeletionLeftovers: return "m_cookie_deletion_leftovers"
 
         case .webkitWarmupStart(let appState):
@@ -3653,6 +3666,7 @@ extension Pixel.Event {
         case .unifiedToggleInputWebSearchSelected: return "m_aichat_unified_input_web_search_selected"
         case .unifiedToggleInputWebSearchDeselected: return "m_aichat_unified_input_web_search_deselected"
         case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
+        case .unifiedToggleInputCustomizeResponsesSelected: return "m_aichat_unified_input_customize_responses_selected"
         case .unifiedToggleInputModelSelected: return "m_aichat_unified_input_model_selected"
         case .unifiedToggleInputReasoningEffortSelected: return "m_aichat_unified_input_reasoning_effort_selected"
         case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
@@ -3665,6 +3679,9 @@ extension Pixel.Event {
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
         case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
+        case .unifiedToggleInputShowModelPicker: return "aichat_unified_input_show_model_picker"
+        case .unifiedToggleInputSubmitChangeModel: return "aichat_unified_input_submit_change_model"
+        case .unifiedToggleInputSubmitChangeModelPromptSent: return "aichat_unified_input_submit_change_model_prompt_sent"
         case .unifiedToggleInputDuckAIDirectNavigation: return "m_aichat_unified_input_duck_ai_direct_navigation"
 
         case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
@@ -3872,6 +3889,12 @@ extension Pixel.Event {
         case .webExtensionDarkReaderInstallError: return "m_web_extension_dark_reader_install_error"
         case .webExtensionDarkReaderEnabled: return "m_web_extension_dark_reader_enabled"
         case .webExtensionDarkReaderDisabled: return "m_web_extension_dark_reader_disabled"
+
+        case .webExtensionStateChecked: return "web_extension_state_checked"
+        case .webExtensionEmbeddedNotLoaded: return "web_extension_embedded_not_loaded"
+        case .webExtensionDarkReaderNotLoaded: return "web_extension_dark_reader_not_loaded"
+        case .webExtensionAdBlockingNotLoaded: return "web_extension_ad_blocking_not_loaded"
+        case .webExtensionAdBlockingScriptletsNotFetched: return "web_extension_ad_blocking_scriptlets_not_fetched"
 
         case .webExtensionAdBlockingInstalled: return "m_web_extension_ad_blocking_installed"
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"

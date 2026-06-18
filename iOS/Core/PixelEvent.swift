@@ -1679,6 +1679,7 @@ extension Pixel {
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
+        case aiChatTabDidReloadAfterTermination
 
         case aiChatReportMetricDecodeError
         case aiChatResponseStateDecodeError
@@ -3563,6 +3564,7 @@ extension Pixel.Event {
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"
+        case .aiChatTabDidReloadAfterTermination: return "m_aichat_tab_did_reload_after_terminate"
 
         case .aiChatReportMetricDecodeError: return "m_aichat_report_metric_decode_error"
         case .aiChatResponseStateDecodeError: return "m_aichat_response_state_decode_error"

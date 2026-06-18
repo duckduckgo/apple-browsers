@@ -634,6 +634,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func invalidateCache(forController controller: TabViewController) {
         if current() === controller {
             Pixel.fire(pixel: .webKitTerminationDidReloadCurrentTab)
+            // Duck.ai-specific counterpart: a foreground Duck.ai tab being reloaded after its renderer
+            // died is the real user-impact signal. Daily+count so a single user stuck in a reload loop
+            // (count spikes) is distinguishable from many users each hit once (daily = users affected).
+            if controller.url?.isDuckAIURL == true {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+            }
             current()?.reload()
         } else {
             removeFromCache(controller)

@@ -605,17 +605,20 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
     var stopCount = 0
     var lastServer: NetworkProtectionServer?
     var lastExcludeLocalNetworks: Bool?
+    var lastExcludeCGNAT: Bool?
     var lastDNSSettings: NetworkProtectionDNSSettings?
 
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async {
         attemptCount += 1
         lastServer = lastConnectedServer
         lastExcludeLocalNetworks = excludeLocalNetworks
+        lastExcludeCGNAT = excludeCGNAT
         lastDNSSettings = dnsSettings
     }
 

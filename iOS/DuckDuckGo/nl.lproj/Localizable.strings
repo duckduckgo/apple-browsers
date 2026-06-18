@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datavolume";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Het wordt aangeraden om deze optie uit te schakelen, zodat al je internetverkeer via de VPN loopt. Probeer deze optie in te schakelen als je problemen ondervindt met functies zoals bellen via wifi, berichten versturen of voicemail.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Uitsluiten van Carrier Services";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Laat lokaal verkeer de VPN omzeilen en maak verbinding met apparaten in je lokale netwerk, zoals een printer.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Sneltoetsen";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Aanbevolen op netwerken die je niet vertrouwt, bijv. openbare wifi in hotels, cafés, enz. Ondervind je problemen met functies (zoals CarPlay, AirDrop enz.) of met het verbinden met andere apparaten, probeer deze instelling dan uit te schakelen. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Strikte routering";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bevestigen";
@@ -3200,7 +3212,7 @@
 "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "geavanceerde, privé AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "Optioneel betaald abonnement.";
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "optioneel betaald abonnement";
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
 "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
@@ -3332,7 +3344,7 @@
 "onboarding.subscription.promo.message" = "DuckDuckGo heeft ook een beveiligde %1$@, verkrijgbaar met een %2$@.";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "Optioneel betaald abonnement.";
+"onboarding.subscription.promo.message.optional-subscription-bold" = "optioneel betaald abonnement";
 
 /* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
 "onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + nog 2 premium beveiligingen";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "De contactpersoon kan niet worden toegevoegd. Probeer het bestand met contactgegevens vanuit je downloadmap te openen.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Contact toegevoegd";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Versie: %@";

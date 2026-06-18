@@ -2842,6 +2842,12 @@ https://duckduckgo.com/mac";
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Data Volume";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Recommended off so all your traffic goes through the VPN. If you have problems with features like Wi-Fi calling, messaging, or voicemail, try turning it on.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Exclude Carrier Services";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Let local traffic bypass the VPN and connect to devices on your local network, like a printer.";
 
@@ -2901,6 +2907,12 @@ https://duckduckgo.com/mac";
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Shortcuts";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like CarPlay, AirDrop, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Strict Routing";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";
@@ -4575,6 +4587,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Privacy Protection enabled for %@";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Unable to add contact. Try opening the contact file from Downloads instead.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Contact added";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Search";

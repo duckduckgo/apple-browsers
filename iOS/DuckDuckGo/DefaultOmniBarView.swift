@@ -254,8 +254,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         largeSizeSpacingConstraint?.isActive = showButtons
 
         let isExpandedPhone = newMode == .expandedPhone
-        leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
-        trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
+        leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : Metrics.iPadButtonSpacing
+        trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : Metrics.iPadButtonSpacing
         stackView.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeSpacing : Metrics.expandedPadSizeSpacing
         stackViewLeadingConstraint?.constant = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
         stackViewTrailingConstraint?.constant = isExpandedPhone ? -Metrics.expandedPhoneSizeMargins.trailing : -Metrics.textAreaHorizontalPadding
@@ -1023,6 +1023,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             trailing: expandedPadSizeSpacing
         )
 
+        static let iPadButtonSpacing: CGFloat = 12.0
         static let expandedPhoneSizeSpacing: CGFloat = 16.0
         static let expandedPhoneSizeButtonSpacing: CGFloat = 10.0
         static let expandedPhoneSizeMargins = NSDirectionalEdgeInsets(

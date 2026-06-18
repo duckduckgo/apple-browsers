@@ -26,10 +26,35 @@ import SwiftUI
 @MainActor
 final class UnifiedSuggestionsViewModel: ObservableObject {
 
+    /// How the focused content leaves the screen on a collapse. A dismiss is *either* a fade-out
+    /// *or* a logo morph-home — never both — so this single value makes the illegal combination
+    /// unrepresentable.
+    enum DismissBehavior: Equatable {
+        case none
+        /// Fade the transient content (logo / suggestion list) out as the NTP content takes over.
+        case fadeOut
+        /// Logo→logo: morph the logo back to the Dax mark and keep it visible (the morph itself lives
+        /// in `logoModel`).
+        case morphHome
+    }
+
     @Published private(set) var content: UnifiedSuggestionsContentKind = .logo
-    /// Reactive sync-promo visibility (driven by the container) so show/hide animates with the
-    /// content crossfade instead of snapping via a root-view rebuild.
-    @Published var showsSyncPromo = false
+    /// The empty-state logo's presentation (mark / morph / speed). All its transitions are pure, so
+    /// the morph rules are tested in `FocusedLogoModelTests`.
+    @Published private(set) var logoModel = FocusedLogoModel()
+    /// How the content collapses back to the omnibar. Cleared on the next focus.
+    @Published private(set) var dismissBehavior: DismissBehavior = .none
+    /// On a fire tab the empty state is the fire screen, not the Dax logo. Set by the container via
+    /// `setFireTab` (which no-ops on an unchanged value, so repeated per-focus sets don't invalidate
+    /// the view body).
+    @Published private(set) var isFireTab = false
+    /// iPhone landscape suppresses the empty state entirely (no room) — matches the unfocused NTP and
+    /// the legacy `DaxLogoManager` horizontal-compact gate. Set by the container.
+    @Published private(set) var isLandscape = false
+    /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
+    /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
+    /// moves in the same pass, and only when the chrome is actually close (never in Search).
+    @Published var chromeInsetTop: CGFloat = 0
     /// The search-surface list VM. On the single-host path the duck.ai surface adds its own
     /// (see `duckAIListViewModel`); the view picks between them by content kind.
     let listViewModel: SuggestionsListViewModel
@@ -42,6 +67,9 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
 
     private var cancellable: AnyCancellable?
     private var previousMode: TextEntryMode?
+    /// Cleared on each focus; the first resolve after that snaps the logo to its mode instead of
+    /// morphing, so a refocus never replays a stale Duck.ai→search morph from the prior session.
+    private var hasResolvedSinceActivation = false
 
     init(inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>,
          listViewModel: SuggestionsListViewModel,
@@ -51,7 +79,17 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         cancellable = inputsPublisher
             .sink { [weak self] inputs in
                 guard let self else { return }
+                // Freeze while the host is collapsing (fade-out OR morph-home): a mid-collapse input
+                // (text clear, mode change) would otherwise swap `content`/the logo out from under the
+                // handoff — a fading list flipping to a spurious logo, or morph-home drifting off `.logo`.
+                // Unfreezes on the next focus.
+                guard self.dismissBehavior == .none else { return }
                 let resolved = UnifiedSuggestionsContentResolver.resolve(inputs, previous: self.content)
+                self.logoModel.update(wasLogo: self.content == .logo,
+                                      isLogo: resolved == .logo,
+                                      isDuckAI: inputs.mode == .aiChat,
+                                      isFirstSinceActivation: !self.hasResolvedSinceActivation)
+                self.hasResolvedSinceActivation = true
                 self.apply(resolved, modeChanged: inputs.mode != self.previousMode)
                 self.previousMode = inputs.mode
             }
@@ -59,11 +97,10 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
 
     /// Crossfades only when a mode switch changes the content *type* (e.g. favorites↔recents,
     /// list↔logo). List↔list keeps the mounted list, and same-mode changes (typing, deletions)
-    /// stay snappy. When the sync promo is showing, snap instead — crossfading the recents under the
-    /// collapsing promo card makes them flash over its space.
+    /// stay snappy.
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool) {
         guard newContent != content else { return }
-        if modeChanged && !Self.sameCategory(content, newContent) && !showsSyncPromo {
+        if modeChanged && !Self.sameCategory(content, newContent) {
             withAnimation(.easeInOut(duration: 0.2)) { content = newContent }
         } else {
             content = newContent
@@ -75,6 +112,47 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         case (.list, .list), (.favorites, .favorites), (.logo, .logo): return true
         default: return false
         }
+    }
+
+    var isShowingLogo: Bool { content == .logo }
+
+    var isShowingFavorites: Bool {
+        if case .favorites = content { return true }
+        return false
+    }
+
+    /// True while the focused content is fading out (drives `DismissFade`).
+    var isFadingOut: Bool { dismissBehavior == .fadeOut }
+
+    /// List/logo→favorites (or recents) collapse: fade the focused content out.
+    func beginDismissFade() {
+        dismissBehavior = .fadeOut
+    }
+
+    /// Logo→logo collapse: morph the focused logo back to the Dax mark and keep it visible (no fade).
+    /// `collapseDuration` is the bar's collapse time — the morph is sped up to finish within it.
+    func morphLogoHomeForDismiss(matching collapseDuration: TimeInterval) {
+        dismissBehavior = .morphHome
+        logoModel.morphToDax(matching: collapseDuration)
+    }
+
+    /// Resets the dismiss state on each focus so the next session starts clean. The reset snaps
+    /// (`DismissFade` only animates the fade-out), so it never replays a fade-in as the logo reappears.
+    func prepareForActivation() {
+        dismissBehavior = .none
+        hasResolvedSinceActivation = false
+    }
+
+    /// No-ops on an unchanged value so repeated per-focus sets don't invalidate the view body.
+    func setFireTab(_ value: Bool) {
+        guard isFireTab != value else { return }
+        isFireTab = value
+    }
+
+    /// No-ops on an unchanged value (see `setFireTab`).
+    func setLandscape(_ value: Bool) {
+        guard isLandscape != value else { return }
+        isLandscape = value
     }
 
     func setDuckAIListViewModel(_ viewModel: SuggestionsListViewModel?) {

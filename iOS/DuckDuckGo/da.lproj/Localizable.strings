@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datamængde";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Anbefales slået fra, så al din trafik går gennem VPN. Hvis du har problemer med funktioner som wi-fi-opkald, beskeder eller telefonsvarer, kan du prøve at aktivere det.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Udeluk Carrier Services";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Lad lokal trafik omgå VPN'en og oprette forbindelse til enheder på dit lokale netværk, f.eks. en printer.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Genveje";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Anbefales på netværk, du ikke har tillid til, f.eks. offentligt wi-fi på hoteller, barer osv. Hvis du har problemer med funktioner (som CarPlay, AirDrop osv.) eller med at forbinde til andre enheder, så prøv at slå det fra. [Læs mere](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Streng routing";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bekræft";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAdvarsler";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kan ikke tilføje kontakt. Prøv i stedet at åbne kontaktfilen fra downloads.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt tilføjet";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Version: %@";

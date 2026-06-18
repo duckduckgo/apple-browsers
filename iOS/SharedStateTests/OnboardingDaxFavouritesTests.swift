@@ -182,6 +182,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             featureFlagger: featureFlagger,
             idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
             afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .lastUsedTab, keyValueStore: keyValueStore),
+            lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: keyValueStore),
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,

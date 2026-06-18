@@ -1,0 +1,19 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_chat_tab_new_button
+
+---
+
+- runFlow:
+    file: ../shared/open_chat_tab.yaml
+
+# Verify the chat-tab header exposes the New (plus) and Recent chats controls.
+# Note: the New control is a UIButton-backed UIMenu (showsMenuAsPrimaryAction) whose items
+# (New Chat / New Voice Chat / New Tab / New Search / New Fire Tab) are not reachable via
+# Maestro's a11y bridge, so this asserts the control is present rather than the menu contents.
+- assertVisible: "Close tab"
+- assertVisible: "New"
+- assertVisible: "Recent chats"

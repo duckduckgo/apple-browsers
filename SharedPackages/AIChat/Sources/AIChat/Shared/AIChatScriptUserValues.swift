@@ -17,6 +17,17 @@
 //
 
 import Foundation
+import FoundationExtensions
+
+/// Indicates whether the Duck.ai conversion pixel is being fired by a new or returning install.
+///
+/// `unknown` is reported on platforms/build channels that cannot determine this — e.g. macOS
+/// App Store builds, which have no reliable reinstall signal — so it isn't conflated with `new`.
+public enum AIChatInstallType: String, Codable {
+    case new
+    case returning
+    case unknown
+}
 
 public struct AIChatNativeHandoffData: Codable {
     public let isAIChatHandoffEnabled: Bool
@@ -93,6 +104,12 @@ public struct AIChatNativeConfigValues: Codable {
     /// must suppress its own in-page tooltip and post `voiceChatStartFailed` to native
     /// after `getUserMedia` rejects.
     public let supportsNativeVoicePermissionHandler: Bool
+    /// Whether this is a new or returning (reinstall) install — `unknown` when the platform
+    /// can't tell. Surfaced on the `web.conversion.duckai.prompt` pixel.
+    public let installType: AIChatInstallType
+    /// Bucketed age of the install (days since the ATB install date):
+    /// 0 = same day, 1 = 1–7, 2 = 8–14, 3 = 15–21, 4 = 22–28, 5 = after day 28.
+    public let installAge: Int
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -156,7 +173,9 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsMultipleContexts: Bool = false,
                 supportsTabPicker: Bool = false,
                 supportsNativeStorage: Bool = false,
-                supportsNativeVoicePermissionHandler: Bool = false) {
+                supportsNativeVoicePermissionHandler: Bool = false,
+                installType: AIChatInstallType = .new,
+                installAge: Int = 0) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -177,6 +196,26 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsTabPicker = supportsTabPicker
         self.supportsNativeStorage = supportsNativeStorage
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
+        self.installType = installType
+        self.installAge = installAge
+    }
+
+    /// Buckets the days between the install date and `now` into the values expected by the
+    /// `web.conversion.duckai.prompt` pixel. A `nil` install date (ATB round-trip not yet
+    /// completed on a fresh install) maps to `0` (same day), as do future/negative dates.
+    public static func installAgeBucket(installDate: Date?, now: Date = Date()) -> Int {
+        guard let installDate else { return 0 }
+        let days = Calendar.current.numberOfDaysBetween(
+            Calendar.current.startOfDay(for: installDate),
+            and: Calendar.current.startOfDay(for: now)) ?? 0
+        switch days {
+        case ..<1: return 0
+        case 1...7: return 1
+        case 8...14: return 2
+        case 15...21: return 3
+        case 22...28: return 4
+        default: return 5
+        }
     }
 }
 

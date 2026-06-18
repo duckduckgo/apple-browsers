@@ -92,7 +92,7 @@ public struct CookiePopupHandledInfo {
 
 public extension Notification.Name {
     /// Posted when the web extension requests a dashboard state refresh for cookie consent status.
-    /// UserInfo contains `AutoconsentNotification.UserInfoKeys.domain` and `AutoconsentNotification.UserInfoKeys.consentStatus`.
+    /// UserInfo contains `AutoconsentNotification.UserInfoKeys.url` and `AutoconsentNotification.UserInfoKeys.consentStatus`.
     static let webExtensionAutoconsentDashboardStateRefresh = Notification.Name("webExtensionAutoconsentDashboardStateRefresh")
 }
 
@@ -100,7 +100,7 @@ public extension Notification.Name {
 public enum AutoconsentNotification {
     /// Keys for notification userInfo dictionary
     public enum UserInfoKeys {
-        public static let domain = "domain"
+        public static let url = "url"
         public static let consentStatus = "consentStatus"
     }
 }
@@ -132,9 +132,9 @@ public protocol AutoconsentMessageHandlerDelegate: AnyObject {
     /// management status for the site.
     ///
     /// - Parameters:
-    ///   - domain: The domain for which to update the dashboard
+    ///   - url: The page URL for which to update the dashboard
     ///   - consentStatus: Detailed information about the consent status
-    func refreshDashboardState(domain: String, consentStatus: ConsentStatusInfo)
+    func refreshDashboardState(url: URL, consentStatus: ConsentStatusInfo)
 
     /// Called when a cookie popup has been handled by the web extension.
     ///

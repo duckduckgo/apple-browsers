@@ -86,6 +86,34 @@ final class AIChatURLParametersTests: XCTestCase {
         XCTAssertEqual(result.absoluteString, "https://duck.ai/chat?mode=image")
     }
 
+    // MARK: - settingsOpenURL
+
+    func testSettingsOpenURLAppendsSettingsParam() {
+        let baseURL = URL(string: "https://duck.ai")!
+        let result = AIChatURLParameters.settingsOpenURL(from: baseURL)
+        XCTAssertEqual(result.absoluteString, "https://duck.ai?settings=open")
+    }
+
+    func testSettingsOpenURLPreservesExistingQueryItems() {
+        let baseURL = URL(string: "https://duck.ai?q=hello")!
+        let result = AIChatURLParameters.settingsOpenURL(from: baseURL)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let queryItems = components.queryItems ?? []
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "hello")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "settings", value: "open")))
+    }
+
+    func testSettingsOpenURLReplacesExistingSettingsParam() {
+        let baseURL = URL(string: "https://duck.ai?settings=closed")!
+        let result = AIChatURLParameters.settingsOpenURL(from: baseURL)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let settingsItems = (components.queryItems ?? []).filter { $0.name == "settings" }
+        XCTAssertEqual(settingsItems.count, 1)
+        XCTAssertEqual(settingsItems.first?.value, "open")
+    }
+
     func testNativeInputURLAppendsNativeInputParameter() {
         let baseURL = URL(string: "https://duck.ai/chat")!
         let result = AIChatURLParameters.nativeInputURL(from: baseURL)

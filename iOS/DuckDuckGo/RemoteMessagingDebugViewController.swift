@@ -154,6 +154,17 @@ struct RemoteMessagingDebugRootView: View {
             } footer: {
                 Text("Shows logs from the last minute, to help diagnose issues immediately after a refresh.")
             }
+
+            Section {
+                NavigationLink(destination: RemoteMessagingUIPreviewsDebugView()) {
+                    Text(verbatim: "RMF UI previews")
+                        .font(.system(size: 15))
+                }
+            } header: {
+                Text(verbatim: "Previews")
+            } footer: {
+                Text(verbatim: "Renders a UI preview of each remote message type.")
+            }
         }
         .navigationTitle("Remote Messaging Debug")
         .toolbar {

@@ -40,7 +40,7 @@ struct BookmarksExporter {
             }
 
             if let folder = entity as? BookmarkFolder {
-                content.append(Template.openFolder(level: level, named: folder.title))
+                content.append(Template.openFolder(level: level, named: folder.title.escapedUnicodeHtmlString()))
                 content.append(contentsOf: export(folder.children, level: level + 1))
                 content.append(Template.closeFolder(level: level))
             }

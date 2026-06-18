@@ -6,50 +6,87 @@ tags:
 
 ---
 
-# Set up
-- runFlow:
-    file: ../shared/setup.yaml
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
 
-# New tab screen - tap Duck.ai button in omnibar
+# NTP: tap Duck.ai button — opens chat tab
 - assertVisible:
     id: "Browser.OmniBar.Button.AIChat"
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"
-- assertVisible:
-    id: "AIChatFullModeBranding"
 
-# Navigate away via Tab Switcher to test browsing menu access
-- tapOn: "Tab Switcher"
-- tapOn: "New Tab"
-- tapOn: "Cancel"
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
+# Verify chat tab header
+- assertVisible: "Free Plan"
+- assertVisible: "Upgrade"
+- assertVisible: "Close tab"
+- assertVisible: "Recent chats"
+- assertVisible: "New"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Close tab to return to NTP
+- tapOn: "Close tab"
 - assertVisible:
     id: "searchEntry"
+
+# Navigate to a web page
 - tapOn:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
 - assertVisible: ".*Privacy Test Pages.*"
 
-# Browsing - test Duck.ai access from browsing menu (shows as "New Chat" in full mode)
+# Browsing Menu: "Duck.ai" opens the chat tab from a web page
 - tapOn: "Browsing Menu"
-- assertVisible: "New Chat"
-- tapOn: "New Chat"
-- assertVisible:
-    id: "AIChatFullModeBranding"
+- assertVisible: "Duck.ai"
+- tapOn: "Duck.ai"
+- assertVisible: "Free Plan"
+- assertVisible: "Close tab"
 
-# Tab Switcher - test Duck.ai access
+# Close tab to return to web page
+- tapOn: "Close tab"
+- assertVisible: ".*Privacy Test Pages.*"
+
+# Tab Switcher: verify Duck.ai tab shortcut is accessible
 - tapOn: "Tab Switcher"
 - assertVisible:
     id: "TabSwitcher.Button.DuckChat"
 - tapOn:
     id: "TabSwitcher.Button.DuckChat"
-- assertVisible:
-    id: "AIChatFullModeBranding"
-- tapOn: "Tab Switcher"
-- tapOn: "New Tab"
+- assertVisible: "Free Plan"
+- assertVisible: "Close tab"
 
-# Turn it off
-- tapOn: "Cancel"
+# Close tab to prepare for AI Features off test
+- tapOn: "Close tab"
+
+# Turn Duck.ai OFF entirely via the master toggle in AI Features.
+# (The "Search Only" picker only hides the unified Search/Duck.ai toggle — it does NOT
+# disable Duck.ai. The master switch on the "Duck.ai" row is the setting that removes
+# Duck.ai access; toggling it off also hides the mode picker below it.)
 - tapOn: "Browsing Menu"
 - tapOn: "Settings"
 - scrollUntilVisible:
@@ -57,30 +94,26 @@ tags:
     direction: DOWN
 - tapOn: "AI Features"
 - tapOn:
-    text: "1"
-    index: 0
+    id: "Settings.AIFeatures.EnableToggle"
 - tapOn: "Settings"
 - tapOn: "Done"
 
-# New tab screen - Duck.ai should not be visible
+# Verify chat button hidden in omnibar
 - assertNotVisible:
     id: "Browser.OmniBar.Button.AIChat"
 
-# Browsing - New Chat should not be visible in menu
-- assertVisible:
-    id: "searchEntry"
+# Verify "Duck.ai" entry hidden in Browsing Menu
 - tapOn:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
 - assertVisible: ".*Privacy Test Pages.*"
 - tapOn: "Browsing Menu"
-- assertNotVisible: "New Chat"
-# Dismiss menu by tapping Settings then backing out
+- assertNotVisible: "Duck.ai"
 - tapOn: "Settings"
 - tapOn: "Done"
 
-# Tab Switcher - Duck.ai should not be visible
+# Verify Tab Switcher has no Duck.ai shortcut
 - tapOn: "Tab Switcher"
 - assertNotVisible:
     id: "TabSwitcher.Button.DuckChat"

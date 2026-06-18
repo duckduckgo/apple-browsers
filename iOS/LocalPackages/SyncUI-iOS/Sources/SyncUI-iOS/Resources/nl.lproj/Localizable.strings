@@ -388,8 +388,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Er wordt verbinding gemaakt ...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Houd DuckDuckGo open op beide apparaten.";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Houd 'Sync & Backup'open op beide apparaten";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Ga terug naar dit apparaat nadat je de code hebt geplakt.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Plak de code op je andere apparaat";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Code handmatig invoeren";
@@ -419,7 +425,7 @@
 "sync.simplified.scan-or-view-code.title" = "Synchroniseer je apparaten";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Scan of plak deze code op je andere apparaat.";
+"sync.simplified.scan-or-view-code.view.instructions" = "Scan of plak deze code op je andere apparaat";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Synchronisatie en back-up";

@@ -207,6 +207,7 @@ class TabViewController: UIViewController {
     public var inferredOpenerContext: BrokenSiteReport.OpenerContext?
     private var refreshCountSinceLoad: Int = 0
     private var breakageReportingSubfeature: BreakageReportingSubfeature?
+    private var siteLoadingPerformanceSubfeature: SiteLoadingPerformanceSubfeature?
 
     private var detectedLoginURL: URL?
     private var fireproofingWorker: FireproofingWorking?
@@ -754,6 +755,10 @@ class TabViewController: UIViewController {
         registerForAddressBarLocationNotifications()
         registerForAutofillNotifications()
 
+        if #available(iOS 18.4, *) {
+            registerForWebExtensionNotifications()
+        }
+
         if #available(iOS 16.4, *) {
             registerForInspectableWebViewNotifications()
         }
@@ -780,6 +785,7 @@ class TabViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
+        webScrollObserver?.reset()
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
         unregisterFromResignActive()
@@ -792,6 +798,27 @@ class TabViewController: UIViewController {
                                                 #selector(onAddressBarPositionChanged),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
                                                object: nil)
+    }
+
+    @available(iOS 18.4, *)
+    private func registerForWebExtensionNotifications() {
+        NotificationCenter.default
+            .publisher(for: .webExtensionAutoconsentDashboardStateRefresh)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                self?.handleWebExtensionDashboardStateRefresh(notification)
+            }
+            .store(in: &cancellables)
+    }
+
+    @available(iOS 18.4, *)
+    private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
+        guard let url = notification.userInfo?[AutoconsentNotification.UserInfoKeys.url] as? URL,
+              let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo else {
+            return
+        }
+
+        privacyInfo?.updateCookieConsentManagedForWebExtensionDashboardState(url: url, consentStatus: consentStatus)
     }
 
     @available(iOS 16.4, *)
@@ -826,9 +853,18 @@ class TabViewController: UIViewController {
             /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
             /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
             /// manages its own native bottom layout via the UnifiedToggleInput container.
-
             let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
-            webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
+            let effectiveBarsVisibilityPercent: CGFloat
+            if #available(iOS 26, *),
+               featureFlagger.isFeatureOn(.bottomBarViewportFixedElementsWorkaround) {
+                /// iOS 26 regressed fixed-bottom webpage elements when the browser continuously
+                /// resizes the webview's bottom inset while chrome hides/shows. Keep the inset
+                /// stable in bottom-address-bar mode to avoid pushing page-fixed footers offscreen.
+                effectiveBarsVisibilityPercent = 1.0
+            } else {
+                effectiveBarsVisibilityPercent = barsVisibilityPercent
+            }
+            webViewBottomAnchorConstraint?.constant = -targetHeight * effectiveBarsVisibilityPercent
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
@@ -840,6 +876,8 @@ class TabViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .assign(to: \.netPConnectionStatus, onWeaklyHeld: self)
     }
+
+    private(set) var webScrollObserver: WebScrollObserver?
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -856,6 +894,7 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
 
         checkWebViewVisibilityConsistency()
+        webScrollObserver?.checkForWedgedRecognizer()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -958,6 +997,13 @@ class TabViewController: UIViewController {
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()
         })
+
+        if webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) {
+            webScrollObserver = WebScrollObserver(container: webViewContainer,
+                                                  scrollView: { [weak self] in self?.webView?.scrollView },
+                                                  currentURL: { [weak self] in self?.webView?.url })
+            webScrollObserver?.install()
+        }
 
         if isAITab {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
@@ -1464,7 +1510,8 @@ class TabViewController: UIViewController {
     }
 
     private func showBars(animated: Bool = true) {
-        chromeDelegate?.setBarsHidden(false, animated: animated, customAnimationDuration: nil)
+        // resetBars syncs BarsAnimator's state; setBarsHidden alone leaves it stale and the chrome can stick hidden.
+        chromeDelegate?.resetBars(animated: animated)
     }
 
     private func hideBars(animated: Bool = true) {
@@ -1506,6 +1553,32 @@ class TabViewController: UIViewController {
             }
         }
     }
+
+    private lazy var navigationPixelResponder = NavigationPixelNavigationResponder(
+        isErrorPageReload: { [weak self] navigationAction in
+            // Keyed on URL — not just `isSpecialErrorPageVisible` — so the "error page reload" gate
+            // only catches reload-like `.other` navs the error page issues against the same URL, not a
+            // user-typed URL (or back/forward) initiated from the error page, which targets a different
+            // URL and represents a real navigation we want to measure.
+            guard let self,
+                  self.specialErrorPageNavigationHandler.isSpecialErrorPageVisible,
+                  let failedURL = self.specialErrorPageNavigationHandler.failedURL else {
+                return false
+            }
+            return navigationAction.request.url == failedURL
+        },
+        isLoadingErrorPage: { [weak self] navigationAction in
+            // Keyed on URL — not just the flag — so an unrelated main-frame nav (back/forward, URL bar)
+            // initiated while the simulated error-page request is in flight isn't also dropped. The
+            // simulated request always uses `failedURL` (set alongside `isSpecialErrorPageRequest`).
+            guard let self,
+                  self.specialErrorPageNavigationHandler.isSpecialErrorPageRequest,
+                  let failedURL = self.specialErrorPageNavigationHandler.failedURL else {
+                return false
+            }
+            return navigationAction.request.url == failedURL
+        }
+    )
 
     private func resetDashboardInfo() {
         if let url = url {
@@ -1775,6 +1848,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        webScrollObserver?.reset()
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
@@ -1940,6 +2014,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        navigationPixelResponder.didStart(navigation)
         lastError = nil
         lastRenderedURL = webView.url
         cancelTrackerNetworksAnimation()
@@ -1954,6 +2029,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
         didFinishURLSubject.send(webView.url)
@@ -2297,6 +2373,16 @@ extension TabViewController: WKNavigationDelegate {
         scheduleTrackerNetworksAnimation(collapsing: true)
         linkProtection.setMainFrameUrl(nil)
         referrerTrimming.onFailedNavigation()
+
+        // Skip the site-loading failure pixel for download handoffs (WebKit error 102) and user
+        // cancellations (NSURLErrorCancelled) — same exclusions as `didFailProvisionalNavigation`.
+        let nsError = error as NSError
+        let isDownloadHandoff = nsError.code == 102 && nsError.domain == "WebKitErrorDomain"
+        let isCancellation = nsError.code == NSURLErrorCancelled && nsError.domain == NSURLErrorDomain
+        if !isDownloadHandoff && !isCancellation {
+            navigationPixelResponder.didFail(navigation, error: error)
+        }
+
         notifyDelegateIfDuckAINavigationFailed(error: error)
     }
 
@@ -2349,6 +2435,10 @@ extension TabViewController: WKNavigationDelegate {
             self.url = webView.url
             return
         }
+
+        // Fire the site-loading failure pixel after the early-return guards above so download handoffs
+        // (WebKit error 102) and user cancellations (NSURLErrorCancelled) aren't miscounted as failures.
+        navigationPixelResponder.didFail(navigation, error: error)
 
         // wait before showing errors in case they recover automatically
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -2406,6 +2496,25 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
+        // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
+        // Doing it any earlier — e.g. at the top of this function — would race when policy decisions
+        // overlap: for instance, the content-blocking wait below can hold nav1's `decisionHandler` while
+        // nav2 enters `decidePolicyFor`, and a second `willStart` would overwrite the pending type before
+        // nav1's `didStartProvisionalNavigation` consumed it. WebKit serializes delegate callbacks on the
+        // main queue, so firing from inside the allow branches guarantees the next event is the matching
+        // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
+        //
+        // `determineAllowPolicy()` may also return the private `WKNavigationActionPolicy(rawValue: 3)`
+        // (`_WKNavigationActionPolicyAllowWithoutTryingAppLink`) to disable Universal Links handling
+        // (set via `preventUniversalLinksOnce` — notably after a tab restoration). WebKit still produces
+        // a `didStartProvisional` for it, so `willStart` must fire just like for the public `.allow` value.
+        let wrappedHandler: (WKNavigationActionPolicy) -> Void = { [weak self] policy in
+            if policy == .allow || policy.rawValue == 3 {
+                self?.navigationPixelResponder.willStart(navigationAction)
+            }
+            decisionHandler(policy)
+        }
+
         // There is an `isUserInitiated` var on navigationAction that uses private API
         //  but this approach is public API.  Unfortunately this means that on iOS 17 and older
         //  if the user visits the a domain where as a loop has already been detected
@@ -2416,7 +2525,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = navigationAction.request.url {
             if !tabURLInterceptor.allowsNavigatingTo(url: url) {
-                decisionHandler(.cancel)
+                wrappedHandler(.cancel)
                 // If there is history or a page loaded keep the tab open
                 if self.currentlyLoadedURL == nil {
                     delegate?.tabDidRequestClose(self)
@@ -2426,7 +2535,7 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         if duckPlayerNavigationHandler.handleDelegateNavigation(navigationAction: navigationAction, webView: webView) {
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             return
         }
         
@@ -2434,10 +2543,10 @@ extension TabViewController: WKNavigationDelegate {
            !url.isDuckDuckGoSearch,
            true == shouldWaitUntilContentBlockingIsLoaded({ [weak self, webView /* decision handler must be called */] in
                guard let self = self else {
-                   decisionHandler(.cancel)
+                   wrappedHandler(.cancel)
                    return
                }
-               self.webView(webView, decidePolicyFor: navigationAction, decisionHandler: decisionHandler)
+               self.webView(webView, decidePolicyFor: navigationAction, decisionHandler: wrappedHandler)
            }) {
             // will wait for Content Blocking to load and re-call on completion
             return
@@ -2458,11 +2567,11 @@ extension TabViewController: WKNavigationDelegate {
 
         switch Self.aiChatNewWindowDecision(currentURL: webView.url, navigationAction: navigationAction) {
         case .loadInTab(let aiChatNewWindowURL):
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             load(url: aiChatNewWindowURL)
             return
         case .openInNewTab(let aiChatNewWindowURL):
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             delegate?.tab(self,
                           didRequestNewTabForUrl: aiChatNewWindowURL,
                           openedByPage: true,
@@ -2487,7 +2596,7 @@ extension TabViewController: WKNavigationDelegate {
                 unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
             )
             if decision == .openInNewTab {
-                decisionHandler(.cancel)
+                wrappedHandler(.cancel)
                 delegate?.tab(self,
                               didRequestNewTabForUrl: linkURL,
                               openedByPage: true,
@@ -2509,7 +2618,7 @@ extension TabViewController: WKNavigationDelegate {
                 guard let self = self else { return }
                 self.load(urlRequest: newRequest)
             },
-                                                                           policyDecisionHandler: decisionHandler)
+                                                                           policyDecisionHandler: wrappedHandler)
 
             if didRewriteLink {
                 return
@@ -2521,7 +2630,7 @@ extension TabViewController: WKNavigationDelegate {
            navigationAction.navigationType != .backForward,
            let newRequest = referrerTrimming.trimReferrer(forNavigation: navigationAction,
                                                           originUrl: webView.url ?? navigationAction.sourceFrame.webView?.url) {
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             load(urlRequest: newRequest)
             return
         }
@@ -2532,7 +2641,7 @@ extension TabViewController: WKNavigationDelegate {
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
            navigationAction.navigationType != .backForward,
            let request = requestForDoNotSell(basedOn: navigationAction.request) {
-            decisionHandler(.cancel)
+            wrappedHandler(.cancel)
             load(urlRequest: request)
             return
         }
@@ -2543,14 +2652,14 @@ extension TabViewController: WKNavigationDelegate {
 
             if modifierFlags.contains(.command) {
                 if modifierFlags.contains(.shift) {
-                    decisionHandler(.cancel)
+                    wrappedHandler(.cancel)
                     delegate?.tab(self,
                                   didRequestNewTabForUrl: url,
                                   openedByPage: false,
                                   inheritingAttribution: adClickAttributionLogic.state)
                     return
                 } else {
-                    decisionHandler(.cancel)
+                    wrappedHandler(.cancel)
                     delegate?.tab(self, didRequestNewBackgroundTabForUrl: url, inheritingAttribution: adClickAttributionLogic.state)
                     return
                 }
@@ -2588,7 +2697,7 @@ extension TabViewController: WKNavigationDelegate {
             if let self, decision == .allow, !self.specialErrorPageNavigationHandler.isSpecialErrorPageRequest {
                 self.specialErrorPageNavigationHandler.handleDecidePolicy(for: navigationAction, webView: webView)
             }
-            decisionHandler(decision)
+            wrappedHandler(decision)
         }
     }
     // swiftlint:enable cyclomatic_complexity
@@ -3452,6 +3561,23 @@ extension TabViewController: UIGestureRecognizerDelegate {
         }
     }
 
+    func zoomIn() {
+        applyTextZoomLevel(textZoomCoordinator.textZoomLevel(forHost: webView.url?.host).incremented())
+    }
+
+    func zoomOut() {
+        applyTextZoomLevel(textZoomCoordinator.textZoomLevel(forHost: webView.url?.host).decremented())
+    }
+
+    func resetTextZoom() {
+        applyTextZoomLevel(appSettings.defaultTextZoomLevel)
+    }
+
+    private func applyTextZoomLevel(_ level: TextZoomLevel) {
+        textZoomCoordinator.set(textZoomLevel: level, forHost: webView.url?.host)
+        textZoomCoordinator.onTextZoomChange(applyToWebView: webView)
+    }
+
 }
 
 // MARK: - UserContentControllerDelegate
@@ -3500,6 +3626,10 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.webView = webView
         
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
+        userScripts.aiChatUserScript.setFocusChatInputHandler { [weak self] in
+            guard let self else { return }
+            (self.parent as? MainViewController)?.focusUnifiedToggleInputForActiveChat(from: self.webView)
+        }
         userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
             guard let self else { return .notFireMode }
             return .resolve(isFireMode: self.tabModel.fireTab,
@@ -3528,6 +3658,9 @@ extension TabViewController: UserContentControllerDelegate {
         
         breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: breakageReportingSubfeature!)
+
+        siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: siteLoadingPerformanceSubfeature!)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         
@@ -3680,6 +3813,40 @@ extension TabViewController: AutoconsentUserScriptDelegate {
     
     func autoconsentUserScript(consentStatus: CookieConsentInfo) {
         privacyInfo?.cookieConsentManaged = consentStatus
+    }
+}
+
+
+@available(iOS 18.4, *)
+extension PrivacyInfo {
+    func updateCookieConsentManagedForWebExtensionDashboardState(url refreshURL: URL, consentStatus: ConsentStatusInfo) {
+        guard url.host == refreshURL.host,
+              normalizedPath(url.path) == normalizedPath(refreshURL.path) else {
+            return
+        }
+
+        cookieConsentManaged = consentStatus.toCookieConsentInfo()
+    }
+
+    private func normalizedPath(_ path: String) -> String {
+        path.isEmpty ? "/" : path
+    }
+}
+
+// MARK: - ConsentStatusInfo to CookieConsentInfo Conversion
+
+@available(iOS 18.4, *)
+extension ConsentStatusInfo {
+    func toCookieConsentInfo() -> CookieConsentInfo {
+        CookieConsentInfo(
+            consentManaged: consentManaged,
+            cosmetic: cosmetic,
+            optoutFailed: optoutFailed,
+            selftestFailed: selftestFailed,
+            consentReloadLoop: consentReloadLoop,
+            consentRule: consentRule,
+            consentHeuristicEnabled: consentHeuristicEnabled
+        )
     }
 }
 

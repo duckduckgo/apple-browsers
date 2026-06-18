@@ -107,7 +107,31 @@ class TabsBarCell: UICollectionViewCell {
         
         applyModel(model)
     }
-    
+
+    /// Configures the cell to render without a backing `Tab`.
+    ///
+    /// Used as a defensive fallback when the collection view requests a cell for an index that no
+    /// longer exists in the tabs model (e.g. during a desync between the layout and the model). The
+    /// cell is left visually empty and non-interactive; a subsequent refresh replaces it.
+    func configurePlaceholder(withTheme theme: Theme) {
+        self.model?.removeObserver(self)
+        self.model = nil
+        onRemove = nil
+
+        label.primaryColor = theme.barTintColor
+        label.text = nil
+        label.accessibilityLabel = nil
+        faviconImage.image = nil
+
+        topBackgroundView.backgroundColor = .clear
+        bottomBackgroundView.backgroundColor = .clear
+        separatorView.backgroundColor = theme.tabsBarSeparatorColor
+
+        labelRemoveButtonConstraint.isActive = false
+        separatorView.isHidden = true
+        removeButton.isHidden = true
+    }
+
     private func applyModel(_ model: Tab) {
 
         if model.link == nil {

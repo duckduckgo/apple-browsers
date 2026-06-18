@@ -211,3 +211,11 @@ private enum Const {
         static let maxWidth: CGFloat = 480.0
     }
 }
+
+#Preview("Cancel Header") {
+    CancelButtonHeader(action: {})
+}
+
+#Preview("Title") {
+    Title()
+}

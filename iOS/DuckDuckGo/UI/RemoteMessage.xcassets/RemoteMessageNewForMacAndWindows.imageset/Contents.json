@@ -1,17 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Property 1=Light.pdf",
-      "idiom" : "universal"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "filename" : "Property 1=Dark.pdf",
+      "filename" : "Laptop-DDGInstall-96.svg",
       "idiom" : "universal"
     }
   ],

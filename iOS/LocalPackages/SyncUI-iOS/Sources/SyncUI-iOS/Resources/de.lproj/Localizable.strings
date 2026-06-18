@@ -388,8 +388,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Verbinden ...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Halte DuckDuckGo auf beiden Geräten offen";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "„Sync & Backup“ auf beiden Geräten offen lassen";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kehre nach dem Einfügen des Codes zu diesem Gerät zurück.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Füge den Code auf deinem anderen Gerät ein";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Code manuell eingeben";
@@ -419,7 +425,7 @@
 "sync.simplified.scan-or-view-code.title" = "Geräte synchronisieren";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Scanne oder füge diesen Code auf deinem anderen Gerät ein.";
+"sync.simplified.scan-or-view-code.view.instructions" = "Scanne oder füge diesen Code auf deinem anderen Gerät ein";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Synchronisieren und sichern";

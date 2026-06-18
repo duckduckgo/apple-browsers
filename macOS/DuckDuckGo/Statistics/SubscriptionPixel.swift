@@ -25,11 +25,17 @@ import Subscription
 
 private let appDistribution = AppVersion.isAppStoreBuild ? "store" : "direct"
 
+enum SubscriptionAppMenuEntryStatus: String {
+    case churned
+    case freeEligible = "free-eligible"
+    case freeIneligible = "free-ineligible"
+}
+
 enum SubscriptionPixel: PixelKitEvent {
     // Subscription
     case subscriptionActive(AuthVersion)
-    case subscriptionOfferScreenImpression
-    case subscriptionPurchaseAttempt
+    case subscriptionOfferScreenImpression(origin: String?)
+    case subscriptionPurchaseAttempt(origin: String?)
     case subscriptionPurchaseFailureOther
     case subscriptionPurchaseFailureStoreError(Error)
     case subscriptionPurchaseFailureBackendError
@@ -71,7 +77,7 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionWelcomeFAQClick
     // Tier Options
     case subscriptionTierOptionsRequested
-    case subscriptionTierOptionsSuccess
+    case subscriptionTierOptionsSuccess(origin: String?)
     case subscriptionTierOptionsFailure(error: Error)
     case subscriptionTierOptionsUnexpectedProTier
     // Plan Change
@@ -91,11 +97,22 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
     case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source)
     case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
-    // Toolbar Button Upsell
+    // Toolbar Button - Upsell
     case subscriptionToolbarButtonShown
+    case subscriptionToolbarButtonClicked
     case subscriptionToolbarButtonPopoverShown
     case subscriptionToolbarButtonPopoverDismissButtonClicked
     case subscriptionToolbarButtonPopoverProceedButtonClicked
+    // Toolbar Button - Subscribed VPN
+    case subscriptionToolbarVPNButtonClicked
+    case subscriptionToolbarVPNPopoverShown
+    case subscriptionToolbarVPNPopoverExpiredViewShown
+    case subscriptionToolbarVPNPopoverExpiredViewSubscribeButtonClicked
+    // Menu Bar Agent - Subscribed VPN
+    case subscriptionMenuBarVPNButtonClicked
+    case subscriptionMenuBarVPNPopoverShown
+    case subscriptionMenuBarVPNPopoverExpiredViewShown
+    case subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked
     // Win-back Offer
     case subscriptionWinBackOfferLaunchPromptShown
     case subscriptionWinBackOfferLaunchPromptCTAClicked
@@ -112,6 +129,12 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionWinBackOfferNewTabPageShown
     case subscriptionWinBackOfferNewTabPageCTAClicked
     case subscriptionWinBackOfferNewTabPageDismissed
+
+    // Subscription Funnel Entry Points (App Menu, Preferences)
+    case subscriptionEntryAppMenuImpression(status: SubscriptionAppMenuEntryStatus)
+    case subscriptionEntryAppMenuSubscriptionClick(status: SubscriptionAppMenuEntryStatus)
+    case subscriptionEntrySettingsImpression
+    case subscriptionEntrySettingsSubscriptionClick
 
     // New Tab Page Next Steps Card
     case subscriptionNewTabPageNextStepsCardClicked
@@ -189,11 +212,22 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_mac_privacy-pro_keychain_manager_deallocated_with_backlog"
         case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_mac_privacy-pro_keychain_manager_data_wrote_from_backlog"
         case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_mac_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
-            // Toolbar Button Upsell
+            // Toolbar Button - Upsell
         case .subscriptionToolbarButtonShown: return "m_mac_privacy-pro_toolbar_button_shown"
+        case .subscriptionToolbarButtonClicked: return "m_mac_\(appDistribution)_privacy-pro_toolbar_button_clicked"
         case .subscriptionToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"
         case .subscriptionToolbarButtonPopoverDismissButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked"
         case .subscriptionToolbarButtonPopoverProceedButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked"
+            // Toolbar Button - Subscribed VPN
+        case .subscriptionToolbarVPNButtonClicked: return "m_mac_\(appDistribution)_subscription_toolbar_vpn_button_clicked"
+        case .subscriptionToolbarVPNPopoverShown: return "m_mac_\(appDistribution)_subscription_toolbar_vpn_popover_shown"
+        case .subscriptionToolbarVPNPopoverExpiredViewShown: return "m_mac_\(appDistribution)_subscription_toolbar_vpn_popover_expired_view_shown"
+        case .subscriptionToolbarVPNPopoverExpiredViewSubscribeButtonClicked: return "m_mac_\(appDistribution)_subscription_toolbar_vpn_popover_expired_view_subscribe_button_clicked"
+            // Menu Bar Agent - Subscribed VPN
+        case .subscriptionMenuBarVPNButtonClicked: return "m_mac_\(appDistribution)_subscription_menu_bar_vpn_button_clicked"
+        case .subscriptionMenuBarVPNPopoverShown: return "m_mac_\(appDistribution)_subscription_menu_bar_vpn_popover_shown"
+        case .subscriptionMenuBarVPNPopoverExpiredViewShown: return "m_mac_\(appDistribution)_subscription_menu_bar_vpn_popover_expired_view_shown"
+        case .subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked: return "m_mac_\(appDistribution)_subscription_menu_bar_vpn_popover_expired_view_subscribe_button_clicked"
             // Win-back Offer
         case .subscriptionWinBackOfferLaunchPromptShown: return "m_mac_\(appDistribution)_privacy-pro_winback_launch_prompt_shown"
         case .subscriptionWinBackOfferLaunchPromptCTAClicked: return "m_mac_\(appDistribution)_privacy-pro_winback_launch_prompt_cta_clicked"
@@ -213,6 +247,11 @@ enum SubscriptionPixel: PixelKitEvent {
 
         case .subscriptionWinBackOfferNewTabPageDismissed: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_dismissed"
 
+            // Subscription Funnel Entry Points
+        case .subscriptionEntryAppMenuImpression: return "m_mac_\(appDistribution)_subscription_appmenu_impression"
+        case .subscriptionEntryAppMenuSubscriptionClick: return "m_mac_\(appDistribution)_subscription_appmenu_subscription_click"
+        case .subscriptionEntrySettingsImpression: return "m_mac_\(appDistribution)_subscription_settings_impression"
+        case .subscriptionEntrySettingsSubscriptionClick: return "m_mac_\(appDistribution)_subscription_settings_subscription_click"
             // New Tab Page Next Steps Card
         case .subscriptionNewTabPageNextStepsCardClicked: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_clicked"
         case .subscriptionNewTabPageNextStepsCardDismissed: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_dismissed"
@@ -229,6 +268,7 @@ enum SubscriptionPixel: PixelKitEvent {
         static let sourceKey = "source"
         static let platformKey = "platform"
         static let activationDayKey = "activation_day"
+        static let statusKey = "status"
     }
 
     var parameters: [String: String]? {
@@ -250,6 +290,14 @@ enum SubscriptionPixel: PixelKitEvent {
              .freeTrialPIRActivation(let activationDay),
              .freeTrialDuckAIActivation(let activationDay):
             return [SubscriptionPixelsDefaults.activationDayKey: activationDay.rawValue]
+        case .subscriptionEntryAppMenuImpression(let status),
+             .subscriptionEntryAppMenuSubscriptionClick(let status):
+            return [SubscriptionPixelsDefaults.statusKey: status.rawValue]
+        case .subscriptionOfferScreenImpression(let origin),
+             .subscriptionPurchaseAttempt(let origin),
+             .subscriptionTierOptionsSuccess(let origin):
+            guard let origin else { return nil }
+            return [AttributionParameter.origin: origin]
         default:
             return nil
         }
@@ -309,9 +357,18 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionKeychainManagerDataWroteFromBacklog,
                 .subscriptionKeychainManagerFailedToWriteDataFromBacklog,
                 .subscriptionToolbarButtonShown,
+                .subscriptionToolbarButtonClicked,
+                .subscriptionToolbarVPNButtonClicked,
                 .subscriptionToolbarButtonPopoverShown,
+                .subscriptionToolbarVPNPopoverShown,
                 .subscriptionToolbarButtonPopoverDismissButtonClicked,
                 .subscriptionToolbarButtonPopoverProceedButtonClicked,
+                .subscriptionToolbarVPNPopoverExpiredViewShown,
+                .subscriptionToolbarVPNPopoverExpiredViewSubscribeButtonClicked,
+                .subscriptionMenuBarVPNButtonClicked,
+                .subscriptionMenuBarVPNPopoverShown,
+                .subscriptionMenuBarVPNPopoverExpiredViewShown,
+                .subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked,
                 .subscriptionWinBackOfferLaunchPromptShown,
                 .subscriptionWinBackOfferLaunchPromptCTAClicked,
                 .subscriptionWinBackOfferLaunchPromptDismissed,
@@ -325,6 +382,10 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionWinBackOfferNewTabPageDismissed,
                 .subscriptionNewTabPageNextStepsCardClicked,
                 .subscriptionNewTabPageNextStepsCardDismissed,
+                .subscriptionEntryAppMenuImpression,
+                .subscriptionEntryAppMenuSubscriptionClick,
+                .subscriptionEntrySettingsImpression,
+                .subscriptionEntrySettingsSubscriptionClick,
                 .subscriptionTierOptionsRequested,
                 .subscriptionTierOptionsSuccess,
                 .subscriptionTierOptionsFailure,

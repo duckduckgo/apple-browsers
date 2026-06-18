@@ -125,6 +125,9 @@ extension XCUIApplication {
         if let arguments {
             app.launchArguments.append(contentsOf: arguments)
         }
+        if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
+            app.launchArguments += ["-isInternalUser", "true"]
+        }
         app.launch()
         return app
     }

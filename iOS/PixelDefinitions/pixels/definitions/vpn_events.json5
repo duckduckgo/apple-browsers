@@ -212,13 +212,13 @@
                 "key": "feature.data.ext.trigger",
                 "type": "string",
                 "description": "What caused the leak check cycle to run",
-                "enum": ["tunnel_start", "reassert", "periodic"]
+                "enum": ["tunnel_start", "reassert", "periodic", "rekey"]
             },
             {
                 "key": "feature.data.ext.status_reason",
                 "type": "string",
-                "description": "Reason attached to an UNKNOWN status: one or more probes errored without a leak, or the cycle did not complete",
-                "enum": ["checks_errored", "check_interrupted"]
+                "description": "Reason attached to an UNKNOWN status: one or more probes errored without a leak; the cycle did not complete; or the tunnel interface resolved to a non-tunnel interface and the check was skipped",
+                "enum": ["checks_errored", "check_interrupted", "unexpected_tunnel_interface"]
             },
             {
                 "key": "feature.data.ext.latency_ms_bucketed",
@@ -231,6 +231,11 @@
                 "type": "string",
                 "description": "Name of the VPN egress server the cycle ran against",
                 "examples": ["yvr2-netp-prod-egress2"]
+            },
+            {
+                "key": "feature.data.ext.os_version",
+                "type": "string",
+                "description": "Operating system major/minor version at the time of the leak check, for example 13.7 or 26.4"
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.ipv(4|6)\\.leak_ip_type",
@@ -254,6 +259,11 @@
                 "keyPattern": "feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.(error_code|underlying_code)",
                 "type": "integer",
                 "description": "Error code associated with a per-probe error (outer or underlying)"
+            },
+            {
+                "keyPattern": "feature\\.data\\.ext\\.ipv4\\.(http|https|stun)\\.leak_octet[1-4]_matched",
+                "type": "boolean",
+                "description": "Whether the corresponding octet of the observed IPv4 address matched the egress IP, present only when a probe reported a leak"
             }
         ]
     }

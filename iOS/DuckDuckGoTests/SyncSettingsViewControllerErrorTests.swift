@@ -34,6 +34,10 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     var vc: SyncSettingsViewController!
     var errorHandler: CapturingSyncPausedStateManager!
     var ddgSyncing: MockDDGSyncing!
+    var syncBookmarksAdapter: SyncBookmarksAdapter!
+    var syncCredentialsAdapter: SyncCredentialsAdapter!
+    var syncCreditCardsAdapter: SyncCreditCardsAdapter!
+    var featureFlagger: MockFeatureFlagger!
     var syncAutoRestoreHandler: MockSyncAutoRestoreHandler!
     var syncSetupExperimentPixels: MockSyncSetupExperimentPixelFiring!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
@@ -54,27 +58,27 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
                                         readOnly: true,
                                         options: [:])
         ddgSyncing = MockDDGSyncing(authState: .active, isSyncInProgress: false)
-        let bookmarksAdapter = SyncBookmarksAdapter(
+        syncBookmarksAdapter = SyncBookmarksAdapter(
             database: database,
             favoritesDisplayModeStorage: MockFavoritesDisplayModeStoring(),
             syncErrorHandler: CapturingAdapterErrorHandler(),
             faviconStoring: MockFaviconStore())
-        let credentialsAdapter = SyncCredentialsAdapter(
+        syncCredentialsAdapter = SyncCredentialsAdapter(
             secureVaultErrorReporter: MockSecureVaultReporting(),
             syncErrorHandler: CapturingAdapterErrorHandler(),
             tld: TLD())
-        let creditCardsAdapter = SyncCreditCardsAdapter(
+        syncCreditCardsAdapter = SyncCreditCardsAdapter(
             secureVaultErrorReporter: MockSecureVaultReporting(),
             syncErrorHandler: CapturingAdapterErrorHandler())
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.syncSeamlessAccountSwitching])
+        featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.syncSeamlessAccountSwitching])
         syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
         syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
         syncSetupExperimentPixels = MockSyncSetupExperimentPixelFiring()
         vc = SyncSettingsViewController(
             syncService: ddgSyncing,
-            syncBookmarksAdapter: bookmarksAdapter,
-            syncCredentialsAdapter: credentialsAdapter,
-            syncCreditCardsAdapter: creditCardsAdapter,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
@@ -86,6 +90,10 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         cancellables = nil
         errorHandler = nil
         vc = nil
+        syncBookmarksAdapter = nil
+        syncCredentialsAdapter = nil
+        syncCreditCardsAdapter = nil
+        featureFlagger = nil
         syncAutoRestoreHandler = nil
         syncSetupExperimentPixels = nil
         super.tearDown()
@@ -366,9 +374,28 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
     @MainActor
     func testWhenControllerDidFinishTransmittingRecoveryKeyThenNoSuccessExperimentMetricIsFired() {
-        vc.controllerDidFinishTransmittingRecoveryKey()
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
 
         XCTAssertFalse(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenControllerDidFinishTransmittingRecoveryKeyWithoutWaitingThenShowsDeviceSyncedToast() {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncSetupExperimentPixels: syncSetupExperimentPixels
+        )
+
+        spyVC.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(spyVC.dismissVCAndShowDeviceSyncedToastCallCount, 1)
+        XCTAssertEqual(spyVC.dismissPresentedViewControllerCallCount, 0)
     }
 
     @MainActor
@@ -380,10 +407,30 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
     @MainActor
     func testWhenControllerDidCreateSyncAccountThenSignupConnectIsFiredWithoutSuccess() {
-        vc.controllerDidCreateSyncAccount()
+        vc.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
 
         XCTAssertTrue(syncSetupExperimentPixels.firedMetrics.contains("signup_connect"))
         XCTAssertFalse(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenControllerDidCreateSyncAccountWithoutShowingSyncEnabledThenDoesNotPresentCompletionUI() {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncSetupExperimentPixels: syncSetupExperimentPixels
+        )
+
+        spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
+
+        XCTAssertEqual(spyVC.dismissVCAndShowDeviceSyncedToastCallCount, 0)
+        XCTAssertEqual(spyVC.dismissVCAndShowRecoveryPDFCallCount, 0)
+        XCTAssertTrue(syncSetupExperimentPixels.firedMetrics.contains("signup_connect"))
     }
 
     @MainActor
@@ -426,6 +473,35 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.handleSuccessfulSetupOutcome(.loginCompleted(setupRole: .receiver(.connect, .qrCode)))
 
         XCTAssertFalse(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenV2AccountConflictHasMultipleDevicesThenSwitchesWithoutPrompting() async throws {
+        vc.viewModel.devices = [
+            SyncSettingsViewModel.Device(id: "1", name: "iPhone", type: "iPhone", isThisDevice: true),
+            SyncSettingsViewModel.Device(id: "2", name: "Macbook Pro", type: "Macbook Pro", isThisDevice: false)
+        ]
+        var loginCalled = false
+        ddgSyncing.spyLogin = { [weak self] _, _, _ in
+            guard let self else { return [] }
+            XCTAssert(ddgSyncing.disconnectCalled)
+            loginCalled = true
+            throw SyncError.failedToDecryptValue("")
+        }
+
+        guard let syncCode = try? SyncCode.decodeBase64String(testRecoveryCode),
+              let recovery = syncCode.recovery,
+              let recoveryKey = try? recovery.defaultCredentialRecoveryKey() else {
+            XCTFail("Could not create RecoveryKey from code")
+            return
+        }
+
+        await vc.controllerDidFindTwoAccountsDuringRecovery(
+            recoveryKey,
+            setupRole: .sharer,
+            shouldPromptBeforeSwitchingAccounts: false)
+
+        XCTAssertTrue(loginCalled)
     }
 
     func x_test_syncCodeEntered_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async {
@@ -478,7 +554,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         }
 
         guard let syncCode = try? SyncCode.decodeBase64String(testRecoveryCode),
-            let recoveryKey = syncCode.recovery else {
+              let recovery = syncCode.recovery,
+              let recoveryKey = try? recovery.defaultCredentialRecoveryKey() else {
             XCTFail("Could not create RecoveryKey from code")
             return
         }
@@ -497,7 +574,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         }
 
         guard let syncCode = try? SyncCode.decodeBase64String(testRecoveryCode),
-              let recoveryKey = syncCode.recovery else {
+              let recovery = syncCode.recovery,
+              let recoveryKey = try? recovery.defaultCredentialRecoveryKey() else {
             XCTFail("Could not create RecoveryKey from code")
             return
         }
@@ -513,5 +591,26 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         ddgSyncing.account = SyncAccount(deviceId: id, deviceName: "iPhone", deviceType: "iPhone", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.registeredDevices = [RegisteredDevice(id: id, name: "iPhone", type: "iPhone")]
         vc.viewModel.devices = [SyncSettingsViewModel.Device(id: id, name: "iPhone", type: "iPhone", isThisDevice: true)]
+    }
+}
+
+@MainActor
+private final class SpySyncSettingsViewController: SyncSettingsViewController {
+
+    var dismissPresentedViewControllerCallCount = 0
+    var dismissVCAndShowDeviceSyncedToastCallCount = 0
+    var dismissVCAndShowRecoveryPDFCallCount = 0
+
+    override func dismissPresentedViewController(completion: (() -> Void)? = nil) {
+        dismissPresentedViewControllerCallCount += 1
+        completion?()
+    }
+
+    override func dismissVCAndShowDeviceSyncedToast() {
+        dismissVCAndShowDeviceSyncedToastCallCount += 1
+    }
+
+    override func dismissVCAndShowRecoveryPDF() {
+        dismissVCAndShowRecoveryPDFCallCount += 1
     }
 }

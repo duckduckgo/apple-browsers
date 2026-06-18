@@ -37,60 +37,65 @@ struct ResponsiveSearchFieldView: View {
         widgetFamily == .systemSmall ? UserText.quickActionsSearch : UserText.searchDuckDuckGo
     }
 
+    private var showsAIChatIcon: Bool {
+        isRightIconEnabled && isAIChatEnabled && widgetFamily != .systemSmall
+    }
+
     var body: some View {
-        Link(destination: DeepLinks.newSearch) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .renderAwareBackgroundFill()
-                    .frame(minHeight: fieldHeight, maxHeight: fieldHeight)
-                    .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
-                    .makeAccentable()
+        ZStack {
+            RoundedRectangle(cornerRadius: 16)
+                .renderAwareBackgroundFill()
+                .frame(minHeight: fieldHeight, maxHeight: fieldHeight)
+                .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
+                .makeAccentable()
 
-                HStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Link(destination: DeepLinks.newSearch) {
+                    HStack(spacing: 0) {
 
-                    if showLogo {
-                        ResizableTintableImage(fullColor: UIImage(resource: .widgetDaxLogo),
-                                      tintable: UIImage(resource: .widgetDaxLogoTinted))
-                                      .frame(width: 24, height: 24, alignment: .leading)
-                                      .padding(.leading, 12)
-                    }
+                        if showLogo {
+                            ResizableTintableImage(fullColor: UIImage(resource: .widgetDaxLogo),
+                                          tintable: UIImage(resource: .widgetDaxLogoTinted))
+                                          .frame(width: 24, height: 24, alignment: .leading)
+                                          .padding(.leading, 12)
+                        }
 
-                    Text(prompt)
-                        .daxBodyRegular()
-                        .foregroundStyle(Color(designSystemColor: .textSecondary))
-                        .padding(.leading, showLogo ? 8 : 12)
-                        .makeAccentable()
+                        Text(prompt)
+                            .daxBodyRegular()
+                            .foregroundStyle(Color(designSystemColor: .textSecondary))
+                            .padding(.leading, showLogo ? 8 : 12)
+                            .makeAccentable()
 
-                    Spacer()
+                        Spacer()
 
-                    Group {
-                        if isRightIconEnabled {
-                            if isAIChatEnabled && widgetFamily != .systemSmall {
-                                Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                                    Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat)
-                                        .resizable()
-                                        .makeAccentable()
-                                        .frame(width: 24, height: 24, alignment: .leading)
-                                        .foregroundStyle(Color(designSystemColor: .icons))
-                                }
-                            } else {
-                                Image(.widgetSearchLoupe)
-                                    .resizable()
-                                    .makeAccentable()
-                                    .frame(width: 24, height: 24, alignment: .leading)
-                                    .foregroundStyle(Color(designSystemColor: .icons))
-                            }
-                        } else {
-                            EmptyView()
+                        if isRightIconEnabled && !showsAIChatIcon {
+                            Image(.widgetSearchLoupe)
+                                .resizable()
+                                .makeAccentable()
+                                .frame(width: 24, height: 24, alignment: .leading)
+                                .foregroundStyle(Color(designSystemColor: .icons))
+                                .padding(.trailing, 12)
                         }
                     }
-                    .padding(.trailing, 12)
-
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
                 }
-
+                if showsAIChatIcon {
+                    Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat)
+                            .resizable()
+                            .makeAccentable()
+                            .frame(width: 24, height: 24, alignment: .leading)
+                            .foregroundStyle(Color(designSystemColor: .icons))
+                            .padding(.horizontal, 12)
+                            .frame(maxHeight: .infinity)
+                            .contentShape(Rectangle())
+                    }
+                }
             }
-            .unredacted()
         }
+        .frame(height: fieldHeight)
+        .unredacted()
     }
 
 }

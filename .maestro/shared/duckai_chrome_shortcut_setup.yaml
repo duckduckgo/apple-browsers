@@ -1,0 +1,25 @@
+# duckai_chrome_shortcut_setup.yaml
+#
+# Shared launch for the iPad Duck.ai chrome shortcut flows.
+# The shortcut is iPad-only and gated behind the `.internalOnly` feature flag
+# `aiChatChromeShortcutIPad`. Passing `ff.aiChatChromeShortcutIPad: "true"` makes
+# LaunchOptionsHandler register a local override (and flips internal-user on),
+# so the chip is visible on a clean install. The Navigation Bar user setting
+# defaults to ON, so no extra setup is needed for the chip to appear.
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        "ff.aiChatChromeShortcutIPad": "true"
+
+# Dismiss the Dax onboarding tips if they appear over the New Tab Page.
+- runFlow: ./hide_daxdialogs.yaml

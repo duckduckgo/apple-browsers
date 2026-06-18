@@ -227,6 +227,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
+    var isSubmitBlockedByRecoveryCard: Bool = false {
+        didSet {
+            guard oldValue != isSubmitBlockedByRecoveryCard else { return }
+            viewController.isSubmitBlockedByRecoveryCard = isSubmitBlockedByRecoveryCard
+        }
+    }
+
     // MARK: - Properties
 
     private(set) var viewController: UnifiedToggleInputViewController
@@ -265,6 +272,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
     private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
+    /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
+    /// submit or session reset.
+    private var isModelPickerForcedVisible: Bool = false {
+        didSet {
+            guard oldValue != isModelPickerForcedVisible else { return }
+            guard !isClearingModelPickerPinWithoutPersist else { return }
+            persistDraftToStore()
+        }
+    }
+    /// Scoped guard for `hide()`: clear the live pin without writing `false` to `TabInputState`
+    /// (the per-tab pin must survive so `activateForTab` can restore the recovery chip).
+    private var isClearingModelPickerPinWithoutPersist = false
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -369,6 +388,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         syncService: DDGSyncing? = nil,
         switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+        aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard),
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil
@@ -398,7 +418,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            syncService: syncService
+            syncService: syncService,
+            aiChatSyncCleaner: aiChatSyncCleaner
         )
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
@@ -613,6 +634,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
         isVoiceSessionActive = state.isVoiceSessionActive
+        isModelPickerForcedVisible = state.isModelPickerForcedVisible
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
@@ -652,7 +674,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool,
             aiChatInputBoxVisibility: aiChatInputBoxVisibility,
-            isVoiceSessionActive: isVoiceSessionActive
+            isVoiceSessionActive: isVoiceSessionActive,
+            isModelPickerForcedVisible: isModelPickerForcedVisible
         )
     }
 
@@ -662,6 +685,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func persistDraftToStore() {
         guard !isApplyingState, !isPerformingDismissCleanup, let uid = currentTabUID else { return }
         stateStore.update(snapshotCurrentState(), for: uid)
+    }
+
+    /// `hide()` clears the live pin without updating `TabInputState`, so submit after `hide()`
+    /// (`currentTabUID` nil) must patch the stored pin directly for `lastActivatedTabUID`.
+    private func persistModelPickerPinClearedAfterHideIfNeeded() {
+        guard currentTabUID == nil, let uid = lastActivatedTabUID else { return }
+        var state = stateStore.state(for: uid)
+        guard state.isModelPickerForcedVisible else { return }
+        state.isModelPickerForcedVisible = false
+        stateStore.update(state, for: uid)
     }
 
     /// Persists a user-deliberate choice — toggle mode, model, reasoning, tool. These
@@ -755,6 +788,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
+        isClearingModelPickerPinWithoutPersist = true
+        isModelPickerForcedVisible = false
+        isClearingModelPickerPinWithoutPersist = false
+        isSubmitBlockedByRecoveryCard = false
         syncInputBehaviorToHandler()
         isInputVisibleForKeyboard = true
         // The live state is no longer authoritative for the previous tab; clearing
@@ -872,7 +909,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // recomputing from `inputMode == .aiChat && enabled` alone would strip the AI toolbar
         // on a Duck.ai tab when the user disables the toggle.
         viewController.updateToggleEnabled(enabled, showsToolbar: computeRenderState().cardLayout.showsToolbar)
-        contentViewController.isSwipeEnabled = isToggleVisible
         let effective = effectiveInputMode(for: inputMode)
         let inputModeChanged = effective != inputMode
         if inputModeChanged {
@@ -1147,9 +1183,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             toolsSelected: false,
             attachmentsSelected: false
         )
-        hasSubmittedPrompt = true
-        updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
+        markActiveChatPromptSubmitted()
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
         showCollapsed()
@@ -1160,9 +1194,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
         let configuration = promptSubmissionConfiguration
-        hasSubmittedPrompt = true
-        updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
+        markActiveChatPromptSubmitted()
         return (configuration.modelId, configuration.reasoningEffort)
     }
 
@@ -1206,7 +1238,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Content & Layout
 
     func pushContentInsets() {
-        let utiHeight = viewController.view.frame.height
+        // Use the deterministic target height (same source adjustUI uses for the navbar
+        // constraint) while editing, so the content inset animates in lockstep with the
+        // input instead of chasing transient frame values mid-animation.
+        let utiHeight = isInputEditing ? editingHeight() : viewController.view.frame.height
         if cardPosition == .top {
             contentViewController.setContentInset(top: utiHeight, bottom: 0)
         } else {
@@ -1338,6 +1373,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func startNewChat() {
         isNewChatPending = true
         hasSubmittedPrompt = false
+        isModelPickerForcedVisible = false
+        isSubmitBlockedByRecoveryCard = false
         resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
@@ -1354,16 +1391,58 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         recordUserChoiceToStore()
     }
 
+    /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
+    /// No-op for a new chat that hasn't submitted yet — there the model rides in the first
+    /// `submitAIChatNativePrompt`.
+    private func notifyFrontendOfActiveChatModelChange(_ modelId: String) {
+        guard hasSubmittedPrompt, let userScript = boundUserScript else {
+            return
+        }
+        userScript.submitChangeModel(modelId)
+        guard isModelPickerForcedVisible, userScript.canDispatchBridgeMessages else {
+            return
+        }
+        UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPixel(modelId: modelId)
+    }
+
+    /// Surfaces the native model picker on the **active** chat in response to the FE's
+    /// `showModelPicker` (e.g. the recovery card's "Switch Model" CTA). Expands the input and
+    /// reveals the model chip **without starting a new chat** — the chat stays `hasSubmittedPrompt`,
+    /// so a subsequent supported-model selection still emits `submitChangeModelAction`.
+    func presentModelPickerForActiveChat() {
+        isModelPickerForcedVisible = true
+        showExpanded(inputMode: .aiChat)
+        if isSubmitBlockedByRecoveryCard,
+           let supportedModel = modelStore.selectedModel,
+           supportedModel.entityHasAccess {
+            isSubmitBlockedByRecoveryCard = false
+            notifyFrontendOfActiveChatModelChange(supportedModel.id)
+        }
+        // Defer to the next runloop so the toolbar (and the now-revealed chip) is laid out after the
+        // expand animation before we ask the button to open its menu.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            UnifiedToggleInputCoordinatorPixelHelper.fireShowModelPickerPixel()
+            self.viewController.presentModelPickerMenu()
+        }
+    }
+
     func handleModelSelection(_ modelId: String) {
-        guard let model = modelStore.models.first(where: { $0.id == modelId }) else { return }
+        guard let model = modelStore.models.first(where: { $0.id == modelId }) else {
+            return
+        }
 
         if model.entityHasAccess {
             let isNewSelection = modelId != modelStore.persistedModelId
             pendingGatedModelId = nil
+            // Supported model picked in the native picker — the recovery card's reason to block
+            // submit is gone, so drop the block (no-op when it wasn't set).
+            isSubmitBlockedByRecoveryCard = false
             updateSelectedModel(modelId)
             if isNewSelection {
                 Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
             }
+            notifyFrontendOfActiveChatModelChange(modelId)
         } else {
             if routeGatedModelSelection(model) {
                 pendingGatedModelId = modelId
@@ -1468,10 +1547,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         let isNewSelection = modelId != modelStore.persistedModelId
         pendingGatedModelId = nil
+        // Mirror the direct-selection path: the gated model in the recovery-card
+        // is now accessible (post-purchase), so drop the recovery-card submit block.
+        isSubmitBlockedByRecoveryCard = false
         updateSelectedModel(modelId)
         if isNewSelection {
             Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
         }
+        notifyFrontendOfActiveChatModelChange(modelId)
         return true
     }
 
@@ -1736,12 +1819,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 extension UnifiedToggleInputCoordinator {
     
     func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
+        if case .customizeResponses = identifier {
+            UnifiedToggleInputCoordinatorPixelHelper.fireCustomizeResponsesSelectedPixel()
+            viewController.handler.customizeResponsesButtonTapped()
+            return
+        }
+
         let previousTool = toolsController.selectedTool
         switch identifier {
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
         case .imageGeneration:
             toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
+        case .customizeResponses:
+            return
         }
         let currentTool = toolsController.selectedTool
         fireToolToggleTransitionPixel(previous: previousTool, current: currentTool)
@@ -1774,6 +1865,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidRequestSubmitCurrentInput(_ vc: UnifiedToggleInputViewController) {
         submitCurrentInputFromCoordinator()
+    }
+
+    func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController) {
+        insertNewlineFromFloatingReturnKey()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
@@ -1840,9 +1935,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if isOmnibarNewAIChatPrompt {
                 viewController.prepareToolbarSubmitStyleForDismissal()
             }
-            hasSubmittedPrompt = true
-            updateModelChipVisibility()
-            syncHasSubmittedPromptToHandler()
+            markActiveChatPromptSubmitted()
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
@@ -1872,6 +1965,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
         updateInputMode(mode, animated: true)
+    }
+
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, isDraggingToggle isDragging: Bool) {
+        // While the toggle pill is in flight, suppress the content swipe-between-modes gesture so the
+        // two animations can't run concurrently and glitch each other. On release, restore swipe to
+        // whatever toggle visibility dictates (the single source of truth for the gesture).
+        contentViewController.isSwipeEnabled = isDragging ? false : isToggleVisible
     }
 
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
@@ -2243,7 +2343,10 @@ private extension UnifiedToggleInputCoordinator {
         // Contextual chat picks the model upstream (in the half-sheet); the model chip is permanently hidden here.
         // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
         let isImageGenActive = toolsController.selectedTool == .imageGeneration
-        viewController.isModelChipHidden = host == .contextualChat || hasSubmittedPrompt || isImageGenActive
+        // `isModelPickerForcedVisible` only relaxes the `hasSubmittedPrompt` hide reason — contextual
+        // chat and image generation stay hidden regardless.
+        let shouldHideModelChip = host == .contextualChat || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
+        viewController.isModelChipHidden = shouldHideModelChip
         updateReasoningPicker()
     }
 
@@ -2255,6 +2358,18 @@ private extension UnifiedToggleInputCoordinator {
         updateFloatingReturnKeyState()
     }
 
+    private func markActiveChatPromptSubmitted() {
+        let wasInRecoveryPickerSession = isModelPickerForcedVisible
+        hasSubmittedPrompt = true
+        isModelPickerForcedVisible = false
+        persistModelPickerPinClearedAfterHideIfNeeded()
+        updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
+        if wasInRecoveryPickerSession {
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPromptSentPixel()
+        }
+    }
+
     func syncInputBehaviorToHandler() {
         viewController.handler.submitsAIChatOnKeyboardReturn = isOmnibarNewAIChatPrompt
     }
@@ -2264,6 +2379,11 @@ private extension UnifiedToggleInputCoordinator {
         aiChatStatus = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
+        // Do not clear the model-picker pin here. It is stored per tab in TabInputState and
+        // restored by applyState during activateForTab. bindToTab calls resetSessionState
+        // immediately after that restore when switching Duck.ai tabs, so resetting the pin
+        // here would undo the value we just loaded for the incoming tab.
+        isSubmitBlockedByRecoveryCard = false
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }
@@ -2380,7 +2500,6 @@ private extension UnifiedToggleInputCoordinator {
             .sink { [weak self] in
                 guard let self else { return }
                 self.didPressCustomizeResponsesButton.send()
-                self.resetToolsSelection()
                 self.showCollapsed()
             }
             .store(in: &cancellables)
@@ -2430,7 +2549,8 @@ private extension UnifiedToggleInputCoordinator {
         NotificationCenter.default.publisher(for: .subscriptionDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshModelsAfterSubscriptionChange()
+                guard let self else { return }
+                self.refreshModelsAfterSubscriptionChange()
             }
             .store(in: &cancellables)
     }

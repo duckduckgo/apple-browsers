@@ -519,7 +519,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     func testShowViewAllAiChatsPublisher_emitsWhenAutocompleteSuggestionsToggles() throws {
-        PixelKit.setUp(dryRun: true, appVersion: "", defaultHeaders: [:], defaults: UserDefaults()) { _, _, _, _, _, _ in }
+        PixelKit.setUp(dryRun: true, appVersion: "", session: "test", defaultHeaders: [:], defaults: UserDefaults()) { _, _, _, _, _, _ in }
         defer { PixelKit.tearDown() }
 
         let store = try makeStore()
@@ -554,7 +554,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     func testShowAskAiSuggestionPublisher_emitsWhenPreferenceChanges() throws {
-        PixelKit.setUp(dryRun: true, appVersion: "", defaultHeaders: [:], defaults: UserDefaults()) { _, _, _, _, _, _ in }
+        PixelKit.setUp(dryRun: true, appVersion: "", session: "test", defaultHeaders: [:], defaults: UserDefaults()) { _, _, _, _, _, _ in }
         defer { PixelKit.tearDown() }
 
         let searchPreferences = makeSearchPreferences(showAutocompleteSuggestions: true)

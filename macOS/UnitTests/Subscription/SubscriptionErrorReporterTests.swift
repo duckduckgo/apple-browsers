@@ -207,13 +207,13 @@ final class SubscriptionErrorReporterTests: XCTestCase {
 
     func testReporterForTierOptionsSuccess() async throws {
         // Given
-        let event = SubscriptionPixel.subscriptionTierOptionsSuccess
+        let event = SubscriptionPixel.subscriptionTierOptionsSuccess(origin: nil)
 
         // When
         reporter.report(subscriptionTierOptionEvent: event)
 
         // Then
-        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsSuccess.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsSuccess(origin: nil).name])
     }
 
     func testReporterForTierOptionsFailure() async throws {

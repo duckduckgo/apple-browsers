@@ -46,6 +46,7 @@ struct SuggestionTrayDependencies {
 /// Protocol for handling suggestion tray events
 protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectSuggestion suggestion: Suggestion)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didDeleteSuggestion suggestion: Suggestion)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
@@ -56,6 +57,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
 }
 
 extension SuggestionTrayManagerDelegate {
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didDeleteSuggestion suggestion: Suggestion) {}
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {}
 }
 
@@ -234,6 +236,11 @@ final class SuggestionTrayManager: NSObject {
     func showInitialSuggestions() {
         updateSuggestionTrayForCurrentState()
     }
+
+    /// Re-fetches autocomplete suggestions for the current query without changing tray
+    func refreshCurrentSuggestions() {
+        suggestionTrayViewController?.refreshSuggestionsIfNeeded()
+    }
     
     // MARK: - Private Methods
 
@@ -329,7 +336,11 @@ extension SuggestionTrayManager: AutocompleteViewControllerDelegate {
     func autocomplete(selectedSuggestion suggestion: Suggestion) {
         delegate?.suggestionTrayManager(self, didSelectSuggestion: suggestion)
     }
-    
+
+    func autocomplete(deletedSuggestion suggestion: Suggestion) {
+        delegate?.suggestionTrayManager(self, didDeleteSuggestion: suggestion)
+    }
+
     func autocomplete(highlighted suggestion: Suggestion, for query: String) {
     }
     

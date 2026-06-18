@@ -22,6 +22,7 @@ import Networking
 public enum SubscriptionPixelType: Equatable {
     case invalidRefreshToken
     case subscriptionIsActive
+    case osDistributionActiveSubscription
     case getTokensError(AuthTokensCachePolicy, Error)
     case invalidRefreshTokenSignedOut
     case invalidRefreshTokenRecovered
@@ -32,6 +33,7 @@ public enum SubscriptionPixelType: Equatable {
         switch (lhs, rhs) {
         case (.invalidRefreshToken, .invalidRefreshToken),
             (.subscriptionIsActive, .subscriptionIsActive),
+            (.osDistributionActiveSubscription, .osDistributionActiveSubscription),
             (.invalidRefreshTokenSignedOut, .invalidRefreshTokenSignedOut),
             (.invalidRefreshTokenRecovered, .invalidRefreshTokenRecovered),
             (.getTokensError, .getTokensError),

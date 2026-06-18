@@ -58,7 +58,6 @@ public extension DesignSystemImages {
             public static var currency: DesignSystemImage { .init(resource: .currency12) }
             public static var deviceMobile: DesignSystemImage { .init(resource: .deviceMobile12) }
             public static var download: DesignSystemImage { .init(resource: .download12) }
-            public static var downloads: DesignSystemImage { .init(resource: .downloads12) }
             public static var duckAi: DesignSystemImage { .init(resource: .duckAi12) }
             public static var edit: DesignSystemImage { .init(resource: .edit12) }
             public static var email: DesignSystemImage { .init(resource: .email12) }
@@ -69,7 +68,6 @@ public extension DesignSystemImages {
             public static var favorite: DesignSystemImage { .init(resource: .favorite12) }
             public static var feedback: DesignSystemImage { .init(resource: .feedback12) }
             public static var feedbackAlert: DesignSystemImage { .init(resource: .feedbackAlert12) }
-            public static var findSearch: DesignSystemImage { .init(resource: .findSearch12) }
             public static var fingerprint: DesignSystemImage { .init(resource: .fingerprint12) }
             public static var fire: DesignSystemImage { .init(resource: .fire12) }
             public static var fireproof: DesignSystemImage { .init(resource: .fireproof12) }
@@ -156,7 +154,11 @@ public extension DesignSystemImages {
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat16) }
             public static var aiChatOnboarding: DesignSystemImage { .init(resource: .aiChatOnboarding16) }
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd16) }
-            public static var aiChatGradientColor: DesignSystemImage { .init(resource: .aiChatGradientColor16) }
+            public static var aiChatGradientColor: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .aiChatColor16)
+                    : .init(resource: .aiChatGradientColor16)
+            }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory16) }
             public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings16) }
             public static var aiModelClaude: DesignSystemImage { .init(resource: .aiModelClaude16) }
@@ -485,6 +487,7 @@ public extension DesignSystemImages {
             public static var crossRecolorable: DesignSystemImage { .init(resource: .crossRecolorable24) }
             public static var crossSolidSmall: DesignSystemImage { .init(resource: .crossSolidSmall24) }
             public static var cut: DesignSystemImage { .init(resource: .cut24) }
+            public static var deviceAll: DesignSystemImage { .init(resource: .deviceAll24) }
             public static var deviceDesktop: DesignSystemImage { .init(resource: .deviceDesktop24) }
             public static var deviceMobile: DesignSystemImage { .init(resource: .deviceMobile24) }
             public static var deviceMobileDouble: DesignSystemImage { .init(resource: .deviceMobileDouble24) }
@@ -557,6 +560,7 @@ public extension DesignSystemImages {
             public static var news: DesignSystemImage { .init(resource: .news24) }
             public static var note: DesignSystemImage { .init(resource: .note24) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn24) }
+            public static var openInSmall: DesignSystemImage { .init(resource: .openIn24Small) }
             public static var options: DesignSystemImage { .init(resource: .options24) }
             public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach24) }
             public static var paste: DesignSystemImage { .init(resource: .paste24) }
@@ -574,6 +578,7 @@ public extension DesignSystemImages {
             public static var reset: DesignSystemImage { .init(resource: .reset24) }
             public static var resetSites: DesignSystemImage { .init(resource: .resetSites24) }
             public static var settings: DesignSystemImage { .init(resource: .settings24) }
+            public static var settingsAiChat: DesignSystemImage { .init(resource: .settingsAiChat24) }
             public static var shapeCircle: DesignSystemImage { .init(resource: .shapeCircle24) }
             public static var shield: DesignSystemImage { .init(resource: .shield24) }
             public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked24) }

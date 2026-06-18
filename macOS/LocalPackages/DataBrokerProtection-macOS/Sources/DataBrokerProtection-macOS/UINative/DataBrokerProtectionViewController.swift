@@ -46,13 +46,14 @@ final public class DataBrokerProtectionViewController: NSViewController {
                 privacyConfig: PrivacyConfigurationManaging? = nil,
                 prefs: ContentScopeProperties? = nil,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
+                isUserSubscribed: @escaping () -> Bool,
                 openURLHandler: @escaping (URL?) -> Void) {
         self.dataManager = dataManager
         self.vpnBypassService = vpnBypassService
         self.openURLHandler = openURLHandler
         self.webUISettings = webUISettings
         self.pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
-        self.webUIPixel = DataBrokerProtectionWebUIPixels(pixelHandler: pixelHandler)
+        self.webUIPixel = DataBrokerProtectionWebUIPixels(pixelHandler: pixelHandler, isUserSubscribed: isUserSubscribed)
 
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")

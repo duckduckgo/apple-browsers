@@ -31,5 +31,15 @@
         "type": "string",
         "description": "Daily and count pixel schedule type",
         "enum": ["daily", "count"]
+    },
+    "platform": {
+        "type": "string",
+        "description": "Device platform",
+        "enum": ["macos"]
+    },
+    "form_factor": {
+        "type": "string",
+        "description": "Device form-factor",
+        "enum": ["desktop"]
     }
 }

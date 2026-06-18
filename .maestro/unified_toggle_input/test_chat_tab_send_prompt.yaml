@@ -1,0 +1,34 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_chat_tab_send_prompt
+
+---
+
+- runFlow:
+    file: ../shared/open_chat_tab.yaml
+
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Type a prompt and submit
+- tapOn:
+    id: "searchEntry"
+- inputText: "What is a duck?"
+- tapOn: "Submit"
+
+# First send on a clearState device shows the anonymous-chat consent. Accepting it dispatches
+# the pending prompt (verified on-device: no re-submit needed). On a non-clean device the
+# block is skipped because consent was already accepted.
+- runFlow:
+    when:
+        visible: "Agree"
+    commands:
+        - tapOn: "Agree"
+
+# The submitted prompt renders as a user message bubble. The input field clears on send, so
+# this matches the conversation bubble rather than the still-populated input. The AI response
+# is non-deterministic, so we assert only the user's own message.
+- assertVisible: "What is a duck?"

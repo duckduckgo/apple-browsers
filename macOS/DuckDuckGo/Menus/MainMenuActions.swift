@@ -66,8 +66,21 @@ extension AppDelegate {
     }
 
     @objc func newBurnerWindow(_ sender: Any?) {
+        // Distinguish between "user pressed ⌘N and Open Fire Window by default is enabled" vs
+        // "user explicitly chose to open a Fire Window".
+        //
+        // If the user opens a Fire Window by pressing ⌘N while they have "Open Fire Window by default"
+        // enabled, we record that path as an automatic Fire Window open.
+        //
+        // Every other invocation — mouse clicks on the menu item, the Dock menu, the Fire popover button,
+        // and ⇧⌘N when the preference is off — is an explicit user choice and is recorded as a manual
+        // Fire Window open.
+        let isKeyShortcut = NSApp.currentEvent?.type == .keyDown
+        let isFireWindowOpenedDueToDefaultPreferenceEnabled: Bool = isKeyShortcut
+            && visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled
         DispatchQueue.main.async {
-            WindowsManager.openNewWindow(burnerMode: BurnerMode(isBurner: true))
+            WindowsManager.openNewWindow(burnerMode: BurnerMode(isBurner: true),
+                                         isOpenedAutomatically: isFireWindowOpenedDueToDefaultPreferenceEnabled)
         }
     }
 
@@ -528,6 +541,7 @@ extension AppDelegate {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         OnboardingActionsManager.isOnboardingFinished = true
+        OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
         Application.appDelegate.windowControllersManager.updatePreventUserInteraction(prevent: false)
         Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
@@ -575,7 +589,6 @@ extension AppDelegate {
         duckPlayer.preferences.duckPlayerMode = .alwaysAsk
         UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
         homePageSetUpDependencies.clearAll()
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @MainActor
@@ -1639,7 +1652,7 @@ extension MainViewController {
         let debugPersistor = NewTabPageNextStepsCardsDebugPersistor()
         guard let card = debugPersistor.debugVisibleCards.first else { return }
         persistor.setTimesShown(10, for: card)
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
     }
 
     @objc func debugShiftNewTabOpeningDate(_ sender: Any?) {

@@ -69,6 +69,28 @@
         ],
         "parameters": ["appVersion"]
     },
+    "m_web_extension_deferred_protected_data_unavailable": {
+        "description": "Fires when web extension loading or embedded install is deferred because protected data is unavailable (e.g. device locked before first unlock).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-15"
+    },
+    "m_web_extension_resumed_protected_data_available": {
+        "description": "Fires when protected data becomes available and previously deferred web extension load/install work is executed.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-15"
+    },
     "m_web_extension_load_error": {
         "description": "Fires during app startup when loading installed web extensions fails (at least one extension failed to load).",
         "owners": ["tomasstrba"],
@@ -518,6 +540,64 @@
                 "type": "string",
                 "enum": ["logged-in", "logged-out", "premium", "unknown"],
                 "description": "User's YouTube login state at the time of detection"
+            }
+        ]
+    },
+    "web_extension_state_checked": {
+        "description": "Fires on each web-extension consistency check (denominator for the not-loaded rate).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "web_extension_embedded_not_loaded": {
+        "description": "Fires when the embedded (autoconsent) extension is enabled but not loaded into the controller.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "web_extension_dark_reader_not_loaded": {
+        "description": "Fires when the Dark Reader extension is enabled but not loaded into the controller.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "web_extension_ad_blocking_not_loaded": {
+        "description": "Fires when the ad-blocking extension is enabled but not loaded into the controller.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "web_extension_ad_blocking_scriptlets_not_fetched": {
+        "description": "Fires when the ad-blocking extension is expected but its scriptlets have not been fetched.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "extension_loaded",
+                "type": "string",
+                "enum": ["true", "false"],
+                "description": "Whether the ad-blocking extension itself was loaded (true) or also missing (false)."
             }
         ]
     }

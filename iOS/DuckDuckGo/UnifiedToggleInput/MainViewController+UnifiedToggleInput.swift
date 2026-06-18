@@ -530,27 +530,12 @@ private extension MainViewController {
     }
 
     func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        let previousLottieProgress = coordinator.contentViewController.daxLogoManager.lottieProgress
-        let wasLogoVisible = coordinator.contentViewController.daxLogoManager.isLogoVisible
-        // If the swipe gesture already drove progress to the target, skip the
-        // programmatic animation — the swipe handled the visual transition.
-        let swipeProgress = coordinator.contentViewController.daxLogoManager.currentProgress
-        let targetProgress: CGFloat = mode == .aiChat ? 1 : 0
-        let wasSwipeDriven = abs(swipeProgress - targetProgress) < 0.01
-
+        // The empty-state logo morph is driven by the SwiftUI host (`FocusedLogoModel`) off the committed
+        // mode — no manager animation here.
         updateUnifiedInputContentVisibility(for: coordinator)
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
-        // Gate on whether the logo is active for the committed state — not its current alpha, which
-        // is `currentProgress`-scrubbed and reads 0 for the AI logo until the morph drives progress.
-        let shouldAnimateLogoTransition = coordinator.contentViewController.daxLogoManager.isLogoActiveForCurrentState
-        if !wasSwipeDriven && shouldAnimateLogoTransition {
-            coordinator.contentViewController.daxLogoManager.animateLogoTransition(
-                toMode: mode,
-                fromProgress: previousLottieProgress,
-                wasLogoVisible: wasLogoVisible)
-        }
         updateFloatingReturnKeyVisibility()
     }
 
@@ -1074,8 +1059,6 @@ extension MainViewController {
                 self.newTabPageViewController?.view.layoutIfNeeded()
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
-                coordinator.contentViewController.setLogoHidden(false)
                 coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()

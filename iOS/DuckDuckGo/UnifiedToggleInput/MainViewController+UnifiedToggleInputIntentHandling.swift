@@ -187,7 +187,6 @@ private extension MainViewController {
         // Favorites hand off seamlessly too: the embedded grid is already laid out where the NTP grid is,
         // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
-        let ntpStartCenterY = ntpLogoWindowCenterY()
         let isBottom = coordinator.cardPosition.isBottom
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
@@ -207,20 +206,11 @@ private extension MainViewController {
             coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
         }
 
-        // For logo-to-logo: place the UTI Logo at the NTP Logo's position, swap visibility
-        // in one frame, then let the animation drive the UTI Logo to its final position.
-        if isLogoToLogo,
-           let ntpY = ntpStartCenterY,
-           let utiY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY {
-            let bottomLogoOffset = isBottom ? Constants.bottomDaxLogoTransitionYOffset : 0
-            let offset = ntpY - utiY + bottomLogoOffset
-            let naturalOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
-            coordinator.contentViewController.daxLogoManager.setLogoYOffset(naturalOffset + offset)
-            coordinator.contentViewController.view.layoutIfNeeded()
-
-            coordinator.contentViewController.setLogoHidden(false)
+        if isLogoToLogo {
+            // Hide the NTP logo during the seamless logo→logo focus so it doesn't double with the
+            // focused SwiftUI logo; revealed again on dismiss. (Alpha is already 1 via the seamless
+            // handoff above — the focused logo rests at the NTP anchor by construction, no manual swap.)
             newTabPageViewController?.setLogoHidden(true)
-            viewCoordinator.unifiedInputContentContainer.alpha = 1
         }
 
         let duration = Constants.omnibarTransitionDuration(isBottom: isBottom)

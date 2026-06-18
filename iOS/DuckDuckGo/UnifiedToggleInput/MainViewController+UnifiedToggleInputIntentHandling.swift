@@ -64,13 +64,6 @@ extension MainViewController {
               attributed.length > 0 else { return nil }
         return attributed.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
     }
-
-    /// Returns the NTP view's center Y in window coordinates, or nil if not available.
-    func ntpLogoWindowCenterY() -> CGFloat? {
-        guard let ntpView = newTabPageViewController?.view,
-              let window = ntpView.window else { return nil }
-        return ntpView.convert(CGPoint(x: 0, y: ntpView.bounds.midY), to: window).y
-    }
 }
 
 private extension MainViewController {
@@ -226,12 +219,6 @@ private extension MainViewController {
                 }
                 if let pendingHeight {
                     self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
-                }
-                // Reset top-bar handoff so the animation interpolates the logo from its
-                // SWAP position to its natural position. Bottom bar keeps the offset and
-                // lets the keyboard guide handle final positioning.
-                if isLogoToLogo, !isBottom {
-                    coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
                 }
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()

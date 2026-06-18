@@ -48,9 +48,6 @@ extension MainViewController {
 
         /// Stretch the icon fade-in past UTI's collapse so the build-up reads rather than front-loading.
         static let omnibarIconFadeInDurationMultiplier: Double = 1.2
-
-        static let bottomDaxLogoTransitionYOffset: CGFloat = -DefaultOmniBarView.expectedHeight / 2
-        static let topDaxLogoTransitionYOffset: CGFloat = 2
     }
 
     enum UnifiedInputChromeBackgroundState: String {

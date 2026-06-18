@@ -42,7 +42,7 @@ protocol DuckAISuggestionsSurfaceProviderDelegate: AnyObject {
 
 /// Owns the lazily-attached duck.ai suggestions surface: its source, chat/url fetchers, the
 /// content/settle state feed, and the URL-history delete action. Built once per attach and torn
-/// down on detach (search persists; duck.ai is transient). The Lottie dax stays in `DaxLogoManager`.
+/// down on detach (search persists; duck.ai is transient).
 @MainActor
 final class DuckAISuggestionsSurfaceProvider {
 

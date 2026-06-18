@@ -517,12 +517,10 @@ extension NewTabPageViewController {
         isShowingDuckAICompletionDialog = true
         // The NTP view is about to become visible (view.alpha = 1 below) but
         // finishOnboarding() has already set isOnboarding = false, so SwiftUI
-        // would render the Dax logo on the next frame.  Hide both the NTP logo
-        // and the UTI/omnibar logo (shown by the beginEditing transition) so
-        // neither flashes through the transparent completion dialog hosting view.
-        // Both are restored once the dialog is dismissed.
+        // would render the Dax logo on the next frame.  Hide the NTP logo so it doesn't flash through
+        // the transparent completion dialog; the focused UTI logo is covered by the overlay suppression
+        // below (it lives inside the unifiedInputContentContainer).
         setLogoHidden(true)
-        coordinator.contentViewController.setLogoHidden(true)
         view.alpha = 1
         // Mirror showNextDaxDialogNew: suppress the UTI content overlay so the NTP
         // (contentContainer) remains visible while the address bar is active.
@@ -570,7 +568,6 @@ extension NewTabPageViewController {
                     self.daxDialogsManager.dismiss()
                     self.dismissHostingController(didFinishNTPOnboarding: true)
                     self.setLogoHidden(false)
-                    coordinator?.contentViewController.setLogoHidden(false)
                     collapseUTI(nil)
                     ViewHighlighter.hideAll()
                 }

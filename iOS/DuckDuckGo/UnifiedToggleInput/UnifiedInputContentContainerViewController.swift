@@ -142,8 +142,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var chromeMeasuredHeight: CGFloat = 0
     private var isSyncPromoCardVisible = false
 
-    private(set) var daxLogoManager: DaxLogoManager
-    private var isDaxLogoForcedHidden = false
     private var notificationCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
@@ -160,11 +158,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
-        // The fire empty state is now rendered by the SwiftUI host (`FireModeEmptyStateView`), so the
-        // manager is always the (suppressed) morph logo here — never the fire content. It stays only for
-        // Architecture A; the UTI path no longer renders through it.
-        self.daxLogoManager = DaxLogoManager(isFireTab: false)
-        self.daxLogoManager.usesLottieTransition = true
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -202,7 +195,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         observeRemoteMessagesChanges()
         observeAddressBarPositionChanges()
 
-        updateDaxVisibility()
+        refreshSyncPromoIfActive()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -230,15 +223,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if self.presentingViewController != nil {
             self.dismiss(animated: true, completion: completion)
         }
-    }
-
-    func setLogoYOffset(_ offset: CGFloat) {
-        daxLogoManager.setLogoYOffset(offset)
-    }
-
-    func setLogoHidden(_ hidden: Bool) {
-        isDaxLogoForcedHidden = hidden
-        daxLogoManager.setForcedHidden(hidden)
     }
 
     func refreshFireMode(fireMode: Bool) {
@@ -303,10 +287,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // The chrome (hatch + sync-promo) is pinned to the bar (see below), not rendered in the host.
         updatePinnedChrome()
         updateSingleHostTopOffset()
-        // The dax offset depends on hatch presence (`hatchClearance` is added when present),
-        // so refresh visibility when the hatch is added or removed mid-session.
+        // The sync-promo sits below the hatch, so its layout changes when the hatch is added/removed.
         if hatchPresenceChanged {
-            updateDaxVisibility()
+            refreshSyncPromoIfActive()
         }
         if isContentActive {
             applyRequestedContentInset()
@@ -458,7 +441,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             markNeedsVisibleRefresh()
             return
         }
-        self.updateDaxVisibility()
+        self.refreshSyncPromoIfActive()
         self.updateLayoutForCurrentOrientation()
     }
 
@@ -506,7 +489,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private func installComponents() {
         installUnifiedSuggestionsHost()
-        installDaxLogoView()
     }
 
     // MARK: - Single suggestions host
@@ -734,8 +716,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the
         // standalone NTP (the embedded controller has no owner to set this otherwise).
         controller.delegate = self
-        // The escape hatch and the empty-state Dax logo are UTI chrome (the unified view's hatch +
-        // DaxLogoManager), not the NTP's — suppress the NTP's own so we never get two Dax logos.
+        // The escape hatch and the empty-state logo are UTI chrome (bar-pinned hatch + the host's
+        // `FocusedDaxLogoView`), not the NTP's — suppress the NTP's own so we never get two.
         controller.setEscapeHatch(nil)
         controller.setLogoHidden(true)
         return controller
@@ -745,10 +727,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         guard duckAISurface != nil else { return }
         detachDuckAISurfaceFromSingleHost()
         attachDuckAISurfaceIfNeeded()
-    }
-
-    private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, isTopBarPosition: false)
     }
 
     private func setupSubscriptions() {
@@ -832,14 +810,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func applyRequestedContentInset() {
-        var insets = UIEdgeInsets(
-            top: requestedContentInset.top,
-            left: 0,
-            bottom: requestedContentInset.bottom,
-            right: 0
-        )
-        insets.top += Metrics.contentTopInset
-        daxLogoManager.setFireTabContentInsets(insets)
         // The host frame stays fixed (uti-host-stable-frame); the bar-height offset rides the host's
         // safe-area inset (top for a top bar, bottom for a bottom bar) so the scroll view animates it
         // in lockstep with the bar.
@@ -855,15 +825,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         contentContainerView.layoutIfNeeded()
     }
 
-    private func updateDaxVisibility() {
+    /// Refreshes derived bar chrome (the Duck.ai sync-promo) after a content/visibility change. The
+    /// focused empty state itself now renders in the SwiftUI host, so there's no logo to update here.
+    private func refreshSyncPromoIfActive() {
         guard isContentActive else {
             markNeedsVisibleRefresh()
             return
         }
-        // The focused empty state — Dax/Duck.ai logo AND the fire screen — renders in the SwiftUI host
-        // now, so the manager stays hidden on the UTI path (it remains only for Architecture A).
-        daxLogoManager.updateVisibility(isHomeDaxVisible: false, isAIDaxVisible: false, committedMode: switchBarHandler.currentToggleState)
-        daxLogoManager.setEscapeHatchBaseOffset(daxVerticalOffset(hasEscapeHatch: escapeHatchModel != nil))
         updateSyncPromo()
     }
 
@@ -907,22 +875,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateSyncPromo()
     }
 
-    /// `toolbarCompensationOffset` shifts the dax down because the toolbar still sits under the
-    /// unified input — without it, the keyboard-relative centering reads visually too high.
-    /// `hatchClearance` adds extra padding when the escape hatch is present so the two don't crowd.
-    private func daxVerticalOffset(hasEscapeHatch: Bool) -> CGFloat {
-        Metrics.toolbarCompensationOffset + (hasEscapeHatch ? Metrics.hatchClearance : 0)
-    }
-
     private enum Metrics {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
-        static let contentTopInset: CGFloat = 10
         /// Brings the card's 8pt bottom margin up to the design's 12pt UTI bottom margin on the top bar
         /// (content then adds its own 6pt top → 18pt UTI→content, per Figma).
         static let topBarContentClearance: CGFloat = 4
-        static let toolbarCompensationOffset: CGFloat = 80
-        static let hatchClearance: CGFloat = 50
         /// Gap between the bar's edge and the pinned chrome (Figma). The chrome owns its other metrics.
         static let hatchTopInsetTopBar: CGFloat = 6
         /// Bottom bar: the focused content top coincides with the NTP content top, so this must equal the
@@ -957,7 +915,7 @@ private extension UnifiedInputContentContainerViewController {
         needsVisibleRefresh = false
 
         let applyContentUpdates = {
-            self.updateDaxVisibility()
+            self.refreshSyncPromoIfActive()
             self.updateSingleHostTopOffset()
             self.applyRequestedContentInset()
             self.view.layoutIfNeeded()
@@ -985,7 +943,7 @@ extension UnifiedInputContentContainerViewController: DuckAISuggestionsSurfacePr
     }
 
     func duckAISurfaceStateDidChange() {
-        updateDaxVisibility()
+        refreshSyncPromoIfActive()
     }
 
     func duckAISurfaceDidDeleteURLSuggestion() {

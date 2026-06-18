@@ -75,17 +75,10 @@ struct AIChatSyncPromoView_Previews: PreviewProvider {
 
     static let snapshots = PreviewSnapshots(
         configurations: [
-            .init(name: "", state: Data.standard, previewDisplayName: "a"),
-            .init(name: "b", state: Data.standard, scope: .previews, preferredColorScheme: .dark)
+            .init(name: "", state: "")
         ],
         configure: { _ in
             AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
         }
     )
-}
-
-extension AIChatSyncPromoView_Previews {
-    enum Data {
-        case standard
-    }
 }

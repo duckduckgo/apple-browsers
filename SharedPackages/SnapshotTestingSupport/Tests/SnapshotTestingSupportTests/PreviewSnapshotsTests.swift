@@ -26,17 +26,15 @@ final class PreviewSnapshotsTests: XCTestCase {
         let previews = PreviewSnapshots(
             configurations: [
                 .init(name: "Enabled", state: "enabled"),
-                .init(name: "Disabled", state: "disabled", previewDisplayName: "Disabled Preview", scope: .previews, preferredColorScheme: .dark),
+                .init(name: "Disabled", state: "disabled", scope: .previews),
                 .init(name: "Snapshots Only", state: "snapshots", scope: .snapshots)
             ],
             configure: { Text($0) }
         )
 
         XCTAssertEqual(previews.configurations.map(\.name), ["Enabled", "Disabled", "Snapshots Only"])
-        XCTAssertEqual(previews.configurations.map(\.previewDisplayName), [nil, "Disabled Preview", nil])
         XCTAssertEqual(previews.previewConfigurations.map(\.name), ["Enabled", "Disabled"])
         XCTAssertEqual(previews.snapshotConfigurations.map(\.name), ["Enabled", "Snapshots Only"])
-        XCTAssertEqual(previews.configurations.map(\.preferredColorScheme), [nil, .dark, nil])
         _ = previews.configure("enabled")
     }
 

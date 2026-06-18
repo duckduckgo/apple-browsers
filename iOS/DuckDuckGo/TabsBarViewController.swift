@@ -152,6 +152,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         collectionView.clipsToBounds = true
         collectionView.delegate = self
         collectionView.dataSource = self
+        // Prefetching can drop a still-visible cell during a fast scroll and not re-display it
+        // (a gap). Prefetching gains are marginal here and on top of that we're not handling it properly (no willDisplay).
+        collectionView.isPrefetchingEnabled = false
 
         collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.leadingInset).isActive = true
 

@@ -198,9 +198,10 @@ public extension SERPSettingsProviding {
         } else {
             dictionary.removeValue(forKey: key)
         }
-        writeSERPSettingsDictionary(dictionary)
-        // Broadcast so any open SERP reflects the change, regardless of which provider instance wrote it.
-        NotificationCenter.default.post(name: .serpSettingsDidChange, object: nil)
+        // Broadcast only on a successful write, so any open SERP reflects the change (any instance).
+        if writeSERPSettingsDictionary(dictionary) {
+            NotificationCenter.default.post(name: .serpSettingsDidChange, object: nil)
+        }
     }
 
     /// Builds the full snapshot of every native-synced SERP setting at its current effective value.
@@ -265,17 +266,21 @@ public extension SERPSettingsProviding {
         }
     }
 
-    private func writeSERPSettingsDictionary(_ dictionary: [String: String]) {
+    // Returns true if the blob was written; false if encoding or the store write failed.
+    private func writeSERPSettingsDictionary(_ dictionary: [String: String]) -> Bool {
         do {
             let data = try JSONEncoder().encode(dictionary)
-            guard let stringData = String(data: data, encoding: .utf8) else { return }
+            guard let stringData = String(data: data, encoding: .utf8) else { return false }
             do {
                 try keyValueStore?.set(stringData, forKey: SERPSettingsConstants.serpSettingsStorage)
+                return true
             } catch {
                 eventMapper?.fire(.keyValueStoreWriteError, error: error)
+                return false
             }
         } catch {
             eventMapper?.fire(.serializationFailed, error: error)
+            return false
         }
     }
 }

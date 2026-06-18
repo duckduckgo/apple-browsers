@@ -76,15 +76,11 @@ public struct PreviewSnapshots<State> {
 
     @ViewBuilder
     private func preview(for configuration: Configuration) -> some View {
-        let displayName = configuration.previewDisplayName ?? configuration.name
-
-        if displayName.isEmpty {
+        if configuration.name.isEmpty {
             configure(configuration.state)
-                .preferredColorScheme(configuration.preferredColorScheme)
         } else {
             configure(configuration.state)
-                .preferredColorScheme(configuration.preferredColorScheme)
-                .previewDisplayName(displayName)
+                .previewDisplayName(configuration.name)
         }
     }
 }
@@ -93,22 +89,16 @@ public extension PreviewSnapshots {
     struct Configuration {
         public let name: String
         public let state: State
-        public let previewDisplayName: String?
         public let scope: PreviewSnapshotScope
-        public let preferredColorScheme: ColorScheme?
 
         public init(
             name: String,
             state: State,
-            previewDisplayName: String? = nil,
-            scope: PreviewSnapshotScope = .all,
-            preferredColorScheme: ColorScheme? = nil
+            scope: PreviewSnapshotScope = .all
         ) {
             self.name = name
             self.state = state
-            self.previewDisplayName = previewDisplayName
             self.scope = scope
-            self.preferredColorScheme = preferredColorScheme
         }
     }
 }

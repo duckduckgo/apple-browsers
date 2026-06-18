@@ -87,10 +87,19 @@ final class UnifiedToggleInputView: UIView {
         // shorter than the 48pt fire/voice buttons that flank it.
         static let flankedCardTopMargin: CGFloat = 6
         static let flankedCardBottomMargin: CGFloat = 6
-        static let cardHorizontalMargin: CGFloat = 16
+        /// Card container's outer horizontal margin. Also drives the flanked-pill inset and fire/menu
+        /// offsets, so the whole input row shares one outer padding.
+        static let cardHorizontalMargin: CGFloat = 8
         static let cardVerticalMargin: CGFloat = 8
+        /// Outer horizontal margin for the expanded card at the bottom-bar position.
         static let cardHorizontalMarginBottom: CGFloat = 8
         static let cardVerticalMarginBottom: CGFloat = 8
+        /// Page-context chip's leading inset within the card. Decoupled from `cardHorizontalMargin`
+        /// so the card's outer margin can change without shifting the chip.
+        static let pageContextChipLeadingInset: CGFloat = 16
+        /// Omnibar pill's horizontal inset; the card's hand-off start width so it animates to the
+        /// narrower editing margins. Mirrors `DefaultOmniBarView`'s portrait value (landscape/iPad differ).
+        static let omnibarMatchingHorizontalMargin: CGFloat = 16
         static let cardCornerRadiusExpanded: CGFloat = 28
         static let toggleTopPadding: CGFloat = 8
         static let toggleBottomPadding: CGFloat = 9
@@ -162,8 +171,8 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    /// True when hosted by a Duck.ai tab. Drives the extra 3pt the text view gets above and below
-    /// itself while expanded. Set before `applyCardLayout` so the layout pass reads the right value.
+    /// True when hosted by a Duck.ai tab. Drives the extra 3pt above/below the text view while
+    /// expanded. Set before `setInputMode`/`applyCardLayout` so the layout pass reads it.
     var isAITab: Bool = false
 
     var text: String {
@@ -950,6 +959,10 @@ final class UnifiedToggleInputView: UIView {
             cardTopConstraint.constant = Constants.cardVerticalMargin
             cardBottomConstraint.constant = -Constants.cardVerticalMargin
         }
+        // Start width matches the omnibar so the expanded pose (set inside the animation block) can
+        // animate the card's width rather than snap it.
+        cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
+        cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         expandedShadowView.updateShadows(omnibarMatchingShadows)
         expandedShadowView.isHidden = false
@@ -975,6 +988,9 @@ final class UnifiedToggleInputView: UIView {
     func applyToggleRevealChanges() {
         let showToolbar = toggleView.selectedMode == .aiChat
         cardView.layer.cornerRadius = Constants.cardCornerRadiusExpanded
+        // Width animation: this reveal path bypasses `applyCardLayout`, so set the expanded margins here.
+        cardLeadingConstraint.constant = Constants.cardHorizontalMargin
+        cardTrailingConstraint.constant = -cardTrailingMargin
         toggleTopConstraint.constant = Constants.toggleTopPadding
         toggleHeightConstraint.constant = Constants.toggleHeight
         toggleView.alpha = 1
@@ -1416,7 +1432,7 @@ private extension UnifiedToggleInputView {
             textEntryViewTrailingConstraint,
 
             inputBottomConstraint,
-            pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.cardHorizontalMargin),
+            pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.pageContextChipLeadingInset),
             pageContextChipHeightConstraint,
 
             attachmentsStrip.topAnchor.constraint(equalTo: pageContextChip.bottomAnchor),

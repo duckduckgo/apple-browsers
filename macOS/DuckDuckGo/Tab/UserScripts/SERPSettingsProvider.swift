@@ -24,7 +24,6 @@ import AIChat
 import Persistence
 import Common
 import FoundationExtensions
-import Combine
 
 /// macOS implementation of SERP settings provider.
 ///
@@ -60,9 +59,6 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     ///
     /// Used to determine the value of `isAIChatEnabled`.
     var aiChatPreferencesStorage: AIChatPreferencesStorage
-
-    /// Fires when a native-originated SERP setting write occurs (see `SERPSettingsProviding`).
-    let settingsDidChangeSubject = PassthroughSubject<Void, Never>()
 
     /// Optional event mapper for error reporting.
     ///

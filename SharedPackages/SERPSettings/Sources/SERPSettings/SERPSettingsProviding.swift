@@ -22,7 +22,6 @@ import AIChat
 import Persistence
 import Common
 import FoundationExtensions
-import Combine
 
 /// Protocol defining the interface for SERP settings management.
 ///
@@ -91,13 +90,6 @@ public protocol SERPSettingsProviding {
     /// When provided, storage errors are reported through this mapper for analytics
     /// and debugging. Platform-specific implementations translate errors to pixels.
     var eventMapper: EventMapping<SERPSettingsError>? { get }
-
-    /// Subject that fires when a native-originated SERP setting write occurs.
-    ///
-    /// `setSERPSetting(_:forKey:)` sends on this, so observers (e.g. the user script) can push the
-    /// updated snapshot to an open SERP. SERP-originated writes via `storeSERPSettings(settings:)`
-    /// deliberately do NOT emit, which avoids echoing a change straight back to the SERP that sent it.
-    var settingsDidChangeSubject: PassthroughSubject<Void, Never> { get }
 
 #if os(iOS)
     /// iOS-specific AI chat settings provider.
@@ -207,12 +199,8 @@ public extension SERPSettingsProviding {
             dictionary.removeValue(forKey: key)
         }
         writeSERPSettingsDictionary(dictionary)
-        settingsDidChangeSubject.send()
-    }
-
-    /// Publisher that fires when a native-originated SERP setting write occurs.
-    var settingsDidChangePublisher: AnyPublisher<Void, Never> {
-        settingsDidChangeSubject.eraseToAnyPublisher()
+        // Broadcast so any open SERP reflects the change, regardless of which provider instance wrote it.
+        NotificationCenter.default.post(name: .serpSettingsDidChange, object: nil)
     }
 
     /// Builds the full snapshot of every native-synced SERP setting at its current effective value.

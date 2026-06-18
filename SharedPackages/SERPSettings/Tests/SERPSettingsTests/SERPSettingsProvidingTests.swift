@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import Combine
+import Foundation
 import Persistence
 import PersistenceTestingUtils
 import XCTest
@@ -142,27 +142,31 @@ final class SERPSettingsProvidingTests: XCTestCase {
         XCTAssertEqual(snapshot[SERPSettingsConstants.hideAIGeneratedImagesKey], "1")
     }
 
-    // MARK: - Change publisher
+    // MARK: - Change notification
 
-    func testSetSERPSetting_emitsChangePerWrite() {
-        var emissions = 0
-        let cancellable = provider.settingsDidChangePublisher.sink { emissions += 1 }
-        defer { cancellable.cancel() }
+    func testSetSERPSetting_postsChangeNotificationPerWrite() {
+        var notifications = 0
+        let observer = NotificationCenter.default.addObserver(forName: .serpSettingsDidChange, object: nil, queue: nil) { _ in
+            notifications += 1
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
 
         provider.searchAssistFrequency = .often
         provider.hideAIGeneratedImages = true
 
-        XCTAssertEqual(emissions, 2)
+        XCTAssertEqual(notifications, 2)
     }
 
-    func testStoreSERPSettings_doesNotEmitChange() {
-        var emissions = 0
-        let cancellable = provider.settingsDidChangePublisher.sink { emissions += 1 }
-        defer { cancellable.cancel() }
+    func testStoreSERPSettings_doesNotPostChangeNotification() {
+        var notifications = 0
+        let observer = NotificationCenter.default.addObserver(forName: .serpSettingsDidChange, object: nil, queue: nil) { _ in
+            notifications += 1
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
 
         // The SERP-originated full-snapshot path must not echo a change back to the SERP.
         provider.storeSERPSettings(settings: [SERPSettingsConstants.searchAssistKey: "3"])
 
-        XCTAssertEqual(emissions, 0)
+        XCTAssertEqual(notifications, 0)
     }
 }

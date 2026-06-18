@@ -22,7 +22,6 @@ import AIChat
 import Common
 import Persistence
 import PersistenceTestingUtils
-import Combine
 @testable import SERPSettings
 
 final class MockSERPSettingsProvider: SERPSettingsProviding {
@@ -34,7 +33,6 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
     var keyValueStore: ThrowingKeyValueStoring?
     var eventMapper: EventMapping<SERPSettingsError>?
     var wasStoreSettingsCalled: Bool = false
-    let settingsDidChangeSubject = PassthroughSubject<Void, Never>()
 
 #if os(iOS)
     var aiChatProvider: AIChatSettingsProvider

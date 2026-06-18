@@ -112,7 +112,12 @@ class SwitchBarTextEntryView: UIView {
             // without a dismiss/re-present cycle.
             if wasFirstResponder { _ = becomeFirstResponder() }
 
-            // Now hide the outgoing control — it has already lost first responder above.
+            // If becomeFirstResponder() returned false the outgoing control is still FR.
+            // Resign it explicitly so it is never hidden while holding keyboard focus.
+            if style == .singleLine && textView.isFirstResponder { _ = textView.resignFirstResponder() }
+            if style == .multiLine && textField.isFirstResponder { _ = textField.resignFirstResponder() }
+
+            // Hide the outgoing control — it has now lost first responder.
             syncActiveControl()
 
             updatePlaceholderVisibility()

@@ -255,6 +255,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
+    /// Internal-only observability for the hard-to-reproduce "web view scroll frozen, taps still work" bug:
+    /// a passive scroll-failure observer plus a gesture watchdog. Off for the general population by default.
+    case webScrollFreezeObservability
+
     case screenTimeCleaning
 
     case minimalChromeInLandscape
@@ -303,6 +307,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215385432113040?focus=true
     case removeChatHistory
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215816968312844?focus=true
+    case staleFaviconCleanup
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -457,6 +464,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
 
+    /// Controls pin/unpin updates of Synced chats
+    case supportsSyncChatsUpdate
+
     /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
     case settingsLinkInAiFeatures
 
@@ -487,6 +497,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
     case omnibarAttachMoreTabs
+
+    /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
+    case ntpAttachMoreTabs
 
     /// Enables page context feature on iPad
     case iPadPageContext
@@ -547,9 +560,19 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// legacy App Group path.
     case nativeStoragePathMigration
 
+    /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
+    /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
+    /// screenshot preview.
+    case tabSwitcherRichCard
+
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg
+
+    /// Replaces the web-link Search Assist and Hide AI-Generated Images rows on the AI Features
+    /// settings screen with native controls, regroups the main AI settings at the top, and adds the
+    /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
+    case aiFeaturesNativeControls
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -629,6 +652,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case aiChatSyncPromo
     case simplifiedSyncSetupExperiment
     case allowSingleDeviceOnConnectScreen
+    case scopedAccessCredentials
+    case canUseV2ConnectFlow
+    case canShowV2ConnectCode
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

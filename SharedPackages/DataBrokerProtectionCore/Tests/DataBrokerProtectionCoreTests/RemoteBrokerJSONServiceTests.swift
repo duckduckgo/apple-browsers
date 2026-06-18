@@ -525,6 +525,31 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         try? realFileManager.removeItem(at: tempDir)
     }
 
+    func testEndpointRequestDoesNotSetAuthorizationHeader() throws {
+        let endpointURL = URL(string: "https://example.com")!
+
+        let mainConfigRequest = try RemoteBrokerJSONService.Endpoint.request(for: .mainConfig, endpointURL: endpointURL)
+        XCTAssertNil(mainConfigRequest.value(forHTTPHeaderField: "Authorization"))
+
+        let allBrokersRequest = try RemoteBrokerJSONService.Endpoint.request(for: .allBrokers, endpointURL: endpointURL)
+        XCTAssertNil(allBrokersRequest.value(forHTTPHeaderField: "Authorization"))
+    }
+
+    func testCheckForUpdatesPerformsRemoteCheckForUnauthenticatedUser() async {
+        authenticationManager.isUserAuthenticatedValue = false
+
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.notModified, nil) }
+
+        XCTAssertEqual(settings.lastBrokerJSONUpdateCheckTimestamp, 0)
+        do {
+            try await remoteBrokerJSONService.checkForUpdates()
+            XCTAssert(settings.lastBrokerJSONUpdateCheckTimestamp > 0)
+            XCTAssertTrue(MockURLProtocol.requestHandlerQueue.isEmpty, "main_config request should have been made")
+        } catch {
+            XCTFail("Unexpected error")
+        }
+    }
+
 }
 
 extension HTTPURLResponse {

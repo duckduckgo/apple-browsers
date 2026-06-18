@@ -100,6 +100,16 @@ protocol FireExecuting {
     @discardableResult
     @MainActor
     func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error>
+
+    /// Burn all persistent Duck.ai chats. Peer to `burnChat` so the chat-history sheet's
+    /// "Delete All" stays off `burn(request:)` (no tab/data orchestration, no delegate).
+    @discardableResult
+    @MainActor
+    func burnAllChats(isFireMode: Bool) async -> Result<Void, Error>
+
+    /// Flush a pending chat deletion to sync now, so it isn't re-pulled on the next sync cycle.
+    @MainActor
+    func scheduleSync()
 }
 
 class FireExecutor: FireExecuting {
@@ -321,6 +331,17 @@ class FireExecutor: FireExecuting {
     @MainActor
     func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> {
         await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: isFireMode)
+    }
+
+    @discardableResult
+    @MainActor
+    func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+        await aiChatDeleter.deleteAllChats(isFireMode: isFireMode)
+    }
+
+    @MainActor
+    func scheduleSync() {
+        aiChatDeleter.scheduleSync()
     }
 
     @MainActor

@@ -28,29 +28,6 @@ import XCTest
 @MainActor
 final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
-    // MARK: - computeSuggestionTrayEscapeHatchInset
-    //
-    // Returns the additionalTopInset applied to both the search and duck.ai
-    // suggestion trays so the UTI escape hatch lines up with the NTP hatch.
-
-    func test_inset_whenNoHatch_returnsZero() {
-        XCTAssertEqual(
-            UnifiedInputContentContainerViewController.computeSuggestionTrayEscapeHatchInset(
-                hasEscapeHatch: false
-            ),
-            0
-        )
-    }
-
-    func test_inset_whenHatchPresent_returnsPullUp() {
-        XCTAssertEqual(
-            UnifiedInputContentContainerViewController.computeSuggestionTrayEscapeHatchInset(
-                hasEscapeHatch: true
-            ),
-            -10
-        )
-    }
-
     func testDuckAISuggestionsDidRequestSyncSetup_PresentsIntroSheetAndCallbackRequestsSyncSetup() {
         let presenter = MockAIChatSyncIntroSheetPresenter()
         let delegate = MockUnifiedInputContentContainerDelegate()
@@ -91,6 +68,7 @@ private final class MockUnifiedInputContentContainerDelegate: UnifiedInputConten
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion) {}
     func unifiedInputEditingStateDidRequestTextUpdate(_ text: String) {}
     func unifiedInputEditingStateDidSelectChatHistory(url: URL) {}
+    func unifiedInputEditingStateDidSelectViewAllChats() {}
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {}
     func unifiedInputEditingStateDidRequestTabSwitcher() {}
     func unifiedInputEditingStateDidRequestTryFireMode() {}

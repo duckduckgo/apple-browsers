@@ -1301,7 +1301,6 @@ extension DefaultOmniBarView {
 
     func updateSearchAreaExpansion(animated: Bool) {
         applyTextViewVisibility()
-        onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
 
         guard animated else {
             searchAreaContainerView.applyShadowOpacityMultiplier(1)
@@ -1312,10 +1311,19 @@ extension DefaultOmniBarView {
             applyExpansionConstraints()
             applyExpansionClipping()
             layoutIfNeeded()
+            // After layout so observers (the popover) anchor against the final frame.
+            onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
             if isSearchAreaExpanded, !aiChatTextView.isFirstResponder {
                 aiChatTextView.becomeFirstResponder()
             }
             return
+        }
+
+        // Collapsing: notify now so the popover hides as the bar shrinks. Expanding: notify on completion
+        // (below), once the expanded frame is laid out, so the popover anchors at the right Y instead of
+        // sliding from the collapsed position.
+        if !isSearchAreaExpanded {
+            onSearchAreaExpandedStateChanged?(false)
         }
 
         layoutIfNeeded()
@@ -1345,6 +1353,7 @@ extension DefaultOmniBarView {
                 self.onCollapseAnimationCompleted = nil
             } else {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.onSearchAreaExpandedStateChanged?(true)
             }
             if self.isSearchAreaExpanded {
                 self.aiChatTextView.becomeFirstResponder()

@@ -22,9 +22,26 @@ import Networking
 
 struct AccountManager: AccountManaging {
 
+    /// Login access-credential scope. This is unrelated to protected-key purposes such as `ai_chats`.
+    private static let defaultLoginScope = "sync"
     let endpoints: Endpoints
     let api: RemoteAPIRequestCreating
     let crypter: CryptingInternal
+    let registeredDeviceMapper: any RegisteredDeviceMapping
+    let isScopedAccessCredentialsEnabled: () -> Bool
+
+    init(endpoints: Endpoints,
+         api: RemoteAPIRequestCreating,
+         crypter: CryptingInternal,
+         registeredDeviceMapper: (any RegisteredDeviceMapping)? = nil,
+         isScopedAccessCredentialsEnabled: @escaping () -> Bool) {
+        self.endpoints = endpoints
+        self.api = api
+        self.crypter = crypter
+        self.registeredDeviceMapper = registeredDeviceMapper ?? RegisteredDeviceMapper(crypter: crypter,
+                                                                                       isScopedAccessCredentialsEnabled: isScopedAccessCredentialsEnabled)
+        self.isScopedAccessCredentialsEnabled = isScopedAccessCredentialsEnabled
+    }
 
     func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
         let deviceId = UUID().uuidString
@@ -36,15 +53,16 @@ struct AccountManager: AccountManaging {
         let encryptedDeviceType = try crypter.encryptAndBase64Encode(deviceType, using: accountKeys.primaryKey)
 
         let hashedPassword = Data(accountKeys.passwordHash).base64EncodedString()
-        let protectedEncyrptionKey = Data(accountKeys.protectedSecretKey).base64EncodedString()
+        let protectedEncryptionKey = Data(accountKeys.protectedSecretKey).base64EncodedString()
 
         let params = Signup.Parameters(
             userId: userId,
             hashedPassword: hashedPassword,
-            protectedEncryptionKey: protectedEncyrptionKey,
+            protectedEncryptionKey: protectedEncryptionKey,
             deviceId: deviceId,
             deviceName: encryptedDeviceName,
-            deviceType: encryptedDeviceType
+            deviceType: encryptedDeviceType,
+            credentialId: isScopedAccessCredentialsEnabled() ? SyncCredentialID.defaultCredential : nil
         )
 
         guard let paramJson = try? JSONEncoder.snakeCaseKeys.encode(params) else {
@@ -123,15 +141,25 @@ struct AccountManager: AccountManaging {
             throw SyncError.unableToDecodeResponse("Failed to decode devices")
         }
 
-        var devices = [RegisteredDevice]()
+        // Scoped access enabled: never auto-logout. Prefer entries_v2; otherwise map legacy entries with
+        // decrypt-or-generic-fallback (undecryptable native -> "Unknown", undecryptable 3party -> "Browser").
+        if isScopedAccessCredentialsEnabled() {
+            let entries: [RegisteredDeviceEntry]
+            if let entriesV2 = result.devices?.entriesV2, !entriesV2.isEmpty {
+                entries = entriesV2
+            } else {
+                entries = result.devices?.entries ?? []
+            }
+            return await registeredDeviceMapper.registeredDevices(from: entries, account: account)
+        }
+
+        // Legacy behaviour (scoped access disabled): invalid native devices are automatically logged out.
+        var devices: [RegisteredDevice] = []
         if let entries = result.devices?.entries {
             for device in entries {
-                do {
-                    let name = try crypter.base64DecodeAndDecrypt(device.name, using: account.primaryKey)
-                    let type = try crypter.base64DecodeAndDecrypt(device.type, using: account.primaryKey)
-                    devices.append(RegisteredDevice(id: device.id, name: name, type: type))
-                } catch {
-                    // Invalid devices should be automatically logged out
+                if let registeredDevice = registeredDeviceMapper.registeredDevice(fromLegacyEntry: device, account: account) {
+                    devices.append(registeredDevice)
+                } else {
                     try await logout(deviceId: device.id, token: token)
                 }
             }
@@ -175,7 +203,8 @@ struct AccountManager: AccountManaging {
             hashedPassword: info.passwordHash.base64EncodedString(),
             deviceId: deviceId,
             deviceName: encryptedDeviceName,
-            deviceType: encryptedDeviceType
+            deviceType: encryptedDeviceType,
+            scope: isScopedAccessCredentialsEnabled() ? Self.defaultLoginScope : nil
         )
 
         let paramJson = try JSONEncoder.snakeCaseKeys.encode(params)
@@ -212,13 +241,14 @@ struct AccountManager: AccountManaging {
                 token: token,
                 state: .addingNewDevice
             ),
-            devices: try result.devices.map {
-                RegisteredDevice(
-                    id: $0.id,
-                    name: try crypter.base64DecodeAndDecrypt($0.name, using: info.primaryKey),
-                    type: try crypter.base64DecodeAndDecrypt($0.type, using: info.primaryKey)
-                )
-            }
+            devices: result.devices.compactMap { device in
+                registeredDeviceMapper.registeredDevice(fromDefaultCredentialLoginEntryWithID: device.id,
+                                                        encryptedName: device.name,
+                                                        encryptedType: device.type,
+                                                        primaryKey: info.primaryKey)
+            },
+            keys: result.keys,
+            accessCredentials: result.accessCredentials
         )
 
     }
@@ -237,15 +267,24 @@ struct AccountManager: AccountManaging {
             let deviceId: String
             let deviceName: String
             let deviceType: String
+            let credentialId: String?
         }
     }
 
     struct Login {
 
         struct Result: Decodable {
-            let devices: [RegisteredDevice]
+            let devices: [Device]
             let token: String
             let protectedEncryptionKey: String
+            let accessCredentials: [AccessCredential]?
+            let keys: [ProtectedKey]?
+        }
+
+        struct Device: Decodable {
+            let id: String
+            let name: String
+            let type: String?
         }
 
         struct Parameters: Encodable {
@@ -254,6 +293,7 @@ struct AccountManager: AccountManaging {
             let deviceId: String
             let deviceName: String
             let deviceType: String
+            let scope: String?
         }
 
     }
@@ -272,7 +312,8 @@ struct AccountManager: AccountManaging {
     struct FetchDevicesResult: Decodable {
         struct DeviceWrapper: Decodable {
             var lastModified: String?
-            var entries: [RegisteredDevice]
+            var entries: [RegisteredDeviceEntry]?
+            var entriesV2: [RegisteredDeviceEntry]?
         }
 
         var devices: DeviceWrapper?

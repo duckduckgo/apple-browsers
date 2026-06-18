@@ -34,15 +34,11 @@ public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
     }
 
     public func cookies(for url: URL) async -> [HTTPCookie] {
-        await withCheckedContinuation { continuation in
-            cookieStore.getAllCookies { cookies in
-                let domain = url.host ?? ""
-                let relevant = cookies.filter { cookie in
-                    let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
-                    return domain.hasSuffix(cookieDomain)
-                }
-                continuation.resume(returning: relevant)
-            }
+        let cookies = await cookieStore.allCookies()
+        let domain = url.host ?? ""
+        return cookies.filter { cookie in
+            let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
+            return domain.hasSuffix(cookieDomain)
         }
     }
 }

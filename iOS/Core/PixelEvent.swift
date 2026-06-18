@@ -903,6 +903,7 @@ extension Pixel {
         case cookieDeletionTime(_ time: BucketAggregation)
         case cookieDeletionLeftovers
         case clearDataInDefaultPersistence(_ time: BucketAggregation)
+        case clearDataInDefaultPersistenceSingleTab(_ time: BucketAggregation)
 
         case webkitWarmupStart(appState: String)
         case webkitWarmupFinished(appState: String)
@@ -967,6 +968,9 @@ extension Pixel {
         case debugBreakageExperiment
 
         case debugWebViewInVisibleTabHidden
+
+        case debugInteractionRepeatedFailedScroll
+        case debugInteractionWedgedRecognizer
 
         case debugPromptCoordinationFailedToSaveLastPresentationDate
         case debugPromptCoordinationFailedToRetrieveLastPresentationDate
@@ -1485,6 +1489,14 @@ extension Pixel {
         case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab
         case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab
         case ntpAfterIdleEscapeHatchHiddenFromMenu
+        case ntpAfterIdleEscapeHatchShown
+        case ntpAfterIdleEscapeHatchMenuShown
+        case ntpAfterIdleEscapeHatchReturnToTabTappedFromMenu
+        case ntpAfterIdleEscapeHatchCloseTabTappedFromMenu
+        case ntpAfterIdleEscapeHatchBurnWithConfirmationTappedFromMenu
+        case ntpAfterIdleEscapeHatchBurnImmediatelyTappedFromMenu
+        case ntpAfterIdleEscapeHatchSwipeActionPerformed
+        case ntpAfterIdleEscapeHatchBurnTappedFromButton
         case ntpAfterIdleSettingChangedToNewTab
         case ntpAfterIdleSettingChangedToLastUsedTab
         case ntpAfterIdleSettingIdleIntervalChanged
@@ -1766,6 +1778,7 @@ extension Pixel {
         case unifiedToggleInputWebSearchSelected
         case unifiedToggleInputWebSearchDeselected
         case unifiedToggleInputWebSearchSubmitted
+        case unifiedToggleInputCustomizeResponsesSelected
         case unifiedToggleInputModelSelected
         case unifiedToggleInputReasoningEffortSelected
         case unifiedToggleInputImageAttached
@@ -2817,7 +2830,9 @@ extension Pixel.Event {
         case .cookieDeletionTime(let aggregation):
             return "m_debug_cookie-clearing-time-\(aggregation)"
         case .clearDataInDefaultPersistence(let aggregation):
-            return "m_debug_legacy-data-clearing-time-\(aggregation)"
+            return "data-clearing_all-tabs-time-\(aggregation)"
+        case .clearDataInDefaultPersistenceSingleTab(let aggregation):
+            return "data-clearing_single-tab-time-\(aggregation)"
         case .cookieDeletionLeftovers: return "m_cookie_deletion_leftovers"
 
         case .webkitWarmupStart(let appState):
@@ -2914,6 +2929,9 @@ extension Pixel.Event {
             // MARK: Debug Web View
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
+
+        case .debugInteractionRepeatedFailedScroll: return "m_debug_interaction_repeated_failed_scroll"
+        case .debugInteractionWedgedRecognizer: return "m_debug_interaction_wedged_recognizer"
 
             // MARK: - Debug Prompt Coordination
 
@@ -3331,6 +3349,14 @@ extension Pixel.Event {
         case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_new_tab"
         case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_last_used_tab"
         case .ntpAfterIdleEscapeHatchHiddenFromMenu: return "m_ntp_after_idle_escape_hatch_hidden_from_menu"
+        case .ntpAfterIdleEscapeHatchShown: return "m_ntp_after_idle_escape_hatch_shown"
+        case .ntpAfterIdleEscapeHatchMenuShown: return "m_ntp_after_idle_escape_hatch_menu_shown"
+        case .ntpAfterIdleEscapeHatchReturnToTabTappedFromMenu: return "m_ntp_after_idle_escape_hatch_return_to_tab_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchCloseTabTappedFromMenu: return "m_ntp_after_idle_escape_hatch_close_tab_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchBurnWithConfirmationTappedFromMenu: return "m_ntp_after_idle_escape_hatch_burn_with_confirmation_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchBurnImmediatelyTappedFromMenu: return "m_ntp_after_idle_escape_hatch_burn_immediately_tapped_from_menu"
+        case .ntpAfterIdleEscapeHatchSwipeActionPerformed: return "m_ntp_after_idle_escape_hatch_swipe_action_performed"
+        case .ntpAfterIdleEscapeHatchBurnTappedFromButton: return "m_ntp_after_idle_escape_hatch_burn_tapped_from_button"
         case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
         case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
         case .ntpAfterIdleSettingIdleIntervalChanged: return "m_ntp_after_idle_setting_idle_interval_changed"
@@ -3603,6 +3629,7 @@ extension Pixel.Event {
         case .unifiedToggleInputWebSearchSelected: return "m_aichat_unified_input_web_search_selected"
         case .unifiedToggleInputWebSearchDeselected: return "m_aichat_unified_input_web_search_deselected"
         case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
+        case .unifiedToggleInputCustomizeResponsesSelected: return "m_aichat_unified_input_customize_responses_selected"
         case .unifiedToggleInputModelSelected: return "m_aichat_unified_input_model_selected"
         case .unifiedToggleInputReasoningEffortSelected: return "m_aichat_unified_input_reasoning_effort_selected"
         case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"

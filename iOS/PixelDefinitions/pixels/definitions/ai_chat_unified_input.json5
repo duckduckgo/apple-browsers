@@ -49,6 +49,13 @@
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_unified_input_customize_responses_selected": {
+        "description": "Fires when the user selects Customize Responses from the tools menu in the Unified Toggle Input. Unlike the other tools menu items, this is a one-shot action forwarded to the front-end rather than a toggleable model tool.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_unified_input_model_selected": {
         "description": "Fires when the user selects a different model in the Unified Toggle Input model picker (new model id differs from previous). Does not fire for gated/rejected models.",
         "owners": ["pikorddg"],

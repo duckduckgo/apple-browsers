@@ -184,6 +184,9 @@ private extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
         let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
+        // Favorites hand off seamlessly too: the embedded grid is already laid out where the NTP grid is,
+        // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
+        let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let ntpStartCenterY = ntpLogoWindowCenterY()
         let isBottom = coordinator.cardPosition.isBottom
 
@@ -192,8 +195,13 @@ private extension MainViewController {
         updateUnifiedInputContentVisibility(for: coordinator)
 
         if !isLogoToLogo {
-            viewCoordinator.unifiedInputContentContainer.alpha = 0
+            // Hide the real NTP favorites while focusing so the UTI's embedded favorites don't
+            // cross-dissolve against them (mirrors the defocus hide-reveal). Revealed again on dismiss.
+            newTabPageViewController?.setFavoritesHidden(true)
         }
+        // Seamless handoffs (logo/favorites) show the content immediately; only other content fades in.
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        viewCoordinator.unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
 
         if let omnibarPlaceholderWindowX {
             coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
@@ -237,7 +245,7 @@ private extension MainViewController {
                 }
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
-                if !isLogoToLogo {
+                if !isSeamlessHandoff {
                     self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 }
                 coordinator.viewController.setTextHorizontalShift(0)

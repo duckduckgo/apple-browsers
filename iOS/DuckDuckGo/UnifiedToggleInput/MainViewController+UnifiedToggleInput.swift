@@ -27,9 +27,6 @@ import Suggestions
 import UIKit
 import WebKit
 
-/// TEMP diagnostic (uti-host-stable-frame): logs the UTI-bar-bottom ↔ list-top gap per frame.
-private let utiGapDiagnostic = UTIGapDiagnostic()
-
 // MARK: - Unified Toggle Input Setup
 
 extension MainViewController {
@@ -907,13 +904,9 @@ extension MainViewController {
             coordinator.pushContentInsets()
             viewCoordinator.showUnifiedInputContent()
             coordinator.contentViewController.refreshVisibleContentIfNeeded()
-            utiGapDiagnostic.start(bar: viewCoordinator.navigationBarContainer) { [weak coordinator] in
-                coordinator?.contentViewController.debugSuggestionsListTopInWindow()
-            }
         } else {
             coordinator.contentViewController.setActive(false)
             viewCoordinator.hideUnifiedInputContent()
-            utiGapDiagnostic.stop()
         }
 
         if isOnAITab {
@@ -1031,51 +1024,29 @@ extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
 
-        let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
-        let utiStartCenterY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY
-        let ntpStartCenterY = ntpLogoWindowCenterY()
-        let isBottom = coordinator.cardPosition.isBottom
+        // Pick the NTP handoff from the host's *current* content (not the NTP's, which can differ
+        // mid-typing). The focused logo and favorites already rest at the NTP's anchors by construction.
+        // - logo→logo: morph the focused logo to the Dax mark so it lands identical to the NTP logo
+        //   (no crossfade flash). The NTP logo is hidden during the collapse so the static Dax behind
+        //   it doesn't ghost the morph; revealed at completion.
+        // - favorites→favorites: the embedded copy animates; the real NTP favorites are hidden and
+        //   revealed at completion to avoid a double image.
+        // - everything else (list, or logo over NTP favorites): fade the focused content out over the
+        //   still-visible NTP content.
+        // The NTP's `isShowingLogo`/`isShowingFavorites` are unreliable here — the focus handoff
+        // hid one of them for the session — so key off its *resting* content instead.
+        let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
+            && newTabPageViewController?.restingContentIsLogo == true
+        let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
+            && newTabPageViewController?.restingContentIsFavorites == true
 
-        // For logo-to-logo: keep the UTI Logo visible and animate it to the NTP Logo's
-        // natural (post-dismiss) position.
-        if isLogoToLogo,
-           let utiY = utiStartCenterY {
-            let ntpNaturalY: CGFloat
-            if isBottom {
-                // The bottom UTI logo is centered against a guide ending one omnibar-height
-                // below the keyboard; compensate by half that height to match the NTP logo.
-                ntpNaturalY = (ntpStartCenterY ?? utiY) + Constants.bottomDaxLogoTransitionYOffset
-            } else {
-                // Top bar: the nav bar shrinks back to standard height, making the
-                // contentContainer taller and shifting the NTP Logo center up by half the delta.
-                let navHeightDelta = viewCoordinator.constraints.navigationBarContainerHeight.constant
-                    - viewCoordinator.standardNavigationBarContainerHeight
-                ntpNaturalY = (ntpStartCenterY ?? utiY) - navHeightDelta / 2 + Constants.topDaxLogoTransitionYOffset
-            }
-
-            // How far the UTI Logo needs to move to land at the NTP Logo's final position.
-            let offset = ntpNaturalY - utiY
-
-            // Hide the NTP Logo — the UTI Logo takes over for the duration of the animation.
+        if isLogoToLogo {
             newTabPageViewController?.setLogoHidden(true)
-
-            // If the UTI Logo is showing the duck.ai state, morph it to the search state
-            // so it matches the NTP Logo by the time the swap happens.
-            if coordinator.contentViewController.daxLogoManager.lottieProgress > 0 {
-                coordinator.contentViewController.daxLogoManager.animateProgress(to: 0)
-            }
-
-            // Shift the UTI Logo's centering constraint so the dismiss animation drives it
-            // to the NTP Logo's post-dismiss position.
-            let currentOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
-            coordinator.contentViewController.daxLogoManager.setLogoYOffset(currentOffset + offset)
-        }
-
-        // Favorites handoff: hide the real NTP favorites during the collapse so only the embedded
-        // (animating) copy is visible — they land aligned, so the real NTP is revealed at completion.
-        // Mirrors the logo handoff and avoids a mid-animation double image.
-        if !isLogoToLogo {
+            coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
+        } else if isFavoritesToFavorites {
             newTabPageViewController?.setFavoritesHidden(true)
+        } else {
+            coordinator.contentViewController.beginDismissFade()
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()

@@ -126,6 +126,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
         onCloseTap: { [weak self] in self?.handleSyncPromoClose() }))
     private var isContentActive = false
+    /// Fires on each focus to force a fresh content resolve before the host is shown, so the prior
+    /// session's stale content (a suggestion list, a logo at the wrong mark) is never flashed.
+    private let activationResolveTrigger = PassthroughSubject<Void, Never>()
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
     private var escapeHatchModel: EscapeHatchModel?
@@ -269,25 +272,29 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         isContentActive = active
         markNeedsVisibleRefresh()
         if active {
+            unifiedSuggestionsHost?.prepareForActivation()
+            // Re-resolve now (synchronously, before the host is shown) so the prior session's stale
+            // content isn't flashed. Runs after `prepareForActivation` clears the dismiss freeze.
+            activationResolveTrigger.send(())
             duckAISurface?.refreshRecents()
         }
     }
 
-    /// TEMP diagnostic (uti-host-stable-frame): top Y of the suggestion list's scroll view in window
-    /// coordinates, from its presentation layer (true mid-animation value).
-    func debugSuggestionsListTopInWindow() -> CGFloat? {
-        guard let scrollView = Self.firstScrollView(in: contentContainerView),
-              let superview = scrollView.superview else { return nil }
-        let frame = scrollView.layer.presentation()?.frame ?? scrollView.frame
-        return superview.convert(frame, to: nil).minY
+    /// The host's current content state, so the dismiss path can pick the right NTP handoff.
+    var isShowingLogoContent: Bool { unifiedSuggestionsHost?.isShowingLogo ?? false }
+    var isShowingFavoritesContent: Bool { unifiedSuggestionsHost?.isShowingFavorites ?? false }
+
+    /// Fades the focused content (logo / suggestion list) out as the UTI collapses, so the NTP
+    /// content takes over cleanly.
+    func beginDismissFade() {
+        unifiedSuggestionsHost?.beginDismissFade()
     }
 
-    private static func firstScrollView(in view: UIView) -> UIScrollView? {
-        for subview in view.subviews {
-            if let scroll = subview as? UIScrollView { return scroll }
-            if let found = firstScrollView(in: subview) { return found }
-        }
-        return nil
+    /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible, so it hands
+    /// off to the (identical) NTP logo without crossfading two different logos. Sped up to finish
+    /// within the bar's `collapseDuration`.
+    func morphLogoHomeForDismiss(matching collapseDuration: TimeInterval) {
+        unifiedSuggestionsHost?.morphLogoHomeForDismiss(matching: collapseDuration)
     }
 
     func refreshVisibleContentIfNeeded() {
@@ -381,7 +388,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             && !switchBarHandler.isFireTab
             && !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                         hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
-            && !requiresHorizontallyCompactLayout(for: view.bounds.size)
     }
 
     /// Height to reserve below the bar for the pinned chrome. The hatch is a fixed height (reserved
@@ -551,6 +557,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // Favorites changes fire on the Core Data context queue; marshal here so the merged
             // inputs (and the view model's `@Published content` mutation) stay on main.
             .receive(on: DispatchQueue.main)
+            // The activation trigger is already on main (fired from `setActive`) — kept after the hop
+            // so the re-resolve it drives stays synchronous, landing before the host becomes visible.
+            .merge(with: activationResolveTrigger)
             .eraseToAnyPublisher()
         let inputsPublisher = makeMergedInputsPublisher(hasFavorites: hasFavorites,
                                                         hasMessages: hasMessages,
@@ -896,8 +905,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             return UnifiedSuggestionsContentResolver.resolve(inputs, previous: nil) == .logo
         }
 
-        let isHomeDaxVisible = !isHorizontallyCompactLayoutEnabled && resolvesToLogo(.search)
-        let isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && resolvesToLogo(.aiChat)
+        // The focused Dax logo is now rendered by FocusedDaxLogoView inside the SwiftUI host. Suppress
+        // the manager's Dax logo on the UTI path so we never get two; the fire empty-state still uses it.
+        let swiftUILogoHandlesDax = !switchBarHandler.isFireTab
+        let isHomeDaxVisible = !swiftUILogoHandlesDax && !isHorizontallyCompactLayoutEnabled && resolvesToLogo(.search)
+        let isAIDaxVisible = !swiftUILogoHandlesDax && !isHorizontallyCompactLayoutEnabled && resolvesToLogo(.aiChat)
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible, committedMode: switchBarHandler.currentToggleState)
         daxLogoManager.setEscapeHatchBaseOffset(daxVerticalOffset(hasEscapeHatch: escapeHatchModel != nil))
@@ -918,8 +930,17 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         // The sync-promo rides the bar-pinned chrome (not the host), so toggling its visibility just
         // rebinds the chrome; the content inset follows from the chrome's reported height.
+        let wasVisible = isSyncPromoCardVisible
         isSyncPromoCardVisible = shouldShow
         updatePinnedChrome()
+        // On hide, the reserved height was the promo's async-measured one and `onHeightChange` is gated
+        // to the visible case — so re-apply the now-synchronous reserved height (hatch or 0) here, or
+        // the content (recents) stays pushed down where the promo was.
+        if wasVisible && !shouldShow {
+            chromeHeightConstraint?.constant = currentChromeReservedHeight
+            applyHostContentInsets()
+            contentContainerView.layoutIfNeeded()
+        }
         promoViewModel.recordImpressionIfNeeded(isVisibleContent: isContentActive, isPromoVisible: shouldShow)
     }
 
@@ -953,7 +974,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let hatchClearance: CGFloat = 50
         /// Gap between the bar's edge and the pinned chrome (Figma). The chrome owns its other metrics.
         static let hatchTopInsetTopBar: CGFloat = 6
-        static let hatchTopInsetBottomBar: CGFloat = 16
+        /// Bottom bar: the focused content top coincides with the NTP content top, so this must equal the
+        /// NTP's `contentTopInset` (`NewTabPageLayoutConfiguration.unifiedToggleInput.contentTopInsetOverride`)
+        /// for the focused and NTP hatches to land on the same line. Keep the two in sync.
+        static let hatchTopInsetBottomBar: CGFloat = 10
     }
 }
 

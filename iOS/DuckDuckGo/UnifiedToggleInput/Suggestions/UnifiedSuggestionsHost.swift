@@ -131,6 +131,25 @@ final class UnifiedSuggestionsHost {
         viewModel.showsSyncPromo = visible
     }
 
+    var isShowingLogo: Bool { viewModel.isShowingLogo }
+    var isShowingFavorites: Bool { viewModel.isShowingFavorites }
+
+    /// List/logo→favorites collapse: fade the focused content out as the NTP content takes over.
+    func beginDismissFade() {
+        viewModel.beginDismissFade()
+    }
+
+    /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible (no fade),
+    /// sped up to finish within the bar's `collapseDuration`.
+    func morphLogoHomeForDismiss(matching collapseDuration: TimeInterval) {
+        viewModel.morphLogoHomeForDismiss(matching: collapseDuration)
+    }
+
+    /// Resets the dismiss/morph state on each focus.
+    func prepareForActivation() {
+        viewModel.prepareForActivation()
+    }
+
     func setAdditionalTopInset(_ inset: CGFloat) {
         escapeHatchTopInset = inset
         applyCombinedInsets()
@@ -153,6 +172,7 @@ final class UnifiedSuggestionsHost {
 
     private func applyCombinedInsets() {
         let top = escapeHatchTopInset + contentInsets.top
+        viewModel.chromeInsetTop = top
         hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
             top: top,
             left: contentInsets.left,

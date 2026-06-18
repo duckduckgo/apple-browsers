@@ -36,20 +36,26 @@ struct UnifiedSuggestionsView: View {
         // recents List header and the favorites/logo overlay. Re-creating it across those subtrees
         // on a mode switch made it jump instead of gliding with the input; a single instance rides
         // the inset animation in both directions.
-        VStack(spacing: 0) {
-            if showsHatch, let header {
-                header
-                    .padding(.horizontal, Metrics.contentHorizontalMargin)
-                    .padding(.top, hatchTopInset)
-                    .padding(.bottom, Metrics.hatchBottomInset)
+        // The logo overlays the chrome+content, anchored to the keyboard (the host's fixed bottom)
+        // rather than living in the VStack flow — so neither the chrome above nor the bar-driven top
+        // inset can move it on a Search↔Duck.ai toggle.
+        ZStack(alignment: .bottom) {
+            VStack(spacing: 0) {
+                if showsHatch, let header {
+                    header
+                        .padding(.horizontal, Metrics.contentHorizontalMargin)
+                        .padding(.top, hatchTopInset)
+                        .padding(.bottom, Metrics.hatchBottomInset)
+                }
+                if isNonTypingState, viewModel.showsSyncPromo, let syncPromo {
+                    syncPromo
+                        .padding(.horizontal, Metrics.contentHorizontalMargin)
+                        .padding(.top, showsHatch ? Metrics.syncPromoInterCardSpacing : hatchTopInset)
+                        .padding(.bottom, Metrics.hatchBottomInset)
+                }
+                contentArea
             }
-            if isNonTypingState, viewModel.showsSyncPromo, let syncPromo {
-                syncPromo
-                    .padding(.horizontal, Metrics.contentHorizontalMargin)
-                    .padding(.top, showsHatch ? Metrics.syncPromoInterCardSpacing : hatchTopInset)
-                    .padding(.bottom, Metrics.hatchBottomInset)
-            }
-            contentArea
+            logoLayer
         }
     }
 
@@ -99,6 +105,9 @@ struct UnifiedSuggestionsView: View {
         SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
                             isAddressBarAtBottom: isAddressBarAtBottom)
             .opacity(isShowingList ? 1 : 0)
+            // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the
+            // NTP favorites instead of snapping away when the host is hidden.
+            .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
             .allowsHitTesting(isShowingList)
     }
 
@@ -110,7 +119,7 @@ struct UnifiedSuggestionsView: View {
     /// Favorites stays mounted like the list and toggles a plain `.opacity` — NOT an insert/remove
     /// `.transition` (which snaps when interrupted by rapid Search↔Duck.ai toggling). Its opacity is
     /// instant (`.animation(nil)`): the incoming list fades in, but favorites must not linger visibly
-    /// over Duck.ai while the crossfade runs. Logo is still drawn by DaxLogoManager.
+    /// over Duck.ai while the crossfade runs.
     @ViewBuilder
     private var overlayLayer: some View {
         if let controller = favoritesProvider() {
@@ -124,6 +133,64 @@ struct UnifiedSuggestionsView: View {
         }
     }
 
+    private var isShowingLogo: Bool {
+        if case .logo = viewModel.content { return true }
+        return false
+    }
+
+    /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
+    /// screen-relative anchor `NewTabPageDaxLogoView` uses, so the focused and NTP logos share one
+    /// resting position+size — focus/defocus is a pixel-identical crossfade (no slide), and it's stable
+    /// across Search↔Duck.ai toggles and the keyboard (screen-relative, not bar/keyboard-relative).
+    private var logoLayer: some View {
+        GeometryReader { proxy in
+            // Rests at the NTP logo's exact screen anchor (so focus/defocus is a crossfade from the NTP
+            // position, and the morph happens in place on a toggle), but kept a minimum gap from the
+            // chrome on *both* sides so the chrome never covers it:
+            //  • pushed DOWN if the top chrome (hatch) comes within `minChromeGap` of the logo's top
+            //    (top-bar Duck.ai); the chrome bottom is `minY + chromeInsetTop`, known as the bar animates.
+            //  • pushed UP if the bar's top edge comes within `minChromeGap` of the logo's bottom
+            //    (bottom-bar omnibar); the bar top is `maxY` — the content-area bottom rides the bar-height
+            //    safe-area inset, so it tracks the bar in the same pass.
+            // With room on both sides the pushes clamp to 0 and the logo stays at the NTP anchor.
+            let frame = proxy.frame(in: .global)
+            let targetCenterY = Self.logoCenterY(
+                restingAt: UIScreen.main.bounds.midY - Metrics.logoScreenCenterOffset,
+                topChromeBottom: frame.minY + viewModel.chromeInsetTop,
+                barTop: frame.maxY)
+            FocusedDaxLogoView(progress: viewModel.logoProgress,
+                               morph: viewModel.animatesLogoMorph,
+                               animationSpeed: viewModel.logoMorphSpeed)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .offset(y: targetCenterY - frame.midY)
+                // Match the bar's toggle animation (0.2s easeInOut) so the logo settles with it, not after.
+                .animation(.easeInOut(duration: 0.2), value: targetCenterY)
+                // Show/hide is instant (matches the favorites overlay) so the logo doesn't linger over
+                // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.
+                .opacity(isShowingLogo ? 1 : 0)
+                .animation(nil, value: isShowingLogo)
+                // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
+                // toggle's instant show/hide above is unaffected.
+                .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
+                .allowsHitTesting(false)
+        }
+        .ignoresSafeArea(.container, edges: .top)
+    }
+
+    /// The logo's screen-center Y: it rests at `restCenterY` (the NTP anchor) but keeps `minChromeGap`
+    /// clear of the chrome on both sides — pushed down off the top chrome (`topChromeBottom`, e.g. the
+    /// top-bar hatch) and up off the bar's top edge (`barTop`, e.g. the bottom-bar omnibar). With room
+    /// on both sides the pushes are zero and it stays at rest; the two net out so it degrades gracefully
+    /// when the band is tighter than the logo itself.
+    private static func logoCenterY(restingAt restCenterY: CGFloat,
+                                    topChromeBottom: CGFloat,
+                                    barTop: CGFloat) -> CGFloat {
+        let halfHeight = Metrics.logoHeight / 2
+        let downPush = max(0, topChromeBottom + Metrics.minChromeGap - (restCenterY - halfHeight))
+        let upPush = max(0, (restCenterY + halfHeight) + Metrics.minChromeGap - barTop)
+        return restCenterY + downPush - upPush
+    }
+
     private enum Metrics {
         /// Matches the NTP's `sectionsViewHorizontalPadding` (regularPadding) so the hatch and the
         /// suggestion list share the favorites grid's side margins.
@@ -134,5 +201,28 @@ struct UnifiedSuggestionsView: View {
         static let hatchBottomInset: CGFloat = 16
         /// Gap between the escape hatch and the sync-promo card (mirrors legacy 20pt inter-card spacing).
         static let syncPromoInterCardSpacing: CGFloat = 20
+        /// Mirrors `NewTabPageDaxLogoView`'s screen-center offset so the focused Search logo lands exactly
+        /// where the NTP logo sits — keep in sync with that view.
+        static let logoScreenCenterOffset: CGFloat = 55
+        /// Minimum gap kept between the logo and the chrome on either side (top hatch / bottom bar); the
+        /// logo only moves once the chrome comes closer than this. Tune.
+        static let minChromeGap: CGFloat = 16
+        /// Mirrors `FocusedDaxLogoView`'s height — used to find the logo's top for the overlap check.
+        static let logoHeight: CGFloat = 162
+    }
+}
+
+/// Fades transient content (logo, suggestion list) out as the host collapses back to the NTP, so it
+/// hands off to the NTP content instead of snapping away. Favorites are excluded — they hand off via
+/// the embedded-copy reveal, not a fade.
+///
+/// One-directional: only the fade-*out* (false→true) animates. The reset (true→false, on the next
+/// focus) snaps, so the logo reappears instantly instead of replaying a fade-in.
+private struct DismissFade: ViewModifier {
+    let isFadingOut: Bool
+    func body(content: Content) -> some View {
+        content
+            .opacity(isFadingOut ? 0 : 1)
+            .animation(isFadingOut ? .easeInOut(duration: 0.2) : nil, value: isFadingOut)
     }
 }

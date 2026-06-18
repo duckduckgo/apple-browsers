@@ -322,6 +322,18 @@ jobs:
             exit 0
           fi
 
+          # Maestro hit its own --timeout (rc=1, distinct from a flow failure). Not retried: a
+          # retry re-runs the full leg under the same budget, so a genuine overrun fails twice.
+          # Checked BEFORE the network signature below because a 90m poll legitimately logs
+          # transient "Could not get Upload status"/ETIMEDOUT lines mid-run; matching those first
+          # would spuriously retry a definitive polling timeout. The rc!=124 guard keeps the outer
+          # hard-kill (below) as a retryable hang. Surface it clearly instead of masquerading as a
+          # test failure.
+          if [ "$rc" -ne 124 ] && grep -qE "Waiting for flows to complete has timed out" maestro.log; then
+            echo "::error::Maestro Cloud's ${MAESTRO_TIMEOUT_MIN}m polling budget elapsed before all flows finished (not a test failure). Most of the budget is cloud-side queuing - only 2 runners serve every leg. Raise MAESTRO_TIMEOUT_MIN (and ATTEMPT_BUDGET_MIN / job timeout-minutes to keep them nested) if this recurs on an otherwise-green run."
+            exit "$rc"
+          fi
+
           if [ "$rc" -eq 124 ] || grep -qE "$NETWORK_SIGNATURE" maestro.log; then
             echo "::warning::Transient Maestro Cloud/network failure on attempt $attempt (rc=$rc)."
             if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
@@ -330,14 +342,6 @@ jobs:
               continue
             fi
             echo "::error::Transient Maestro Cloud failures persisted across $MAX_ATTEMPTS attempts."
-            exit "$rc"
-          fi
-
-          # Maestro hit its own --timeout (rc=1, distinct from a flow failure). Not retried: a
-          # retry re-runs the full leg under the same budget, so a genuine overrun fails twice.
-          # Surface it clearly instead of masquerading as a test failure.
-          if grep -qE "Waiting for flows to complete has timed out" maestro.log; then
-            echo "::error::Maestro Cloud's ${MAESTRO_TIMEOUT_MIN}m polling budget elapsed before all flows finished (not a test failure). Most of the budget is cloud-side queuing - only 2 runners serve every leg. Raise MAESTRO_TIMEOUT_MIN (and ATTEMPT_BUDGET_MIN / job timeout-minutes to keep them nested) if this recurs on an otherwise-green run."
             exit "$rc"
           fi
 

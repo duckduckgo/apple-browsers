@@ -59,11 +59,11 @@ final class SearchExperienceToggleUIView: UIView {
 
     // MARK: - Animation asset names
     //
-    // JSON files delivered by design, located next to this Swift file:
-    //   OnboardingSearchAIToggle.json           – light mode, coloured
-    //   OnboardingSearchAIToggle_dark.json      – dark mode, coloured
-    //   OnboardingSearchAIToggleGrey.json       – light mode, grey (base)
-    //   OnboardingSearchAIToggleGrey_dark.json  – dark mode, grey (base)
+    // .lottie files located next to this Swift file:
+    //   OnboardingSearchAIToggle.lottie           – light mode, coloured
+    //   OnboardingSearchAIToggle_dark.lottie      – dark mode, coloured
+    //   OnboardingSearchAIToggleGrey.lottie       – light mode, grey (base)
+    //   OnboardingSearchAIToggleGrey_dark.lottie  – dark mode, grey (base)
 
     private enum Assets {
         static let coloredLight = "OnboardingSearchAIToggle"
@@ -128,8 +128,7 @@ final class SearchExperienceToggleUIView: UIView {
         // Coloured starts hidden; revealed by the first setSelected call.
         coloredView.alpha = 0
 
-        loadAnimations()
-        startLoop()
+        loadAnimationsAndStartLoop()
     }
 
     // MARK: - Animation loading
@@ -142,9 +141,17 @@ final class SearchExperienceToggleUIView: UIView {
         traitCollection.userInterfaceStyle == .dark ? Assets.greyDark : Assets.greyLight
     }
 
-    private func loadAnimations() {
-        greyView.animation = LottieAnimation.named(greyAnimationName)
-        coloredView.animation = LottieAnimation.named(coloredAnimationName)
+    private func loadAnimationsAndStartLoop() {
+        let greyName = greyAnimationName
+        let coloredName = coloredAnimationName
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            async let grey = try? DotLottieFile.named(greyName)
+            async let colored = try? DotLottieFile.named(coloredName)
+            if let g = await grey { greyView.loadAnimation(from: g) }
+            if let c = await colored { coloredView.loadAnimation(from: c) }
+            startLoop()
+        }
     }
 
     // MARK: - Public API
@@ -221,7 +228,6 @@ final class SearchExperienceToggleUIView: UIView {
         coloredView.stop()
 
         // Reload with new colour-scheme assets and restart the loop from the beginning.
-        loadAnimations()
-        startLoop()
+        loadAnimationsAndStartLoop()
     }
 }

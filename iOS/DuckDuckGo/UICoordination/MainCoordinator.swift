@@ -429,7 +429,10 @@ final class MainCoordinator {
         )
         self.webExtensionManager = webExtensionManager
 
-        let lifecycleCoordinator = WebExtensionLifecycleCoordinator(manager: webExtensionManager) { [weak self] in
+        let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
+            manager: webExtensionManager,
+            pixelFiring: iOSWebExtensionPixelFiring()
+        ) { [weak self] in
             self?.enabledEmbeddedExtensionTypes() ?? []
         }
         self.webExtensionLifecycleCoordinator = lifecycleCoordinator

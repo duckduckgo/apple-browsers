@@ -63,6 +63,8 @@ struct SyncedDeviceIcon: View {
             return NSImage(imageLiteralResourceName: "SyncedDeviceDesktop")
         case .mobile:
             return NSImage(imageLiteralResourceName: "SyncedDeviceMobile")
+        case .thirdParty:
+            return NSImage(imageLiteralResourceName: "SyncAllDevices")
         }
     }
 

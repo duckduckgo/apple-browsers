@@ -2903,6 +2903,12 @@
 		9FCB946C2DE05AC800BC662B /* MockTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCB946A2DE05AC600BC662B /* MockTimer.swift */; };
 		9FDA6C212B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */; };
 		9FDA6C222B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */; };
+		9FE239BB2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */; };
+		9FE239BC2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */; };
+		9FE239C12FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */; };
+		9FE239C22FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */; };
+		9FE239C72FD909E4007135F2 /* FireWindowOpenPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C62FD909E4007135F2 /* FireWindowOpenPixelReporter.swift */; };
+		9FE239C82FD909E4007135F2 /* FireWindowOpenPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE239C62FD909E4007135F2 /* FireWindowOpenPixelReporter.swift */; };
 		9FEE98652B846870002E44E8 /* AddEditBookmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */; };
 		9FEE98662B846870002E44E8 /* AddEditBookmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */; };
 		9FEE98692B85B869002E44E8 /* BookmarksDialogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98682B85B869002E44E8 /* BookmarksDialogViewModel.swift */; };
@@ -6042,6 +6048,9 @@
 		9FCB94672DE05A4400BC662B /* TimerInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerInterface.swift; sourceTree = "<group>"; };
 		9FCB946A2DE05AC600BC662B /* MockTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTimer.swift; sourceTree = "<group>"; };
 		9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkFavoriteView.swift; sourceTree = "<group>"; };
+		9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowOpenTrigger.swift; sourceTree = "<group>"; };
+		9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowsManagerFireWindowOpenTriggerTests.swift; sourceTree = "<group>"; };
+		9FE239C62FD909E4007135F2 /* FireWindowOpenPixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowOpenPixelReporter.swift; sourceTree = "<group>"; };
 		9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkView.swift; sourceTree = "<group>"; };
 		9FEE98682B85B869002E44E8 /* BookmarksDialogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksDialogViewModel.swift; sourceTree = "<group>"; };
 		9FEE986C2B85BA17002E44E8 /* AddEditBookmarkDialogCoordinatorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkDialogCoordinatorViewModel.swift; sourceTree = "<group>"; };
@@ -7612,6 +7621,7 @@
 				1D39F7272DCA2C9200F258F0 /* InitialWindowFrameProviderTests.swift */,
 				84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */,
 				842303DD2ED075340025F26B /* WindowsManagerPopupTests.swift */,
+				9FE239C02FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift */,
 			);
 			path = MainWindow;
 			sourceTree = "<group>";
@@ -10871,6 +10881,7 @@
 			isa = PBXGroup;
 			children = (
 				84537A022C998C24008723BC /* FireWindowSession.swift */,
+				9FE239BA2FD8EE92007135F2 /* FireWindowOpenTrigger.swift */,
 				1D39F7242DCA299D00F258F0 /* InitialWindowFrameProvider.swift */,
 				AA7412BC24D2BEEE00D22FE0 /* MainWindow.swift */,
 				AA7412B424D1536B00D22FE0 /* MainWindowController.swift */,
@@ -12103,6 +12114,7 @@
 		B6A9E44E26142AF90067D1B9 /* Statistics */ = {
 			isa = PBXGroup;
 			children = (
+				9FE239C62FD909E4007135F2 /* FireWindowOpenPixelReporter.swift */,
 				7B7821BB2E84440A00E0359A /* ErrorPagePixel.swift */,
 				7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */,
 				37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */,
@@ -15777,6 +15789,7 @@
 				3706FC10293F65D500E42796 /* DictionaryExtension.swift in Sources */,
 				3706FC11293F65D500E42796 /* Publishers.NestedObjectChanges.swift in Sources */,
 				3706FC12293F65D500E42796 /* MenuItemSelectors.swift in Sources */,
+				9FE239C82FD909E4007135F2 /* FireWindowOpenPixelReporter.swift in Sources */,
 				3706FC13293F65D500E42796 /* FaviconView.swift in Sources */,
 				B69A14F72B4D701F00B9417D /* AddBookmarkPopoverViewModel.swift in Sources */,
 				F14890972ECDD24400B5239E /* AttributedMetricDebugMenu.swift in Sources */,
@@ -16098,6 +16111,7 @@
 				7BAB1A0100000000A0000062 /* AIChatMentionPickerViewController.swift in Sources */,
 				7BAB1A0100000000A0000072 /* AIChatMentionPickerCoordinator.swift in Sources */,
 				7BAB1A0100000000A0000082 /* AIChatMentionPickerFilter.swift in Sources */,
+				9FE239BB2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */,
 				7BAB1A0100000000A0000092 /* AIChatMentionPickerEmptyRowView.swift in Sources */,
 				7BAB1A0100000000A00000C2 /* PointingHandButton.swift in Sources */,
 				B541E9582EF5AB8C002A633E /* ThemePixels.swift in Sources */,
@@ -16298,6 +16312,7 @@
 				3706FE1E293F661700E42796 /* GeolocationProviderTests.swift in Sources */,
 				9FFBEE832DE016E70058B11A /* MockDefaultBrowserAndDockPromptStatusUpdateNotifier.swift in Sources */,
 				567A23CE2C80CF3D0010F66C /* SpecialErrorPageUserScriptTests.swift in Sources */,
+				9FE239C12FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */,
 				9F39106A2B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */,
 				B5F31F4C2F50E2B90060E5C1 /* PerformanceMetricsReporterTests.swift in Sources */,
 				C149975B2DE762B600FF8F0F /* SubscriptionPagesUseSubscriptionFeatureTests.swift in Sources */,
@@ -17973,6 +17988,7 @@
 				37EE55F02D5F197300D53C7C /* AddressBarButton.swift in Sources */,
 				37EE55F12D5F197300D53C7C /* AddressBarButtonsViewController.swift in Sources */,
 				B5FBAFCF2F87049400CE51F3 /* AutoplayPermissionSeeder.swift in Sources */,
+				9FE239C72FD909E4007135F2 /* FireWindowOpenPixelReporter.swift in Sources */,
 				37EE55F22D5F197300D53C7C /* AddressBarTextEditor.swift in Sources */,
 				37EE55F32D5F197300D53C7C /* AddressBarTextField.swift in Sources */,
 				37EE55F42D5F197300D53C7C /* AddressBarTextSelectionNavigation.swift in Sources */,
@@ -18037,6 +18053,7 @@
 				37E794932EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityProvider.swift in Sources */,
 				37E794942EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityManager.swift in Sources */,
 				1D2EE7062E26626000F51C57 /* Logger+NewTabPage.swift in Sources */,
+				9FE239BC2FD8EE92007135F2 /* FireWindowOpenTrigger.swift in Sources */,
 				4B37EE5F2B4CFC3C00A89A61 /* HomePageRemoteMessagingStorage.swift in Sources */,
 				31F28C5128C8EEC500119F70 /* YoutubeOverlayUserScript.swift in Sources */,
 				BBB891E72DAEC1C1001A42DF /* MoreOptionsMenuIconsProviding.swift in Sources */,
@@ -18871,6 +18888,7 @@
 				CCB2EBDF2F62001600C65813 /* MockExternalPromoDelegate.swift in Sources */,
 				CCB2EBE02F62001600C65813 /* MockPromoHistoryStore.swift in Sources */,
 				CCB2EBE12F62001600C65813 /* MockPromoDelegate.swift in Sources */,
+				9FE239C22FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */,
 				311309792ECE77BC00FCD220 /* AddressBarSharedTextStateTests.swift in Sources */,
 				56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */,
 				36763A062FBB930600383BAE /* URL+SubscriptionAttributionTests.swift in Sources */,
@@ -20234,7 +20252,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-clocks.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.1.0;
+				version = 1.0.6;
 			};
 		};
 		9FF521422BAA8FF300B9819B /* XCRemoteSwiftPackageReference "lottie-spm" */ = {

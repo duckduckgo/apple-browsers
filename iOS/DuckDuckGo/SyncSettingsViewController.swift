@@ -387,7 +387,11 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     func mapDevices(_ devices: [RegisteredDevice]) {
         viewModel.devices = devices.map {
-            .init(id: $0.id, name: $0.name, type: $0.type, isThisDevice: $0.id == syncService.account?.deviceId)
+            .init(id: $0.id,
+                  name: $0.name,
+                  type: $0.type,
+                  credentialId: $0.credentialId,
+                  isThisDevice: $0.id == syncService.account?.deviceId)
         }.sorted(by: { lhs, _ in
             lhs.isThisDevice
         })
@@ -709,7 +713,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             await handleError(.thirdPartyAccountAlreadyUpgraded, error: nil, event: nil)
         case .syncCancelledFromOtherDevice:
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
-        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
+        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey, .accountUpgradeFailed, .protocolError:
             fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:

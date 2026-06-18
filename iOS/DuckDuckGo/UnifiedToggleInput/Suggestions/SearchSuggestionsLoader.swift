@@ -83,6 +83,16 @@ final class SearchSuggestionsLoader {
         }
     }
 
+    /// Clears state for a fresh editing session so the long-lived loader never renders a previous
+    /// session's suggestions for the new query.
+    func reset() {
+        loader = nil
+        latestDispatchedQuery = nil
+        lastCompletedFetchQuery = nil
+        // Unconditional (no `!= .appEmpty` guard) to force `sectionsPublisher` to recompute
+        result = .appEmpty
+    }
+
     func tearDown() { cancellables.removeAll() }
 }
 

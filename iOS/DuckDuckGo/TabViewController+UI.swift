@@ -30,10 +30,51 @@ extension TabViewController {
         buttonConfiguration.background.cornerRadius = 8
         buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var transformed = incoming
-            transformed.font = UIFont.daxSubheadSemibold()
+            transformed.font = UIFont.daxButton()
             return transformed
         }
         errorActionButton.configuration = buttonConfiguration
+        errorActionButton.configurationUpdateHandler = { button in
+            guard var configuration = button.configuration else { return }
+            if !button.isEnabled {
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryTextDisabled)
+                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDisabled)
+            } else if button.isHighlighted {
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
+                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryPressed)
+            } else {
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
+                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
+            }
+            button.configuration = configuration
+        }
+    }
+
+    func setupErrorReportBrokenSiteButton() {
+        var buttonConfiguration = UIButton.Configuration.plain()
+        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostText)
+        buttonConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24)
+        buttonConfiguration.background.cornerRadius = 8
+        buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var transformed = incoming
+            transformed.font = UIFont.daxButton()
+            return transformed
+        }
+        errorReportBrokenSiteButton.configuration = buttonConfiguration
+        errorReportBrokenSiteButton.configurationUpdateHandler = { button in
+            guard var configuration = button.configuration else { return }
+            if !button.isEnabled {
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostTextDisabled)
+                configuration.background.backgroundColor = .clear
+            } else if button.isHighlighted {
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostTextPressed)
+                configuration.background.backgroundColor = UIColor(designSystemColor: .buttonsGhostPressedFill)
+            } else {
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostText)
+                configuration.background.backgroundColor = .clear
+            }
+            button.configuration = configuration
+        }
     }
 
     func configureRootView() {
@@ -141,10 +182,15 @@ extension TabViewController {
         errorContentStack.addArrangedSubview(errorInfoImage)
         errorContentStack.addArrangedSubview(labelsStack)
         errorContentStack.addArrangedSubview(errorActionButton)
+        errorContentStack.addArrangedSubview(errorReportBrokenSiteButton)
 
         let safeArea = rootView.safeAreaLayoutGuide
         let minHeightConstraint = error.heightAnchor.constraint(equalToConstant: 400)
         minHeightConstraint.priority = .defaultLow
+        let errorActionButtonFullWidthConstraint = errorActionButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
+        errorActionButtonFullWidthConstraint.priority = .defaultHigh
+        let errorReportBrokenSiteButtonFullWidthConstraint = errorReportBrokenSiteButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
+        errorReportBrokenSiteButtonFullWidthConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
             error.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
             error.centerYAnchor.constraint(equalTo: safeArea.centerYAnchor),
@@ -159,8 +205,10 @@ extension TabViewController {
             errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: error.bottomAnchor),
 
             labelsStack.widthAnchor.constraint(lessThanOrEqualToConstant: 400),
-            errorActionButton.leadingAnchor.constraint(greaterThanOrEqualTo: error.leadingAnchor, constant: 24),
-            errorActionButton.trailingAnchor.constraint(lessThanOrEqualTo: error.trailingAnchor, constant: -24)
+            errorActionButtonFullWidthConstraint,
+            errorActionButton.widthAnchor.constraint(lessThanOrEqualToConstant: 640),
+            errorReportBrokenSiteButtonFullWidthConstraint,
+            errorReportBrokenSiteButton.widthAnchor.constraint(lessThanOrEqualToConstant: 640)
         ])
     }
 

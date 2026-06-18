@@ -127,6 +127,13 @@ class TabViewController: UIViewController {
         button.addTarget(self, action: #selector(onOpenInSafariFromErrorPage), for: .touchUpInside)
         return button
     }()
+    lazy var errorReportBrokenSiteButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isHidden = true
+        button.addTarget(self, action: #selector(onReportBrokenSiteFromErrorPage), for: .touchUpInside)
+        return button
+    }()
     var jsAlertContainerView: UIView!
 
     var openedByPage = false
@@ -748,6 +755,7 @@ class TabViewController: UIViewController {
         decorate()
         defaultErrorHeaderText = errorHeader.text ?? ""
         setupErrorActionButton()
+        setupErrorReportBrokenSiteButton()
         addTextZoomObserver()
 
         subscribeToEmailProtectionSignOutNotification()
@@ -1436,6 +1444,7 @@ class TabViewController: UIViewController {
         errorHeader.text = defaultErrorHeaderText
         errorMessage.text = message
         errorActionButton.isHidden = true
+        errorReportBrokenSiteButton.isHidden = true
         safariRedirectLoopErrorURL = nil
         error.layoutIfNeeded()
     }
@@ -1446,6 +1455,7 @@ class TabViewController: UIViewController {
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorActionButton.isHidden = true
+        errorReportBrokenSiteButton.isHidden = true
         safariRedirectLoopErrorURL = nil
     }
 
@@ -1458,6 +1468,8 @@ class TabViewController: UIViewController {
         errorMessage.text = UserText.generalPageProblemMessage
         errorActionButton.setTitle(UserText.generalPageProblemOpenInBrowserButton, for: .normal)
         errorActionButton.isHidden = false
+        errorReportBrokenSiteButton.setTitle(UserText.actionReportBrokenSite, for: .normal)
+        errorReportBrokenSiteButton.isHidden = false
         error.layoutIfNeeded()
         webpageDidFailToLoad()
     }
@@ -3686,6 +3698,12 @@ extension TabViewController: UserContentControllerDelegate {
     func onOpenInSafariFromErrorPage() {
         guard let safariRedirectLoopErrorURL else { return }
         openExternally(url: makeXSafariHTTPSURL(from: safariRedirectLoopErrorURL))
+    }
+
+    @objc
+    func onReportBrokenSiteFromErrorPage() {
+        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage, error: nil, withAdditionalParameters: [:])
+        delegate?.tabDidRequestReportBrokenSite(tab: self)
     }
 
 }

@@ -50,15 +50,17 @@ extension DuckAIGridItem {
     /// `DuckAIGridContentResolver`.
     static func from(chat: DuckAiChat, lastMessageContent: String?) -> DuckAIGridItem? {
         let title = chat.title.isEmpty ? UserText.aiChatTabSwitcherCardUntitledChat : chat.title
-        let kind = AIChatSuggestion.kind(forModel: chat.model)
 
-        switch kind {
-        case .text:
+        switch chat.chatType {
+        case .discussion:
             let trimmed = lastMessageContent?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             guard !trimmed.isEmpty else { return nil }
             let snippet = String(trimmed.prefix(snippetCharacterCap))
             return .text(title: title, snippet: snippet)
-        case .image, .voice:
+        case .imageGeneration:
+            guard let fileRef = chat.fileRefs.last else { return nil }
+            return .image(title: title, imageFileRef: fileRef)
+        case .voice:
             return nil
         }
     }

@@ -73,7 +73,7 @@ class TabSwitcherPageViewController: UIViewController {
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
-    private let duckAIGridItemProvider: DuckAIGridItemProviding?
+    private let duckAIGridContentProvider: DuckAIGridContentProviding?
 
     var canUpdateCollection = true
 
@@ -87,7 +87,7 @@ class TabSwitcherPageViewController: UIViewController {
          tabSwitcherSettings: TabSwitcherSettings,
          trackerCountViewModel: TabSwitcherTrackerCountViewModel?,
          isFireModeEnabled: Bool,
-         duckAIGridItemProvider: DuckAIGridItemProviding?) {
+         duckAIGridContentProvider: DuckAIGridContentProviding?) {
         self.browsingMode = browsingMode
         self.tabsModel = tabsModel
         self.previewsSource = previewsSource
@@ -95,7 +95,7 @@ class TabSwitcherPageViewController: UIViewController {
         self.trackerCountViewModel = trackerCountViewModel
         self.isFireModeEnabled = isFireModeEnabled
         self.currentSelection = tabsModel.currentIndex
-        self.duckAIGridItemProvider = duckAIGridItemProvider
+        self.duckAIGridContentProvider = duckAIGridContentProvider
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -342,7 +342,7 @@ class TabSwitcherPageViewController: UIViewController {
     /// `nil` keeps the cell on the existing screenshot path.
     private func duckAIGridItem(for tab: Tab) -> DuckAIGridItem? {
         guard tab.isAITab else { return nil }
-        return duckAIGridItemProvider?.gridItem(for: tab)
+        return duckAIGridContentProvider?.gridItem(for: tab)
     }
 }
 
@@ -374,7 +374,8 @@ extension TabSwitcherPageViewController: UICollectionViewDataSource {
                         isSelectionModeEnabled: pageDelegate?.isEditing ?? false,
                         preview: previewsSource?.preview(for: tab),
                         isFireModeEnabled: isFireModeEnabled,
-                        duckAIGridItem: duckAIGridItem(for: tab))
+                        duckAIGridItem: duckAIGridItem(for: tab),
+                        thumbnailLoader: duckAIGridContentProvider)
         }
 
         return cell
@@ -541,7 +542,8 @@ extension TabSwitcherPageViewController: TabObserver {
                     isSelectionModeEnabled: pageDelegate?.isEditing ?? false,
                     preview: previewsSource?.preview(for: tab),
                     isFireModeEnabled: isFireModeEnabled,
-                    duckAIGridItem: duckAIGridItem(for: tab))
+                    duckAIGridItem: duckAIGridItem(for: tab),
+                    thumbnailLoader: duckAIGridContentProvider)
     }
 }
 

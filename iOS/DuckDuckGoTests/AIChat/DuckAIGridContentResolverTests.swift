@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import UIKit
 import AIChat
 import Core
 @testable import DuckDuckGo
@@ -126,7 +127,87 @@ final class DuckAIGridContentResolverTests: XCTestCase {
         XCTAssertEqual(sut.gridItem(for: tab), .text(title: "Cute ducks", snippet: "hi there!"))
     }
 
+    // MARK: - loadImage
+
+    func testWhenLoadImageAndStorageHandlerIsNilThenReturnsNil() async {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeDataAccess, .aiChatTabSwitcherRichCard])
+        let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: nil)
+
+        let image = await sut.loadImage(fileRef: Self.fixtureUUID)
+
+        XCTAssertNil(image)
+    }
+
+    func testWhenLoadImageAndNativeDataAccessFlagOffThenReturnsNil() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabSwitcherRichCard])
+        let storage = makeStorageWithMigrationsDone()
+        try storage.putFile(uuid: Self.fixtureUUID, chatId: "chat-1", data: Self.pngBytes)
+        let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
+
+        let image = await sut.loadImage(fileRef: Self.fixtureUUID)
+
+        XCTAssertNil(image)
+    }
+
+    func testWhenLoadImageAndFileNotInStoreThenReturnsNil() async {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeDataAccess])
+        let storage = makeStorageWithMigrationsDone()
+        let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
+
+        let image = await sut.loadImage(fileRef: Self.fixtureUUID)
+
+        XCTAssertNil(image)
+    }
+
+    func testWhenLoadImageAndFileIsRawImageBytesThenReturnsImage() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeDataAccess])
+        let storage = makeStorageWithMigrationsDone()
+        try storage.putFile(uuid: Self.fixtureUUID, chatId: "chat-1", data: Self.pngBytes)
+        let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
+
+        let image = await sut.loadImage(fileRef: Self.fixtureUUID)
+
+        XCTAssertNotNil(image)
+    }
+
+    func testWhenLoadImageAndFileIsJSONWrapperThenReturnsImage() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeDataAccess])
+        let storage = makeStorageWithMigrationsDone()
+        let wrapper = """
+        {"data":"\(Self.pngBytes.base64EncodedString())","mimeType":"image/png"}
+        """
+        try storage.putFile(uuid: Self.fixtureUUID, chatId: "chat-1", data: Data(wrapper.utf8))
+        let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
+
+        let image = await sut.loadImage(fileRef: Self.fixtureUUID)
+
+        XCTAssertNotNil(image)
+    }
+
+    func testWhenLoadImageAndFileBytesAreUndecodableThenReturnsNil() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeDataAccess])
+        let storage = makeStorageWithMigrationsDone()
+        try storage.putFile(uuid: Self.fixtureUUID, chatId: "chat-1", data: Data("not an image".utf8))
+        let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
+
+        let image = await sut.loadImage(fileRef: Self.fixtureUUID)
+
+        XCTAssertNil(image)
+    }
+
     // MARK: - Helpers
+
+    /// Memory storage validates UUIDs on `putFile` / `getFile`; reuse a single fixture across tests.
+    private static let fixtureUUID = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+
+    /// 1×1 transparent PNG; sufficient for `UIImage(data:)` to succeed without bundling an asset.
+    private static let pngBytes: Data = {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1))
+        return renderer.image { context in
+            UIColor.clear.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+        }.pngData() ?? Data()
+    }()
 
     private func makeStorageWithMigrationsDone() -> DuckAiNativeMemoryStorageHandler {
         let storage = DuckAiNativeMemoryStorageHandler()

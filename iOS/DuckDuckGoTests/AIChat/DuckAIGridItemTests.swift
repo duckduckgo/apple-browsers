@@ -69,15 +69,50 @@ final class DuckAIGridItemTests: XCTestCase {
         XCTAssertEqual(item, .text(title: "Cute ducks", snippet: expectedSnippet))
     }
 
+    // MARK: - Image branch
+
+    func testWhenChatIsImageGenerationModelAndHasFileRefsThenReturnsImageItemWithLastFileRef() {
+        let chat = makeChat(
+            title: "A duck wearing sunglasses",
+            model: "image-generation",
+            fileRefs: ["uuid-first", "uuid-second", "uuid-latest"]
+        )
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
+
+        XCTAssertEqual(item, .image(title: "A duck wearing sunglasses", imageFileRef: "uuid-latest"))
+    }
+
+    func testWhenChatIsImageGenerationModelAndHasNoFileRefsThenReturnsNil() {
+        let chat = makeChat(title: "A duck wearing sunglasses", model: "image-generation", fileRefs: [])
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
+
+        XCTAssertNil(item)
+    }
+
+    func testWhenChatIsImageGenerationAndTitleIsEmptyThenFallsBackToUntitledChatPlaceholder() {
+        let chat = makeChat(title: "", model: "image-generation", fileRefs: ["uuid-1"])
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
+
+        XCTAssertEqual(item, .image(title: UserText.aiChatTabSwitcherCardUntitledChat, imageFileRef: "uuid-1"))
+    }
+
     // MARK: - Helpers
 
-    private func makeChat(title: String, model: String) -> DuckAiChat {
+    private func makeChat(title: String,
+                          model: String,
+                          fileRefs: [String] = [],
+                          isImageGeneration: Bool = false) -> DuckAiChat {
         DuckAiChat(
             chatId: "chat-1",
             title: title,
             model: model,
             lastEdit: "2026-01-01T00:00:00.000Z",
-            pinned: false
+            pinned: false,
+            fileRefs: fileRefs,
+            isImageGeneration: isImageGeneration
         )
     }
 }

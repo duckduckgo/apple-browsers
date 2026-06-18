@@ -219,7 +219,7 @@ extension MainViewController {
             return
         }
 
-        let duckAIGridItemProvider = DuckAIGridContentResolver(
+        let duckAIGridContentProvider = DuckAIGridContentResolver(
             featureFlagger: featureFlagger,
             storageHandler: duckAiNativeStorageHandler
         )
@@ -241,7 +241,7 @@ extension MainViewController {
                                       keyValueStore: self.keyValueStore,
                                       daxDialogsManager: self.daxDialogsManager,
                                       initialTrackerCountState: initialTrackerCountState,
-                                      duckAIGridItemProvider: duckAIGridItemProvider)
+                                      duckAIGridContentProvider: duckAIGridContentProvider)
         }) else {
             assertionFailure()
             return

@@ -229,6 +229,11 @@ enum AIChatPixel: PixelKitEvent {
     /// the × on the carousel card.
     case aiChatAddressBarFileRemoved
 
+    /// Event Trigger: A file the user picked for the duck.ai omnibar failed validation and was
+    /// rejected (too large, too many pages, unsupported type, encrypted, or unreadable). `reason`
+    /// mirrors the iOS `m_aichat_unified_input_file_validation_failed` reason values.
+    case aiChatAddressBarFileValidationFailed(reason: String)
+
     /// Event Trigger: User submits a prompt that includes one or more file attachments.
     case aiChatAddressBarSubmitWithFiles(fileCount: Int)
 
@@ -555,6 +560,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_file_attached"
         case .aiChatAddressBarFileRemoved:
             return "aichat_addressbar_file_removed"
+        case .aiChatAddressBarFileValidationFailed:
+            return "aichat_addressbar_file_validation_failed"
         case .aiChatAddressBarSubmitWithFiles:
             return "aichat_addressbar_submit_with_files"
         case .aiChatAddressBarAttachTabsPickerShown:
@@ -758,6 +765,8 @@ enum AIChatPixel: PixelKitEvent {
             return ["tabCount": String(tabCount)]
         case .aiChatAddressBarSubmitWithFiles(let fileCount):
             return ["fileCount": String(fileCount)]
+        case .aiChatAddressBarFileValidationFailed(let reason):
+            return ["reason": reason]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
@@ -856,6 +865,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarSubmitWithTabs,
                 .aiChatAddressBarFileAttached,
                 .aiChatAddressBarFileRemoved,
+                .aiChatAddressBarFileValidationFailed,
                 .aiChatAddressBarSubmitWithFiles,
                 .aiChatAddressBarAttachTabsPickerShown,
                 .aiChatAddressBarAttachTabChosen,

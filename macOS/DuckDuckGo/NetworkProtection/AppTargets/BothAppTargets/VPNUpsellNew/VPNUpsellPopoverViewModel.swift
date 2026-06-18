@@ -61,15 +61,6 @@ extension VPNUpsellPopoverViewModel {
                 return UserText.pirFeatureTitle
             }
         }
-
-        var subtitle: String? {
-            switch self {
-            case .pir:
-                return "(\(UserText.pirFeatureSubtitle))"
-            default:
-                return nil
-            }
-        }
     }
 }
 

@@ -18,7 +18,9 @@
 //
 
 import AIChat
+import Combine
 import Core
+import DesignResourcesKit
 import UIKit
 
 // MARK: - Duck.ai Query Experiment — onboarding fire flow types
@@ -340,57 +342,140 @@ extension MainViewController {
 
     func onboardingCompletedWithExperimentTransition(controller: UIViewController) {
         enforceSingleTabAfterOnboardingIfNeeded()
-        let onboardingTransitionSnapshotView = showOnboardingTransitionSnapshot(from: controller)
+        let snapshot = showOnboardingTransitionSnapshot(from: controller)
 
         // In UTI mode the coordinator is active immediately after openAIChatFromOnboarding fires.
         // Calling setBarsVisibility(0) would kill the UTI session via dismissOmniBar(), so we take
         // a simpler snapshot-only path: dismiss the intro modal, let UTI manage chrome, fade snapshot.
         let isUTIActive = unifiedToggleInputCoordinator != nil
 
+        if isUTIActive {
+            prepareUTIChromeForSlideIn()
+        }
+
         controller.dismiss(animated: false) { [weak self] in
             guard let self else { return }
-
             if isUTIActive {
-                // UTI manages its own chrome; just fade the snapshot away.
-                UIView.animate(withDuration: 0.3) {
-                    onboardingTransitionSnapshotView?.alpha = 0
+                self.runUTIOnboardingTransition(snapshot: snapshot)
+            } else {
+                self.runLegacyOnboardingTransition(snapshot: snapshot)
+            }
+            self.newTabPageViewController?.onboardingCompleted()
+        }
+    }
+
+    // Slide UTI chrome off-screen so it enters the same way the legacy bars do.
+    // transform-based so Auto Layout is unaffected and the content area doesn't shift.
+    private func prepareUTIChromeForSlideIn() {
+        let safeTop = view.safeAreaInsets.top
+        let headerH = viewCoordinator.aiChatTabChatHeaderContainer.bounds.height
+        viewCoordinator.aiChatTabChatHeaderContainer.transform =
+            CGAffineTransform(translationX: 0, y: -(headerH + safeTop))
+
+        let safeBottom = view.safeAreaInsets.bottom
+        let inputBarH = viewCoordinator.navigationBarContainer.bounds.height
+        viewCoordinator.navigationBarContainer.transform =
+            CGAffineTransform(translationX: 0, y: inputBarH + safeBottom)
+    }
+
+    private func runUTIOnboardingTransition(snapshot: UIView?) {
+        viewCoordinator.aiChatTabChatHeaderContainer.alpha = 0
+        viewCoordinator.navigationBarContainer.alpha = 0
+        viewCoordinator.statusBackground.alpha = 0
+
+        let chromeRevealDelay: TimeInterval = 0.05
+        DispatchQueue.main.asyncAfter(deadline: .now() + chromeRevealDelay) {
+            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
+                snapshot?.alpha = 0
+                self.viewCoordinator.aiChatTabChatHeaderContainer.transform = .identity
+                self.viewCoordinator.navigationBarContainer.transform = .identity
+            } completion: { _ in
+                self.hideOnboardingTransitionSnapshot(snapshot)
+            }
+        }
+
+        // Hide content so no partially-loaded web view bleeds through the fading snapshot.
+        viewCoordinator.contentContainer.alpha = 0
+
+        // Full-screen surface fill placed behind the content container. This prevents the
+        // root view's surfaceCanvas background from bleeding through the transparent
+        // contentContainer during both the snapshot fade and the subsequent content fade-in.
+        // It must be removed only after contentContainer is fully opaque.
+        let transitionFill = UIView()
+        transitionFill.backgroundColor = UIColor(singleUseColor: .duckAIWebViewBackground)
+        var fillFrame = view.bounds
+        fillFrame.size.height -= view.safeAreaInsets.bottom
+        transitionFill.frame = fillFrame
+        transitionFill.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        transitionFill.isUserInteractionEnabled = false
+        view.insertSubview(transitionFill, belowSubview: viewCoordinator.contentContainer)
+
+        UIView.animate(withDuration: 0.3) {
+            snapshot?.alpha = 0
+            self.viewCoordinator.aiChatTabChatHeaderContainer.alpha = 1
+            self.viewCoordinator.navigationBarContainer.alpha = 1
+            self.viewCoordinator.statusBackground.alpha = 1
+        } completion: { _ in
+            self.hideOnboardingTransitionSnapshot(snapshot)
+
+            let revealContent = {
+                UIView.animate(withDuration: 0.25) {
+                    self.viewCoordinator.contentContainer.alpha = 1
                 } completion: { _ in
-                    self.hideOnboardingTransitionSnapshot(onboardingTransitionSnapshotView)
+                    transitionFill.removeFromSuperview()
                 }
-                self.newTabPageViewController?.onboardingCompleted()
+            }
+
+            // Trigger the fade-in only once the web view has finished loading so the
+            // content is rendered before it becomes visible, not while it's still blank.
+            guard let webView = self.currentTab?.webView, webView.isLoading else {
+                revealContent()
                 return
             }
 
-            let chromeRevealDelay: TimeInterval = 0.05
-            let chromeRevealDuration: CGFloat = 0.25
-            let onboardingTransitionBottomFillView = self.showOnboardingTransitionBottomFill()
-
-            self.setBarsVisibility(0, animated: false, animationDuration: nil)
-            self.viewCoordinator.toolbar.alpha = 1 // keep toolbar at its off-screen start position
-            self.setOnboardingChromeOffscreenStartPosition()
-            self.viewCoordinator.statusBackground.alpha = 0
-            self.viewCoordinator.topSlideContainer.alpha = 0
-            onboardingTransitionBottomFillView?.alpha = 0
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + chromeRevealDelay) {
-                CATransaction.begin()
-                CATransaction.setCompletionBlock {
-                    UIView.animate(withDuration: 0.25) {
-                        onboardingTransitionSnapshotView?.alpha = 0
-                    } completion: { _ in
-                        self.hideOnboardingTransitionSnapshot(onboardingTransitionSnapshotView)
-                        self.hideOnboardingTransitionBottomFill(onboardingTransitionBottomFillView)
-                    }
+            var cancellable: AnyCancellable?
+            cancellable = webView.publisher(for: \.isLoading)
+                .filter { !$0 }
+                .first()
+                // delay before the web view content starts rendering before revealing it
+                .delay(for: .seconds(0.5), scheduler: DispatchQueue.main)
+                .sink { _ in
+                    cancellable = nil
+                    revealContent()
                 }
-                self.setBarsVisibility(1, animated: true, animationDuration: chromeRevealDuration)
-                UIView.animate(withDuration: chromeRevealDuration) {
-                    self.viewCoordinator.statusBackground.alpha = 1
-                    self.viewCoordinator.topSlideContainer.alpha = 1
-                    onboardingTransitionBottomFillView?.alpha = 1
+            _=cancellable // suppress warning
+        }
+    }
+
+    private func runLegacyOnboardingTransition(snapshot: UIView?) {
+        let chromeRevealDelay: TimeInterval = 0.05
+        let chromeRevealDuration: CGFloat = 0.25
+        let onboardingTransitionBottomFillView = showOnboardingTransitionBottomFill()
+
+        setBarsVisibility(0, animated: false, animationDuration: nil)
+        viewCoordinator.toolbar.alpha = 1 // keep toolbar at its off-screen start position
+        setOnboardingChromeOffscreenStartPosition()
+        viewCoordinator.statusBackground.alpha = 0
+        viewCoordinator.topSlideContainer.alpha = 0
+        onboardingTransitionBottomFillView?.alpha = 0
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + chromeRevealDelay) {
+            CATransaction.begin()
+            CATransaction.setCompletionBlock {
+                UIView.animate(withDuration: 0.25) {
+                    snapshot?.alpha = 0
+                } completion: { _ in
+                    self.hideOnboardingTransitionSnapshot(snapshot)
+                    self.hideOnboardingTransitionBottomFill(onboardingTransitionBottomFillView)
                 }
-                CATransaction.commit()
             }
-            self.newTabPageViewController?.onboardingCompleted()
+            self.setBarsVisibility(1, animated: true, animationDuration: chromeRevealDuration)
+            UIView.animate(withDuration: chromeRevealDuration) {
+                self.viewCoordinator.statusBackground.alpha = 1
+                self.viewCoordinator.topSlideContainer.alpha = 1
+                onboardingTransitionBottomFillView?.alpha = 1
+            }
+            CATransaction.commit()
         }
     }
 

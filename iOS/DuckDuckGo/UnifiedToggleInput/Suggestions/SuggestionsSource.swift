@@ -144,6 +144,11 @@ final class DuckAISuggestionsSource: SuggestionsSource {
     func fetchURLSuggestions(query: String) {
         urlLoader.fetch(query: query)
     }
+
+    /// Deletes a recent-chat suggestion via the backing chat manager (after delete confirmation).
+    func deleteChat(_ chat: AIChatSuggestion) {
+        chatManager.deleteChatSuggestion(suggestion: chat)
+    }
 }
 
 /// Duck.ai-empty source: a single section of recent chats.

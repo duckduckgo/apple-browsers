@@ -26,14 +26,24 @@ import os.log
 /// back to the existing screenshot path (flag off, not a Duck.ai chat tab, native
 /// data unavailable, decode failure, …).
 @MainActor
-protocol DuckAIGridItemProviding {
+protocol DuckAIGridItemProviding: AnyObject {
     func gridItem(for tab: Tab) -> DuckAIGridItem?
 }
+
+/// Loads thumbnail images for `DuckAIGridItem.image` cards.
+@MainActor
+protocol DuckAIThumbnailLoading: AnyObject {
+    func loadImage(fileRef: String) async -> UIImage?
+}
+
+/// Composition of both grid-content capabilities.
+@MainActor
+protocol DuckAIGridContentProviding: DuckAIGridItemProviding, DuckAIThumbnailLoading {}
 
 /// Resolves the content shown for a Duck.ai chat tab in the tab switcher grid,
 /// reading from native chat storage.
 @MainActor
-final class DuckAIGridContentResolver: DuckAIGridItemProviding {
+final class DuckAIGridContentResolver: DuckAIGridContentProviding {
 
     private let featureFlagger: FeatureFlagger
     private let storageHandler: DuckAiNativeStorageHandling?
@@ -79,5 +89,35 @@ final class DuckAIGridContentResolver: DuckAIGridItemProviding {
             Logger.aiChat.error("DuckAIGridContentResolver: failed to read chat: \(error.localizedDescription)")
             return nil
         }
+    }
+
+    func loadImage(fileRef: String) async -> UIImage? {
+        guard let storageHandler, aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
+            return nil
+        }
+        return await Task.detached {
+            do {
+                guard let file = try storageHandler.getFile(uuid: fileRef) else { return nil }
+                return Self.decodeImage(from: file.data)
+            } catch {
+                Logger.aiChat.error("DuckAIGridContentResolver: failed to read file: \(error.localizedDescription)")
+                return nil
+            }
+        }.value
+    }
+
+    /// Native files may be raw image bytes OR a `{data: <base64>, mimeType: ...}` JSON
+    /// wrapper (debug-server dashboard is the reference). Try wrapper first, then raw.
+    nonisolated private static func decodeImage(from data: Data) -> UIImage? {
+        if let wrapper = try? JSONDecoder().decode(FileWrapper.self, from: data),
+           let bytes = Data(base64Encoded: wrapper.data) {
+            return UIImage(data: bytes)
+        }
+        return UIImage(data: data)
+    }
+
+    private struct FileWrapper: Decodable {
+        let data: String
+        let mimeType: String?
     }
 }

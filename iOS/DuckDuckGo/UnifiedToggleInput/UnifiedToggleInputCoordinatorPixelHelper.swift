@@ -46,6 +46,9 @@ private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
             self = .webSearch
         case .imageGeneration:
             self = .imageGeneration
+        case .customizeResponses:
+            // Not a model tool — never produced from a selected tool, so it never reports as one.
+            self = .none
         }
     }
 }
@@ -68,6 +71,7 @@ extension UTIToolsMenu.Item.Identifier {
         switch self {
         case .imageGeneration: return true
         case .webSearch: return false
+        case .customizeResponses: return false
         }
     }
 }
@@ -122,6 +126,10 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         }
     }
 
+    static func fireCustomizeResponsesSelectedPixel() {
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputCustomizeResponsesSelected)
+    }
+
     static func fireUnifiedPromptSubmittedPixel(
         text: String,
         selectedTool: AIChatRAGTool?,
@@ -145,6 +153,18 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
                 "has_text": hasText ? "true" : "false"
             ]
         )
+    }
+
+    static func fireShowModelPickerPixel() {
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputShowModelPicker)
+    }
+
+    static func fireSubmitChangeModelPixel(modelId: String) {
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputSubmitChangeModel, withAdditionalParameters: ["model_id": modelId])
+    }
+
+    static func fireSubmitChangeModelPromptSentPixel() {
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputSubmitChangeModelPromptSent)
     }
 
     static func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?, attachments: [UnifiedToggleInputAttachment]) {

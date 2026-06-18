@@ -227,6 +227,55 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.arrowUp)
     }
 
+    // MARK: - Recovery-Card Submit Block
+
+    func test_recoveryCardBlock_disablesSubmit_whenContentPresent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertFalse(submitButton.isEnabled,
+                       "Recovery card must block submit while there is submittable content")
+    }
+
+    func test_recoveryCardBlock_leavesVoiceButtonUntouched_whenNoContent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isAIVoiceChatActive = true
+        sut.isSubmitEnabled = false
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertTrue(submitButton.isEnabled,
+                      "With no text the Voice affordance must stay active — the block only suppresses submit")
+        XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.voice)
+    }
+
+    func test_clearingRecoveryCardBlock_reenablesSubmit_whenContentPresent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        sut.isSubmitBlockedByRecoveryCard = true
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertFalse(submitButton.isEnabled)
+
+        sut.isSubmitBlockedByRecoveryCard = false
+
+        XCTAssertTrue(submitButton.isEnabled,
+                      "Clearing the recovery block re-enables submit when content is present")
+    }
+
+    func test_clearingRecoveryCardBlock_doesNotForceEnableSubmit_whenNoContent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = false
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.isSubmitBlockedByRecoveryCard = false
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertFalse(submitButton.isEnabled,
+                       "enableChatInput must not force-enable submit when another reason (no content) still blocks it")
+    }
+
     func test_insertNewlineAtCursor_whenTextIsEmpty() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = SwitchBarTextEntryView(handler: handler)
@@ -493,6 +542,61 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         XCTAssertFalse(shadowView.isHidden)
         assertColor(rimShadowLayer.shadowColor, equals: expectedShadowColor)
+    }
+
+    private let longURL = "https://www.cinemark.com/theatres/ca-playa-vista/cinemark-playa-vista-and-xd?showDate=2026-06-12"
+
+    // A long URL expands to multiple lines once the user taps in, so the caret can reach its end to
+    // edit — in search mode too (the single-line gating from #5373/#5429 was reverted; see isUnexpandedURL).
+    func test_urlExpandsHeightInSearchModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.search)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(heightAfterTap, singleLineHeight, accuracy: 1)
+    }
+
+    func test_urlCanExpandInAIChatModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.aiChat)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertGreaterThan(heightAfterTap, singleLineHeight)
+    }
+
+    // Search-only: UTI shown without a toggle (AI chat unavailable), but the handler keeps its
+    // `.aiChat` default toggle state. A tapped URL expands to multiple lines so the user can edit
+    // its end — matching AI chat mode. (The single-line gating for this case was reverted; see
+    // isUnexpandedURL.)
+    func test_urlExpandsHeightInSearchOnlyModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(heightAfterTap, singleLineHeight, accuracy: 1)
     }
 
     private func flushMainQueue() {

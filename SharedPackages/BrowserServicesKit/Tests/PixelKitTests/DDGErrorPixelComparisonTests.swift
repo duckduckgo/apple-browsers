@@ -129,7 +129,7 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
             dryRun: false,
             appVersion: "1.0.0",
             defaultHeaders: [:],
-            dailyPixelCalendar: nil,
+            pixelCalendar: nil,
             defaults: userDefaults()
         ) { pixelName, headers, parameters, _, _, _ in
             print("DEBUG: FireRequest called #\(callCount + 1) for pixel: \(pixelName) with parameters: \(parameters)")
@@ -180,7 +180,7 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
             dryRun: false,
             appVersion: "1.0.0",
             defaultHeaders: [:],
-            dailyPixelCalendar: nil,
+            pixelCalendar: nil,
             defaults: userDefaults()
         ) { _, _, parameters, _, _, _ in
             if ddgErrorParams == nil {
@@ -245,7 +245,7 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
             dryRun: false,
             appVersion: "1.0.0",
             defaultHeaders: [:],
-            dailyPixelCalendar: nil,
+            pixelCalendar: nil,
             defaults: userDefaults()
         ) { _, _, parameters, _, _, _ in
             if ddgErrorParams == nil {
@@ -298,7 +298,7 @@ final class DDGErrorPixelComparisonTests: XCTestCase {
             dryRun: false,
             appVersion: "1.0.0",
             defaultHeaders: [:],
-            dailyPixelCalendar: nil,
+            pixelCalendar: nil,
             defaults: userDefaults()
         ) { _, _, parameters, _, _, _ in
             wrappedErrorParams = parameters

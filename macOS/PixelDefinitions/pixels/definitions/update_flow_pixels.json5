@@ -297,7 +297,8 @@
                 "description": "macOS version"
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_update_configuration": {

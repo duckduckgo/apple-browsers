@@ -163,6 +163,16 @@ extension NSAlert {
         return alert
     }
 
+    static func syncPairingV2Confirmation(message: String) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.syncPairingV2ConfirmationTitle
+        alert.informativeText = message
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: UserText.cancel)
+        alert.addButton(withTitle: UserText.syncPairingV2ConfirmationAction)
+        return alert
+    }
+
     static func dataSyncingDisabledByFeatureFlag(showLearnMore: Bool, upgradeRequired: Bool = false) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.syncPausedTitle

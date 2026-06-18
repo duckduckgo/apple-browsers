@@ -121,13 +121,13 @@ extension SimplifiedSyncSettingsView {
         Section {
             VStack(spacing: 20) {
                 ZStack {
-                    Image(rebrandable: "Sync-New-128")
+                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-128" : "Sync-New-128-legacy")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
                         .opacity(model.isSyncEnabled ? 0 : 1)
 
-                    Image(rebrandable: "Sync-Pair-96")
+                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-Pair-128" : "Sync-Pair-96-legacy")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
@@ -451,13 +451,17 @@ extension SimplifiedSyncSettingsView {
 
     @ViewBuilder
     func deviceTypeImage(_ device: SyncSettingsViewModel.Device) -> some View {
-        switch device.type {
-        case "desktop":
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceDesktop)
-        case "tablet":
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceTablet)
-        default:
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
+        if device.isThirdParty {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceAll)
+        } else {
+            switch device.type {
+            case "desktop":
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceDesktop)
+            case "tablet":
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceTablet)
+            default:
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
+            }
         }
     }
 

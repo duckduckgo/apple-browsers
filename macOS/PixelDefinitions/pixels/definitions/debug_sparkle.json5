@@ -12,7 +12,7 @@
         "owners": ["diegoreymendez", "quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_debug_updater_did_find_update": {
         "description": "Fired when Sparkle reports that a valid update is available.",

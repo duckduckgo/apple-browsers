@@ -29,6 +29,7 @@ final class CrashReportSenderExtensionsTests: XCTestCase {
         firedPixelNames = []
         PixelKit.setUp(dryRun: false,
                        appVersion: "1.0.0",
+                       session: "test",
                        defaultHeaders: [:],
                        defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!) { [weak self] firedPixelName, _, _, _, _, onComplete in
             self?.firedPixelNames.append(firedPixelName)

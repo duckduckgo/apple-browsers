@@ -138,7 +138,7 @@ enum RebrandingColor {
     }
 
     enum Green {
-        static let green40 = Color(0x39B25E)
+        static let green40 = Color(0x38B26A)
     }
 
 }

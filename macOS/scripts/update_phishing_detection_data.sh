@@ -63,7 +63,9 @@ performUpdate() {
         printf "New SHA256: %s ✨\n" "$new_sha"
     fi
 
-    sed -i '' -e "s/${threat_type}Embedded${capitalized_data_type}DataSHA =.*/${threat_type}Embedded${capitalized_data_type}DataSHA = \"$new_sha\"/g" "${def_filename}"
+    # `sed -i ''` is BSD-only; GNU sed on the Linux CI runner reads '' as a filename and fails silently.
+    # `-i.bak` (suffix attached) is accepted by both; delete the backup once the edit succeeds.
+    sed -i.bak -e "s/${threat_type}Embedded${capitalized_data_type}DataSHA =.*/${threat_type}Embedded${capitalized_data_type}DataSHA = \"$new_sha\"/g" "${def_filename}" && rm -f "${def_filename}.bak"
 
     # Validate number of records in the data file
     record_count=$(jq 'length' "$data_path")
@@ -80,7 +82,7 @@ performUpdate() {
 
 updateRevision() {
     local revision_to_use=$1
-    sed -i '' -e "s/embeddedDataRevision = $old_revision/embeddedDataRevision = $revision_to_use/" "${def_filename}"
+    sed -i.bak -e "s/embeddedDataRevision = $old_revision/embeddedDataRevision = $revision_to_use/" "${def_filename}" && rm -f "${def_filename}.bak"
     printf "Updated revision from %s to %s\n" "$old_revision" "$revision_to_use"
 }
 

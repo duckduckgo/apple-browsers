@@ -209,10 +209,14 @@ final class AIChatOmnibarController {
     /// in the same window if one is active; otherwise opens a new selected Duck.ai tab and hands
     /// off `mode: voice-mode` via the prompt handler.
     func openNewVoiceChat() {
-        aiChatTabOpener.openVoiceSession(
-            inSourceCollection: tabCollectionViewModel,
-            behavior: .newTab(selected: true)
-        )
+        // Defer the tab open: synchronously it tears the panel down mid-click, so the click falls through to the bookmarks bar behind.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.aiChatTabOpener.openVoiceSession(
+                inSourceCollection: self.tabCollectionViewModel,
+                behavior: .newTab(selected: true)
+            )
+        }
         PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative, frequency: .dailyAndStandard, includeAppVersionParameter: true)
     }
 
@@ -593,8 +597,20 @@ final class AIChatOmnibarController {
             current.remove(at: index)
         } else {
             current.append(attachment)
+            prewarmAttachedTab(id: attachment.id)
         }
         persistTabAttachmentsToActiveTab(current)
+    }
+
+    /// Wakes a just-attached tab if it's suspended so its content is loaded by the time the user
+    /// submits, avoiding a submit-time wait. Fire-and-forget — `extractPageContextsForOmnibarSubmit`
+    /// re-resolves and wakes regardless, so this is purely a latency optimization.
+    private func prewarmAttachedTab(id: String) {
+        guard let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: tabCollectionViewModel, in: Application.appDelegate.windowControllersManager),
+              resolved.wasMaterialized else {
+            return
+        }
+        resolved.tab.reload()
     }
 
     /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
@@ -692,33 +708,29 @@ final class AIChatOmnibarController {
         tabCollectionViewModel.selectedTabViewModel?.tab.uuid
     }
 
-    /// Returns the open browser tabs (pinned + regular) in this controller's window as candidate
-    /// attachments, with native `NSImage` favicons resolved from the favicon manager. Used by the
-    /// omnibar attach menu and the `@`-mention picker to populate their tab lists.
+    /// Returns the open browser tabs (pinned + regular) as candidate attachments, with native
+    /// `NSImage` favicons resolved from the favicon manager. Used by the omnibar attach menu and
+    /// the `@`-mention picker to populate their tab lists.
     ///
-    /// - Note: `tabCollectionViewModel` is the window-scoped TCVM injected at init, so the result
-    /// is intentionally restricted to **this window's** tabs — other browser windows aren't
-    /// surfaced. Non-URL tabs (settings, new-tab page, etc.) are filtered out, as are URLs the
-    /// sidebar's shared `AIChatTabMetadata.shouldExcludeFromTabPicker(_:)` rules out
-    /// (DDG homepage, `about:blank`, duck.ai itself). Internal testers who set a custom AI Chat
-    /// URL via Debug → AI Chat → Set custom URL also get tabs at that host filtered out — the
-    /// shared helper only knows about the hardcoded `duck.ai` host, so the omnibar checks the
-    /// debug override here to keep the picker meta-attachment-free for them too.
+    /// - Note: tabs are sourced across windows via the shared `AIChatTabPickerSource`, using this
+    /// controller's `tabCollectionViewModel` as the origin: a regular window surfaces tabs from all
+    /// regular windows, while a Fire Window surfaces only its own tabs (Fire Windows are never
+    /// pulled into a regular picker, and vice versa). Non-URL tabs and URLs ruled out by
+    /// `AIChatTabMetadata.shouldExcludeFromTabPicker(_:)` are already filtered by the source.
+    /// Internal testers who set a custom AI Chat URL via Debug → AI Chat → Set custom URL also get
+    /// tabs at that host filtered out here — the shared helper only knows the hardcoded `duck.ai`
+    /// host, so the omnibar checks the debug override too.
     ///
     /// The current tab (if it survives the filters) is hoisted to the front of the returned list
     /// so menus that pin "Current Tab" at the top get the right ordering for free.
     func openTabsForOmnibarPicker() -> [AIChatTabAttachment] {
-        let pinnedTabs = tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
-        let regularTabs = tabCollectionViewModel.tabCollection.tabs
-        let allTabs = pinnedTabs + regularTabs
         let faviconManager = NSApp.delegateTyped.faviconManager
         // Resolve the custom-URL host once per pick — `keyedStoring` reads from UserDefaults
         // every access, so caching avoids hitting it per-tab.
         let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
         let customAIChatURLHost = debugURLSettings.customURLHostname
-        let candidates = allTabs.compactMap { tab -> AIChatTabAttachment? in
+        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: tabCollectionViewModel, in: Application.appDelegate.windowControllersManager).compactMap { tab -> AIChatTabAttachment? in
             guard case .url(let url, _, _) = tab.content else { return nil }
-            guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
             if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
                 return nil
             }
@@ -1032,9 +1044,10 @@ final class AIChatOmnibarController {
     /// stripped to the no-`tabId` form, marking it as "the page you're chatting about" per
     /// the tech design discriminator).
     ///
-    /// Per-tab extraction runs in parallel (`withTaskGroup`) with the same 5s timeout the
-    /// sidebar's JS-bridge uses. Suspended / unreachable tabs return `nil` from the shared
-    /// extractor and are dropped silently from the payload — same behavior the JS-bridge has.
+    /// Per-tab extraction runs in parallel (`withTaskGroup`). Each task resolves the tab by id via
+    /// the shared cross-window source (scoped to this controller's window as origin) and **wakes a
+    /// suspended tab** if needed so its content is extracted rather than dropped. Tabs that genuinely
+    /// can't be loaded return `nil` and are dropped from the payload — same as the JS-bridge.
     @MainActor
     private func extractPageContextsForOmnibarSubmit(
         tabAttachments: [AIChatTabAttachment],
@@ -1042,25 +1055,13 @@ final class AIChatOmnibarController {
     ) async -> AIChatPageContextPayload? {
         guard !tabAttachments.isEmpty else { return nil }
 
-        // Look up the actual `Tab` objects from this controller's tabCollectionViewModel,
-        // matching the JS-bridge's `getAIChatTabContent` lookup (which only considers loaded
-        // tabs). Unloaded tabs have no `PageContextUserScript` to invoke, so they'd return
-        // `nil` from the extractor anyway — restricting to `loadedTabs` makes that explicit.
-        let pinned: [Tab] = tabCollectionViewModel.pinnedTabsCollection?.loadedTabs ?? []
-        let regular: [Tab] = tabCollectionViewModel.tabCollection.loadedTabs
-        let allTabs: [Tab] = pinned + regular
-        var tabsByUUID: [String: Tab] = [:]
-        for tab in allTabs {
-            tabsByUUID[tab.uuid] = tab
-        }
-
+        let origin = tabCollectionViewModel
+        let windowControllersManager = Application.appDelegate.windowControllersManager
         let extracted: [(String, AIChatPageContextData?)] = await withTaskGroup(of: (String, AIChatPageContextData?).self) { group in
             for attachment in tabAttachments {
                 let tabId: String = attachment.id
-                let tab: Tab? = tabsByUUID[tabId]
                 group.addTask { @MainActor in
-                    guard let tab else { return (tabId, nil) }
-                    let ctx = await AIChatUserScriptHandler.extractPageContext(from: tab)
+                    let ctx = await AIChatUserScriptHandler.extractPageContext(forTabId: tabId, origin: origin, in: windowControllersManager)
                     return (tabId, ctx)
                 }
             }

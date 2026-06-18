@@ -33,6 +33,8 @@ public protocol UserAgentManaging {
     func update(webView: WKWebView, isDesktop: Bool, url: URL?)
     func userAgent(isDesktop: Bool) -> String
     func userAgent(isDesktop: Bool, url: URL?) -> String
+    var applicationNameForUserAgent: String { get }
+    func safariOnlyUserAgent(isDesktop: Bool) -> String
 
 }
 
@@ -75,6 +77,10 @@ public class DefaultUserAgentManager: UserAgentManaging {
         userAgent.agent(forUrl: url, isDesktop: isDesktop)
     }
 
+    public func safariOnlyUserAgent(isDesktop: Bool) -> String {
+        userAgent.safariOnlyAgent(isDesktop: isDesktop)
+    }
+
     public func update(request: inout URLRequest, isDesktop: Bool) {
         request.addValue(userAgent.agent(forUrl: nil, isDesktop: isDesktop), forHTTPHeaderField: "User-Agent")
     }
@@ -82,6 +88,10 @@ public class DefaultUserAgentManager: UserAgentManaging {
     public func update(webView: WKWebView, isDesktop: Bool, url: URL?) {
         let agent = userAgent.agent(forUrl: url, isDesktop: isDesktop)
         webView.customUserAgent = agent
+    }
+
+    public var applicationNameForUserAgent: String {
+        userAgent.applicationNameForUserAgent
     }
 
     public static var duckDuckGoUserAgent: String { duckduckGoUserAgent(for: AppVersion.shared) }
@@ -229,6 +239,10 @@ struct UserAgent {
         return versions
     }
 
+    var applicationNameForUserAgent: String {
+        "\(versionComponent) Mobile/15E148 \(safariComponent)"
+    }
+
     public func agent(forUrl url: URL?,
                       isDesktop: Bool,
                       deviceVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
@@ -276,6 +290,12 @@ struct UserAgent {
             ua.append(" \(brandComponent)")
             return ua
         }
+    }
+
+    func safariOnlyAgent(isDesktop: Bool,
+                         deviceVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
+                         privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig) -> String {
+        closestLogic(forUrl: nil, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
     }
 
     private func oldLogic(forUrl url: URL?,

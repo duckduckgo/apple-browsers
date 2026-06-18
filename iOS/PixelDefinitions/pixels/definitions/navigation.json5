@@ -1,7 +1,44 @@
 {
+    "m_site_loading_success": {
+        "description": "Fired when a site loading navigation completes successfully.",
+        "owners": ["diegoreymendez", "THISISDINOSAUR"],
+        "triggers": ["page_load"],
+        "suffixes": [
+            "platform",
+            "form_factor",
+            {
+                "description": "Sampling percentage (between 1 and 100 inclusive)",
+                "pattern": "^sample(?:100|0?[1-9]|[1-9][0-9])$"
+            }
+        ],
+        "parameters": ["appVersion", "pixelSource", "duration", "navigation_type"]
+    },
+    "m_site_loading_failure": {
+        "description": "Fired when a site loading navigation fails.",
+        "owners": ["diegoreymendez", "THISISDINOSAUR"],
+        "triggers": ["page_load"],
+        "suffixes": [
+            "platform",
+            "form_factor",
+            {
+                "description": "Sampling percentage (between 1 and 100 inclusive)",
+                "pattern": "^sample(?:100|0?[1-9]|[1-9][0-9])$"
+            }
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "duration",
+            "navigation_type",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain"
+        ]
+    },
     "m_site_loading_performance": {
         "description": "Fired when CSS pushes privacy-aware performance metrics via expandedPerformanceMetricsResult notification",
-        "owners": ["diegoreymendez"],
+        "owners": ["diegoreymendez", "THISISDINOSAUR"],
         "triggers": ["page_load"],
         "suffixes": [
             "platform",

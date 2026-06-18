@@ -134,8 +134,19 @@ class SwitchBarTextEntryView: UIView {
         return Constants.minHeight
     }
 
+    /// Optional ceiling imposed by the host when vertical space is constrained (e.g. landscape,
+    /// where the keyboard leaves little room). The field caps at this height and scrolls internally.
+    var externalMaxHeightCap: CGFloat? {
+        didSet {
+            guard externalMaxHeightCap != oldValue else { return }
+            updateTextViewHeight()
+        }
+    }
+
     private var currentMaxHeight: CGFloat {
-        handler.isUsingFadeOutAnimation ? Constants.maxHeightWhenUsingFadeOutAnimation : Constants.maxHeight
+        let base = handler.isUsingFadeOutAnimation ? Constants.maxHeightWhenUsingFadeOutAnimation : Constants.maxHeight
+        guard let externalMaxHeightCap else { return base }
+        return max(currentMinHeight, min(base, externalMaxHeightCap))
     }
 
     private var isUsingBottomBarIncreasedHeight: Bool {
@@ -534,8 +545,12 @@ class SwitchBarTextEntryView: UIView {
     }
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
+    /// A URL is single-line only before the user interacts; once tapped it expands to multiple lines
+    /// so the caret can reach the end to edit (the original behaviour, restored after #5373/#5429
+    /// made long URLs single-line and therefore not editable to the end).
     private func isUnexpandedURL() -> Bool {
-        return !hasBeenInteractedWith && isURL
+        guard isURL else { return false }
+        return currentMode == .search || !handler.isToggleEnabled || !hasBeenInteractedWith
     }
 
     private func updateTextViewHeight() {
@@ -671,7 +686,6 @@ class SwitchBarTextEntryView: UIView {
                     let isNewLineInsertion = text == (self.textView.text ?? "") + "\n"
                     
                     guard !isUserActivelyTyping || isNewLineInsertion else { return }
-                    
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
                     self.updateTextViewHeight()
@@ -866,8 +880,11 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidChangeSelection(_ textView: UITextView) {
         guard canExpandOnSelectionChange else { return }
-        textViewDidChange(textView)
         canExpandOnSelectionChange = false
+        // A selection change (e.g. the select-all on focus) only needs the expandable-height
+        // recompute — it is NOT a text edit, so it must not run the full `textViewDidChange`
+        // (which marks user interaction and would flash suggestions over favorites/logo).
+        updateTextViewHeight()
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {

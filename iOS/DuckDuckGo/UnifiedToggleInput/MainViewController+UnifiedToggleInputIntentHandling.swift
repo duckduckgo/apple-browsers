@@ -177,6 +177,8 @@ private extension MainViewController {
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
+        coordinator.contentViewController.refreshSuggestionsCaches()
+
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor

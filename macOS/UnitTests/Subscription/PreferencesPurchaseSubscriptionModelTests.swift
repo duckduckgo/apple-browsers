@@ -200,4 +200,54 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
         // Then
         XCTAssertEqual(discount, 25)
     }
+
+    // MARK: - Entry-point pixel user events
+
+    @MainActor
+    func testDidAppear_FiresDidOpenSubscriptionPurchaseEvent() {
+        // When
+        sut.didAppear()
+
+        // Then
+        XCTAssertTrue(userEvents.contains(where: { event in
+            if case .didOpenSubscriptionPurchase = event { return true }
+            return false
+        }))
+    }
+
+    @MainActor
+    func testPurchaseAction_WhenWinBackOfferAvailable_FiresDidClickPurchaseEventBeforeOpeningWinBackLandingPage() {
+        // Given
+        mockWinBackOfferManager.isOfferAvailable = true
+
+        // When
+        sut.purchaseAction()
+
+        // Then — didClickPurchase must come first so the entry-point click pixel fires regardless of branch taken
+        guard let firstIndex = userEvents.firstIndex(where: { event in
+            if case .didClickPurchase = event { return true }
+            return false
+        }), let secondIndex = userEvents.firstIndex(where: { event in
+            if case .openWinBackOfferLandingPage = event { return true }
+            return false
+        }) else {
+            return XCTFail("Expected both didClickPurchase and openWinBackOfferLandingPage events")
+        }
+        XCTAssertLessThan(firstIndex, secondIndex)
+    }
+
+    @MainActor
+    func testPurchaseAction_WhenNoWinBackOffer_FiresDidClickPurchaseEvent() {
+        // Given
+        mockWinBackOfferManager.isOfferAvailable = false
+
+        // When
+        sut.purchaseAction()
+
+        // Then
+        XCTAssertTrue(userEvents.contains(where: { event in
+            if case .didClickPurchase = event { return true }
+            return false
+        }))
+    }
 }

@@ -1840,17 +1840,29 @@ final class AddressBarButtonsViewController: NSViewController {
     private func showSystemDisabledInfoPopover(for domain: String, permissionType: PermissionType) {
         guard permissionCenterButton.isVisible else { return }
 
-        let view = SystemDisabledPermissionInfoView(domain: domain, permissionType: permissionType)
-        let controller = NSHostingController(rootView: view)
-        controller.preferredContentSize = controller.view.fittingSize
+        // Auto-layout-pinned NSHostingView (like PermissionCenterViewController) so NSPopover reads a stable
+        // fitting size; a bare NSHostingController left contentSize at the 320×320 default and mis-positioned it.
+        let swiftUIView = SystemDisabledPermissionInfoView(domain: domain, permissionType: permissionType)
+        let hostingView = NSHostingView(rootView: swiftUIView)
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        let controller = NSViewController()
+        controller.view = NSView()
+        controller.view.addSubview(hostingView)
+        NSLayoutConstraint.activate([
+            hostingView.topAnchor.constraint(equalTo: controller.view.topAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: controller.view.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: controller.view.bottomAnchor)
+        ])
 
         let popover = NSPopover()
         systemDisabledInfoPopover = popover
         popover.contentViewController = controller
         popover.behavior = .transient  // Click outside to dismiss
-        popover.show(relativeTo: permissionCenterButton.bounds,
-                     of: permissionCenterButton,
-                     preferredEdge: .maxY)
+        // Tint the whole popover including the arrow to match the theme (default leaves the arrow untinted).
+        popover.backgroundColor = themeManager.theme.colorsProvider.popoverBackgroundColor
+        popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped),
+                     in: permissionCenterButton)
     }
 
     func openPrivacyDashboard() {

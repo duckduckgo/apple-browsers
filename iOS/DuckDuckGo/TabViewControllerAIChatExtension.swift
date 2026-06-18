@@ -123,6 +123,11 @@ extension TabViewController: AITabController {
         delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
     }
 
+    func openSettingsInNewTab() {
+        let url = AIChatURLParameters.settingsOpenURL(from: aiChatSettings.aiChatURL)
+        delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
+    }
+
     /// Reloads the full mode AI Chat tab if this is an AI tab.
     func reloadFullModeAIChatIfNeeded() {
         if isAITab {

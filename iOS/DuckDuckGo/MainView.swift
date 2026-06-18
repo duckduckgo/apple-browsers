@@ -57,6 +57,7 @@ class MainViewFactory {
 
     static func createViewHierarchy(_ parentController: UIViewController,
                                     aiChatSettings: AIChatSettingsProvider,
+                                    aiChatSyncCleaner: AIChatSyncCleaning? = nil,
                                     aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger,
@@ -72,6 +73,7 @@ class MainViewFactory {
                                                       featureFlagger: featureFlagger,
                                                       aichatIPadTabFeature: AIChatIPadTabFeature(featureFlagger: featureFlagger),
                                                       aiChatSettings: aiChatSettings,
+                                                      aiChatSyncCleaner: aiChatSyncCleaner,
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       suggestionTrayDependencies: suggestionTrayDependencies,
                                                       appSettings: appSettings,

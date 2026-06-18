@@ -37,7 +37,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     private enum Constants {
         static let headerHeight: CGFloat = 60
-        static let buttonSize: CGFloat = 48
+        static let buttonSize: CGFloat = 44
         static let horizontalPadding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let titleEdgeSpacing: CGFloat = 12
@@ -45,11 +45,12 @@ final class AIChatTabChatHeaderView: UIView {
         static let titleVerticalPadding: CGFloat = 2
         static let chevronSize: CGFloat = 12
         static let chevronSpacing: CGFloat = 4
-        static let pillInnerHorizontalPadding: CGFloat = 6
-        static let pillInnerIconSpacing: CGFloat = 20
-        static let pillButtonSize: CGFloat = 36
+        /// Gap between the two icons in the shared right pill: two `buttonSize` targets + this = the 104pt group.
+        static let pillInnerIconSpacing: CGFloat = 16
+        static let tabBadgeSize: CGFloat = 36
         static let paidIconSize: CGFloat = 16
         static let paidIconTitleSpacing: CGFloat = 6
+        static let titleMinimumScaleFactor: CGFloat = 0.7
     }
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
@@ -88,6 +89,8 @@ final class AIChatTabChatHeaderView: UIView {
     lazy var chatListButtonPill: UIView = makePillContainer()
     private lazy var rightPairPill: UIView = makePillContainer()
 
+    private var isOnboardingLocked = false
+
     private var titleSpacingConstraints: [NSLayoutConstraint] = []
 
     private lazy var rightPairStack: UIStackView = {
@@ -115,14 +118,15 @@ final class AIChatTabChatHeaderView: UIView {
         button.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
         button.addTarget(self, action: #selector(tabSwitcherTapped), for: .touchUpInside)
         button.addSubview(tabSwitcherView)
+        // Pin the badge to its own footprint, centred, so the bigger tap target doesn't stretch it.
         NSLayoutConstraint.activate([
-            tabSwitcherView.topAnchor.constraint(equalTo: button.topAnchor),
-            tabSwitcherView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
-            tabSwitcherView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
-            tabSwitcherView.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+            tabSwitcherView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+            tabSwitcherView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            tabSwitcherView.widthAnchor.constraint(equalToConstant: Constants.tabBadgeSize),
+            tabSwitcherView.heightAnchor.constraint(equalToConstant: Constants.tabBadgeSize),
         ])
         // Capsule-clip the button so the adjacent Plus menu dismissal can't flash a rectangle highlight.
-        button.layer.cornerRadius = Constants.pillButtonSize / 2
+        button.layer.cornerRadius = Constants.buttonSize / 2
         button.clipsToBounds = true
         return button
     }()
@@ -147,7 +151,7 @@ final class AIChatTabChatHeaderView: UIView {
         button.showsMenuAsPrimaryAction = true
         // Clip the button itself to the pill shape — without this, UIKit's transient
         // highlight on menu dismiss renders as a rectangle against the surrounding pill.
-        button.layer.cornerRadius = Constants.pillButtonSize / 2
+        button.layer.cornerRadius = Constants.buttonSize / 2
         button.clipsToBounds = true
         return button
     }()
@@ -218,6 +222,8 @@ final class AIChatTabChatHeaderView: UIView {
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
         return label
     }()
 
@@ -237,6 +243,8 @@ final class AIChatTabChatHeaderView: UIView {
         label.textColor = UIColor(designSystemColor: .textSecondary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
         return label
     }()
 
@@ -248,6 +256,8 @@ final class AIChatTabChatHeaderView: UIView {
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
         return label
     }()
 
@@ -351,6 +361,7 @@ final class AIChatTabChatHeaderView: UIView {
     /// Lock/unlock header controls during onboarding (close included — would otherwise let users escape via the NTP).
     /// Dimming is applied to the enclosing pills so the glass background and tab-count label fade uniformly with the icons.
     func setOnboardingLocked(_ locked: Bool) {
+        isOnboardingLocked = locked
         closeButton.isEnabled = !locked
         newChatButton.isEnabled = !locked
         chatListButton.isEnabled = !locked
@@ -362,6 +373,7 @@ final class AIChatTabChatHeaderView: UIView {
         chatListButtonPill.alpha = dimmedAlpha
         rightPairPill.alpha = dimmedAlpha
         titleContainer.alpha = dimmedAlpha
+        updateButtonShadows()
     }
 
     private func applyState() {
@@ -401,8 +413,9 @@ final class AIChatTabChatHeaderView: UIView {
         rightStack.addArrangedSubview(rightPairPill)
         pillContentSuperview(for: rightPairPill).addSubview(rightPairStack)
 
-        for control in [closeButton, chatListButton, newChatButton, tabSwitcherButton] as [UIControl] {
-            control.addGestureRecognizer(StrictBoundsTouchObserver())
+        // Only the shared right-pair pill can cross-fire between icons, so only those two are guarded.
+        for control in [newChatButton, tabSwitcherButton] as [UIControl] {
+            control.addGestureRecognizer(SiblingTouchGuard())
         }
 
         titleContainer.addSubview(freeTitleStack)
@@ -424,17 +437,17 @@ final class AIChatTabChatHeaderView: UIView {
             titleContainer.trailingAnchor.constraint(equalTo: titleHolder.trailingAnchor),
             titleContainer.bottomAnchor.constraint(equalTo: titleHolder.bottomAnchor),
 
-            closeButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            closeButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            closeButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            closeButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            chatListButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            chatListButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            chatListButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            chatListButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            newChatButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            newChatButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            newChatButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            newChatButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            tabSwitcherButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
-            tabSwitcherButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            tabSwitcherButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            tabSwitcherButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
             closeButtonPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             closeButtonPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
@@ -447,8 +460,8 @@ final class AIChatTabChatHeaderView: UIView {
             chatListButton.centerYAnchor.constraint(equalTo: chatListButtonPill.centerYAnchor),
 
             rightPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-            rightPairStack.leadingAnchor.constraint(equalTo: rightPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
-            rightPairStack.trailingAnchor.constraint(equalTo: rightPairPill.trailingAnchor, constant: -Constants.pillInnerHorizontalPadding),
+            rightPairStack.leadingAnchor.constraint(equalTo: rightPairPill.leadingAnchor),
+            rightPairStack.trailingAnchor.constraint(equalTo: rightPairPill.trailingAnchor),
             rightPairStack.topAnchor.constraint(equalTo: rightPairPill.topAnchor),
             rightPairStack.bottomAnchor.constraint(equalTo: rightPairPill.bottomAnchor),
 
@@ -615,7 +628,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     private func applyGlassChromeShadow(to view: UIView) {
         view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = 0.16
+        view.layer.shadowOpacity = isOnboardingLocked ? 0.04 : 0.16
         view.layer.shadowOffset = CGSize(width: 0, height: 8)
         view.layer.shadowRadius = 16
         view.layer.borderWidth = 0
@@ -645,12 +658,10 @@ private final class HighlightableContainerView: UIControl {
     }
 }
 
-/// Cancels the host UIControl's touch follow-through the moment the touch leaves the visible
-/// bounds. UIControl tolerates ~70pt of slack by default — fine for an isolated button, but
-/// inside our shared glass pill it lets the originally-tapped icon fire when the finger is
-/// released over a sibling icon. The flags below keep the recognizer purely observational so
-/// the control's own taps, long-press, and menus still flow normally.
-private final class StrictBoundsTouchObserver: UIGestureRecognizer {
+/// Cancels the host control's tracking once the finger moves onto a sibling control, so a tap on one
+/// icon in the shared pill can't fire when released over its neighbour. Observational only; with no
+/// siblings it never cancels, leaving the control's taps, long-press, and menus normal.
+private final class SiblingTouchGuard: UIGestureRecognizer {
     override init(target: Any?, action: Selector?) {
         super.init(target: target, action: action)
         delaysTouchesBegan = false
@@ -660,9 +671,14 @@ private final class StrictBoundsTouchObserver: UIGestureRecognizer {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesMoved(touches, with: event)
-        guard let control = view as? UIControl, let touch = touches.first else { return }
-        if !control.bounds.contains(touch.location(in: control)) {
+        guard let control = view as? UIControl,
+              let touch = touches.first,
+              let container = control.superview else { return }
+        let location = touch.location(in: container)
+        for case let sibling as UIControl in container.subviews
+        where sibling !== control && sibling.isUserInteractionEnabled && sibling.isEnabled && !sibling.isHidden && sibling.frame.contains(location) {
             control.cancelTracking(with: event)
+            return
         }
     }
 }

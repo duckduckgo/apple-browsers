@@ -50,21 +50,23 @@ struct RemoteMessagingDebugRootView: View {
         List {
             Section {
                 HStack {
-                    Text("Days Since Installed")
+                    Text(verbatim: "Days Since Installed")
                         .font(.system(size: 15))
                     Spacer()
                     Text(model.currentDaysSinceInstalled.map(String.init) ?? "Not set")
                         .font(.system(size: 15))
                         .foregroundStyle(Color(baseColor: .gray70))
                 }
-                Button("Set Days Since Installed…") {
+                Button {
                     daysInput = model.currentDaysSinceInstalled.map(String.init) ?? ""
                     isShowingDaysAlert = true
+                } label: {
+                    Text(verbatim: "Set Days Since Installed…")
                 }
             } header: {
-                Text("Install Date")
+                Text(verbatim: "Install Date")
             } footer: {
-                Text("Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Refresh Config” afterwards to re-evaluate.")
+                Text(verbatim: "Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Refresh Config” afterwards to re-evaluate.")
             }
 
             Section {
@@ -151,6 +153,17 @@ struct RemoteMessagingDebugRootView: View {
                 }
             } footer: {
                 Text("Shows logs from the last minute, to help diagnose issues immediately after a refresh.")
+            }
+
+            Section {
+                NavigationLink(destination: RemoteMessagingUIPreviewsDebugView()) {
+                    Text(verbatim: "RMF UI previews")
+                        .font(.system(size: 15))
+                }
+            } header: {
+                Text(verbatim: "Previews")
+            } footer: {
+                Text(verbatim: "Renders a UI preview of each remote message type.")
             }
         }
         .navigationTitle("Remote Messaging Debug")

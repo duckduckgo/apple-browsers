@@ -90,7 +90,29 @@ public extension BrokerProfileQueryData {
     }
 }
 
+public enum BrokerProfileQueryDataFetchReason {
+    case oneTimeMigration
+    case profileHistoryReporting
+    case specificBrokerJobDispatch
+}
+
 public extension Array where Element == BrokerProfileQueryData {
+
+    var excludingRemovedBrokers: [BrokerProfileQueryData] {
+        filter { !$0.dataBroker.isRemoved }
+    }
+
+    var excludingBrokersRequiringSubscription: [BrokerProfileQueryData] {
+        filter { !$0.dataBroker.scanRequiresSubscription }
+    }
+
+    func excludingIneligibleBrokers(isAuthenticatedUser: Bool) -> [BrokerProfileQueryData] {
+        var result = excludingRemovedBrokers
+        if !isAuthenticatedUser {
+            result = result.excludingBrokersRequiringSubscription
+        }
+        return result
+    }
 
     func latestScanLastRunDate() -> Date? {
         self.lazy.compactMap { $0.scanJobData.lastRunDate }.max()

@@ -55,6 +55,26 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User triggered a plan change by cancelling a pending downgrade
     case cancelDowngrade = "funnel_canceldowngrade_ios"
+
+    /// User entered the funnel via the VPN access-revoked alert when their subscription was revoked.
+    case vpnAccessRevokedAlert = "funnel_alert_ios__subscriptionvpnrevoked"
+
+    // MARK: - VPN Entry Points (non-subscriber fallback)
+
+    /// User entered the funnel by tapping the customizable toolbar VPN button without an active VPN entitlement.
+    case toolbarVPN = "funnel_toolbar_ios__subscriptionvpn"
+
+    /// User entered the funnel by tapping the customizable address-bar VPN button without an active VPN entitlement.
+    case addressBarVPN = "funnel_addressbar_ios__subscriptionvpn"
+
+    /// User entered the funnel via the VPN Control Center widget / App Intent deep link without an active VPN entitlement.
+    case widgetVPN = "funnel_widget_ios__subscriptionvpn"
+
+    /// User entered the funnel via the home-screen app-icon VPN quick action without an active VPN entitlement.
+    case shortcutVPN = "funnel_integration_ios_shortcut_subscriptionvpn"
+
+    /// User entered the funnel by tapping the VPN push notification without an active VPN entitlement.
+    case notificationVPN = "funnel_notification_ios__subscriptionvpn"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the iOS app.

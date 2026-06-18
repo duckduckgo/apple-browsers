@@ -270,14 +270,23 @@ public extension DDGError /*CustomNSError*/ {
     ///
     /// - Returns: A dictionary suitable for use as NSError userInfo.
     var errorUserInfo: [String: Any] {
+        // `description` is exposed both as the debug description and as the localized description.
+        // Populating `NSLocalizedDescriptionKey` ensures that once the error is bridged to `NSError`
+        // (e.g. when passed to PixelKit or any logging that reads `localizedDescription`), the
+        // meaningful description is surfaced instead of the generic
+        // "The operation couldn’t be completed. (domain error code.)" fallback.
         var result: [String: Any] = [
-            NSDebugDescriptionErrorKey: description
+            NSDebugDescriptionErrorKey: description,
+            NSLocalizedDescriptionKey: description
         ]
         if let underlying = underlyingError {
             result[NSUnderlyingErrorKey] = underlying
         }
         if let localisedError = self as? LocalizedError {
-            result[NSLocalizedDescriptionKey] = localisedError.errorDescription
+            // A more specific localized description takes precedence over `description` when provided.
+            if let errorDescription = localisedError.errorDescription {
+                result[NSLocalizedDescriptionKey] = errorDescription
+            }
             if let failureReason = localisedError.failureReason {
                 result[NSLocalizedFailureErrorKey] = failureReason
             }

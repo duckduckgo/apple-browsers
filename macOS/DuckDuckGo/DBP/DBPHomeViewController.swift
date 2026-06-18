@@ -87,6 +87,7 @@ final class DBPHomeViewController: NSViewController {
             privacyConfig: privacyConfigurationManager,
             prefs: prefs,
             webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
+            isUserSubscribed: { Application.appDelegate.subscriptionManager.isUserAuthenticated },
             openURLHandler: { url in
                 Application.appDelegate.windowControllersManager.show(url: url, source: .link, newTab: true)
             })

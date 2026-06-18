@@ -43,6 +43,9 @@ public enum AIChatURLParameters {
     public static let sidebarName = "sidebar"
     public static let sidebarOpenValue = "open"
 
+    public static let settingsName = "settings"
+    public static let settingsOpenValue = "open"
+
     /// Appends `?mode=voice` to the given base URL.
     public static func voiceModeURL(from baseURL: URL) -> URL {
         modeURL(from: baseURL, mode: voiceModeValue)
@@ -56,6 +59,11 @@ public enum AIChatURLParameters {
     /// Appends `?sidebar=open` to the given base URL.
     public static func sidebarOpenURL(from baseURL: URL) -> URL {
         baseURL.addingOrReplacing(URLQueryItem(name: sidebarName, value: sidebarOpenValue))
+    }
+
+    /// Appends `?settings=open` to the given base URL.
+    public static func settingsOpenURL(from baseURL: URL) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: settingsName, value: settingsOpenValue))
     }
 
     /// Appends `?native-input=true` to the given base URL.

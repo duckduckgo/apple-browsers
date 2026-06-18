@@ -580,6 +580,7 @@ final class AddressBarTextField: NSTextField {
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result {
+            suggestionContainerViewModel?.prewarmRemoteSuggestionsConnection()
             reconcilePerformanceCoordinator()
             performanceCoordinator?.resetForNewInteraction()
             focusDelegate?.addressBarDidFocus(self)

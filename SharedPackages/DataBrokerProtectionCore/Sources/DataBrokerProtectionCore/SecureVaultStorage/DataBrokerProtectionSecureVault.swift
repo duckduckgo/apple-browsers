@@ -119,7 +119,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
 
-    func fetchFirstEligibleJobDate() throws -> Date?
+    func fetchFirstEligibleJobDate(excludingScanBrokerIDs brokerIDs: [Int64], includesOptOuts: Bool) throws -> Date?
 
     func save(backgroundTaskEvent: BackgroundTaskEvent) throws
     func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
@@ -564,8 +564,8 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         return try providers.crypto.decrypt(data, withKey: l2Key)
     }
 
-    public func fetchFirstEligibleJobDate() throws -> Date? {
-        return try self.providers.database.fetchFirstEligibleJobDate()
+    public func fetchFirstEligibleJobDate(excludingScanBrokerIDs brokerIDs: [Int64], includesOptOuts: Bool) throws -> Date? {
+        return try self.providers.database.fetchFirstEligibleJobDate(excludingScanBrokerIDs: brokerIDs, includesOptOuts: includesOptOuts)
     }
 
     public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {

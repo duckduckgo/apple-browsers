@@ -67,12 +67,13 @@ extension Font {
     }
 }
 
-// MARK: - Previews
+// MARK: - Debug gallery
 
-#if DEBUG
+public struct TextStylesGallery: View {
 
-private struct TextStylesGallery: View {
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 section("Label4Style — default") {
@@ -109,7 +110,7 @@ private struct TextStylesGallery: View {
     @ViewBuilder
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+            Text(verbatim: title)
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
             content()
@@ -117,13 +118,16 @@ private struct TextStylesGallery: View {
     }
 }
 
+#if DEBUG
 #Preview("Text styles / Light") {
     TextStylesGallery()
+        .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
 }
 
 #Preview("Text styles / Dark") {
     TextStylesGallery()
+        .environment(\.colorScheme, .dark)
         .preferredColorScheme(.dark)
 }
 

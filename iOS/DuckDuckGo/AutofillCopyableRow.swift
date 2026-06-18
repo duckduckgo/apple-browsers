@@ -208,3 +208,15 @@ private extension View {
         modifier(ListRowSelectableBackground(isSelected: isSelected))
     }
 }
+
+#Preview {
+    List {
+        AutofillCopyableRow(
+            title: "Username",
+            subtitle: "john.appleseed@example.com",
+            selectedCell: .constant(nil),
+            actionTitle: "Copy Username",
+            action: {}
+        )
+    }
+}

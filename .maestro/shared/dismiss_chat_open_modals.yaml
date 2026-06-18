@@ -1,0 +1,21 @@
+appId: com.duckduckgo.mobile.ios
+
+---
+
+# Dismiss the first-launch web/consent modals that can appear over the chat tab on a
+# clearState launch. The number/order is non-deterministic, so each step is conditional.
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"

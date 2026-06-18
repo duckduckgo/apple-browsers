@@ -33,7 +33,7 @@ extension OnboardingView {
         static let legacyTitleToPickerTopPadding: CGFloat = 8
         static let rebrandedTitleToPickerTopPadding: CGFloat = 16
         static let fieldToFirstChipTopPadding: CGFloat = 16
-        static let queryFieldBottomPadding: CGFloat = -8
+        static let queryFieldBottomPadding: CGFloat = 0
         static let queryFieldTopPadding: CGFloat = -12
         static let queryFieldContentSpacing: CGFloat = 8
         static let queryFieldHorizontalPadding: CGFloat = 16
@@ -50,10 +50,10 @@ extension OnboardingView {
         static let multilineFieldHeight: CGFloat = 56
         static let queryFieldActionButtonSize: CGFloat = 28
         static let queryFieldCornerRadius: CGFloat = 14
-        static let queryFieldInnerBorderInset: CGFloat = 2
         static let maxSuggestionCount = 3
-        static let legacyQueryFieldBorderWidth: CGFloat = 1
-        static let rebrandedQueryFieldBorderWidth: CGFloat = 1
+        static let queryFieldShadowColor: Color = .black.opacity(0.16)
+        static let queryFieldShadowRadius: CGFloat = 16
+        static let queryFieldShadowOffset = CGPoint(x: 0, y: 8)
 
         // MARK: Animation
         static let controlsRevealDelayAfterTitleAnimation: TimeInterval = 0.3
@@ -265,16 +265,8 @@ extension OnboardingView {
             visualStyle == .rebranded ? Metrics.rebrandedTitleToPickerTopPadding : Metrics.legacyTitleToPickerTopPadding
         }
 
-        private var accentSecondaryColor: Color {
-            visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentAltGlowPrimary)) : Color(designSystemColor: .accentGlowSecondary)
-        }
-
         private var queryFieldBackgroundColor: Color {
             visualStyle == .rebranded ? onboardingTheme.colorPalette.background : Color(designSystemColor: .surface)
-        }
-
-        private var queryFieldBorderWidth: CGFloat {
-            visualStyle == .rebranded ? Metrics.rebrandedQueryFieldBorderWidth : Metrics.legacyQueryFieldBorderWidth
         }
 
         private var initialInputFocusDelayAfterAppear: TimeInterval {
@@ -366,17 +358,9 @@ extension OnboardingView {
             .padding(.horizontal, Metrics.queryFieldHorizontalPadding)
             .padding(.vertical, Metrics.queryFieldVerticalPadding)
             .background(queryFieldBackgroundColor)
-            .overlay(
-                RoundedRectangle(cornerRadius: Metrics.queryFieldCornerRadius)
-                    .strokeBorder(accentSecondaryColor, lineWidth: queryFieldBorderWidth)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Metrics.queryFieldCornerRadius)
-                    .inset(by: Metrics.queryFieldInnerBorderInset)
-                    .strokeBorder(accentColor, lineWidth: queryFieldBorderWidth)
-            )
             .cornerRadius(Metrics.queryFieldCornerRadius)
             .frame(maxWidth: .infinity)
+            .shadow(color: Metrics.queryFieldShadowColor, radius: Metrics.queryFieldShadowRadius, x: Metrics.queryFieldShadowOffset.x, y: Metrics.queryFieldShadowOffset.y)
             .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
         }
 
@@ -514,9 +498,6 @@ extension OnboardingView {
 
 // MARK: - OnboardingQueryField
 private struct OnboardingQueryField: UIViewRepresentable {
-    private static let singleLineTopInset: CGFloat = 5.0 / 3.0
-    private static let multiLineTopInset: CGFloat = 10.0 / 3.0
-
     @Binding var text: String
     let placeholder: String
     @Binding var isFocused: Bool
@@ -573,14 +554,6 @@ private struct OnboardingQueryField: UIViewRepresentable {
         if context.coordinator.isSingleLine != isSingleLine {
             context.coordinator.isSingleLine = isSingleLine
             applyModeConfiguration(to: textView, isSingleLine: isSingleLine, context: context)
-        }
-
-        let topInset = isSingleLine ? Self.singleLineTopInset : Self.multiLineTopInset
-
-        UIView.performWithoutAnimation {
-            textView.textContainerInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
-            context.coordinator.placeholderTopConstraint?.constant = topInset
-            textView.layoutIfNeeded()
         }
 
         if isFocused {

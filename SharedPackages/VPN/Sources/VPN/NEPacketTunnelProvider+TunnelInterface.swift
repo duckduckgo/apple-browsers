@@ -25,23 +25,36 @@ extension NEPacketTunnelProvider {
     /// Resolves the tunnel's virtual `NWInterface`.
     ///
     /// Uses `virtualInterface` on iOS 18 / macOS 15 and later, where the system surfaces the tunnel
-    /// interface directly. On earlier OS versions — or if `virtualInterface` is unexpectedly nil —
-    /// falls back to looking up the interface by name through `NWPathMonitor`.
+    /// interface directly and is trusted as the source of truth. On earlier OS versions — or if
+    /// `virtualInterface` is unexpectedly nil — falls back to looking up the interface by name
+    /// through `NWPathMonitor`.
     ///
     /// `fallbackInterfaceName` is only consulted on the fallback path; on iOS 18 / macOS 15+ the
     /// system property is the source of truth and the parameter is ignored.
-    func resolveTunnelInterface(fallbackInterfaceName: String?) async -> NWInterface? {
+    ///
+    /// On the fallback path the resolved interface is validated to be a `utun`. If it isn't, the
+    /// tunnel was likely rebound underneath us and this is no longer the tunnel interface, so we
+    /// report `.unexpectedInterface` rather than handing back a non-tunnel interface to probe.
+    func resolveTunnelInterface(fallbackInterfaceName: String?) async -> LeakCheckTunnelInterface {
         if #available(iOS 18.0, macOS 15.0, *) {
             if let interface = virtualInterface {
-                return interface
+                return .resolved(interface)
             }
         }
 
-        guard let fallbackInterfaceName, Self.isTunnelInterfaceName(fallbackInterfaceName) else {
-            return nil
+        guard let fallbackInterfaceName else {
+            return .unavailable
         }
 
-        return await Self.findInterface(named: fallbackInterfaceName)
+        guard let interface = await Self.findInterface(named: fallbackInterfaceName) else {
+            return .unavailable
+        }
+
+        guard Self.isTunnelInterfaceName(interface.name) else {
+            return .unexpectedInterface
+        }
+
+        return .resolved(interface)
     }
 
     static func isTunnelInterfaceName(_ interfaceName: String) -> Bool {

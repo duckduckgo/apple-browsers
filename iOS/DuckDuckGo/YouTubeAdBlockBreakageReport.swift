@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 struct YouTubeAdBlockBreakageReportView: View {
 
@@ -67,12 +68,12 @@ struct YouTubeAdBlockBreakageReportView: View {
     }
 
     private var header: some View {
-        VStack(spacing: Constants.headerSectionSpacing) {
+        VStack(spacing: SheetMetrics.contentSpacing) {
             Image(uiImage: DesignSystemImages.Color.Size128.youTubeAdBlockWarning)
                 .resizable()
                 .frame(width: Constants.headerIconWidth, height: Constants.headerIconHeight)
 
-            VStack(spacing: Constants.headlineTextSpacing) {
+            VStack(spacing: SheetMetrics.headerSpacing) {
                 Text(UserText.youTubeAdBlockingBreakageReportTitle)
                     .daxTitle3()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -89,7 +90,7 @@ struct YouTubeAdBlockBreakageReportView: View {
     }
 
     private var buttons: some View {
-        VStack(spacing: Constants.buttonSpacing) {
+        VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
             Button {
                 onSend()
             } label: {
@@ -112,11 +113,14 @@ private extension YouTubeAdBlockBreakageReportView {
         static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 0, trailing: 24)
         static let popoverViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         static let mainSectionSpacing: CGFloat = 16
-        static let headerSectionSpacing: CGFloat = 8
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
         static let headerIconWidth: CGFloat = 128
         static let headerIconHeight: CGFloat = 96
-        static let headlineTextSpacing: CGFloat = 12
-        static let buttonSpacing: CGFloat = 8
     }
 }
+
+#if DEBUG
+#Preview {
+    YouTubeAdBlockBreakageReportView()
+}
+#endif

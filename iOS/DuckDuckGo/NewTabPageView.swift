@@ -86,11 +86,17 @@ struct NewTabPageView: View {
 struct NewTabPageLayoutConfiguration {
     let expandsEscapeHatchToAvailableWidth: Bool
     let escapeHatchHorizontalPadding: CGFloat
+    /// When true, the per-section top nudge is folded into the content's top inset, so the favorites
+    /// grid sits at the same top inset as the escape hatch. The unified toggle input needs this so the
+    /// focused embedded NTP (favorites only) and the unfocused NTP (hatch + favorites) compose alike.
+    let favoritesShareHatchTopInset: Bool
 
     static let standard = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: false,
-                                                        escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding)
+                                                        escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding,
+                                                        favoritesShareHatchTopInset: false)
     static let unifiedToggleInput = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: true,
-                                                                  escapeHatchHorizontalPadding: 0)
+                                                                  escapeHatchHorizontalPadding: 0,
+                                                                  favoritesShareHatchTopInset: true)
 }
 
 private extension NewTabPageView {
@@ -103,7 +109,7 @@ private extension NewTabPageView {
                     escapeHatchSectionView
 
                     messagesSectionView
-                        .padding(.top, Metrics.nonGridSectionTopPadding)
+                        .padding(.top, sectionTopNudge)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
 
                     if let title = viewModel.sectionTitle, !title.isEmpty {
@@ -118,7 +124,8 @@ private extension NewTabPageView {
                     FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.vertical, sectionsViewPadding(in: proxy))
+                .padding(.top, contentTopInset(in: proxy))
+                .padding(.bottom, sectionsViewPadding(in: proxy))
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
             }
@@ -145,7 +152,12 @@ private extension NewTabPageView {
     private var logoEmptyView: some View {
         GeometryReader { proxy in
             ZStack {
+                // Anchors the Lottie's geometric center to screen.midY - 55, so the visible duck
+                // lands at screen.midY - 72 — the splash storyboard's resting position. The
+                // dynamic offset compensates for the NTP body's centerY shifting based on top vs
+                // bottom omnibar chrome.
                 NewTabPageDaxLogoView()
+                    .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
                     .opacity(shouldShowLogoInEmptyState ? 1 : 0)
                     .allowsHitTesting(false)
 
@@ -154,11 +166,12 @@ private extension NewTabPageView {
                         escapeHatchSectionView
 
                         messagesSectionView
-                            .padding(.top, Metrics.nonGridSectionTopPadding)
+                            .padding(.top, sectionTopNudge)
                             .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
                     }
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .padding(.vertical, sectionsViewPadding(in: proxy))
+                    .padding(.top, contentTopInset(in: proxy))
+                    .padding(.bottom, sectionsViewPadding(in: proxy))
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 }
                 .if(dismissKeyboardOnScroll, transform: {
@@ -174,7 +187,6 @@ private extension NewTabPageView {
     private var shouldShowLogoInEmptyState: Bool {
         guard !viewModel.isLogoHidden else { return false }
         guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
-        if viewModel.escapeHatch?.tabType == .aiChat { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true
@@ -197,7 +209,7 @@ private extension NewTabPageView {
         if let escapeHatch = viewModel.escapeHatch {
             EscapeHatchView(model: escapeHatch)
                 .frame(maxWidth: escapeHatchMaxWidth)
-                .padding(.top, Metrics.nonGridSectionTopPadding)
+                .padding(.top, sectionTopNudge)
                 .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
         }
     }
@@ -240,6 +252,18 @@ private extension NewTabPageView {
 
     private func sectionsViewPadding(in geometry: GeometryProxy) -> CGFloat {
         geometry.frame(in: .local).width > Metrics.verySmallScreenWidth ? Metrics.regularPadding : Metrics.smallPadding
+    }
+
+    /// The top nudge applied to each non-grid section, unless folded into the content inset.
+    private var sectionTopNudge: CGFloat {
+        layoutConfiguration.favoritesShareHatchTopInset ? 0 : Metrics.nonGridSectionTopPadding
+    }
+
+    /// Top inset above the content stack. When the section nudge is folded in, the first section —
+    /// hatch or favorites — sits at the nudged inset, so favorites align with the hatch.
+    private func contentTopInset(in geometry: GeometryProxy) -> CGFloat {
+        let folded = layoutConfiguration.favoritesShareHatchTopInset ? Metrics.nonGridSectionTopPadding : 0
+        return sectionsViewPadding(in: geometry) + folded
     }
 }
 

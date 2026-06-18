@@ -97,7 +97,7 @@ final class UnifiedToggleInputView: UIView {
         /// Bottom padding between the input content and the card edge when the AI tools
         /// toolbar is hidden. Slightly larger than the matching top gap so the cursor doesn't
         /// crowd the card's bottom curve in Search mode.
-        static let inputBottomPadding: CGFloat = 10 //5
+        static let inputBottomPadding: CGFloat = 10
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25

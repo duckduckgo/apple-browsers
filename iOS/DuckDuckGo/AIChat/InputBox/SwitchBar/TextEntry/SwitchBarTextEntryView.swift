@@ -60,7 +60,7 @@ class SwitchBarTextEntryView: UIView {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
         static let minHeight: CGFloat = 44
-        static let minHeightAIChat: CGFloat = 56
+        static let minHeightAIChat: CGFloat = 51
         static let fontSize: CGFloat = 16
 
         // Text container insets

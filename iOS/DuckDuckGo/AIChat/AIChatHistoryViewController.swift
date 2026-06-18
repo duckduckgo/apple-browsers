@@ -103,6 +103,8 @@ final class AIChatHistoryViewController: UIViewController {
         configureToolbar()
         decorateBarsIfNeeded()
         bindViewModel()
+
+        viewModel.screenDidLoad()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -288,6 +290,7 @@ final class AIChatHistoryViewController: UIViewController {
     @objc private func fireButtonTapped(_ sender: UIBarButtonItem) {
         let count = viewModel.totalChatCount
         guard count > 0 else { return }
+        viewModel.fireAllTapped()
         let presenter = FireConfirmationPresenter()
         presenter.presentFireConfirmation(
             on: self,
@@ -324,6 +327,7 @@ final class AIChatHistoryViewController: UIViewController {
             tableView.isEditing = false
             tableView.setEditing(true, animated: true)
             isEditingChats = true
+            viewModel.editModeEntered()
         }
         configureToolbar()
         configureRightBarButtonItem()
@@ -446,6 +450,10 @@ extension AIChatHistoryViewController: UITableViewDelegate {
 // MARK: - UISearchBarDelegate
 
 extension AIChatHistoryViewController: UISearchBarDelegate {
+
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        viewModel.searchActivated()
+    }
 
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         viewModel.updateQuery(searchText)

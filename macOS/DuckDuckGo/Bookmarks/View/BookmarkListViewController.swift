@@ -462,6 +462,19 @@ final class BookmarkListViewController: NSViewController {
                 self?.updateDocumentViewHeight()
             }
         }.store(in: &cancellables)
+
+        // Bookmark favicons are lazy-loaded: `Bookmark.favicon(.small)` may return `nil` on a cache miss and the
+        // cell falls back to a default icon. When the image is decoded later, `.faviconCacheUpdated` is posted; reload
+        // the outline when the update relates to a host of one of our bookmarks (or defensively if no payload).
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate, update.hosts.isDisjoint(with: self.bookmarkManager.allHosts()) {
+                    return
+                }
+                self.reloadData()
+            }.store(in: &cancellables)
     }
 
     private func reloadData() {

@@ -1354,16 +1354,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         switch startReason {
         case .manual, .onDemand, .snoozeEnded:
             if leakCheckService == nil {
-                // Capture the interface name on the main actor; the resolver itself
-                // (which may consult NWPathMonitor) is safe to call off-main.
-                let fallbackInterfaceName = adapter.interfaceName
                 let service = VPNLeakCheckService(
                     configuration: .default,
                     egressInfo: { [weak self] in
                         await self?.currentEgressInfo()
                     },
                     tunnelInterface: { [weak self] in
-                        await self?.resolveTunnelInterface(fallbackInterfaceName: fallbackInterfaceName)
+                        guard let self else { return .unavailable }
+                        // Read the utun name live per check: the service outlives rekeys/reconnects/wake,
+                        // any of which can rebind the tunnel to a new utun. A stale name makes the
+                        // older-OS fallback (no `virtualInterface`) pin probes to the wrong interface → false leak.
+                        let currentInterfaceName = await self.tunnelInterfaceName
+                        return await self.resolveTunnelInterface(fallbackInterfaceName: currentInterfaceName)
                     },
                     tunnelPathGeneration: { [weak self] in
                         guard let self else { return 0 }

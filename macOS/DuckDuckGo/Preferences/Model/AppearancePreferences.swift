@@ -321,9 +321,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var maxNextStepsCardsDemonstrationDays: Int {
-        if let featureFlagger,
-           featureFlagger.isFeatureOn(.nextStepsListWidget) &&
-            featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) {
+        if let featureFlagger, featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) {
             return Constants.maxNextStepsCardsDemonstrationDays
         } else {
             return Constants.legacyDismissNextStepsCardsAfterDays
@@ -465,11 +463,6 @@ final class AppearancePreferences: ObservableObject {
             darkReaderFeatureSettings?.setForceDarkModeEnabled(newValue)
             objectWillChange.send()
         }
-    }
-
-    var isContinueSetUpAvailable: Bool {
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        return (privacyConfigurationManager?.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) ?? true) && osVersion.majorVersion >= 12
     }
 
     func updateUserInterfaceStyle() {

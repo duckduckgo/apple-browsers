@@ -508,7 +508,7 @@ final class UnifiedToggleInputView: UIView {
         self.isToggleEnabled = isToggleEnabled
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
-        textEntryView.style = (isToggleEnabled && handler.currentToggleState == .aiChat) ? .multiLine : .singleLine
+        textEntryView.style = (handler.currentToggleState == .aiChat) ? .multiLine : .singleLine
         setupUI()
         setupSubscriptions()
     }
@@ -652,7 +652,7 @@ final class UnifiedToggleInputView: UIView {
     func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
-        textEntryView.style = (enabled && handler.currentToggleState == .aiChat) ? .multiLine : .singleLine
+        textEntryView.style = (handler.currentToggleState == .aiChat) ? .multiLine : .singleLine
         if isExpanded {
             applyCardLayout(.collapsed, animated: false)
             applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: showsToolbar), animated: false)

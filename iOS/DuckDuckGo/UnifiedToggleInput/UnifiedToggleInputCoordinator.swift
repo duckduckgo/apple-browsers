@@ -1404,6 +1404,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return
         }
         userScript.submitChangeModel(modelId)
+        guard isModelPickerForcedVisible, userScript.canDispatchBridgeMessages else {
+            return
+        }
+        UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPixel(modelId: modelId)
     }
 
     /// Surfaces the native model picker on the **active** chat in response to the FE's
@@ -1423,6 +1427,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // expand animation before we ask the button to open its menu.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            UnifiedToggleInputCoordinatorPixelHelper.fireShowModelPickerPixel()
             self.viewController.presentModelPickerMenu()
         }
     }
@@ -1819,12 +1824,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 extension UnifiedToggleInputCoordinator {
     
     func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
+        if case .customizeResponses = identifier {
+            UnifiedToggleInputCoordinatorPixelHelper.fireCustomizeResponsesSelectedPixel()
+            viewController.handler.customizeResponsesButtonTapped()
+            return
+        }
+
         let previousTool = toolsController.selectedTool
         switch identifier {
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
         case .imageGeneration:
             toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
+        case .customizeResponses:
+            return
         }
         let currentTool = toolsController.selectedTool
         fireToolToggleTransitionPixel(previous: previousTool, current: currentTool)
@@ -2351,11 +2364,15 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     private func markActiveChatPromptSubmitted() {
+        let wasInRecoveryPickerSession = isModelPickerForcedVisible
         hasSubmittedPrompt = true
         isModelPickerForcedVisible = false
         persistModelPickerPinClearedAfterHideIfNeeded()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
+        if wasInRecoveryPickerSession {
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPromptSentPixel()
+        }
     }
 
     func syncInputBehaviorToHandler() {
@@ -2488,7 +2505,6 @@ private extension UnifiedToggleInputCoordinator {
             .sink { [weak self] in
                 guard let self else { return }
                 self.didPressCustomizeResponsesButton.send()
-                self.resetToolsSelection()
                 self.showCollapsed()
             }
             .store(in: &cancellables)

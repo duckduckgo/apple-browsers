@@ -81,7 +81,7 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     }
 
     func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {
-        delegate?.tabDidRequestAIChatHistory(tab: self)
+        delegate?.tabDidRequestAIChatHistory(tab: self, source: .contextualChat)
     }
 
     func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator) {

@@ -23,9 +23,8 @@ import UIKit
 extension TabViewController {
 
     func setupErrorActionButton() {
-        var buttonConfiguration = UIButton.Configuration.filled()
-        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
-        buttonConfiguration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
+        var buttonConfiguration = UIButton.Configuration.plain()
+        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostText)
         buttonConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24)
         buttonConfiguration.background.cornerRadius = 8
         buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
@@ -38,22 +37,23 @@ extension TabViewController {
         errorActionButton.configurationUpdateHandler = { button in
             guard var configuration = button.configuration else { return }
             if !button.isEnabled {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryTextDisabled)
-                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDisabled)
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostTextDisabled)
+                configuration.background.backgroundColor = .clear
             } else if button.isHighlighted {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
-                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryPressed)
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostTextPressed)
+                configuration.background.backgroundColor = UIColor(designSystemColor: .buttonsGhostPressedFill)
             } else {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
-                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostText)
+                configuration.background.backgroundColor = .clear
             }
             button.configuration = configuration
         }
     }
 
     func setupErrorReportBrokenSiteButton() {
-        var buttonConfiguration = UIButton.Configuration.plain()
-        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostText)
+        var buttonConfiguration = UIButton.Configuration.filled()
+        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
+        buttonConfiguration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
         buttonConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24)
         buttonConfiguration.background.cornerRadius = 8
         buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
@@ -66,14 +66,14 @@ extension TabViewController {
         errorReportBrokenSiteButton.configurationUpdateHandler = { button in
             guard var configuration = button.configuration else { return }
             if !button.isEnabled {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostTextDisabled)
-                configuration.background.backgroundColor = .clear
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryTextDisabled)
+                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDisabled)
             } else if button.isHighlighted {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostTextPressed)
-                configuration.background.backgroundColor = UIColor(designSystemColor: .buttonsGhostPressedFill)
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
+                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryPressed)
             } else {
-                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsGhostText)
-                configuration.background.backgroundColor = .clear
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
+                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
             }
             button.configuration = configuration
         }
@@ -183,10 +183,10 @@ extension TabViewController {
         labelsStack.addArrangedSubview(errorMessage)
         errorContentStack.addArrangedSubview(errorInfoImage)
         errorContentStack.addArrangedSubview(labelsStack)
-        errorContentStack.addArrangedSubview(errorActionButton)
         errorContentStack.addArrangedSubview(errorReportBrokenSiteButton)
+        errorContentStack.addArrangedSubview(errorActionButton)
         errorContentStack.setCustomSpacing(24, after: labelsStack)
-        errorContentStack.setCustomSpacing(8, after: errorActionButton)
+        errorContentStack.setCustomSpacing(8, after: errorReportBrokenSiteButton)
 
         let safeArea = rootView.safeAreaLayoutGuide
         let minHeightConstraint = error.heightAnchor.constraint(equalToConstant: 400)

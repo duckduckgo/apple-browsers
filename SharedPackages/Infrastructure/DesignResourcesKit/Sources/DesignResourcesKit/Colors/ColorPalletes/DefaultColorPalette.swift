@@ -284,6 +284,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: background.darkColor)
         case .duckAIContextualSheetBackground:
             return DynamicColor(lightColor: .white, darkColor: .x161616)
+        case .duckAIWebViewBackground:
+            return DynamicColor(lightColor: .white, darkColor: .x111111)
         case .unifiedToggleInputCardBackground:
             return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
         case .unifiedToggleInputStopButtonBackground:

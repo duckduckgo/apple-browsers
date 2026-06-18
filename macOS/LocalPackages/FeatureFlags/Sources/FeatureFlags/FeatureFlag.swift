@@ -249,6 +249,16 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
     case memoryUsageReporting
 
+    /// Lazy favicon image loading (default-ON kill switch; off reverts to the legacy eager full-image cache).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215720761295352
+    case faviconLazyImageLoading
+
+    /// Favicon storing improvements: store only the favicons the browser displays — drop favicons larger than the
+    /// max display size (64 px), downscaling the single kept larger one — instead of storing every fetched favicon.
+    /// Off follows the pre-existing path: every fetched favicon is stored at its original resolution.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215720760576164
+    case faviconStoringImprovements
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case aiChatSync
 
@@ -590,6 +600,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .memoryUsageReporting:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.memoryUsageReporting))
+        case .faviconLazyImageLoading:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconLazyImageLoading))
+        case .faviconStoringImprovements:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconStoringImprovements))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:

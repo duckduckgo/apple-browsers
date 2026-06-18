@@ -84,6 +84,16 @@ struct FaviconView: View {
             guard faviconManagement.isCacheLoaded else { return }
             timer.upstream.connect().cancel()
             refreshImage()
+        }.onReceive(NotificationCenter.default.publisher(for: .faviconCacheUpdated)) { note in
+            // A favicon image may be decoded after the initial cache-loaded trigger; refresh when
+            // the update is relevant to this view's page URL (or defensively if no payload is present).
+            guard let update = note.faviconsCacheUpdate else {
+                refreshImage()
+                return
+            }
+            if (url?.host).map(update.hosts.contains) == true {
+                refreshImage()
+            }
         }
 
     }

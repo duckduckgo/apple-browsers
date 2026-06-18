@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Prenesite DuckDuckGo v drugih napravah";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Vaši podatki so sinhronizirani!";
+"device.synced.sheet.title" = "Naprava je sinhronizirana!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Končano";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Nastavitev sinhronizacije in varnostnega kopiranja";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Priprava na sinhronizacijo";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Obnovitev sinhroniziranih podatkov";
@@ -392,10 +395,10 @@
 "sync.simplified.scan-or-view-code.connecting.title" = "V obeh napravah imejte odprto »Sync & Backup«";
 
 /* Message of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Po lepljenju kode se vrni na to napravo.";
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Po lepljenju kode se vrnite na to napravo.";
 
 /* Title of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Prilepi kodo na svojo drugo napravo";
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Prilepite kodo na svojo drugo napravo";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Ročno vnesite kodo";

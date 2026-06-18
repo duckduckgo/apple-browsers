@@ -263,6 +263,20 @@ final class BookmarksBarMenuViewController: NSViewController {
             }
             .store(in: &cancellables)
 
+        // Favicon images are decoded lazily; reload when an image becomes available for a bookmark
+        // currently shown in this menu so it isn't stuck on the letter placeholder.
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate,
+                   update.hosts.isDisjoint(with: self.bookmarkManager.allHosts()) {
+                    return
+                }
+                self.reloadData()
+            }
+            .store(in: &cancellables)
+
         subscribeToScrollingEvents()
         subscribeToMenuPopoverEvents()
         subscribeToDragDropEvents()

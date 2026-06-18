@@ -62,6 +62,8 @@ final class AIChatTabChatHeaderView: UIView {
         /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
         var isSubscriptionActive: Bool?
         var isVoiceSessionActive: Bool = false
+        /// Hides the free/upgrade title during the Duck.ai fire onboarding step.
+        var isOnboardingLocked: Bool = false
     }
 
     private var state = ViewState() {
@@ -88,8 +90,6 @@ final class AIChatTabChatHeaderView: UIView {
     lazy var closeButtonPill: UIView = makePillContainer()
     lazy var chatListButtonPill: UIView = makePillContainer()
     private lazy var rightPairPill: UIView = makePillContainer()
-
-    private var isOnboardingLocked = false
 
     private var titleSpacingConstraints: [NSLayoutConstraint] = []
 
@@ -361,7 +361,6 @@ final class AIChatTabChatHeaderView: UIView {
     /// Lock/unlock header controls during onboarding (close included — would otherwise let users escape via the NTP).
     /// Dimming is applied to the enclosing pills so the glass background and tab-count label fade uniformly with the icons.
     func setOnboardingLocked(_ locked: Bool) {
-        isOnboardingLocked = locked
         closeButton.isEnabled = !locked
         newChatButton.isEnabled = !locked
         chatListButton.isEnabled = !locked
@@ -373,11 +372,13 @@ final class AIChatTabChatHeaderView: UIView {
         chatListButtonPill.alpha = dimmedAlpha
         rightPairPill.alpha = dimmedAlpha
         titleContainer.alpha = dimmedAlpha
+        state.isOnboardingLocked = locked
         updateButtonShadows()
     }
 
     private func applyState() {
-        titleContainer.isHidden = state.isSubscriptionActive != false
+        // During fire onboarding, hide the free/upgrade title to avoid distraction.
+        titleContainer.isHidden = state.isOnboardingLocked || state.isSubscriptionActive != false
         paidTitleStack.isHidden = state.isSubscriptionActive != true
         let voiceActive = state.isVoiceSessionActive
         titleHolder.isHidden = voiceActive
@@ -628,7 +629,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     private func applyGlassChromeShadow(to view: UIView) {
         view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = isOnboardingLocked ? 0.04 : 0.16
+        view.layer.shadowOpacity = state.isOnboardingLocked ? 0.04 : 0.16
         view.layer.shadowOffset = CGSize(width: 0, height: 8)
         view.layer.shadowRadius = 16
         view.layer.borderWidth = 0

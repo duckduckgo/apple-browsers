@@ -379,6 +379,15 @@
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "既存のブックマークは複製されません。";
 
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "了解";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "すでに両方のデバイスで、このアカウントとペアリングされています。";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "すでにペアリング済み";
+
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "一部のブックマークは形式が誤っているか長すぎるため、同期されませんでした。";
 
@@ -387,6 +396,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "ブックマーク同期が一時停止中です";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "了解";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "もう一度お試しください。";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "他のデバイスから同期がキャンセルされました。";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "お使いのブラウザでduck.aiにアクセスして、「設定」に移動し、「Sync & Backup」で「オンにする」、「別のデバイスと同期」の順に選択します。";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Duck.aiの設定からこのコードをスキャンしてください。";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "一部のパスワードは形式が誤っているか長すぎるため、同期されませんでした。";
@@ -411,6 +435,9 @@
 
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "同期設定";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "別のデバイスで接続済みのDuckDuckGoブラウザを開き、このデバイスと同期してください。";
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "同期が一時停止されました。このデバイスの同期を続行する場合は、別のデバイスまたはリカバリーコードを使用して再接続してください。";
@@ -444,6 +471,12 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backupは一時的に利用できません。";
+
+/* Description for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-description" = "このコードは現在のアプリバージョンではサポートされていません。";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "DuckDuckGoブラウザを再読み込みして、もう一度お試しください。";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "同期エラー";
@@ -4578,6 +4611,21 @@
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "サーバーデータを削除しますか？";
+
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "今すぐ同期";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "「%@」が同期済みのDuckDuckGoパスワード、自動入力データ、Duck.aiチャットにアクセス可能になります。";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "「%@」が同期済みのDuck.aiチャットにアクセス可能になります。";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "新しいデバイスを同期しますか？";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "もう一方のデバイス";
 
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "アカウントは必要ありません。エンドツーエンドの暗号化により、お客様以外は誰もブックマークを見ることができません。当社ですらアクセスできません。";

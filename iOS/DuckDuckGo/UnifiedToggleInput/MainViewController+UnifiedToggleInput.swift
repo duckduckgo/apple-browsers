@@ -127,6 +127,14 @@ extension MainViewController {
         subscribeToModeChanges(coordinator)
         subscribeToSystemEvents()
         subscribeToToggleSettings()
+
+        // Immediately reconcile chrome for the already-selected tab. If a tab was
+        // selected before UTI existed (e.g. a duck.ai tab opened from onboarding
+        // before linear onboarding completed), the legacy nav bar would otherwise
+        // remain visible until the next tab-change event triggered a refresh.
+        if let currentTab {
+            refreshUnifiedToggleInput(for: currentTab)
+        }
     }
 
     func updateUnifiedToggleInputKeyboardVisibility(_ keyboardVisible: Bool) {

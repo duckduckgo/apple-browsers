@@ -132,6 +132,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Use WKDownload for favicon fetching to bypass App Transport Security restrictions on HTTP URLs
     case faviconWKDownload
 
+    /// Load favicon images from disk on demand and store them in an in-memory cache.
+    case faviconLazyImageLoading
+
+    /// Favicon storing improvements: store only the favicons the browser displays, dropping and downscaling larger ones.
+    case faviconStoringImprovements
+
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly
 

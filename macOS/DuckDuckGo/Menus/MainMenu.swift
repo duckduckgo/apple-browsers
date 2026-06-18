@@ -690,18 +690,24 @@ final class MainMenu: NSMenu {
     private var folderDelegates: [LazyBookmarkFolderMenuDelegate] = []
 
     var faviconsCancellable: AnyCancellable?
+    var faviconsCacheUpdateCancellable: AnyCancellable?
     @MainActor
     private func subscribeToFavicons(faviconManager: FaviconManagement) {
         faviconsCancellable = faviconManager.faviconsLoadedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loaded in
                 guard let self, loaded else { return }
-                if self.isLazyMenuRebuild {
-                    self.bookmarkFaviconsNeedUpdate = true
-                } else {
-                    self.updateFavicons(in: bookmarksMenu)
-                    self.updateFavicons(in: favoritesMenu)
-                }
+                self.bookmarkFaviconsNeedUpdate = true
+            }
+
+        // `faviconsLoadedPublisher` fires when favicon metadata loads, before the
+        // images are decoded. Favicon images become available lazily and post
+        // `.faviconCacheUpdated`, so also refresh the menus on that notification.
+        faviconsCacheUpdateCancellable = NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.bookmarkFaviconsNeedUpdate = true
             }
     }
 
@@ -910,6 +916,7 @@ final class MainMenu: NSMenu {
 
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
+            NSMenuItem(title: "Inspect Favicons", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "Performance Debugging") {

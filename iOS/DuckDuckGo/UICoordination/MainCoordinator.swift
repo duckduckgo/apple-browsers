@@ -753,11 +753,13 @@ extension MainCoordinator: URLHandling {
             onReadLater: { [weak self] in
                 guard let self else { return }
                 clearPromptObserver()
+                let toastMessage = self.controller.deferredReadingController.addedActionMessage()
                 self.controller.deferredReadingController.deferURL(promptState.currentURL, title: promptState.title)
                 self.controller.presentedViewController?.dismiss(animated: true) {
                     if let openedTab {
                         self.controller.closeTab(openedTab)
                     }
+                    ActionMessageView.present(message: toastMessage)
                 }
             },
             onDisappear: clearPromptObserver

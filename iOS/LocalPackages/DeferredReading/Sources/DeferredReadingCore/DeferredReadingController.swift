@@ -118,6 +118,10 @@ public final class DeferredReadingController: ObservableObject {
         rescheduleNotification()
     }
 
+    public func addedActionMessage(date: Date = Date()) -> String {
+        "Added, we'll remind you \(reminderWindowDescription(from: date))."
+    }
+
     private func updateUnreadCount() {
         unreadCount = items.reduce(into: 0) { result, item in
             if !item.isRead {
@@ -182,18 +186,33 @@ public final class DeferredReadingController: ObservableObject {
         }
     }
 
-    private func nextReminderDate() -> Date {
-        let now = nowProvider()
-        var components = calendar.dateComponents([.year, .month, .day], from: now)
+    private func nextReminderDate(from now: Date? = nil) -> Date {
+        let currentDate = now ?? nowProvider()
+        var components = calendar.dateComponents([.year, .month, .day], from: currentDate)
         components.hour = settingsController.settings.reminderHour
         components.minute = settingsController.settings.reminderMinute
 
-        let todayReminder = calendar.date(from: components) ?? now
-        if todayReminder > now {
+        let todayReminder = calendar.date(from: components) ?? currentDate
+        if todayReminder > currentDate {
             return todayReminder
         }
 
         return calendar.date(byAdding: .day, value: 1, to: todayReminder) ?? todayReminder
+    }
+
+    private func reminderWindowDescription(from now: Date) -> String {
+        let reminderDate = nextReminderDate(from: now)
+        let reminderHour = calendar.component(.hour, from: reminderDate)
+        let dayPrefix = calendar.isDate(reminderDate, inSameDayAs: now) ? "this" : "tomorrow"
+
+        switch reminderHour {
+        case ..<12:
+            return "\(dayPrefix) morning"
+        case ..<18:
+            return "\(dayPrefix) afternoon"
+        default:
+            return "\(dayPrefix) evening"
+        }
     }
 
     private func reminderBody(unreadCount: Int) -> String {

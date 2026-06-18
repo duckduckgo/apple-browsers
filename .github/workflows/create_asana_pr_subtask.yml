@@ -19,7 +19,7 @@ jobs:
             text: ${{ github.event.pull_request.body }}
 
         - name: Create or Update PR Subtask
-          uses: duckduckgo/apple-toolbox/actions/asana-create-pr-subtask@sam/add-pr-tasks-to-apple-team-code-reviews-asana-project
+          uses: duckduckgo/apple-toolbox/actions/asana-create-pr-subtask@main
           with:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
             asana-task-id: ${{ steps.get-task-id.outputs.task-id }}

@@ -163,17 +163,18 @@ struct UnifiedSuggestionsView: View {
         .ignoresSafeArea(.container, edges: .top)
     }
 
-    /// The logo's screen-center Y: it rests at `restCenterY` (the NTP anchor) but keeps `minChromeGap`
-    /// clear of the chrome on both sides — pushed down off the top chrome (`topChromeBottom`, e.g. the
-    /// top-bar hatch) and up off the bar's top edge (`barTop`, e.g. the bottom-bar omnibar). With room
-    /// on both sides the pushes are zero and it stays at rest; the two net out so it degrades gracefully
-    /// when the band is tighter than the logo itself.
+    /// The logo's screen-center Y: it rests at `restCenterY` (the NTP anchor) but keeps clear of the
+    /// chrome on both sides — pushed down off the top chrome (`topChromeBottom`, e.g. the top-bar hatch)
+    /// by `topChromeGap`, and up off the bar's top edge (`barTop`, e.g. the bottom-bar omnibar) by the
+    /// larger `bottomBarGap` (the bottom bar is tall, so the logo needs more breathing room above it).
+    /// With room on both sides the pushes are zero and it stays at rest; the two net out so it degrades
+    /// gracefully when the band is tighter than the logo itself.
     private static func logoCenterY(restingAt restCenterY: CGFloat,
                                     topChromeBottom: CGFloat,
                                     barTop: CGFloat) -> CGFloat {
         let halfHeight = Metrics.logoHeight / 2
-        let downPush = max(0, topChromeBottom + Metrics.minChromeGap - (restCenterY - halfHeight))
-        let upPush = max(0, (restCenterY + halfHeight) + Metrics.minChromeGap - barTop)
+        let downPush = max(0, topChromeBottom + Metrics.topChromeGap - (restCenterY - halfHeight))
+        let upPush = max(0, (restCenterY + halfHeight) + Metrics.bottomBarGap - barTop)
         return restCenterY + downPush - upPush
     }
 
@@ -181,9 +182,11 @@ struct UnifiedSuggestionsView: View {
         /// Mirrors `NewTabPageDaxLogoView`'s screen-center offset so the focused Search logo lands exactly
         /// where the NTP logo sits — keep in sync with that view.
         static let logoScreenCenterOffset: CGFloat = 55
-        /// Minimum gap kept between the logo and the chrome on either side (top hatch / bottom bar); the
-        /// logo only moves once the chrome comes closer than this. Tune.
-        static let minChromeGap: CGFloat = 16
+        /// Min gap kept below the top chrome (hatch) before the logo is pushed down. Tune.
+        static let topChromeGap: CGFloat = 16
+        /// Min gap kept above the bottom bar before the logo is pushed up. Larger than the top gap — the
+        /// bottom bar is tall, so the logo needs more breathing room to sit balanced above it. Tune.
+        static let bottomBarGap: CGFloat = 56
         /// Mirrors `FocusedDaxLogoView`'s height — used to find the logo's top for the overlap check.
         static let logoHeight: CGFloat = 162
     }

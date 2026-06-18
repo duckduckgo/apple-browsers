@@ -2960,7 +2960,7 @@
 "network.protection.vpn.exclude.cgnat.setting.footer" = "Anbefales å slå av, slik at all trafikken din går gjennom VPN. Hvis du har problemer med funksjoner som Wi-Fi-anrop, meldinger eller talepost, kan du prøve å slå det på.";
 
 /* Title for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.title" = "Exclude Carrier Services";
+"network.protection.vpn.exclude.cgnat.setting.title" = "Ekskluder operatørtjenester";
 
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "La lokal trafikk omgå VPN-et og koble til enheter på det lokale nettverket, for eksempel en skriver.";

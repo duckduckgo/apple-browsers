@@ -3158,7 +3158,7 @@
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo oferuje również %1$@, dostępną wraz z %2$@ i %3$@.";
 
 /* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "pažangiu, privačiu dirbtiniu intelektu";
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "zaawansowana, prywatna AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "opcjonalną płatną subskrypcję";

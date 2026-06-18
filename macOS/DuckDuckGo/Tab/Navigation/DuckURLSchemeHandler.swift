@@ -34,6 +34,9 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
     /// image decode). Used to skip messaging a task that WebKit has already stopped.
     private var runningFaviconTasks = Set<ObjectIdentifier>()
 
+    /// Debug-only Favicons inspector served at `duck://favicons` (Debug ▸ Inspect Favicons).
+    private lazy var faviconsDebugInspector = FaviconsDebugInspector(faviconManager: faviconManager)
+
     init(
         featureFlagger: FeatureFlagger,
         faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager,
@@ -78,6 +81,11 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
             default:
                 handleSpecialPages(urlSchemeTask: urlSchemeTask)
             }
+        case .favicons:
+            guard featureFlagger.internalUserDecider.isInternalUser else {
+                fallthrough
+            }
+            faviconsDebugInspector.handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         default:
             handleNativeUIPages(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         }
@@ -87,6 +95,7 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
         // A favicon task may still be awaiting its image decode; drop it so the pending completion is
         // skipped instead of messaging a stopped task (which would crash).
         runningFaviconTasks.remove(ObjectIdentifier(urlSchemeTask))
+        faviconsDebugInspector.webViewDidStop(urlSchemeTask)
     }
 
     private lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
@@ -379,6 +388,7 @@ private extension URL {
         case newTab
         case history
         case favicon
+        case favicons
         case customBackgroundImage
         case customBackgroundImageThumbnail
         case onboarding
@@ -406,6 +416,8 @@ private extension URL {
             return .newTab
         } else if self.isFavicon {
             return .favicon
+        } else if self.isFavicons {
+            return .favicons
         } else if self.isHistory {
             return .history
         } else {

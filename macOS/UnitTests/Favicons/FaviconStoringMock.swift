@@ -28,6 +28,8 @@ final class FaviconStoringMock: FaviconStoring {
     var faviconsToLoad: [Favicon] = []
     var metadataToLoad: [FaviconMetadata] = []
     var imagesByIdentifier: [UUID: NSImage] = [:]
+    var hostReferencesToLoad: [FaviconHostReference] = []
+    var urlReferencesToLoad: [FaviconUrlReference] = []
 
     // When set, `loadImage(for:)` throws this error instead of returning an image,
     // simulating an undecodable (corrupt) stored bitmap.
@@ -40,6 +42,8 @@ final class FaviconStoringMock: FaviconStoring {
     private(set) var loadImageIdentifiers: [UUID] = []
     private(set) var removeFaviconsCallCount = 0
     private(set) var removedFaviconIdentifiers: [UUID] = []
+    private(set) var removedHostReferenceIdentifiers: [UUID] = []
+    private(set) var removedUrlReferenceIdentifiers: [UUID] = []
 
     // Fulfilled when `removeFavicons(_:)` is called, so tests can await asynchronous removals.
     var removeFaviconsExpectation: XCTestExpectation?
@@ -69,12 +73,12 @@ final class FaviconStoringMock: FaviconStoring {
 
     func removeFavicons(_ favicons: [Favicon]) async throws {
         removeFaviconsCallCount += 1
-        removedFaviconIdentifiers.append(contentsOf: favicons.map { $0.identifier })
+        removedFaviconIdentifiers.append(contentsOf: favicons.map(\.identifier))
         removeFaviconsExpectation?.fulfill()
     }
 
     func loadFaviconReferences() async throws -> ([FaviconHostReference], [FaviconUrlReference]) {
-        ([], [])
+        (hostReferencesToLoad, urlReferencesToLoad)
     }
 
     func save(hostReference: FaviconHostReference) async throws {
@@ -86,11 +90,11 @@ final class FaviconStoringMock: FaviconStoring {
     }
 
     func remove(hostReferences: [FaviconHostReference]) async throws {
-        ()
+        removedHostReferenceIdentifiers.append(contentsOf: hostReferences.map(\.identifier))
     }
 
     func remove(urlReferences: [FaviconUrlReference]) async throws {
-        ()
+        removedUrlReferenceIdentifiers.append(contentsOf: urlReferences.map(\.identifier))
     }
 
 }

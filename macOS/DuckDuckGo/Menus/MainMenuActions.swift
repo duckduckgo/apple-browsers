@@ -1481,6 +1481,11 @@ extension MainViewController {
         browserTabViewController.openNewTab(with: .bookmarks)
     }
 
+    @objc func inspectFavicons(_ sender: Any?) {
+        makeKeyIfNeeded()
+        browserTabViewController.openNewTab(with: .url(.favicons, source: .ui))
+    }
+
     @objc func showHistory(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .anyHistoryPane)

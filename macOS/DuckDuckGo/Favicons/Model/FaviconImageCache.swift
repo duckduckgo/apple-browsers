@@ -60,6 +60,16 @@ protocol FaviconImageCaching {
                      exceptSavedLogins logins: Set<String>,
                      exceptHistoryDomains history: Set<String>,
                      tld: TLD) async -> Result<Void, Error>
+
+    /// Debug/admin: deletes the favicon image records with the given identifiers from memory + store and
+    /// posts `.faviconCacheUpdated`. References pointing at a deleted favicon resolve to a cache miss and
+    /// re-fetch on the next visit. No-op for an empty set.
+    @MainActor
+    func removeFavicons(withIdentifiers identifiers: Set<UUID>) async
+
+    /// Debug/admin: deletes every cached favicon image record (memory + store) and posts `.faviconCacheUpdated`.
+    @MainActor
+    func removeAllFavicons() async
 }
 
 final class FaviconImageCache: FaviconImageCaching {
@@ -302,6 +312,40 @@ final class FaviconImageCache: FaviconImageCaching {
         }
     }
 
+    // MARK: - Debug / admin removal
+
+    @MainActor
+    func removeFavicons(withIdentifiers identifiers: Set<UUID>) async {
+        guard !identifiers.isEmpty else { return }
+        await deleteFaviconsAndNotify { identifiers.contains($0.identifier) }
+    }
+
+    @MainActor
+    func removeAllFavicons() async {
+        await deleteFaviconsAndNotify { _ in true }
+    }
+
+    /// Removes matching favicons. The set to delete is resolved from the store — the inspector's source
+    /// of truth — rather than the in-memory `entries`, which may not yet hold every stored row (e.g.
+    /// before `load()` finishes); filtering memory would let deletes silently no-op while the store keeps
+    /// the rows. Deletes from the store, evicts any in-memory copies (metadata map + decoded-image
+    /// NSCache), and posts `.faviconCacheUpdated` so open UI re-resolves. Unlike the private
+    /// `removeFavicons(filter:)` used by clean/burn, this always notifies.
+    @MainActor
+    private func deleteFaviconsAndNotify(filter isRemoved: (FaviconMetadata) -> Bool) async {
+        let toRemove = ((try? await storing.loadFaviconMetadata()) ?? []).filter(isRemoved)
+        guard !toRemove.isEmpty else { return }
+        for metadata in toRemove {
+            entries[metadata.url] = nil
+            imageCache.removeObject(forKey: metadata.url as NSURL)
+        }
+        await removeFaviconsFromStore(toRemove)
+        NotificationCenter.default.postFaviconCacheUpdated(
+            faviconURLs: Set(toRemove.map(\.url)),
+            documentURLs: Set(toRemove.map(\.documentUrl))
+        )
+    }
+
     // MARK: - Private
 
     @discardableResult
@@ -541,6 +585,33 @@ final class EagerFaviconImageCache: FaviconImageCaching {
                 && !logins.contains(host)
                 && !history.contains(host)
         }
+    }
+
+    // MARK: - Debug / admin removal
+
+    @MainActor
+    func removeFavicons(withIdentifiers identifiers: Set<UUID>) async {
+        guard !identifiers.isEmpty else { return }
+        await deleteFaviconsAndNotify { identifiers.contains($0.identifier) }
+    }
+
+    @MainActor
+    func removeAllFavicons() async {
+        await deleteFaviconsAndNotify { _ in true }
+    }
+
+    /// See the lazy `FaviconImageCache` twin: resolves the set to delete from the store (the inspector's
+    /// source of truth) rather than the in-memory `entries`, so deletes don't no-op before `load()` finishes.
+    @MainActor
+    private func deleteFaviconsAndNotify(filter isRemoved: (FaviconMetadata) -> Bool) async {
+        let toRemove = ((try? await storing.loadFaviconMetadata()) ?? []).filter(isRemoved)
+        guard !toRemove.isEmpty else { return }
+        toRemove.forEach { entries[$0.url] = nil }
+        await removeFaviconsFromStore(toRemove.map { $0.asFaviconWithoutImage() })
+        NotificationCenter.default.postFaviconCacheUpdated(
+            faviconURLs: Set(toRemove.map(\.url)),
+            documentURLs: Set(toRemove.map(\.documentUrl))
+        )
     }
 
     // MARK: - Private

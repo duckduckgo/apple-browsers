@@ -89,6 +89,115 @@ final class DuckSchemeHandlerTests: XCTestCase {
         XCTAssertNil(task.error)
     }
 
+    // MARK: - Favicons inspector (duck://favicons)
+
+    @MainActor
+    func testFaviconsInspectorServesPageHTML() throws {
+        let inspector = FaviconsDebugInspector(faviconManager: FaviconManagerMock())
+        let task = MockSchemeTask(request: URLRequest(url: URL.favicons))
+
+        inspector.handle(requestURL: URL.favicons, urlSchemeTask: task)
+
+        XCTAssertEqual(task.response?.mimeType, "text/html")
+        let html = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertTrue(html.contains("Favicons"))
+        XCTAssertTrue(html.contains("/app.js"))
+        XCTAssertTrue(task.didFinishCalled)
+    }
+
+    @MainActor
+    func testFaviconsInspectorServesAppScript() throws {
+        let inspector = FaviconsDebugInspector(faviconManager: FaviconManagerMock())
+        let url = try XCTUnwrap(URL(string: "duck://favicons/app.js"))
+        let task = MockSchemeTask(request: URLRequest(url: url))
+
+        inspector.handle(requestURL: url, urlSchemeTask: task)
+
+        XCTAssertEqual(task.response?.mimeType, "text/javascript")
+        let js = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertTrue(js.contains("/api/list"))
+        XCTAssertTrue(task.didFinishCalled)
+    }
+
+    @MainActor
+    func testFaviconsInspectorListReturnsJSON() async throws {
+        let faviconManager = FaviconManagerMock()
+        let identifier = UUID()
+        faviconManager.debugMetadata = [
+            FaviconMetadata(identifier: identifier,
+                            url: try XCTUnwrap("https://example.com/favicon.ico".url),
+                            documentUrl: try XCTUnwrap("https://example.com".url),
+                            dateCreated: Date(),
+                            relation: .favicon)
+        ]
+        let inspector = FaviconsDebugInspector(faviconManager: faviconManager)
+        let url = try XCTUnwrap(URL(string: "duck://favicons/api/list"))
+        let task = MockSchemeTask(request: URLRequest(url: url))
+        let finished = expectation(description: "list finished")
+        task.onCompletion = { finished.fulfill() }
+
+        inspector.handle(requestURL: url, urlSchemeTask: task)
+        await fulfillment(of: [finished], timeout: 5)
+
+        XCTAssertEqual(task.response?.mimeType, "application/json")
+        let json = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertTrue(json.contains("example.com"))
+        XCTAssertTrue(json.contains(identifier.uuidString))
+    }
+
+    @MainActor
+    func testFaviconsInspectorDeleteRemovesFaviconsAndReportsCount() async throws {
+        let faviconManager = FaviconManagerMock()
+        let identifier = UUID()
+        faviconManager.debugMetadata = [
+            FaviconMetadata(identifier: identifier,
+                            url: try XCTUnwrap("https://example.com/favicon.ico".url),
+                            documentUrl: try XCTUnwrap("https://example.com".url),
+                            dateCreated: Date(),
+                            relation: .favicon)
+        ]
+        let inspector = FaviconsDebugInspector(faviconManager: faviconManager)
+        let url = try XCTUnwrap(URL(string: "duck://favicons/api/delete?ids=\(identifier.uuidString)"))
+        let task = MockSchemeTask(request: URLRequest(url: url))
+        let finished = expectation(description: "delete finished")
+        task.onCompletion = { finished.fulfill() }
+
+        inspector.handle(requestURL: url, urlSchemeTask: task)
+        await fulfillment(of: [finished], timeout: 5)
+
+        XCTAssertEqual(faviconManager.deletedIdentifiers, [[identifier]])
+        let json = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertTrue(json.contains("\"deleted\":1"))
+    }
+
+    @MainActor
+    func testFaviconsInspectorIsNotServedToNonInternalUsers() throws {
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: false))
+        let handler = DuckURLSchemeHandler(featureFlagger: featureFlagger, faviconManager: FaviconManagerMock())
+        let task = MockSchemeTask(request: URLRequest(url: URL.favicons))
+
+        // Route through the scheme handler (where the internal-user gate lives), not the inspector directly.
+        handler.webView(WKWebView(), start: task)
+
+        // For non-internal users duck://favicons falls through to the empty native UI page — not the inspector.
+        let html = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertFalse(html.contains("Favicons"))
+        XCTAssertFalse(html.contains("/app.js"))
+    }
+
+    @MainActor
+    func testFaviconsInspectorIsServedToInternalUsers() throws {
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true))
+        let handler = DuckURLSchemeHandler(featureFlagger: featureFlagger, faviconManager: FaviconManagerMock())
+        let task = MockSchemeTask(request: URLRequest(url: URL.favicons))
+
+        handler.webView(WKWebView(), start: task)
+
+        let html = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertTrue(html.contains("Favicons"))
+        XCTAssertTrue(html.contains("/app.js"))
+    }
+
     private func makeTestImage() -> NSImage {
         let rep = NSBitmapImageRep(
             bitmapDataPlanes: nil,

@@ -40,6 +40,12 @@ final class FaviconManagerMock: FaviconManagement {
         imagesByHost[host] = image
     }
 
+    // MARK: - FaviconManagementDebugging test storage
+    var debugMetadata: [FaviconMetadata] = []
+    var debugImagesByIdentifier: [UUID: NSImage] = [:]
+    private(set) var deletedIdentifiers: [Set<UUID>] = []
+    private(set) var deleteAllFaviconsCallCount = 0
+
     // MARK: - FaviconManagement
 
     func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> Favicon? {
@@ -95,6 +101,27 @@ final class FaviconManagerMock: FaviconManagement {
 
     func burnDomains(_ domains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins: Set<String>, exceptExistingHistory history: BrowsingHistory, tld: TLD) async -> Result<Void, Error> {
         return .success(())
+    }
+}
+
+extension FaviconManagerMock: FaviconManagementDebugging {
+
+    func allFaviconsMetadata() async -> [FaviconMetadata] {
+        debugMetadata
+    }
+
+    func faviconImage(withIdentifier identifier: UUID) async -> NSImage? {
+        debugImagesByIdentifier[identifier]
+    }
+
+    func deleteFavicons(withIdentifiers identifiers: Set<UUID>) async {
+        deletedIdentifiers.append(identifiers)
+        debugMetadata.removeAll { identifiers.contains($0.identifier) }
+    }
+
+    func deleteAllFavicons() async {
+        deleteAllFaviconsCallCount += 1
+        debugMetadata.removeAll()
     }
 }
 #endif

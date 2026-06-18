@@ -33,11 +33,13 @@ struct FaviconsCacheUpdate {
     /// Favicon image URLs whose image just became available.
     let faviconURLs: Set<URL>
 
-    /// Document (page) URLs the favicons belong to.
-    let documentURLs: Set<URL>
+    /// Hosts the favicons belong to.
+    let hosts: Set<String>
 
-    /// Hosts of `documentURLs`, for observers keyed by host.
-    var hosts: Set<String> { Set(documentURLs.compactMap(\.host)) }
+    init(faviconURLs: Set<URL>, documentURLs: some Sequence<URL>) {
+        self.faviconURLs = faviconURLs
+        self.hosts = Set(documentURLs.compactMap(\.host))
+    }
 
 }
 
@@ -54,7 +56,7 @@ extension NotificationCenter {
 
     /// Posts `.faviconCacheUpdated` describing which favicons just became available, so observers
     /// can reload selectively.
-    func postFaviconCacheUpdated(faviconURLs: Set<URL>, documentURLs: Set<URL>) {
+    func postFaviconCacheUpdated(faviconURLs: Set<URL>, documentURLs: some Sequence<URL>) {
         post(name: .faviconCacheUpdated,
              object: nil,
              userInfo: [FaviconsCacheUpdate.userInfoKey: FaviconsCacheUpdate(faviconURLs: faviconURLs, documentURLs: documentURLs)])

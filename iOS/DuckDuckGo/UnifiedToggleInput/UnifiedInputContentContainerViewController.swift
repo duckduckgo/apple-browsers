@@ -120,8 +120,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// Duck.ai sync-promo presenter; nil when there's no sync service.
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
         syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
-    /// Built once — its show/hide is driven reactively by `setSyncPromoVisible`, so there's no need
-    /// to reconstruct it on every `updateSyncPromo`.
+    /// Built once and rebound into the pinned chrome by `updatePinnedChrome`; its show/hide rides
+    /// `isSyncPromoCardVisible`, so there's no need to reconstruct it each time.
     private lazy var syncPromoView = AnyView(AIChatSyncPromoView(
         onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
         onCloseTap: { [weak self] in self?.handleSyncPromoClose() }))
@@ -307,9 +307,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
-        // The chrome (hatch + sync-promo) is pinned to the bar by the container (below), not rendered
-        // in the SwiftUI host, so the host header stays empty.
-        unifiedSuggestionsHost?.setEscapeHatch(nil)
+        // The chrome (hatch + sync-promo) is pinned to the bar (see below), not rendered in the host.
         updatePinnedChrome()
         updateSingleHostTopOffset()
         // The dax offset depends on hatch presence (`hatchClearance` is added when present),
@@ -638,8 +636,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // top safe-area inset of its own.
         host.setAdditionalTopInset(0)
         updateSingleHostTopOffset()
-        // Chrome (hatch + sync-promo) is pinned to the bar by the container, not rendered in the host.
-        host.setEscapeHatch(nil)
         unifiedSuggestionsHost = host
         updatePinnedChrome()
     }

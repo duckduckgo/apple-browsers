@@ -25,58 +25,18 @@ struct UnifiedSuggestionsView: View {
 
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
-    let header: AnyView?
-    /// Duck.ai sync-promo card; shown below the hatch in non-typing states. nil when hidden.
-    let syncPromo: AnyView?
     /// Built lazily by the host for the `.favorites` state; nil when favorites aren't supported (Duck.ai).
     let favoritesProvider: () -> NewTabPageViewController?
 
     var body: some View {
-        // The escape hatch is one persistent element above the content — NOT duplicated inside the
-        // recents List header and the favorites/logo overlay. Re-creating it across those subtrees
-        // on a mode switch made it jump instead of gliding with the input; a single instance rides
-        // the inset animation in both directions.
-        // The logo overlays the chrome+content, anchored to the keyboard (the host's fixed bottom)
-        // rather than living in the VStack flow — so neither the chrome above nor the bar-driven top
-        // inset can move it on a Search↔Duck.ai toggle.
+        // The chrome (escape hatch + sync-promo) is pinned to the bar by the container (it rides the
+        // bar's UIKit animation in the same layout pass), so it's not in this host. The logo overlays
+        // the content, anchored to the keyboard (the host's fixed bottom) so neither the bar-driven top
+        // inset nor a Search↔Duck.ai toggle moves it.
         ZStack(alignment: .bottom) {
-            VStack(spacing: 0) {
-                if showsHatch, let header {
-                    header
-                        .padding(.horizontal, Metrics.contentHorizontalMargin)
-                        .padding(.top, hatchTopInset)
-                        .padding(.bottom, Metrics.hatchBottomInset)
-                }
-                if isNonTypingState, viewModel.showsSyncPromo, let syncPromo {
-                    syncPromo
-                        .padding(.horizontal, Metrics.contentHorizontalMargin)
-                        .padding(.top, showsHatch ? Metrics.syncPromoInterCardSpacing : hatchTopInset)
-                        .padding(.bottom, Metrics.hatchBottomInset)
-                }
-                contentArea
-            }
+            contentArea
             logoLayer
         }
-    }
-
-    /// The non-typing states (favorites / logo / recents), mirroring legacy `isQueryActive`; the
-    /// search / duck.ai suggestion lists are the typing states.
-    private var isNonTypingState: Bool {
-        switch viewModel.content {
-        case .favorites, .logo: return true
-        case .list(let kind): return kind == .recents
-        }
-    }
-
-    /// The hatch additionally requires a header model.
-    private var showsHatch: Bool {
-        header != nil && isNonTypingState
-    }
-
-    /// Top bar: the hatch sits 6pt below the input's bottom margin (Figma). Bottom bar: it keeps the
-    /// larger inset that lines it up with the NTP escape hatch.
-    private var hatchTopInset: CGFloat {
-        isAddressBarAtBottom ? Metrics.hatchTopInsetBottomBar : Metrics.hatchTopInsetTopBar
     }
 
     private var contentArea: some View {
@@ -192,15 +152,6 @@ struct UnifiedSuggestionsView: View {
     }
 
     private enum Metrics {
-        /// Matches the NTP's `sectionsViewHorizontalPadding` (regularPadding) so the hatch and the
-        /// suggestion list share the favorites grid's side margins.
-        static let contentHorizontalMargin: CGFloat = 24
-        /// Top bar: 6pt below the input (Figma). Bottom bar: lines the hatch up with the NTP hatch.
-        static let hatchTopInsetTopBar: CGFloat = 6
-        static let hatchTopInsetBottomBar: CGFloat = 16
-        static let hatchBottomInset: CGFloat = 16
-        /// Gap between the escape hatch and the sync-promo card (mirrors legacy 20pt inter-card spacing).
-        static let syncPromoInterCardSpacing: CGFloat = 20
         /// Mirrors `NewTabPageDaxLogoView`'s screen-center offset so the focused Search logo lands exactly
         /// where the NTP logo sits — keep in sync with that view.
         static let logoScreenCenterOffset: CGFloat = 55

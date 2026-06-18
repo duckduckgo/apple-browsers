@@ -36,9 +36,6 @@ final class UnifiedSuggestionsHost {
     /// config's install-time value, which is stale once the bar position is finalized).
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
-    private var escapeHatchModel: EscapeHatchModel?
-    /// Duck.ai sync-promo card shown below the escape hatch in non-typing states; nil when hidden.
-    private var syncPromo: AnyView?
     private var escapeHatchTopInset: CGFloat = 0
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
@@ -91,8 +88,6 @@ final class UnifiedSuggestionsHost {
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            header: makeHeader(),
-            syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
         let hosting = UIHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
@@ -110,25 +105,6 @@ final class UnifiedSuggestionsHost {
         ])
         hosting.didMove(toParent: parentViewController)
         hostingController = hosting
-    }
-
-    func setEscapeHatch(_ model: EscapeHatchModel?) {
-        escapeHatchModel = model
-        rebuildRootView()
-    }
-
-    /// Installs (or clears) the sync-promo card view. Set once when the surface is available; its
-    /// show/hide is then driven reactively by `setSyncPromoVisible` so it animates with the content.
-    func setSyncPromo(_ view: AnyView?) {
-        guard (syncPromo == nil) != (view == nil) else { return }
-        syncPromo = view
-        rebuildRootView()
-    }
-
-    /// Toggles the sync-promo's visibility. Snaps (no animation) to match the content, which also
-    /// snaps while the promo is shown.
-    func setSyncPromoVisible(_ visible: Bool) {
-        viewModel.showsSyncPromo = visible
     }
 
     var isShowingLogo: Bool { viewModel.isShowingLogo }
@@ -229,18 +205,11 @@ final class UnifiedSuggestionsHost {
 
     // MARK: - Private
 
-    private func makeHeader() -> AnyView? {
-        guard let escapeHatchModel else { return nil }
-        return AnyView(EscapeHatchView(model: escapeHatchModel))
-    }
-
     private func rebuildRootView() {
         guard let hosting = hostingController else { return }
         hosting.rootView = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            header: makeHeader(),
-            syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
     }
 }

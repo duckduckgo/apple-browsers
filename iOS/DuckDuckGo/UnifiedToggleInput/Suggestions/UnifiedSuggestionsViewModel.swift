@@ -39,9 +39,6 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     }
 
     @Published private(set) var content: UnifiedSuggestionsContentKind = .logo
-    /// Reactive sync-promo visibility (driven by the container) so show/hide animates with the
-    /// content crossfade instead of snapping via a root-view rebuild.
-    @Published var showsSyncPromo = false
     /// The empty-state logo's presentation (mark / morph / speed). All its transitions are pure, so
     /// the morph rules are tested in `FocusedLogoModelTests`.
     @Published private(set) var logoModel = FocusedLogoModel()
@@ -96,11 +93,10 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
 
     /// Crossfades only when a mode switch changes the content *type* (e.g. favorites↔recents,
     /// list↔logo). List↔list keeps the mounted list, and same-mode changes (typing, deletions)
-    /// stay snappy. When the sync promo is showing, snap instead — crossfading the recents under the
-    /// collapsing promo card makes them flash over its space.
+    /// stay snappy.
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool) {
         guard newContent != content else { return }
-        if modeChanged && !Self.sameCategory(content, newContent) && !showsSyncPromo {
+        if modeChanged && !Self.sameCategory(content, newContent) {
             withAnimation(.easeInOut(duration: 0.2)) { content = newContent }
         } else {
             content = newContent

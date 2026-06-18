@@ -114633,10 +114633,28 @@
       "comment" : "Strict routing setting description. The 'Learn more' text is a Markdown link.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empfohlen in Netzwerken, denen du nicht vertraust, z. B. öffentliches WLAN in Hotels, Bars usw. Solltest du Probleme mit Funktionen (wie AirDrop, Sidecar usw.) oder der Verbindung zu anderen Geräten haben, versuche, diese zu deaktivieren. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like AirDrop, Sidecar, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recomendado en redes en las que no confías, p. ej., redes Wi-Fi públicas en hoteles, bares, etc. Si tienes problemas con las funciones (como AirDrop, Sidecar, etc.) o al conectarte a otros dispositivos, intenta apagarlo. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommandé sur les réseaux que vous jugez non fiables, comme le Wi-Fi public dans les hôtels, bars, etc. Si vous rencontrez des problèmes avec les fonctionnalités (comme AirDrop, Sidecar, etc.) ou la connexion à d’autres appareils, essayez de le désactiver. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
           }
         },
         "it" : {
@@ -115095,10 +115113,28 @@
       "comment" : "Strict routing setting title",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Striktes Routing"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Strict routing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enrutamiento estricto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Routage strict"
           }
         },
         "it" : {

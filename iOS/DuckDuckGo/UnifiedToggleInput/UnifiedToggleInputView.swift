@@ -885,11 +885,8 @@ final class UnifiedToggleInputView: UIView {
             applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
         case (_, _):
             applyCardLayout(.collapsed, animated: false)
-            // For toggle-disabled: the inline dismiss button shifts the textEntryView's leading
-            // edge inward (reducing its width) when expanded. Pre-apply that constraint here,
-            // before the UIView.animate block, so the text area is already at its final width
-            // when the card height animation begins — without this the width change animates
-            // alongside card expansion and text visibly shrinks from the right.
+            // Pre-apply the inline dismiss leading inset so the text area is already at its
+            // final width before animation — otherwise the width change animates with the card.
             if !isToggleEnabled {
                 UIView.performWithoutAnimation {
                     self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: true)

@@ -579,9 +579,8 @@ class SwitchBarTextEntryView: UIView {
 
         if animated {
             if usesTextField {
-                // Apply the inset change before the crossfade so the text area
-                // is already at its final width when the button fades in —
-                // UITextField's editingRect is crisp and the shrink is visible.
+                // Apply inset before crossfade so UITextField's editingRect is at its final width
+                // when the button fades in — the change is instant and visible otherwise.
                 apply()
                 UIView.transition(with: buttonsView,
                                   duration: Constants.buttonStateAnimationDuration,
@@ -1018,9 +1017,8 @@ class SwitchBarTextEntryView: UIView {
     private var visibleTextLeadingWindowX: CGFloat {
         if placeholderLabel.isHidden {
             if usesTextField {
-                // Mirror how the omnibar measures its text position: use the text rect's leading
-                // edge (textLeftInset), not firstRect — UITextField's firstRect can reflect internal
-                // scroll state and give wrong values during dismiss.
+                // Use textLeftInset, not firstRect — firstRect reflects internal scroll state
+                // and gives wrong values during the dismiss animation.
                 return textField.convert(CGPoint(x: textField.textLeftInset, y: 0), to: nil).x
             } else if let end = textView.position(from: textView.beginningOfDocument, offset: 1),
                       let range = textView.textRange(from: textView.beginningOfDocument, to: end) {

@@ -839,10 +839,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.applyCardLayout(.collapsed, animated: false)
         let renderState = computeRenderState()
 
-        // Set text before apply so clearDismissSnapshot (called inside applyCardLayout's changes
-        // closure) sees the final button state. Without this, the handler has no text when
-        // clearDismissSnapshot fires, so the textRightInset starts at the no-button value and
-        // visibly shrinks on the first display frame once setText fires later.
+        // Set text before apply so clearDismissSnapshot sees the correct handler state when
+        // it fires inside applyCardLayout — otherwise textRightInset starts at the no-button value.
         let shouldSelectAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             setText(text)

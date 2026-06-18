@@ -665,8 +665,8 @@ final class UnifiedToggleInputView: UIView {
         }
         if isToggleEnabled {
             toggleView.setMode(mode, animated: animated)
-            textEntryView.style = mode == .aiChat ? .multiLine : .singleLine
         }
+        textEntryView.style = mode == .aiChat ? .multiLine : .singleLine
         // Drive textView pose synchronously inside the caller's UIView.animate so the
         // placeholder constraint switch animates rather than snapping when the publisher
         // subscriber fires after the animation transaction has already committed.

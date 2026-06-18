@@ -27,7 +27,6 @@ import UserNotifications
 import VPN
 import BrowserServicesKit
 import Core
-import PrivacyConfig
 
 enum NetworkProtectionNotificationsViewKind: Equatable {
     case loading

@@ -42,11 +42,12 @@ struct UnifiedSuggestionsView: View {
 
     /// On a fire tab every non-typing state is the full fire screen — favorites/recents/logo never show
     /// there (matching the legacy behaviour, where the opaque fire screen covered them). Only the typing
-    /// suggestion list shows; otherwise this opaque layer covers the content beneath. Suppressed in
-    /// landscape, where the empty state has no room (matches the unfocused NTP / legacy gate).
+    /// suggestion list shows; otherwise this opaque layer covers the content beneath. Always shown on a
+    /// fire tab (incl. landscape) — suppressing it would expose the favorites/recents the resolver still
+    /// produces underneath.
     @ViewBuilder
     private var fireLayer: some View {
-        if viewModel.isFireTab, !viewModel.isLandscape {
+        if viewModel.isFireTab {
             let showsFire = !isTypingList
             FireModeEmptyStateView(type: .tab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -21,6 +21,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
+import PreviewSnapshots
 import SwiftUI
 
 struct AIChatSyncPromoView: View {
@@ -66,11 +67,25 @@ struct AIChatSyncPromoView: View {
     }
 }
 
-#Preview {
-    AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
+struct AIChatSyncPromoView_Previews: PreviewProvider {
+
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots(
+        configurations: [
+            .init(name: "", state: Data.standard, previewDisplayName: "a"),
+            .init(name: "b", state: Data.standard, scope: .previews, preferredColorScheme: .dark)
+        ],
+        configure: { _ in
+            AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
+        }
+    )
 }
 
-#Preview {
-    AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
-        .colorScheme(.dark)
+extension AIChatSyncPromoView_Previews {
+    enum Data {
+        case standard
+    }
 }

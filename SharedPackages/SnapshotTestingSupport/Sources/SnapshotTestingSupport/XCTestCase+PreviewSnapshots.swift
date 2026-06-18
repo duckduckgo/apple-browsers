@@ -1,5 +1,5 @@
 //
-//  XCTestCase+SnapshotPreviews.swift
+//  XCTestCase+PreviewSnapshots.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
+import PreviewSnapshots
 import SwiftUI
 import XCTest
 
 public extension XCTestCase {
     func assertImageSnapshots<State>(
-        _ previews: SnapshotPreviews<State>,
+        _ previews: PreviewSnapshots<State>,
         strategy: SnapshotImageStrategy = .allAppearances,
         size: SnapshotImageSize,
         record: Bool = false,
@@ -43,7 +44,7 @@ public extension XCTestCase {
     }
 
     func assertImageSnapshots<State>(
-        _ previews: SnapshotPreviews<State>,
+        _ previews: PreviewSnapshots<State>,
         strategy: (State) -> SnapshotImageStrategy,
         size: SnapshotImageSize,
         record: Bool = false,
@@ -52,7 +53,7 @@ public extension XCTestCase {
         testName: String = #function,
         line: UInt = #line
     ) {
-        for configuration in previews.configurations where configuration.isEnabled {
+        for configuration in previews.snapshotConfigurations {
             assertImageSnapshot(
                 matching: previews.configure(configuration.state),
                 strategy: namedStrategy(
@@ -68,50 +69,6 @@ public extension XCTestCase {
                 line: line
             )
         }
-    }
-
-    func assertImageSnapshots<Provider: SnapshotPreviewProvider>(
-        _ provider: Provider.Type,
-        strategy: SnapshotImageStrategy = .allAppearances,
-        size: SnapshotImageSize,
-        record: Bool = false,
-        perceptualPrecision: Float = 0.98,
-        file: StaticString = #filePath,
-        testName: String = #function,
-        line: UInt = #line
-    ) {
-        assertImageSnapshots(
-            provider.snapshotPreviews,
-            strategy: strategy,
-            size: size,
-            record: record,
-            perceptualPrecision: perceptualPrecision,
-            file: file,
-            testName: testName,
-            line: line
-        )
-    }
-
-    func assertImageSnapshots<Provider: SnapshotPreviewProvider>(
-        _ provider: Provider.Type,
-        strategy: (Provider.State) -> SnapshotImageStrategy,
-        size: SnapshotImageSize,
-        record: Bool = false,
-        perceptualPrecision: Float = 0.98,
-        file: StaticString = #filePath,
-        testName: String = #function,
-        line: UInt = #line
-    ) {
-        assertImageSnapshots(
-            provider.snapshotPreviews,
-            strategy: strategy,
-            size: size,
-            record: record,
-            perceptualPrecision: perceptualPrecision,
-            file: file,
-            testName: testName,
-            line: line
-        )
     }
 
     private func namedStrategy(

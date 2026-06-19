@@ -1605,6 +1605,7 @@ class TabViewController: UIViewController {
                                       malicousSiteThreatKind: specialErrorPageNavigationHandler.currentThreatKind,
                                       shouldCheckServerTrust: shouldCheckServerTrust,
                                       allActiveContentScopeExperiments: contentScopeExperimentsManager.allActiveContentScopeExperiments)
+        privacyInfo.cookieConsentManaged = CookieConsentInfo.initialCPMDiagnostics
         let isCertificateInvalid = certificateTrustEvaluator
             .evaluateCertificateTrust(trust: webView.serverTrust)
             .map { !$0 }
@@ -3841,7 +3842,12 @@ extension ConsentStatusInfo {
             selftestFailed: selftestFailed,
             consentReloadLoop: consentReloadLoop,
             consentRule: consentRule,
-            consentHeuristicEnabled: consentHeuristicEnabled
+            consentHeuristicEnabled: consentHeuristicEnabled,
+            cpmDashboardState: .applied,
+            cpmStage: cpmStage.flatMap(CookieConsentCPMStage.init(rawValue:)),
+            cpmErrors: cpmErrors,
+            cpmQueueSize: cpmQueueSize,
+            cpmConfigVersion: cpmConfigVersion
         )
     }
 }

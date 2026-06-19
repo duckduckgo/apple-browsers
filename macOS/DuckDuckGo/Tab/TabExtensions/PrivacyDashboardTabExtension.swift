@@ -158,6 +158,7 @@ final class PrivacyDashboardTabExtension {
                                   protectionStatus: makeProtectionStatus(for: host),
                                   malicousSiteThreatKind: maliciousSiteProtectionStateProvider().bypassedMaliciousSiteThreatKind,
                                   allActiveContentScopeExperiments: contentScopeExperimentsManager.allActiveContentScopeExperiments)
+        privacyInfo?.cookieConsentManaged = CookieConsentInfo.initialCPMDiagnostics
 
         previousPrivacyInfosByURL[url.absoluteString] = privacyInfo
 
@@ -305,7 +306,12 @@ extension ConsentStatusInfo {
             selftestFailed: selftestFailed,
             consentReloadLoop: consentReloadLoop,
             consentRule: consentRule,
-            consentHeuristicEnabled: consentHeuristicEnabled
+            consentHeuristicEnabled: consentHeuristicEnabled,
+            cpmDashboardState: .applied,
+            cpmStage: cpmStage.flatMap(CookieConsentCPMStage.init(rawValue:)),
+            cpmErrors: cpmErrors,
+            cpmQueueSize: cpmQueueSize,
+            cpmConfigVersion: cpmConfigVersion
         )
     }
 }

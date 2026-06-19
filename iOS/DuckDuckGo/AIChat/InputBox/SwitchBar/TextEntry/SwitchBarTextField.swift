@@ -22,8 +22,23 @@ import UIKit
 /// Single-line UITextField used in place of `SwitchBarTextView` when Duck.ai is off or toggle is disabled.
 final class SwitchBarTextField: UITextField {
 
-    var textLeftInset: CGFloat = 0
-    var textRightInset: CGFloat = 0
+    var textLeftInset: CGFloat = 0 {
+        didSet {
+            guard textLeftInset != oldValue else {
+                return
+            }
+            setNeedsLayout()
+        }
+    }
+
+    var textRightInset: CGFloat = 0 {
+        didSet {
+            guard textRightInset != oldValue else {
+                return
+            }
+            setNeedsLayout()
+        }
+    }
 
     override func textRect(forBounds bounds: CGRect) -> CGRect {
         bounds.inset(by: UIEdgeInsets(top: 0, left: textLeftInset, bottom: 0, right: textRightInset))

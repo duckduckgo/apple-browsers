@@ -312,7 +312,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     }
 
     func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewline() {
-        let expectedTopAIChatMinimumHeight: CGFloat = 68
+        let expectedTopAIChatMinimumHeight: CGFloat = 51
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         handler.updateBarPosition(isTop: true)
         let sut = SwitchBarTextEntryView(handler: handler)
@@ -443,7 +443,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         handler.updateBarPosition(isTop: true)
         sut.updatePoseForCurrentState()
 
-        XCTAssertEqual(applyFittingHeight(to: sut), 68, accuracy: 1)
+        XCTAssertEqual(applyFittingHeight(to: sut), 51, accuracy: 1)
     }
 
     func test_expandedPlaceholderAlignmentUpdatesWhenToggleSwitchesMode() throws {

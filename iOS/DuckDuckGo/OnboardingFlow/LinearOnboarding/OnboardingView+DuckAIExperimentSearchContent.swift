@@ -152,7 +152,8 @@ extension OnboardingView {
             _pickerViewModel = StateObject(wrappedValue: ImageSegmentedPickerViewModel(
                 items: Self.pickerItems,
                 selectedItem: initialSelection,
-                configuration: ImageSegmentedPickerConfiguration(itemContentSpacing: Metrics.queryFieldContentSpacing),
+                configuration: ImageSegmentedPickerConfiguration(itemContentSpacing: Metrics.queryFieldContentSpacing,
+                                                                 textLineLimit: 1),
                 scrollProgress: defaultMode == .duckAI ? 1 : 0,
                 isScrollProgressDriven: false
             ))

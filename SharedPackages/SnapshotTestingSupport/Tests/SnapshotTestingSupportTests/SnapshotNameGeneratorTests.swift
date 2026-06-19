@@ -17,41 +17,50 @@
 //
 
 import SnapshotTestingSupport
-import XCTest
+import Testing
 
-final class SnapshotNameGeneratorTests: XCTestCase {
+@Suite("Snapshot Name Generator Tests")
+struct SnapshotNameGeneratorTests {
 
-    func testAppearanceNamesAreStable() {
-        XCTAssertEqual(SnapshotNameGenerator.name(for: .light), "light")
-        XCTAssertEqual(SnapshotNameGenerator.name(for: .dark), "dark")
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func appearanceNamesAreStable() {
+        #expect(SnapshotNameGenerator.name(for: .light) == "light")
+        #expect(SnapshotNameGenerator.name(for: .dark) == "dark")
     }
 
-    func testDeviceNamesAreIncludedWhenProvided() {
-        XCTAssertEqual(
-            SnapshotNameGenerator.name(for: .light, device: .iPadDefault),
-            "iPadDefault_light"
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func deviceNamesAreIncludedWhenProvided() {
+        #expect(
+            SnapshotNameGenerator.name(for: .light, device: .iPadDefault) == "iPadDefault_light"
         )
     }
 
-    func testConfigurationUsesGeneratedNameWhenNoNameIsProvided() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func configurationUsesGeneratedNameWhenNoNameIsProvided() {
         let configuration = SnapshotImageConfiguration(
             appearance: .light,
             device: .iPhoneDefault
         )
 
-        XCTAssertEqual(configuration.name, "iPhoneDefault_light")
+        #expect(configuration.name == "iPhoneDefault_light")
     }
 
-    func testConfigurationUsesCustomNameWhenProvided() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func configurationUsesCustomNameWhenProvided() {
         let configuration = SnapshotImageConfiguration(appearance: .dark, name: "custom-dark")
 
-        XCTAssertEqual(configuration.name, "custom-dark")
+        #expect(configuration.name == "custom-dark")
     }
 
-    func testPreviewNamesAreSanitizedAndPrepended() {
-        XCTAssertEqual(
-            SnapshotNameGenerator.name(forPreview: "Empty State", snapshotName: "iPadDefault_dark"),
-            "Empty_State_iPadDefault_dark"
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func previewNamesAreSanitizedAndPrepended() {
+        #expect(
+            SnapshotNameGenerator.name(forPreview: "Empty State", snapshotName: "iPadDefault_dark") == "Empty_State_iPadDefault_dark"
         )
     }
 }

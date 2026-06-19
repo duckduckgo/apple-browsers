@@ -18,12 +18,15 @@
 //
 
 import SnapshotTestingSupport
-import XCTest
+import Testing
 @testable import DuckDuckGo
 
 @MainActor
-final class AIChatSyncPromoViewTests: XCTestCase {
+@Suite("AI Chat Sync Promo View Tests")
+final class AIChatSyncPromoViewTests {
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testAIChatSyncPromoViewSnapshots() {
         assertImageSnapshots(
             AIChatSyncPromoView_Previews.snapshots,

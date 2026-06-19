@@ -18,37 +18,43 @@
 
 import CoreGraphics
 import SnapshotTestingSupport
-import XCTest
+import Testing
 
-final class SnapshotImageStrategyTests: XCTestCase {
+@Suite("Snapshot Image Strategy Tests")
+struct SnapshotImageStrategyTests {
 
-    func testMacOSAllAppearancesExpandsToLightAndDark() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOSAllAppearancesExpandsToLightAndDark() {
         let configurations = SnapshotImageStrategy.allAppearances.configurations(
             for: .macOS,
             size: .intrinsicContentSize
         )
 
-        XCTAssertEqual(configurations.map(\.appearance), [.light, .dark])
-        XCTAssertEqual(configurations.map(\.name), ["light", "dark"])
+        #expect(configurations.map(\.appearance) == [.light, .dark])
+        #expect(configurations.map(\.name) == ["light", "dark"])
     }
 
-    func testIOSAllAppearancesDefaultsToIntrinsicLightAndDark() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOSAllAppearancesDefaultsToIntrinsicLightAndDark() {
         let configurations = SnapshotImageStrategy.allAppearances.configurations(
             for: .iOS,
             size: .intrinsicContentSize
         )
 
-        XCTAssertEqual(configurations.map(\.appearance), [.light, .dark])
-        XCTAssertEqual(configurations.map(\.name), ["light", "dark"])
-        XCTAssertEqual(configurations.map(\.device), [nil, nil])
+        #expect(configurations.map(\.appearance) == [.light, .dark])
+        #expect(configurations.map(\.name) == ["light", "dark"])
+        #expect(configurations.map(\.device) == [nil, nil])
     }
 
-    func testIOSAllAppearancesExpandsToPhoneAndPadForScreenSnapshots() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOSAllAppearancesExpandsToPhoneAndPadForScreenSnapshots() {
         let configurations = SnapshotImageStrategy.allAppearances.configurations(for: .iOS, size: .screen)
 
-        XCTAssertEqual(
-            configurations.map(\.name),
-            [
+        #expect(
+            configurations.map(\.name) == [
                 "iPhoneDefault_light",
                 "iPhoneDefault_dark",
                 "iPadDefault_light",
@@ -57,12 +63,13 @@ final class SnapshotImageStrategyTests: XCTestCase {
         )
     }
 
-    func testIOSAllAppearancesExpandsToPhoneAndPadForSheetSnapshots() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOSAllAppearancesExpandsToPhoneAndPadForSheetSnapshots() {
         let configurations = SnapshotImageStrategy.allAppearances.configurations(for: .iOS, size: .sheet)
 
-        XCTAssertEqual(
-            configurations.map(\.name),
-            [
+        #expect(
+            configurations.map(\.name) == [
                 "iPhoneDefault_light",
                 "iPhoneDefault_dark",
                 "iPadDefault_light",
@@ -71,37 +78,44 @@ final class SnapshotImageStrategyTests: XCTestCase {
         )
     }
 
-    func testMacOSSingleAppearanceExpandsToOneConfiguration() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOSSingleAppearanceExpandsToOneConfiguration() {
         let configurations = SnapshotImageStrategy.single(.dark).configurations(
             for: .macOS,
             size: .intrinsicContentSize
         )
 
-        XCTAssertEqual(configurations, [SnapshotImageConfiguration(appearance: .dark)])
+        #expect(configurations == [SnapshotImageConfiguration(appearance: .dark)])
     }
 
-    func testIOSSingleAppearanceDefaultsToIntrinsic() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOSSingleAppearanceDefaultsToIntrinsic() {
         let configurations = SnapshotImageStrategy.single(.dark).configurations(
             for: .iOS,
             size: .intrinsicContentSize
         )
 
-        XCTAssertEqual(configurations, [SnapshotImageConfiguration(appearance: .dark)])
+        #expect(configurations == [SnapshotImageConfiguration(appearance: .dark)])
     }
 
-    func testIOSSingleAppearanceExpandsToPhoneAndPadForScreenSnapshots() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOSSingleAppearanceExpandsToPhoneAndPadForScreenSnapshots() {
         let configurations = SnapshotImageStrategy.single(.dark).configurations(for: .iOS, size: .screen)
 
-        XCTAssertEqual(
-            configurations.map(\.name),
-            [
+        #expect(
+            configurations.map(\.name) == [
                 "iPhoneDefault_dark",
                 "iPadDefault_dark"
             ]
         )
     }
 
-    func testCustomConfigurationsArePreserved() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func customConfigurationsArePreserved() {
         let custom = [
             SnapshotImageConfiguration(
                 appearance: .light,
@@ -110,9 +124,8 @@ final class SnapshotImageStrategyTests: XCTestCase {
             )
         ]
 
-        XCTAssertEqual(
-            SnapshotImageStrategy.custom(custom).configurations(for: .iOS, size: .intrinsicContentSize),
-            custom
+        #expect(
+            SnapshotImageStrategy.custom(custom).configurations(for: .iOS, size: .intrinsicContentSize) == custom
         )
     }
 }

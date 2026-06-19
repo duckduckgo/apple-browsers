@@ -27,3 +27,5 @@ jobs:
             github-pr-author-user: ${{ github.event.pull_request.user.login }}
             github-pr-author-type: ${{ github.event.pull_request.user.type }}
             github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+            asana-project-id: ${{ vars.APPLE_TEAM_CODE_REVIEWS_ASANA_PROJECT_ID }}
+            asana-section-id: ${{ vars.APPLE_TEAM_CODE_REVIEWS_SECTION_ID }}

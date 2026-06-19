@@ -142,7 +142,7 @@ private struct FeatureRow: View {
     let availableFeatureAnimation: RebrandedOnboardingComparisonTableView.AvailableFeatureAnimation
 
     private var backgroundColor: Color {
-        index % 2 == 0 ? Color(singleUseColor: .rebranding(.accentAltGlowPrimary)) : Color.clear
+        index % 2 == 0 ? OnboardingRebrandColor.accentAltGlowPrimary : Color.clear
     }
 
     var body: some View {

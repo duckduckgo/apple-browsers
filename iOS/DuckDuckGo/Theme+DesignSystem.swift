@@ -52,20 +52,20 @@ extension Theme {
     
     var feedbackSentimentButtonBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     
-    var aboutScreenButtonColor: UIColor { UIColor(designSystemColor: .accent) }
+    var aboutScreenButtonColor: UIColor { UIColor(designSystemColor: .accentPrimary) }
 
     var tabSwitcherCellTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     
     var textFieldFontColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var textFieldBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     
-    var buttonTintColor: UIColor { UIColor(designSystemColor: .accent) }
+    var buttonTintColor: UIColor { UIColor(designSystemColor: .accentPrimary) }
     
     var feedbackPrimaryTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var feedbackSecondaryTextColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     
-    var progressBarGradientDarkColor: UIColor { UIColor(designSystemColor: .accent) }
-    var progressBarGradientLightColor: UIColor { UIColor(designSystemColor: .accent) }
+    var progressBarGradientDarkColor: UIColor { UIColor(designSystemColor: .accentPrimary) }
+    var progressBarGradientLightColor: UIColor { UIColor(designSystemColor: .accentPrimary) }
     
     var daxDialogBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     var daxDialogTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }

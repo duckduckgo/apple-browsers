@@ -861,10 +861,10 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         let alert = NSAlert.syncPairingV2Confirmation(message: message)
 
         guard let parentWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window else {
-            return await alert.runModal() == .alertSecondButtonReturn
+            return await alert.runModal() == .alertFirstButtonReturn
         }
 
         let presentationWindow = parentWindow.attachedSheet ?? parentWindow
-        return await alert.beginSheetModal(for: presentationWindow) == .alertSecondButtonReturn
+        return await alert.beginSheetModal(for: presentationWindow) == .alertFirstButtonReturn
     }
 }

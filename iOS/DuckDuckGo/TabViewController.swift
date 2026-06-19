@@ -1711,9 +1711,13 @@ class TabViewController: UIViewController {
 
         var loadedWebExtensions: String?
         var adBlockingScriptletsVersion: String?
+        var cpmExtensionLoaded = false
+        var cpmExtensionDroppedCallbacks = 0
         if #available(iOS 18.4, *), let webExtensionManager {
             loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
             adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
+            cpmExtensionLoaded = webExtensionManager.isAutoconsentExtensionLoaded
+            cpmExtensionDroppedCallbacks = webExtensionManager.eventsListener.droppedCallbacksCount
         }
 
         return PrivacyDashboardViewController.BreakageAdditionalInfo(currentURL: currentURL,
@@ -1731,7 +1735,9 @@ class TabViewController: UIViewController {
                                                                      autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode.rawValue,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
                                                                      loadedWebExtensions: loadedWebExtensions,
-                                                                     adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
+                                                                     adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
+                                                                     cpmExtensionLoaded: cpmExtensionLoaded,
+                                                                     cpmExtensionDroppedCallbacks: cpmExtensionDroppedCallbacks)
     }
 
     public func print() {

@@ -146,6 +146,11 @@ public struct ScriptletDebugInfo: Identifiable {
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionManaging {
 
+    /// Whether the embedded autoconsent web extension is loaded and active.
+    var isAutoconsentExtensionLoaded: Bool {
+        loadedExtensions.contains { $0.duckDuckGoWebExtensionType == .embedded }
+    }
+
     /// Returns a comma-separated string of short labels for all currently installed embedded extensions,
     /// or `nil` if none are installed.
     func loadedWebExtensionsString() -> String? {

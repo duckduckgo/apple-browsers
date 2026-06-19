@@ -104,4 +104,24 @@ public struct CookieConsentInfo: Encodable {
         self.cpmConfigVersion = cpmConfigVersion
     }
 
+    /// Preserves the dashboard-reported CPM state while overlaying values only known when a breakage report is assembled.
+    public func withCPMRuntimeInfo(extensionLoaded: Bool?, droppedCallbacks: Int?) -> CookieConsentInfo {
+        CookieConsentInfo(
+            consentManaged: consentManaged,
+            cosmetic: cosmetic,
+            optoutFailed: optoutFailed,
+            selftestFailed: selftestFailed,
+            consentReloadLoop: consentReloadLoop,
+            consentRule: consentRule,
+            consentHeuristicEnabled: consentHeuristicEnabled,
+            cpmExtensionDroppedCallbacks: droppedCallbacks,
+            cpmExtensionLoaded: extensionLoaded,
+            cpmDashboardState: cpmDashboardState,
+            cpmStage: cpmStage,
+            cpmErrors: cpmErrors,
+            cpmQueueSize: cpmQueueSize,
+            cpmConfigVersion: cpmConfigVersion
+        )
+    }
+
 }

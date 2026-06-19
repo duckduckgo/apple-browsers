@@ -22,8 +22,6 @@ import Persistence
 import PersistenceTestingUtils
 import XCTest
 
-@testable import SparkleAppUpdater
-
 final class ApplicationUpdateDetectorTests: XCTestCase {
 
     private var settings: (any ThrowingKeyedStoring<UpdateControllerSettings>)!

@@ -54,4 +54,7 @@ extension Color {
 
     // Duck.ai contextual sheet background color
     static let x161616 = Color(0x161616)
+
+    // Duck.ai web view background color (dark mode)
+    static let x111111 = Color(0x111111)
 }

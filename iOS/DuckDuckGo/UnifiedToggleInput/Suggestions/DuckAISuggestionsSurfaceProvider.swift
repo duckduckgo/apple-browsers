@@ -42,7 +42,7 @@ protocol DuckAISuggestionsSurfaceProviderDelegate: AnyObject {
 
 /// Owns the lazily-attached duck.ai suggestions surface: its source, chat/url fetchers, the
 /// content/settle state feed, and the URL-history delete action. Built once per attach and torn
-/// down on detach (search persists; duck.ai is transient). The Lottie dax stays in `DaxLogoManager`.
+/// down on detach (search persists; duck.ai is transient).
 @MainActor
 final class DuckAISuggestionsSurfaceProvider {
 
@@ -73,6 +73,10 @@ final class DuckAISuggestionsSurfaceProvider {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     private let stateSubject = CurrentValueSubject<UnifiedSuggestionsInputsMerger.DuckAIState?, Never>(nil)
+    /// "Has any recent chats" — a stable, query-independent fact (mirrors search's favorites existence),
+    /// refreshed only from an unfiltered (empty-query) fetch so a just-cleared query never reads empty
+    /// and flashes the logo before its recents reload.
+    private let hasAnyRecentsSubject = CurrentValueSubject<Bool, Never>(false)
     private var cancellables = Set<AnyCancellable>()
     private var hasContentReader: (() -> Bool)?
     private var hasSettledReader: ((String) -> Bool)?
@@ -138,13 +142,21 @@ final class DuckAISuggestionsSurfaceProvider {
                 featureFlagger.isFeatureOn(.aiChatNativeChatHistory) && UIDevice.current.userInterfaceIdiom != .pad
             }
         )
-        chatManager.onFetchCompleted = { [weak self] _, _ in self?.delegate?.duckAISurfaceStateDidChange() }
+        chatManager.onFetchCompleted = { [weak self] query, hasSuggestions in
+            // Only an unfiltered (empty-query) fetch defines "has any recent chats". Filtered fetches
+            // (while typing) leave it unchanged, so clearing the query keeps the stable `true`.
+            if query.isEmpty { self?.hasAnyRecentsSubject.send(hasSuggestions) }
+            self?.delegate?.duckAISurfaceStateDidChange()
+        }
 
-        Publishers.CombineLatest(
-            chatViewModel.$filteredSuggestions.map { !$0.isEmpty },
+        // `filteredSuggestions` / `topURLs` are triggers only (they move `settled`); the recents fact
+        // comes from the stable `hasAnyRecentsSubject`, not the query-filtered list.
+        Publishers.CombineLatest3(
+            hasAnyRecentsSubject,
+            chatViewModel.$filteredSuggestions.map { _ in () },
             urlLoader.$topURLs.map { _ in () }.prepend(())
         )
-        .map { [weak chatManager, weak urlLoader, weak self] hasRecents, _ -> UnifiedSuggestionsInputsMerger.DuckAIState in
+        .map { [weak chatManager, weak urlLoader, weak self] hasRecents, _, _ -> UnifiedSuggestionsInputsMerger.DuckAIState in
             let query = self?.switchBarHandler.currentText ?? ""
             let settled = chatManager?.lastCompletedFetchQuery == query
                 && urlLoader?.lastCompletedFetchQuery == query

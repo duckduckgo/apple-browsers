@@ -177,7 +177,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 cacheType: .inMemory,
                 bookmarkManager: NSApp.delegateTyped.bookmarkManager,
                 fireproofDomains: fireproofDomains,
-                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager)
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger)
         }
 
         self.init(id: id,

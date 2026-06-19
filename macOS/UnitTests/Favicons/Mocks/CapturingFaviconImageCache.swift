@@ -45,6 +45,11 @@ final class CapturingFaviconImageCache: FaviconImageCaching {
         return getFaviconWithURL(faviconUrl)
     }
 
+    func resolvedFavicon(faviconUrl: URL) async -> Favicon? {
+        getFaviconWithURLCalls.append(faviconUrl)
+        return getFaviconWithURL(faviconUrl)
+    }
+
     func getFavicons(with urls: some Sequence<URL>) -> [Favicon]? {
         getFaviconsWithURLsCalls.append(Array(urls))
         return getFaviconsWithURLs(urls)
@@ -65,6 +70,14 @@ final class CapturingFaviconImageCache: FaviconImageCaching {
         return .success(())
     }
 
+    func removeFavicons(withIdentifiers identifiers: Set<UUID>) async {
+        removeFaviconsWithIdentifiersCalls.append(identifiers)
+    }
+
+    func removeAllFavicons() async {
+        removeAllFaviconsCallsCount += 1
+    }
+
     var loadCallsCount: Int = 0
     var insertCalls: [[Favicon]] = []
     var getFaviconWithURLCalls: [URL] = []
@@ -73,6 +86,8 @@ final class CapturingFaviconImageCache: FaviconImageCaching {
     var cleanCallsCount: Int = 0
     var burnCallsCount: Int = 0
     var burnDomainsCallsCount: Int = 0
+    var removeFaviconsWithIdentifiersCalls: [Set<UUID>] = []
+    var removeAllFaviconsCallsCount: Int = 0
 
     var getFaviconWithURL: (URL) -> Favicon? = { _ in nil }
     var getFaviconsWithURLs: (any Sequence<URL>) -> [Favicon]? = { _ in nil }

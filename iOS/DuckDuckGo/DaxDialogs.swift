@@ -71,6 +71,8 @@ protocol ContextualOnboardingLogic {
     func fireButtonPulseStarted()
     func fireButtonPulseCancelled()
 
+    func setDialogsPriorFinalSeen()
+
     func setFinalOnboardingDialogSeen()
 
     func setDaxDialogDismiss()
@@ -532,6 +534,18 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func setDaxDialogDismiss() {
         clearOnboardingBrowsingData()
+    }
+
+    func setDialogsPriorFinalSeen() {
+        settings.tryAnonymousSearchShown = true
+        settings.tryVisitASiteShown = true
+        settings.browsingAfterSearchShown = true
+        settings.browsingWithTrackersShown = true
+        settings.browsingWithoutTrackersShown = true
+        settings.browsingMajorTrackingSiteShown = true
+        settings.fireButtonEducationShownOrExpired = true
+        settings.fireMessageExperimentShown = true
+        settings.privacyButtonPulseShown = true
     }
 
     func setFinalOnboardingDialogSeen() {

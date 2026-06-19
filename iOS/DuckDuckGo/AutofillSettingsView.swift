@@ -100,7 +100,7 @@ struct AutofillSettingsView: View {
                     } label: {
                         Text(UserText.autofillEmptyViewImportButtonTitle)
                             .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                            .foregroundColor(Color(designSystemColor: .accentPrimary))
                     }
                 }
             }
@@ -120,7 +120,7 @@ struct AutofillSettingsView: View {
                             viewModel.resetExcludedSites()
                         } label: {
                             Text(UserText.autofillNeverSavedSettings)
-                                .foregroundColor(Color(designSystemColor: .accent))
+                                .foregroundColor(Color(designSystemColor: .accentPrimary))
                         }
                         .confirmationDialog(
                             "",
@@ -206,7 +206,7 @@ struct AutofillSettingsView: View {
         var body: some View {
             return Toggle(title, isOn: $toggleStatus)
                 .toggleStyle(.switch)
-                .tint(Color(designSystemColor: .accent))
+                .tint(Color(designSystemColor: .accentPrimary))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .daxBodyRegular()
         }

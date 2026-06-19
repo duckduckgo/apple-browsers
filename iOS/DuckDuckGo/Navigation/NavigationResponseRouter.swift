@@ -81,10 +81,10 @@ struct NavigationResponseRouter {
             return shape.hasTemporaryBlobDownload ? .blobAllow : .blobDownload
         }
 
-        if FilePreviewHelper.canAutoPreviewMIMEType(shape.mimeType) ||
-            FilePreviewHelper.canAutoPreviewICSByExtension(url: shape.url,
-                                                           filename: shape.suggestedFilename,
-                                                           featureFlagger: featureFlagger) {
+        if FilePreviewHelper.canAutoPreview(mimeType: shape.mimeType,
+                                            url: shape.url,
+                                            filename: shape.suggestedFilename,
+                                            featureFlagger: featureFlagger) {
             pixelFiring.fire(.downloadStarted,
                              withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "1"])
 

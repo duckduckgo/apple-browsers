@@ -57,6 +57,31 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
+    @Published var enforceRoutes: Bool {
+        didSet {
+            guard settings.enforceRoutes != enforceRoutes else {
+                return
+            }
+            settings.enforceRoutes = enforceRoutes
+        }
+    }
+
+    @Published private(set) var isStrictRoutingAvailable: Bool
+
+    @Published var excludeCGNAT: Bool {
+        didSet {
+            guard settings.excludeCGNAT != excludeCGNAT else {
+                return
+            }
+            settings.excludeCGNAT = excludeCGNAT
+            reloadVPN()
+        }
+    }
+
+    var isExcludeCGNATAvailable: Bool {
+        featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle)
+    }
+
     @Published var showInMenuBar: Bool {
         didSet {
             settings.showInMenuBar = showInMenuBar
@@ -150,6 +175,9 @@ final class VPNPreferencesModel: ObservableObject {
         excludedAppsCount = proxySettings.excludedAppsMinusDBPAgent.count
         excludedDomainsCount = proxySettings.excludedDomains.count
         excludeLocalNetworks = settings.excludeLocalNetworks
+        enforceRoutes = settings.enforceRoutes
+        isStrictRoutingAvailable = featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+        excludeCGNAT = settings.excludeCGNAT
         notifyStatusChanges = settings.notifyStatusChanges
         showInMenuBar = settings.showInMenuBar
         showInBrowserToolbar = pinningManager.isPinned(.networkProtection)
@@ -166,6 +194,9 @@ final class VPNPreferencesModel: ObservableObject {
         subscribeToConnectOnLoginSettingChanges()
         subscribeToExcludedDomainsCountChanges()
         subscribeToExcludeLocalNetworksSettingChanges()
+        subscribeToEnforceRoutesSettingChanges()
+        subscribeToStrictRoutingAvailabilityChanges()
+        subscribeToExcludeCGNATSettingChanges()
         subscribeToShowInMenuBarSettingChanges()
         subscribeToShowInBrowserToolbarSettingsChanges()
         subscribeToLocationSettingChanges()
@@ -209,6 +240,30 @@ final class VPNPreferencesModel: ObservableObject {
     private func subscribeToExcludeLocalNetworksSettingChanges() {
         settings.excludeLocalNetworksPublisher
             .assign(to: \.excludeLocalNetworks, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToEnforceRoutesSettingChanges() {
+        settings.enforceRoutesPublisher
+            .assign(to: \.enforceRoutes, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToStrictRoutingAvailabilityChanges() {
+        // Keep the toggle's availability in sync as the feature flag changes at runtime
+        // (remote config update or a local override), so the row appears/disappears live.
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.isStrictRoutingAvailable = self.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToExcludeCGNATSettingChanges() {
+        settings.excludeCGNATPublisher
+            .assign(to: \.excludeCGNAT, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 
@@ -262,6 +317,11 @@ final class VPNPreferencesModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    @MainActor
+    func onViewAppeared() {
+        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
     }
 
     func reloadVPN() {

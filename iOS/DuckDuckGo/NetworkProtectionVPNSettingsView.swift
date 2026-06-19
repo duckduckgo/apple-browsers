@@ -43,6 +43,24 @@ struct NetworkProtectionVPNSettingsView: View {
                     Toggle("", isOn: $viewModel.excludeLocalNetworks)
                 }
 
+                if viewModel.isStrictRoutingAvailable {
+                    toggleSection(
+                        text: UserText.netPStrictRoutingSettingTitle,
+                        footerText: UserText.netPStrictRoutingSettingFooter
+                    ) {
+                        Toggle("", isOn: $viewModel.enforceRoutes)
+                    }
+                }
+
+                if viewModel.isExcludeCGNATAvailable {
+                    toggleSection(
+                        text: UserText.netPExcludeCGNATSettingTitle,
+                        footerText: UserText.netPExcludeCGNATSettingFooter
+                    ) {
+                        Toggle("", isOn: $viewModel.excludeCGNAT)
+                    }
+                }
+
                 dnsSection()
             }
         }
@@ -84,7 +102,7 @@ struct NetworkProtectionVPNSettingsView: View {
     }
 
     @ViewBuilder
-    func toggleSection(text: String, headerText: String, footerText: String, @ViewBuilder toggle: () -> some View) -> some View {
+    func toggleSection(text: String, headerText: String? = nil, footerText: String, @ViewBuilder toggle: () -> some View) -> some View {
         Section {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -95,14 +113,16 @@ struct NetworkProtectionVPNSettingsView: View {
                 }
 
                 toggle()
-                    .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
+                    .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
             }
         } header: {
-            Text(headerText)
+            if let headerText {
+                Text(headerText)
+            }
         } footer: {
-            Text(footerText)
+            Text(LocalizedStringKey(footerText))
                 .foregroundColor(.init(designSystemColor: .textSecondary))
-                .accentColor(Color(designSystemColor: .accent))
+                .accentColor(Color(designSystemColor: .accentPrimary))
                 .daxFootnoteRegular()
                 .padding(.top, 6)
         }
@@ -115,7 +135,7 @@ struct NetworkProtectionVPNSettingsView: View {
             Button(UserText.netPTurnOnNotificationsButtonTitle) {
                 viewModel.turnOnNotifications()
             }
-            .foregroundColor(.init(designSystemColor: .accent))
+            .foregroundColor(.init(designSystemColor: .accentPrimary))
         } footer: {
             Text(UserText.netPTurnOnNotificationsSectionFooter)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
@@ -135,7 +155,7 @@ struct NetworkProtectionVPNSettingsView: View {
                     set: viewModel.didToggleAlerts(to:)
                 )
             )
-            .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
+            .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
         } header: {
             Text(UserText.netPVPNAlertsSectionHeader)
         } footer: {

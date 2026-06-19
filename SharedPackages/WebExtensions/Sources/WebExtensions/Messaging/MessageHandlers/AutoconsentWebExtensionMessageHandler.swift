@@ -108,16 +108,16 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         guard
             let urlString = params?["url"] as? String,
             let url = URL(string: urlString),
-            let domain = url.host,
+            url.host != nil,
             let consentStatusDict = params?["consentStatus"] as? [String: Any],
             let consentStatus = ConsentStatusInfo(from: consentStatusDict)
         else {
             return .failure(WebExtensionMessageHandlerError.missingParameter("url or consentStatus"))
         }
 
-        Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - domain: \(domain), consentManaged: \(consentStatus.consentManaged)")
+        Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.absoluteString), consentManaged: \(consentStatus.consentManaged)")
 
-        delegate?.refreshDashboardState(domain: domain, consentStatus: consentStatus)
+        delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
         return .success(Self.successResponse)
     }

@@ -282,7 +282,11 @@ final class AutoconsentDashboardStateRefreshTests: XCTestCase {
             selftestFailed: false,
             consentReloadLoop: true,
             consentRule: "test-rule",
-            consentHeuristicEnabled: false)
+            consentHeuristicEnabled: false,
+            cpmStage: "popup_found",
+            cpmErrors: "multiple_cmps,tab_refreshDashboardState",
+            cpmQueueSize: 2,
+            cpmConfigVersion: "123")
         let refreshURL = URL(string: "https://example.com/articles/one?refresh=query")!
 
         matchingPrivacyInfo.updateCookieConsentManagedForWebExtensionDashboardState(url: refreshURL, consentStatus: consentStatus)
@@ -295,6 +299,11 @@ final class AutoconsentDashboardStateRefreshTests: XCTestCase {
         XCTAssertEqual(cookieConsentInfo["consentReloadLoop"] as? Bool, true)
         XCTAssertEqual(cookieConsentInfo["consentRule"] as? String, "test-rule")
         XCTAssertEqual(cookieConsentInfo["consentHeuristicEnabled"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmDashboardState"] as? String, "applied")
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "popup_found")
+        XCTAssertEqual(cookieConsentInfo["cpmErrors"] as? String, "multiple_cmps,tab_refreshDashboardState")
+        XCTAssertEqual(cookieConsentInfo["cpmQueueSize"] as? Int, 2)
+        XCTAssertEqual(cookieConsentInfo["cpmConfigVersion"] as? String, "123")
     }
 
     func testWhenDashboardStateRefreshMatchesHostButNotPathThenPrivacyInfoDoesNotUpdate() throws {
@@ -303,12 +312,17 @@ final class AutoconsentDashboardStateRefreshTests: XCTestCase {
         }
 
         let privacyInfo = makePrivacyInfo(url: URL(string: "https://example.com/articles/two")!)
+        privacyInfo.cookieConsentManaged = CookieConsentInfo.initialCPMDiagnostics
         let consentStatus = ConsentStatusInfo(consentManaged: true)
         let refreshURL = URL(string: "https://example.com/articles/one")!
 
         privacyInfo.updateCookieConsentManagedForWebExtensionDashboardState(url: refreshURL, consentStatus: consentStatus)
 
-        XCTAssertNil(privacyInfo.cookieConsentManaged)
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: privacyInfo)
+        XCTAssertEqual(cookieConsentInfo["consentManaged"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmDashboardState"] as? String, "waiting")
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "not_started")
+        XCTAssertEqual(cookieConsentInfo["cpmConfigVersion"] as? String, "")
     }
 
     private func makePrivacyInfo(url: URL) -> PrivacyInfo {

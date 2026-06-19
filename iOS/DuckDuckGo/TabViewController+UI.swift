@@ -53,7 +53,7 @@ extension TabViewController {
 
     func setupErrorReportBrokenSiteButton() {
         var buttonConfiguration = UIButton.Configuration.plain()
-        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .textLink)
+        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .accentTextPrimary)
         buttonConfiguration.contentInsets = .zero
         buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var transformed = incoming
@@ -64,7 +64,7 @@ extension TabViewController {
         errorReportBrokenSiteButton.contentHorizontalAlignment = .center
         errorReportBrokenSiteButton.configurationUpdateHandler = { button in
             guard var configuration = button.configuration else { return }
-            configuration.baseForegroundColor = UIColor(designSystemColor: .textLink).withAlphaComponent(button.isHighlighted ? 0.7 : 1)
+            configuration.baseForegroundColor = UIColor(designSystemColor: .accentTextPrimary).withAlphaComponent(button.isHighlighted ? 0.7 : 1)
             configuration.background.backgroundColor = .clear
             button.configuration = configuration
         }

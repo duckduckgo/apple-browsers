@@ -42,7 +42,9 @@ class SwitchBarTextEntryView: UIView {
             case .compact:
                 return Constants.minHeight
             case .tallTopAlignedAIChat:
-                return Constants.minHeightAIChat
+                // This pose is only selected when `usesExpandedAIChatTextEntryLayout` is true (the
+                // legacy non-UTI iPhone path), so it always uses the legacy height.
+                return Constants.legacyMinHeightAIChat
             }
         }
 
@@ -62,6 +64,11 @@ class SwitchBarTextEntryView: UIView {
         static let minHeight: CGFloat = 44
         static let minHeightAIChat: CGFloat = 51
         static let fontSize: CGFloat = 16
+
+        // Legacy Layout
+        static let legacyMinHeightAIChat: CGFloat = 68
+        static let legacyTextHorizontalInset: CGFloat = 12
+        static let legacyPlaceholderHorizontalOffset: CGFloat = 16
 
         // Text container insets
         static let textTopInset: CGFloat = 12
@@ -158,6 +165,19 @@ class SwitchBarTextEntryView: UIView {
         return .compact
     }
 
+    // Layout values that fall back to their legacy counterparts on the non-UTI iPhone path
+    private var minHeightAIChat: CGFloat {
+        handler.usesExpandedAIChatTextEntryLayout ? Constants.legacyMinHeightAIChat : Constants.minHeightAIChat
+    }
+
+    private var textHorizontalInset: CGFloat {
+        handler.usesExpandedAIChatTextEntryLayout ? Constants.legacyTextHorizontalInset : Constants.textHorizontalInset
+    }
+
+    private var placeholderHorizontalOffset: CGFloat {
+        handler.usesExpandedAIChatTextEntryLayout ? Constants.legacyPlaceholderHorizontalOffset : Constants.placeholderHorizontalOffset
+    }
+
     private var currentMinHeight: CGFloat {
         if currentPose == .tallTopAlignedAIChat {
             return currentPose.minHeight
@@ -172,7 +192,7 @@ class SwitchBarTextEntryView: UIView {
         }
 
         if currentMode == .aiChat {
-            return handler.isTopBarPosition ? Constants.minHeightAIChat : Constants.minHeight
+            return handler.isTopBarPosition ? minHeightAIChat : Constants.minHeight
         }
 
         return Constants.minHeight
@@ -417,7 +437,7 @@ class SwitchBarTextEntryView: UIView {
             textField.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             placeholderCenterYConstraint,
-            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
+            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: placeholderHorizontalOffset),
             // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
             // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
@@ -637,15 +657,15 @@ class SwitchBarTextEntryView: UIView {
         if usesTextField {
             let fittingWidth = buttonsView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
             let buttonsWidth = currentButtonState.showsAnyButton ? fittingWidth : 0
-            let rightInset = buttonsWidth > 0 ? buttonsWidth : Constants.textHorizontalInset
-            textField.textLeftInset = Constants.textHorizontalInset + fragmentPadding
+            let rightInset = buttonsWidth > 0 ? buttonsWidth : textHorizontalInset
+            textField.textLeftInset = textHorizontalInset + fragmentPadding
             textField.textRightInset = rightInset + fragmentPadding
         } else {
             let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
-            let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
+            let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : textHorizontalInset
             textView.textContainerInset = UIEdgeInsets(
                 top: Constants.textTopInset,
-                left: Constants.textHorizontalInset,
+                left: textHorizontalInset,
                 bottom: Constants.textBottomInset,
                 right: rightInset
             )

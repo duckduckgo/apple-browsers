@@ -20,6 +20,8 @@
 import UIKit
 import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
+import MetricBuilder
 
 extension ActionMessageView: NibLoading {}
 
@@ -47,7 +49,8 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         static var maxWidth: CGFloat = 346
         static var minimumHorizontalPadding: CGFloat = 20
         static var cornerRadius: CGFloat = 10
-        
+        static var rebrandedMinimumHeight: CGFloat = 48
+
         static var animationDuration: TimeInterval = 0.2
         static var duration: TimeInterval = 3.0
         
@@ -77,8 +80,10 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     @IBOutlet weak var actionButton: UIButton!
     
     @IBOutlet var labelToButton: NSLayoutConstraint!
+    @IBOutlet var labelToLeading: NSLayoutConstraint!
     @IBOutlet var labelToTrailing: NSLayoutConstraint!
-    
+    @IBOutlet var buttonToTrailing: NSLayoutConstraint!
+
     private var action: () -> Void = {}
     private var onDidDismiss: () -> Void = {}
     
@@ -91,19 +96,24 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     override func awakeFromNib() {
         super.awakeFromNib()
         
-        layer.cornerRadius = Constants.cornerRadius
+        layer.cornerRadius = AppRebrand.isAppRebranded() ? ContainerMetrics.cornerRadius : Constants.cornerRadius
+        if AppRebrand.isAppRebranded() {
+            heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.rebrandedMinimumHeight).isActive = true
+            labelToLeading.constant = 16
+            buttonToTrailing.constant = 16
+        }
         applySystemFonts()
     }
 
     private func applySystemFonts() {
-        let messageFont = UIFont.daxSubheadRegular()
+        let messageFont = UIFont.daxBodyRegular()
         if let attributedText = message.attributedText {
             message.attributedText = attributedText.withFont(messageFont)
         } else {
             message.font = messageFont
         }
 
-        let buttonFont = UIFont.daxSubheadSemibold()
+        let buttonFont = UIFont.daxBodySemibold()
         if let attributedTitle = actionButton.attributedTitle(for: .normal) {
             actionButton.setAttributedTitle(attributedTitle.withFont(buttonFont), for: .normal)
         } else {

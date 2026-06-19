@@ -167,8 +167,7 @@
                 "key": "cpmExtensionDroppedCallbacks",
                 "type": "string",
                 "description": "Number of web extension callbacks dropped before a native controller was available",
-                "pattern": "^[0-9]*$",
-                "expires": "2026-09-30"
+                "pattern": "^[0-9]*$"
             },
             {
                 "key": "cpmExtensionLoaded",
@@ -180,8 +179,7 @@
                 "key": "cpmDashboardState",
                 "type": "string",
                 "description": "Whether native was still waiting for a cookie prompt management dashboard state or had applied one for the current page",
-                "enum": ["waiting", "applied", ""],
-                "expires": "2026-09-30"
+                "enum": ["waiting", "applied", ""]
             },
             {
                 "key": "cpmStage",
@@ -209,8 +207,7 @@
                 "key": "cpmQueueSize",
                 "type": "string",
                 "description": "Native callback queue size observed by the embedded cookie prompt management extension",
-                "pattern": "^[0-9]*$",
-                "expires": "2026-09-30"
+                "pattern": "^[0-9]*$"
             },
             {
                 "key": "cpmConfigVersion",
@@ -544,8 +541,7 @@
                 "key": "cpmExtensionDroppedCallbacks",
                 "type": "string",
                 "description": "Number of web extension callbacks dropped before a native controller was available",
-                "pattern": "^[0-9]*$",
-                "expires": "2026-09-30"
+                "pattern": "^[0-9]*$"
             },
             {
                 "key": "cpmExtensionLoaded",
@@ -557,8 +553,7 @@
                 "key": "cpmDashboardState",
                 "type": "string",
                 "description": "Whether native was still waiting for a cookie prompt management dashboard state or had applied one for the current page",
-                "enum": ["waiting", "applied", ""],
-                "expires": "2026-09-30"
+                "enum": ["waiting", "applied", ""]
             },
             {
                 "key": "cpmStage",
@@ -586,8 +581,7 @@
                 "key": "cpmQueueSize",
                 "type": "string",
                 "description": "Native callback queue size observed by the embedded cookie prompt management extension",
-                "pattern": "^[0-9]*$",
-                "expires": "2026-09-30"
+                "pattern": "^[0-9]*$"
             },
             {
                 "key": "cpmConfigVersion",

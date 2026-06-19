@@ -33,16 +33,19 @@ import XCTest
 class AutoconsentMessageProtocolTests: XCTestCase {
 
     var userScript: AutoconsentUserScript!
+    var config: MockPrivacyConfiguration!
+    var preferences: CookiePopupProtectionPreferences!
 
     @MainActor
     override func setUp() async throws{
         try await super.setUp()
 
-        let preferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
+        config = MockPrivacyConfiguration()
+        preferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
         preferences.isAutoconsentEnabled = true
 
         userScript = AutoconsentUserScript(
-            config: MockPrivacyConfiguration(),
+            config: config,
             management: AutoconsentManagement(),
             preferences: preferences,
             featureFlagger: MockFeatureFlagger()
@@ -51,6 +54,8 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
     override func tearDown() {
         userScript = nil
+        config = nil
+        preferences = nil
     }
 
     func replyToJson(msg: Any) -> String {
@@ -157,6 +162,42 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         XCTAssertEqual(cookieConsentInfo["consentManaged"] as? Bool, false)
         XCTAssertEqual(cookieConsentInfo["cpmDashboardState"] as? String, "applied")
         XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "init_received")
+        XCTAssertEqual(cookieConsentInfo["cpmQueueSize"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionDroppedCallbacks"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionLoaded"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmConfigVersion"] as? String, "123456789")
+    }
+
+    @MainActor
+    func testWhenAutoconsentDisabledByUserThenPublishesSettingDisabledCPMDiagnostics() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+        preferences.isAutoconsentEnabled = false
+
+        _ = sendInit(url: "https://example.com")
+
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["consentManaged"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmDashboardState"] as? String, "applied")
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "setting_disabled")
+        XCTAssertEqual(cookieConsentInfo["cpmQueueSize"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionDroppedCallbacks"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionLoaded"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmConfigVersion"] as? String, "123456789")
+    }
+
+    @MainActor
+    func testWhenAutoconsentDisabledForSiteThenPublishesSiteDisabledCPMDiagnostics() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+        config.isFeatureEnabledForDomainCheck = { _, _ in false }
+
+        _ = sendInit(url: "https://example.com")
+
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["consentManaged"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmDashboardState"] as? String, "applied")
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "site_disabled")
         XCTAssertEqual(cookieConsentInfo["cpmQueueSize"] as? Int, 0)
         XCTAssertEqual(cookieConsentInfo["cpmExtensionDroppedCallbacks"] as? Int, 0)
         XCTAssertEqual(cookieConsentInfo["cpmExtensionLoaded"] as? Bool, false)

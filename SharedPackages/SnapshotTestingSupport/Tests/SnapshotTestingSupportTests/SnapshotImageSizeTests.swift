@@ -18,85 +18,94 @@
 
 import CoreGraphics
 @testable import SnapshotTestingSupport
-import XCTest
+import Testing
 
-final class SnapshotImageSizeTests: XCTestCase {
+@Suite("Snapshot Image Size Tests")
+struct SnapshotImageSizeTests {
 
-    func testIntrinsicContentSizeUsesConfigurationSizeWhenProvided() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func intrinsicContentSizeUsesConfigurationSizeWhenProvided() {
         let configuration = SnapshotImageConfiguration(
             appearance: .light,
             size: CGSize(width: 320, height: 240)
         )
 
-        XCTAssertEqual(
+        #expect(
             SnapshotImageSize.intrinsicContentSize.resolvedSize(
                 for: configuration,
                 defaultSize: SnapshotDevice.iPhoneDefault.size
-            ),
-            CGSize(width: 320, height: 240)
+            ) == CGSize(width: 320, height: 240)
         )
     }
 
-    func testIntrinsicContentSizeDefersToViewWhenConfigurationHasNoSize() {
-        XCTAssertNil(
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func intrinsicContentSizeDefersToViewWhenConfigurationHasNoSize() {
+        #expect(
             SnapshotImageSize.intrinsicContentSize.resolvedSize(
                 for: SnapshotImageConfiguration(appearance: .light),
                 defaultSize: SnapshotDevice.iPhoneDefault.size
-            )
+            ) == nil
         )
     }
 
-    func testConstrainedWidthDefersHeightToView() {
-        XCTAssertNil(
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func constrainedWidthDefersHeightToView() {
+        #expect(
             SnapshotImageSize.constrainedWidth.resolvedSize(
                 for: SnapshotImageConfiguration(appearance: .light),
                 defaultSize: SnapshotDevice.iPhoneDefault.size
-            )
+            ) == nil
         )
-        XCTAssertEqual(SnapshotImageSize.constrainedWidth.fixedConstrainedWidth, SnapshotDevice.iPhoneDefault.size.width)
+        #expect(SnapshotImageSize.constrainedWidth.fixedConstrainedWidth == SnapshotDevice.iPhoneDefault.size.width)
     }
 
-    func testScreenUsesConfigurationDeviceSize() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func screenUsesConfigurationDeviceSize() {
         let configuration = SnapshotImageConfiguration(
             appearance: .dark,
             device: .iPadDefault
         )
 
-        XCTAssertEqual(
+        #expect(
             SnapshotImageSize.screen.resolvedSize(
                 for: configuration,
                 defaultSize: SnapshotDevice.iPhoneDefault.size
-            ),
-            SnapshotDevice.iPadDefault.size
+            ) == SnapshotDevice.iPadDefault.size
         )
     }
 
-    func testSheetUsesConfigurationDeviceSize() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func sheetUsesConfigurationDeviceSize() {
         let configuration = SnapshotImageConfiguration(
             appearance: .dark,
             device: .iPadDefault
         )
 
-        XCTAssertEqual(
+        #expect(
             SnapshotImageSize.sheet.resolvedSize(
                 for: configuration,
                 defaultSize: SnapshotDevice.iPhoneDefault.size
-            ),
-            SnapshotDevice.iPadDefault.size
+            ) == SnapshotDevice.iPadDefault.size
         )
-        XCTAssertNil(SnapshotImageSize.sheet.fixedConstrainedWidth)
-        XCTAssertTrue(SnapshotImageSize.sheet.usesDefaultIOSDevices)
+        #expect(SnapshotImageSize.sheet.fixedConstrainedWidth == nil)
+        #expect(SnapshotImageSize.sheet.usesDefaultIOSDevices)
     }
 
-    func testFixedUsesExplicitSize() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func fixedUsesExplicitSize() {
         let size = CGSize(width: 500, height: 700)
 
-        XCTAssertEqual(
+        #expect(
             SnapshotImageSize.fixed(size).resolvedSize(
                 for: SnapshotImageConfiguration(appearance: .light),
                 defaultSize: SnapshotDevice.iPhoneDefault.size
-            ),
-            size
+            ) == size
         )
     }
 }

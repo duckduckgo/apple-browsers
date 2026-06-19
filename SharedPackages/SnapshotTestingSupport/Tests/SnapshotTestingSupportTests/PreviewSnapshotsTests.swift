@@ -18,11 +18,14 @@
 
 import SnapshotTestingSupport
 import SwiftUI
-import XCTest
+import Testing
 
-final class PreviewSnapshotsTests: XCTestCase {
+@Suite("Preview Snapshots Tests")
+struct PreviewSnapshotsTests {
 
-    func testPreviewCollectionKeepsConfigurationsAndBuildsViews() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func previewCollectionKeepsConfigurationsAndBuildsViews() {
         let previews = PreviewSnapshots(
             configurations: [
                 .init(name: "Enabled", state: "enabled"),
@@ -32,13 +35,15 @@ final class PreviewSnapshotsTests: XCTestCase {
             configure: { Text($0) }
         )
 
-        XCTAssertEqual(previews.configurations.map(\.name), ["Enabled", "Disabled", "Snapshots Only"])
-        XCTAssertEqual(previews.previewConfigurations.map(\.name), ["Enabled", "Disabled"])
-        XCTAssertEqual(previews.snapshotConfigurations.map(\.name), ["Enabled", "Snapshots Only"])
+        #expect(previews.configurations.map(\.name) == ["Enabled", "Disabled", "Snapshots Only"])
+        #expect(previews.previewConfigurations.map(\.name) == ["Enabled", "Disabled"])
+        #expect(previews.snapshotConfigurations.map(\.name) == ["Enabled", "Snapshots Only"])
         _ = previews.configure("enabled")
     }
 
-    func testStatesInitializerUsesNamedStateNames() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func statesInitializerUsesNamedStateNames() {
         let previews = PreviewSnapshots(
             states: [
                 NamedState(name: "First", value: 1),
@@ -47,10 +52,12 @@ final class PreviewSnapshotsTests: XCTestCase {
             configure: { Text(String($0.value)) }
         )
 
-        XCTAssertEqual(previews.configurations.map(\.name), ["First", "Second"])
+        #expect(previews.configurations.map(\.name) == ["First", "Second"])
     }
 
-    func testStatesInitializerUsesNameKeyPath() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func statesInitializerUsesNameKeyPath() {
         let previews = PreviewSnapshots(
             states: [
                 KeyPathNamedState(title: "Alpha"),
@@ -60,7 +67,7 @@ final class PreviewSnapshotsTests: XCTestCase {
             configure: { Text($0.title) }
         )
 
-        XCTAssertEqual(previews.configurations.map(\.name), ["Alpha", "Beta"])
+        #expect(previews.configurations.map(\.name) == ["Alpha", "Beta"])
     }
 }
 

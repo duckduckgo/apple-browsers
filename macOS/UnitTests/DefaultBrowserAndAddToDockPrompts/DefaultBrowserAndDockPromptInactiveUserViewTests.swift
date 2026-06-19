@@ -18,12 +18,15 @@
 
 import CoreGraphics
 import SnapshotTestingSupport
-import XCTest
+import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
-final class DefaultBrowserAndDockPromptInactiveUserViewTests: XCTestCase {
+@Suite("Default Browser And Dock Prompt Inactive User View Tests")
+final class DefaultBrowserAndDockPromptInactiveUserViewTests {
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testDefaultBrowserAndDockPromptInactiveUserViewSnapshot() {
         assertImageSnapshots(
             DefaultBrowserAndDockPromptInactiveUserView_Previews.snapshots,

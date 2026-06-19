@@ -18,64 +18,77 @@
 
 import Foundation
 import SnapshotTestingSupport
-import XCTest
+import Testing
 
-final class SnapshotEnvironmentTests: XCTestCase {
+@Suite("Snapshot Environment Tests")
+struct SnapshotEnvironmentTests {
 
-    func testMacOS26IsAccepted() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOS26IsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0)
         )
 
-        XCTAssertNil(message)
+        #expect(message == nil)
     }
 
-    func testMacOSWrongMajorVersionIsRejected() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOSWrongMajorVersionIsRejected() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 25, minorVersion: 6, patchVersion: 0)
         )
 
-        XCTAssertEqual(message, "UI snapshots must run on macOS 26.x. Current OS is 25.6.0.")
+        #expect(message == "UI snapshots must run on macOS 26.x. Current OS is 25.6.0.")
     }
 
-    func testMacOSDifferentMinorVersionIsAccepted() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOSDifferentMinorVersionIsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 1, patchVersion: 0)
         )
 
-        XCTAssertNil(message)
+        #expect(message == nil)
     }
 
-    func testIOS264At3xIsAccepted() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOS264At3xIsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .iOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0),
             displayScale: 3
         )
 
-        XCTAssertNil(message)
+        #expect(message == nil)
     }
 
-    func testIOSWrongMinorVersionIsRejected() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOSWrongMinorVersionIsRejected() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .iOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 1, patchVersion: 0),
             displayScale: 3
         )
 
-        XCTAssertEqual(message, "UI snapshots must run on iOS 26.4. Current OS is 26.1.0.")
+        #expect(message == "UI snapshots must run on iOS 26.4. Current OS is 26.1.0.")
     }
 
-    func testIOS26At2xIsRejected() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOS26At2xIsRejected() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .iOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0),
             displayScale: 2
         )
 
-        XCTAssertEqual(message, "iOS UI snapshots must run at @3x scale. Current scale is 2.0.")
+        #expect(message == "iOS UI snapshots must run at @3x scale. Current scale is 2.0.")
     }
 }

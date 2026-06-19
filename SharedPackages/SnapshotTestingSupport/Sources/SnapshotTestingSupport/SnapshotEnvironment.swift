@@ -46,7 +46,7 @@ public enum SnapshotEnvironment {
         return validationMessage(
             platform: .iOS,
             operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersion,
-            displayScale: Double(UIScreen.main.scale)
+            displayScale: currentIOSDisplayScale()
         )
         #elseif os(macOS)
         return validationMessage(
@@ -99,4 +99,16 @@ public enum SnapshotEnvironment {
             return "\(expectedMajorVersion).x"
         }
     }
+
+    #if os(iOS)
+    private static func currentIOSDisplayScale() -> Double? {
+        let windowScene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first
+        guard let scale = windowScene?.screen.scale else {
+            return nil
+        }
+        return Double(scale)
+    }
+    #endif
 }

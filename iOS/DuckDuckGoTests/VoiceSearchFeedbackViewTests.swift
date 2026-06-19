@@ -18,12 +18,15 @@
 //
 
 import SnapshotTestingSupport
-import XCTest
+import Testing
 @testable import DuckDuckGo
 
 @MainActor
-final class VoiceSearchFeedbackViewTests: XCTestCase {
+@Suite("Voice Search Feedback View Tests")
+final class VoiceSearchFeedbackViewTests {
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testVoiceSearchFeedbackViewSnapshots() {
         assertImageSnapshots(
             VoiceSearchFeedbackView_Previews.snapshots,

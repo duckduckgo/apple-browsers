@@ -17,12 +17,15 @@
 //
 
 import SnapshotTestingSupport
-import XCTest
+import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
-final class InfoViewTests: XCTestCase {
+@Suite("Info View Tests")
+final class InfoViewTests {
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testInfoViewSnapshot() {
         assertImageSnapshot(
             matching: InfoView(info: "DuckDuckGo snapshot testing support").withBackground,
@@ -30,4 +33,3 @@ final class InfoViewTests: XCTestCase {
         )
     }
 }
- 

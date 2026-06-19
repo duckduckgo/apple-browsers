@@ -18,12 +18,15 @@
 //
 
 import SnapshotTestingSupport
-import XCTest
+import Testing
 @testable import DuckDuckGo
 
 @MainActor
-final class AIChatSyncIntroSheetViewTests: XCTestCase {
+@Suite("AI Chat Sync Intro Sheet View Tests")
+final class AIChatSyncIntroSheetViewTests {
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testAIChatSyncIntroSheetViewSnapshots() {
         assertImageSnapshot(
             matching: AIChatSyncIntroSheetView(onScanTap: {}, onNotNowTap: {}),

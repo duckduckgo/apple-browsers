@@ -802,11 +802,6 @@ extension AppDelegate {
         duckPlayer.preferences.youtubeOverlayInteracted = false
     }
 
-    @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
-        homePageSetUpDependencies.clearAll()
-    }
-
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
     }

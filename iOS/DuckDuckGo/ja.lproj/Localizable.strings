@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "データ量";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "すべてのトラフィックがVPNを通るように、オフにすることをおすすめします。Wi-Fi通話、メッセージ、留守番電話などの機能に問題がある場合は、オンにしてみてください。";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "キャリアサービスを除外";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "ローカルトラフィックがVPNをバイパスし、プリンターなどのローカルネットワーク上のデバイスに接続できるようにします。";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "ショートカット";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "ホテルやバーなどの公共Wi-Fiなど、信頼できないネットワークでの使用をおすすめします。CarPlayやAirDropなどの機能に問題がある場合や、他のデバイスとの接続に問題がある場合は、この機能をオフにしてみてください。[詳細](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "厳格なルーティング";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "確認";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "連絡先を追加できません。代わりにダウンロードから連絡先ファイルを開いてみてください。";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "連絡先が追加されました";
 
 /* No comment provided by engineer. */
 "Version: %@" = "バージョン：%@";

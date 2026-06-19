@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Veri Hacmi";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "VPN'i kapatmanız önerilir, böylece tüm trafiğiniz VPN üzerinden geçer. Wi-Fi araması, mesajlaşma veya sesli mesaj gibi özelliklerle ilgili sorun yaşıyorsanız bu özelliği açmayı deneyin.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Operatör Hizmetlerini Hariç Tut";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Yerel trafiğin VPN'i atlamasını ve yerel ağınızdaki yazıcı gibi cihazlara bağlanmasını sağlayın.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Kısayollar";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Güvenmediğiniz ağlarda (örneğin otellerde, barlarda vb. halka açık Wi-Fi ağlarında) kullanılması önerilir. CarPlay, AirDrop gibi özelliklerle veya diğer cihazlara bağlanmada sorun yaşıyorsanız, kapatmayı deneyin. [Daha fazla bilgi](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Katı Yönlendirme";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Onayla";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kişi eklenemedi. Bunun yerine kişi dosyasını İndirilenler klasöründen açmayı deneyin.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kişi eklendi";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Sürüm: %@";

@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Volum de date";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Recomandat dezactivat, astfel încât tot traficul să treacă prin VPN. Dacă ai probleme cu funcții precum apelurile prin Wi-Fi, mesageria sau mesageria vocală, încearcă să le activezi.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Exclude serviciile operatorului de telefonie mobilă";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Lasă traficul local să ocolească VPN-ul și să se conecteze la dispozitivele din rețeaua locală, cum ar fi o imprimantă.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Scurtături";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Recomandat pentru rețele în care nu ai încredere, de ex. Wi-Fi public în hoteluri, baruri etc. Dacă ai probleme cu unele funcții (cum ar fi CarPlay, AirDrop etc.) sau cu conectarea la alte dispozitive, încearcă să dezactivezi. [Află mai multe](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Rutare strictă";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirmare";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Nu se poate adăuga contactul. Încearcă să deschizi fișierul contactului din Descărcări.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Contact adăugat";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Versiune: %@";

@@ -37,6 +37,14 @@ public enum VPNRoutingRange {
         "fc00::/7",   /* fc00:: - fdff:: Unique Local Addresses (ULA) */
     ]
 
+    /// RFC 6598 Carrier-Grade NAT (CGNAT). Used by cellular carriers and by mesh VPN
+    /// overlays (Tailscale, ZeroTier). Carved out of ``publicNetworkRange`` so the
+    /// resolver can include or exclude it on its own — included in the tunnel when
+    /// the CGNAT-exclude toggle is off (legacy behavior), explicitly excluded when on.
+    public static let cgnatRange: [VPN.IPAddressRange] = [
+        "100.64.0.0/10",  /* 100.64.0.0 - 100.127.255.255 */
+    ]
+
     public static let localNetworkRangeWithoutDNS: [VPN.IPAddressRange] = [
         "172.16.0.0/12",  /* 255.240.0.0 */
         "192.168.0.0/16", /* 255.255.0.0 */
@@ -60,7 +68,13 @@ public enum VPNRoutingRange {
         "16.0.0.0/4",       /* 16.0.0.0 - 31.255.255.255 */
         "32.0.0.0/3",       /* 32.0.0.0 - 63.255.255.255 */
         "64.0.0.0/3",       /* 64.0.0.0 - 95.255.255.255 */
-        "96.0.0.0/4",       /* 96.0.0.0 - 111.255.255.255 */
+        "96.0.0.0/6",       /* 96.0.0.0 - 99.255.255.255 */
+        "100.0.0.0/10",     /* 100.0.0.0 - 100.63.255.255 */
+        /* 100.64.0.0/10       100.64.0.0 - 100.127.255.255   CGNAT (RFC 6598), see cgnatRange */
+        "100.128.0.0/9",    /* 100.128.0.0 - 100.255.255.255 */
+        "101.0.0.0/8",      /* 101.0.0.0 - 101.255.255.255 */
+        "102.0.0.0/7",      /* 102.0.0.0 - 103.255.255.255 */
+        "104.0.0.0/5",      /* 104.0.0.0 - 111.255.255.255 */
         "112.0.0.0/5",      /* 112.0.0.0 - 119.255.255.255 */
         "120.0.0.0/6",      /* 120.0.0.0 - 123.255.255.255 */
         "124.0.0.0/7",      /* 124.0.0.0 - 125.255.255.255 */

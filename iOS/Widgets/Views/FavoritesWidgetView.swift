@@ -42,7 +42,7 @@ struct FavoritesWidgetView: View {
 
             Text(UserText.noFavoritesCTA)
                 .daxSubheadSemibold()
-                .foregroundColor(Color(designSystemColor: .accent))
+                .foregroundColor(Color(designSystemColor: .accentPrimary))
                 .makeAccentable()
         }
     }

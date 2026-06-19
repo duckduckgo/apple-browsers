@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Adatmennyiség";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Ajánlott kikapcsolni, hogy az összes forgalmad a VPN-en keresztül menjen. Ha problémáid vannak olyan funkciókkal, mint a Wi-Fi-hívás, az üzenetküldés vagy a hangposta, próbáld meg bekapcsolni.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Szolgáltatói szolgáltatások kizárása";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Engedd, hogy a helyi forgalom megkerülje a VPN-t, és csatlakozz a helyi hálózaton található eszközökhöz úgy, mint egy nyomtatóhoz.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Gyorsparancsok";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Nem megbízható hálózatokon ajánlott, pl. nyilvános wifi szállodákban, bárokban stb. Ha problémákat tapasztalsz a funkciókkal (például a CarPlay, az AirDrop stb.) vagy más eszközökhöz való csatlakozással, próbáld meg kikapcsolni. [További információk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Szigorú útvonalvezetés";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Megerősítés";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Nem sikerült hozzáadni a névjegyet. Próbálkozz inkább a Letöltések mappában található névjegyfájl megnyitásával.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Névjegy hozzáadva";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Verzió: %@";

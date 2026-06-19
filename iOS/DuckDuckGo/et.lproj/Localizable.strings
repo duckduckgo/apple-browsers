@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Andmemaht";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Soovitatav on see välja lülitada, et kogu liiklus läbiks VPN-i. Kui teil on probleeme selliste funktsioonidega nagu WiFi-kõned, sõnumside või kõnepost, proovige need sisse lülitada.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Välista operaatoriteenused";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Suuna kohalik võrguliiklus VPN-ist mööda ja loo ühendus kohtvõrgu seadmete, nt printeriga.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Otseteed";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Soovitatav võrkudes, mida sa ei usalda, nt. avalik wifi hotellides, baarides jne. Kui teil on probleeme funktsioonidega (nt CarPlay, AirDrop jne) või teiste seadmetega ühenduse loomisega, proovige see välja lülitada. [Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Range marsruutimine";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Kinnita";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kontakti lisamine ebaõnnestus. Proovi kontaktfail hoopis allalaadimisest avada.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt lisatud";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Versioon: %@";

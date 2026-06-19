@@ -91,7 +91,7 @@ struct SyncRecoveryAlternativeView: View {
 
         do {
             var attributedString = try AttributedString(markdown: markdownString)
-            attributedString.foregroundColor = Color(designSystemColor: .accent)
+            attributedString.foregroundColor = Color(designSystemColor: .accentPrimary)
 
             return attributedString
         } catch {

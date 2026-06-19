@@ -130,6 +130,92 @@ final class VPNRoutingTableResolverTests: XCTestCase {
                       "Should NOT exclude IPv6 ULA when including local networks")
     }
 
+    /// Verifies that the CGNAT range (100.64.0.0/10) is added to excluded routes when the toggle is on.
+    /// Carriers and mesh VPNs like Tailscale rely on this range; including it in the tunnel breaks
+    /// Wi-Fi calling, Visual Voicemail, and Tailscale peer connectivity.
+    func testCGNATExcludedWhenToggleOn() {
+        let resolver = VPNRoutingTableResolver(
+            dnsServers: [DNSServer(address: IPv4Address("8.8.8.8")!)],
+            excludeLocalNetworks: false,
+            excludeCGNAT: true
+        )
+
+        let excludedStrings = resolver.excludedRoutes.map { $0.description }
+
+        XCTAssertTrue(excludedStrings.contains("100.64.0.0/10"),
+                     "Should exclude CGNAT range when excludeCGNAT is on")
+    }
+
+    /// Verifies that the CGNAT range is NOT added to excluded routes when the toggle is off
+    /// (preserves legacy behavior where 100.64/10 tunnels through the VPN).
+    func testCGNATNotExcludedWhenToggleOff() {
+        let resolver = VPNRoutingTableResolver(
+            dnsServers: [DNSServer(address: IPv4Address("8.8.8.8")!)],
+            excludeLocalNetworks: false,
+            excludeCGNAT: false
+        )
+
+        let excludedStrings = resolver.excludedRoutes.map { $0.description }
+
+        XCTAssertFalse(excludedStrings.contains("100.64.0.0/10"),
+                      "Should NOT exclude CGNAT range when excludeCGNAT is off")
+    }
+
+    /// Verifies that the CGNAT range is added to *included* routes when the toggle is off,
+    /// so 100.64/10 traffic still tunnels — preserving the legacy behavior where 100.64/10
+    /// was swept into the tunnel via the (now carved-up) 96.0.0.0/4 supernet.
+    func testCGNATIncludedWhenToggleOff() {
+        let resolver = VPNRoutingTableResolver(
+            dnsServers: [DNSServer(address: IPv4Address("8.8.8.8")!)],
+            excludeLocalNetworks: false,
+            excludeCGNAT: false
+        )
+
+        let includedStrings = resolver.includedRoutes.map { $0.description }
+
+        XCTAssertTrue(includedStrings.contains("100.64.0.0/10"),
+                     "100.64/10 should tunnel through VPN when excludeCGNAT is off")
+    }
+
+    /// Verifies that when the toggle is ON, 100.64/10 appears only in excludedRoutes and
+    /// is not pulled back into the tunnel via any superset block — no longer a collision
+    /// dependent on iOS longest-prefix-match semantics.
+    func testCGNATNotInIncludedRoutesWhenToggleOn() {
+        let resolver = VPNRoutingTableResolver(
+            dnsServers: [DNSServer(address: IPv4Address("8.8.8.8")!)],
+            excludeLocalNetworks: false,
+            excludeCGNAT: true
+        )
+
+        let includedStrings = resolver.includedRoutes.map { $0.description }
+        let cgnatRange = VPN.IPAddressRange(from: "100.64.0.0/10")!
+
+        XCTAssertFalse(includedStrings.contains("100.64.0.0/10"),
+                      "100.64/10 should not be in includedRoutes when excludeCGNAT is on")
+        // Belt-and-braces: no included route should *contain* the CGNAT range either.
+        let anyIncludedContainsCGNAT = resolver.includedRoutes.contains { route in
+            route.contains(cgnatRange.address)
+        }
+        XCTAssertFalse(anyIncludedContainsCGNAT,
+                      "No included route should encompass the CGNAT range when excludeCGNAT is on")
+    }
+
+    /// Verifies that the CGNAT toggle is orthogonal to the local-networks toggle:
+    /// CGNAT should be excluded based on its own flag, regardless of excludeLocalNetworks.
+    func testCGNATExclusionOrthogonalToLocalNetworks() {
+        for excludeLocal in [true, false] {
+            let resolver = VPNRoutingTableResolver(
+                dnsServers: [DNSServer(address: IPv4Address("8.8.8.8")!)],
+                excludeLocalNetworks: excludeLocal,
+                excludeCGNAT: true
+            )
+
+            let excludedStrings = resolver.excludedRoutes.map { $0.description }
+            XCTAssertTrue(excludedStrings.contains("100.64.0.0/10"),
+                         "CGNAT exclusion should be independent of excludeLocalNetworks (was \(excludeLocal))")
+        }
+    }
+
     // MARK: - Included Routes Logic Tests
 
     /// Verifies that all public internet traffic is always routed through the VPN tunnel regardless of local network settings

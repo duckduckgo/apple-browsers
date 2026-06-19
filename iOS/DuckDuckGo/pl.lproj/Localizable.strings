@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Ilość danych";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Zalecane jest wyłączenie tej opcji, aby cały ruch przechodził przez VPN. Jeśli masz problemy z funkcjami, takimi jak połączenia Wi-Fi, wiadomości lub poczta głosowa, spróbuj włączyć tę opcję.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Wyklucz usługi operatorów";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Zezwól na pomijanie sieci VPN przez ruch lokalny w celu łączenia z urządzeniami w sieci lokalnej, takimi jak drukarka.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Skróty";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Polecane w sieciach, którym nie ufasz, np. publiczne Wi-Fi w hotelach, barach itd. Jeśli masz problemy z funkcjami (takimi jak CarPlay, AirDrop itp.) lub łączeniem się z innymi urządzeniami, spróbuj je wyłączyć. [Dowiedz się więcej](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Ścisły routing";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potwierdź";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Nie mogę dodać kontaktu. Spróbuj otworzyć plik z kontaktami z pobranych.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Dodano kontakt";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Wersja: %@";

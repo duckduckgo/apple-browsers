@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Volumen de datos";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Se recomienda desactivarlo para que todo tu tráfico pase por la VPN. Si tienes problemas con funciones como las llamadas por Wi-Fi, la mensajería o el buzón de voz, intenta encenderlo.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Excluir servicios de operadoras";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Deja que el tráfico local sortee la VPN y conéctate a dispositivos de tu red local, como una impresora.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Accesos directos";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Recomendado en redes en las que no confías, p. ej., redes Wi-Fi públicas en hoteles, bares, etc. Si tienes problemas con las funciones (como CarPlay, AirDrop, etc.) o al conectarte a otros dispositivos, intenta apagarlo. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Enrutamiento estricto";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirmar";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "No se puede añadir el contacto. Intenta abrir el archivo de contactos de las descargas en su lugar.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Contacto añadido";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Versión: %@";

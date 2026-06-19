@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Volume de données";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Désactivation recommandée pour que tout votre trafic passe par le VPN. Si vous rencontrez des problèmes avec les fonctionnalités comme les appels Wi-Fi, la messagerie ou la messagerie vocale, essayez de l'activer.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Exclure les services des opérateurs";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Permettez au trafic local de contourner le VPN et connectez-vous aux appareils de votre réseau local, tels qu'une imprimante.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Raccourcis";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Recommandé sur les réseaux que vous jugez non fiables, comme le Wi-Fi public dans les hôtels, bars, etc. Si vous rencontrez des problèmes avec les fonctionnalités (comme CarPlay, AirDrop, etc.) ou la connexion à d’autres appareils, essayez de le désactiver. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Routage strict";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirmer";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "AlerteIU";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Impossible d'ajouter le contact. Essayez plutôt d'ouvrir le fichier du contact depuis Téléchargements.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Contact ajouté";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Version : %@";

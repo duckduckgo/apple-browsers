@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Όγκος δεδομένων";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Συνιστάται να απενεργοποιηθεί, ώστε το σύνολο της επισκεψιμότητάς σας να περνάει μέσω του VPN. Εάν αντιμετωπίζετε προβλήματα με λειτουργίες όπως κλήσεις Wi-Fi, ανταλλαγή μηνυμάτων ή φωνητικά μηνύματα, δοκιμάστε να προβείτε σε ενεργοποίηση.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Εξαίρεση Υπηρεσιών Παρόχου";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Επιτρέψτε στην τοπική κυκλοφορία να παρακάμψει το VPN και να συνδεθεί σε συσκευές του τοπικού δικτύου σας, όπως ένας εκτυπωτής.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Συντομευσεις";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Συνιστάται σε δίκτυα που δεν εμπιστεύεσαι, π.χ. δημόσιο wifi σε ξενοδοχεία, μπαρ κ.λπ. Εάν αντιμετωπίζεις προβλήματα με λειτουργίες (όπως CarPlay, AirDrop κ.λπ.) ή με τη σύνδεση σε άλλες συσκευές, δοκίμασε να το απενεργοποιήσεις. [Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Αυστηρή δρομολόγηση";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Επιβεβαίωση";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Δεν είναι δυνατή η προσθήκη επαφής. Δοκίμασε να ανοίξεις το αρχείο επαφής από τις Λήψεις.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Προστέθηκε επαφή";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Έκδοση: %@";

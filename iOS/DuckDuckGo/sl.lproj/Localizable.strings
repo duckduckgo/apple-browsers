@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Podatkovni nosilec";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Priporočamo izklop, da ves vaš promet poteka prek VPN. Če imate težave s funkcijami, kot so klicanje prek Wi-Fi, sporočanje ali glasovna pošta, poskusite to funkcijo vklopiti.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Izključi storitve operaterja";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Omogočite, da lahko lokalni promet zaobide omrežje VPN in se poveže z napravami v lokalnem omrežju, na primer s tiskalnikom.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Bližnjice";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Priporočeno v omrežjih, ki jim ne zaupate, npr. javni wifi v hotelih, barih itd. Če imate težave s funkcijami (kot so CarPlay, AirDrop itd.) ali povezovanjem z drugimi napravami, poskusite to izklopiti. [Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Strogo usmerjanje";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potrdi";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Ni mogoče dodati stika. Poskusite namesto tega odpreti datoteko s stiki iz mape Prenosi.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Stik je bil dodan";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Različica: %@";

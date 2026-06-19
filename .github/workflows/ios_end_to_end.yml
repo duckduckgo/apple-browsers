@@ -218,7 +218,7 @@ jobs:
     name: "E2E: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }}"
     needs: [build-end-to-end-tests, setup-matrix]
     runs-on: macos-26
-    timeout-minutes: 160
+    timeout-minutes: 210
 
     env:
       RUNS_ON: macos-26 # keep this in sync with runs-on above
@@ -248,24 +248,106 @@ jobs:
         name: duckduckgo-ios-app
         path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
+    - name: Install Maestro CLI
+      run: |
+        brew tap mobile-dev-inc/tap
+        brew install mobile-dev-inc/tap/maestro
+        # `timeout` is GNU coreutils; macOS runners may have only `gtimeout`, or neither.
+        if ! command -v timeout >/dev/null && ! command -v gtimeout >/dev/null; then
+          brew install coreutils
+        fi
+
+    - name: Prepare Maestro workspace config for the CLI
+      # The committed .maestro/config.yaml is in the legacy Robin format (appStartup/appSize keys),
+      # which the action-maestro-cloud action consumed itself. The bare `maestro cloud` CLI cannot
+      # parse those keys, so it treats config.yaml as a flow and aborts ("Config Field Required").
+      # Rewrite it (job-local, never committed) to a current-format workspace config that recurses
+      # into the flow subdirectories. ios_sync_end_to_end.yml still uses the old action in its own
+      # checkout, so this runtime rewrite does not affect it.
+      run: |
+        printf 'flows:\n  - "**"\n' > ../.maestro/config.yaml
+
     - name: Run Maestro tests (${{ matrix.device-name }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }})
       id: upload
-      uses: mobile-dev-inc/action-maestro-cloud@v1.9.8
-      with:
-        api-key: ${{ secrets.ROBIN_API_KEY }}
-        project-id: ${{ vars.ROBIN_PROJECT_KEY }}
-        name: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device-name }}_${{ github.sha }}
-        timeout: 150
-        app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
-        workspace: .maestro
-        include-tags: ${{ matrix.test-tag }}
-        exclude-tags: ${{ matrix.exclude-tags }}
-        env: |
-          ONBOARDING_COMPLETED=true
-          INTERNAL_USER_MODE=${{ matrix.user-mode == 'internal' && 'true' || '' }}
-        device-os: iOS-18-2
-        device-model: ${{ matrix.device-model }}
-        device-name: ${{ matrix.device-name }}
+      env:
+        MAESTRO_CLI_NO_ANALYTICS: "1"
+        MAESTRO_API_KEY: ${{ secrets.ROBIN_API_KEY }}
+        PROJECT_ID: ${{ vars.ROBIN_PROJECT_KEY }}
+        UPLOAD_NAME: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && '_internal' || '' }}_${{ matrix.device-name }}_${{ github.sha }}
+        TEST_TAG: ${{ matrix.test-tag }}
+        EXCLUDE_TAGS: ${{ matrix.exclude-tags }}
+        DEVICE_MODEL: ${{ matrix.device-model }}
+        USER_MODE: ${{ matrix.user-mode }}
+      run: |
+        set -uo pipefail
+        set +e   # GitHub's default bash uses `set -e`; we inspect exit codes manually
+        # Budget nesting - each value must stay below the next:
+        #   MAESTRO_TIMEOUT_MIN  maestro's own polling wait, the primary graceful budget. Its
+        #                        60m default silently killed healthy runs: only 2 cloud runners
+        #                        serve every leg, so queuing ate most of the window before the
+        #                        flows themselves had run. We set it above the real need (~77m
+        #                        for the 38-flow release leg: ~42m queue + ~35m execution).
+        #   ATTEMPT_BUDGET_MIN   outer hard-kill belt; only fires if maestro ignores its own
+        #                        clock (a true hang), surfacing as rc=124, which we retry.
+        #   MAX_ATTEMPTS x ATTEMPT_BUDGET_MIN must fit under the job's timeout-minutes.
+        MAESTRO_TIMEOUT_MIN=90
+        ATTEMPT_BUDGET_MIN=100
+        MAX_ATTEMPTS=2
+        RETRY_DELAY=30
+        NETWORK_SIGNATURE='getaddrinfo ENOTFOUND|EAI_AGAIN|FetchError|Could not get Upload status|ETIMEDOUT|ECONNRESET|socket hang up'
+        TIMEOUT_BIN="$(command -v timeout || command -v gtimeout)"
+
+        flags=(
+          --api-key "$MAESTRO_API_KEY"
+          --project-id "$PROJECT_ID"
+          --name "$UPLOAD_NAME"
+          --app-file "DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app"
+          --flows "../.maestro"
+          --include-tags "$TEST_TAG"
+          --device-os iOS-18-2
+          --device-model "$DEVICE_MODEL"
+          --timeout "$MAESTRO_TIMEOUT_MIN"
+          -e ONBOARDING_COMPLETED=true
+        )
+        if [ -n "$EXCLUDE_TAGS" ]; then flags+=(--exclude-tags "$EXCLUDE_TAGS"); fi
+        if [ "$USER_MODE" = "internal" ]; then flags+=(-e INTERNAL_USER_MODE=true); fi
+
+        for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+          echo "Maestro Cloud attempt $attempt of $MAX_ATTEMPTS (budget ${ATTEMPT_BUDGET_MIN}m)"
+          "$TIMEOUT_BIN" "${ATTEMPT_BUDGET_MIN}m" maestro cloud "${flags[@]}" 2>&1 | tee maestro.log
+          rc=${PIPESTATUS[0]}
+
+          if [ "$rc" -eq 0 ]; then
+            echo "Maestro Cloud passed on attempt $attempt"
+            exit 0
+          fi
+
+          # Maestro hit its own --timeout (rc=1, distinct from a flow failure). Not retried: a
+          # retry re-runs the full leg under the same budget, so a genuine overrun fails twice.
+          # Checked BEFORE the network signature below because a 90m poll legitimately logs
+          # transient "Could not get Upload status"/ETIMEDOUT lines mid-run; matching those first
+          # would spuriously retry a definitive polling timeout. The rc!=124 guard keeps the outer
+          # hard-kill (below) as a retryable hang. Surface it clearly instead of masquerading as a
+          # test failure.
+          if [ "$rc" -ne 124 ] && grep -qE "Waiting for flows to complete has timed out" maestro.log; then
+            echo "::error::Maestro Cloud's ${MAESTRO_TIMEOUT_MIN}m polling budget elapsed before all flows finished (not a test failure). Most of the budget is cloud-side queuing - only 2 runners serve every leg. Raise MAESTRO_TIMEOUT_MIN (and ATTEMPT_BUDGET_MIN / job timeout-minutes to keep them nested) if this recurs on an otherwise-green run."
+            exit "$rc"
+          fi
+
+          if [ "$rc" -eq 124 ] || grep -qE "$NETWORK_SIGNATURE" maestro.log; then
+            echo "::warning::Transient Maestro Cloud/network failure on attempt $attempt (rc=$rc)."
+            if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+              echo "Retrying in ${RETRY_DELAY}s..."
+              sleep "$RETRY_DELAY"
+              continue
+            fi
+            echo "::error::Transient Maestro Cloud failures persisted across $MAX_ATTEMPTS attempts."
+            exit "$rc"
+          fi
+
+          echo "Genuine Maestro flow failure (rc=$rc) - not retrying."
+          exit "$rc"
+        done
 
     - name: Report job duration
       continue-on-error: true

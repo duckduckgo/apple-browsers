@@ -445,7 +445,7 @@ final class TabCollectionViewModel: NSObject {
         shouldReturnToPreviousActiveTab = true
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
-            NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
+            NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
             if isBurner {
                 var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
                 if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {

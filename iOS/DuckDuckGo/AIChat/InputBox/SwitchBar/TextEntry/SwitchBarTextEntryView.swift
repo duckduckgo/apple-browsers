@@ -37,17 +37,6 @@ class SwitchBarTextEntryView: UIView {
         case compact
         case tallTopAlignedAIChat
 
-        var minHeight: CGFloat {
-            switch self {
-            case .compact:
-                return Constants.minHeight
-            case .tallTopAlignedAIChat:
-                // This pose is only selected when `usesExpandedAIChatTextEntryLayout` is true (the
-                // legacy non-UTI iPhone path), so it always uses the legacy height.
-                return Constants.legacyMinHeightAIChat
-            }
-        }
-
         var usesTopAlignedPlaceholder: Bool {
             switch self {
             case .compact:
@@ -165,22 +154,25 @@ class SwitchBarTextEntryView: UIView {
         return .compact
     }
 
-    // Layout values that fall back to their legacy counterparts on the non-UTI iPhone path
+    // The tall AIChat height is shared by both the UTI and the legacy iPhone path, so it tracks
+    // `usesExpandedAIChatTextEntryLayout` (true for both).
     private var minHeightAIChat: CGFloat {
         handler.usesExpandedAIChatTextEntryLayout ? Constants.legacyMinHeightAIChat : Constants.minHeightAIChat
     }
 
+    // The horizontal insets/offsets only revert on the legacy (non-UTI) path. The UTI keeps the new
+    // metrics even though it also reports `usesExpandedAIChatTextEntryLayout == true`.
     private var textHorizontalInset: CGFloat {
-        handler.usesExpandedAIChatTextEntryLayout ? Constants.legacyTextHorizontalInset : Constants.textHorizontalInset
+        handler.usesLegacyLayoutMetrics ? Constants.legacyTextHorizontalInset : Constants.textHorizontalInset
     }
 
     private var placeholderHorizontalOffset: CGFloat {
-        handler.usesExpandedAIChatTextEntryLayout ? Constants.legacyPlaceholderHorizontalOffset : Constants.placeholderHorizontalOffset
+        handler.usesLegacyLayoutMetrics ? Constants.legacyPlaceholderHorizontalOffset : Constants.placeholderHorizontalOffset
     }
 
     private var currentMinHeight: CGFloat {
         if currentPose == .tallTopAlignedAIChat {
-            return currentPose.minHeight
+            return minHeightAIChat
         }
 
         guard handler.isUsingFadeOutAnimation else {

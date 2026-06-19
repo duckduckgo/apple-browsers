@@ -25,13 +25,13 @@ final class SnapshotEnvironmentTests: XCTestCase {
     func testMacOS26IsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0)
         )
 
         XCTAssertNil(message)
     }
 
-    func testMacOS25IsRejected() {
+    func testMacOSWrongMajorVersionIsRejected() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 25, minorVersion: 6, patchVersion: 0)
@@ -40,20 +40,39 @@ final class SnapshotEnvironmentTests: XCTestCase {
         XCTAssertEqual(message, "UI snapshots must run on macOS 26.x. Current OS is 25.6.0.")
     }
 
-    func testIOS26At3xIsAccepted() {
+    func testMacOSDifferentMinorVersionIsAccepted() {
+        let message = SnapshotEnvironment.validationMessage(
+            platform: .macOS,
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 1, patchVersion: 0)
+        )
+
+        XCTAssertNil(message)
+    }
+
+    func testIOS264At3xIsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .iOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0),
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0),
             displayScale: 3
         )
 
         XCTAssertNil(message)
     }
 
+    func testIOSWrongMinorVersionIsRejected() {
+        let message = SnapshotEnvironment.validationMessage(
+            platform: .iOS,
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 1, patchVersion: 0),
+            displayScale: 3
+        )
+
+        XCTAssertEqual(message, "UI snapshots must run on iOS 26.4. Current OS is 26.1.0.")
+    }
+
     func testIOS26At2xIsRejected() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .iOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0),
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0),
             displayScale: 2
         )
 

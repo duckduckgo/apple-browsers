@@ -38,6 +38,7 @@ public enum SnapshotPlatform: Equatable {
 
 public enum SnapshotEnvironment {
     public static let expectedMajorVersion = 26
+    public static let expectedMinorVersion = 4
     public static let expectedIOSDisplayScale = 3.0
 
     public static func currentValidationMessage() -> String? {
@@ -64,7 +65,14 @@ public enum SnapshotEnvironment {
     ) -> String? {
         guard operatingSystemVersion.majorVersion == expectedMajorVersion else {
             let currentVersion = versionString(operatingSystemVersion)
-            return "UI snapshots must run on \(platform.displayName) \(expectedMajorVersion).x. Current OS is \(currentVersion)."
+            return "UI snapshots must run on \(platform.displayName) \(expectedVersionString(for: platform)). Current OS is \(currentVersion)."
+        }
+
+        if platform == .iOS {
+            guard operatingSystemVersion.minorVersion == expectedMinorVersion else {
+                let currentVersion = versionString(operatingSystemVersion)
+                return "UI snapshots must run on \(platform.displayName) \(expectedVersionString(for: platform)). Current OS is \(currentVersion)."
+            }
         }
 
         if platform == .iOS {
@@ -81,5 +89,14 @@ public enum SnapshotEnvironment {
 
     private static func versionString(_ version: OperatingSystemVersion) -> String {
         "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
+    }
+
+    private static func expectedVersionString(for platform: SnapshotPlatform) -> String {
+        switch platform {
+        case .iOS:
+            return "\(expectedMajorVersion).\(expectedMinorVersion)"
+        case .macOS:
+            return "\(expectedMajorVersion).x"
+        }
     }
 }

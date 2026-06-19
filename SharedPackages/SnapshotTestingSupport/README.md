@@ -57,8 +57,8 @@ On macOS:
 - `.screen` and `.sheet` currently resolve to the macOS default size (`800x600`) unless a custom or fixed size is supplied.
 
 Environment validation is strict:
-- iOS snapshots require iOS 26 and `@3x`.
-- macOS snapshots require macOS 26.
+- iOS snapshots require iOS 26.4 and `@3x`.
+- macOS snapshots require macOS 26.x.
 
 Recording:
 - Missing references record automatically.

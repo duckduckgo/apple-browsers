@@ -1187,6 +1187,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             configurationResult = try await deviceManager.generateTunnelConfiguration(
                 resolvedSelectionMethod: resolvedServerSelectionMethod,
                 excludeLocalNetworks: settings.excludeLocalNetworks,
+                excludeCGNAT: settings.excludeCGNAT,
                 dnsSettings: dnsSettings,
                 regenerateKey: regenerateKey
             )
@@ -1262,6 +1263,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 .setDNSSettings,
                 .setEnforceRoutes,
                 .setExcludeLocalNetworks,
+                .setExcludeCGNAT,
                 .setExcludeAPNs,
                 .setExcludeCellularServices,
                 .setExcludeDeviceCommunication,
@@ -1275,6 +1277,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // Some of these don't require further action
             // Some may require an adapter restart, but it's best if that's taken care of by
             // the app that's coordinating the updates.
+            //
+            // enforceRoutes specifically is bound to the NECP session at creation time, so a
+            // network-settings re-push here can't change it. The controller re-saves the protocol
+            // and fully restarts the tunnel when this setting changes instead.
             break
         }
     }

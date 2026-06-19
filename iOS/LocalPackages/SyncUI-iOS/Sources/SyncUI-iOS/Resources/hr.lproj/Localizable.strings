@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Nabavi DuckDuckGo na drugim uređajima";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Tvoji su podaci sinkronizirani!";
+"device.synced.sheet.title" = "Uređaj je sinkroniziran!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Gotovo";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Postavljanje sinkronizacije i sigurnosnog kopiranja";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Priprema za sinkronizaciju";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Oporavak sinkroniziranih podataka";
@@ -389,13 +392,13 @@
 "sync.simplified.scan-or-view-code.connecting.status" = "Povezivanje u tijeku...";
 
 /* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Keep “Sync & Backup” open on both devices";
+"sync.simplified.scan-or-view-code.connecting.title" = "Ostavi Sync & Backup otvoren na oba uređaja";
 
 /* Message of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Vrati se na ovaj uređaj nakon što zalijepiš kod.";
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Vrati se na ovaj uređaj nakon što zalijepiš kôd.";
 
 /* Title of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Umetnite kod na svoj drugi uređaj";
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Zalijepi kôd u aplikaciju svog drugog uređaja";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Ručno unesi šifru";
@@ -425,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Sinkroniziraj svoje uređaje";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Skeniraj ili zalijepi ovaj kôd na svoj drugi";
+"sync.simplified.scan-or-view-code.view.instructions" = "Skeniraj ili zalijepi ovaj kôd u aplikaciju svog drugog";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sinkronizacija i sigurnosno kopiranje";

@@ -101,6 +101,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tabDragAndDropManager: TabDragAndDropManager
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
+    let applicationUpdateDetector: ApplicationUpdateDetector
+    private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
@@ -849,16 +851,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
+            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
-            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
+            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), decisionOverride: voiceChatPermissionOverride)
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
+        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
 #endif
         notificationService = UserNotificationAuthorizationService()
@@ -1240,6 +1242,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             memoryProvider: MemoryUsageMonitor.residentMemorySize(forPID:)
         )
 
+        applicationUpdateDetector = ApplicationUpdateDetector(settings: UserDefaults.standard.throwingKeyedStoring())
+
         super.init()
 
         webExtensionManagerHolder.appDelegate = self
@@ -1303,12 +1307,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 
+        let buildType = StandardApplicationBuildType()
+        uncleanExitRestartSourceResolver = UncleanExitRestartSourceResolver(
+            updateControllerSettings: UserDefaults.standard.throwingKeyedStoring(),
+            crashReportDetecting: MainBrowserCrashReportDetector(
+                settings: UserDefaults.standard.throwingKeyedStoring(),
+                buildType: buildType
+            ),
+            buildType: buildType
+        )
+
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                              startupPreferences: startupPreferences,
                                                              tabsPreferences: tabsPreferences,
                                                              keyValueStore: keyValueStore,
                                                              sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                                                             applicationUpdateDetecting: applicationUpdateDetector,
+                                                             restartSourceResolver: uncleanExitRestartSourceResolver,
                                                              pixelFiring: PixelKit.shared)
+
+        uncleanExitRestartSourceResolver.captureSparklePendingUpdateSnapshot()
 
         initializeUpdateController()
 
@@ -1682,6 +1700,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
+                applicationUpdateDetector: applicationUpdateDetector,
                 allowCustomUpdateFeed: allowCustomUpdateFeed,
                 isAutoUpdatePaused: { [featureFlagger] in
                     if buildType.isDebugBuild {

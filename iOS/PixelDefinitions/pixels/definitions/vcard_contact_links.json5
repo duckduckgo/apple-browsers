@@ -1,0 +1,49 @@
+{
+    "m_vcard_contact_editor_presented": {
+        "description": "Fired when CNContactViewController is presented for a downloaded .vcf file containing a single presentable contact",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_vcard_contact_editor_saved": {
+        "description": "Fired when the user adds the contact (Create New Contact / Add to Existing Contact) from the CNContactViewController shown for a downloaded .vcf file",
+        "owners": ["bkunat"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_vcard_contact_editor_cancelled": {
+        "description": "Fired when the user dismisses the CNContactViewController shown for a downloaded .vcf file without adding the contact",
+        "owners": ["bkunat"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_vcard_contact_multiple_contacts_truncated": {
+        "description": "Fired when a .vcf file contains more than one contact; we present the first contact's Add to Contacts card and ignore the rest (Safari parity)",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_vcard_contact_fallback_parse_failure": {
+        "description": "Fired when a .vcf file fails to parse or has no presentable fields and we fall back to QuickLook with a toast",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "m_vcard_contact_routed_by_extension": {
+        "description": "Fired when a downloaded file is routed through the .vcf handler based on its file extension because the MIME type wasn't a recognized vCard type",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

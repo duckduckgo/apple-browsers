@@ -287,12 +287,12 @@ extension RemoteMessagingUI {
                     .font(.system(size: Metrics.Card.FeaturedTwoLines.buttonTitleSize))
                     .underline(true)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color(designSystemColor: .accent))
+                    .foregroundStyle(Color(designSystemColor: .accentPrimary))
 
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.chevronMediumRight)
             }
             .frame(height: Metrics.Card.FeaturedTwoLines.buttonHeight)
-            .foregroundStyle(Color.init(designSystemColor: .accent))
+            .foregroundStyle(Color.init(designSystemColor: .accentPrimary))
         }
     }
 

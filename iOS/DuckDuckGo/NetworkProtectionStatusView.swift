@@ -115,7 +115,7 @@ struct NetworkProtectionStatusView: View {
                     }
                 ))
                 .disabled(statusModel.shouldDisableToggle)
-                .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
+                .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
             }
             .padding([.top, .bottom], 2)
 
@@ -199,7 +199,7 @@ struct NetworkProtectionStatusView: View {
                     await statusModel.cancelSnooze()
                 }
             }
-            .tint(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accentPrimary))
             .disabled(statusModel.snoozeRequestPending)
         } else if statusModel.hasServerInfo {
             Button(UserText.netPStatusViewSnooze) {
@@ -207,7 +207,7 @@ struct NetworkProtectionStatusView: View {
                     await statusModel.startSnooze()
                 }
             }
-            .tint(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accentPrimary))
             .disabled(statusModel.snoozeRequestPending)
         }
     }
@@ -386,7 +386,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
-                .tint(Color.init(designSystemColor: .accent))
+                .tint(Color.init(designSystemColor: .accentPrimary))
                 .onAppear {
                     tipsModel.handleSnoozeTipShown()
                 }
@@ -415,7 +415,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
-                .tint(Color.init(designSystemColor: .accent))
+                .tint(Color.init(designSystemColor: .accentPrimary))
                 .onAppear {
                     tipsModel.handleWidgetTipShown()
                 }

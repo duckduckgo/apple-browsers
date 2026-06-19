@@ -29,6 +29,7 @@ let package = Package(
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "Navigation", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
             ],

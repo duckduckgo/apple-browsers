@@ -1,0 +1,14 @@
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- tapOn: "Browsing Menu"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "AI Features"
+    direction: DOWN
+- tapOn: "AI Features"
+- tapOn:
+    id: "Settings.AIFeatures.Picker.SearchOnly"
+- tapOn: "Settings"
+- tapOn: "Done"

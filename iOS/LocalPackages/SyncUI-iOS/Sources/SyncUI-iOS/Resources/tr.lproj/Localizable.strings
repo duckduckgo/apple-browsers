@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "DuckDuckGo'yu Diğer Cihazlarda Edinin";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Verileriniz Senkronize Edildi!";
+"device.synced.sheet.title" = "Cihaz senkronize edildi!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Bitti";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Senkronizasyon ve Yedeklemeyi Ayarlama";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Senkronizasyona hazırlanıyor";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Senkronize Edilen Verileri Kurtar";
@@ -389,13 +392,13 @@
 "sync.simplified.scan-or-view-code.connecting.status" = "Bağlanıyor...";
 
 /* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Her iki cihazda da “Sync & Backup” açık kalsın";
+"sync.simplified.scan-or-view-code.connecting.title" = "“Sync & Backup” her iki cihazda da açık kalsın";
 
 /* Message of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kodu yapıştırdıktan sonra bu cihaza geri dön.";
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kodu yapıştırdıktan sonra bu cihaza geri dönün.";
 
 /* Title of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Kodu diğer cihazına yapıştır.";
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Kodu diğer cihazınıza yapıştırın";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Kodu Manuel Olarak Yaz";
@@ -425,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Cihazlarınızı Senkronize Edin";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Bu kodu tara veya diğer cihazına yapıştır";
+"sync.simplified.scan-or-view-code.view.instructions" = "Bu kodu tarayın veya diğer cihazınıza yapıştırın";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Senkronizasyon ve Yedekleme";

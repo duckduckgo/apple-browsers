@@ -50,10 +50,14 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     public static let viewDidLayoutNotification = Notification.Name("com.duckduckgo.app.TabsBarViewControllerViewDidLayout")
     
     struct Constants {
-        
-        static let minItemWidth: CGFloat = 68
-        static let buttonSize: CGFloat = 40
+
+        static let buttonWidth: CGFloat = 44
+        static let buttonHeight: CGFloat = 40
         static let stackSpacing: CGFloat = 12
+        static let minItemWidth: CGFloat = 120
+        static let maxItemWidthFraction: CGFloat = 0.33
+        static let narrowMaxItemWidthFraction: CGFloat = 0.5
+        static let leadingInset: CGFloat = 16
     }
     
     enum NewTabType {
@@ -108,7 +112,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private var cancellables = Set<AnyCancellable>()
     
     private weak var pressedCell: TabsBarCell?
-    
+
     var tabsCount: Int {
         return tabsModel?.count ?? 0
     }
@@ -119,10 +123,6 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     
     var currentIndex: Int? {
         return tabsModel?.currentIndex
-    }
-
-    var maxItems: Int {
-        return Int(collectionView.frame.size.width / Constants.minItemWidth)
     }
 
     static func createFromXib() -> TabsBarViewController {
@@ -148,6 +148,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         collectionView.clipsToBounds = true
         collectionView.delegate = self
         collectionView.dataSource = self
+        // Prefetching can drop a still-visible cell during a fast scroll and not re-display it
+        // (a gap). Prefetching gains are marginal here and on top of that we're not handling it properly (no willDisplay).
+        collectionView.isPrefetchingEnabled = false
+
+        collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.leadingInset).isActive = true
 
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
         fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
@@ -167,10 +172,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
         tabSwitcherButton.delegate = self
 
-        // Set width equal to height for all icon buttons
+        // Set width and height for all icon buttons
+        // Width is set to 44 to properly align with OmniBar buttons that are displayed below
         [addTabButton, fireButton, tabSwitcherButton].forEach { button in
-            button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
-            button.widthAnchor.constraint(equalToConstant: Constants.buttonSize).isActive = true
+            button.heightAnchor.constraint(equalToConstant: Constants.buttonHeight).isActive = true
+            button.widthAnchor.constraint(equalToConstant: Constants.buttonWidth).isActive = true
         }
     }
 
@@ -304,18 +310,49 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     }
 
+    /// After a resize/rotation reflows the strip, nudge the current tab fully into view, but only if
+    /// it ended up partially clipped. If it's already fully visible there's nothing to do; if the
+    /// user had scrolled it entirely out of view, their scroll position is left untouched.
+    func scrollCurrentTabIntoView() {
+        DispatchQueue.main.async {
+            guard let currentIndex = self.currentIndex else { return }
+            let indexPath = IndexPath(row: currentIndex, section: 0)
+            guard let attributes = self.collectionView.layoutAttributesForItem(at: indexPath) else { return }
+            let visibleRect = CGRect(origin: self.collectionView.contentOffset, size: self.collectionView.bounds.size)
+            let isPartiallyClipped = visibleRect.intersects(attributes.frame) && !visibleRect.contains(attributes.frame)
+            guard isPartiallyClipped else { return }
+            self.collectionView.scrollToItem(at: indexPath, at: [], animated: true)
+        }
+    }
+
     private func recomputeItemSize() {
         let availableWidth = collectionView.frame.size.width
-        let maxVisibleItems = min(maxItems, tabsCount)
-        guard maxVisibleItems > 0 else { return }
+        guard tabsCount > 0 else { return }
 
-        var itemWidth = availableWidth / CGFloat(maxVisibleItems)
-        itemWidth = max(itemWidth, Constants.minItemWidth)
-        itemWidth = min(itemWidth, availableWidth / 2)
+        let itemWidth = Self.itemWidth(
+            availableWidth: availableWidth,
+            visibleItems: tabsCount,
+            minWidth: Constants.minItemWidth,
+            maxWidth: maxItemWidth(forStripWidth: availableWidth)
+        )
 
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
             flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
         }
+    }
+
+    /// Half the strip, but in landscape also capped at a third of the full-screen strip so a resize
+    /// to full width eases to a third instead of snapping.
+    private func maxItemWidth(forStripWidth availableWidth: CGFloat) -> CGFloat {
+        let half = availableWidth * Constants.narrowMaxItemWidthFraction
+        guard let window = view.window, let windowScene = window.windowScene,
+              windowScene.interfaceOrientation.isLandscape else {
+            return half
+        }
+        let chrome = window.bounds.width - availableWidth
+        let screenBounds = windowScene.screen.bounds
+        let landscapeFullStripWidth = max(screenBounds.width, screenBounds.height) - chrome
+        return min(half, landscapeFullStripWidth * Constants.maxItemWidthFraction)
     }
 
     /// Once-per-day baseline snapshots: open-tab count (bucketed) and whether the strip overflows
@@ -332,6 +369,15 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         if availableWidth > 0, itemWidth > 0, CGFloat(tabsCount) * itemWidth > availableWidth {
             DailyPixel.fire(pixel: .tabBarOverflowDaily)
         }
+    }
+
+    /// Equal share of the strip, capped at `maxWidth` then floored at `minWidth` (floor wins).
+    static func itemWidth(availableWidth: CGFloat, visibleItems: Int, minWidth: CGFloat, maxWidth: CGFloat) -> CGFloat {
+        guard visibleItems > 0 else { return 0 }
+        var width = availableWidth / CGFloat(visibleItems)
+        width = min(width, maxWidth)
+        width = max(width, minWidth)
+        return width
     }
 
     private func reloadData() {

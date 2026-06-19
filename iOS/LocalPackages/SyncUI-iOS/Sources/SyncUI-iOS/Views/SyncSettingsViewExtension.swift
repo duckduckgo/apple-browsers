@@ -80,7 +80,7 @@ extension SyncSettingsView {
                 model.beginBackupFlow()
             } label: {
                 Text(UserText.syncAndBackUpThisDeviceLink)
-                    .foregroundColor(Color(designSystemColor: .accent))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
             }
             .sheet(isPresented: $model.isSyncWithSetUpSheetVisible, onDismiss: model.syncWithSetUpSheetDidDismiss, content: {
                 SyncWithServerView(model: model, onCancel: {
@@ -94,7 +94,7 @@ extension SyncSettingsView {
                 model.beginRecoverFlow()
             } label: {
                 Text(UserText.recoverSyncedDataLink)
-                    .foregroundColor(Color(designSystemColor: .accent))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
             }
             .sheet(isPresented: $model.isRecoverSyncedDataSheetVisible, content: {
                 RecoverSyncedDataView(model: model, onCancel: {

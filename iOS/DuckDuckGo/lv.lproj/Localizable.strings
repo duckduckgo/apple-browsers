@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datu apjoms";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Ieteicams izslēgt, lai visa tava datplūsma notiktu caur VPN. Ja rodas problēmas ar tādām funkcijām kā Wi-Fi zvani, ziņojumapmaiņa vai balss pasts, mēģini to ieslēgt.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Neietvert operatora pakalpojumus";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Ļauj vietējai datplūsmai apiet VPN un izveidot savienojumu ar ierīcēm tavā vietējā tīklā, piemēram, printeri.";
 
@@ -3060,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Saīsnes";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Ieteicama tīklos, kuriem neuzticies, piemēram, publiskam Wi-Fi viesnīcās, bāros u.tml. Ja rodas problēmas ar funkcijām (piemēram, CarPlay, AirDrop u.c.) vai savienošanos ar citām ierīcēm, pamēģini to izslēgt. [Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Stingra maršrutēšana";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Apstiprināt";
@@ -4845,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Nevar pievienot kontaktpersonu. Mēģini atvērt kontaktpersonas failu no lejupielādēm.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontaktpersona pievienota";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Versija: %@";

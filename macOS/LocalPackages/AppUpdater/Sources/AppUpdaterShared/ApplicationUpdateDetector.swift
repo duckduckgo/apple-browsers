@@ -16,19 +16,31 @@
 //  limitations under the License.
 //
 
-import AppUpdaterShared
 import Common
-import FoundationExtensions
 import Foundation
+import FoundationExtensions
 import Persistence
 
-public final class ApplicationUpdateDetector {
+public protocol ApplicationUpdateDetecting {
+    func isApplicationUpdated(currentVersion: String?,
+                              currentBuild: String?,
+                              previousVersion: String?,
+                              previousBuild: String?) -> AppUpdateStatus
+}
+
+public extension ApplicationUpdateDetecting {
+    func isApplicationUpdated() -> AppUpdateStatus {
+        isApplicationUpdated(currentVersion: nil, currentBuild: nil, previousVersion: nil, previousBuild: nil)
+    }
+}
+
+public final class ApplicationUpdateDetector: ApplicationUpdateDetecting {
 
     private var hasCheckedForUpdate = false
     private var updateStatus: AppUpdateStatus = .noChange
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
-    init(settings: any ThrowingKeyedStoring<UpdateControllerSettings>) {
+    public init(settings: any ThrowingKeyedStoring<UpdateControllerSettings>) {
         self.settings = settings
     }
 
@@ -42,10 +54,10 @@ public final class ApplicationUpdateDetector {
         set { try? settings.set(newValue, for: \.previousBuild) }
     }
 
-    func isApplicationUpdated(currentVersion: String? = nil,
-                              currentBuild: String? = nil,
-                              previousVersion: String? = nil,
-                              previousBuild: String? = nil) -> AppUpdateStatus {
+    public func isApplicationUpdated(currentVersion: String? = nil,
+                                     currentBuild: String? = nil,
+                                     previousVersion: String? = nil,
+                                     previousBuild: String? = nil) -> AppUpdateStatus {
         // If the update check has already been performed, return the cached result
         if hasCheckedForUpdate {
             return updateStatus

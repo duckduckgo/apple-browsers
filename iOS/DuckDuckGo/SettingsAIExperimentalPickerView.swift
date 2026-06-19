@@ -176,7 +176,7 @@ private struct CheckmarkView: View {
             Image(uiImage: DesignSystemImages.Recolorable.Size24.check)
                 .resizable()
                 .renderingMode(.template)
-                .foregroundStyle(Color(designSystemColor: .accent))
+                .foregroundStyle(Color(designSystemColor: .accentPrimary))
         } else {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle)
                 .resizable()

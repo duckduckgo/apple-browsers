@@ -35,7 +35,7 @@ struct NetworkProtectionUIElements {
                     HStack(spacing: 12) {
                         label()
                         Image(systemName: "checkmark")
-                            .tint(.init(designSystemColor: .accent))
+                            .tint(.init(designSystemColor: .accentPrimary))
                             .if(!isSelected) {
                                 $0.hidden()
                             }
@@ -71,14 +71,14 @@ struct NetworkProtectionUIElements {
                     }
 
                     toggle
-                        .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
+                        .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
                 }
             } header: {
                 Text(headerText)
             } footer: {
                 Text(LocalizedStringKey(footerText))
                     .foregroundColor(.init(designSystemColor: .textSecondary))
-                    .accentColor(Color(designSystemColor: .accent))
+                    .accentColor(Color(designSystemColor: .accentPrimary))
                     .daxFootnoteRegular()
                     .padding(.top, 6)
             }

@@ -295,6 +295,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
     private let aiChatSettings: AIChatSettingsProvider
+    private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
 
     public let isDismissedPublisher: PassthroughSubject<Bool, Never>
 
@@ -304,7 +305,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
          variantManager: VariantManager = DefaultVariantManager(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
          onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
-         aiChatSettings: AIChatSettingsProvider = AIChatSettings()
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
@@ -312,6 +314,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         self.launchOptionsHandler = launchOptionsHandler
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
         self.aiChatSettings = aiChatSettings
+        self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         self.isDismissedPublisher = PassthroughSubject<Bool, Never>()
     }
 
@@ -672,6 +675,16 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             // When AI Chat is enabled the EOJ is driven by presentChatPathOnboardingCompletionIfNeeded.
             // When disabled, fall through to .final so users still see an end-of-journey dialog.
             return isAIChatEnabled ? nil : .final
+        }
+
+        // When the user chose "Use Search & Duck.ai" and triggered a search during onboarding,
+        // the UTI would load NewTabPageViewController calling `viewDidAppear` which would 
+        // call nextHomeScreenMessageNew() before the SERP dialog fires.
+        // Suppress .subsequent until "That's DuckDuckGo Search!" has been seen.
+        if onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding
+            && settings.tryAnonymousSearchShown
+            && !settings.browsingAfterSearchShown {
+            return nil
         }
 
         // Check final first as if we skip anonymous searches we don't want to show this.

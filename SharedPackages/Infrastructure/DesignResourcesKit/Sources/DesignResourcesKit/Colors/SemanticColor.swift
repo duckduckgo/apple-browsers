@@ -30,6 +30,7 @@ public enum DesignSystemColor {
 
     // Surfaces
     case surface // T-surface/secondary
+    case surfaceSecondary
     case surfaceTertiary
     case surfaceCanvas
 

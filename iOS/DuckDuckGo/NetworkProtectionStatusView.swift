@@ -146,7 +146,7 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func statusBadge(isConnected: Bool) -> some View {
         Circle()
-            .foregroundStyle(isConnected ? .green : .yellow)
+            .foregroundStyle(isConnected ? Color(designSystemColor: .alertGreen) : Color(designSystemColor: .alertYellow))
             .frame(width: 8, height: 8)
     }
 
@@ -156,22 +156,12 @@ struct NetworkProtectionStatusView: View {
             Spacer(minLength: 0)
             VStack(alignment: .center, spacing: 8) {
                 if AppRebrand.isAppRebranded() {
-                    ZStack {
-                        Image(.vpnLock128)
-                            .resizable()
-                            .frame(width: 128, height: 96)
-                            .opacity(statusModel.isNetPEnabled ? 1 : 0)
-                        Image(.vpnDisabled128)
-                            .resizable()
-                            .frame(width: 128, height: 96)
-                            .opacity(statusModel.isNetPEnabled ? 0 : 1)
-                    }
-                    .animation(statusModel.animationsOn ? .easeInOut(duration: 0.3) : nil,
-                               value: statusModel.isNetPEnabled)
+                    headerAnimationView("vpn-animation", contentSize: CGSize(width: 128, height: 96))
+                        .frame(width: 128, height: 96)
                 } else if colorScheme == .light {
-                    headerAnimationView("vpn-light-mode")
+                    headerAnimationView("vpn-light-mode-legacy")
                 } else {
-                    headerAnimationView("vpn-dark-mode")
+                    headerAnimationView("vpn-dark-mode-legacy")
                 }
                 Text(statusModel.headerTitle)
                     .daxHeadline()
@@ -333,20 +323,33 @@ struct NetworkProtectionStatusView: View {
     }
 
     @ViewBuilder
-    private func headerAnimationView(_ animationName: String) -> some View {
-        LottieView(
-            lottieFile: animationName,
-            loopMode: .withIntro(
+    private func headerAnimationView(_ animationName: String, contentSize: CGSize? = nil) -> some View {
+        let loopMode: LottieView.LoopMode = AppRebrand.isAppRebranded() ?
+            .withIntro(
                 .init(
                     // Skip the intro if NetP is enabled, but the user didn't manually trigger it
+                    skipIntro: statusModel.isNetPEnabled && !statusModel.shouldDisableToggle,
+                    introStartFrame: 0,
+                    introEndFrame: 30,
+                    loopStartFrame: 31,
+                    loopEndFrame: 121
+                )
+            ) :
+            .withIntro(
+                .init(
                     skipIntro: statusModel.isNetPEnabled && !statusModel.shouldDisableToggle,
                     introStartFrame: 0,
                     introEndFrame: 100,
                     loopStartFrame: 130,
                     loopEndFrame: 370
                 )
-            ),
-            isAnimating: $statusModel.isNetPEnabled
+            )
+
+        LottieView(
+            lottieFile: animationName,
+            loopMode: loopMode,
+            isAnimating: $statusModel.isNetPEnabled,
+            contentSize: contentSize
         )
     }
 

@@ -827,6 +827,8 @@ final class RebrandPreviewOverride: ObservableObject {
 public struct ButtonStylesGallery: View {
     let isRebranded: Bool
 
+    @Environment(\.colorScheme) private var colorScheme
+
     @StateObject private var override: RebrandPreviewOverride
 
     public init(isRebranded: Bool) {
@@ -912,7 +914,7 @@ public struct ButtonStylesGallery: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 24)
         }
-        .background(Color(designSystemColor: .background))
+        .background(colorScheme == .light ? Color(0xF2F1F1) : Color(0x1F1F1F))
     }
 
     @ViewBuilder

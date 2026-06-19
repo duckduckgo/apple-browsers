@@ -54,6 +54,8 @@ struct RebrandedColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
         case .destructiveGlowPrimary:
             return DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xEE6D87).opacity(0.2))
+        case .surfaceSecondary:
+            return DynamicColor(lightHex: 0xFCFCFC, darkHex: 0x2B2B2B)
         default:
             return DefaultColorPalette.dynamicColor(for: designSystemColor)
         }

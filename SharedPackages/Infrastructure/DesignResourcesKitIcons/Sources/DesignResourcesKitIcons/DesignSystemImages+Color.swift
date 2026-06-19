@@ -315,7 +315,11 @@ public extension DesignSystemImages {
                     ? .init(resource: .identityTheftRestorationColor24)
                     : .init(resource: .identityTheftRestorationColor24Legacy)
             }
-            public static var `import`: DesignSystemImage { .init(resource: .importColor24) }
+            public static var `import`: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .importColor24)
+                    : .init(resource: .importColor24Legacy)
+            }
             public static var info: DesignSystemImage { .init(resource: .infoRecolorable24)}
             public static var key: DesignSystemImage {
                 AppRebrand.isAppRebranded()
@@ -482,6 +486,11 @@ public extension DesignSystemImages {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .fire128)
                     : .init(resource: .fire128Legacy)
+            }
+            public static var lockLocked: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .lockLocked128)
+                    : .init(resource: .lockLocked128Legacy)
             }
             public static var networkProtectionVPN: DesignSystemImage { .init(resource: .networkProtectionVPN128) }
             public static var networkProtectionVPNDisabled: DesignSystemImage { .init(resource: .networkProtectionVPNDisabled128) }

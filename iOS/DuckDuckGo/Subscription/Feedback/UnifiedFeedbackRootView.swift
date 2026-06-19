@@ -290,7 +290,7 @@ private struct IssueDescriptionFormView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
-            .tint(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accentPrimary))
             .environment(\.openURL, OpenURLAction { _ in
                 Task {
                     await viewModel.process(action: .reportFAQClick)
@@ -310,7 +310,7 @@ private struct IssueDescriptionFormView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
-            .tint(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accentPrimary))
             .environment(\.openURL, OpenURLAction { _ in
                 Task {
                     await viewModel.process(action: .contactSupportClick)

@@ -653,7 +653,7 @@ class SwitchBarTextEntryView: UIView {
         overrideUserInterfaceStyle = isFireTab ? .dark : .unspecified
         textView.tintColor = isFireTab
             ? UIColor(singleUseColor: .fireModeAccent)
-            : UIColor(designSystemColor: .accent)
+            : UIColor(designSystemColor: .accentPrimary)
     }
 
     private func setupSubscriptions() {

@@ -99,7 +99,7 @@ struct SuggestionsListView: View {
     /// `selectedRowID` stays nil on iPhone (no arrow-key navigation), so this is inert there.
     private func rowBackground(for row: SuggestionRow) -> Color {
         row.id == viewModel.selectedRowID
-            ? Color(designSystemColor: .accent)
+            ? Color(designSystemColor: .accentPrimary)
             : Color(designSystemColor: .surface)
     }
 

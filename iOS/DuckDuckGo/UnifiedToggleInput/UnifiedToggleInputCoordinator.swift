@@ -989,9 +989,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if animated {
             UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
                 applyModeChange()
+                // Push the new mode's content inset here (target height) so the suggestions content and
+                // the logo move in the same pass as the bar — not reactively after the height callback.
+                if didModeChange { self.pushContentInsets() }
             }
         } else {
             applyModeChange()
+            if didModeChange { pushContentInsets() }
         }
 
         applyToolbarPresentation()

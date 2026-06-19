@@ -96,7 +96,7 @@ extension OnboardingAddressBarPositionPicker {
 
         private var strokeColor: Color {
             if isSelected {
-                Color(designSystemColor: .accent)
+                Color(designSystemColor: .accentPrimary)
             } else {
                 colorScheme == .light ? Metrics.Button.borderLightColor : Metrics.Button.borderDarkColor
             }
@@ -134,7 +134,7 @@ extension OnboardingAddressBarPositionPicker.AddressBarPositionButton {
                             // Use smaller frame for checkbox bg to not fill the transparent edge of the glyph
                             .frame(width: Metrics.Checkbox.checkSize, height: Metrics.Checkbox.checkSize)
                     )
-                    .foregroundStyle(Color(designSystemColor: .accent))
+                    .foregroundStyle(Color(designSystemColor: .accentPrimary))
                     .frame(width: Metrics.Checkbox.size, height: Metrics.Checkbox.size)
                     .clipShape(Circle())
             } else {
@@ -147,7 +147,7 @@ extension OnboardingAddressBarPositionPicker.AddressBarPositionButton {
         private var foregroundColor: Color {
             switch (colorScheme, isSelected) {
             case (.light, true), (.dark, true):
-                Color(designSystemColor: .accent)
+                Color(designSystemColor: .accentPrimary)
             case (.light, false):
                     .black.opacity(0.03)
             case (.dark, false):

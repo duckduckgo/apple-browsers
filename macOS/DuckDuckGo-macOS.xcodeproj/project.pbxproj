@@ -3282,6 +3282,8 @@
 		B64CE01F2B8622D700126CA5 /* AddressBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */; };
 		A7B000042F6A000100000001 /* SnapshotTestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A7B000062F6A000100000001 /* SnapshotTestingSupport */; };
 		A7B000072F6A000100000001 /* SnapshotTestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A7B000062F6A000100000001 /* SnapshotTestingSupport */; };
+		A7B0000A2F6A000100000001 /* PreviewSnapshots in Frameworks */ = {isa = PBXBuildFile; productRef = A7B0000C2F6A000100000001 /* PreviewSnapshots */; };
+		A7B0000B2F6A000100000001 /* PreviewSnapshots in Frameworks */ = {isa = PBXBuildFile; productRef = A7B0000C2F6A000100000001 /* PreviewSnapshots */; };
 		B65211252B29A42C00B30633 /* BookmarkStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA652CDA25DDAB32009059CC /* BookmarkStoreMock.swift */; };
 		B65211262B29A42E00B30633 /* BookmarkStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA652CDA25DDAB32009059CC /* BookmarkStoreMock.swift */; };
 		B65349AA265CF45000DCC645 /* DispatchQueueExtensionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65349A9265CF45000DCC645 /* DispatchQueueExtensionsTests.swift */; };
@@ -3682,6 +3684,12 @@
 		BB7D35712DB80E0D0002CDB6 /* TabStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7D356F2DB80E040002CDB6 /* TabStyleProviding.swift */; };
 		BB80DDCF2D75E94D00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */; };
 		BB80DDD02D75E94D00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */; };
+		A7B001132F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B001122F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserViewTests.swift */; };
+		A7B001142F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B001122F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserViewTests.swift */; };
+		A7B001162F6B000100000001 /* InfoViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B001152F6B000100000001 /* InfoViewTests.swift */; };
+		A7B001172F6B000100000001 /* InfoViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B001152F6B000100000001 /* InfoViewTests.swift */; };
+		A7B0011A2F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserView_PreviewMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B001192F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserView_PreviewMocks.swift */; };
+		A7B0011B2F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserView_PreviewMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B001192F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserView_PreviewMocks.swift */; };
 		BB80DDDB2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */; };
 		BB80DDDC2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */; };
 		BB8DD9E92EDF73A900F75D8E /* QuitSurveyDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8DD9E72EDF73A900F75D8E /* QuitSurveyDecider.swift */; };
@@ -5298,6 +5306,10 @@
 		37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashPixelAppIdentifier.swift; sourceTree = "<group>"; };
 		37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashPixelAppIdentifierTests.swift; sourceTree = "<group>"; };
 		37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandlerTests.swift; sourceTree = "<group>"; };
+		D1A7B0010000000000000021 /* AIChatTabPickerSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabPickerSourceTests.swift; sourceTree = "<group>"; };
+		A7B001122F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptInactiveUserViewTests.swift; sourceTree = "<group>"; };
+		A7B001152F6B000100000001 /* InfoViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoViewTests.swift; sourceTree = "<group>"; };
+		A7B001192F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserView_PreviewMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptInactiveUserView_PreviewMocks.swift; sourceTree = "<group>"; };
 		37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPixel.swift; sourceTree = "<group>"; };
 		37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuPixel.swift; sourceTree = "<group>"; };
 		37ADC4002DF040000001CA03 /* WebViewZoomPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewZoomPixel.swift; sourceTree = "<group>"; };
@@ -7150,6 +7162,7 @@
 				A7C3D1EB2F4B5A300654B4E /* SERPInstallOrigin in Frameworks */,
 				B6F7128229F6820A00594A45 /* QuickLookUI.framework in Frameworks */,
 				85F592DE2DE1E9FE00117D5E /* DesignResourcesKitIcons in Frameworks */,
+				A7B0000A2F6A000100000001 /* PreviewSnapshots in Frameworks */,
 				D65D0FA12E7239730075A784 /* NetworkQualityMonitor in Frameworks */,
 				4B9EE34A2D76C97C00DDC75C /* DDGSync in Frameworks */,
 				4B9EE3482D76C96800DDC75C /* Configuration in Frameworks */,
@@ -7523,6 +7536,7 @@
 				7B11B30A2EF304B6005F0687 /* AutomationServer in Frameworks */,
 				4B9EE31C2D76C81600DDC75C /* Configuration in Frameworks */,
 				BB7D100C2DE0D9430027222A /* DesignResourcesKitIcons in Frameworks */,
+				A7B0000B2F6A000100000001 /* PreviewSnapshots in Frameworks */,
 				37EACB162EF54224002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
 				37EACB042EF4C3B6002C06F9 /* PrivacyConfig in Frameworks */,
 				4B9EE3222D76C83900DDC75C /* DuckPlayer in Frameworks */,
@@ -11021,6 +11035,7 @@
 				B68172AC269EB415006D1092 /* Geolocation */,
 				AAEC74AE2642C47300C2EFBC /* History */,
 				4BF6961B28BE90E800D402D4 /* HomePage */,
+				A7B001182F6B000100000001 /* InfoViews */,
 				AA585D96248FD31400E9A3E2 /* Info.plist */,
 				EEF53E162950CEB6002D78F4 /* JSAlert */,
 				56EA40272DB782D500B5061E /* Localization */,
@@ -12605,6 +12620,7 @@
 				9F15567C2DDC3F8300A35DBA /* Mocks */,
 				BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */,
 				BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */,
+				A7B001122F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserViewTests.swift */,
 				9F1556772DDC3B0600A35DBA /* DefaultBrowserAndDockPromptTypeDeciderTests.swift */,
 				9FFBEE652DDD83B40058B11A /* DefaultBrowserAndDockPromptStorageTests.swift */,
 				9FFBEE792DDEE1E40058B11A /* DefaultBrowserAndDockStoreMigratorTests.swift */,
@@ -12618,6 +12634,14 @@
 				CCD89A122ECE2C01008E738B /* DefaultBrowserAndDockPromptNotificationPresenterTests.swift */,
 			);
 			path = DefaultBrowserAndAddToDockPrompts;
+			sourceTree = "<group>";
+		};
+		A7B001182F6B000100000001 /* InfoViews */ = {
+			isa = PBXGroup;
+			children = (
+				A7B001152F6B000100000001 /* InfoViewTests.swift */,
+			);
+			path = InfoViews;
 			sourceTree = "<group>";
 		};
 		BB8DD9E82EDF73A900F75D8E /* QuitSurvey */ = {
@@ -12693,6 +12717,7 @@
 				9F1556742DDC0DFD00A35DBA /* DefaultBrowserAndDockPromptFeatureFlagger.swift */,
 				9FFBEE7C2DDF02CE0058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifier.swift */,
 				CCA0EB202EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift */,
+				A7B001192F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserView_PreviewMocks.swift */,
 				CC438E1C2EBCE224008537AD /* DefaultBrowserAndDockPromptUIProvider.swift */,
 				CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */,
 				CCAA80322F5B290400BB58F4 /* DefaultBrowserAndDockPromptUIHosting.swift */,
@@ -13440,6 +13465,7 @@
 				31B6493B2DB289B100A7AEE0 /* AIChat */,
 				31D49A3A2DC294A200262F26 /* UIComponents */,
 				85F592DD2DE1E9FE00117D5E /* DesignResourcesKitIcons */,
+				A7B0000C2F6A000100000001 /* PreviewSnapshots */,
 				84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */,
 				84C176512DF0462F001DEEC7 /* LetsMove */,
 				7BC26CA92DFC11D800E52480 /* VPN */,
@@ -14031,6 +14057,7 @@
 				31B649392DB289A600A7AEE0 /* AIChat */,
 				316AC7882DC28DDA003D9770 /* UIComponents */,
 				BB7D100B2DE0D9430027222A /* DesignResourcesKitIcons */,
+				A7B0000C2F6A000100000001 /* PreviewSnapshots */,
 				84C176382DF02556001DEEC7 /* CommonObjCExtensions */,
 				84C1764F2DF0462F001DEEC7 /* LetsMove */,
 				7BC26CA32DFC103D00E52480 /* VPN */,
@@ -15274,6 +15301,7 @@
 				9D9AE86C2AA76D1B0026E7DC /* LoginItemsManager.swift in Sources */,
 				3706FAC6293F65D500E42796 /* ConnectBitwardenViewController.swift in Sources */,
 				CCA0EB212EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift in Sources */,
+				A7B0011A2F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserView_PreviewMocks.swift in Sources */,
 				BB0DA4E32DB1C4A000AB9C29 /* AddressBarIconsProviding.swift in Sources */,
 				1DDC84FC2B8356CE00670238 /* PreferencesDefaultBrowserView.swift in Sources */,
 				3706FAC8293F65D500E42796 /* AppTrackerDataSetProvider.swift in Sources */,
@@ -16520,6 +16548,8 @@
 				3706FDFE293F661700E42796 /* FaviconReferenceCacheTests.swift in Sources */,
 				CCE3F83A2F5A27910046F5E4 /* NextStepsCardsPromoDelegateTests.swift in Sources */,
 				BB80DDCF2D75E94D00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift in Sources */,
+				A7B001132F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserViewTests.swift in Sources */,
+				A7B001162F6B000100000001 /* InfoViewTests.swift in Sources */,
 				CCB2EBD12F62000C00C65813 /* PromoRegistryTests.swift in Sources */,
 				CCB2EBD22F62000C00C65813 /* PromoServiceTests.swift in Sources */,
 				CCB2EBD32F62000C00C65813 /* PromoServiceFactoryTests.swift in Sources */,
@@ -18688,6 +18718,7 @@
 				AA8EDF2424923E980071C2E8 /* URLExtension.swift in Sources */,
 				B634DBDF293C8F7F00C3C99E /* Tab+UIDelegate.swift in Sources */,
 				CCA0EB222EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift in Sources */,
+				A7B0011B2F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserView_PreviewMocks.swift in Sources */,
 				B6F1B02E2BCE6B47005E863C /* TunnelControllerProvider.swift in Sources */,
 				BB25827B2E9EC778002B8DB5 /* SERPSettingsProvider.swift in Sources */,
 				37AFCE8127DA2CA600471A10 /* PreferencesViewController.swift in Sources */,
@@ -19054,6 +19085,8 @@
 				B6BBF1722744CE36004F850E /* FireproofDomainsStoreMock.swift in Sources */,
 				4BA1A6D9258C0CB300F6F690 /* DataEncryptionTests.swift in Sources */,
 				BB80DDD02D75E94D00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift in Sources */,
+				A7B001142F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserViewTests.swift in Sources */,
+				A7B001172F6B000100000001 /* InfoViewTests.swift in Sources */,
 				3798580D2D730E32008773F6 /* HistoryQueryKindExtensionTests.swift in Sources */,
 				B6AA64732994B43300D99CD6 /* FutureExtensionTests.swift in Sources */,
 				56BA1E802BAB2E43001CF69F /* ErrorPageTabExtensionTests.swift in Sources */,
@@ -21872,6 +21905,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A7B000052F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */;
 			productName = SnapshotTestingSupport;
+		};
+		A7B0000C2F6A000100000001 /* PreviewSnapshots */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A7B000052F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */;
+			productName = PreviewSnapshots;
 		};
 		B6AE39F229374AEC00C37AA4 /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;

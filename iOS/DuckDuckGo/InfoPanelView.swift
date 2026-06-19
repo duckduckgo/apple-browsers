@@ -27,10 +27,15 @@ struct InfoPanelView: View {
         static let contentSpacing: CGFloat = 6
         static let iconSize: CGFloat = 18
         static let infoButtonPadding: CGFloat = 4
-        static let horizontalPadding: CGFloat = 10
-        static let verticalPadding: CGFloat = 8
-        static let cornerRadius: CGFloat = 16
         static let maxWidth: CGFloat = 480
+
+        static let legacyHorizontalPadding: CGFloat = 10
+        static let legacyVerticalPadding: CGFloat = 8
+        static let legacyCornerRadius: CGFloat = 16
+
+        static let rebrandedHorizontalPadding: CGFloat = 16
+        static let rebrandedHeight: CGFloat = 48
+        static let rebrandedCornerRadius: CGFloat = 26
     }
 
     struct Model {
@@ -44,6 +49,12 @@ struct InfoPanelView: View {
 
     let model: Model
 
+    private var isRebranded: Bool { AppRebrand.isAppRebranded() }
+    private var cornerRadius: CGFloat { isRebranded ? Constants.rebrandedCornerRadius : Constants.legacyCornerRadius }
+    private var horizontalPadding: CGFloat { isRebranded ? Constants.rebrandedHorizontalPadding : Constants.legacyHorizontalPadding }
+    private var subtitleColor: Color { Color(designSystemColor: isRebranded ? .textSecondary : .textPrimary) }
+    private var infoIconColor: Color { Color(designSystemColor: isRebranded ? .iconsTertiary : .iconsSecondary) }
+
     var body: some View {
         HStack(alignment: .center, spacing: Constants.contentSpacing) {
             Image(uiImage: model.icon)
@@ -51,9 +62,11 @@ struct InfoPanelView: View {
                 .frame(width: Constants.iconSize, height: Constants.iconSize)
                 .accessibilityHidden(true)
 
-            (Text(model.title).fontWeight(.semibold) + Text(" " + model.subtitle))
-                .font(.subheadline)
+            (Text(model.title).fontWeight(.semibold)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
+             + Text(" " + model.subtitle)
+                .foregroundColor(subtitleColor))
+                .font(.subheadline)
             Spacer()
 
             Button(action: { model.onInfo() }, label: {
@@ -61,19 +74,20 @@ struct InfoPanelView: View {
                     .renderingMode(.template)
                     .resizable()
                     .frame(width: Constants.iconSize, height: Constants.iconSize)
-                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .foregroundColor(infoIconColor)
                     .padding(Constants.infoButtonPadding)
             })
             .accessibilityLabel(Text(UserText.tabSwitcherTrackerCountInfoA11y))
             .accessibilityHint(Text(UserText.tabSwitcherTrackerCountInfoHintA11y))
         }
-        .padding(.horizontal, Constants.horizontalPadding)
-        .padding(.vertical, Constants.verticalPadding)
+        .padding(.horizontal, horizontalPadding)
+        .padding(.vertical, isRebranded ? 0 : Constants.legacyVerticalPadding)
+        .frame(height: isRebranded ? Constants.rebrandedHeight : nil)
         .background(
-            RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(model.backgroundColor)
         )
-        .contentShape(RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .onTapGesture { model.onTap() }
         .frame(maxWidth: Constants.maxWidth, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .center)
@@ -100,8 +114,10 @@ extension InfoPanelView.Model {
         return InfoPanelView.Model(
             title: state.title,
             subtitle: state.subtitle,
-            icon: UIImage(resource: .trackerShield),
-            backgroundColor: Color(singleUseColor: .tabSwitcherTrackerCountBackground),
+            icon: UIImage(rebrandable: "TrackerShield") ?? UIImage(resource: .trackerShield),
+            backgroundColor: AppRebrand.isAppRebranded()
+                ? Color(designSystemColor: .surfaceSecondary)
+                : Color(singleUseColor: .tabSwitcherTrackerCountBackground),
             onTap: onTap,
             onInfo: onInfo
         )
@@ -114,7 +130,7 @@ struct InfoPanelView_Previews: PreviewProvider {
         InfoPanelView(
             model: .init(title: "396 trackers blocked",
                          subtitle: "in the last 7 days",
-                         icon: UIImage(resource: .trackerShield),
+                         icon: UIImage(rebrandable: "TrackerShield") ?? UIImage(resource: .trackerShield),
                          backgroundColor: Color(singleUseColor: .tabSwitcherTrackerCountBackground),
                          onTap: {},
                          onInfo: {})

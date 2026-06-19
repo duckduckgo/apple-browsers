@@ -169,6 +169,25 @@ final class SaveCredentialsViewController: NSViewController {
 
         subscribeToThemeChanges()
         applyThemeStyle()
+
+        subscribeToFaviconCacheUpdates()
+    }
+
+    /// Favicons are lazy-loaded: `getCachedFaviconSafeForRendering(for:)` can miss the cache and return `nil`
+    /// (we fall back to `.web`). When the image is decoded later, `.faviconCacheUpdated` is posted; re-run the
+    /// favicon assignment so the placeholder is replaced with the real icon.
+    private func subscribeToFaviconCacheUpdates() {
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self, let domain = self.credentials?.account.domain else { return }
+                // Refresh when the update relates to our domain, or defensively if no payload is present.
+                if let update = notification.faviconsCacheUpdate, !update.hosts.contains(domain) {
+                    return
+                }
+                self.loadFaviconForDomain(domain)
+            }
+            .store(in: &cancellables)
     }
 
     override func viewWillAppear() {

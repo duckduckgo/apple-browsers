@@ -32,7 +32,7 @@ final class AIChatHistoryViewController: UIViewController {
     /// Set while a swipe-driven animation is in flight to suppress reactive reloads that
     /// would otherwise cancel the slide.
     private var isApplyingLocalUpdate = false
-    
+
     private var isEditingChats = false
     private weak var fireBarButtonItem: UIBarButtonItem?
 
@@ -142,7 +142,7 @@ final class AIChatHistoryViewController: UIViewController {
         ])
         tableView.tableHeaderView = headerView
     }
-    
+
     private lazy var closeBarButtonItem: UIBarButtonItem = {
         let item = UIBarButtonItem(
             image: DesignSystemImages.Glyphs.Size24.close,
@@ -318,7 +318,7 @@ final class AIChatHistoryViewController: UIViewController {
         } completion: {
         }
     }
-    
+
     @objc private func editButtonTapped() {
         if isEditingChats {
             tableView.setEditing(false, animated: true)

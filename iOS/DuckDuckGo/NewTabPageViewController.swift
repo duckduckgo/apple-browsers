@@ -31,22 +31,40 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     var isShowingLogo: Bool {
         guard !newTabPageViewModel.isLogoHidden else { return false }
+        return restingContentIsLogo
+    }
+
+    var isShowingFavorites: Bool {
+        restingContentIsFavorites && !newTabPageViewModel.isFavoritesHidden
+    }
+
+    /// What the NTP shows at rest (logo vs favorites), independent of the transient
+    /// `isLogoHidden`/`isFavoritesHidden` flags the focus/dismiss handoff toggles. The dismiss path
+    /// uses these to pick the right handoff while those flags are still mid-transition.
+    var restingContentIsLogo: Bool {
         guard favoritesModel.isEmpty else { return false }
         if newTabPageViewModel.escapeHatch != nil {
-            let isLandscape = view.bounds.width > view.bounds.height
-            return !isLandscape
+            return view.bounds.width <= view.bounds.height
         }
         return true
+    }
+
+    var restingContentIsFavorites: Bool {
+        !favoritesModel.isEmpty
     }
 
     func setLogoHidden(_ hidden: Bool) {
         newTabPageViewModel.isLogoHidden = hidden
     }
 
+    func setFavoritesHidden(_ hidden: Bool) {
+        newTabPageViewModel.isFavoritesHidden = hidden
+    }
+
     private lazy var borderView = StyledTopBottomBorderView()
 
     private let newTabDialogFactory: any NewTabDaxDialogProviding
-    private let daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
+    private let daxDialogsManager: DaxDialogsManaging
     private let onboardingFlowProvider: OnboardingFlowProviding
 
     private let newTabPageViewModel: NewTabPageViewModel
@@ -74,7 +92,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          subscriptionDataReporting: SubscriptionDataReporting? = nil,
          newTabDialogFactory: any NewTabDaxDialogProviding,
-         daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
+         daxDialogsManager: DaxDialogsManaging,
          onboardingFlowProvider: OnboardingFlowProviding,
          faviconLoader: FavoritesFaviconLoading,
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
@@ -360,6 +378,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
             if tutorialSettings.hasSkippedOnboarding {
                 chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
             } else {
+                // Prevent contextual dialogs to show if user does not manually dismiss the end of journey dialog
+                daxDialogsManager.setDialogsPriorFinalSeen()
+                // Show final dialog
                 showDuckAIOnboardingCompletionWithActiveAddressBar(message: UserText.Onboarding.DuckAICPP.Contextual.onboardingEndOfJourneyMessage, textEntryMode: .aiChat)
             }
         }
@@ -499,12 +520,10 @@ extension NewTabPageViewController {
         isShowingDuckAICompletionDialog = true
         // The NTP view is about to become visible (view.alpha = 1 below) but
         // finishOnboarding() has already set isOnboarding = false, so SwiftUI
-        // would render the Dax logo on the next frame.  Hide both the NTP logo
-        // and the UTI/omnibar logo (shown by the beginEditing transition) so
-        // neither flashes through the transparent completion dialog hosting view.
-        // Both are restored once the dialog is dismissed.
+        // would render the Dax logo on the next frame.  Hide the NTP logo so it doesn't flash through
+        // the transparent completion dialog; the focused UTI logo is covered by the overlay suppression
+        // below (it lives inside the unifiedInputContentContainer).
         setLogoHidden(true)
-        coordinator.contentViewController.setLogoHidden(true)
         view.alpha = 1
         // Mirror showNextDaxDialogNew: suppress the UTI content overlay so the NTP
         // (contentContainer) remains visible while the address bar is active.
@@ -552,7 +571,6 @@ extension NewTabPageViewController {
                     self.daxDialogsManager.dismiss()
                     self.dismissHostingController(didFinishNTPOnboarding: true)
                     self.setLogoHidden(false)
-                    coordinator?.contentViewController.setLogoHidden(false)
                     collapseUTI(nil)
                     ViewHighlighter.hideAll()
                 }

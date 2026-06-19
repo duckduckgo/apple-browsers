@@ -400,6 +400,13 @@ extension Pixel {
         case icsCalendarRoutedByExtension
         case icsCalendarUnsupportedRRule
 
+        case vcardContactEditorPresented
+        case vcardContactEditorSaved
+        case vcardContactEditorCancelled
+        case vcardContactMultipleContactsTruncated
+        case vcardContactFallbackParseFailure
+        case vcardContactRoutedByExtension
+
         case walletPassPreviewRequested
         case walletPassPreviewFailed
 
@@ -1116,6 +1123,7 @@ extension Pixel {
         case syncSetupManualCodeEnteredSuccess
         case syncSetupManualCodeEnteredFailed
         case syncSetupEndedAbandoned
+        case syncSetupEndedFailed
         case syncSetupEndedSuccessful
         case syncSetupDeepLinkFlowStarted
         case syncSetupDeepLinkFlowSuccess
@@ -2361,6 +2369,13 @@ extension Pixel.Event {
         case .icsCalendarRoutedByExtension: return "m_ics_calendar_routed_by_extension"
         case .icsCalendarUnsupportedRRule: return "m_ics_calendar_unsupported_rrule"
 
+        case .vcardContactEditorPresented: return "m_vcard_contact_editor_presented"
+        case .vcardContactEditorSaved: return "m_vcard_contact_editor_saved"
+        case .vcardContactEditorCancelled: return "m_vcard_contact_editor_cancelled"
+        case .vcardContactMultipleContactsTruncated: return "m_vcard_contact_multiple_contacts_truncated"
+        case .vcardContactFallbackParseFailure: return "m_vcard_contact_fallback_parse_failure"
+        case .vcardContactRoutedByExtension: return "m_vcard_contact_routed_by_extension"
+
         case .walletPassPreviewRequested: return "wallet_pass_preview_requested"
         case .walletPassPreviewFailed: return "wallet_pass_preview_failed"
             
@@ -3111,6 +3126,7 @@ extension Pixel.Event {
         case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
         case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
         case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
+        case .syncSetupEndedFailed: return "sync_setup_ended_failed"
         case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
         case .syncSetupDeepLinkFlowStarted: return "sync_setup_deep_link_flow_started"
         case .syncSetupDeepLinkFlowSuccess: return "sync_setup_deep_link_flow_success"

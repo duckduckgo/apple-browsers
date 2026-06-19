@@ -335,7 +335,7 @@ private struct MenuRowButton: View {
         var body: some View {
             HStack(spacing: Metrics.detailStackSpacing) {
                 if entryData.showNotificationDot {
-                    Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
+                    Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accentPrimary))
                         .frame(width: Metrics.dotSize, height: Metrics.dotSize)
                 }
 

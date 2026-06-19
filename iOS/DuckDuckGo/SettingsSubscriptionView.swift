@@ -99,7 +99,7 @@ struct SettingsSubscriptionView: View {
             SettingsCustomCell(content: {
                 Text(UserText.winBackCampaignSubscriptionSettingsMenuCTA)
                     .daxBodyRegular()
-                    .foregroundColor(Color.init(designSystemColor: .accent))
+                    .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
                 Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
@@ -146,7 +146,7 @@ struct SettingsSubscriptionView: View {
             SettingsCustomCell(content: {
                 Text(settingsViewModel.purchaseButtonText)
                     .daxBodyRegular()
-                    .foregroundColor(Color.init(designSystemColor: .accent))
+                    .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
                 Pixel.fire(pixel: .subscriptionEntrySettingsSubscriptionClick)
@@ -183,7 +183,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCustomCell(content: {
                     Text(UserText.settingsPProFreemiumDBPFreeScanCTA)
                         .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                         .padding(.leading, 32.0)
                 }, action: {
                     Pixel.fire(pixel: .freemiumPIRSettingsEntryPointClicked)
@@ -426,7 +426,7 @@ struct SettingsSubscriptionView: View {
 
                 let footerLink = Link(UserText.settingsPProSectionFooter,
                                       destination: ViewConstants.privacyPolicyURL)
-                    .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accent))
+                    .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accentPrimary))
 
                 Section(header: Text(UserText.settingsSubscriptionSection),
                         footer: !isSignedIn ? footerLink : nil

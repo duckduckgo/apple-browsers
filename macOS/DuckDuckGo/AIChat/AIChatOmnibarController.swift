@@ -84,6 +84,11 @@ final class AIChatOmnibarController {
     /// Whether the user has an active paid subscription (plus or pro).
     private(set) var hasActiveSubscription = false
 
+    /// Per-tier attachment limits (file size / pages / counts, image counts, input-char) from the
+    /// models endpoint, resolved to the user's tier. `nil` until fetched, or when the endpoint
+    /// omits the block — callers fall back to the previously shipped defaults in that case.
+    private(set) var attachmentLimits: AIChatAttachmentTierLimits?
+
     /// Called after a successful submit so the container VC can cancel any in-flight image
     /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
     var onAttachmentsClearRequested: (() -> Void)?
@@ -295,6 +300,7 @@ final class AIChatOmnibarController {
                 let userTier = try await self.resolveUserTier()
                 guard !Task.isCancelled else { return }
                 self.hasActiveSubscription = userTier != .free
+                self.attachmentLimits = response.attachmentLimits?.limits(for: userTier)
                 self.models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()
@@ -421,18 +427,29 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
 
-    /// Maximum image attachments the duck.ai backend accepts per conversation.
-    static let maxImageAttachments: Int = 3
+    /// Fallback caps used until the API limits load (or when the endpoint omits them). These match
+    /// the values previously hardcoded here, so a missing-limits state degrades to prior behaviour.
+    static let fallbackMaxImageAttachments: Int = 3
+    static let fallbackMaxFileAttachments: Int = 3
+
+    /// Maximum images the omnibar accepts for a submission. The omnibar starts a *new* chat, so a
+    /// submission is a single turn — the per-turn limit governs (bounded by the per-conversation
+    /// limit as a safety net). Falls back to 3 until limits load.
+    var maxImageAttachments: Int {
+        guard let images = attachmentLimits?.images else { return Self.fallbackMaxImageAttachments }
+        return max(0, min(images.maxPerTurn, images.maxPerConversation))
+    }
     /// One above the cap — the picker / `addImageAttachmentToActiveTab` allow exactly one over
     /// so the user gets a visible "you've gone over" cue and the error label has something to
     /// anchor against. Submit blocks while in that state.
-    static let imageAttachmentsDisplayCap: Int = maxImageAttachments + 1
+    var imageAttachmentsDisplayCap: Int { maxImageAttachments + 1 }
 
-    /// Maximum file (PDF etc.) attachments the duck.ai backend accepts per conversation. Same
-    /// cap as images; the carousel and submit path both gate on this so the user can't
-    /// overshoot the server limit.
-    static let maxFileAttachments: Int = 3
-    static let fileAttachmentsDisplayCap: Int = maxFileAttachments + 1
+    /// Maximum file (PDF etc.) attachments per conversation. Files have no per-turn limit, so the
+    /// per-conversation value applies directly. Falls back to 3 until limits load.
+    var maxFileAttachments: Int {
+        attachmentLimits?.files.maxPerConversation ?? Self.fallbackMaxFileAttachments
+    }
+    var fileAttachmentsDisplayCap: Int { maxFileAttachments + 1 }
 
     /// Whether the currently selected model supports file (PDF etc.) upload.
     /// Returns `false` conservatively when models are unavailable — file upload is opt-in per model
@@ -448,6 +465,43 @@ final class AIChatOmnibarController {
         guard !models.isEmpty else { return [] }
         return models.first(where: { $0.id == persistedModelId })?.supportedFileTypes ?? []
     }
+
+    /// The currently selected model, or `nil` when models haven't loaded.
+    var selectedModel: AIChatModel? {
+        models.first(where: { $0.id == persistedModelId })
+    }
+
+    /// Builds a validator for the current model + limits against the supplied pending attachments.
+    /// The omnibar is the entry point to a brand-new chat, so prior conversation usage is always
+    /// zero — pending attachments are the whole picture.
+    func makeAttachmentValidator(
+        pendingImageCount: Int,
+        pendingFiles: [AIChatAttachmentValidator.FileDescriptor]
+    ) -> AIChatAttachmentValidator {
+        AIChatAttachmentValidator(
+            limits: attachmentLimits,
+            model: selectedModel,
+            usage: .zero,
+            pendingImageCount: pendingImageCount,
+            pendingFiles: pendingFiles,
+            messages: Self.attachmentValidatorMessages
+        )
+    }
+
+    static let attachmentValidatorMessages = AIChatAttachmentValidator.Messages(
+        unsupportedFileType: UserText.aiChatAttachmentUnsupportedFileType,
+        unavailable: UserText.aiChatAttachmentUnavailable,
+        fileEncrypted: UserText.aiChatAttachmentFileEncrypted,
+        fileUnreadable: UserText.aiChatAttachmentFileUnreadable,
+        promptTooLong: UserText.aiChatAttachmentPromptTooLong,
+        unsupportedFileTypeWithAccepted: { UserText.aiChatAttachmentUnsupportedFileType(acceptedFileTypes: $0) },
+        fileCountLimit: { UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: $0) },
+        fileTooLarge: { UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: $0) },
+        filesExceedTotalSizeLimit: { UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: $0) },
+        fileTooManyPages: { UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: $0) },
+        imageTurnLimit: { UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: $0) },
+        imageCountLimit: { UserText.aiChatAttachmentImageCountLimit(maxImagesPerConversation: $0) }
+    )
 
     /// Supported reasoning effort levels for the currently selected model. Unknown raw values
     /// returned by the backend are silently filtered out. This is the server-truth list — used to
@@ -629,19 +683,19 @@ final class AIChatOmnibarController {
 
     /// At or above the per-conversation image cap.
     var isActiveTabImageAttachmentsFull: Bool {
-        activeImageAttachments.count >= Self.maxImageAttachments
+        activeImageAttachments.count >= maxImageAttachments
     }
 
     /// Strictly over the per-conversation image cap (one over, by `imageAttachmentsDisplayCap` design).
     var hasExcessActiveTabImageAttachments: Bool {
-        activeImageAttachments.count > Self.maxImageAttachments
+        activeImageAttachments.count > maxImageAttachments
     }
 
     /// Adds an image attachment to the active tab. No-op if at displayCap or if an attachment
     /// with the same id is already present.
     func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) {
         var current = activeImageAttachments
-        guard current.count < Self.imageAttachmentsDisplayCap else { return }
+        guard current.count < imageAttachmentsDisplayCap else { return }
         guard !current.contains(where: { $0.id == attachment.id }) else { return }
         current.append(attachment)
         sharedTextState?.setAIChatAttachments(current)
@@ -686,7 +740,7 @@ final class AIChatOmnibarController {
     /// paste, restore paths, tests) safe from overshooting `fileAttachmentsDisplayCap`.
     func addFileAttachmentToActiveTab(_ attachment: AIChatFileAttachment) {
         var current = activeFileAttachments
-        guard current.count < Self.fileAttachmentsDisplayCap else { return }
+        guard current.count < fileAttachmentsDisplayCap else { return }
         guard !current.contains(where: { $0.id == attachment.id }) else { return }
         current.append(attachment)
         persistFileAttachmentsToActiveTab(current)
@@ -877,14 +931,14 @@ final class AIChatOmnibarController {
 
         // Block submission if too many images are attached and would be sent
         let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
-        if canSendImages && activeImageAttachments.count > Self.maxImageAttachments {
+        if canSendImages && activeImageAttachments.count > maxImageAttachments {
             return
         }
 
         // Block submission if too many files are attached. The picker caps picks at one over the
         // limit (`+1`) so the user gets a visible "you've gone over" cue; if they actually try to
         // submit while in that state, hold the submit until they remove the excess.
-        if selectedModelSupportsFileUpload && activeFileAttachments.count > Self.maxFileAttachments {
+        if selectedModelSupportsFileUpload && activeFileAttachments.count > maxFileAttachments {
             return
         }
 

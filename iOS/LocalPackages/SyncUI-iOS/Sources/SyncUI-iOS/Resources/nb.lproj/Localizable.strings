@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Få DuckDuckGo på andre enheter";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Dataene dine er synkronisert!";
+"device.synced.sheet.title" = "Enhet synkronisert!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Ferdig";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Setter opp synkronisering og sikkerhetskopiering";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Forbereder synkronisering";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Gjenopprett synkroniserte data";
@@ -392,7 +395,7 @@
 "sync.simplified.scan-or-view-code.connecting.title" = "Hold «Sync & Backup» åpen på begge enhetene";
 
 /* Message of the reminder shown after the user copies the sync code. */
-"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kom tilbake til denne enheten etter at du har limt inn koden.";
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kom tilbake til denne enheten når du har limt inn koden.";
 
 /* Title of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.title" = "Lim inn koden på den andre enheten din";
@@ -425,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Synkroniser enhetene dine";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Skann eller lim inn denne koden i din andre";
+"sync.simplified.scan-or-view-code.view.instructions" = "Skann eller lim inn denne koden på den andre";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Synkronisering og sikkerhetskopiering";

@@ -60,6 +60,10 @@ protocol DaxDialogsSettings: AnyObject {
 
     /// The current phase of the Duck.ai chat-first onboarding path, derived from persisted state flags.
     var chatPathPhase: DaxDialogs.ChatPathPhase { get }
+
+    /// Set when the user taps a search suggestion on the linear onboarding search/duck.ai screen.
+    /// Cleared when the "That's DuckDuckGo Search!" SERP dialog fires.
+    var linearOnboardingSearchTriggered: Bool { get set }
 }
 
 class DefaultDaxDialogsSettings: DaxDialogsSettings {
@@ -112,6 +116,8 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
         static let visitSiteSeen = "com.duckduckgo.ios.daxOnboardingChatPathVisitSiteSeen"
         static let isChatFirstPath = "com.duckduckgo.ios.daxOnboardingIsChatFirstPath"
     }
+
+    var linearOnboardingSearchTriggered: Bool = false
 
     private let chatPathStore: KeyValueStoring = UserDefaults.standard
 

@@ -62,6 +62,7 @@ protocol ContextualOnboardingLogic {
     func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType)
 
     func setTryAnonymousSearchMessageSeen()
+    func setLinearOnboardingSearchTriggered()
     func setSearchMessageSeen()
 
     func setTryVisitSiteMessageSeen()
@@ -512,6 +513,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         settings.tryAnonymousSearchShown = true
     }
 
+    func setLinearOnboardingSearchTriggered() {
+        settings.linearOnboardingSearchTriggered = true
+    }
+
     func setTryVisitSiteMessageSeen() {
         settings.tryVisitASiteShown = true
     }
@@ -691,13 +696,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             return isAIChatEnabled ? nil : .final
         }
 
-        // When the user chose "Use Search & Duck.ai" and triggered a search during onboarding,
-        // the UTI would load NewTabPageViewController calling `viewDidAppear` which would 
+        // When the user tapped a search suggestion on the linear onboarding search/duck.ai screen,
+        // the UTI would load NewTabPageViewController calling `viewDidAppear` which would
         // call nextHomeScreenMessageNew() before the SERP dialog fires.
         // Suppress .subsequent until "That's DuckDuckGo Search!" has been seen.
-        if onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding
-            && settings.tryAnonymousSearchShown
-            && !settings.browsingAfterSearchShown {
+        // Flag is set in setLinearOnboardingSearchTriggered() and cleared in searchMessage().
+        if settings.linearOnboardingSearchTriggered {
             return nil
         }
 
@@ -757,6 +761,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     private func searchMessage() -> BrowsingSpec? {
         guard !settings.browsingAfterSearchShown else { return nil }
         settings.browsingAfterSearchShown = true
+        settings.linearOnboardingSearchTriggered = false
         return BrowsingSpec.afterSearch
     }
 

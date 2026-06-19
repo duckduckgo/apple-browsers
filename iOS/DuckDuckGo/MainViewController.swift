@@ -6548,6 +6548,7 @@ extension MainViewController: OnboardingNavigationDelegate {
     func searchFromOnboarding(for query: String) {
         // Suppress the Search onboarding dialog when the user came from the duck.ai query selection step.
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
+        daxDialogsManager.setLinearOnboardingSearchTriggered()
         self.loadQuery(query)
     }
 }

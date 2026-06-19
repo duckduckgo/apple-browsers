@@ -39,18 +39,17 @@ class TabViewCell: UICollectionViewCell {
 
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
-        static let borderRadius: CGFloat = 14.0
+        static var borderRadius: CGFloat { AppRebrand.isAppRebranded() ? 28.0 : 14.0 }
 
-        static let cellCornerRadius: CGFloat = 12.0
+        static var cellCornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 26.0 : 12.0 }
         static let cellHeaderHeight: CGFloat = 36.0 + 4.0 // height + top padding
         static let cellLogoSize: CGFloat = 68.0
-
-        static let previewCornerRadius: CGFloat = 8
 
         static let selectedBorderWidth: CGFloat = 2.0
         static let unselectedBorderWidth: CGFloat = 0.0
         static let previewPadding: CGFloat = 4.0
-
+        static var previewCornerRadius: CGFloat { cellCornerRadius - previewPadding }
+        
         static let removeButtonTextSpacingRegular: CGFloat = -12
         static let removeButtonTextSpacingHighlighted: CGFloat = 2
 

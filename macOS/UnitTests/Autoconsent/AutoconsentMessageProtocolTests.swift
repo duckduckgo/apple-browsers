@@ -145,4 +145,129 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         )
         waitForExpectations(timeout: 1.0)
     }
+
+    @MainActor
+    func testWhenInitAcceptedThenPublishesLegacyCPMDiagnostics() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+
+        _ = sendInit(url: "https://example.com")
+
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["consentManaged"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmDashboardState"] as? String, "applied")
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "init_received")
+        XCTAssertEqual(cookieConsentInfo["cpmQueueSize"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionDroppedCallbacks"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionLoaded"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmConfigVersion"] as? String, "123456789")
+    }
+
+    @MainActor
+    func testWhenLegacyLifecycleProgressesThenPublishesCPMStagesAndErrors() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+
+        _ = sendInit(url: "https://example.com")
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+        var cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "popup_found")
+
+        sendOptOutResult(cmp: "TestCMP", result: false, url: "https://example.com")
+        cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "optout_failed")
+        XCTAssertEqual(cookieConsentInfo["optoutFailed"] as? Bool, true)
+
+        sendAutoconsentError()
+        cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["cpmErrors"] as? String, "multiple_cmps")
+        XCTAssertEqual(cookieConsentInfo["optoutFailed"] as? Bool, true)
+
+        sendAutoconsentDone(cmp: "TestCMP", url: "https://example.com", isCosmetic: false)
+        cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "done")
+    }
+
+    @MainActor
+    @discardableResult
+    private func sendInit(url: String) -> [String: Any]? {
+        sendMessage(name: "init", body: [
+            "type": "init",
+            "url": url
+        ])
+    }
+
+    @MainActor
+    private func sendPopupFound(cmp: String, url: String) {
+        _ = sendMessage(name: "popupFound", body: [
+            "type": "popupFound",
+            "cmp": cmp,
+            "url": url
+        ])
+    }
+
+    @MainActor
+    private func sendOptOutResult(cmp: String, result: Bool, url: String) {
+        _ = sendMessage(name: "optOutResult", body: [
+            "type": "optOutResult",
+            "cmp": cmp,
+            "result": result,
+            "scheduleSelfTest": false,
+            "url": url
+        ])
+    }
+
+    @MainActor
+    private func sendAutoconsentDone(cmp: String, url: String, isCosmetic: Bool) {
+        _ = sendMessage(name: "autoconsentDone", body: [
+            "type": "autoconsentDone",
+            "cmp": cmp,
+            "url": url,
+            "isCosmetic": isCosmetic,
+            "duration": 42,
+            "totalClicks": 1
+        ])
+    }
+
+    @MainActor
+    private func sendAutoconsentError() {
+        _ = sendMessage(name: "autoconsentError", body: [
+            "type": "autoconsentError"
+        ])
+    }
+
+    @MainActor
+    private func sendMessage(name: String, body: [String: Any]) -> [String: Any]? {
+        let expect = expectation(description: "reply for \(name)")
+        var receivedReply: [String: Any]?
+        let message = WKScriptMessage.mock(name: name, body: body)
+        userScript.handleMessage(
+            replyHandler: { (msg: Any?, _: String?) in
+                if let msg,
+                   let data = try? JSONSerialization.data(withJSONObject: msg, options: .sortedKeys),
+                   let json = try? JSONSerialization.jsonObject(with: data, options: []),
+                   let dict = json as? [String: Any] {
+                    receivedReply = dict
+                }
+                expect.fulfill()
+            },
+            message: message
+        )
+        waitForExpectations(timeout: 1.0)
+        return receivedReply
+    }
+
+    private func cookieConsentInfoDictionary(from cookieConsentInfo: CookieConsentInfo?) throws -> [String: Any] {
+        let cookieConsentInfo = try XCTUnwrap(cookieConsentInfo)
+        let data = try JSONEncoder().encode(cookieConsentInfo)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
+}
+
+final class MockAutoconsentUserScriptDelegate: AutoconsentUserScriptDelegate {
+    private(set) var receivedConsentStatuses: [CookieConsentInfo] = []
+
+    func autoconsentUserScript(consentStatus: CookieConsentInfo) {
+        receivedConsentStatuses.append(consentStatus)
+    }
 }

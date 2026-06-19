@@ -2900,7 +2900,7 @@ https://duckduckgo.com/mac";
 "network.protection.vpn.settings.copy-diagnostics" = "Copy VPN Diagnostics";
 
 /* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
-"network.protection.vpn.settings.copy-diagnostics.caption" = "Copies anonymized VPN diagnostic information to your clipboard. Include it when contacting Support to help us troubleshoot your connection.";
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Include a copy of these anonymized VPN diagnostics when contacting Support to help us troubleshoot your connection.";
 
 /* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
 "network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Copied to clipboard";

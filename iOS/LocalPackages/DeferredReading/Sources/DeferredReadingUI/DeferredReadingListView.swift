@@ -10,6 +10,7 @@ public struct DeferredReadingListView: View {
     @ObservedObject private var controller: DeferredReadingController
     private let onOpenURL: (URL) -> Void
     private let faviconLoader: ((URL, @escaping (UIImage?) -> Void) -> Void)?
+    @State private var isShowingSettings = false
 
     public init(controller: DeferredReadingController,
                 faviconLoader: ((URL, @escaping (UIImage?) -> Void) -> Void)? = nil,
@@ -62,6 +63,9 @@ public struct DeferredReadingListView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        Button("Settings") {
+                            isShowingSettings = true
+                        }
                         Button("Clear Read") {
                             controller.clearRead()
                         }
@@ -77,6 +81,19 @@ public struct DeferredReadingListView: View {
             }
             .listStyle(.insetGrouped)
             .background(Color(designSystemColor: .background))
+            .sheet(isPresented: $isShowingSettings) {
+                NavigationView {
+                    DeferredReadingSettingsView(settingsController: controller.settingsController)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Done") {
+                                    isShowingSettings = false
+                                }
+                            }
+                        }
+                }
+                .navigationViewStyle(.stack)
+            }
         }
         .navigationViewStyle(.stack)
     }

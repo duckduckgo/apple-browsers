@@ -328,6 +328,20 @@ final class AppStateRestorationManagerTests: XCTestCase {
         mockPixelKit.verifyExpectations()
     }
 
+    // MARK: - Session Restored Pixel
+
+    func testSessionRestoredPixel_HasExpectedName() {
+        XCTAssertEqual(GeneralPixel.appStateRestored(trigger: .standard).name, "m_mac_session_restored")
+    }
+
+    func testSessionRestoredPixel_WhenStandardTrigger_ThenRestartToUpdateParamIsFalse() {
+        XCTAssertEqual(GeneralPixel.appStateRestored(trigger: .standard).parameters, ["restart_to_update": "false"])
+    }
+
+    func testSessionRestoredPixel_WhenAppUpdateTrigger_ThenRestartToUpdateParamIsTrue() {
+        XCTAssertEqual(GeneralPixel.appStateRestored(trigger: .appUpdate).parameters, ["restart_to_update": "true"])
+    }
+
     // MARK: - Automatic Relaunch Tests
 
     @MainActor

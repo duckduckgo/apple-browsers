@@ -187,7 +187,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             // "Delete All" (destructive) over a neutral "Cancel". The caller supplies the burn
             // action; the chat-history sheet only surfaces persistent chats.
             return [
-                FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteAllButton,
+                FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteChatsButton,
                                        style: .primary,
                                        action: onDelete,
                                        accessibilityIdentifier: AccessibilityIdentifiers.deleteAll),

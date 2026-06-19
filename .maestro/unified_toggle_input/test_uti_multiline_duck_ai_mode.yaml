@@ -1,0 +1,55 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_uti_multiline_duck_ai_mode
+
+---
+
+# Verifies that with Search↔Duck.ai toggle present and Duck.ai selected, the UTI uses
+# the multi-line UITextView composer — the AI toolbar and model chip appear.
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+        ff.experimentalAddressBar: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+# Open UTI from NTP omnibar — toggle is present
+- tapOn:
+    id: "searchEntry"
+- assertVisible:
+    id: "AddressBar.Button.DuckAI"
+
+# Switch to Duck.ai mode — multi-line UITextView composer activates
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+
+# AI toolbar and model chip confirm Duck.ai / multi-line mode is active
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Type a long URL — multi-line composer expands vertically to show it
+- inputText: "https://en.wikipedia.org/wiki/Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch"
+
+# Multi-line field and AI toolbar remain visible after input
+- assertVisible:
+    id: "searchEntry"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml

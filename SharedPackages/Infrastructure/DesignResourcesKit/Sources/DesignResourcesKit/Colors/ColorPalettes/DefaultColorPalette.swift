@@ -56,6 +56,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Surfaces
     private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let surfaceSecondary = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
     private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
     private static let surfaceCanvas = DynamicColor(lightColor: xFAFAFA, darkColor: x1C1C1C)
 
@@ -219,6 +220,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .accentTertiary: return accentTertiary
 
         case .surface: return surface
+        case .surfaceSecondary: return surfaceSecondary
         case .surfaceTertiary: return surfaceTertiary
         case .surfaceCanvas: return surfaceCanvas
 

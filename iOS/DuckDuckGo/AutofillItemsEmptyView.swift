@@ -59,7 +59,7 @@ struct AutofillItemsEmptyView: View {
                     } label: {
                         Text(UserText.autofillEmptyViewImportButtonTitle)
                     }
-                    .buttonStyle(PrimaryButtonStyle(compact: true))
+                    .buttonStyle(PrimaryButtonStyle())
                     .onFirstAppear {
                         if case .hub = DataImportEntryPointHandler().destination(for: .passwords) {
                             Pixel.fire(pixel: .importHubEntryShown, withAdditionalParameters: DataImportViewModel.ImportScreen.passwords.importHubEntryPointParameters)
@@ -73,14 +73,14 @@ struct AutofillItemsEmptyView: View {
                     } label: {
                         Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
                     }
-                    .buttonStyle(SecondaryFillButtonStyle(compact: true))
+                    .buttonStyle(SecondaryFillButtonStyle())
                 } else {
                     Button {
                         importViaSyncButtonAction?()
                     } label: {
                         Text(UserText.autofillEmptyViewImportButtonTitle)
                     }
-                    .buttonStyle(PrimaryButtonStyle(compact: true))
+                    .buttonStyle(PrimaryButtonStyle())
                 }
             }
             // fixedSize sizes both buttons to the wider title's width.

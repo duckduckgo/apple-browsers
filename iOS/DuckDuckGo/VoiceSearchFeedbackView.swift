@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKitIcons
 import UIComponents
+import PreviewSnapshots
 
 struct VoiceSearchFeedbackView: View {
     @ObservedObject var speechModel: VoiceSearchFeedbackViewModel
@@ -226,29 +227,19 @@ extension VoiceSearchFeedbackView {
 // MARK: - Preview
 
 struct VoiceSearchFeedbackView_Previews: PreviewProvider {
+    typealias State = VoiceSearchFeedbackViewModel
+
     static var previews: some View {
-        Group {
-            ForEach(ColorScheme.allCases, id: \.self) {
-                VoiceSearchFeedbackView(speechModel: VoiceSearchFeedbackViewModel(speechRecognizer: PreviewMockSpeechRecognizer(),
-                                                                                  aiChatSettings: AIChatSettings()))
-                    .preferredColorScheme($0)
-            }
-
-            VoiceSearchFeedbackView(speechModel: VoiceSearchFeedbackViewModel(speechRecognizer: PreviewMockSpeechRecognizer(),
-                                                                              aiChatSettings: AIChatSettings()))
-                .previewInterfaceOrientation(.landscapeRight)
-        }
+        snapshots.previews
     }
-}
 
-private struct PreviewMockSpeechRecognizer: SpeechRecognizerProtocol {
-    var isAvailable: Bool = false
-
-    static func requestMicAccess(withHandler handler: @escaping (Bool) -> Void) { }
-
-    func getVolumeLevel(from channelData: UnsafeMutablePointer<Float>) -> Float { 10 }
-
-    func startRecording(resultHandler: @escaping (String?, Error?, Bool) -> Void, volumeCallback: @escaping (Float) -> Void) { }
-
-    func stopRecording() { }
+    static let snapshots = PreviewSnapshots(
+        configurations: [
+            .init(name: "AI Chat", state: .preview()),
+            .init(name: "Search", state: .preview(preferredTarget: .SERP))
+        ],
+        configure: {
+            VoiceSearchFeedbackView(speechModel: $0)
+        }
+    )
 }

@@ -104,6 +104,8 @@ public enum SyncErrorType {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertTitle
+        case .unableToSyncToOtherDevice:
+            return UserText.syncFailedTitle
         case .updateRequired:
             return UserText.syncUpdateRequiredTitle
         case .alreadyPairedWithAccount:
@@ -122,7 +124,7 @@ public enum SyncErrorType {
         case .unableToSyncToServer:
             return UserText.unableToSyncToServerDescription
         case .unableToSyncToOtherDevice:
-            return UserText.unableToSyncWithAnotherDeviceDescription
+            return UserText.syncFailedDescription
         case .unableToMergeTwoAccounts:
             return UserText.unableToMergeTwoAccountsDescription
         case .unableToUpdateDeviceName:
@@ -158,6 +160,8 @@ public enum SyncErrorType {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertButton
+        case .unableToSyncToOtherDevice:
+            return UserText.syncSetupErrorGotItButton
         case .alreadyPairedWithAccount:
             return UserText.syncAlreadyPairedWithAccountButton
         case .syncCancelledFromOtherDevice:

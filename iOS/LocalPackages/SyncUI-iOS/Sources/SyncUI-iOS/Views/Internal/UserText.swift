@@ -123,7 +123,7 @@ public struct UserText {
     static let autoRestoreFooter = NSLocalizedString("auto.restore.toggle.footer", bundle: Bundle.module, value: "Restore your data automatically if you reinstall the app. Sync & Backup data can’t be recovered after 18 months of inactivity.", comment: "Auto-restore section - Footer")
 
     // Device Synced Sheet
-    static let deviceSyncedSheetTitle = NSLocalizedString("device.synced.sheet.title", bundle: Bundle.module, value: "Device synced!", comment: "Device SyncedSheet - Title")
+    static let deviceSyncedSheetTitle = NSLocalizedString("device.synced.sheet.title", bundle: Bundle.module, value: "New device added!", comment: "Device SyncedSheet - Title")
     static let deviceSyncedSheetGetOnOtherDevicesButton = NSLocalizedString("device.synced.sheet.button.get.other.devices", bundle: Bundle.module, value: "Get DuckDuckGo on Other Devices", comment: "Device SyncedSheet Button to go get DuckDuckGo on other devices")
 
     // Recover Synced Data Sheet
@@ -257,7 +257,7 @@ public struct UserText {
     static let simplifiedViewCodeShareButton = NSLocalizedString("sync.simplified.scan-or-view-code.share", bundle: Bundle.module, value: "Share Code", comment: "Title of button to share a sync code")
     static let simplifiedViewCodeCopyConfirmationTitle = NSLocalizedString("sync.simplified.scan-or-view-code.copy-confirmation.title", bundle: Bundle.module, value: "Paste the code on your other device", comment: "Title of the reminder shown after the user copies the sync code.")
     static let simplifiedViewCodeCopyConfirmationMessage = NSLocalizedString("sync.simplified.scan-or-view-code.copy-confirmation.message", bundle: Bundle.module, value: "Come back to this device after pasting the code.", comment: "Message of the reminder shown after the user copies the sync code.")
-    static let simplifiedConnectingTitle = NSLocalizedString("sync.simplified.scan-or-view-code.connecting.title", bundle: Bundle.module, value: "Keep “Sync & Backup” open on both devices", comment: "Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved.")
+    static let simplifiedConnectingTitle = NSLocalizedString("sync.simplified.scan-or-view-code.connecting.title", bundle: Bundle.module, value: "End-to-end encrypted on all your devices.", comment: "Instruction shown during sync setup flow.")
     static let simplifiedConnectingStatus = NSLocalizedString("sync.simplified.scan-or-view-code.connecting.status", bundle: Bundle.module, value: "Connecting...", comment: "Status text when connecting devices to sync")
     static let simplifiedPasteCodeInstructions = NSLocalizedString("sync.simplified.scan-or-view-code.paste.code.instructions", bundle: Bundle.module, value: "Go to **Settings > Sync & Backup > Sync With Another Device** and select **View Text Code** in the DuckDuckGo App on another synced device and paste the code here to sync this device.", comment: "Instructions on manual sync code entry screen. **bold** marks are rendered as bold text.")
     static let simplifiedPasteCodeVerifying = NSLocalizedString("sync.simplified.scan-or-view-code.paste.code.verifying", bundle: Bundle.module, value: "Verifying code", comment: "Status text while verifying a pasted sync code")

@@ -242,6 +242,9 @@ enum UserText {
     }
 
     static let syncErrorAlertTitle = NSLocalizedString("alert.sync-error", bundle: Bundle.module, value: "Sync & Backup Error", comment: "Title for sync error alert")
+    static let syncFailedTitle = NSLocalizedString("alert.sync-failed-title", bundle: Bundle.module, value: "Sync failed.", comment: "Title for generic Sync setup failure alerts")
+    static let syncFailedDescription = NSLocalizedString("alert.sync-failed-description", bundle: Bundle.module, value: "Please try again.", comment: "Description for generic Sync setup failure alerts")
+    static let syncSetupErrorGotItButton = NSLocalizedString("alert.sync-setup-error-got-it-button", bundle: Bundle.module, value: "Got It", comment: "Button title for Sync setup error alerts")
     static let syncDeviceAuthenticationErrorAlertTitle = NSLocalizedString("alert.sync-device-auth-error", bundle: Bundle.module, value: "Sync & Backup Error", comment: "Title for an error alert")
     static let syncDeviceAuthenticationErrorAlertButton = NSLocalizedString("alert.sync-device-auth-error-button", bundle: Bundle.module, value: "Go to Settings", comment: "Button Title of an error alert")
     static let unableToAuthenticateDevice = NSLocalizedString("alert.unable-to-authenticate-device", bundle: Bundle.module, value: "A device password is required to use Sync & Backup.", comment: "Description for  unable to authenticate error")

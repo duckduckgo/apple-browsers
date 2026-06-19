@@ -295,6 +295,34 @@
             }
         ]
     },
+    "aichat_unified_input_show_model_picker": {
+        "description": "Fires when native surfaces the model picker in response to the FE showModelPicker bridge message (recovery picker session entry).",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_unified_input_submit_change_model": {
+        "description": "Fires when native emits submitChangeModelAction to the FE during an active recovery picker session.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "model_id",
+                "description": "The model id reported to the FE via submitChangeModelAction.",
+                "type": "string"
+            }
+        ]
+    },
+    "aichat_unified_input_submit_change_model_prompt_sent": {
+        "description": "Fires when the user successfully submits a prompt that ends a recovery picker session.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_unified_input_duck_ai_direct_navigation": {
         "description": "Fires when Duck.ai is disabled under AI Features settings yet the user navigates directly to Duck.ai by typing its address into the Unified Toggle Input and submitting. Does not fire for the in-input Duck.ai shortcut button or other Duck.ai entry points.",
         "owners": ["aataraxiaa"],

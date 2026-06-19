@@ -167,6 +167,8 @@ extension URL {
     static let settings = URL(string: "duck://settings")!
     static let bookmarks = URL(string: "duck://bookmarks")!
     static let history = URL(string: "duck://history")!
+    /// Debug-only favicon manager page (Debug ▸ Favicon Browser). Served by `DuckURLSchemeHandler`.
+    static let favicons = URL(string: "duck://favicons")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
 
@@ -195,6 +197,11 @@ extension URL {
 
     var isNTP: Bool {
         return navigationalScheme == .duck && host == URL.newtab.host
+    }
+
+    /// `duck://favicons` (and its sub-paths) — the debug-only favicon manager page.
+    var isFavicons: Bool {
+        return navigationalScheme == .duck && host == URL.favicons.host
     }
 
 #endif

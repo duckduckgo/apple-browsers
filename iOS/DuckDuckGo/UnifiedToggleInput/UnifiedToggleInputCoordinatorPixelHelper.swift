@@ -155,6 +155,18 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         )
     }
 
+    static func fireShowModelPickerPixel() {
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputShowModelPicker)
+    }
+
+    static func fireSubmitChangeModelPixel(modelId: String) {
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputSubmitChangeModel, withAdditionalParameters: ["model_id": modelId])
+    }
+
+    static func fireSubmitChangeModelPromptSentPixel() {
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputSubmitChangeModelPromptSent)
+    }
+
     static func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?, attachments: [UnifiedToggleInputAttachment]) {
         guard let selectedTool else { return }
         switch selectedTool {

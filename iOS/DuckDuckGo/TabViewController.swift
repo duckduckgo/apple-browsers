@@ -50,6 +50,7 @@ import AIChat
 import PixelKit
 import PrivacyConfig
 import WebExtensions
+import DesignResourcesKitIcons
 
 class TabViewController: UIViewController {
 
@@ -1463,7 +1464,7 @@ class TabViewController: UIViewController {
         webpageDidFailToLoad()
     }
 
-    private func setErrorInfoImage(resource: ImageResource = .errorInfoUniversal) {
+    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy) {
         errorInfoImage.image = UIImage(resource: resource)
         errorInfoImage.isHidden = false
     }

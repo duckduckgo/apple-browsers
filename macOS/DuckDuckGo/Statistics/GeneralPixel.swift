@@ -1405,7 +1405,7 @@ enum GeneralPixel: PixelKitEvent {
             return ["kind": kind.description]
 
         case .appStateRestored(let trigger):
-            return ["restart_to_update": String(trigger == .appUpdate)]
+            return ["isRestartToUpdate": String(trigger == .appUpdate)]
 
         case .dataImportFailed(source: _, sourceVersion: let version, error: let error):
             var params = error.pixelParameters

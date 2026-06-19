@@ -335,11 +335,11 @@ final class AppStateRestorationManagerTests: XCTestCase {
     }
 
     func testSessionRestoredPixel_WhenStandardTrigger_ThenRestartToUpdateParamIsFalse() {
-        XCTAssertEqual(GeneralPixel.appStateRestored(trigger: .standard).parameters, ["restart_to_update": "false"])
+        XCTAssertEqual(GeneralPixel.appStateRestored(trigger: .standard).parameters, ["isRestartToUpdate": "false"])
     }
 
     func testSessionRestoredPixel_WhenAppUpdateTrigger_ThenRestartToUpdateParamIsTrue() {
-        XCTAssertEqual(GeneralPixel.appStateRestored(trigger: .appUpdate).parameters, ["restart_to_update": "true"])
+        XCTAssertEqual(GeneralPixel.appStateRestored(trigger: .appUpdate).parameters, ["isRestartToUpdate": "true"])
     }
 
     // MARK: - Automatic Relaunch Tests

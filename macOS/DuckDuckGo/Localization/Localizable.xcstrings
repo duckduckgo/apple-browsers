@@ -114209,6 +114209,246 @@
         }
       }
     },
+    "vpn.preferences.copy-diagnostics-copied.button.title" : {
+      "comment" : "Temporary VPN settings button title shown after VPN diagnostic information is copied to the clipboard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Zwischenablage kopiert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copied to clipboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiado en el portapapeles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copié dans le presse-papiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiato negli appunti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gekopieerd naar klembord"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skopiowano do schowka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiado para a área de transferência"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировано в буфер обмена"
+          }
+        }
+      }
+    },
+    "vpn.preferences.copy-diagnostics-failed.button.title" : {
+      "comment" : "Temporary VPN settings button title shown when VPN diagnostic information could not be copied to the clipboard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konnte nicht in die Zwischenablage kopiert werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't copy to clipboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo copiar al portapapeles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de copier dans le presse-papiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile copiare negli appunti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon niet naar het klembord kopiëren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się skopiować do schowka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível copiar para a área de transferência"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось скопировать в буфер обмена"
+          }
+        }
+      }
+    },
+    "vpn.preferences.copy-diagnostics.button.title" : {
+      "comment" : "The VPN settings button that copies VPN diagnostic information to the clipboard.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "VPN-Diagnosen kopieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy VPN Diagnostics"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar diagnósticos de VPN"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier les diagnostics du VPN"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia le diagnostiche VPN"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "VPN-diagnostiek kopiëren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skopiuj diagnostykę VPN"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar diagnósticos da VPN"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Копировать данные диагностики VPN"
+          }
+        }
+      }
+    },
+    "vpn.preferences.copy-diagnostics.caption" : {
+      "comment" : "Caption beneath the Copy VPN Diagnostics button in VPN settings, explaining what the button does.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiert anonymisierte VPN-Diagnoseinformationen in deine Zwischenablage. Bitte gib diese Information bei deiner Kontaktaufnahme mit dem Support an, damit wir dein Verbindungsproblem beheben können."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copies anonymized VPN diagnostic information to your clipboard. Include it when contacting Support to help us troubleshoot your connection."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia la información anónima de diagnóstico de la VPN en tu portapapeles. Inclúyela cuando te pongas en contacto con el servicio de asistencia para ayudarnos a solucionar los problemas de conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copie les informations de diagnostic VPN anonymisées dans votre presse-papiers. Ajoutez-les lorsque vous contactez l'assistance pour nous aider à résoudre vos problèmes de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia le informazioni diagnostiche VPN anonimizzate negli appunti. Includile quando contatti l'assistenza per aiutarci a risolvere il problema della tua connessione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopieert geanonimiseerde diagnostische informatie over VPN naar je klembord. Vermeld dit als je contact opneemt met de klantenservice, zodat we je kunnen helpen bij het oplossen van je verbindingsproblemen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skopiuj anonimowe informacje diagnostyczne VPN do schowka. Podaj tę informację, gdy skontaktujesz się z pomocą techniczną, aby pomóc nam rozwiązać problem z Twoim połączeniem."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia a informação de diagnóstico da VPN anonimizada para a tua área de transferência. Inclui-o ao contactares o serviço de apoio para nos ajudares a solucionar problemas de ligação."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Копирует анонимизированные данные диагностики VPN в буфер обмена. Приложите эти данные к обращению в службу поддержки, чтобы мы могли помочь вам устранить неполадки с подключением."
+          }
+        }
+      }
+    },
     "vpn.setting.add.excluded.domain.action.button.title" : {
       "comment" : "Add excluded domain button title",
       "extractionState" : "extracted_with_value",
@@ -115225,54 +115465,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ярлыки"
-          }
-        }
-      }
-    },
-    "vpn.preferences.copy-diagnostics-copied.button.title" : {
-      "comment" : "Temporary VPN settings button title shown after VPN diagnostic information is copied to the clipboard.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Copied to clipboard"
-          }
-        }
-      }
-    },
-    "vpn.preferences.copy-diagnostics-failed.button.title" : {
-      "comment" : "Temporary VPN settings button title shown when VPN diagnostic information could not be copied to the clipboard.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Couldn't copy to clipboard"
-          }
-        }
-      }
-    },
-    "vpn.preferences.copy-diagnostics.button.title" : {
-      "comment" : "The VPN settings button that copies VPN diagnostic information to the clipboard.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Copy VPN Diagnostics"
-          }
-        }
-      }
-    },
-    "vpn.preferences.copy-diagnostics.caption" : {
-      "comment" : "Caption beneath the Copy VPN Diagnostics button in VPN settings, explaining what the button does.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Copies anonymized VPN diagnostic information to your clipboard. Include it when contacting Support to help us troubleshoot your connection."
           }
         }
       }

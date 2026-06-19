@@ -8,6 +8,7 @@ public final class DeferredReadingController: ObservableObject {
 
     public enum Constants {
         public static let notificationIdentifier = "com.duckduckgo.deferredReading.reminder"
+        public static let debugNotificationIdentifier = "com.duckduckgo.deferredReading.reminder.debug"
         public static let notificationCategoryIdentifier = "com.duckduckgo.deferredReading.category"
     }
 
@@ -120,6 +121,52 @@ public final class DeferredReadingController: ObservableObject {
 
     public func addedActionMessage(date: Date = Date()) -> String {
         "Added, we'll remind you \(reminderWindowDescription(from: date))."
+    }
+
+    public func nextScheduledReminderDate() -> Date? {
+        guard isFeatureEnabled(),
+              settingsController.quietPeriod != .never,
+              unreadCount > 0 else {
+            return nil
+        }
+
+        return nextReminderDate()
+    }
+
+    public func scheduleDebugReminderNotificationInOneMinute(now: Date = Date()) {
+        Task {
+            let settings = await notificationSettings()
+            var status = settings.authorizationStatus
+
+            if status == .notDetermined {
+                _ = try? await notificationCenter.requestAuthorization(options: [.alert, .sound, .badge])
+                status = await notificationSettings().authorizationStatus
+            }
+
+            guard status == .authorized || status == .provisional || status == .ephemeral else {
+                return
+            }
+
+            let triggerDate = now.addingTimeInterval(60)
+            let triggerComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: triggerDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
+            let content = UNMutableNotificationContent()
+            let count = max(unreadCount, 1)
+            content.title = "Deferred reading reminder"
+            content.body = reminderBody(unreadCount: count)
+            content.categoryIdentifier = Constants.notificationCategoryIdentifier
+
+            let request = UNNotificationRequest(
+                identifier: Constants.debugNotificationIdentifier,
+                content: content,
+                trigger: trigger
+            )
+            try? await notificationCenter.add(request)
+        }
+    }
+
+    public func debugNotificationAuthorizationStatus() async -> UNAuthorizationStatus {
+        await notificationSettings().authorizationStatus
     }
 
     private func updateUnreadCount() {
@@ -236,5 +283,13 @@ public final class DeferredReadingController: ObservableObject {
             return .default
         }
         return decoded
+    }
+
+    private func notificationSettings() async -> UNNotificationSettings {
+        await withCheckedContinuation { continuation in
+            notificationCenter.getNotificationSettings { settings in
+                continuation.resume(returning: settings)
+            }
+        }
     }
 }

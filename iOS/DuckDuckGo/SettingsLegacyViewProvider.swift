@@ -32,6 +32,7 @@ import AIChat
 import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
+import DeferredReadingCore
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -61,6 +62,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let webExtensionManager: WebExtensionManaging?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    let deferredReadingController: DeferredReadingController?
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
 
@@ -85,7 +87,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          syncAutoRestoreHandler: SyncAutoRestoreHandling,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         deferredReadingController: DeferredReadingController? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -106,6 +109,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.webExtensionManager = webExtensionManager
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.deferredReadingController = deferredReadingController
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
     }
@@ -165,7 +169,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
-            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            deferredReadingController: self.deferredReadingController))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

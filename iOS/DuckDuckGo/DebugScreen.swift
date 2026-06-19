@@ -29,6 +29,7 @@ import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
+import DeferredReadingCore
 
 protocol RemoteMessagingDebugHandling {
     func refreshRemoteMessages()
@@ -58,6 +59,51 @@ enum DebugScreen: Identifiable {
         let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
         let webExtensionManager: WebExtensionManaging?
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+        let deferredReadingController: DeferredReadingController?
+
+        init(syncService: DDGSyncing,
+             syncAutoRestoreHandler: SyncAutoRestoreHandling,
+             bookmarksDatabase: CoreDataDatabase,
+             internalUserDecider: InternalUserDecider,
+             tabManager: TabManager,
+             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandling,
+             fireproofing: Fireproofing,
+             customConfigurationURLProvider: CustomConfigurationURLProviding,
+             keyValueStore: ThrowingKeyValueStoring,
+             systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+             daxDialogManager: DaxDialogsManaging,
+             databaseDelegate: DBPIOSInterface.DatabaseDelegate?,
+             debuggingDelegate: DBPIOSInterface.DebuggingDelegate?,
+             runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
+             freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+             freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+             subscriptionDataReporter: SubscriptionDataReporting,
+             remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
+             webExtensionManager: WebExtensionManaging?,
+             duckAiNativeStorageHandler: DuckAiNativeStorageHandling?,
+             deferredReadingController: DeferredReadingController? = nil) {
+            self.syncService = syncService
+            self.syncAutoRestoreHandler = syncAutoRestoreHandler
+            self.bookmarksDatabase = bookmarksDatabase
+            self.internalUserDecider = internalUserDecider
+            self.tabManager = tabManager
+            self.tipKitUIActionHandler = tipKitUIActionHandler
+            self.fireproofing = fireproofing
+            self.customConfigurationURLProvider = customConfigurationURLProvider
+            self.keyValueStore = keyValueStore
+            self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
+            self.daxDialogManager = daxDialogManager
+            self.databaseDelegate = databaseDelegate
+            self.debuggingDelegate = debuggingDelegate
+            self.runPrequisitesDelegate = runPrequisitesDelegate
+            self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
+            self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+            self.subscriptionDataReporter = subscriptionDataReporter
+            self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
+            self.webExtensionManager = webExtensionManager
+            self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+            self.deferredReadingController = deferredReadingController
+        }
 
     }
 

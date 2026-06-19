@@ -27,6 +27,7 @@ import DataBrokerProtection_iOS
 import AIChat
 import WebExtensions
 import DuckUI
+import DeferredReadingUI
 
 extension DebugScreensViewModel {
 
@@ -172,6 +173,13 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Modal Prompt Coordination", { d in
                 ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
+            }),
+            .view(title: "Deferred Reading", { d in
+                if let deferredReadingController = d.deferredReadingController {
+                    DeferredReadingDebugView(controller: deferredReadingController)
+                } else {
+                    Text("Deferred Reading controller unavailable")
+                }
             }),
             .view(title: "What's New", { dependencies in
                 WhatsNewDebugView(keyValueStore: dependencies.keyValueStore, remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)

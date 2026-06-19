@@ -61,7 +61,8 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
             if let identifier = DataBrokerProtectionNotificationIdentifier(rawValue: raw) {
                 handleDataBrokerProtectionNotification(identifier: identifier)
             }
-        case DeferredReadingController.Constants.notificationIdentifier:
+        case DeferredReadingController.Constants.notificationIdentifier,
+             DeferredReadingController.Constants.debugNotificationIdentifier:
             handleDeferredReadingNotification()
         default:
             break

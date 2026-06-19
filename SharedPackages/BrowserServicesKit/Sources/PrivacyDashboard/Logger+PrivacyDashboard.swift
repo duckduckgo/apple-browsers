@@ -21,4 +21,5 @@ import os.log
 
 public extension Logger {
     static let privacyDashboard = Logger(subsystem: "Privacy Dashboard", category: "")
+    static let siteBreakage = Logger(subsystem: "Privacy Dashboard", category: "Site Breakage")
 }

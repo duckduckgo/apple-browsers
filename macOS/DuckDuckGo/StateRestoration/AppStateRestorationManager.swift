@@ -148,7 +148,11 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
             })
             // rename loaded app state file
             service.didLoadState()
-            if state != nil {
+            // The user's session is only considered restored when their regular tabs come back.
+            // At startup `restoreLastSessionState` also runs to restore pinned tabs (which persist
+            // regardless of the session-restore setting), so a decoded state alone isn't a restore.
+            let didRestoreSession = includeRegularTabs && state != nil
+            if didRestoreSession {
                 PixelKit.fire(GeneralPixel.appStateRestored(trigger: isRelaunchingAutomatically ? .appUpdate : .standard), frequency: .dailyAndCount)
             }
         } catch CocoaError.fileReadNoSuchFile {

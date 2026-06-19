@@ -87,8 +87,12 @@ final class UnifiedToggleInputView: UIView {
         // shorter than the 48pt fire/voice buttons that flank it.
         static let flankedCardTopMargin: CGFloat = 6
         static let flankedCardBottomMargin: CGFloat = 6
-        /// Card container's outer horizontal margin. Also drives the flanked-pill inset and fire/menu
-        /// offsets, so the whole input row shares one outer padding.
+        /// Outer horizontal padding for the whole `.flanked` row: the fire/menu accessory buttons'
+        /// distance from the view edges, and the base inset the flanked-pill card is laid out from
+        /// (see `flankedHorizontalInset` in `setupConstraints`). Keeps the flanked input's left/right
+        /// padding consistent end-to-end.
+        static let flankedCardHorizontalMargin: CGFloat = 16
+        /// Card container's outer horizontal margin in the non-flanked layouts.
         static let cardHorizontalMargin: CGFloat = 8
         static let cardVerticalMargin: CGFloat = 8
         /// Outer horizontal margin for the expanded card at the bottom-bar position.
@@ -1398,7 +1402,7 @@ private extension UnifiedToggleInputView {
         // Anchoring to self (not to the flank buttons) keeps voice/fire out of the card's
         // dependency chain. Inner content's intrinsic width pressure can no longer slide
         // voice — Auto Layout has to compress the content instead.
-        let flankedHorizontalInset = Constants.cardHorizontalMargin
+        let flankedHorizontalInset = Constants.flankedCardHorizontalMargin
             + Constants.aiTabCollapsedAccessorySize
             + Constants.aiTabCollapsedAccessorySpacing
         cardLeadingFlankedConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: flankedHorizontalInset)
@@ -1459,12 +1463,12 @@ private extension UnifiedToggleInputView {
             toolbarBottomConstraint,
             toolbarHeightConstraint,
 
-            aiTabCollapsedFireButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.cardHorizontalMargin),
+            aiTabCollapsedFireButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.flankedCardHorizontalMargin),
             aiTabCollapsedFireButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
             aiTabCollapsedFireButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
             aiTabCollapsedFireButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
 
-            aiTabCollapsedMenuButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin),
+            aiTabCollapsedMenuButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.flankedCardHorizontalMargin),
             aiTabCollapsedMenuButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
             aiTabCollapsedMenuButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
             aiTabCollapsedMenuButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),

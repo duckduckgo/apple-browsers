@@ -147,11 +147,15 @@ private extension RebrandedNewTabDaxDialogFactory {
             delegate: delegate,
             onSuggestionPressed: { [weak self] in
                 self?.onboardingPixelReporter.measureTryVisitSiteDialogSuggestedSiteTapped()
+                if !isChatPath {
+                    self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
+                }
             }
         )
 
         let manualDismissAction: (() -> Void)? = isChatPath ? nil : { [weak self] in
             self?.onboardingPixelReporter.measureTryVisitSiteDialogNewTabDismissButtonTapped()
+            self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
             onManualDismiss()
         }
 
@@ -165,7 +169,6 @@ private extension RebrandedNewTabDaxDialogFactory {
                 self?.daxDialogsFlowCoordinator.setChatPathVisitSiteSeen()
                 self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTryVisitSiteUnique)
             } else {
-                self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
                 self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
             }
             self?.onboardingPixelReporter.measureScreenImpression(.visitSite(.shown))

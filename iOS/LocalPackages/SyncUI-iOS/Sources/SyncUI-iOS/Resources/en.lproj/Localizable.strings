@@ -175,6 +175,9 @@
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Setting Up Sync and Backup";
 
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Preparing to sync";
+
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Recover Synced Data";
 

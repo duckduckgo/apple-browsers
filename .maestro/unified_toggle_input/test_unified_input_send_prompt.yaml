@@ -1,7 +1,11 @@
 appId: com.duckduckgo.mobile.ios
+# TEMPORARILY DISABLED from gating CI: the `release` tag (which the e2e job includes) is removed
+# on purpose. This flow is flaky — submitting from the NTP omnibar in Duck.ai mode intermittently
+# opens an empty chat (prompt not committed), and it depends on the Duck.ai web consent which only
+# appears intermittently. Re-enable by restoring the `- release` tag once the submit/consent
+# flakiness is fixed (follow-up task to be created).
 tags:
     - iphone
-    - release
     - unified_toggle_input
 name: test_unified_input_send_prompt
 

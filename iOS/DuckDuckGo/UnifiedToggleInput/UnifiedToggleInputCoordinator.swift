@@ -989,9 +989,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if animated {
             UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
                 applyModeChange()
+                // Push the new mode's content inset here (target height) so the suggestions content and
+                // the logo move in the same pass as the bar — not reactively after the height callback.
+                if didModeChange { self.pushContentInsets() }
             }
         } else {
             applyModeChange()
+            if didModeChange { pushContentInsets() }
         }
 
         applyToolbarPresentation()
@@ -1399,6 +1403,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return
         }
         userScript.submitChangeModel(modelId)
+        guard isModelPickerForcedVisible, userScript.canDispatchBridgeMessages else {
+            return
+        }
+        UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPixel(modelId: modelId)
     }
 
     /// Surfaces the native model picker on the **active** chat in response to the FE's
@@ -1418,6 +1426,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // expand animation before we ask the button to open its menu.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            UnifiedToggleInputCoordinatorPixelHelper.fireShowModelPickerPixel()
             self.viewController.presentModelPickerMenu()
         }
     }
@@ -2354,11 +2363,15 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     private func markActiveChatPromptSubmitted() {
+        let wasInRecoveryPickerSession = isModelPickerForcedVisible
         hasSubmittedPrompt = true
         isModelPickerForcedVisible = false
         persistModelPickerPinClearedAfterHideIfNeeded()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
+        if wasInRecoveryPickerSession {
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPromptSentPixel()
+        }
     }
 
     func syncInputBehaviorToHandler() {

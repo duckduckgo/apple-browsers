@@ -137,7 +137,7 @@ struct SettingsYouTubeAdBlockingView: View {
         base.append(AttributedString(UserText.youTubeAdBlockingToggleFooter))
         base.append(AttributedString(" "))
         var link = AttributedString(UserText.youTubeAdBlockingLearnMoreButton)
-        link.foregroundColor = Color(designSystemColor: .accent)
+        link.foregroundColor = Color(designSystemColor: .accentPrimary)
         link.link = Self.learnMoreURL
         base.append(link)
         return base

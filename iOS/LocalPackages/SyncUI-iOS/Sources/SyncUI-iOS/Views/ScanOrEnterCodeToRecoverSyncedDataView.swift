@@ -60,7 +60,7 @@ public struct ScanOrEnterCodeToRecoverSyncedDataView: View {
                             NavigationLink(UserText.scanCodeToRecoverSyncedDataEnterCodeLink, destination: {
                                 PasteCodeView(model: model)
                             })
-                            .foregroundColor(Color(designSystemColor: .accent))
+                            .foregroundColor(Color(designSystemColor: .accentPrimary))
                             Image(uiImage: DesignSystemImages.Glyphs.Size12.arrowCircleRight)
                         }
                     }

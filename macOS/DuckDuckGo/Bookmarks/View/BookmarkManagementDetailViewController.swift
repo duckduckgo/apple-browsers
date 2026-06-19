@@ -307,6 +307,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     override func viewDidAppear() {
         subscribeToSelectedSortMode()
         subscribeToFirstResponder()
+        subscribeToFaviconCacheUpdates()
         // reloadData() will be called from BookmarkManagementSidebarViewController → dataSource.$selectedFolders observer → update(selectionState:)
         // updatesyncPromoViewHostingVisibility() will be called from reloadData()
     }
@@ -349,6 +350,27 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
                 self?.firstResponderDidChange($0)
             }
             .store(in: &cancellables)
+    }
+
+    /// Bookmark favicons are lazy-loaded: `Bookmark.favicon(.small)` may return `nil` on a cache miss and the
+    /// cell falls back to a default icon. When the image is decoded later, `.faviconCacheUpdated` is posted; reload
+    /// the table when the update relates to a host currently displayed in the list (or defensively if no payload).
+    private func subscribeToFaviconCacheUpdates() {
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate, update.hosts.isDisjoint(with: self.displayedBookmarkHosts) {
+                    return
+                }
+                self.reloadData()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Hosts of the bookmarks currently visible in the list, used to filter favicon-cache updates.
+    private var displayedBookmarkHosts: Set<String> {
+        Set(managementDetailViewModel.visibleBookmarks.compactMap { ($0 as? Bookmark)?.urlObject?.host })
     }
 
     override func keyDown(with event: NSEvent) {

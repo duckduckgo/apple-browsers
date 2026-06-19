@@ -66,7 +66,7 @@ struct ListBasedPicker<T: Hashable, Footer: View>: View {
 
                             Spacer()
                             Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSmall)
-                                .foregroundStyle(Color(designSystemColor: .accent))
+                                .foregroundStyle(Color(designSystemColor: .accentPrimary))
                                 .opacity(selectedOption == option ? 1 : 0)
                         }
                     }

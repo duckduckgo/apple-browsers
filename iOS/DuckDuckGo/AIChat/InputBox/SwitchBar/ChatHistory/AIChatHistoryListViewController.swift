@@ -227,7 +227,7 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private func highlightBackgroundColor(isHighlighted: Bool) -> UIColor {
-        isHighlighted ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .surface)
+        isHighlighted ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .surface)
     }
 
     func setScrollableTitle(_ title: String?) {

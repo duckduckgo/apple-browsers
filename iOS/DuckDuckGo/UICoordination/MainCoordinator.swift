@@ -762,6 +762,12 @@ extension MainCoordinator: URLHandling {
                     ActionMessageView.present(message: toastMessage)
                 }
             },
+            onPauseForToday: { [weak self] in
+                guard let self else { return }
+                clearPromptObserver()
+                self.controller.deferredReadingController.pausePromptsForToday()
+                self.controller.presentedViewController?.dismiss(animated: true)
+            },
             onDisappear: clearPromptObserver
         )
 
@@ -769,16 +775,7 @@ extension MainCoordinator: URLHandling {
         promptController.modalPresentationStyle = .pageSheet
 
         if let sheetPresentationController = promptController.sheetPresentationController {
-            if #available(iOS 16.0, *) {
-                let compactDetent = UISheetPresentationController.Detent.custom(
-                    identifier: .init("deferredReadingPromptCompact")
-                ) { _ in
-                    200
-                }
-                sheetPresentationController.detents = [compactDetent]
-            } else {
-                sheetPresentationController.detents = [.medium()]
-            }
+            sheetPresentationController.detents = [.medium()]
             sheetPresentationController.prefersGrabberVisible = true
             sheetPresentationController.prefersScrollingExpandsWhenScrolledToEdge = false
         }

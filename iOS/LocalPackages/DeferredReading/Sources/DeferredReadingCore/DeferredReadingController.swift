@@ -15,6 +15,7 @@ public final class DeferredReadingController: ObservableObject {
     private enum StorageKey {
         static let items = "deferred-reading.items"
         static let settings = "deferred-reading.settings"
+        static let pausedDate = "deferred-reading.paused-date"
     }
 
     @Published public private(set) var items: [DeferredReadingItem] = []
@@ -26,6 +27,7 @@ public final class DeferredReadingController: ObservableObject {
     private let calendar: Calendar
     private let nowProvider: () -> Date
     private let isFeatureEnabled: () -> Bool
+    private var pausedDate: Date?
 
     public init(keyValueStore: ThrowingKeyValueStoring,
                 notificationCenter: UNUserNotificationCenter = .current(),
@@ -47,6 +49,7 @@ public final class DeferredReadingController: ObservableObject {
         }
 
         items = Self.loadItems(from: keyValueStore)
+        pausedDate = Self.loadPausedDate(from: keyValueStore)
         updateUnreadCount()
         registerNotificationCategory()
         rescheduleNotification()
@@ -68,7 +71,22 @@ public final class DeferredReadingController: ObservableObject {
 
     public func shouldPromptForExternalURLNow(date: Date = Date()) -> Bool {
         guard isFeatureEnabled() else { return false }
+        guard !isPromptPaused(on: date) else { return false }
         return settingsController.quietPeriod.contains(date, calendar: calendar)
+    }
+
+    public func pausePromptsForToday(date: Date = Date()) {
+        pausedDate = date
+        persistPausedDate()
+    }
+
+    public func resetPromptPause() {
+        pausedDate = nil
+        persistPausedDate()
+    }
+
+    public func isPromptPausedToday(date: Date = Date()) -> Bool {
+        isPromptPaused(on: date)
     }
 
     public func deferURL(_ url: URL, title: String? = nil, date: Date = Date()) {
@@ -186,6 +204,14 @@ public final class DeferredReadingController: ObservableObject {
         }
     }
 
+    private func persistPausedDate() {
+        do {
+            try keyValueStore.set(pausedDate?.timeIntervalSince1970, forKey: StorageKey.pausedDate)
+        } catch {
+            // Best effort persistence.
+        }
+    }
+
     private func storeSettings(_ settings: DeferredReadingSettings) {
         do {
             let data = try JSONEncoder().encode(settings)
@@ -283,6 +309,18 @@ public final class DeferredReadingController: ObservableObject {
             return .default
         }
         return decoded
+    }
+
+    private static func loadPausedDate(from store: ThrowingKeyValueStoring) -> Date? {
+        guard let timestamp = try? store.object(forKey: StorageKey.pausedDate) as? TimeInterval else {
+            return nil
+        }
+        return Date(timeIntervalSince1970: timestamp)
+    }
+
+    private func isPromptPaused(on date: Date) -> Bool {
+        guard let pausedDate else { return false }
+        return calendar.isDate(pausedDate, inSameDayAs: date)
     }
 
     private func notificationSettings() async -> UNNotificationSettings {

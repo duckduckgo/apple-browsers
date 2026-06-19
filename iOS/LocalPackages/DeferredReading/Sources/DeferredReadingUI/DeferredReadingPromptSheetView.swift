@@ -31,15 +31,18 @@ public struct DeferredReadingPromptSheetView: View {
 
     let onReadNow: () -> Void
     let onReadLater: () -> Void
+    let onPauseForToday: () -> Void
     let onDisappear: () -> Void
 
     public init(state: DeferredReadingPromptState,
                 onReadNow: @escaping () -> Void,
                 onReadLater: @escaping () -> Void,
+                onPauseForToday: @escaping () -> Void,
                 onDisappear: @escaping () -> Void = {}) {
         self.state = state
         self.onReadNow = onReadNow
         self.onReadLater = onReadLater
+        self.onPauseForToday = onPauseForToday
         self.onDisappear = onDisappear
     }
 
@@ -56,6 +59,12 @@ public struct DeferredReadingPromptSheetView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+
+                Button(action: onPauseForToday) {
+                    Text("Pause for Today")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
 
                 Button(action: onReadNow) {
                     Text("Read Now")

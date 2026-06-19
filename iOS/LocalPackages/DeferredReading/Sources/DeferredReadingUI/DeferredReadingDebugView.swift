@@ -7,6 +7,7 @@ public struct DeferredReadingDebugView: View {
     @ObservedObject private var controller: DeferredReadingController
     @State private var debugScheduledAt: Date?
     @State private var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
+    @State private var isPromptPausedToday = false
 
     public init(controller: DeferredReadingController) {
         self.controller = controller
@@ -18,6 +19,14 @@ public struct DeferredReadingDebugView: View {
                 row(title: "Next scheduled reminder",
                     value: formatted(date: controller.nextScheduledReminderDate()) ?? "Not scheduled")
                 row(title: "Unread deferred items", value: "\(controller.unreadCount)")
+                row(title: "Prompt paused today", value: isPromptPausedToday ? "Yes" : "No")
+            }
+
+            Section("Prompt Pause") {
+                Button("Reset Pause for Today") {
+                    controller.resetPromptPause()
+                    refreshStatus()
+                }
             }
 
             Section("Debug Notification") {
@@ -25,9 +34,7 @@ public struct DeferredReadingDebugView: View {
                     let now = Date()
                     debugScheduledAt = now.addingTimeInterval(60)
                     controller.scheduleDebugReminderNotificationInOneMinute(now: now)
-                    Task {
-                        notificationAuthorizationStatus = await controller.debugNotificationAuthorizationStatus()
-                    }
+                    refreshStatus()
                 }
 
                 row(title: "Notification permission",
@@ -38,7 +45,7 @@ public struct DeferredReadingDebugView: View {
         }
         .navigationTitle("Deferred Reading Debug")
         .task {
-            notificationAuthorizationStatus = await controller.debugNotificationAuthorizationStatus()
+            refreshStatus()
         }
     }
 
@@ -56,6 +63,13 @@ public struct DeferredReadingDebugView: View {
     private func formatted(date: Date?) -> String? {
         guard let date else { return nil }
         return date.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    private func refreshStatus() {
+        isPromptPausedToday = controller.isPromptPausedToday()
+        Task {
+            notificationAuthorizationStatus = await controller.debugNotificationAuthorizationStatus()
+        }
     }
 }
 

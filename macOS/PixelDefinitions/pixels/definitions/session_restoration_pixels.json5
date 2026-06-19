@@ -11,9 +11,8 @@
             "channel",
             {
                 "key": "isRestartToUpdate",
-                "type": "string",
-                "description": "Whether the restoration happened during an automatic restart-to-update relaunch, which restores the session regardless of the session-restore setting.",
-                "enum": ["true", "false"]
+                "type": "boolean",
+                "description": "Whether the restoration happened during an automatic restart-to-update relaunch, which restores the session regardless of the session-restore setting."
             }
         ]
     }

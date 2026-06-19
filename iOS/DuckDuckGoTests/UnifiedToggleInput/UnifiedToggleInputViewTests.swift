@@ -311,10 +311,14 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(handler.currentText, "he\nllo")
     }
 
-    func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewline() {
-        let expectedTopAIChatMinimumHeight: CGFloat = 51
-        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
-        handler.updateBarPosition(isTop: true)
+    func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewlineAndLegacyUXIsEnabled() {
+        let expectedTopAIChatMinimumHeight: CGFloat = 68
+        let handler = LegacyTextEntryMockHandler(
+            currentToggleState: .aiChat,
+            isTopBarPosition: true,
+            isUsingFadeOutAnimation: false,
+            usesExpandedAIChatTextEntryLayout: true
+        )
         let sut = SwitchBarTextEntryView(handler: handler)
         sut.isExpandable = true
         prepareForFitting(sut)
@@ -342,7 +346,6 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         XCTAssertFalse(placeholderLabel.isHidden)
         XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
-        // The UTI uses the new horizontal inset, not the legacy one.
         XCTAssertEqual(textView.textContainerInset.left, 16, accuracy: 1)
     }
 
@@ -427,7 +430,6 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(height, 68, accuracy: 1)
         XCTAssertFalse(placeholderLabel.isHidden)
         XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
-        // The legacy path keeps the legacy horizontal inset.
         XCTAssertEqual(textView.textContainerInset.left, 12, accuracy: 1)
     }
 

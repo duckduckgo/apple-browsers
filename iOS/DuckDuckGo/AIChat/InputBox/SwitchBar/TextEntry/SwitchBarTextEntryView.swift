@@ -157,7 +157,7 @@ class SwitchBarTextEntryView: UIView {
     // The tall AIChat height is shared by both the UTI and the legacy iPhone path, so it tracks
     // `usesExpandedAIChatTextEntryLayout` (true for both).
     private var minHeightAIChat: CGFloat {
-        handler.usesExpandedAIChatTextEntryLayout ? Constants.legacyMinHeightAIChat : Constants.minHeightAIChat
+        handler.usesLegacyLayoutMetrics ? Constants.legacyMinHeightAIChat : Constants.minHeightAIChat
     }
 
     // The horizontal insets/offsets only revert on the legacy (non-UTI) path. The UTI keeps the new

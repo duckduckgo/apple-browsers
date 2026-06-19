@@ -552,6 +552,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         handler.setToggleState(.search)
         let sut = SwitchBarTextEntryView(handler: handler)
+        sut.style = .singleLine // UnifiedToggleInputView sets singleLine for search mode
         sut.isExpandable = true
         prepareForFitting(sut)
         sut.setQueryText(longURL)
@@ -587,6 +588,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     func test_urlExpandsHeightInSearchOnlyModeAfterUserTap() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: false)
         let sut = SwitchBarTextEntryView(handler: handler)
+        sut.style = .singleLine // UnifiedToggleInputView sets singleLine for toggle-disabled mode
         sut.isExpandable = true
         prepareForFitting(sut)
         sut.setQueryText(longURL)

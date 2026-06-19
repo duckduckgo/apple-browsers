@@ -159,7 +159,12 @@ extension TabViewController {
             // Settings lives in the header tiles; Zoom/Find/Print and site-utility items are omitted.
             entries.append(buildNewAIChatEntry(withSmallIcon: useSmallIcon))
             entries.append(buildAINewVoiceChatEntry(useSmallIcon: useSmallIcon))
-            entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
+            // Native sheet on iPhone when the flag is on; Duck.ai web sidebar otherwise.
+            if isNativeChatHistoryAvailable {
+                entries.append(buildDuckAiChatsEntry(withSmallIcon: useSmallIcon))
+            } else {
+                entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
+            }
             entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon, useAIGlyph: true))
 
             entries.append(.separator)

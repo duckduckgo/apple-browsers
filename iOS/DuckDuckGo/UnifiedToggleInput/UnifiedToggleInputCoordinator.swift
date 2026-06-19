@@ -838,10 +838,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.applyCardLayout(.collapsed, animated: false)
         let renderState = computeRenderState()
-        viewController.apply(renderState.viewConfig, animated: false)
-        applyToolbarPresentation()
-        fetchModels()
 
+        // Set text before apply so clearDismissSnapshot sees the correct handler state when
+        // it fires inside applyCardLayout — otherwise textRightInset starts at the no-button value.
         let shouldSelectAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             setText(text)
@@ -851,6 +850,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             shouldSelectAllText = false
         }
         updateFloatingReturnKeyState()
+
+        viewController.apply(renderState.viewConfig, animated: false)
+        applyToolbarPresentation()
+        fetchModels()
 
         let expandedHeight = editingHeight()
 

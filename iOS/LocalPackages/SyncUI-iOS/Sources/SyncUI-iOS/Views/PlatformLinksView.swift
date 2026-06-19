@@ -77,7 +77,7 @@ public struct PlatformLinksView: View {
 
                 Text(Constants.goToUrl)
                     .daxBodyBold()
-                    .foregroundColor(Color(designSystemColor: .accent))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
                     .overlay(
                         CopyActionOverlay(copyText: Constants.downloadUrl, onCopy: {
                             model.fireOtherPlatformLinksPixel(for: .copy, source: source)

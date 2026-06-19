@@ -23,6 +23,7 @@ import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 /// Constants used in DuckPlayerWelcomePillView
 private struct Constants {
@@ -80,7 +81,7 @@ struct DuckPlayerWelcomePillView: View {
                 Text(UserText.duckPlayerOptInPillTitle)
             }
         }
-        .buttonStyle(PrimaryButtonStyle(compact: true))
+        .buttonStyle(PrimaryButtonStyle())
         .padding(.top, Constants.buttonTopPadding)
         .accessibilityLabel("Watch in DuckPlayer")
         .accessibilityHint("Opens the video in DuckPlayer for privacy protection")
@@ -144,12 +145,16 @@ struct DuckPlayerWelcomePillView: View {
                 }
                 mainActionButton
             }
-            .padding(.horizontal, Constants.horizontalPadding)
+            .padding(.horizontal, AppRebrand.isAppRebranded() ?
+                     ButtonStackMetrics.containerPadding
+                     : Constants.horizontalPadding)
             .padding(.vertical, Constants.verticalPadding)
             .background(
                 Color(designSystemColor: colorScheme == .dark ? .controlsFillPrimary  : .backgroundSheets)
             )
-            .cornerRadius(Constants.cornerRadius)
+            .cornerRadius(AppRebrand.isAppRebranded() ?
+                          ContainerMetrics.cornerRadius
+                          : Constants.cornerRadius)
             .shadow(
                 color: Color.black.opacity(Constants.shadowOpacity),
                 radius: Constants.shadowRadius,

@@ -64,7 +64,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private lazy var borderView = StyledTopBottomBorderView()
 
     private let newTabDialogFactory: any NewTabDaxDialogProviding
-    private let daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
+    private let daxDialogsManager: DaxDialogsManaging
     private let onboardingFlowProvider: OnboardingFlowProviding
 
     private let newTabPageViewModel: NewTabPageViewModel
@@ -92,7 +92,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          subscriptionDataReporting: SubscriptionDataReporting? = nil,
          newTabDialogFactory: any NewTabDaxDialogProviding,
-         daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
+         daxDialogsManager: DaxDialogsManaging,
          onboardingFlowProvider: OnboardingFlowProviding,
          faviconLoader: FavoritesFaviconLoading,
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
@@ -378,6 +378,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
             if tutorialSettings.hasSkippedOnboarding {
                 chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
             } else {
+                // Prevent contextual dialogs to show if user does not manually dismiss the end of journey dialog
+                daxDialogsManager.setDialogsPriorFinalSeen()
+                // Show final dialog
                 showDuckAIOnboardingCompletionWithActiveAddressBar(message: UserText.Onboarding.DuckAICPP.Contextual.onboardingEndOfJourneyMessage, textEntryMode: .aiChat)
             }
         }

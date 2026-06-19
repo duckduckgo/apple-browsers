@@ -52,7 +52,7 @@ public struct ScanOrSeeCode: View {
                         NavigationLink(UserText.scanOrSeeCodeManuallyEnterCodeLink, destination: {
                             PasteCodeView(model: model)
                         })
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                     }
                 }
             }
@@ -135,7 +135,7 @@ public struct ScanOrSeeCode: View {
             Text(UserText.scanOrSeeCodeFooter)
             HStack(alignment: .center) {
                 Text(UserText.scanOrSeeCodeShareCodeLink)
-                    .foregroundColor(Color(designSystemColor: .accent))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
                     .onTapGesture {
                         model.showShareCodeSheet()
                     }

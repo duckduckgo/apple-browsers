@@ -10,13 +10,20 @@ public struct DeferredReadingListView: View {
     @ObservedObject private var controller: DeferredReadingController
     private let onOpenURL: (URL) -> Void
     private let faviconLoader: ((URL, @escaping (UIImage?) -> Void) -> Void)?
+    private let previewContentBuilder: ((URL) -> AnyView)?
+    private let onPreviewDismissed: ((URL) -> Void)?
     @State private var isShowingSettings = false
+    @State private var previewSheet: PreviewSheet?
 
     public init(controller: DeferredReadingController,
                 faviconLoader: ((URL, @escaping (UIImage?) -> Void) -> Void)? = nil,
+                previewContentBuilder: ((URL) -> AnyView)? = nil,
+                onPreviewDismissed: ((URL) -> Void)? = nil,
                 onOpenURL: @escaping (URL) -> Void) {
         self.controller = controller
         self.faviconLoader = faviconLoader
+        self.previewContentBuilder = previewContentBuilder
+        self.onPreviewDismissed = onPreviewDismissed
         self.onOpenURL = onOpenURL
     }
 
@@ -94,6 +101,18 @@ public struct DeferredReadingListView: View {
                 }
                 .navigationViewStyle(.stack)
             }
+            .sheet(item: $previewSheet) { sheet in
+                DeferredReadingPreviewSheetView(url: sheet.url,
+                                               content: sheet.content,
+                                               onClose: {
+                    onPreviewDismissed?(sheet.url)
+                    previewSheet = nil
+                },
+                                               onOpenInTab: {
+                    onOpenURL(sheet.url)
+                    previewSheet = nil
+                })
+            }
         }
         .navigationViewStyle(.stack)
     }
@@ -102,7 +121,12 @@ public struct DeferredReadingListView: View {
     private func itemRow(_ item: DeferredReadingItem) -> some View {
         Button {
             if let url = controller.open(item) {
-                onOpenURL(url)
+                if let previewContentBuilder {
+                    previewSheet = PreviewSheet(url: url,
+                                                content: previewContentBuilder(url))
+                } else {
+                    onOpenURL(url)
+                }
             }
         } label: {
             HStack(alignment: .top, spacing: 10) {
@@ -159,6 +183,100 @@ public struct DeferredReadingListView: View {
         item.url?.absoluteString ?? item.urlString
     }
 
+}
+
+private struct PreviewSheet: Identifiable {
+    let id = UUID()
+    let url: URL
+    let content: AnyView
+}
+
+private struct DeferredReadingPreviewSheetView: View {
+    let url: URL
+    let content: AnyView
+    let onClose: () -> Void
+    let onOpenInTab: () -> Void
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .background(DeferredReadingOpaqueNavigationBarConfigurator())
+            .background(Color(designSystemColor: .backgroundSheets))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        onClose()
+                    }
+                }
+                ToolbarItem(placement: .principal) {
+                    Text(url.host ?? "Page")
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(action: onOpenInTab) {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.tabNew)
+                            .foregroundColor(Color(designSystemColor: .icons))
+                    }
+                    .accessibilityLabel("Open in New Tab")
+                }
+            }
+        }
+        .navigationViewStyle(.stack)
+        .interactiveDismissDisabled(true)
+    }
+}
+
+private struct DeferredReadingOpaqueNavigationBarConfigurator: UIViewControllerRepresentable {
+
+    func makeUIViewController(context: Context) -> Controller {
+        Controller()
+    }
+
+    func updateUIViewController(_ uiViewController: Controller, context: Context) {
+        uiViewController.applyAppearanceIfPossible()
+    }
+
+    final class Controller: UIViewController {
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            applyAppearanceIfPossible()
+        }
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            applyAppearanceIfPossible()
+        }
+
+        func applyAppearanceIfPossible() {
+            guard let navigationBar = navigationController?.navigationBar else { return }
+
+            let backgroundColor = UIColor(designSystemColor: .backgroundSheets)
+            let foregroundColor = UIColor(designSystemColor: .textPrimary)
+
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = backgroundColor
+            appearance.shadowColor = .clear
+            appearance.titleTextAttributes = [.foregroundColor: foregroundColor]
+            appearance.largeTitleTextAttributes = [.foregroundColor: foregroundColor]
+
+            navigationBar.tintColor = foregroundColor
+            navigationBar.standardAppearance = appearance
+            navigationBar.scrollEdgeAppearance = appearance
+            navigationBar.compactAppearance = appearance
+            if #available(iOS 15.0, *) {
+                navigationBar.compactScrollEdgeAppearance = appearance
+            }
+            navigationController?.view.backgroundColor = backgroundColor
+        }
+    }
 }
 
 private struct DeferredReadingFaviconView: View {

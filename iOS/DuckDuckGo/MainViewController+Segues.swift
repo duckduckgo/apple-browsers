@@ -198,6 +198,7 @@ extension MainViewController {
     func segueToDeferredReadingList() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
+        let previewStore = DeferredReadingPreviewSessionStore()
 
         let listView = DeferredReadingListView(controller: deferredReadingController, faviconLoader: { [weak self] url, completion in
             guard let self else {
@@ -211,9 +212,31 @@ extension MainViewController {
                                       fromCache: .tabs,
                                       queue: DispatchQueue.main,
                                       completion: completion)
+        }, previewContentBuilder: { [weak self] url in
+            guard let self else {
+                return AnyView(EmptyView())
+            }
+
+            if let existingSession = previewStore.session, existingSession.url == url {
+                return existingSession.previewView
+            }
+
+            previewStore.session?.closePreview()
+            let session = DeferredReadingPreviewSession(url: url, mainViewController: self)
+            previewStore.session = session
+            return session.previewView
+        }, onPreviewDismissed: { _ in
+            previewStore.session?.closePreview()
+            previewStore.session = nil
         }) { [weak self] url in
-            self?.dismiss(animated: true) {
-                self?.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil)
+            guard let self else { return }
+            self.dismiss(animated: true) {
+                if let session = previewStore.session, session.url == url {
+                    session.openInTab()
+                } else {
+                    self.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil)
+                }
+                previewStore.session = nil
             }
         }
         let controller = UIHostingController(rootView: listView)
@@ -642,6 +665,53 @@ extension MainViewController {
         return currentViewController
     }
 
+}
+
+@MainActor
+private final class DeferredReadingPreviewSessionStore {
+    var session: DeferredReadingPreviewSession?
+}
+
+@MainActor
+private final class DeferredReadingPreviewSession {
+
+    let url: URL
+    private weak var mainViewController: MainViewController?
+    private let tabController: TabViewController
+    private var didOpenInTab = false
+
+    init(url: URL, mainViewController: MainViewController) {
+        self.url = url
+        self.mainViewController = mainViewController
+        self.tabController = mainViewController.tabManager.add(url: url, inBackground: true, inheritedAttribution: nil)
+    }
+
+    var previewView: AnyView {
+        AnyView(DeferredReadingTabPreviewContainerView(tabController: tabController))
+    }
+
+    func closePreview() {
+        guard !didOpenInTab else { return }
+        mainViewController?.tabManager.remove(tab: tabController.tabModel)
+    }
+
+    func openInTab() {
+        guard !didOpenInTab else { return }
+        didOpenInTab = true
+        mainViewController?.selectTab(tabController.tabModel)
+    }
+}
+
+private struct DeferredReadingTabPreviewContainerView: UIViewControllerRepresentable {
+
+    let tabController: TabViewController
+
+    func makeUIViewController(context: Context) -> TabViewController {
+        tabController
+    }
+
+    func updateUIViewController(_ uiViewController: TabViewController, context: Context) {
+    }
 }
 
 // Exists to fire a did disappear notification for settings when the controller did disappear

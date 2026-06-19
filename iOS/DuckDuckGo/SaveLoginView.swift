@@ -24,6 +24,7 @@ import DuckUI
 import BrowserServicesKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import MetricBuilder
 
 struct SaveLoginView: View {
     enum LayoutType {
@@ -65,8 +66,7 @@ struct SaveLoginView: View {
 
         return ZStack {
             AutofillViews.CloseButtonHeader(action: viewModel.cancelButtonPressed)
-                .padding(.top, closeButtonExtraPadding)
-                .offset(x: horizontalPadding - closeButtonExtraPadding)
+                .offset(x: sheetHorizontalPadding)
                 .zIndex(1)
 
             innerContent
@@ -78,7 +78,7 @@ struct SaveLoginView: View {
                 })
                 .useScrollView(shouldUseScrollView(), minHeight: frame.height)
         }
-        .padding(.horizontal, horizontalPadding)
+        .padding(.horizontal, sheetHorizontalPadding)
     }
 
     var shouldFixSize: Bool {
@@ -104,53 +104,65 @@ struct SaveLoginView: View {
         switch layoutType {
         case .newUser:
             VStack {
-                Spacer(minLength: Const.Size.topPadding)
-                AutofillViews.AppIconHeader()
-                Spacer(minLength: Const.Size.contentSpacing)
-                AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
-                Spacer(minLength: Const.Size.headlineToContentSpacing)
-                AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage)
-                Spacer(minLength: Const.Size.contentSpacing)
-                featuresView().padding([.bottom], Const.Size.featuresListPadding)
+                Group {
+                    Spacer(minLength: Const.Size.topPadding)
+                    AutofillViews.AppIconHeader()
+                    Spacer(minLength: Const.Size.contentSpacing)
+                    AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
+                    Spacer(minLength: Const.Size.headlineToContentSpacing)
+                    AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage)
+                    Spacer(minLength: Const.Size.contentSpacing)
+                    featuresView().padding([.bottom], Const.Size.featuresListPadding)
+                }
+                .padding(.horizontal, contentHorizontalPadding)
                 onboardingCtaView()
             }
 
         case .saveLogin, .savePassword:
             VStack {
-                Spacer(minLength: Const.Size.topPadding)
-                AutofillViews.AppIconHeader()
-                Spacer(minLength: Const.Size.contentSpacing)
-                AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
-                Spacer(minLength: Const.Size.headlineToContentSpacing)
-                AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage)
-                Spacer(minLength: Const.Size.contentSpacing)
+                Group {
+                    Spacer(minLength: Const.Size.topPadding)
+                    AutofillViews.AppIconHeader()
+                    Spacer(minLength: Const.Size.contentSpacing)
+                    AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
+                    Spacer(minLength: Const.Size.headlineToContentSpacing)
+                    AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage)
+                    Spacer(minLength: Const.Size.contentSpacing)
+                }
+                .padding(.horizontal, contentHorizontalPadding)
                 standardCtaView(title: UserText.autofillSavePasswordSaveCTA)
             }
 
         case .updatePassword:
             VStack {
-                Spacer(minLength: Const.Size.topPadding)
-                AutofillViews.AppIconHeader()
-                Spacer(minLength: Const.Size.contentSpacing)
-                AutofillViews.Headline(title: UserText.autofillUpdatePassword(for: usernameDisplayString))
-                Spacer(minLength: Const.Size.headlineToContentSpacing)
-                AutofillViews.SecureDescription(text: UserText.autoUpdatePasswordMessage)
-                Spacer(minLength: Const.Size.contentSpacing)
+                Group {
+                    Spacer(minLength: Const.Size.topPadding)
+                    AutofillViews.AppIconHeader()
+                    Spacer(minLength: Const.Size.contentSpacing)
+                    AutofillViews.Headline(title: UserText.autofillUpdatePassword(for: usernameDisplayString))
+                    Spacer(minLength: Const.Size.headlineToContentSpacing)
+                    AutofillViews.SecureDescription(text: UserText.autoUpdatePasswordMessage)
+                    Spacer(minLength: Const.Size.contentSpacing)
+                }
+                .padding(.horizontal, contentHorizontalPadding)
                 standardCtaView(title: UserText.autofillUpdatePasswordSaveCTA)
             }
 
         case .updateUsername:
             VStack {
-                Spacer(minLength: Const.Size.topPadding)
-                AutofillViews.AppIconHeader()
-                Spacer(minLength: Const.Size.contentSpacing)
-                AutofillViews.Headline(title: UserText.autofillUpdateUsernameTitle)
-                Spacer(minLength: Const.Size.headlineToContentSpacing)
-                Text(verbatim: viewModel.usernameTruncated)
-                    .font(Const.Fonts.userInfo)
-                    .lineLimit(1)
-                    .multilineTextAlignment(.center)
-                Spacer(minLength: Const.Size.contentSpacing)
+                Group {
+                    Spacer(minLength: Const.Size.topPadding)
+                    AutofillViews.AppIconHeader()
+                    Spacer(minLength: Const.Size.contentSpacing)
+                    AutofillViews.Headline(title: UserText.autofillUpdateUsernameTitle)
+                    Spacer(minLength: Const.Size.headlineToContentSpacing)
+                    Text(verbatim: viewModel.usernameTruncated)
+                        .font(Const.Fonts.userInfo)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                    Spacer(minLength: Const.Size.contentSpacing)
+                }
+                .padding(.horizontal, contentHorizontalPadding)
                 standardCtaView(title: UserText.autofillUpdateUsernameSaveCTA)
             }
         }
@@ -233,11 +245,12 @@ struct SaveLoginView: View {
     /// CTA buttons for onboarding flows
     ///
     private func onboardingCtaView() -> some View {
-        VStack(spacing: Const.Size.ctaVerticalSpacing) {
+        VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
             AutofillViews.PrimaryButton(title: UserText.autofillSavePasswordSaveCTA,
                                         action: viewModel.save)
             dismissButton
         }
+        .padding(.horizontal, buttonHorizontalPadding)
     }
 
     @ViewBuilder
@@ -258,21 +271,13 @@ struct SaveLoginView: View {
     /// CTA buttons for non-onboarding flows
     ///
     private func standardCtaView(title: String) -> some View {
-        VStack(spacing: Const.Size.ctaVerticalSpacing) {
+        VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
             AutofillViews.PrimaryButton(title: title,
                                         action: viewModel.save)
             AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNeverPromptCTA,
                                          action: viewModel.neverPrompt)
         }
-    }
-
-    // iOS 26 needs some extra padding due to its very large corner radii
-    private var closeButtonExtraPadding: CGFloat {
-        if #available(iOS 26, *) {
-            return 10
-        } else {
-            return 0
-        }
+        .padding(.horizontal, buttonHorizontalPadding)
     }
 
     private var horizontalPadding: CGFloat {
@@ -285,6 +290,18 @@ struct SaveLoginView: View {
         } else {
             return Const.Size.closeButtonOffset
         }
+    }
+
+    private var sheetHorizontalPadding: CGFloat {
+        min(horizontalPadding, SheetMetrics.contentHorizontalPadding)
+    }
+
+    private var contentHorizontalPadding: CGFloat {
+        horizontalPadding - sheetHorizontalPadding
+    }
+
+    private var buttonHorizontalPadding: CGFloat {
+        SheetMetrics.contentHorizontalPadding - sheetHorizontalPadding
     }
 }
 
@@ -300,7 +317,6 @@ private enum Const {
         static let topPadding: CGFloat = 56.0
         static let contentSpacing: CGFloat = 24.0
         static let headlineToContentSpacing: CGFloat = 8.0
-        static let ctaVerticalSpacing: CGFloat = 8.0
         static let bodyBottomPadding: CGFloat = 24.0
         static let featureListItemIconGap: CGFloat = 8.0
         static let featuresListItemImageWidthHeight: CGFloat = 24.0

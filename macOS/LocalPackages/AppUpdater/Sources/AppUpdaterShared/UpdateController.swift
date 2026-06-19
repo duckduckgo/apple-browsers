@@ -43,6 +43,7 @@ public protocol SparkleUpdateControllerFactory {
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
+                            applicationUpdateDetector: ApplicationUpdateDetector,
                             allowCustomUpdateFeed: Bool,
                             isAutoUpdatePaused: @escaping () -> Bool,
                             wideEvent: WideEventManaging,

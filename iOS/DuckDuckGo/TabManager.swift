@@ -633,7 +633,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     func invalidateCache(forController controller: TabViewController) {
         if current() === controller {
-            Pixel.fire(pixel: .webKitTerminationDidReloadCurrentTab)
+            DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+
+            if controller.url?.isDuckAIURL == true {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+            }
+
             current()?.reload()
         } else {
             removeFromCache(controller)
@@ -755,6 +760,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func cleanupTabsFaviconCache() {
+        guard featureFlagger.isFeatureOn(.staleFaviconCleanup) else { return }
         guard tabsCacheNeedsCleanup else { return }
 
         DispatchQueue.global(qos: .background).async { [weak self] in
@@ -802,6 +808,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if clearTabHistory {
             removeTabHistory(for: tabIDs)
         }
+
+        tabsCacheNeedsCleanup = true
     }
 
     private func removeTabHistory(for tabIDs: [String]) {

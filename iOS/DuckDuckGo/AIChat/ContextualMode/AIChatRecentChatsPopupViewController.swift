@@ -38,10 +38,8 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         static let sectionHeaderTopPadding: CGFloat = 4
         static let sectionHeaderBottomPadding: CGFloat = 10
         static let sectionHeaderLeading: CGFloat = 8
-        static let cellIconSize: CGFloat = 20
-        /// The `chats` glyph has a 24pt artboard (vs the 20pt single-`chat` glyph), so it needs a
-        /// larger frame to render at the same optical size as the other rows' icons.
-        static let viewAllChatsIconSize: CGFloat = 24
+        static let cellIconSize: CGFloat = 16
+        static let viewAllChatsIconSize: CGFloat = 16
         static let cellIconGap: CGFloat = 8
         static let cellVerticalPadding: CGFloat = 10
         static let cellLeadingPadding: CGFloat = 6
@@ -238,8 +236,8 @@ private extension AIChatRecentChatsPopupViewController {
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = UIColor(designSystemColor: .icons)
         iconView.image = (suggestion.isPinned
-            ? DesignSystemImages.Glyphs.Size24.pin
-            : DesignSystemImages.Glyphs.Size24.chat).withRenderingMode(.alwaysTemplate)
+            ? DesignSystemImages.Glyphs.Size16.pin
+            : DesignSystemImages.Glyphs.Size16.chat).withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -300,7 +298,8 @@ private extension AIChatRecentChatsPopupViewController {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = UIColor(designSystemColor: .icons)
-        iconView.image = DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        // No `chats` glyph at 16px; fall back to `aiChatHistory` (same as the app menu).
+        iconView.image = DesignSystemImages.Glyphs.Size16.aiChatHistory.withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -340,7 +339,7 @@ private extension AIChatRecentChatsPopupViewController {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = UIColor(designSystemColor: .icons)
-        iconView.image = DesignSystemImages.Glyphs.Size24.compose.withRenderingMode(.alwaysTemplate)
+        iconView.image = DesignSystemImages.Glyphs.Size16.compose.withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false

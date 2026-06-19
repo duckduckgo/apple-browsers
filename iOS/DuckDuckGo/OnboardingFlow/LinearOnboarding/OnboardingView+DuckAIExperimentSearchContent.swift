@@ -258,7 +258,7 @@ extension OnboardingView {
 
         // MARK: Style
         private var accentColor: Color {
-            visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentPrimary)) : Color(designSystemColor: .accent)
+            visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentPrimary)) : Color(designSystemColor: .accentPrimary)
         }
 
         private var titleToPickerTopPadding: CGFloat {

@@ -16,7 +16,7 @@ public struct DeferredReadingBannerView: View {
         Button(action: onOpen) {
             HStack(spacing: 12) {
                 Image(systemName: "globe.badge.clock.fill")
-                    .foregroundColor(Color(designSystemColor: .accent))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
                 Text(title)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .frame(maxWidth: .infinity, alignment: .leading)

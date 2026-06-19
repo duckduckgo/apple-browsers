@@ -244,6 +244,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
                 pixelFiring: PixelFiring?,
                 notificationPresenter: UpdateNotificationPresenting,
                 keyValueStore: ThrowingKeyValueStoring,
+                applicationUpdateDetector: ApplicationUpdateDetector,
                 allowCustomUpdateFeed: Bool,
                 isAutoUpdatePaused: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging,
@@ -261,7 +262,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.isOnboardingFinished = isOnboardingFinished
         self.openUpdatesPageAction = openUpdatesPage
         self.settings = keyValueStore.throwingKeyedStoring()
-        self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
+        self.applicationUpdateDetector = applicationUpdateDetector
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
         // Capture the current value before initializing updateWideEvent

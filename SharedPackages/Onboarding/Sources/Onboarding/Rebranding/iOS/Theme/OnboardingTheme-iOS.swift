@@ -31,20 +31,13 @@ public extension OnboardingTheme {
     static let iOSRebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
-        let bubbleBorderColor = Color(uiColor: UIColor { traitCollection in
-            switch traitCollection.userInterfaceStyle {
-            case .dark:
-                return UIColor(singleUseColor: .rebranding(.surfaceTertiary))
-            default:
-                return UIColor(singleUseColor: .rebranding(.accentAltPrimary))
-            }
-        })
+        let bubbleBorderColor = OnboardingRebrandColor.bubbleBorder
 
         let typography: OnboardingTheme.Typography = .duckSans
         let colorPalette = ColorPalette(
             background: Color(singleUseColor: .rebranding(.backdrop)),
             bubbleBorder: bubbleBorderColor,
-            bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
+            bubbleBackground: OnboardingRebrandColor.surfaceTertiary,
             bubbleShadow: Color.shade(0.03),
             textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
             textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
@@ -59,7 +52,7 @@ public extension OnboardingTheme {
             secondaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsSecondaryDefault)),
             secondaryButtonPressedColor: Color(singleUseColor: .rebranding(.buttonsSecondaryPressed)),
             secondaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsSecondaryText)),
-            backgroundAccent: Color(singleUseColor: .rebranding(.backgroundAccent))
+            backgroundAccent: OnboardingRebrandColor.backgroundAccent
         )
         let bubbleMetrics = BubbleMetrics(
             contentInsets: bubbleContentInsets,
@@ -152,7 +145,7 @@ public extension OnboardingTheme {
                     OnboardingRebranding.OnboardingStyles.BubbleDismissButtonStyle(
                         contentPadding: dismissButtonMetrics.contentPadding,
                         backgroundColor: colorPalette.bubbleBackground,
-                        borderColor: Color(singleUseColor: .rebranding(.accentAltPrimary)), // Dark mode bubble does not have a border color, hence reference the color directly.
+                        borderColor: OnboardingRebrandColor.accentAltPrimary, // Dark mode bubble does not have a border color, hence reference the color directly.
                         borderWidth: borderWidth,
                         buttonSize: dismissButtonMetrics.buttonSize
                     )

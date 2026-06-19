@@ -70,7 +70,7 @@ private extension SettingsAutoplayView {
     var footerAttributedString: AttributedString {
         var base = AttributedString(UserText.settingsAutoplayFooter)
         var link = AttributedString(UserText.settingsAutoplayDuckPlayerLink)
-        link.foregroundColor = Color(designSystemColor: .accent)
+        link.foregroundColor = Color(designSystemColor: .accentPrimary)
         link.link = FooterAction.duckPlayerSettings.url
         base.append(link)
         base.append(AttributedString("."))

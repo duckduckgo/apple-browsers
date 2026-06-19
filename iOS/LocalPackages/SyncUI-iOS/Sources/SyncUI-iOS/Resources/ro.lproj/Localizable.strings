@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Obține DuckDuckGo pe alte dispozitive";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Datele tale sunt sincronizate!";
+"device.synced.sheet.title" = "Dispozitiv sincronizat!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Terminat";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Se configurează sincronizarea și backupul";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Se pregătește sincronizarea";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Recuperează datele sincronizate";

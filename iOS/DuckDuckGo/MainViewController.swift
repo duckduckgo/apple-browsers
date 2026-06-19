@@ -700,7 +700,6 @@ class MainViewController: UIViewController {
         registerForKeyboardNotifications()
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
-        registerForWebExtensionNotifications()
         registerForAppBackgroundNotification()
 
         decorate()
@@ -1238,28 +1237,6 @@ class MainViewController: UIViewController {
                                                selector: #selector(refreshViewsBasedOnDuckPlayerPresentation),
                                                name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
                                                object: nil)
-    }
-
-    private func registerForWebExtensionNotifications() {
-        if #available(iOS 18.4, *) {
-            NotificationCenter.default.addObserver(
-                forName: .webExtensionAutoconsentDashboardStateRefresh,
-                object: nil,
-                queue: .main
-            ) { [weak self] notification in
-                self?.handleWebExtensionDashboardStateRefresh(notification)
-            }
-        }
-    }
-
-    @available(iOS 18.4, *)
-    @objc private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
-        guard let domain = notification.userInfo?[AutoconsentNotification.UserInfoKeys.domain] as? String,
-              let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo,
-              currentTab?.url?.host == domain else {
-            return
-        }
-        currentTab?.privacyInfo?.cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
     private func registerForAppBackgroundNotification() {
@@ -2607,6 +2584,8 @@ class MainViewController: UIViewController {
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
             self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel)
+            // Keep the current tab in view after a resize/rotation reflows the strip.
+            self.tabsBarController?.scrollCurrentTabIntoView()
             self.swipeTabsCoordinator?.refresh(tabsModel: self.tabManager.currentTabsModel)
             
             // Do this on the next UI thread pass so we definitely have the right width
@@ -3945,7 +3924,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onViewAllChatsSelected() {
-        openAIChatHistory()
+        openAIChatHistory(source: .addressBar)
     }
 
     func onAIChatQueryUpdated(_ query: String) {
@@ -5523,11 +5502,11 @@ extension MainViewController: TabDelegate {
         openAIChat()
     }
 
-    func tabDidRequestAIChatHistory(tab: TabViewController) {
-        openAIChatHistory()
+    func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {
+        openAIChatHistory(source: source)
     }
 
-    func openAIChatHistory() {
+    func openAIChatHistory(source: AIChatHistorySource = .browserMenu) {
         // The native chat history sheet is an iPhone-only experience; entrypoints are hidden on iPad,
         // and this guard ensures the sheet can never be presented there.
         guard UIDevice.current.userInterfaceIdiom != .pad else { return }
@@ -5555,7 +5534,8 @@ extension MainViewController: TabDelegate {
             reader: reader,
             fireExecutor: fireExecutor,
             downloader: downloader,
-            pinner: pinner
+            pinner: pinner,
+            source: source
         )
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)
@@ -7169,24 +7149,7 @@ extension MainViewController: AIChatHistoryManagerDelegate {
     }
 
     func aiChatHistoryManagerDidSelectViewAllChats(_ manager: AIChatHistoryManager) {
-        openAIChatHistory()
-    }
-}
-
-// MARK: - ConsentStatusInfo to CookieConsentInfo Conversion
-
-@available(iOS 18.4, *)
-extension ConsentStatusInfo {
-    func toCookieConsentInfo() -> CookieConsentInfo {
-        CookieConsentInfo(
-            consentManaged: consentManaged,
-            cosmetic: cosmetic,
-            optoutFailed: optoutFailed,
-            selftestFailed: selftestFailed,
-            consentReloadLoop: consentReloadLoop,
-            consentRule: consentRule,
-            consentHeuristicEnabled: consentHeuristicEnabled
-        )
+        openAIChatHistory(source: .addressBar)
     }
 }
 

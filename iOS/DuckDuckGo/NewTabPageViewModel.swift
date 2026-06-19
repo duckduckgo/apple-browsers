@@ -33,6 +33,10 @@ final class NewTabPageViewModel: ObservableObject {
     @Published var isLogoHidden: Bool = false
     @Published private(set) var deferredReadingUnreadCount: Int = 0
     @Published private(set) var isDeferredReadingEnabled: Bool = false
+
+    /// Hides the favorites grid (without removing it) so the UTI defocus handoff can keep the embedded
+    /// favorites visible during the collapse and reveal these — aligned — only at completion.
+    @Published var isFavoritesHidden: Bool = false
     private(set) var fireTab: Bool
 
     private(set) var isDragging: Bool = false

@@ -58,6 +58,8 @@ final class AIChatHistoryViewModel: ObservableObject {
     private let downloader: ChatHistoryDownloading?
     private let pinner: ChatPinning?
     private let mutationQueue: DispatchQueue
+    private let instrumentation: AIChatHistoryInstrumentation
+    private let source: AIChatHistorySource
     private var cancellables: Set<AnyCancellable> = []
 
     weak var delegate: AIChatHistoryViewModelDelegate?
@@ -67,13 +69,17 @@ final class AIChatHistoryViewModel: ObservableObject {
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
         pinner: ChatPinning? = nil,
-        mutationQueue: DispatchQueue = DispatchQueue(label: "chat-history.mutation", qos: .userInitiated)
+        source: AIChatHistorySource = .browserMenu,
+        mutationQueue: DispatchQueue = DispatchQueue(label: "chat-history.mutation", qos: .userInitiated),
+        instrumentation: AIChatHistoryInstrumentation = DefaultAIChatHistoryInstrumentation()
     ) {
         self.reader = reader
         self.fireExecutor = fireExecutor
         self.downloader = downloader
         self.pinner = pinner
+        self.source = source
         self.mutationQueue = mutationQueue
+        self.instrumentation = instrumentation
 
         // `.failure` as a sentinel keeps the combined publisher alive for `loadFailed`.
         let chats: AnyPublisher<Result<[DuckAiChat], Error>, Never> = reader.chatsPublisher()
@@ -154,17 +160,42 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     // MARK: - Intents
 
+    /// Call once when the screen is first presented. Fires the screen-shown impression.
+    func screenDidLoad() {
+        instrumentation.screenShown(source: source)
+    }
+
+    func searchActivated() {
+        instrumentation.searchActivated()
+    }
+
+    func editModeEntered() {
+        instrumentation.editModeEntered()
+    }
+
+    func fireAllTapped() {
+        instrumentation.fireAllTapped()
+    }
+
     func newChatTapped() {
+        instrumentation.newChatTapped()
+        delegate?.viewModelDidRequestOpenNewChat()
+    }
+
+    func emptyStateCTATapped() {
+        instrumentation.emptyCTATapped()
         delegate?.viewModelDidRequestOpenNewChat()
     }
 
     func openChat(chatId: String) {
+        instrumentation.chatOpened()
         delegate?.viewModelDidRequestOpenChat(chatId: chatId)
     }
 
     func deleteChat(chatId: String) {
         // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
+        instrumentation.chatDeleted()
         Task { @MainActor in
             let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
             guard case .success = result else { return }
@@ -175,6 +206,8 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     func burnAllChats() async {
         guard let fireExecutor else { return }
+        // Reached only after the user confirms the delete-all action.
+        instrumentation.fireAllConfirmed()
         let result = await fireExecutor.burnAllChats(isFireMode: false)
         guard case .success = result else { return }
         // Flush the clear to sync now so the FE doesn't re-pull the chats.
@@ -184,6 +217,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     func downloadChat(chatId: String) {
         // Image-gen exports do enough I/O to freeze the sheet — dispatch off-main.
         guard let downloader else { return }
+        instrumentation.downloadStarted()
         mutationQueue.async { [weak self] in
             do {
                 let url = try downloader.downloadChat(chatId: chatId)
@@ -208,6 +242,11 @@ final class AIChatHistoryViewModel: ObservableObject {
     func togglePin(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
         guard let pinner, let move = applyOptimisticPinToggle(chatId: chatId) else { return nil }
         let newPinned = move.destination.section == Section.pinned.rawValue
+        if newPinned {
+            instrumentation.pinAdded()
+        } else {
+            instrumentation.pinRemoved()
+        }
         mutationQueue.async {
             do {
                 try pinner.setPinned(chatId: chatId, pinned: newPinned)
@@ -268,7 +307,8 @@ final class AIChatHistoryViewModel: ObservableObject {
         case (.discussion, false): image = DesignSystemImages.Glyphs.Size24.chat
         case (.voice, true): image = DesignSystemImages.Glyphs.Size24.voicePinned
         case (.voice, false): image = DesignSystemImages.Glyphs.Size24.voice
-        case (.imageGeneration, _): image = DesignSystemImages.Glyphs.Size24.image
+        case (.imageGeneration, true): image = DesignSystemImages.Glyphs.Size24.imagesPinned
+        case (.imageGeneration, false): image = DesignSystemImages.Glyphs.Size24.images
         }
         // The chat-family glyph assets aren't marked `template-rendering-intent` in their
         // Contents.json, so without forcing template mode they render in their own

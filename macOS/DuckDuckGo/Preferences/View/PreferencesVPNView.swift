@@ -69,6 +69,28 @@ extension Preferences {
                             spacing: 12
                         )
                     }
+
+                    if model.isStrictRoutingAvailable {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.vpnStrictRoutingSettingTitle,
+                                UserText.vpnStrictRoutingSettingDescription,
+                                isOn: $model.enforceRoutes,
+                                spacing: 12
+                            )
+                        }
+                    }
+
+                    if model.isExcludeCGNATAvailable {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.vpnExcludeCGNATSettingTitle,
+                                UserText.vpnExcludeCGNATSettingDescription,
+                                isOn: $model.excludeCGNAT,
+                                spacing: 12
+                            )
+                        }
+                    }
                 }
                 .padding(.bottom, 12)
 
@@ -193,6 +215,9 @@ extension Preferences {
                         }
                     }
                 }
+            }
+            .onAppear {
+                model.onViewAppeared()
             }
         }
 

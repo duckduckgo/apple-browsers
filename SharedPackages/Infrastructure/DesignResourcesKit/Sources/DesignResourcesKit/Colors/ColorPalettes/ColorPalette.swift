@@ -45,6 +45,10 @@ public struct DesignSystemPalette {
 public enum ColorPalette {
     case `default`
 
+#if os(iOS)
+    case rebranded
+#endif
+
 #if os(macOS)
     case coolGray
     case desert
@@ -81,6 +85,8 @@ public enum ColorPalette {
         switch self {
         case .default:
             DefaultColorPalette.self
+        case .rebranded:
+            RebrandedColorPalette.self
         }
     }
 #endif

@@ -66,11 +66,11 @@ class SwitchBarTextEntryView: UIView {
         // Text container insets
         static let textTopInset: CGFloat = 12
         static let textBottomInset: CGFloat = 12
-        static let textHorizontalInset: CGFloat = 12
+        static let textHorizontalInset: CGFloat = 16
 
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
-        static let placeholderHorizontalOffset: CGFloat = 16
+        static let placeholderHorizontalOffset: CGFloat = 20
 
         // Increased buttons spacing
         static let additionalVerticalButtonsPadding: CGFloat = 6

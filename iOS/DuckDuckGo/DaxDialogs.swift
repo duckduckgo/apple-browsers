@@ -61,6 +61,8 @@ protocol ContextualOnboardingLogic {
 
     func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType)
 
+    var tryAnonymousSearchMessageSeen: Bool { get }
+
     func setTryAnonymousSearchMessageSeen()
     func setLinearOnboardingSearchTriggered()
     func setSearchMessageSeen()
@@ -90,6 +92,7 @@ protocol ContextualOnboardingLogic {
     /// Whether the user entered the Duck.ai chat-first onboarding path.
     /// Unlike `chatPathPhase`, this stays `true` even after the path completes (e.g. past `finalDialogSeen`).
     var isChatFirstPath: Bool { get }
+
 
     /// Whether Duck.ai is currently enabled in app settings.
     /// When false, chat-path onboarding UI should fall back to the standard search-path equivalent.
@@ -511,6 +514,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func setTryAnonymousSearchMessageSeen() {
         settings.tryAnonymousSearchShown = true
+    }
+
+    var tryAnonymousSearchMessageSeen: Bool {
+        settings.tryAnonymousSearchShown
     }
 
     func setLinearOnboardingSearchTriggered() {

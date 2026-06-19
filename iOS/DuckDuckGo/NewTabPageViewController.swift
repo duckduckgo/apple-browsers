@@ -626,9 +626,15 @@ extension NewTabPageViewController {
         chromeDelegate?.setUnifiedInputContentOverlaySuppressed(true)
 
         // The EoJ ("High five!") dialog surfaces with an active address bar in UTI mode so the user
-        // can immediately try a search — matching the linearOnboardingCompleted path's behaviour.
-        if spec == .final, UnifiedToggleInputFeature().isAvailable {
-            chromeDelegate?.omniBar.beginEditing(animated: true)
+        // can immediately try a search — but only on the duck.ai suggestion path. On the search
+        // suggestion path the address bar is activated later via launchNewSearch() in the onDismiss
+        // closure, so a premature beginEditing here would cause a visual double-activation glitch.
+        //
+        // `tryAnonymousSearchMessageSeen` is the persisted discriminator: true on the search path,
+        // false on the duck.ai suggestion path (openAIChatFromOnboarding never sets it).
+        if spec == .final, UnifiedToggleInputFeature().isAvailable,
+           !daxDialogsManager.tryAnonymousSearchMessageSeen {
+            chromeDelegate?.omniBar.beginEditing(animated: false)
         }
 
         let onDismiss: (_ activateSearch: Bool) -> Void = { [weak self] activateSearch in

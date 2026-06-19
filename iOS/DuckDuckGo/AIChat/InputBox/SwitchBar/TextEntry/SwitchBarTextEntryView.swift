@@ -788,7 +788,7 @@ class SwitchBarTextEntryView: UIView {
         overrideUserInterfaceStyle = isFireTab ? .dark : .unspecified
         let tintColor: UIColor = isFireTab
             ? UIColor(singleUseColor: .fireModeAccent)
-            : UIColor(designSystemColor: .accent)
+            : UIColor(designSystemColor: .accentPrimary)
         textView.tintColor = tintColor
         textField.tintColor = tintColor
     }

@@ -147,7 +147,7 @@ private struct AddressBarPositionButtonStyle: ButtonStyle {
 
     private func backgroundColor(isSelected: Bool, isPressed: Bool) -> Color {
         if isSelected {
-            return Color(singleUseColor: .rebranding(.accentAltGlowPrimary))
+            return OnboardingRebrandColor.accentAltGlowPrimary
         } else if isPressed {
             return Color(designSystemColor: .buttonsGhostPressedFill)
         } else {

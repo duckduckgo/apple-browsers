@@ -39,7 +39,7 @@ public extension Color {
     }
 
     static var waitlistBlue: Color {
-        Color(designSystemColor: .accent)
+        Color(designSystemColor: .accentPrimary)
     }
 
     static var waitlistNotificationBackground: Color {

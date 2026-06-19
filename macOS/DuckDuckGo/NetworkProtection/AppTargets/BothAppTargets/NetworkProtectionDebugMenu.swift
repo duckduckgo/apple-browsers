@@ -55,6 +55,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     private let disableRekeyingMenuItem = NSMenuItem(title: "Disable Rekeying", action: #selector(NetworkProtectionDebugMenu.toggleRekeyingDisabled))
 
     private let excludeLocalNetworksMenuItem = NSMenuItem(title: "excludeLocalNetworks", action: #selector(NetworkProtectionDebugMenu.toggleShouldExcludeLocalRoutes))
+    private let excludeCGNATMenuItem = NSMenuItem(title: "excludeCGNAT", action: #selector(NetworkProtectionDebugMenu.toggleExcludeCGNAT))
     private let excludeAPNsMenuItem = NSMenuItem(title: "excludeAPNs", action: #selector(NetworkProtectionDebugMenu.toggleExcludeAPNs))
     private let excludeCellularServicesMenuItem = NSMenuItem(title: "excludeCellularServices", action: #selector(NetworkProtectionDebugMenu.toggleExcludeCellularServices))
     private let excludeDeviceCommunicationMenuItem = NSMenuItem(title: "excludeDeviceCommunication", action: #selector(NetworkProtectionDebugMenu.toggleExcludeDeviceCommunication))
@@ -134,6 +135,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
                     .targetting(self)
 
                 excludeLocalNetworksMenuItem
+                    .targetting(self)
+
+                excludeCGNATMenuItem
                     .targetting(self)
 
                 shouldEnforceRoutesMenuItem
@@ -438,6 +442,15 @@ final class NetworkProtectionDebugMenu: NSMenu {
         }
     }
 
+    @objc func toggleExcludeCGNAT(_ sender: Any?) {
+        settings.excludeCGNAT.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
     @objc func toggleExcludeAPNs(_ sender: Any?) {
         settings.excludeAPNs.toggle()
 
@@ -635,6 +648,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
         shouldEnforceRoutesMenuItem.state = settings.enforceRoutes ? .on : .off
         shouldIncludeAllNetworksMenuItem.state = settings.includeAllNetworks ? .on : .off
         excludeLocalNetworksMenuItem.state = settings.excludeLocalNetworks ? .on : .off
+        excludeCGNATMenuItem.state = settings.excludeCGNAT ? .on : .off
         disableRekeyingMenuItem.state = settings.disableRekeying ? .on : .off
 
         if #available(macOS 13.3, *) {

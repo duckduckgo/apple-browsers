@@ -47,6 +47,13 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
+    /// Gates the "Strict routing" VPN toggle.
+    case vpnStrictRoutingToggle
+
+    /// Gates the "Exclude Carrier-Grade NAT" VPN toggle.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
+    case vpnExcludeCGNATToggle
+
     /// Kill switch: enable remotely to disable orphaned-proxy detection (tunnel heartbeat + proxy detection loop + pixel).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454304
     case vpnOrphanProxyDetectionKillSwitch
@@ -472,6 +479,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtension), category: .vpn)
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
+        case .vpnStrictRoutingToggle:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle), category: .vpn)
+        case .vpnExcludeCGNATToggle:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT), category: .vpn)
         case .vpnOrphanProxyDetectionKillSwitch:
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyDetectionKillSwitch), category: .vpn)
         case .vpnOrphanProxyBypassKillSwitch:

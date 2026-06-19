@@ -400,6 +400,13 @@ extension Pixel {
         case icsCalendarRoutedByExtension
         case icsCalendarUnsupportedRRule
 
+        case vcardContactEditorPresented
+        case vcardContactEditorSaved
+        case vcardContactEditorCancelled
+        case vcardContactMultipleContactsTruncated
+        case vcardContactFallbackParseFailure
+        case vcardContactRoutedByExtension
+
         case walletPassPreviewRequested
         case walletPassPreviewFailed
 
@@ -2361,6 +2368,13 @@ extension Pixel.Event {
         case .icsCalendarFallbackParseFailure: return "m_ics_calendar_fallback_parse_failure"
         case .icsCalendarRoutedByExtension: return "m_ics_calendar_routed_by_extension"
         case .icsCalendarUnsupportedRRule: return "m_ics_calendar_unsupported_rrule"
+
+        case .vcardContactEditorPresented: return "m_vcard_contact_editor_presented"
+        case .vcardContactEditorSaved: return "m_vcard_contact_editor_saved"
+        case .vcardContactEditorCancelled: return "m_vcard_contact_editor_cancelled"
+        case .vcardContactMultipleContactsTruncated: return "m_vcard_contact_multiple_contacts_truncated"
+        case .vcardContactFallbackParseFailure: return "m_vcard_contact_fallback_parse_failure"
+        case .vcardContactRoutedByExtension: return "m_vcard_contact_routed_by_extension"
 
         case .walletPassPreviewRequested: return "wallet_pass_preview_requested"
         case .walletPassPreviewFailed: return "wallet_pass_preview_failed"

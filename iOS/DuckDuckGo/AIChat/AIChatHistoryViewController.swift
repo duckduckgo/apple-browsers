@@ -54,6 +54,8 @@ final class AIChatHistoryViewController: UIViewController {
         // row stable across trailing swipe-action animations — match Bookmarks' storyboard.
         table.clipsToBounds = true
         table.sectionFooterHeight = 18
+        // Dismiss the keyboard when the list is dragged, matching system search screens.
+        table.keyboardDismissMode = .onDrag
         return table
     }()
 
@@ -92,12 +94,13 @@ final class AIChatHistoryViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let backgroundColor: UIColor = .systemGroupedBackground
+        let backgroundColor = UIColor(designSystemColor: .background)
         view.backgroundColor = backgroundColor
         navigationController?.view.backgroundColor = backgroundColor
+        tableView.backgroundColor = backgroundColor
 
         title = UserText.actionChats
-        configureRightBarButtonItem()
+        configureNavigationButtons()
 
         setupViews()
         configureToolbar()
@@ -140,25 +143,30 @@ final class AIChatHistoryViewController: UIViewController {
         tableView.tableHeaderView = headerView
     }
 
-    private lazy var doneBarButtonItem: UIBarButtonItem = {
+    private lazy var closeBarButtonItem: UIBarButtonItem = {
         let item = UIBarButtonItem(
-            title: UserText.navigationTitleDone,
-            style: .done,
+            image: DesignSystemImages.Glyphs.Size24.close,
+            style: .plain,
             target: self,
             action: #selector(doneButtonTapped)
         )
-        if #available(iOS 26, *) {
-            item.style = .plain
-        }
+        item.accessibilityLabel = UserText.keyCommandClose
         return item
     }()
 
-    private func configureRightBarButtonItem() {
-        if isEditingChats {
-            navigationItem.rightBarButtonItem = nil
-        } else {
-            navigationItem.rightBarButtonItem = doneBarButtonItem
+    /// Left: X closes the sheet. Right: Edit toggles edit mode (showing Done while editing).
+    private func configureNavigationButtons() {
+        navigationItem.leftBarButtonItem = closeBarButtonItem
+        let edit = UIBarButtonItem(
+            title: isEditingChats ? UserText.navigationTitleDone : UserText.actionGenericEdit,
+            style: isEditingChats ? .done : .plain,
+            target: self,
+            action: #selector(editButtonTapped)
+        )
+        if #available(iOS 26, *) {
+            edit.style = .plain
         }
+        navigationItem.rightBarButtonItem = edit
     }
 
     /// Pre-iOS 26 sheets default bar button items to the system accent (blue). Match Bookmarks
@@ -184,16 +192,8 @@ final class AIChatHistoryViewController: UIViewController {
             action: #selector(composeButtonTapped)
         )
         compose.isEnabled = !isEditingChats
-        let gap = UIBarButtonItem(systemItem: .fixedSpace)
-        gap.width = 12
         let spacer = UIBarButtonItem(systemItem: .flexibleSpace)
-        let edit = UIBarButtonItem(
-            title: isEditingChats ? UserText.navigationTitleDone: UserText.actionGenericEdit,
-            style: .plain,
-            target: self,
-            action: #selector(editButtonTapped)
-        )
-        toolbarItems = [fire, gap, compose, spacer, edit]
+        toolbarItems = [fire, spacer, compose]
     }
 
     private func bindViewModel() {
@@ -330,7 +330,7 @@ final class AIChatHistoryViewController: UIViewController {
             viewModel.editModeEntered()
         }
         configureToolbar()
-        configureRightBarButtonItem()
+        configureNavigationButtons()
     }
 
 }
@@ -352,17 +352,17 @@ extension AIChatHistoryViewController: UITableViewDataSource {
         guard let title = viewModel.title(forSection: section) else { return nil }
         let label = UILabel()
         label.text = title
-        label.font = .systemFont(ofSize: 13, weight: .regular)
-        label.textColor = .secondaryLabel
+        label.font = .systemFont(ofSize: 17, weight: .semibold)
+        label.textColor = UIColor(designSystemColor: .textSecondary)
         label.translatesAutoresizingMaskIntoConstraints = false
 
         let container = UIView()
         container.addSubview(label)
         NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 24),
-            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -24),
-            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
-            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 24),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -6)
         ])
         return container
     }
@@ -418,7 +418,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
                 completion(true)
             })
         }
-        action.image = DesignSystemImages.Glyphs.Size24.pin
+        action.image = wasPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin
         action.accessibilityLabel = wasPinned
             ? UserText.aiChatHistoryUnpinSwipeAccessibilityLabel
             : UserText.aiChatHistoryPinSwipeAccessibilityLabel
@@ -452,10 +452,26 @@ extension AIChatHistoryViewController: UITableViewDelegate {
 extension AIChatHistoryViewController: UISearchBarDelegate {
 
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchBar.setShowsCancelButton(true, animated: true)
         viewModel.searchActivated()
+    }
+
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        searchBar.setShowsCancelButton(false, animated: true)
     }
 
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         viewModel.updateQuery(searchText)
+    }
+
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
+
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.text = nil
+        searchBar.setShowsCancelButton(false, animated: true)
+        searchBar.resignFirstResponder()
+        viewModel.updateQuery("")
     }
 }

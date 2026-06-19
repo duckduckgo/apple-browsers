@@ -508,6 +508,7 @@ final class UnifiedToggleInputView: UIView {
         self.isToggleEnabled = isToggleEnabled
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
+        textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
         setupUI()
         setupSubscriptions()
     }
@@ -651,6 +652,7 @@ final class UnifiedToggleInputView: UIView {
     func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
+        textEntryView.style = enabled ? .multiLine : .singleLine
         if isExpanded {
             applyCardLayout(.collapsed, animated: false)
             applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: showsToolbar), animated: false)
@@ -664,6 +666,7 @@ final class UnifiedToggleInputView: UIView {
         if isToggleEnabled {
             toggleView.setMode(mode, animated: animated)
         }
+        textEntryView.style = mode == .aiChat ? .multiLine : .singleLine
         // Drive textView pose synchronously inside the caller's UIView.animate so the
         // placeholder constraint switch animates rather than snapping when the publisher
         // subscriber fires after the animation transaction has already committed.
@@ -882,6 +885,16 @@ final class UnifiedToggleInputView: UIView {
             applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
         case (_, _):
             applyCardLayout(.collapsed, animated: false)
+            // Pre-apply the inline dismiss leading inset so the text area is already at its
+            // final width before animation — otherwise the width change animates with the card.
+            if !isToggleEnabled {
+                UIView.performWithoutAnimation {
+                    self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: true)
+                    self.applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: true)
+                    self.layoutIfNeeded()
+                }
+            }
+            textEntryView.clearDismissSnapshot()
         }
         alignWithOmnibarChrome()
     }

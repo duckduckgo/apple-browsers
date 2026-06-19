@@ -20,18 +20,6 @@ import PixelKit
 public enum UpdateFlowPixels: PixelKitEvent {
 
     /**
-     * Event Trigger: Check for Updates tapped on App Store builds
-     *
-     * > Note: This pixel has three sources where it can be fired that we will send as parameters: the DuckDuckGo main menu,
-     * the more options menu and the About section in Settings.
-     *
-     * Anomaly Investigation:
-     * - This pixel is fired from `AppDelegate.checkForUpdates` when the build configuration is set to APPSTORE
-     * - Anomalies could be caused when this is released, but we do not expect much traction given it is static and we do not nudge users to tap it.
-     */
-    case checkForUpdate(source: Source)
-
-    /**
      * Event Trigger: Update notification is shown to user
      *
      * Fired when the update notification popover appears after an update is detected.
@@ -55,6 +43,15 @@ public enum UpdateFlowPixels: PixelKitEvent {
      * This tracks user engagement with the update button in preferences.
      */
     case updateDuckDuckGoButtonTapped
+
+    /**
+     * Event Trigger: "Check for Updates…" item tapped in the menu bar
+     *
+     * Fired when the user clicks the "Check for Updates…" item in the app's menu bar, on all
+     * build types. On App Store builds this opens the updates page; on Sparkle builds it opens
+     * the About window. pixelSource distinguishes App Store from Sparkle/DMG builds.
+     */
+    case checkForUpdatesFromMainMenu
 
     /**
      * Event Trigger: Release metadata fetch fails
@@ -126,14 +123,14 @@ public enum UpdateFlowPixels: PixelKitEvent {
 
     public var name: String {
         switch self {
-        case .checkForUpdate:
-            return "m_mac_app_store_check_for_update"
         case .updateNotificationShown:
             return "m_mac_update_notification_shown"
         case .updateNotificationTapped:
             return "m_mac_update_notification_tapped"
         case .updateDuckDuckGoButtonTapped:
             return "m_mac_update_duckduckgo_button_tapped"
+        case .checkForUpdatesFromMainMenu:
+            return "m_mac_check_for_updates_from_main_menu"
         case .releaseMetadataFetchFailed:
             return "m_mac_release_metadata_fetch_failed"
         case .updateApplicationSuccess:
@@ -161,8 +158,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
 
     public var parameters: [String: String]? {
         switch self {
-        case .checkForUpdate(let source):
-            return ["source": source.rawValue]
         case .updateApplicationSuccess(let sourceVersion, let sourceBuild, let targetVersion,
                                         let targetBuild, let initiationType, let updateConfiguration,
                                         let osVersion):
@@ -204,6 +199,7 @@ public enum UpdateFlowPixels: PixelKitEvent {
         case .updateNotificationShown,
                 .updateNotificationTapped,
                 .updateDuckDuckGoButtonTapped,
+                .checkForUpdatesFromMainMenu,
                 .releaseMetadataFetchFailed,
                 .updaterDidRunUpdate,
                 .updaterAttemptToRestartWithoutResumeBlock,
@@ -222,18 +218,12 @@ public enum UpdateFlowPixels: PixelKitEvent {
         }
     }
 
-    public enum Source: String {
-        case mainMenu = "main_menu"
-        case moreOptionsMenu = "more_options"
-        case aboutMenu = "about"
-    }
-
     public var standardParameters: [PixelKitStandardParameter]? {
         switch self {
-        case .checkForUpdate,
-                .updateNotificationShown,
+        case .updateNotificationShown,
                 .updateNotificationTapped,
                 .updateDuckDuckGoButtonTapped,
+                .checkForUpdatesFromMainMenu,
                 .releaseMetadataFetchFailed,
                 .updateApplicationSuccess,
                 .updateApplicationFailure,

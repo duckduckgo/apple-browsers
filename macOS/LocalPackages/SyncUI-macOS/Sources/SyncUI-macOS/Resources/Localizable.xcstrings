@@ -72,7 +72,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sorry, this code is invalid. Please make sure it was entered correctly."
+            "value" : "Please make sure the correct code was entered or scanned."
           }
         },
         "es" : {
@@ -192,7 +192,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You're already paired with this account on both devices."
+            "value" : "These devices are already connected to Sync & Backup."
           }
         },
         "es" : {
@@ -252,7 +252,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Already Paired"
+            "value" : "Already synced."
           }
         },
         "es" : {
@@ -552,7 +552,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Scan this code from Duck.ai Settings."
+            "value" : "Scan this code using a browser other than DuckDuckGo."
           }
         },
         "es" : {
@@ -779,6 +779,30 @@
         }
       }
     },
+    "alert.sync-failed-description" : {
+      "comment" : "Description for generic Sync setup failure alerts",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Please try again."
+          }
+        }
+      }
+    },
+    "alert.sync-failed-title" : {
+      "comment" : "Title for generic Sync setup failure alerts",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync failed."
+          }
+        }
+      }
+    },
     "alert.sync-from-another-connected-device-description" : {
       "comment" : "Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential",
       "extractionState" : "extracted_with_value",
@@ -835,6 +859,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Синхронизируйте это устройство с уже подключённым браузером DuckDuckGo на другом устройстве."
+          }
+        }
+      }
+    },
+    "alert.sync-setup-error-got-it-button" : {
+      "comment" : "Button title for Sync setup error alerts",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Got It"
           }
         }
       }
@@ -1021,59 +1057,52 @@
     },
     "alert.sync-update-required-description" : {
       "comment" : "Description for Sync error shown when the app version does not support the scanned Sync code",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dieser Code wird in der aktuellen App-Version nicht unterstützt."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "This code is not supported in the current app version."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Este código no es compatible con la versión actual de la aplicación."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ce code n'est pas pris en charge dans la version actuelle de l'application."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Questo codice non è supportato nella versione attuale dell'app."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Deze code wordt niet ondersteund in de huidige app-versie."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ten kod nie jest obsługiwany w obecnej wersji aplikacji."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Este código não é suportado na versão atual da aplicação."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Этот код не поддерживается в текущей версии приложения."
           }
         }
@@ -1452,7 +1481,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sorry, this code is invalid. Please make sure the correct code was entered or scanned."
+            "value" : "Please make sure the correct code was entered or scanned."
           }
         },
         "es" : {
@@ -1495,6 +1524,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "К сожалению, этот код недействителен. Введите или отсканируйте правильный код."
+          }
+        }
+      }
+    },
+    "alert.unable-to-scan-qr-code-title" : {
+      "comment" : "Title for unable to scan qr code error",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This is not a valid Sync code."
           }
         }
       }
@@ -3115,6 +3156,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Держите приложения «Sync & Backup» открытыми на обоих устройствах"
+          }
+        }
+      }
+    },
+    "preferences.preparing-to-sync.waiting-for-native-confirmation.dialog-title" : {
+      "comment" : "Preparing to sync dialog title shown after confirming sync setup while waiting for another DuckDuckGo browser to confirm",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Confirm on your other device."
+          }
+        }
+      }
+    },
+    "preferences.preparing-to-sync.waiting-for-third-party-confirmation.dialog-title" : {
+      "comment" : "Preparing to sync dialog title shown after confirming sync setup while waiting for a third-party device to finish confirming",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Check your other device to finish."
           }
         }
       }

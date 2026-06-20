@@ -112,6 +112,8 @@ public enum SyncErrorType {
             return UserText.syncAlreadyPairedWithAccountTitle
         case .unsupportedThirdPartyRecoveryCode:
             return UserText.syncUnsupportedThirdPartyRecoveryCodeTitle
+        case .unableToRecognizeCode:
+            return UserText.unableToRecognizeCodeTitle
         case .syncCancelledFromOtherDevice:
             return UserText.syncCancelledFromOtherDeviceTitle
         default:

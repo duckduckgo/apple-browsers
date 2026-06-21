@@ -491,7 +491,8 @@
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
                 "description": "The funnel that led to the subscription flow"
-            }
+            },
+            "channel"
         ]
     },
     // Defined in https://app.asana.com/1/137249556945/task/1211354430557014
@@ -633,7 +634,9 @@
                 "description": "Bucketed latency for fetch JWKS step (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
-            "channel"
+            "channel",
+            "originalPixelTimestamp",
+            "retriedPixel"
         ]
     },
     "m_mac_wide_subscription_plan_change": {

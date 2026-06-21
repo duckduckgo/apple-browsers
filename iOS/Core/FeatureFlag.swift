@@ -327,6 +327,7 @@ public enum FeatureFlag: String {
 
     /// Internal-only gate for the heavier on-device freeze capture (snapshot + ring buffer). Kept separate from
     /// `webScrollFreezeObservability` so the production observer ships without the capture.
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1215895676655232
     case webScrollFreezeCapture
 
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by

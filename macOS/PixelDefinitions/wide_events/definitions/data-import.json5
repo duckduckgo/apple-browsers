@@ -1,0 +1,98 @@
+{
+    "macos-data-import": {
+        "description": "Sent at the end of a data import flow, capturing the import source plus per-type (bookmarks, passwords, credit cards) status, timing, and errors. The journey resolves to SUCCESS when all selected types import cleanly, FAILURE when every type fails, or UNKNOWN when the flow is orphaned and resolved on a later launch (partial data or timeout).",
+        "owners": ["hanyutang-sandra"],
+        "meta": {
+            "type": "macos-data-import",
+            "version": "2.0"
+        },
+        "feature": {
+            "name": "data-import",
+            "status": ["SUCCESS", "FAILURE", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "source": {
+                        "type": "string",
+                        "description": "The browser or data source the user imported from.",
+                        "enum": [
+                            "brave",
+                            "chrome",
+                            "chromium",
+                            "coccoc",
+                            "edge",
+                            "firefox",
+                            "opera",
+                            "operaGX",
+                            "safari",
+                            "safariTechnologyPreview",
+                            "tor",
+                            "vivaldi",
+                            "yandex",
+                            "fileImport",
+                            "csv",
+                            "bookmarksHTML",
+                            "onePassword8",
+                            "onePassword7",
+                            "bitwarden",
+                            "lastPass"
+                        ]
+                    },
+                    "latency_ms": {
+                        "type": "integer",
+                        "description": "Total duration of the data import flow, in milliseconds."
+                    },
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason accompanying a non-clean terminal status. `partial_data` = only some of the selected data imported, or an orphaned flow was completed on a later launch; `timeout` = the import did not complete within the timeout window.",
+                        "enum": ["partial_data", "timeout"]
+                    },
+                    "bookmarks_status": {
+                        "type": "string",
+                        "description": "Final status of the bookmarks import.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "bookmarks_status_reason": {
+                        "type": "string",
+                        "description": "Reason accompanying the bookmarks import status. `partial_data` = only some bookmarks imported successfully.",
+                        "enum": ["partial_data"]
+                    },
+                    "bookmarks_importer_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration of the bookmarks importer, in milliseconds."
+                    },
+                    "bookmarks_error": "dataImportTypeError",
+                    "passwords_status": {
+                        "type": "string",
+                        "description": "Final status of the passwords import.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "passwords_status_reason": {
+                        "type": "string",
+                        "description": "Reason accompanying the passwords import status. `partial_data` = only some passwords imported successfully.",
+                        "enum": ["partial_data"]
+                    },
+                    "passwords_importer_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration of the passwords importer, in milliseconds."
+                    },
+                    "passwords_error": "dataImportTypeError",
+                    "creditCards_status": {
+                        "type": "string",
+                        "description": "Final status of the credit cards import.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "creditCards_status_reason": {
+                        "type": "string",
+                        "description": "Reason accompanying the credit cards import status. `partial_data` = only some credit cards imported successfully.",
+                        "enum": ["partial_data"]
+                    },
+                    "creditCards_importer_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration of the credit cards importer, in milliseconds."
+                    },
+                    "creditCards_error": "dataImportTypeError"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,326 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent at the end of a data import flow, capturing the import source plus per-type (bookmarks, passwords, credit cards) status, timing, and errors. The journey resolves to SUCCESS when all selected types import cleanly, FAILURE when every type fails, or UNKNOWN when the flow is orphaned and resolved on a later launch (partial data or timeout).",
+    "$comment": "{\"owners\":[\"hanyutang-sandra\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "macos-data-import" }, "version": { "const": "1.2.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "enum": [
+                        "DuckDuckGo",
+                        "DuckDuckGo Alpha",
+                        "DuckDuckGo Review",
+                        "DuckDuckGo App Store",
+                        "DuckDuckGo VPN",
+                        "DuckDuckGo VPN Alpha",
+                        "DuckDuckGo VPN Review",
+                        "DuckDuckGo VPN App Store",
+                        "NetworkProtectionAppExtension",
+                        "com.duckduckgo.macos.vpn.network-extension",
+                        "com.duckduckgo.macos.vpn.network-extension.debug",
+                        "com.duckduckgo.macos.vpn.network-extension.review",
+                        "com.duckduckgo.macos.vpn.network-extension.alpha",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                    ]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["macOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["data-import"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "source": {
+                                    "type": "string",
+                                    "description": "The browser or data source the user imported from.",
+                                    "enum": [
+                                        "brave",
+                                        "chrome",
+                                        "chromium",
+                                        "coccoc",
+                                        "edge",
+                                        "firefox",
+                                        "opera",
+                                        "operaGX",
+                                        "safari",
+                                        "safariTechnologyPreview",
+                                        "tor",
+                                        "vivaldi",
+                                        "yandex",
+                                        "fileImport",
+                                        "csv",
+                                        "bookmarksHTML",
+                                        "onePassword8",
+                                        "onePassword7",
+                                        "bitwarden",
+                                        "lastPass"
+                                    ]
+                                },
+                                "latency_ms": {
+                                    "type": "integer",
+                                    "description": "Total duration of the data import flow, in milliseconds."
+                                },
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Reason accompanying a non-clean terminal status. `partial_data` = only some of the selected data imported, or an orphaned flow was completed on a later launch; `timeout` = the import did not complete within the timeout window.",
+                                    "enum": ["partial_data", "timeout"]
+                                },
+                                "bookmarks_status": {
+                                    "type": "string",
+                                    "description": "Final status of the bookmarks import.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "bookmarks_status_reason": {
+                                    "type": "string",
+                                    "description": "Reason accompanying the bookmarks import status. `partial_data` = only some bookmarks imported successfully.",
+                                    "enum": ["partial_data"]
+                                },
+                                "bookmarks_importer_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration of the bookmarks importer, in milliseconds."
+                                },
+                                "bookmarks_error": {
+                                    "type": "object",
+                                    "description": "Per-type error details for a single data import type (bookmarks, passwords, credit cards). Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "passwords_status": {
+                                    "type": "string",
+                                    "description": "Final status of the passwords import.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "passwords_status_reason": {
+                                    "type": "string",
+                                    "description": "Reason accompanying the passwords import status. `partial_data` = only some passwords imported successfully.",
+                                    "enum": ["partial_data"]
+                                },
+                                "passwords_importer_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration of the passwords importer, in milliseconds."
+                                },
+                                "passwords_error": {
+                                    "type": "object",
+                                    "description": "Per-type error details for a single data import type (bookmarks, passwords, credit cards). Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "creditCards_status": {
+                                    "type": "string",
+                                    "description": "Final status of the credit cards import.",
+                                    "enum": ["SUCCESS", "FAILURE"]
+                                },
+                                "creditCards_status_reason": {
+                                    "type": "string",
+                                    "description": "Reason accompanying the credit cards import status. `partial_data` = only some credit cards imported successfully.",
+                                    "enum": ["partial_data"]
+                                },
+                                "creditCards_importer_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Duration of the credit cards importer, in milliseconds."
+                                },
+                                "creditCards_error": {
+                                    "type": "object",
+                                    "description": "Per-type error details for a single data import type (bookmarks, passwords, credit cards). Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

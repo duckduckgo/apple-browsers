@@ -92,6 +92,11 @@
                 "description": "Dominant drag direction across the failed attempts.",
                 "type": "string",
                 "enum": ["up", "down", "mixed"]
+            },
+            {
+                "key": "mechanism",
+                "description": "Gesture-environment state at the moment the freeze is confirmed. 'wedged:<type>' means a recognizer is stuck active with no touches (e.g. wedged:swipe_tabs); 'none_wedged' means no stuck recognizer was found, consistent with the phantom-touch hypothesis.",
+                "type": "string"
             }
         ],
         "expires": "2026-07-11"

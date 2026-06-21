@@ -321,8 +321,13 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
 
-    /// Internal-only gate for web-scroll-freeze observability (scroll-failure observer + gesture watchdog).
+    /// Production kill switch (on by default) for web-scroll-freeze observability: the passive scroll-failure
+    /// observer (bystander recognizer) + the symptom/mechanism pixels. Ship a privacy-config entry to roll back.
     case webScrollFreezeObservability
+
+    /// Internal-only gate for the heavier on-device freeze capture (snapshot + ring buffer). Kept separate from
+    /// `webScrollFreezeObservability` so the production observer ships without the capture.
+    case webScrollFreezeCapture
 
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
     /// default; ship a privacy-config entry to roll back. See
@@ -744,7 +749,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.unifiedToggleInput))
         case .webScrollFreezeObservability:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeObservability))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeObservability))
+        case .webScrollFreezeCapture:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeCapture))
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .freeTrialConversionWideEvent:

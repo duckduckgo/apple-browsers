@@ -260,9 +260,14 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
-    /// Internal-only observability for the hard-to-reproduce "web view scroll frozen, taps still work" bug:
-    /// a passive scroll-failure observer plus a gesture watchdog. Off for the general population by default.
+    /// Production observability for the hard-to-reproduce "web view scroll frozen, taps still work" bug:
+    /// a passive scroll-failure observer plus the symptom/mechanism pixels. On by default for everyone;
+    /// ship a privacy-config entry to roll back.
     case webScrollFreezeObservability
+
+    /// Internal-only gate for the heavier on-device freeze capture (snapshot + ring buffer), kept separate
+    /// from `webScrollFreezeObservability` so the production observer ships without the capture.
+    case webScrollFreezeCapture
 
     case screenTimeCleaning
 

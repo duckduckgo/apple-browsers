@@ -232,27 +232,31 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.recovery_latency_ms_bucketed"], "5000")
     }
 
-    func testPixelParameters_performedTokenRecovery_emittedOnlyWhenTrue() {
-        let notRecovered = AuthV2TokenRefreshWideEventData()
-        XCTAssertNil(notRecovered.pixelParameters()["feature.data.ext.performed_token_recovery"])
+    func testPixelParameters_recoveryOutcome_emittedOnlyWhenSet() {
+        let noRecovery = AuthV2TokenRefreshWideEventData()
+        XCTAssertNil(noRecovery.pixelParameters()["feature.data.ext.recovery_outcome"])
 
         let recovered = AuthV2TokenRefreshWideEventData()
-        recovered.performedTokenRecovery = true
-        XCTAssertEqual(recovered.pixelParameters()["feature.data.ext.performed_token_recovery"], "true")
+        recovered.recoveryOutcome = .succeeded
+        XCTAssertEqual(recovered.pixelParameters()["feature.data.ext.recovery_outcome"], "succeeded")
+
+        let notAttempted = AuthV2TokenRefreshWideEventData()
+        notAttempted.recoveryOutcome = .notAttempted
+        XCTAssertEqual(notAttempted.pixelParameters()["feature.data.ext.recovery_outcome"], "not_attempted")
     }
 
-    func testDecoding_withoutPerformedTokenRecovery_defaultsToFalse() throws {
+    func testDecoding_withoutRecoveryOutcome_defaultsToNil() throws {
         let eventData = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
         eventData.recoveryDuration = .startingNow()
 
         let encoded = try JSONEncoder().encode(eventData)
         var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
-        json.removeValue(forKey: "performedTokenRecovery")
+        json.removeValue(forKey: "recoveryOutcome")
 
         let legacyData = try JSONSerialization.data(withJSONObject: json)
         let decoded = try JSONDecoder().decode(AuthV2TokenRefreshWideEventData.self, from: legacyData)
 
-        XCTAssertFalse(decoded.performedTokenRecovery)
+        XCTAssertNil(decoded.recoveryOutcome)
         XCTAssertEqual(decoded.failingStep, .recoverInvalidToken)
         XCTAssertNotNil(decoded.recoveryDuration?.start)
     }
@@ -360,7 +364,7 @@ final class AuthV2WideEventTests: XCTestCase {
         freshFlow.recoveryDuration = .startingNow()
         mock.startFlow(freshFlow)
 
-        instrumentation.completeInvalidTokenRecovery(status: .success(reason: nil), error: nil)
+        instrumentation.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
 
         XCTAssertEqual(mock.completions.count, 1)
         let (data, status) = try XCTUnwrap(mock.completions.first)
@@ -368,7 +372,7 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(status, .success(reason: nil))
 
         let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
-        XCTAssertTrue(refreshData.performedTokenRecovery)
+        XCTAssertEqual(refreshData.recoveryOutcome, .succeeded)
         XCTAssertNil(refreshData.errorData)
         XCTAssertNil(refreshData.failingStep)
         XCTAssertNotNil(refreshData.recoveryDuration?.end)
@@ -382,17 +386,41 @@ final class AuthV2WideEventTests: XCTestCase {
         pendingFlow.recoveryDuration = .startingNow()
         mock.startFlow(pendingFlow)
 
-        instrumentation.completeInvalidTokenRecovery(status: .failure, error: SubscriptionManagerError.noTokenAvailable)
+        instrumentation.completeInvalidTokenRecovery(outcome: .failed, error: SubscriptionManagerError.noTokenAvailable)
 
         XCTAssertEqual(mock.completions.count, 1)
         let (data, status) = try XCTUnwrap(mock.completions.first)
         XCTAssertEqual(status, .failure)
 
         let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
-        XCTAssertTrue(refreshData.performedTokenRecovery)
+        XCTAssertEqual(refreshData.recoveryOutcome, .failed)
         XCTAssertNotNil(refreshData.errorData)
         XCTAssertEqual(refreshData.failingStep, .recoverInvalidToken)
         XCTAssertNotNil(refreshData.recoveryDuration?.end)
+    }
+
+    func testRefreshInstrumentation_recoveryNotAttempted_dropsLatencyAndKeepsOriginalError() throws {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          globalData: WideEventGlobalData(id: "refresh-1"))
+        pendingFlow.errorData = WideEventErrorData(error: OAuthClientError.invalidTokenRequest(.reused))
+        pendingFlow.recoveryDuration = .startingNow()
+        mock.startFlow(pendingFlow)
+
+        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
+
+        XCTAssertEqual(mock.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mock.completions.first)
+        XCTAssertEqual(status, .failure)
+
+        let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
+        XCTAssertEqual(refreshData.recoveryOutcome, .notAttempted)
+        // No restore ran, so the recovery latency would be meaningless and must be dropped, while the
+        // original invalid-token error/step is preserved for debugging.
+        XCTAssertNil(refreshData.recoveryDuration)
+        XCTAssertNotNil(refreshData.errorData)
+        XCTAssertEqual(refreshData.failingStep, .recoverInvalidToken)
     }
 
     // MARK: - Token adoption source

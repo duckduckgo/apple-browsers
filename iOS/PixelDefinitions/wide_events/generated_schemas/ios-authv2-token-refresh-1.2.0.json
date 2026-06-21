@@ -103,9 +103,10 @@
                                     "description": "Bucketed latency from invalid-token detection to recovery outcome (ms).",
                                     "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
                                 },
-                                "performed_token_recovery": {
-                                    "type": "boolean",
-                                    "description": "Whether an invalid-token recovery was performed during this journey."
+                                "recovery_outcome": {
+                                    "type": "string",
+                                    "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed.",
+                                    "enum": ["not_attempted", "succeeded", "failed"]
                                 },
                                 "error": {
                                     "type": "object",

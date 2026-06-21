@@ -42,7 +42,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     public var refreshTokenDuration: WideEvent.MeasuredInterval?
     public var fetchJWKSDuration: WideEvent.MeasuredInterval?
     public var recoveryDuration: WideEvent.MeasuredInterval?
-    public var performedTokenRecovery: Bool = false
+    public var recoveryOutcome: TokenRecoveryOutcome?
 
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
@@ -51,7 +51,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
 
     private enum CodingKeys: String, CodingKey {
         case globalData, contextData, appData
-        case refreshTokenDuration, fetchJWKSDuration, recoveryDuration, performedTokenRecovery
+        case refreshTokenDuration, fetchJWKSDuration, recoveryDuration, recoveryOutcome
         case failingStep, errorData, refreshTrigger
     }
 
@@ -76,7 +76,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         refreshTokenDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .refreshTokenDuration)
         fetchJWKSDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .fetchJWKSDuration)
         recoveryDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .recoveryDuration)
-        performedTokenRecovery = try container.decodeIfPresent(Bool.self, forKey: .performedTokenRecovery) ?? false
+        recoveryOutcome = try container.decodeIfPresent(TokenRecoveryOutcome.self, forKey: .recoveryOutcome)
         failingStep = try container.decodeIfPresent(FailingStep.self, forKey: .failingStep)
         errorData = try container.decodeIfPresent(WideEventErrorData.self, forKey: .errorData)
         refreshTrigger = try container.decodeIfPresent(TokenRefreshTrigger.self, forKey: .refreshTrigger)
@@ -91,11 +91,23 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         try container.encodeIfPresent(refreshTokenDuration, forKey: .refreshTokenDuration)
         try container.encodeIfPresent(fetchJWKSDuration, forKey: .fetchJWKSDuration)
         try container.encodeIfPresent(recoveryDuration, forKey: .recoveryDuration)
-        try container.encode(performedTokenRecovery, forKey: .performedTokenRecovery)
+        try container.encodeIfPresent(recoveryOutcome, forKey: .recoveryOutcome)
         try container.encodeIfPresent(failingStep, forKey: .failingStep)
         try container.encodeIfPresent(errorData, forKey: .errorData)
         try container.encodeIfPresent(refreshTrigger, forKey: .refreshTrigger)
     }
+}
+
+/// The outcome of an invalid-token recovery within a token refresh journey.
+///
+/// `notAttempted` is distinct from `failed`: recovery is only ever *attempted* for App Store
+/// subscriptions with a recovery handler configured. On other platforms (or with no handler) the
+/// recovery path bails before any restore runs, which must not be conflated with a restore that ran
+/// and failed.
+public enum TokenRecoveryOutcome: String, Codable, CaseIterable {
+    case notAttempted = "not_attempted"
+    case succeeded
+    case failed
 }
 
 extension AuthV2TokenRefreshWideEventData {
@@ -125,9 +137,9 @@ extension AuthV2TokenRefreshWideEventData {
             (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.recoveryLatency, recoveryDuration?.intValue(bucket)),
         ])
-        // Emit only when a recovery happened (this event's params are sparse - absent means no recovery).
-        if performedTokenRecovery {
-            parameters[WideEventParameter.AuthV2RefreshFeature.performedTokenRecovery] = performedTokenRecovery
+        // Emit only when the recovery path was reached (this event's params are sparse - absent means no recovery).
+        if let recoveryOutcome {
+            parameters[WideEventParameter.AuthV2RefreshFeature.recoveryOutcome] = recoveryOutcome.rawValue
         }
         return parameters
     }
@@ -161,7 +173,7 @@ extension WideEventParameter {
         static let refreshTokenLatency = "feature.data.ext.refresh_token_latency_ms_bucketed"
         static let fetchJWKSLatency = "feature.data.ext.fetch_jwks_latency_ms_bucketed"
         static let recoveryLatency = "feature.data.ext.recovery_latency_ms_bucketed"
-        static let performedTokenRecovery = "feature.data.ext.performed_token_recovery"
+        static let recoveryOutcome = "feature.data.ext.recovery_outcome"
     }
 
 }

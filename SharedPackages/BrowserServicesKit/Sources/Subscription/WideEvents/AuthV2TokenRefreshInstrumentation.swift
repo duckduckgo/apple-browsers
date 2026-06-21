@@ -24,7 +24,7 @@ import PixelKit
 public protocol AuthV2TokenRefreshInstrumenting: AnyObject {
     var eventMapping: EventMapping<OAuthClientRefreshEvent> { get }
 
-    func completeInvalidTokenRecovery(status: WideEventStatus, error: Error?)
+    func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome, error: Error?)
 }
 
 public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting {
@@ -43,23 +43,38 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
         }
     }
 
-    public func completeInvalidTokenRecovery(status: WideEventStatus, error: Error?) {
+    public func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome, error: Error?) {
         guard isFeatureEnabled(),
               let data = newestPendingRecoveryFlow() else {
             return
         }
 
-        data.recoveryDuration?.complete()
-        data.performedTokenRecovery = true
+        data.recoveryOutcome = outcome
 
-        if let error {
-            data.errorData = WideEventErrorData(error: error)
-        } else {
+        switch outcome {
+        case .succeeded:
+            // A restore ran and produced a valid token: the refresh journey recovered.
+            data.recoveryDuration?.complete()
             data.errorData = nil
             data.failingStep = nil
-        }
+            wideEvent.completeFlow(data, status: .success(reason: nil), onComplete: { _, _ in })
 
-        wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
+        case .failed:
+            // A restore ran but did not yield a valid token. Record its error if one was provided,
+            // otherwise keep the original invalid-token error already on the flow.
+            data.recoveryDuration?.complete()
+            if let error {
+                data.errorData = WideEventErrorData(error: error)
+            }
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+
+        case .notAttempted:
+            // No restore ran (no handler, or the platform can't restore), so the recovery latency
+            // measured from invalid-token detection would be meaningless - drop it. Keep the
+            // original invalid-token error/failing step that the flow already carries.
+            data.recoveryDuration = nil
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        }
     }
 
     private func handle(_ event: OAuthClientRefreshEvent) {

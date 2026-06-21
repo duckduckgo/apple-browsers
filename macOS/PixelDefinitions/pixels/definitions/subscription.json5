@@ -648,9 +648,10 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "feature.data.ext.performed_token_recovery",
-                "type": "boolean",
-                "description": "Whether an invalid-token recovery was performed during this journey"
+                "key": "feature.data.ext.recovery_outcome",
+                "type": "string",
+                "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed",
+                "enum": ["not_attempted", "succeeded", "failed"]
             },
             "channel"
         ]

@@ -614,12 +614,20 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(status: .success(reason: nil), error: nil)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
                     return recoveredTokenContainer
-                } catch {
+                } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
+                    // No restore ran (no handler, or the platform can't restore): record the refresh
+                    // as a failure whose recovery was never attempted, keeping its invalid-token error.
                     await signOut(notifyUI: false, userInitiated: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(status: .failure, error: error)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
+                    throw SubscriptionManagerError.noTokenAvailable
+                } catch {
+                    // A restore ran but did not yield a valid token.
+                    await signOut(notifyUI: false, userInitiated: false)
+                    pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .failed, error: error)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 
@@ -635,7 +643,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
         guard let tokenRecoveryHandler else {
             Logger.subscription.log("Recovery not possible, no handler configured.")
-            throw SubscriptionManagerError.noTokenAvailable
+            throw SubscriptionManagerError.tokenRecoveryNotAttempted
         }
 
         try await tokenRecoveryHandler()

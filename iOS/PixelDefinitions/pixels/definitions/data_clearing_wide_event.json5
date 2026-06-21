@@ -67,7 +67,7 @@
                 "key": "feature.data.ext.source",
                 "type": "string",
                 "description": "Entry point that triggered the data clearing flow",
-                "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear"]
+                "enum": ["browsing", "escapeHatch", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear", "chatSuggestions"]
             },
 
             // Overall latency

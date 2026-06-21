@@ -433,6 +433,7 @@ private final class DeviceManagementSpy: NetworkProtectionDeviceManagement {
     func generateTunnelConfiguration(
         resolvedSelectionMethod: NetworkProtectionServerSelectionMethod,
         excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         regenerateKey: Bool
     ) async throws -> NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult {

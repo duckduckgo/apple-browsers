@@ -274,6 +274,17 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertNil(decoded.startedAt)
     }
 
+    func testEncodingAndDecoding_preservesStartedAt() throws {
+        let startedAt = Date()
+        let eventData = AuthV2TokenRefreshWideEventData(startedAt: startedAt)
+
+        let encoded = try JSONEncoder().encode(eventData)
+        let decoded = try JSONDecoder().decode(AuthV2TokenRefreshWideEventData.self, from: encoded)
+        let decodedStartedAt = try XCTUnwrap(decoded.startedAt)
+
+        XCTAssertEqual(decodedStartedAt.timeIntervalSince1970, startedAt.timeIntervalSince1970, accuracy: 0.001)
+    }
+
     // MARK: - Refresh trigger
 
     func testPixelParameters_refreshTrigger_alwaysEmitted_defaultsToClient() {

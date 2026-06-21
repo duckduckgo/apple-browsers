@@ -195,6 +195,16 @@ final class WideEventServiceTests: XCTestCase {
         XCTAssertTrue(wideEventMock.completions.contains { $0.0 is SubscriptionPurchaseWideEventData })
     }
 
+    func testColdLaunch_recentAuthV2RefreshFlowStaysPending() async {
+        let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
+        refreshFlow.recoveryDuration = .startingNow()
+        wideEventMock.started = [refreshFlow]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertFalse(wideEventMock.completions.contains { $0.0 is AuthV2TokenRefreshWideEventData })
+    }
+
     func testColdLaunch_completesAuthV2RefreshFlowAsUnknown() async {
         let staleStart = Date().addingTimeInterval(-AuthV2TokenRefreshWideEventData.launchCleanupTimeout - 1)
         let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,

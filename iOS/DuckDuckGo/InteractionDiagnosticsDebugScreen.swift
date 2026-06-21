@@ -33,8 +33,8 @@ struct InteractionDiagnosticsDebugScreen: View {
 
     @StateObject private var model: InteractionDiagnosticsModel
 
-    init(tabManager: TabManager) {
-        _model = StateObject(wrappedValue: InteractionDiagnosticsModel(tabManager: tabManager))
+    init() {
+        _model = StateObject(wrappedValue: InteractionDiagnosticsModel())
     }
 
     var body: some View {
@@ -71,7 +71,7 @@ private struct InteractionRecoveryView: View {
     var body: some View {
         List {
             Section {
-                Button { model.recover() } label: { Text(verbatim: "Recover (combined — what the watchdog runs)") }
+                Button { model.recover() } label: { Text(verbatim: "Recover (surgical — reset pan/wedged recognizers)") }
                 Button { model.resetScrollPan() } label: { Text(verbatim: "R1 · Reset web scroll pan only") }
                 Button { model.runRecovery(.flushAppRecognizers) } label: { Text(verbatim: "R2 · Reset app recognizers") }
                 Button { model.runRecovery(.bounceWindowInteraction) } label: { Text(verbatim: "R3 · Bounce window interaction") }
@@ -84,7 +84,8 @@ private struct InteractionRecoveryView: View {
             } footer: {
                 Text(verbatim: "Run least→most invasive against a live freeze to find the minimal action that recovers. "
                      + "R1 should fail (victim-side), R2 should clear a wedged recognizer, R3 targets a phantom touch. "
-                     + "'Recover' combines R2+R3 — the action the auto-watchdog uses.")
+                     + "'Recover' resets only pan/wedged recognizers (no window bounce). Recovery is debug-only here — "
+                     + "productionised in Part 3.")
             }
         }
         .navigationTitle("Recovery")
@@ -155,12 +156,6 @@ final class InteractionDiagnosticsModel: ObservableObject {
     @Published var report = ""
     @Published var actionResult = ""
     @Published var savedCount = FreezeCaptureStore.count()
-
-    private let tabManager: TabManager
-
-    init(tabManager: TabManager) {
-        self.tabManager = tabManager
-    }
 
     @MainActor
     func capture() {

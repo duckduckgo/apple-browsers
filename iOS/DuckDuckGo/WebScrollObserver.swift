@@ -356,9 +356,10 @@ final class WebScrollObserverGestureRecognizer: UIGestureRecognizer {
 
 // MARK: - Recovery (manual debug rungs — internal only)
 
-/// Self-heal actions for the web-scroll-freeze. `recover()` is the combined production action the
-/// auto-watchdog runs; the individual rungs are exposed for the debug Recovery screen to find the minimal
-/// sufficient action. All are idempotent and meant to run BETWEEN gestures (no active touch).
+/// Self-heal actions for the web-scroll-freeze. `recover()` is the surgical reset (pan + wedged recognizers);
+/// the individual rungs are exposed for the debug Recovery screen to find the minimal sufficient action.
+/// Debug-only and manual for now — there is no production auto-recovery; that is productionised in Part 3.
+/// All are idempotent and meant to run BETWEEN gestures (no active touch).
 @MainActor
 enum WebScrollFreezeRecovery {
 
@@ -371,7 +372,7 @@ enum WebScrollFreezeRecovery {
     @discardableResult
     static func recover() -> String {
         let count = resetBlockingRecognizers()
-        Logger.interaction.error("Auto-recovery ran: reset \(count, privacy: .public) pan/wedged recognizers")
+        Logger.interaction.error("Manual recovery ran: reset \(count, privacy: .public) pan/wedged recognizers")
         return "recover: reset \(count) pan/wedged recognizers"
     }
 

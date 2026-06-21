@@ -19,7 +19,7 @@ tags:
 - pressKey: Enter
 
 - extendedWaitUntil:
-    visible: "This file can't be processed"
+    visible: "This file can't be processed. Try opening the downloaded file instead."
     timeout: 15000
 
 # QuickLook must not be presented for a malformed file.

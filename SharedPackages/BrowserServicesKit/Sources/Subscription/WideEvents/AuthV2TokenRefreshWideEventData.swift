@@ -27,6 +27,8 @@ import UIKit
 #endif
 
 public class AuthV2TokenRefreshWideEventData: WideEventData {
+    public static let launchCleanupTimeout: TimeInterval = .minutes(5)
+
     public static let metadata = WideEventMetadata(
         pixelName: "auth_v2_token_refresh",
         featureName: "authv2-token-refresh",
@@ -48,23 +50,26 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     public var errorData: WideEventErrorData?
 
     public var refreshTrigger: TokenRefreshTrigger?
+    public var startedAt: Date?
 
     private enum CodingKeys: String, CodingKey {
         case globalData, contextData, appData
         case refreshTokenDuration, fetchJWKSDuration, recoveryDuration, recoveryOutcome
-        case failingStep, errorData, refreshTrigger
+        case failingStep, errorData, refreshTrigger, startedAt
     }
 
     public init(failingStep: FailingStep? = nil,
                 errorData: WideEventErrorData? = nil,
                 contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
-                globalData: WideEventGlobalData = WideEventGlobalData()) {
+                globalData: WideEventGlobalData = WideEventGlobalData(),
+                startedAt: Date? = Date()) {
         self.failingStep = failingStep
         self.errorData = errorData
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
+        self.startedAt = startedAt
     }
 
     public required init(from decoder: Decoder) throws {
@@ -80,6 +85,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         failingStep = try container.decodeIfPresent(FailingStep.self, forKey: .failingStep)
         errorData = try container.decodeIfPresent(WideEventErrorData.self, forKey: .errorData)
         refreshTrigger = try container.decodeIfPresent(TokenRefreshTrigger.self, forKey: .refreshTrigger)
+        startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -95,6 +101,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         try container.encodeIfPresent(failingStep, forKey: .failingStep)
         try container.encodeIfPresent(errorData, forKey: .errorData)
         try container.encodeIfPresent(refreshTrigger, forKey: .refreshTrigger)
+        try container.encodeIfPresent(startedAt, forKey: .startedAt)
     }
 }
 
@@ -148,7 +155,18 @@ extension AuthV2TokenRefreshWideEventData {
         // A refresh flow still pending at app launch never reached a terminal point - for example a
         // invalid-token refresh on the recovery-less API refresher path, or a process kill mid-refresh.
         // Reconcile it as UNKNOWN rather than leaving it pending forever.
-        .complete(.unknown(reason: StatusReason.partialData.rawValue))
+        switch trigger {
+        case .appLaunch:
+            guard let startedAt else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if Date() >= startedAt.addingTimeInterval(Self.launchCleanupTimeout) {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            return .keepPending
+        }
     }
 
     private static func bucket(_ ms: Int) -> Int {

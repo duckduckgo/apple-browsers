@@ -261,6 +261,19 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertNotNil(decoded.recoveryDuration?.start)
     }
 
+    func testDecoding_withoutStartedAt_defaultsToNil() throws {
+        let eventData = AuthV2TokenRefreshWideEventData()
+
+        let encoded = try JSONEncoder().encode(eventData)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        json.removeValue(forKey: "startedAt")
+
+        let legacyData = try JSONSerialization.data(withJSONObject: json)
+        let decoded = try JSONDecoder().decode(AuthV2TokenRefreshWideEventData.self, from: legacyData)
+
+        XCTAssertNil(decoded.startedAt)
+    }
+
     // MARK: - Refresh trigger
 
     func testPixelParameters_refreshTrigger_alwaysEmitted_defaultsToClient() {
@@ -287,13 +300,35 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(pending.first?.pixelParameters()["feature.data.ext.refresh_trigger"], "token_adoption")
     }
 
-    func testCompletionDecision_appLaunch_reconcilesToUnknown() async {
+    func testCompletionDecision_appLaunch_recentRefreshKeepsPending() async {
         let eventData = AuthV2TokenRefreshWideEventData()
 
         let decision = await eventData.completionDecision(for: .appLaunch)
 
+        guard case .keepPending = decision else {
+            return XCTFail("Expected recent refresh to stay pending, got \(decision)")
+        }
+    }
+
+    func testCompletionDecision_appLaunch_staleRefreshReconcilesToUnknown() async {
+        let staleStart = Date().addingTimeInterval(-AuthV2TokenRefreshWideEventData.launchCleanupTimeout - 1)
+        let eventData = AuthV2TokenRefreshWideEventData(startedAt: staleStart)
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
         guard case .complete(.unknown(let reason)) = decision else {
-            return XCTFail("Expected pending refresh to reconcile to UNKNOWN, got \(decision)")
+            return XCTFail("Expected stale refresh to reconcile to UNKNOWN, got \(decision)")
+        }
+        XCTAssertEqual(reason, "partial_data")
+    }
+
+    func testCompletionDecision_appLaunch_legacyRefreshWithoutStartedAtReconcilesToUnknown() async {
+        let eventData = AuthV2TokenRefreshWideEventData(startedAt: nil)
+
+        let decision = await eventData.completionDecision(for: .appLaunch)
+
+        guard case .complete(.unknown(let reason)) = decision else {
+            return XCTFail("Expected legacy refresh to reconcile to UNKNOWN, got \(decision)")
         }
         XCTAssertEqual(reason, "partial_data")
     }

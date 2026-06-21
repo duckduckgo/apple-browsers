@@ -196,7 +196,9 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func testColdLaunch_completesAuthV2RefreshFlowAsUnknown() async {
-        let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
+        let staleStart = Date().addingTimeInterval(-AuthV2TokenRefreshWideEventData.launchCleanupTimeout - 1)
+        let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          startedAt: staleStart)
         refreshFlow.recoveryDuration = .startingNow()
         wideEventMock.started = [refreshFlow]
 

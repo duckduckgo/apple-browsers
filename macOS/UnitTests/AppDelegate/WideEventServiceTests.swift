@@ -72,6 +72,31 @@ final class WideEventServiceTests: XCTestCase {
         XCTAssertEqual(completedRestoreData.count, 1)
     }
 
+    func test_sendPendingEvents_recentAuthV2RefreshStaysPending() async {
+        let data = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
+        mockWideEvent.started.append(data)
+
+        await sut.sendPendingEvents()
+
+        XCTAssertFalse(mockWideEvent.completions.contains { $0.0 is AuthV2TokenRefreshWideEventData })
+    }
+
+    func test_sendPendingEvents_staleAuthV2RefreshCompletesWithUnknown() async {
+        let data = AuthV2TokenRefreshWideEventData(
+            failingStep: .recoverInvalidToken,
+            startedAt: Date().addingTimeInterval(-AuthV2TokenRefreshWideEventData.launchCleanupTimeout - 1)
+        )
+        mockWideEvent.started.append(data)
+
+        await sut.sendPendingEvents()
+
+        let completion = mockWideEvent.completions.first { $0.0 is AuthV2TokenRefreshWideEventData }
+        XCTAssertNotNil(completion, "A stale refresh must be reconciled on launch")
+        guard case .unknown = completion?.1 else {
+            return XCTFail("Expected the stale refresh to complete as UNKNOWN")
+        }
+    }
+
     // MARK: - processSubscriptionPurchasePixels - Happy Path
 
     func test_processSubscriptionPurchasePixels_noPendingEvents_completesWithoutErrors() async {

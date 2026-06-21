@@ -132,7 +132,9 @@ final class WebScrollObserver: NSObject {
         }
     }
 
-    private func classifyDrag(dx: CGFloat, dy: CGFloat, startOffsetY: CGFloat, startScreenY: CGFloat) {
+    /// Internal (not private) so unit tests can drive classification directly, bypassing the post-gesture
+    /// `asyncAfter` recheck. In production this is only ever called from `dragEnded`.
+    func classifyDrag(dx: CGFloat, dy: CGFloat, startOffsetY: CGFloat, startScreenY: CGFloat) {
         guard isEligible(), let scrollView = scrollViewProvider() else { return }
 
         // Only count vertical-dominant drags long enough to be a real scroll attempt.
@@ -350,4 +352,103 @@ final class WebScrollObserverGestureRecognizer: UIGestureRecognizer {
 
     override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool { false }
     override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+}
+
+// MARK: - Recovery (manual debug rungs — internal only)
+
+/// Self-heal actions for the web-scroll-freeze. `recover()` is the combined production action the
+/// auto-watchdog runs; the individual rungs are exposed for the debug Recovery screen to find the minimal
+/// sufficient action. All are idempotent and meant to run BETWEEN gestures (no active touch).
+@MainActor
+enum WebScrollFreezeRecovery {
+
+    enum Rung { case flushAppRecognizers, bounceWindowInteraction, flushAll }
+
+    /// Surgical self-heal: reset only the recognisers that can actually block scrolling — pan recognisers
+    /// (incl. the web scroll view's own pan) and anything stuck mid-gesture. Does NOT touch window
+    /// interaction (toggling `isUserInteractionEnabled` orphans touches into a stuck Stationary/nil-window
+    /// state — the very freeze we're fixing) and leaves taps untouched.
+    @discardableResult
+    static func recover() -> String {
+        let count = resetBlockingRecognizers()
+        Logger.interaction.error("Auto-recovery ran: reset \(count, privacy: .public) pan/wedged recognizers")
+        return "recover: reset \(count) pan/wedged recognizers"
+    }
+
+    /// Reset pan recognisers + any recogniser stuck in `began`/`changed`. Skips UIKit-internal (`_UI…`)
+    /// system gates and all taps. Typically a handful, not the whole app.
+    @discardableResult
+    private static func resetBlockingRecognizers() -> Int {
+        var count = 0
+        for window in windows() {
+            forEachRecognizer(in: window) { recognizer in
+                guard !String(describing: type(of: recognizer)).hasPrefix("_") else { return }
+                let isPan = recognizer is UIPanGestureRecognizer
+                let isWedged = recognizer.state == .began || recognizer.state == .changed
+                guard isPan || isWedged else { return }
+                recognizer.isEnabled = false
+                recognizer.isEnabled = true
+                count += 1
+            }
+        }
+        return count
+    }
+
+    @discardableResult
+    static func runRung(_ rung: Rung) -> String {
+        switch rung {
+        case .flushAppRecognizers: return "reset \(flushAppRecognizers()) app recognizers"
+        case .bounceWindowInteraction: bounceWindowInteraction(); return "bounced window interaction"
+        case .flushAll: return "reset \(flushAll()) recognizers (all, incl. system)"
+        }
+    }
+
+    /// Reset every non-UIKit-internal recogniser (skip `_UI…` classes so we don't disturb system gates).
+    /// This also re-arms the web scroll view's own pan.
+    @discardableResult
+    private static func flushAppRecognizers() -> Int {
+        var count = 0
+        for window in windows() {
+            forEachRecognizer(in: window) { recognizer in
+                guard !String(describing: type(of: recognizer)).hasPrefix("_") else { return }
+                recognizer.isEnabled = false
+                recognizer.isEnabled = true
+                count += 1
+            }
+        }
+        return count
+    }
+
+    /// Cancel any touches the gesture environment is still tracking (the phantom-touch flush). The async
+    /// re-enable lets UIKit process the cancellation; the gap is one run-loop tick, imperceptible.
+    private static func bounceWindowInteraction() {
+        for window in windows() where window.isKeyWindow {
+            window.isUserInteractionEnabled = false
+            DispatchQueue.main.async { window.isUserInteractionEnabled = true }
+        }
+    }
+
+    @discardableResult
+    private static func flushAll() -> Int {
+        var count = 0
+        for window in windows() {
+            forEachRecognizer(in: window) { recognizer in
+                recognizer.isEnabled = false
+                recognizer.isEnabled = true
+                count += 1
+            }
+        }
+        return count
+    }
+
+    private static func windows() -> [UIWindow] {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+    }
+
+    private static func forEachRecognizer(in view: UIView, _ body: (UIGestureRecognizer) -> Void) {
+        view.gestureRecognizers?.forEach(body)
+        view.subviews.forEach { forEachRecognizer(in: $0, body) }
+    }
 }

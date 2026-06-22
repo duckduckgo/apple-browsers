@@ -361,8 +361,7 @@ class TabSwitcherPageViewController: UIViewController {
                     thumbnailLoader: duckAIGridContentProvider)
     }
 
-    /// Reloads visible Duck.ai cells when a voice session starts/ends so the live voice card
-    /// appears/disappears while the switcher is open.
+    /// Refreshes visible Duck.ai cells when a voice session starts/ends (end-timing lives in `DuckAIVoiceSessionTracker`).
     private func subscribeToVoiceSessionChanges() {
         voiceSessionChangesCancellable = duckAIVoiceSessionTracker?.changes
             .receive(on: DispatchQueue.main)

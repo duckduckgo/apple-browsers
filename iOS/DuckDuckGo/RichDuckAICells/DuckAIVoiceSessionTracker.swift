@@ -20,7 +20,6 @@
 import Combine
 import Foundation
 import WebKit
-import os.log
 
 /// Reports which `Tab`s currently host a live Duck.ai voice session, so the tab
 /// switcher can render the dark "live voice" card for them (a finished voice chat is
@@ -80,28 +79,24 @@ final class DuckAIVoiceSessionTracker: NSObject, DuckAIVoiceSessionTracking {
     }
 
     @objc private func voiceSessionStarted(_ note: Notification) {
-        guard let tab = resolveTab(from: note, event: "started") else { return }
+        guard let tab = resolveTab(from: note) else { return }
         activeTabs.add(tab)
-        Logger.aiChat.debug("DuckAIVoiceSessionTracker: voice session STARTED for tab \(tab.uid, privacy: .public) (active=\(self.activeTabs.count, privacy: .public))")
         changesSubject.send()
     }
 
     @objc private func voiceSessionEnded(_ note: Notification) {
-        guard let tab = resolveTab(from: note, event: "ended") else { return }
-        activeTabs.remove(tab)
-        Logger.aiChat.debug("DuckAIVoiceSessionTracker: voice session ENDED for tab \(tab.uid, privacy: .public) (active=\(self.activeTabs.count, privacy: .public))")
-        changesSubject.send()
+        guard let tab = resolveTab(from: note) else { return }
+        // Hold the tab active briefly so the live card holds until the transcript persists (avoids a screenshot flash).
+        // TODO: replace the fixed delay with the native-storage persistence signal (chatUpdatesPublisher).
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self else { return }
+            self.activeTabs.remove(tab)
+            self.changesSubject.send()
+        }
     }
 
-    private func resolveTab(from note: Notification, event: String) -> Tab? {
-        guard let webView = note.object as? WKWebView else {
-            Logger.aiChat.debug("DuckAIVoiceSessionTracker: voiceSession\(event, privacy: .public) notification carried no WKWebView object")
-            return nil
-        }
-        guard let tab = tabForWebView(webView) else {
-            Logger.aiChat.debug("DuckAIVoiceSessionTracker: voiceSession\(event, privacy: .public) webView did not resolve to a Tab")
-            return nil
-        }
-        return tab
+    private func resolveTab(from note: Notification) -> Tab? {
+        guard let webView = note.object as? WKWebView else { return nil }
+        return tabForWebView(webView)
     }
 }

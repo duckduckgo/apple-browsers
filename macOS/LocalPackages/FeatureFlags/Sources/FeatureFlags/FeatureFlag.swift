@@ -352,10 +352,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
-    /// Enables the new Tab Animations (Milestone 1)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213643457004332
-    case tabAnimations
-
     /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
     case lazyMenuRebuild
 
@@ -661,8 +657,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
-        case .tabAnimations:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.tabAnimations))
         case .lazyMenuRebuild:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
         case .aiChatRemoveSuggestion:

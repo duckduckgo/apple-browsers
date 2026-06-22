@@ -120,6 +120,10 @@ extension TabViewController {
 
         jsAlertContainerView = UIView()
         jsAlertContainerView.translatesAutoresizingMaskIntoConstraints = false
+        // Hidden until a JS alert is presented. This fills rootView and sits above the web view,
+        // so leaving it visible would swallow all touches/scrolls. Previously JSAlertController's
+        // viewDidAppear hid it during eager setup; now that setup is deferred, hide it explicitly.
+        jsAlertContainerView.isHidden = true
         rootView.addSubview(jsAlertContainerView)
         NSLayoutConstraint.activate([
             jsAlertContainerView.topAnchor.constraint(equalTo: rootView.topAnchor),

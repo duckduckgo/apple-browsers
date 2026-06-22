@@ -24,7 +24,7 @@ import AppKit
 import SwiftUI
 
 public extension View {
-    var withBackground: some View {
+    func snapshotBackground() -> some View {
         background(SnapshotBackground())
     }
 }

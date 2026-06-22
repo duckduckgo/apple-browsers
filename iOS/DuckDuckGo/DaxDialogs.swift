@@ -64,7 +64,6 @@ protocol ContextualOnboardingLogic {
     var tryAnonymousSearchMessageSeen: Bool { get }
 
     func setTryAnonymousSearchMessageSeen()
-    func setLinearOnboardingSearchTriggered()
     func setSearchMessageSeen()
 
     func setTryVisitSiteMessageSeen()
@@ -92,7 +91,6 @@ protocol ContextualOnboardingLogic {
     /// Whether the user entered the Duck.ai chat-first onboarding path.
     /// Unlike `chatPathPhase`, this stays `true` even after the path completes (e.g. past `finalDialogSeen`).
     var isChatFirstPath: Bool { get }
-
 
     /// Whether Duck.ai is currently enabled in app settings.
     /// When false, chat-path onboarding UI should fall back to the standard search-path equivalent.
@@ -520,10 +518,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         settings.tryAnonymousSearchShown
     }
 
-    func setLinearOnboardingSearchTriggered() {
-        settings.linearOnboardingSearchTriggered = true
-    }
-
     func setTryVisitSiteMessageSeen() {
         settings.tryVisitASiteShown = true
     }
@@ -703,15 +697,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             return isAIChatEnabled ? nil : .final
         }
 
-        // When the user tapped a search suggestion on the linear onboarding search/duck.ai screen,
-        // the UTI would load NewTabPageViewController calling `viewDidAppear` which would
-        // call nextHomeScreenMessageNew() before the SERP dialog fires.
-        // Suppress .subsequent until "That's DuckDuckGo Search!" has been seen.
-        // Flag is set in setLinearOnboardingSearchTriggered() and cleared in searchMessage().
-        if settings.linearOnboardingSearchTriggered {
-            return nil
-        }
-
         // Check final first as if we skip anonymous searches we don't want to show this.
         if settings.fireMessageExperimentShown {
             return .final
@@ -768,7 +753,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     private func searchMessage() -> BrowsingSpec? {
         guard !settings.browsingAfterSearchShown else { return nil }
         settings.browsingAfterSearchShown = true
-        settings.linearOnboardingSearchTriggered = false
         return BrowsingSpec.afterSearch
     }
 

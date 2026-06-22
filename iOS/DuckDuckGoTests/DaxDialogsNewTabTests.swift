@@ -268,6 +268,4 @@ class MockDaxDialogsSettings: DaxDialogsSettings {
     var isChatFirstPath: Bool = false
 
     var chatPathPhase: DaxDialogs.ChatPathPhase = .none
-
-    var linearOnboardingSearchTriggered: Bool = false
 }

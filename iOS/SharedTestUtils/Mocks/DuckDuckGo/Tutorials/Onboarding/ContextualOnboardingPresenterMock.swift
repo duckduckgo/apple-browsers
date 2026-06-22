@@ -70,8 +70,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
         didCallSetTryAnonymousSearchMessageSeen = true
     }
 
-    func setLinearOnboardingSearchTriggered() { }
-
     func setTryVisitSiteMessageSeen() {
         didCallSetTryVisitSiteMessageSeen = true
     }
@@ -193,8 +191,6 @@ class MockDaxDialogsManager: DaxDialogsManaging {
     private(set) var clearHeldURLDataCallCount = 0
 
     func setTryAnonymousSearchMessageSeen() { }
-
-    func setLinearOnboardingSearchTriggered() { }
 
     func setTryVisitSiteMessageSeen() {}
 

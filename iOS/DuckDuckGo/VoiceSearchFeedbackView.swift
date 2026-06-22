@@ -72,7 +72,6 @@ extension VoiceSearchFeedbackView {
 
     private var voiceFeedbackView: some View {
         VStack {
-            Spacer()
             Text(speechModel.speechFeedback)
                 .multilineTextAlignment(.center)
                 .foregroundColor(Colors.speechFeedback)

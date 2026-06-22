@@ -436,6 +436,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    func dictationStartFailed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
     // Migration data mocks
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         didStoreMigrationData = true

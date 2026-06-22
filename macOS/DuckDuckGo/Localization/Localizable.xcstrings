@@ -70655,6 +70655,18 @@
         }
       }
     },
+    "permission.authorization.microphone.duckai-dictation" : {
+      "comment" : "Prompt shown in the OS-microphone-disabled popover when the user starts dictation on Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai dictation requires microphone access."
+          }
+        }
+      }
+    },
     "permission.authorization.microphone.duckai-voice-chat" : {
       "comment" : "Prompt shown in the OS-microphone-disabled popover when the user starts voice chat on Duck.ai",
       "extractionState" : "extracted_with_value",

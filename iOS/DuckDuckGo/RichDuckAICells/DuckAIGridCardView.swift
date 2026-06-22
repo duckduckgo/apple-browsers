@@ -34,12 +34,14 @@ final class DuckAIGridCardView: UIView {
         static let snippetChipSpacing: CGFloat = 4
         static let chipHeight: CGFloat = 22
         static let thumbnailCornerRadius: CGFloat = 16
+        static let voiceMascotVerticalSpacing: CGFloat = 8
     }
 
     private let titleLabel = UILabel()
     private let snippetLabel = UILabel()
     private let chipView = ChipView()
     private let thumbnailImageView = UIImageView()
+    private let mascotImageView = UIImageView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -54,6 +56,11 @@ final class DuckAIGridCardView: UIView {
     /// Apply the supplied grid item to the view.
     /// Callers pass `nil` when they want the screenshot fallback
     func configure(with item: DuckAIGridItem) {
+        // Reset to the default light appearance; the `.voice` arm overrides for the dark card.
+        backgroundColor = UIColor(designSystemColor: .backgroundPromptMessage)
+        overrideUserInterfaceStyle = .unspecified
+        setMascotVisible(false)
+
         // TODO: - Consider reducing repitition
         switch item {
         case .text(let title, let snippet):
@@ -79,9 +86,21 @@ final class DuckAIGridCardView: UIView {
             configureChatChip()
             setThumbnailVisible(true)
 
-        case .voice(let title), .empty(let title):
-            // Dedicated content views for these variants are not built yet; render
-            // the title only so the cell scaffold still has something meaningful.
+        case .voice:
+            // Dark, static live-voice card: "Listening…" status + centred mascot + "Voice" chip.
+            // Forcing the subtree to `.dark` flips the reused DRK colours to light-on-dark.
+            backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            overrideUserInterfaceStyle = .dark
+            titleLabel.text = UserText.aiChatTabSwitcherCardVoiceListening
+            snippetLabel.text = nil
+            snippetLabel.isHidden = true
+            setThumbnailVisible(false)
+            setMascotVisible(true)
+            configureVoiceChip()
+
+        case .empty(let title):
+            // Dedicated content view for the empty state is not built yet; render the title
+            // only so the cell scaffold still has something meaningful.
             titleLabel.text = title
             snippetLabel.text = nil
             snippetLabel.isHidden = true
@@ -110,9 +129,19 @@ final class DuckAIGridCardView: UIView {
         chipView.isHidden = false
     }
 
+    private func configureVoiceChip() {
+        chipView.configure(icon: DesignSystemImages.Glyphs.Size12.voice,
+                           label: UserText.aiChatTabSwitcherCardChipVoice)
+        chipView.isHidden = false
+    }
+
     private func setThumbnailVisible(_ visible: Bool) {
         thumbnailImageView.isHidden = !visible
         if !visible { thumbnailImageView.image = nil }
+    }
+
+    private func setMascotVisible(_ visible: Bool) {
+        mascotImageView.isHidden = !visible
     }
 
     private func setupSubviews() {
@@ -149,6 +178,12 @@ final class DuckAIGridCardView: UIView {
         thumbnailImageView.isHidden = true
         addSubview(thumbnailImageView)
 
+        mascotImageView.translatesAutoresizingMaskIntoConstraints = false
+        mascotImageView.contentMode = .scaleAspectFit
+        mascotImageView.image = UIImage(resource: .duckAIVoiceChatFace)
+        mascotImageView.isHidden = true
+        addSubview(mascotImageView)
+
         // Snippet may have to shrink so the chip stays anchored to the bottom; let
         // it lose against the chip's bottom anchor instead of breaking the layout.
         let snippetBottom = snippetLabel.bottomAnchor.constraint(lessThanOrEqualTo: chipView.topAnchor,
@@ -172,7 +207,13 @@ final class DuckAIGridCardView: UIView {
             thumbnailImageView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Metrics.imageVerticalSpacing),
             thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
             thumbnailImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
-            thumbnailImageView.bottomAnchor.constraint(equalTo: chipView.topAnchor, constant: -Metrics.imageVerticalSpacing)
+            thumbnailImageView.bottomAnchor.constraint(equalTo: chipView.topAnchor, constant: -Metrics.imageVerticalSpacing),
+
+            // Voice mascot: centred between the status row and the chip (aspect-fit, dark card only).
+            mascotImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            mascotImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            mascotImageView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Metrics.voiceMascotVerticalSpacing),
+            mascotImageView.bottomAnchor.constraint(equalTo: chipView.topAnchor, constant: -Metrics.voiceMascotVerticalSpacing)
         ])
     }
 
@@ -186,8 +227,11 @@ final class DuckAIGridCardView: UIView {
         case .text(let title, let snippet), .transcript(let title, let snippet):
             accessibilityLabel = title
             accessibilityValue = snippet
-        case .image(let title, _), .voice(let title), .empty(let title):
+        case .image(let title, _), .empty(let title):
             accessibilityLabel = title
+            accessibilityValue = nil
+        case .voice:
+            accessibilityLabel = UserText.aiChatTabSwitcherCardVoiceListening
             accessibilityValue = nil
         }
     }

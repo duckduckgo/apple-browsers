@@ -70,7 +70,7 @@ final class DuckAIGridContentResolver: DuckAIGridContentProviding {
         guard featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) else { return nil }
         // A live voice session overrides any persisted classification
         if liveVoiceActive {
-            return .voice(title: UserText.aiChatTabSwitcherCardVoiceActive)
+            return .voice
         }
         guard let chatID = tab.link?.url.duckAIChatID else { return nil }
         return gridItem(forChatID: chatID)

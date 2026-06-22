@@ -137,8 +137,7 @@ final class DuckAIGridContentResolverTests: XCTestCase {
         let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
         let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?ia=chat&chatID=chat-1")!))
 
-        XCTAssertEqual(sut.gridItem(for: tab, liveVoiceActive: true),
-                       .voice(title: UserText.aiChatTabSwitcherCardVoiceActive))
+        XCTAssertEqual(sut.gridItem(for: tab, liveVoiceActive: true), .voice)
     }
 
     func testWhenLiveVoiceActiveAndTabHasNoChatIDThenStillReturnsVoiceItem() {
@@ -147,8 +146,7 @@ final class DuckAIGridContentResolverTests: XCTestCase {
         let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: makeStorageWithMigrationsDone())
         let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?ia=chat")!))
 
-        XCTAssertEqual(sut.gridItem(for: tab, liveVoiceActive: true),
-                       .voice(title: UserText.aiChatTabSwitcherCardVoiceActive))
+        XCTAssertEqual(sut.gridItem(for: tab, liveVoiceActive: true), .voice)
     }
 
     func testWhenLiveVoiceActiveButFeatureFlagOffThenReturnsNil() {

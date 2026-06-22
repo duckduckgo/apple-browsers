@@ -35,9 +35,10 @@ enum DuckAIGridItem: Equatable {
     /// ref used to load the thumbnail from the native file store.
     case image(title: String, imageFileRef: String)
 
-    /// A voice-mode chat (`chat.model == "voice-mode"`): title only; the dark
-    /// voice-AI card variant from Figma is rendered around it.
-    case voice(title: String)
+    /// A live (in-progress) voice session — surfaced by the resolver's live-voice override,
+    /// not the persisted classifier. Rendered as the dark voice card. Carries no payload: the
+    /// card is fully static ("Listening…" status + mascot + "Voice" chip).
+    case voice
 
     /// Empty-state card (centered Dax logo + "Duck.ai" label): a chat exists in
     /// native storage but has no assistant messages yet.

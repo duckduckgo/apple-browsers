@@ -810,9 +810,13 @@ final class UnifiedToggleInputView: UIView {
 
         let hLeadingMargin: CGFloat
         let hTrailingMargin: CGFloat
+
         if expanded && cardPosition == .bottom && !usesOmnibarMargins {
             hLeadingMargin = Constants.cardHorizontalMarginBottom
             hTrailingMargin = Constants.cardHorizontalMarginBottom
+        } else if layout == .collapsed {
+            hLeadingMargin = Constants.omnibarMatchingHorizontalMargin
+            hTrailingMargin = Constants.omnibarMatchingHorizontalMargin
         } else {
             hLeadingMargin = Constants.cardHorizontalMargin
             hTrailingMargin = cardTrailingMargin

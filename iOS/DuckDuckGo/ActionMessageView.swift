@@ -49,7 +49,10 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         static var maxWidth: CGFloat = 346
         static var minimumHorizontalPadding: CGFloat = 20
         static var cornerRadius: CGFloat = 10
-        static var rebrandedMinimumHeight: CGFloat = 48
+
+        @MainActor static var rebrandedMinimumHeight: CGFloat {
+            ContainerMetrics.cornerRadius * 2
+        }
 
         static var animationDuration: TimeInterval = 0.2
         static var duration: TimeInterval = 3.0

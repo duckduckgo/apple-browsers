@@ -2269,8 +2269,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             assertionFailure("TabBarViewController: Failed to get tab view model for tab bar view item")
             return false
         }
-        guard !tabViewModel.isPinned else { return false }
-        return tabViewModel.tabContent.canBePinned
+        return !tabViewModel.isPinned && tabViewModel.tabContent.canBePinned
     }
 
     func tabBarViewItemPinAction(_ tabBarViewItem: TabBarViewItem) {

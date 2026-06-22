@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Core
 import Common
 import FoundationExtensions
 import PixelKit
@@ -78,6 +79,10 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
             case .keyValueStoreWriteError:
                 // Fires when writing to persistent storage fails.
                 PixelKit.fire(SERPSettingsPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
+            case .unrecognizedValue(let key, let value):
+                // Standard iOS pixel (not PixelKit) so the wire name matches macOS exactly.
+                DailyPixel.fireDailyAndCount(pixel: .serpSettingsUnrecognizedValue,
+                                             withAdditionalParameters: ["key": key, "value": value])
             }
         }
     }

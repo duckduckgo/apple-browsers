@@ -1947,6 +1947,7 @@ extension SettingsViewModel {
                 guard newValue != self.serpSettings.searchAssistFrequency else { return }
                 self.objectWillChange.send()
                 self.serpSettings.searchAssistFrequency = newValue
+                DailyPixel.fireDailyAndCount(pixel: Self.searchAssistPixel(for: newValue))
             }
         )
     }
@@ -1958,8 +1959,19 @@ extension SettingsViewModel {
                 guard newValue.hidden != self.serpSettings.hideAIGeneratedImages else { return }
                 self.objectWillChange.send()
                 self.serpSettings.hideAIGeneratedImages = newValue.hidden
+                DailyPixel.fireDailyAndCount(pixel: newValue.hidden ? .aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff)
             }
         )
+    }
+
+    /// Maps a Search Assist frequency to its value-in-name AI Features pixel.
+    private static func searchAssistPixel(for frequency: SearchAssistFrequency) -> Pixel.Event {
+        switch frequency {
+        case .never: return .aiFeaturesSearchAssistNever
+        case .onDemand: return .aiFeaturesSearchAssistOnDemand
+        case .sometimes: return .aiFeaturesSearchAssistSometimes
+        case .often: return .aiFeaturesSearchAssistOften
+        }
     }
 
     /// True when Duck.ai is off and both SERP AI settings are at their most-restrictive values.
@@ -1975,6 +1987,7 @@ extension SettingsViewModel {
         aiChatSettings.enableAIChat(enable: false)
         serpSettings.searchAssistFrequency = .never
         serpSettings.hideAIGeneratedImages = true
+        DailyPixel.fireDailyAndCount(pixel: .aiFeaturesDisabled)
     }
 
     var isChatSuggestionsEnabled: Binding<Bool> {

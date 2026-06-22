@@ -221,8 +221,12 @@ public extension SERPSettingsProviding {
     /// default removes the key, mirroring the SERP (which omits defaults) so the two stay consistent.
     var searchAssistFrequency: SearchAssistFrequency {
         get {
-            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey),
-                  let frequency = SearchAssistFrequency(rawValue: rawValue) else {
+            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey) else {
+                return .defaultValue
+            }
+            guard let frequency = SearchAssistFrequency(rawValue: rawValue) else {
+                // Key is present but holds a value the native enum doesn't recognize (contract mismatch).
+                eventMapper?.fire(.unrecognizedValue(key: SERPSettingsConstants.searchAssistKey, value: rawValue))
                 return .defaultValue
             }
             return frequency
@@ -239,8 +243,12 @@ public extension SERPSettingsProviding {
     /// default removes the key.
     var hideAIGeneratedImages: Bool {
         get {
-            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey),
-                  let hidden = HideAIGeneratedImages.isHidden(fromRawValue: rawValue) else {
+            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey) else {
+                return HideAIGeneratedImages.defaultValue
+            }
+            guard let hidden = HideAIGeneratedImages.isHidden(fromRawValue: rawValue) else {
+                // Key is present but holds a value the native side doesn't recognize (contract mismatch).
+                eventMapper?.fire(.unrecognizedValue(key: SERPSettingsConstants.hideAIGeneratedImagesKey, value: rawValue))
                 return HideAIGeneratedImages.defaultValue
             }
             return hidden

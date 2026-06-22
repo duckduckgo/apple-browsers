@@ -493,15 +493,11 @@ final class RecoveryWordingTests: XCTestCase {
     }
 
     @MainActor
-    func testAutoRecoverResult_inTestHostReportsNoWebView() {
-        // In the test host there is no MainViewController, so autoRecover() returns the "no webView
-        // found" path — not a false success or a crash.
-        let result = WebScrollFreezeRecovery.autoRecover()
-        XCTAssertFalse(result.isEmpty)
-        XCTAssertFalse(result.contains("WAS the cause"),
-                       "autoRecover result must not make causal claim: \"\(result)\"")
-        XCTAssertFalse(result.contains("proven"),
-                       "autoRecover result must not use 'proven': \"\(result)\"")
+    func testAutoRecoverInTestHostReturnsFalse() {
+        // autoRecover() returns Bool — true only if it actually ran the scoped resets. In the test host
+        // there is no MainViewController, so it finds no web view and returns false (never a false success).
+        XCTAssertFalse(WebScrollFreezeRecovery.autoRecover(),
+                       "autoRecover must return false when there is no web view to recover.")
     }
 
     // Scoped recovery skips when a recognizer has touches:

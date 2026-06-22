@@ -279,7 +279,7 @@ final class WebScrollObserver: NSObject {
             .flatMap { $0.windows }
         var count = 0
         for window in windows {
-            forEachPossibleZeroTouchWebKitRecognizer(in: window) { count += 1 }
+            forEachPossibleZeroTouchWebKitRecognizer(in: window) { _ in count += 1 }
         }
         return count
     }
@@ -696,7 +696,7 @@ enum WebScrollFreezeBreadcrumb {
     private static func wkSuspectCount() -> Int {
         var count = 0
         for window in windows() {
-            forEachPossibleZeroTouchWebKitRecognizer(in: window) { count += 1 }
+            forEachPossibleZeroTouchWebKitRecognizer(in: window) { _ in count += 1 }
         }
         return count
     }

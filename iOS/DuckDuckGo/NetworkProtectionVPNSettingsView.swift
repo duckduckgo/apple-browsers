@@ -43,21 +43,21 @@ struct NetworkProtectionVPNSettingsView: View {
                     Toggle("", isOn: $viewModel.excludeLocalNetworks)
                 }
 
-                if viewModel.isStrictRoutingAvailable {
-                    toggleSection(
-                        text: UserText.netPStrictRoutingSettingTitle,
-                        footerText: UserText.netPStrictRoutingSettingFooter
-                    ) {
-                        Toggle("", isOn: $viewModel.enforceRoutes)
-                    }
-                }
-
                 if viewModel.isExcludeCGNATAvailable {
                     toggleSection(
                         text: UserText.netPExcludeCGNATSettingTitle,
                         footerText: UserText.netPExcludeCGNATSettingFooter
                     ) {
                         Toggle("", isOn: $viewModel.excludeCGNAT)
+                    }
+                }
+
+                if viewModel.isStrictRoutingAvailable {
+                    toggleSection(
+                        text: UserText.netPStrictRoutingSettingTitle,
+                        footerText: UserText.netPStrictRoutingSettingFooter
+                    ) {
+                        Toggle("", isOn: $viewModel.enforceRoutes)
                     }
                 }
 

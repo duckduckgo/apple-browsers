@@ -63,7 +63,8 @@ public final class VPNTipsModel: ObservableObject {
 
     /// How long the user must have had Strict routing disabled before the reminder first appears,
     /// and the interval at which it recurs afterwards. Overridable from the VPN debug menu.
-    static let defaultStrictRoutingReminderInterval: TimeInterval = 7 * 24 * 60 * 60
+    // TODO: REVERT BEFORE MERGING — hardcoded to 30s for testing (was 7 * 24 * 60 * 60)
+    static let defaultStrictRoutingReminderInterval: TimeInterval = 30
 
     private let isMenuApp: Bool
     private let vpnAppState: VPNAppState

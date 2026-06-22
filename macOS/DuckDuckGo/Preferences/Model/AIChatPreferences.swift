@@ -23,6 +23,8 @@ import CombineExtensions
 import Foundation
 import PixelKit
 import PrivacyConfig
+import SERPSettings
+import SwiftUI
 
 final class AIChatPreferences: ObservableObject {
 
@@ -32,6 +34,8 @@ final class AIChatPreferences: ObservableObject {
     private var windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
+    private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
 
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = Application.appDelegate.aiChatMenuConfiguration,
@@ -134,6 +138,54 @@ final class AIChatPreferences: ObservableObject {
             return false
         }
         return !showShortcutInAddressBar || !openAIChatInSidebar
+    }
+
+    var shouldShowNativeAIControls: Bool {
+        featureFlagger.isFeatureOn(.aiFeaturesNativeControls)
+    }
+
+    // Native SERP AI settings (Search Assist / Hide AI Images), backed by the shared SERP settings store.
+
+    var searchAssistFrequencyBinding: Binding<SearchAssistFrequency> {
+        Binding(
+            get: { self.serpSettings.searchAssistFrequency },
+            set: { newValue in
+                guard newValue != self.serpSettings.searchAssistFrequency else { return }
+                self.objectWillChange.send()
+                self.serpSettings.searchAssistFrequency = newValue
+            }
+        )
+    }
+
+    var hideAIImagesBinding: Binding<HideAIImagesOption> {
+        Binding(
+            get: { HideAIImagesOption(hidden: self.serpSettings.hideAIGeneratedImages) },
+            set: { newValue in
+                guard newValue.hidden != self.serpSettings.hideAIGeneratedImages else { return }
+                self.objectWillChange.send()
+                self.serpSettings.hideAIGeneratedImages = newValue.hidden
+            }
+        )
+    }
+
+    // Duck.ai-only; `isAIFeaturesEnabled` is the legacy name (kept to avoid an app-wide rename).
+    private var isDuckAIEnabled: Bool {
+        get { isAIFeaturesEnabled }
+        set { isAIFeaturesEnabled = newValue }
+    }
+
+    // True when Duck.ai off + Search Assist Never + Hide AI on; hides the disable button.
+    var isAllAIDisabled: Bool {
+        !isDuckAIEnabled
+            && serpSettings.searchAssistFrequency == .never
+            && serpSettings.hideAIGeneratedImages
+    }
+
+    @MainActor func disableAllAI() {
+        objectWillChange.send()
+        isDuckAIEnabled = false
+        serpSettings.searchAssistFrequency = .never
+        serpSettings.hideAIGeneratedImages = true
     }
 
     // Properties for managing the current state of AI Chat preference options

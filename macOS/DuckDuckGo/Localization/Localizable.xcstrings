@@ -28892,6 +28892,42 @@
         }
       }
     },
+    "duckai.ai-features.disable-all.button" : {
+      "comment" : "Button that turns off all AI features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use DuckDuckGo Without AI"
+          }
+        }
+      }
+    },
+    "duckai.ai-features.disable-all.footer" : {
+      "comment" : "Footer text below the Disable AI Features button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disables Duck.ai, hides AI-assisted answers in search, and hides AI-Generated images."
+          }
+        }
+      }
+    },
+    "duckai.ai-features.disable-all.footer.disabled" : {
+      "comment" : "Footer text shown once all AI features are already disabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers or AI-Generated images in search results."
+          }
+        }
+      }
+    },
     "duckai.automatically-send-page-content.toggle-setting" : {
       "comment" : "Settings option to automatically send page content to the sidebar",
       "extractionState" : "extracted_with_value",
@@ -29013,12 +29049,12 @@
       }
     },
     "duckai.disable.button" : {
-      "comment" : "Button to disable Duck.ai feature",
+      "comment" : "Button to disable Duck.ai feature (opens a confirmation dialog)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai deaktivieren …"
           }
         },
@@ -29030,44 +29066,56 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Desactivar Duck.ai..."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Désactiver Duck.ai..."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Disabilita Duck.ai..."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai uitschakelen..."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wyłącz Duck.ai..."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Desativar Duck.ai..."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Отключить Duck.ai…"
+          }
+        }
+      }
+    },
+    "duckai.disable.button.immediate" : {
+      "comment" : "Button to disable Duck.ai feature directly, without a confirmation dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disable Duck.ai"
           }
         }
       }
@@ -29488,6 +29536,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Исключать из результатов поиска изображения, созданные нейросетью"
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images.off" : {
+      "comment" : "Hide AI-Generated Images option: off (images shown)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images.on" : {
+      "comment" : "Hide AI-Generated Images option: on (images hidden)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On"
           }
         }
       }
@@ -30687,6 +30759,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть настройки Search Assist"
+          }
+        }
+      }
+    },
+    "duckai.search-assist.never" : {
+      "comment" : "Search Assist frequency option: never show AI-assisted answers",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never"
+          }
+        }
+      }
+    },
+    "duckai.search-assist.often" : {
+      "comment" : "Search Assist frequency option: often show AI-assisted answers",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Often"
+          }
+        }
+      }
+    },
+    "duckai.search-assist.on-demand" : {
+      "comment" : "Search Assist frequency option: show AI-assisted answers on demand",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On demand"
+          }
+        }
+      }
+    },
+    "duckai.search-assist.sometimes" : {
+      "comment" : "Search Assist frequency option: sometimes show AI-assisted answers",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sometimes"
           }
         }
       }

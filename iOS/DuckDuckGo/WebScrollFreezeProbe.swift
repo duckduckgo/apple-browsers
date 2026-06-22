@@ -552,9 +552,16 @@ enum FreezeCaptureStore {
         return url
     }
 
+    /// Monotonic counter so back-to-back saves (e.g. a recovery's pre + post captures, written within the
+    /// same wall-clock second) get distinct filenames instead of the second-granularity name colliding and
+    /// the post-capture overwriting the pre-capture. Zero-padded so the string sort in `files()` stays
+    /// chronological within a second.
+    private static var sequence = 0
+
     static func save(_ text: String) {
         guard let directory else { return }
-        let name = "capture-\(Int(Date().timeIntervalSince1970)).txt"
+        sequence += 1
+        let name = "capture-\(Int(Date().timeIntervalSince1970))-\(String(format: "%03d", sequence)).txt"
         try? text.write(to: directory.appendingPathComponent(name), atomically: true, encoding: .utf8)
         prune()
     }

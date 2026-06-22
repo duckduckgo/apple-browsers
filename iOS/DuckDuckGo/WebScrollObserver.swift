@@ -795,25 +795,21 @@ enum WebScrollFreezeRecovery {
     /// only — bracketed by exactly one pre-capture and one post-capture. The closure is intentionally
     /// narrow: no broad window resets, no flushAll. Call only when no touch is in flight.
     ///
-    /// Returns a summary string so callers can log or surface it. The leading hypothesis is that one or
-    /// both of these resets may help; compare the pre/post captures rather than treating the return value
-    /// as confirmation.
+    /// Returns `true` ONLY if it actually ran the resets — `false` if it skipped (a touch is in flight, or
+    /// no web view was found). Callers MUST gate the attempt pixel + outcome arming on this, so a skipped
+    /// attempt does not emit a misleading recovery outcome. The leading hypothesis is that one or both
+    /// resets may help; compare the pre/post captures rather than treating the return value as confirmation.
     @discardableResult
-    static func autoRecover() -> String {
-        guard !anyTouchInFlight() else {
-            return "skipped — touch in flight"
-        }
-        guard let webView = WebScrollFreezeProbe.findMainViewController()?.currentTab?.webView else {
-            return "auto-recover: no webView found"
-        }
+    static func autoRecover() -> Bool {
+        guard !anyTouchInFlight() else { return false }
+        guard let webView = WebScrollFreezeProbe.findMainViewController()?.currentTab?.webView else { return false }
         let pan = webView.scrollView.panGestureRecognizer
-        let pre = WebScrollFreezeProbe.captureNow()
-        FreezeCaptureStore.save(pre)
+        FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow())
         applyScrollPanReset(pan)
         applyDeferringGateReset(in: webView)
-        let post = WebScrollFreezeProbe.captureNow()
-        FreezeCaptureStore.save(post)
-        return "auto-recover: applied scroll-pan + deferring-gate resets; pre/post captures saved — compare them"
+        FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow())
+        Logger.interaction.error("Auto-recover: applied scroll-pan + deferring-gate resets; pre/post captures saved")
+        return true
     }
 
     /// Core: toggle the web scroll pan recognizer off then on. Does NOT save captures — callers are

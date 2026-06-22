@@ -419,7 +419,7 @@ extension PrivacyIconView: UIPointerInteractionDelegate {
         if icon == .daxLogo {
             return nil
         }
-        return UIPointerStyle(effect: .automatic(.init(view: self)), shape: .roundedRect(frame, radius: 12))
+        return UIPointerStyle(effect: .lift(.init(view: self)))
     }
     
 }

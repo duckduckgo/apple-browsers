@@ -5263,3 +5263,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nu există potriviri pentru „%@”";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Folosește bara de adrese pentru a căuta și vizita site-uri sau comută la Duck.ai pentru chat privat cu IA.\n\nPoți folosi Duck.ai de oriunde vezi pictograma de chat [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Chaturi private cu IA pe care le poți șterge oricând cu butonul „Fire Button”. Încearcă! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Acesta este Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Întreabă orice în mod privat";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Caută în mod privat";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Explică-mi piața bursieră ca și cum aș avea 10 ani";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planifică o zi perfectă în Londra";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Care sunt 10 lucruri fascinante despre știință, natură și istorie?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Ești gata să începi?\nÎncearcă o căutare sau un chat IA!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Întreabă IA";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Cod copiat";

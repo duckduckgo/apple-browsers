@@ -5263,3 +5263,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Que voulez-vous importer ?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Aucun résultat pour \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Servez-vous de la barre d'adresse pour effectuer des recherches et visiter des sites, ou passez sur Duck.ai pour un chat IA privé.\n\nVous pouvez utiliser Duck.ai partout où vous voyez l'icône de chat [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Les chats IA privés que vous pouvez supprimer à tout moment avec le Fire Button. Essayez par vous-même ! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "C’est Duck.ai !";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Posez toutes vos questions en privé";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Faites une recherche privée";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Explique-moi le marché boursier comme si j'avais 10 ans";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planifie une journée parfaite à Londres";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Cite 10 faits fascinants dans les domaines de la science, de la nature et de l'histoire.";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Prêt(e) à commencer ?\nEssayez une recherche ou un chat IA !";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Demander à l'IA";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Code copié";

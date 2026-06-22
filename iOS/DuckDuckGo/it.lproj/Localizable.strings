@@ -5263,3 +5263,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Cosa vuoi importare?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nessuna corrispondenza per \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Usa la barra degli indirizzi per cercare e visitare siti o passa a Duck.ai per una chat AI privata.\n\nPuoi utilizzare Duck.ai da qualsiasi luogo in cui vedi l'icona della chat [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Chat AI private che puoi eliminare in qualsiasi momento con il Fire Button. Prova! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Questo è Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Chiedi qualsiasi cosa in privato";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Cerca privatamente";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Spiega il mercato azionario come se io avessi 10 anni";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Organizza una giornata perfetta a Londra";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Quali sono 10 curiosità affascinanti che spaziano tra scienza, natura e storia?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Ti va di iniziare?\nProva una ricerca o una chat AI!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Chiedi all'AI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Codice copiato";

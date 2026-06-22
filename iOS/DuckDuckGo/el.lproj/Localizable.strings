@@ -5263,3 +5263,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Δεν υπάρχουν αντιστοιχίες για το «%@»";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Χρησιμοποιήστε τη γραμμή διευθύνσεων για αναζήτηση και επίσκεψη σε ιστότοπους ή μεταβείτε στο Duck.ai για ιδιωτική συνομιλία AI.\n\nΜπορείτε να χρησιμοποιήσετε το Duck.ai από οπουδήποτε βλέπετε το εικονίδιο συνομιλίας [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Ιδιωτικές συνομιλίες με τεχνητή νοημοσύνη που μπορείς να διαγράψεις ανά πάσα στιγμή με το Fire Button. Δοκίμασέ το! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Αυτό είναι το Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Ρωτήστε οτιδήποτε ιδιωτικά";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Ιδιωτική αναζήτηση";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Εξήγησέ μου την χρηματιστηριακή αγορά σαν να είμαι 10 χρονών";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Σχεδίασε μια τέλεια μέρα στο Λονδίνο";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Μπορείς να μου πεις 10 συναρπαστικά γεγονότα από την επιστήμη, τη φύση και την ιστορία;";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Έτοιμος να αρχίσεις;\nΔοκίμασε μια αναζήτηση ή μια συνομιλία με τεχνητή νοημοσύνη!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Ρωτήστε AI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Ο κώδικας αντιγράφηκε";

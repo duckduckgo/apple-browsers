@@ -218,7 +218,7 @@ jobs:
     name: "E2E: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }}"
     needs: [build-end-to-end-tests, setup-matrix]
     runs-on: macos-26
-    timeout-minutes: 210
+    timeout-minutes: 250
 
     env:
       RUNS_ON: macos-26 # keep this in sync with runs-on above
@@ -290,8 +290,8 @@ jobs:
         #   ATTEMPT_BUDGET_MIN   outer hard-kill belt; only fires if maestro ignores its own
         #                        clock (a true hang), surfacing as rc=124, which we retry.
         #   MAX_ATTEMPTS x ATTEMPT_BUDGET_MIN must fit under the job's timeout-minutes.
-        MAESTRO_TIMEOUT_MIN=90
-        ATTEMPT_BUDGET_MIN=100
+        MAESTRO_TIMEOUT_MIN=110
+        ATTEMPT_BUDGET_MIN=120
         MAX_ATTEMPTS=2
         RETRY_DELAY=30
         NETWORK_SIGNATURE='getaddrinfo ENOTFOUND|EAI_AGAIN|FetchError|Could not get Upload status|ETIMEDOUT|ECONNRESET|socket hang up'

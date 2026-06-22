@@ -93,6 +93,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
         didCallSetChatPathVisitSiteSeen = true
     }
 
+    var tryAnonymousSearchMessageSeen: Bool = false
     var chatPathPhase: DaxDialogs.ChatPathPhase = .none
     var isChatFirstPath: Bool = false
     var isAIChatEnabled: Bool = true
@@ -204,6 +205,7 @@ class MockDaxDialogsManager: DaxDialogsManaging {
     func setChatPathVisitSiteSeen() {}
     func setAsChatFirstPath() {}
 
+    var tryAnonymousSearchMessageSeen: Bool { false }
     var chatPathPhase: DaxDialogs.ChatPathPhase { .none }
     var isChatFirstPath: Bool { false }
     var isAIChatEnabled: Bool { true }

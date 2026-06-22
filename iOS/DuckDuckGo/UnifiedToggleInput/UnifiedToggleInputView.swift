@@ -128,6 +128,9 @@ final class UnifiedToggleInputView: UIView {
         // Fire / voice fade in once the pill has finished shrinking into its flanked frame.
         static let aiTabCollapsedAccessoryFadeDelay: TimeInterval = 0.18
         static let aiTabCollapsedAccessoryFadeDuration: TimeInterval = 0.12
+        // Subtler than the fire button (0.16) to match the visual weight of top-toolbar elements.
+        static let aiTabCollapsedMenuButtonShadowOpacity: Float = 0.04
+        static let aiTabCollapsedMenuButtonDisabledShadowOpacity: Float = 0.0
     }
 
     // MARK: - Hit Testing
@@ -571,7 +574,7 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isUserInteractionEnabled = !dimmed
         // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
         handler.isOnboardingLocked = dimmed
-        let shadowOpacity: Float = dimmed ? 0.04 : 0.16
+        let shadowOpacity = dimmed ? Constants.aiTabCollapsedMenuButtonDisabledShadowOpacity : Constants.aiTabCollapsedMenuButtonShadowOpacity
         Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
     }
 

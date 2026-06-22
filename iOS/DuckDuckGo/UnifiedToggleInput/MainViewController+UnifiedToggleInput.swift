@@ -65,7 +65,6 @@ extension MainViewController {
         // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
         // Duck.ai tailored-flow users are need UTI during the linear onboarding otherwise they will not see the new UI in the Duck.ai page that is shown during the linear onboarding interlude.
         // Returning users (who skip linear onboarding) fall through immediately.
-        guard !(needsToShowOnboardingIntro() && onboardingManager.currentOnboardingFlow == .default) else { return }
         guard unifiedToggleInputFeature.isAvailable else { return }
 
         let aiChatPreferences = AIChatPreferencesPersistor()

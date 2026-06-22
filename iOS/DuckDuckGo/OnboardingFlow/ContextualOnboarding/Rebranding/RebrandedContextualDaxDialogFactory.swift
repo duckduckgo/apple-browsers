@@ -289,7 +289,7 @@ private extension RebrandedContextualDaxDialogFactory {
                 self.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
             case .duckAIOnboarding:
                 if self.onboardingManager.currentOnboardingFlow == .default {
-                    self.contextualOnboardingPixelReporter.measureDuckAIExperimentFireDialogImpression()
+                    self.contextualOnboardingPixelReporter.measureDuckAIFireDialogImpression()
                 }
             }
             self.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))

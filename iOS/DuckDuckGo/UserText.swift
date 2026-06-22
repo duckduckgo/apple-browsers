@@ -2526,58 +2526,58 @@ public struct UserText {
             }
         }
 
-        enum DuckAIQueryExperiment {
-            public static let toggleAILabel = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.toggle.ai",
+        enum DuckAIQuery {
+            public static let toggleAILabel = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.toggle.ai",
                 value: "Ask AI",
-                comment: "Label for the AI Chat option in the Search/Ask AI toggle on the onboarding experiment screen."
+                comment: "Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen."
             )
-            public static let title = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.title",
+            public static let title = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.title",
                 value: "Ready to get started?\nTry a search or AI chat!",
-                comment: "Title for the onboarding Duck.ai query experiment screen."
+                comment: "Title for the onboarding Duck.ai query selection screen."
             )
-            public static let aiPlaceholder = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.placeholder.ai",
+            public static let aiPlaceholder = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.placeholder.ai",
                 value: "Ask anything privately",
-                comment: "Placeholder for AI query input in onboarding Duck.ai query experiment screen."
+                comment: "Placeholder for AI query input in onboarding Duck.ai query selection screen."
             )
-            public static let searchPlaceholder = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.placeholder.search",
+            public static let searchPlaceholder = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.placeholder.search",
                 value: "Search privately",
-                comment: "Placeholder for search query input in onboarding Duck.ai query experiment screen."
+                comment: "Placeholder for search query input in onboarding Duck.ai query selection screen."
             )
-            public static let suggestionOption1 = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.suggestion.option1",
+            public static let suggestionOption1 = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.suggestion.option1",
                 value: "Explain the stock market like I'm 10",
-                comment: "First suggestion chip label in onboarding Duck.ai query experiment screen."
+                comment: "First suggestion chip label in onboarding Duck.ai query selection screen."
             )
-            public static let suggestionOption2 = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.suggestion.option2",
+            public static let suggestionOption2 = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.suggestion.option2",
                 value: "Plan a perfect day in London",
-                comment: "Second suggestion chip label in onboarding Duck.ai query experiment screen."
+                comment: "Second suggestion chip label in onboarding Duck.ai query selection screen."
             )
             public static let suggestionOption3VisibleTitle = Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
-            public static let suggestionOption3Prompt = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.suggestion.option3.prompt",
+            public static let suggestionOption3Prompt = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.suggestion.option3.prompt",
                 value: "What are 10 fascinating facts across science, nature, and history?",
-                comment: "Prompt submitted when user taps the third suggestion in onboarding Duck.ai query experiment screen."
+                comment: "Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen."
             )
 
-            public static let fireOnboardingTitle = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.fire.title",
+            public static let fireOnboardingTitle = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.fire.title",
                 value: "That’s Duck.ai!",
-                comment: "Experiment-only fire onboarding title shown after the first Duck.ai response."
+                comment: "Fire onboarding title shown after the first Duck.ai response."
             )
-            public static let fireOnboardingMessage = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.fire.message",
+            public static let fireOnboardingMessage = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.fire.message",
                 value: "Private AI chats you can delete anytime with the Fire Button. Give it a try! 🔥",
-                comment: "Experiment-only fire onboarding message shown after the first Duck.ai response."
+                comment: "Fire onboarding message shown after the first Duck.ai response."
             )
-            public static let completionOnboardingMessage = NotLocalizedString(
-                "onboarding.highlights.duckAIQueryExperiment.completion.message",
+            public static let completionOnboardingMessage = NSLocalizedString(
+                "onboarding.highlights.duckAIQuery.completion.message",
                 value: "Use the address bar to search and visit sites or toggle to Duck.ai for private AI chat.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
-                comment: "Experiment-only completion onboarding message shown after finishing Fire onboarding in Duck.ai flow."
+                comment: "Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated."
             )
         }
 

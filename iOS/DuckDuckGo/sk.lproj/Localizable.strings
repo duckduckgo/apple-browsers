@@ -5263,3 +5263,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Žiadne zhody pre \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Použi panel s adresou na vyhľadávanie a otváranie stránok alebo prepni na Duck.ai, ak chceš súkromne četovať s umelou inteligenciou.\n\nDuck.ai môžeš použiť kdekoľvek, kde vidíš ikonu četu [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Súkromné čety s umelou inteligenciou, ktoré môžeš kedykoľvek odstrániť pomocou Fire Button. Vyskúšaj to! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Spýtaj sa na čokoľvek súkromne";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Vyhľadávanie v súkromí";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Vysvetli mi akciový trh, akoby som mal 10 rokov.";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Naplánuj perfektný deň v Londýne";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Akých je 10 fascinujúcich faktov z oblasti vedy, prírody a histórie?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Si pripravený/-á začať?\nSkús vyhľadávanie alebo čet s umelou inteligenciou!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Spýtaj sa AI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kód bol skopírovaný";

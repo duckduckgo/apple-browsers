@@ -730,16 +730,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           frequency: .legacyDailyAndCount)
         }
 
-        let authRefreshWideEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+        let isAuthV2WideEventEnabled = {
 #if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
+            return true
 #else
             return subscriptionEnvironment.serviceEnvironment == .production
 #endif
-        })
+        }
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
-                                            refreshEventMapping: authRefreshWideEventMapper)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
@@ -752,7 +754,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             if tokenContainer.decodedAccessToken.isExpired() {
                 Logger.OAuth.debug("Refreshing tokens")
-                let tokens = try await authClient.getTokens(policy: .localForceRefresh)
+                let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
                 return tokens.accessToken
             } else {
                 Logger.general.debug("Trying to refresh valid token, using the old one")
@@ -783,7 +785,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     subscriptionEndpointService: subscriptionEndpointService,
                                                                     subscriptionEnvironment: subscriptionEnvironment,
                                                                     pixelHandler: pixelHandler,
-                                                                    isInternalUserEnabled: isInternalUserEnabled)
+                                                                    isInternalUserEnabled: isInternalUserEnabled,
+                                                                    wideEvent: wideEvent,
+                                                                    isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
+                                                                    authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
 
         // Expired refresh token recovery
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,

@@ -38,25 +38,15 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
     private static let isFeatureFlagEnabledKey = "com.duckduckgo.unifiedToggleInput.session.enabled"
     private static let isToggleHiddenOnDuckAITabKey = "com.duckduckgo.unifiedToggleInput.aiChatTabHideToggle.session.enabled"
 
-    private static let controlCohortID = FeatureFlag.DuckAIQueryExperimentCohort.control.rawValue
-
-    private static let nonControlCohortExcludedExperimentIDs: Set<SubfeatureID> = [
-        AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
-        AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue,
-    ]
-
     /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads `isAvailable` / `isToggleHiddenOnDuckAITab`.
     static func resolve(using featureFlagger: FeatureFlagger) {
         UserDefaults.app.set(featureFlagger.isFeatureOn(.unifiedToggleInput), forKey: isFeatureFlagEnabledKey)
         UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatTabHideToggle), forKey: isToggleHiddenOnDuckAITabKey)
     }
 
-    private let featureFlagger: FeatureFlagger
     private let devicePlatform: DevicePlatformProviding.Type
 
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
-        self.featureFlagger = featureFlagger
+    init(devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.devicePlatform = devicePlatform
     }
 
@@ -65,19 +55,10 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
     }
 
     var isAvailable: Bool {
-        isFeatureFlagEnabled && devicePlatform.isIphone && !isInExcludedExperimentCohort
+        isFeatureFlagEnabled && devicePlatform.isIphone
     }
 
     var isToggleHiddenOnDuckAITab: Bool {
         UserDefaults.app.bool(forKey: Self.isToggleHiddenOnDuckAITabKey)
-    }
-
-    private var isInExcludedExperimentCohort: Bool {
-        Self.nonControlCohortExcludedExperimentIDs.contains { experimentID in
-            guard let cohortID = featureFlagger.allActiveExperiments[experimentID]?.cohortID else {
-                return false
-            }
-            return cohortID != Self.controlCohortID
-        }
     }
 }

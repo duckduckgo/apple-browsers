@@ -25,6 +25,14 @@ import PixelKit
 import Suggestions
 import enum UserScript.UserScriptError
 
+/// Describes why the app session was restored, reported by the `m.mac.session.restored` pixel.
+enum AppStateRestorationTrigger {
+    /// Normal session restoration (the user has session restore enabled, or accepted the restore prompt).
+    case standard
+    /// Restoration forced by an automatic restart-to-update relaunch, regardless of the session-restore setting.
+    case appUpdate
+}
+
 enum GeneralPixel: PixelKitEvent {
 
     case crash(appIdentifier: CrashPixelAppIdentifier?)
@@ -431,6 +439,7 @@ enum GeneralPixel: PixelKitEvent {
     case suggestionsFetchFailed
     case appOpenURLFailed
     case appStateRestorationFailed
+    case appStateRestored(trigger: AppStateRestorationTrigger)
 
     case contentBlockingErrorReportingIssue
 
@@ -596,6 +605,16 @@ enum GeneralPixel: PixelKitEvent {
     case autoplaySettingAllowAll
     case autoplaySettingBlockAudio
     case autoplaySettingBlockAll
+
+    // Fire Window
+
+    /// Aggregate Fire-Window-open pixel — fires once per user per day on any Fire Window open
+    /// (manual or automatic). Answers "% DAU opened any Fire Window today".
+    case fireWindowOpenedAny
+
+    /// Fires every time a Fire Window is opened, sliced by how the open happened (manual vs.
+    /// automatic). Used to measure per-trigger DAU and per-trigger counts.
+    case fireWindowOpened(trigger: FireWindowOpenTrigger)
 
     var name: String {
         switch self {
@@ -1143,6 +1162,8 @@ enum GeneralPixel: PixelKitEvent {
             return "url"
         case .appStateRestorationFailed:
             return "srf"
+        case .appStateRestored:
+            return "m_mac_session_restored"
 
         case .contentBlockingErrorReportingIssue:
             return "content_blocking_error_reporting_issue"
@@ -1366,6 +1387,12 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_autoplay_setting_block-audio"
         case .autoplaySettingBlockAll:
             return "m_mac_autoplay_setting_block-all"
+
+            // Fire Window
+        case .fireWindowOpenedAny:
+            return "m_mac_firewindow_opened"
+        case .fireWindowOpened(trigger: let trigger):
+            return "m_mac_firewindow_opened_\(trigger)"
         }
     }
 
@@ -1376,6 +1403,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .navigation(let kind):
             return ["kind": kind.description]
+
+        case .appStateRestored(let trigger):
+            return ["isRestartToUpdate": String(trigger == .appUpdate)]
 
         case .dataImportFailed(source: _, sourceVersion: let version, error: let error):
             var params = error.pixelParameters
@@ -1555,6 +1585,8 @@ enum GeneralPixel: PixelKitEvent {
                 .dailyFireWindowConfigurationStartupFireWindowEnabled,
                 .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled,
                 .dailyFireWindowConfigurationFireAnimationEnabled,
+                .fireWindowOpenedAny,
+                .fireWindowOpened,
                 .navigation,
                 .navigationToExternalURL,
                 .serp,
@@ -1814,6 +1846,7 @@ enum GeneralPixel: PixelKitEvent {
                 .suggestionsFetchFailed,
                 .appOpenURLFailed,
                 .appStateRestorationFailed,
+                .appStateRestored,
                 .contentBlockingErrorReportingIssue,
                 .contentBlockingCompilationFailed,
                 .contentBlockingCompilationTime,

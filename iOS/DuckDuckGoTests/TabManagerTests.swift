@@ -33,6 +33,7 @@ final class TabManagerTests: XCTestCase {
 
     override func tearDown() {
         UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
+        UserDefaults.app.removeObject(forKey: UserDefaultsWrapper<Bool>.Key.faviconTabsCacheNeedsCleanup.rawValue)
         super.tearDown()
     }
 
@@ -126,7 +127,22 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 1)
         XCTAssertEqual(Set(mockHistoryManager.removeTabHistoryCalls.first ?? []), Set(tabIDs))
     }
-    
+
+    func testWhenTabRemoved_ThenTabsFaviconCacheMarkedForCleanup() throws {
+        let tabsModel = TabsModel(desktop: false)
+        let tabToRemove = Tab(link: Link(title: "example", url: URL(string: "https://example.com")!))
+        tabsModel.insert(tab: tabToRemove, placement: .atEnd, selectNewTab: true)
+
+        let manager = try makeManager(tabsModel)
+
+        manager.tabsCacheNeedsCleanup = false
+
+        manager.remove(tab: tabToRemove)
+
+        XCTAssertTrue(manager.tabsCacheNeedsCleanup,
+                      "Removing a tab should flag the tabs favicon cache for cleanup so orphaned favicons are swept on next launch")
+    }
+
     func testWhenViewModelRequested_ThenReturnsViewModelForTab() throws {
         let tabsModel = TabsModel(desktop: false)
         let tab = try XCTUnwrap(tabsModel.get(tabAt: 0))
@@ -403,7 +419,7 @@ final class TabManagerTests: XCTestCase {
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                           featureDiscovery: MockFeatureDiscovery(),
                           keyValueStore: MockKeyValueFileStore(),
-                          daxDialogsManager: DummyDaxDialogsManager(),
+                          daxDialogsManager: MockDaxDialogsManager(),
                           aiChatSettings: MockAIChatSettingsProvider(),
                           productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                           privacyStats: MockPrivacyStats(),

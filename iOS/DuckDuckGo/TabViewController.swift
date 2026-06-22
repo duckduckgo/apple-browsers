@@ -25,6 +25,7 @@ import CombineExtensions
 import StoreKit
 import LocalAuthentication
 import BrowserServicesKit
+import Navigation
 import SwiftUI
 import Bookmarks
 import Persistence
@@ -68,28 +69,28 @@ class TabViewController: UIViewController {
 
     var privacyDashboardAnchor: UIView!
     var error: UIView!
-    
+
     var errorInfoImage: UIImageView!
     var errorHeader: UILabel!
     var errorMessage: UILabel!
-    
+
     var containerStackView: UIStackView!
     var outerContainer: UIView!
     var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
     var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
-    
+
     /// Stores the visual state of the web view
     /// Used by DuckPlayer to save and restore view appearance when switching between normal browsing and fullscreen (portrail/landscape) video modes.
     private struct ViewSettings {
-        
+
         let viewBackground: UIColor?
         let webViewBackground: UIColor?
         let webViewOpaque: Bool
         let scrollViewBackground: UIColor?
-        
-        /// Default view settings        
+
+        /// Default view settings
         static var `default`: ViewSettings {
             ViewSettings(
                 viewBackground: .systemBackground,
@@ -127,6 +128,13 @@ class TabViewController: UIViewController {
         button.addTarget(self, action: #selector(onOpenInSafariFromErrorPage), for: .touchUpInside)
         return button
     }()
+    lazy var errorReportBrokenSiteButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isHidden = true
+        button.addTarget(self, action: #selector(onReportBrokenSiteFromErrorPage), for: .touchUpInside)
+        return button
+    }()
     var jsAlertContainerView: UIView!
 
     var openedByPage = false
@@ -135,7 +143,7 @@ class TabViewController: UIViewController {
             delegate?.tabLoadingStateDidChange(tab: self)
         }
     }
-    
+
     weak var delegate: TabDelegate?
     var fireModePromotionCoordinator: FireModePromotionCoordinating?
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
@@ -152,7 +160,7 @@ class TabViewController: UIViewController {
         get { return findInPageScript?.findInPage }
         set { findInPageScript?.findInPage = newValue }
     }
-    
+
     var daxEasterEggHandler: DaxEasterEggHandling?
     var logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()
 
@@ -163,7 +171,7 @@ class TabViewController: UIViewController {
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     public weak var privacyDashboard: PrivacyDashboardViewController?
-    
+
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
     let appSettings: AppSettings
 
@@ -181,7 +189,7 @@ class TabViewController: UIViewController {
     private(set) var viewModel: TabViewModel
     private(set) var privacyInfo: PrivacyInfo?
     private var previousPrivacyInfosByURL: [URL: PrivacyInfo] = [:]
-    
+
     private let requeryLogic = RequeryLogic()
 
     private static let tld = AppDependencyProvider.shared.storageCache.tld
@@ -216,7 +224,7 @@ class TabViewController: UIViewController {
     private var lastVisitedTrackerAnimationDomain: String?
     private var lastNotifiedTrackerAnimationDomain: String?
     var shouldSuppressTrackerAnimationOnFirstLoad: Bool = false
-    
+
     private var tabURLInterceptor: TabURLInterceptor
     private var currentlyLoadedURL: URL?
 
@@ -266,17 +274,18 @@ class TabViewController: UIViewController {
 
     // In certain conditions we try to present a dax dialog when one is already showing, so check to ensure we don't
     var isShowingFullScreenDaxDialog = false
-    
+
     var temporaryDownloadForPreviewedFile: Download?
     var mostRecentAutoPreviewDownloadID: UUID?
     private var pendingCalendarPreview: CalendarEventPreviewHelper?
+    private var pendingContactPreview: ContactPreviewHelper?
     private var blobDownloadTargetFrame: WKFrameInfo?
 
     // Recent request's URL if its WKNavigationAction had shouldPerformDownload set to true
     private var recentNavigationActionShouldPerformDownloadURL: URL?
 
     let userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared
-    
+
     let bookmarksDatabase: CoreDataDatabase
     lazy var faviconUpdater = FireproofFaviconUpdater(bookmarksDatabase: bookmarksDatabase,
                                                       tab: tabModel,
@@ -340,7 +349,7 @@ class TabViewController: UIViewController {
             urlSubject.send(url)
         }
     }
-    
+
     override var title: String? {
         didSet {
             updateTabModel()
@@ -355,31 +364,31 @@ class TabViewController: UIViewController {
     public var isError: Bool {
         return !error.isHidden
     }
-    
+
     public var errorText: String? {
         return errorMessage.text
     }
-    
+
     public var link: Core.Link? {
         if isError {
             if let url = url ?? webView.url ?? URL(string: "") {
                 return Link(title: errorText, url: url)
             }
         }
-        
+
         guard let url = url else {
             return tabModel.link
         }
-                        
+
         let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
         let activeLink = Link(title: title, url: finalURL)
         guard let storedLink = tabModel.link else {
             return activeLink
         }
-        
+
         return activeLink.merge(with: storedLink)
     }
-    
+
     /// Convenience property which passes back the value of `isAITab` from the underlying `TabModel`
     var isAITab: Bool {
         tabModel.isAITab
@@ -411,19 +420,19 @@ class TabViewController: UIViewController {
                    withAdditionalParameters: params ?? [:],
                    onComplete: onComplete)
     }
-    
+
     private lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                        errorReporting: Self.debugEvents)
     }()
-    
+
     private lazy var referrerTrimming: ReferrerTrimming = {
         ReferrerTrimming(privacyManager: privacyConfigurationManager,
                          contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                          tld: AppDependencyProvider.shared.storageCache.tld)
     }()
-        
+
     private var canDisplayJavaScriptAlert: Bool {
         return presentedViewController == nil
             && delegate?.tabCheckIfItsBeingCurrentlyPresented(self) ?? false
@@ -441,7 +450,7 @@ class TabViewController: UIViewController {
     }
 
     private let rulesCompilationMonitor = RulesCompilationMonitor.shared
-    
+
     private var lastRenderedURL: URL?
 
     static func loadFromStoryboard(model: Tab,
@@ -688,7 +697,7 @@ class TabViewController: UIViewController {
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
-        
+
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
@@ -748,6 +757,7 @@ class TabViewController: UIViewController {
         decorate()
         defaultErrorHeaderText = errorHeader.text ?? ""
         setupErrorActionButton()
+        setupErrorReportBrokenSiteButton()
         addTextZoomObserver()
 
         subscribeToEmailProtectionSignOutNotification()
@@ -777,7 +787,7 @@ class TabViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
+
         registerForResignActive()
         registerForKeyboardNotifications()
     }
@@ -911,12 +921,12 @@ class TabViewController: UIViewController {
 
         return activities
     }
-    
+
     func initAttributionLogic() {
         adClickAttributionLogic.delegate = self
         adClickAttributionDetection.delegate = adClickAttributionLogic
     }
-    
+
     func updateTabModel() {
         if let url = url {
             let hasTitle = title != nil && !title!.isEmpty
@@ -927,13 +937,13 @@ class TabViewController: UIViewController {
             tabModel.link = nil
         }
     }
-        
+
     @objc func onApplicationWillResignActive() {
         shouldReloadOnError = true
 
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
     }
-    
+
     func applyInheritedAttribution(_ attribution: AdClickAttributionLogic.State?) {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
     }
@@ -941,7 +951,7 @@ class TabViewController: UIViewController {
     private func checkWebViewVisibilityConsistency() {
         if webView.isHidden && error.isHidden {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
-            
+
             // Fix inconsistent state - if webView is hidden but no error shown, show webView
             // https://app.asana.com/1/137249556945/project/414709148257752/task/1210155968610460?focus=true
             hideErrorMessage()
@@ -1117,7 +1127,7 @@ class TabViewController: UIViewController {
 
         load(url: url, didUpgradeURL: false)
     }
-    
+
     public func load(backForwardListItem: WKBackForwardListItem) {
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
@@ -1126,7 +1136,7 @@ class TabViewController: UIViewController {
         updateContentMode()
         webView.go(to: backForwardListItem)
     }
-    
+
     private func load(url: URL, didUpgradeURL: Bool) {
         if !didUpgradeURL {
             lastUpgradedURL = nil
@@ -1142,7 +1152,7 @@ class TabViewController: UIViewController {
         if !url.isBookmarklet() {
             self.url = url
         }
-        
+
         lastError = nil
         updateContentMode()
         linkProtection.getCleanURL(from: url,
@@ -1160,11 +1170,11 @@ class TabViewController: UIViewController {
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
         delegate = nil
-        
+
         webView.stopLoading()
         webView.loadHTMLString("", baseURL: nil)
     }
-    
+
     private func load(urlRequest: URLRequest) {
         loadViewIfNeeded()
 
@@ -1180,7 +1190,7 @@ class TabViewController: UIViewController {
         dismissJSAlertIfNeeded()
         webView.load(urlRequest)
     }
-    
+
     // swiftlint:disable block_based_kvo
     open override func observeValue(forKeyPath keyPath: String?,
                                     of object: Any?,
@@ -1237,7 +1247,7 @@ class TabViewController: UIViewController {
             Logger.general.debug("Unhandled keyPath \(keyPath)")
         }
     }
-    
+
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
         // Handle DuckPlayer Navigation URL changes
         if let currentURL = newURL ?? webView.url,
@@ -1267,7 +1277,7 @@ class TabViewController: UIViewController {
             self?.fireproofingWorker?.handleUserEnablingFireproofing(forDomain: domain)
         }
     }
-    
+
     func disableFireproofingForDomain(_ domain: String) {
         fireproofingWorker?.handleUserDisablingFireproofing(forDomain: domain)
     }
@@ -1309,19 +1319,19 @@ class TabViewController: UIViewController {
         shouldReloadOnError = false
         reload()
     }
-    
+
     private func shouldReissueDDGStaticNavigation(for url: URL) -> Bool {
         guard url.isDuckDuckGoStatic else { return false }
         return !url.hasCorrectSearchHeaderParams
     }
-    
+
     private func reissueNavigationWithSearchHeaderParams(for url: URL) {
         load(url: url.applyingSearchHeaderParams())
     }
-    
+
     private func shouldReissueSearch(for url: URL) -> Bool {
         guard url.isDuckDuckGoSearch else { return false }
-        
+
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
         let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
         shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
@@ -1366,7 +1376,7 @@ class TabViewController: UIViewController {
         delegate?.tabLoadingStateDidChange(tab: self)
         resetCreditCardPrompt()
     }
-    
+
     func updateContentMode() {
         webView.configuration.defaultWebpagePreferences.preferredContentMode = tabModel.isDesktop ? .desktop : .mobile
     }
@@ -1377,7 +1387,7 @@ class TabViewController: UIViewController {
 
         // Clear navigation error when going back
         lastError = nil
-        
+
         if let url = url, url.isDuckPlayer {
             webView.stopLoading()
             if webView.canGoBack {
@@ -1402,7 +1412,7 @@ class TabViewController: UIViewController {
             onWebpageDidFinishLoading()
             return
         }
-        
+
         if webView.canGoBack {
             webView.goBack()
             duckPlayerNavigationHandler.handleGoBack(webView: webView)
@@ -1413,9 +1423,9 @@ class TabViewController: UIViewController {
         if openingTab != nil {
             delegate?.tabDidRequestClose(self)
         }
-        
+
     }
-    
+
     func goForward() {
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
@@ -1428,7 +1438,7 @@ class TabViewController: UIViewController {
             chromeDelegate?.omniBar.endEditing()
         }
     }
-    
+
     private func showError(message: String) {
         webView.isHidden = true
         error.isHidden = false
@@ -1436,6 +1446,7 @@ class TabViewController: UIViewController {
         errorHeader.text = defaultErrorHeaderText
         errorMessage.text = message
         errorActionButton.isHidden = true
+        errorReportBrokenSiteButton.isHidden = true
         safariRedirectLoopErrorURL = nil
         error.layoutIfNeeded()
     }
@@ -1446,6 +1457,7 @@ class TabViewController: UIViewController {
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorActionButton.isHidden = true
+        errorReportBrokenSiteButton.isHidden = true
         safariRedirectLoopErrorURL = nil
     }
 
@@ -1458,6 +1470,8 @@ class TabViewController: UIViewController {
         errorMessage.text = UserText.generalPageProblemMessage
         errorActionButton.setTitle(UserText.generalPageProblemOpenInBrowserButton, for: .normal)
         errorActionButton.isHidden = false
+        errorReportBrokenSiteButton.setTitle(UserText.actionReportBrokenSite, for: .normal)
+        errorReportBrokenSiteButton.isHidden = false
         error.layoutIfNeeded()
         webpageDidFailToLoad()
     }
@@ -1593,10 +1607,10 @@ class TabViewController: UIViewController {
         }
         onPrivacyInfoChanged()
     }
-    
+
     public func makePrivacyInfo(url: URL, shouldCheckServerTrust: Bool = false) -> PrivacyInfo? {
         guard let host = url.host else { return nil }
-        
+
         let entity = ContentBlocking.shared.trackerDataManager.trackerData.findParentEntityOrFallback(forHost: host)
 
         let privacyInfo = PrivacyInfo(url: url,
@@ -1614,33 +1628,33 @@ class TabViewController: UIViewController {
         privacyInfo.isSpecialErrorPageVisible = specialErrorPageNavigationHandler.isSpecialErrorPageVisible
 
         previousPrivacyInfosByURL[url] = privacyInfo
-        
+
         return privacyInfo
     }
-    
+
     private func makeProtectionStatus(for host: String) -> ProtectionStatus {
         let config = privacyConfigurationManager.privacyConfig
-        
+
         let isTempUnprotected = config.isTempUnprotected(domain: host)
         let isAllowlisted = config.isUserUnprotected(domain: host)
-        
+
         var enabledFeatures: [String] = []
-        
+
         if !config.isInExceptionList(domain: host, forFeature: .contentBlocking) {
             enabledFeatures.append(PrivacyFeature.contentBlocking.rawValue)
         }
-        
+
         return ProtectionStatus(unprotectedTemporary: isTempUnprotected,
                                 enabledFeatures: enabledFeatures,
                                 allowlisted: isAllowlisted,
                                 denylisted: false)
     }
- 
+
     private func onPrivacyInfoChanged() {
         delegate?.tab(self, didChangePrivacyInfo: privacyInfo)
         privacyDashboard?.updatePrivacyInfo(privacyInfo)
     }
-    
+
     func didLaunchBrowsingMenu() {
         daxDialogsManager.resumeRegularFlow()
     }
@@ -1661,7 +1675,7 @@ class TabViewController: UIViewController {
             }
         }
     }
-    
+
     func presentOpenInExternalAppAlert(url: URL) {
         if safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: url) { return }
 
@@ -1746,13 +1760,13 @@ class TabViewController: UIViewController {
         let printInfo = UIPrintInfo(dictionary: nil)
         printInfo.jobName = Bundle.main.infoDictionary!["CFBundleName"] as? String ?? "DuckDuckGo"
         printInfo.outputType = .general
-        
+
         let printController = UIPrintInteractionController.shared
         printController.printInfo = printInfo
         printController.printFormatter = printFormatter
         printController.present(animated: true, completionHandler: nil)
     }
-    
+
     func onCopyAction(forUrl url: URL) {
         let copyText: String
         if url.isDuckDuckGo {
@@ -1761,10 +1775,10 @@ class TabViewController: UIViewController {
         } else {
             copyText = url.absoluteString
         }
-        
+
         onCopyAction(for: copyText)
     }
-    
+
     func onCopyAction(for text: String) {
         UIPasteboard.general.string = text
     }
@@ -1802,11 +1816,11 @@ class TabViewController: UIViewController {
 
 // MARK: - LoginFormDetectionDelegate
 extension TabViewController: LoginFormDetectionDelegate {
-    
+
     func loginFormDetectionUserScriptDetectedLoginForm(_ script: LoginFormDetectionUserScript) {
         detectedLoginURL = webView.url
     }
-    
+
 }
 
 // MARK: - WKNavigationDelegate
@@ -1869,7 +1883,7 @@ extension TabViewController: WKNavigationDelegate {
         let httpsForced = tld.domain(lastUpgradedURL?.host) == tld.domain(webView.url?.host)
         onWebpageDidStartLoading(httpsForced: httpsForced)
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
-        
+
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
@@ -1901,7 +1915,7 @@ extension TabViewController: WKNavigationDelegate {
             SKStoreReviewController.requestReview(in: scene)
             appRatingPrompt.shown()
         }
-        
+
         duckPlayerNavigationHandler.handleDidStartLoading(webView: webView)
     }
 
@@ -2053,7 +2067,7 @@ extension TabViewController: WKNavigationDelegate {
         trackSecondSiteVisitIfNeeded(url: webView.url)
 
         fireProductTelemetry(for: webView)
-        
+
         // definitely finished with any potential login cycle by this point, so don't try and handle it any more
         detectedLoginURL = nil
         updatePreview()
@@ -2094,10 +2108,10 @@ extension TabViewController: WKNavigationDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let webView = self?.webView,
                   webView.bounds.height > 0 && webView.bounds.width > 0 else { completion(nil); return }
-            
+
             let size = CGSize(width: webView.frame.size.width,
                               height: webView.frame.size.height - webView.scrollView.contentInset.top - webView.scrollView.contentInset.bottom)
-            
+
             let renderer = UIGraphicsImageRenderer(size: size)
             let image = renderer.image { context in
                 context.cgContext.translateBy(x: 0, y: -webView.scrollView.contentInset.top)
@@ -2120,7 +2134,7 @@ extension TabViewController: WKNavigationDelegate {
             }
         }
     }
-    
+
     private func onWebpageDidFinishLoading() {
         Logger.general.debug("webpageLoading finished")
 
@@ -2145,7 +2159,7 @@ extension TabViewController: WKNavigationDelegate {
                 inferredOpenerContext = .serp
             }
         }
-        
+
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
 
         showDuckPlayerToastIfNeeded()
@@ -2174,7 +2188,7 @@ extension TabViewController: WKNavigationDelegate {
     /// Check cache for DaxEasterEgg logo on commit (instant display for back navigation)
     private func checkDaxEasterEggCacheIfDuckDuckGoSearch(_ webView: WKWebView) {
         guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
-        
+
         guard let url = webView.url, url.isDuckDuckGoSearch else {
             // Clear logo when navigating away from DuckDuckGo search
             if tabModel.daxEasterEggLogoURL != nil {
@@ -2182,7 +2196,7 @@ extension TabViewController: WKNavigationDelegate {
             }
             return
         }
-        
+
         // Check cache for instant logo display
         if let searchQuery = url.searchQuery,
            let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
@@ -2190,11 +2204,11 @@ extension TabViewController: WKNavigationDelegate {
             delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
         }
     }
-    
+
     /// Trigger DaxEasterEgg extraction with cache fallback on DuckDuckGo search pages
     private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
         guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
-        
+
         guard let url = webView.url, url.isDuckDuckGoSearch else {
             // Clear logo when navigating away from DuckDuckGo search
             if tabModel.daxEasterEggLogoURL != nil {
@@ -2202,7 +2216,7 @@ extension TabViewController: WKNavigationDelegate {
             }
             return
         }
-        
+
         // Check cache first - if found, use it and skip extraction
         if let searchQuery = url.searchQuery,
            let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
@@ -2210,7 +2224,7 @@ extension TabViewController: WKNavigationDelegate {
             delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
             return
         }
-        
+
         // Cache miss - proceed with JavaScript extraction
         // Ensure handler is created for new tabs that navigate directly to DuckDuckGo
         if daxEasterEggHandler == nil {
@@ -2218,7 +2232,7 @@ extension TabViewController: WKNavigationDelegate {
             daxEasterEggHandler?.delegate = self
             Logger.daxEasterEgg.debug("Created DaxEasterEggHandler for new tab")
         }
-        
+
         Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
         daxEasterEggHandler?.extractLogosForCurrentPage()
     }
@@ -2236,12 +2250,16 @@ extension TabViewController: WKNavigationDelegate {
             delegate?.tabDidRequestShowingMenuHighlighter(tab: self)
             return
         }
-              
+
         /// Never show onboarding Dax on Duck.ai, Youtube or DuckPlayer (unless DuckPlayer is disabled)
         guard let url = link?.url,
               !url.isDuckAIURL,
               !url.isDuckPlayer,
               !(url.isYoutube && duckPlayerNavigationHandler.duckPlayer.settings.mode != .disabled) else {
+            // Do not dismiss while the fire onboarding dialog is up
+            if !contextualOnboardingLogic.isShowingFireDialog {
+                dismissContextualOnboardingIfNeeded()
+            }
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
@@ -2252,7 +2270,7 @@ extension TabViewController: WKNavigationDelegate {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
-        
+
         if let url = link?.url, url.isDuckDuckGoEmailProtection {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
@@ -2267,7 +2285,7 @@ extension TabViewController: WKNavigationDelegate {
             if daxDialogsManager.shouldShowFireButtonPulse {
                 delegate?.tabDidRequestFireButtonPulse(tab: self)
             }
-            
+
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
@@ -2275,26 +2293,29 @@ extension TabViewController: WKNavigationDelegate {
         // In new onboarding we do not highlight the address bar so collapsing is default to true.
         scheduleTrackerNetworksAnimation(collapsing: true)
         let daxDialogSourceURL = self.url
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self else { return }
-            // https://app.asana.com/0/414709148257752/1201620790053163/f
-            if self.url != daxDialogSourceURL && self.url?.isSameDuckDuckGoSearchURL(other: daxDialogSourceURL) == false {
-                daxDialogsManager.overrideShownFlagFor(spec, flag: false)
-                self.isShowingFullScreenDaxDialog = false
-                return
-            }
+            self?.presentContextualOnboardingIfURLUnchanged(spec: spec, sourceURL: daxDialogSourceURL)
+        }
+    }
 
-            self.chromeDelegate?.omniBar.endEditing()
-            self.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+    private func presentContextualOnboardingIfURLUnchanged(spec: DaxDialogs.BrowsingSpec, sourceURL: URL?) {
+        // https://app.asana.com/0/414709148257752/1201620790053163/f
+        if self.url != sourceURL && self.url?.isSameDuckDuckGoSearchURL(other: sourceURL) == false {
+            daxDialogsManager.overrideShownFlagFor(spec, flag: false)
+            self.isShowingFullScreenDaxDialog = false
+            return
+        }
 
-            // Present the contextual onboarding
-            presentContextualOnboarding(for: spec)
+        self.chromeDelegate?.omniBar.endEditing()
+        self.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
 
-            if spec == DaxDialogs.BrowsingSpec.withoutTrackers {
-                self.woShownRecently = true
-                self.fireWoFollowUp = true
-            }
+        // Present the contextual onboarding
+        presentContextualOnboarding(for: spec)
+
+        if spec == DaxDialogs.BrowsingSpec.withoutTrackers {
+            self.woShownRecently = true
+            self.fireWoFollowUp = true
         }
     }
 
@@ -2308,7 +2329,7 @@ extension TabViewController: WKNavigationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + Constants.trackerNetworksAnimationDelay,
                                       execute: trackersWorkItem)
     }
-    
+
     private func cancelTrackerNetworksAnimation() {
         trackersInfoWorkItem?.cancel()
         trackersInfoWorkItem = nil
@@ -2350,7 +2371,7 @@ extension TabViewController: WKNavigationDelegate {
         lastNotifiedTrackerAnimationDomain = currentDomain
         return true
     }
-    
+
     private func checkLoginDetectionAfterNavigation() {
         if fireproofingWorker?.handleLoginDetection(detectedURL: detectedLoginURL,
                                                     currentURL: url,
@@ -2407,7 +2428,7 @@ extension TabViewController: WKNavigationDelegate {
         self.delegate?.tabLoadingStateDidChange(tab: self)
         self.delegate?.tabDidFinishNavigation(self)
     }
-    
+
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
@@ -2483,7 +2504,7 @@ extension TabViewController: WKNavigationDelegate {
 
         checkLoginDetectionAfterNavigation()
     }
-    
+
     private func requestForDoNotSell(basedOn incomingRequest: URLRequest) -> URLRequest? {
         let config = privacyConfigurationManager.privacyConfig
         guard var request = GPCRequestFactory().requestForGPC(basedOn: incomingRequest,
@@ -2491,7 +2512,7 @@ extension TabViewController: WKNavigationDelegate {
                                                               gpcEnabled: appSettings.sendDoNotSell) else {
             return nil
         }
-        
+
         request.attribution = .user
 
         return request
@@ -2540,12 +2561,12 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
         }
-        
+
         if duckPlayerNavigationHandler.handleDelegateNavigation(navigationAction: navigationAction, webView: webView) {
             wrappedHandler(.cancel)
             return
         }
-        
+
         if let url = navigationAction.request.url,
            !url.isDuckDuckGoSearch,
            true == shouldWaitUntilContentBlockingIsLoaded({ [weak self, webView /* decision handler must be called */] in
@@ -2558,7 +2579,7 @@ extension TabViewController: WKNavigationDelegate {
             // will wait for Content Blocking to load and re-call on completion
             return
         }
-        
+
 
         didGoBackForward = (navigationAction.navigationType == .backForward)
 
@@ -2737,7 +2758,7 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         let tld = storageCache.tld
-        
+
         // If WKNavigationAction requests to shouldPerformDownload prepare for handling it in decidePolicyFor:navigationResponse:
         recentNavigationActionShouldPerformDownloadURL = navigationAction.shouldPerformDownload ? navigationAction.request.url : nil
 
@@ -2786,7 +2807,7 @@ extension TabViewController: WKNavigationDelegate {
 
         case .blob:
             performBlobNavigation(navigationAction, completion: completion)
-        
+
         case .duck:
             if navigationAction.isTargetingMainFrame() {
                 duckPlayerNavigationHandler.handleDuckNavigation(navigationAction, webView: webView)
@@ -2920,7 +2941,7 @@ extension TabViewController: WKNavigationDelegate {
             break
         }
     }
-    
+
     private func isNewTargetBlankRequest(navigationAction: WKNavigationAction) -> Bool {
         return navigationAction.navigationType == .linkActivated && navigationAction.targetFrame == nil
     }
@@ -2932,7 +2953,7 @@ extension TabViewController: WKNavigationDelegate {
         }
         return AppUserDefaults().allowUniversalLinks ? .allow : allowWithoutUniversalLinks
     }
-    
+
     private func showErrorNow() {
         guard let error = lastError as NSError? else { return }
         hideProgressIndicator()
@@ -2947,15 +2968,15 @@ extension TabViewController: WKNavigationDelegate {
         webpageDidFailToLoad()
         checkForReloadOnError()
     }
-    
+
     func dismissKeyboardIfPresent() {
         self.webView.evaluateJavaScript("document.activeElement?.blur()")
     }
-    
+
     private func showLoginDetails(with account: SecureVaultModels.WebsiteAccount, source: AutofillSettingsSource) {
         delegate?.tab(self, didRequestAutofillLogins: account, source: source, extensionPromotionManager: extensionPromotionManager)
     }
-    
+
     @objc private func dismissLoginDetails() {
         dismiss(animated: true)
     }
@@ -3078,7 +3099,7 @@ extension TabViewController {
                 assertionFailure("Expected DownloadError")
                 Logger.general.error("Failed to create download: Unkown Error)")
             }
-            
+
         }
 
         return (.cancel, nil)
@@ -3088,7 +3109,7 @@ extension TabViewController {
      Some files might be previewed by webkit but in order to share them
      we need to download them first.
      This method stores the temporary download or clears it if necessary
-     
+
      - Returns: Navigation policy or nil if it is not a download
      */
     private func setupOrClearTemporaryDownload(for response: URLResponse) -> WKNavigationResponsePolicy? {
@@ -3131,7 +3152,11 @@ extension TabViewController {
 
                 if self.shouldTriggerDownloadAction(for: navigationResponse) && !FilePreviewHelper.canAutoPreviewMIMEType(downloadMetadata.mimeType) {
                     // Show alert to the file download
-                    self.presentSaveToDownloadsAlert(with: downloadMetadata) {
+                    self.presentSaveToDownloadsAlert(with: downloadMetadata) { [weak self] in
+                        guard let self else {
+                            callback(nil)
+                            return
+                        }
                         callback(self.transfer(download,
                                                to: downloadManager,
                                                with: navigationResponse.response,
@@ -3320,10 +3345,10 @@ extension TabViewController {
     }
 
     private func previewDownloadedFileIfNecessary(_ download: Download) {
-        let canAutoPreview = FilePreviewHelper.canAutoPreviewMIMEType(download.mimeType) ||
-            FilePreviewHelper.canAutoPreviewICSByExtension(url: download.location,
-                                                           filename: download.filename,
-                                                           featureFlagger: featureFlagger)
+        let canAutoPreview = FilePreviewHelper.canAutoPreview(mimeType: download.mimeType,
+                                                              url: download.location,
+                                                              filename: download.filename,
+                                                              featureFlagger: featureFlagger)
         guard let delegate = self.delegate,
               delegate.tabCheckIfItsBeingCurrentlyPresented(self),
               canAutoPreview,
@@ -3332,6 +3357,7 @@ extension TabViewController {
 
         if mostRecentAutoPreviewDownloadID == download.id {
             retainCalendarPreviewIfNeeded(fileHandler)
+            retainContactPreviewIfNeeded(fileHandler)
             fileHandler.preview()
         } else {
             let pixelParameters = [PixelParameters.mimeType: download.mimeType.rawValue,
@@ -3347,18 +3373,25 @@ extension TabViewController {
             self?.pendingCalendarPreview = nil
         }
         calendarHandler.onSaved = { [weak self] in
-            self?.showCalendarAddedToast()
+            self?.showFileHandlerAddedToast(message: UserText.icsEventAddedToCalendar)
         }
         calendarHandler.onFailure = { [weak self] failure in
             self?.showCalendarAddFailureToast(for: failure)
         }
     }
 
-    private func showCalendarAddedToast() {
-        ActionMessageView.present(
-            message: UserText.icsEventAddedToCalendar,
-            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom)
-        )
+    private func retainContactPreviewIfNeeded(_ fileHandler: FilePreview) {
+        guard let contactHandler = fileHandler as? ContactPreviewHelper else { return }
+        pendingContactPreview = contactHandler
+        contactHandler.onDismiss = { [weak self] in
+            self?.pendingContactPreview = nil
+        }
+        contactHandler.onSaved = { [weak self] in
+            self?.showFileHandlerAddedToast(message: UserText.vcardContactAdded)
+        }
+        contactHandler.onParseFailure = { [weak self] in
+            self?.showFileHandlerFailureToast(message: UserText.vcardAddContactParseFailure)
+        }
     }
 
     private func showCalendarAddFailureToast(for failure: CalendarEventPreviewHelper.Failure) {
@@ -3371,26 +3404,41 @@ extension TabViewController {
         case .parseFailure:
             message = UserText.icsAddToCalendarParseFailure
         }
+        showFileHandlerFailureToast(message: message)
+    }
+
+    /// Success toast for an imported file (calendar event added, contact added, etc.).
+    private func showFileHandlerAddedToast(message: String) {
+        ActionMessageView.present(
+            message: message,
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom)
+        )
+    }
+
+    private func showFileHandlerFailureToast(message: String) {
         ActionMessageView.present(
             message: message,
             actionTitle: UserText.actionGenericShow,
             presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
             duration: 10,
             onAction: { [weak self] in
-                guard let self else { return }
-                Pixel.fire(pixel: .downloadsListOpened,
-                           withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
-                let openDownloads = { [weak self] in
-                    guard let self else { return }
-                    self.delegate?.tabDidRequestDownloads(tab: self)
-                }
-                if let presented = self.presentedViewController {
-                    presented.dismiss(animated: true, completion: openDownloads)
-                } else {
-                    openDownloads()
-                }
+                self?.openDownloadsFromToast()
             }
         )
+    }
+
+    private func openDownloadsFromToast() {
+        Pixel.fire(pixel: .downloadsListOpened,
+                   withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
+        let openDownloads = { [weak self] in
+            guard let self else { return }
+            self.delegate?.tabDidRequestDownloads(tab: self)
+        }
+        if let presented = presentedViewController {
+            presented.dismiss(animated: true, completion: openDownloads)
+        } else {
+            openDownloads()
+        }
     }
 }
 
@@ -3429,23 +3477,43 @@ extension TabViewController: WKUIDelegate {
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        if webView.url?.isDuckAIURL == true {
+        handleWebContentProcessDidTerminate(webView, reasonName: nil)
+    }
+
+    // WebKit invokes this in place of `webViewWebContentProcessDidTerminate(_:)` when a termination
+    // reason is available, so it must reproduce that method's reporting and recovery in full.
+    @objc(_webView:webContentProcessDidTerminateWithReason:)
+    public func webView(_ webView: WKWebView, webContentProcessDidTerminateWith reason: Int) {
+        handleWebContentProcessDidTerminate(webView, reasonName: WKProcessTerminationReason(rawValue: reason)?.pixelName ?? "unknown")
+    }
+
+    private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        let isDuckAITab = webView.url?.isDuckAIURL == true
+        if isDuckAITab {
             DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])
         }
-        Pixel.fire(pixel: .webKitDidTerminate)
+        DailyPixel.fireDailyAndCount(pixel: .webKitDidTerminate, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+
+        if let reasonName {
+            DailyPixel.fireDailyAndCount(pixel: .webContentProcessTerminated(reason: reasonName))
+            if isDuckAITab {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatWebContentProcessTerminated(reason: reasonName))
+            }
+        }
+
         delegate?.tabContentProcessDidTerminate(tab: self)
     }
-    
+
     func webView(_ webView: WKWebView,
                  runJavaScriptAlertPanelWithMessage message: String,
                  initiatedByFrame frame: WKFrameInfo,
                  completionHandler: @escaping () -> Void) {
-        
+
         guard canDisplayJavaScriptAlert else {
             completionHandler()
             return
         }
-        
+
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
                                ?? webView.backForwardList.currentItem?.url.host
@@ -3455,17 +3523,17 @@ extension TabViewController: WKUIDelegate {
                                alertType: .alert(handler: completionHandler))
         self.present(alert)
     }
-    
+
     func webView(_ webView: WKWebView,
                  runJavaScriptConfirmPanelWithMessage message: String,
                  initiatedByFrame frame: WKFrameInfo,
                  completionHandler: @escaping (Bool) -> Void) {
-        
+
         guard canDisplayJavaScriptAlert else {
             completionHandler(false)
             return
         }
-        
+
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
                                ?? webView.backForwardList.currentItem?.url.host
@@ -3475,18 +3543,18 @@ extension TabViewController: WKUIDelegate {
                                alertType: .confirm(handler: completionHandler))
         self.present(alert)
     }
-    
+
     func webView(_ webView: WKWebView,
                  runJavaScriptTextInputPanelWithPrompt prompt: String,
                  defaultText: String?,
                  initiatedByFrame frame: WKFrameInfo,
                  completionHandler: @escaping (String?) -> Void) {
-        
+
         guard canDisplayJavaScriptAlert else {
             completionHandler(nil)
             return
         }
-        
+
         let alert = WebJSAlert(domain: frame.request.url?.host
                                // in case the web view is navigating to another host
                                ?? webView.backForwardList.currentItem?.url.host
@@ -3497,7 +3565,7 @@ extension TabViewController: WKUIDelegate {
                                                 defaultText: defaultText))
         self.present(alert)
     }
-    
+
 }
 
 // MARK: - UIGestureRecognizerDelegate
@@ -3554,7 +3622,7 @@ extension TabViewController: UIGestureRecognizerDelegate {
         } else {
             url = webView.url
         }
-        
+
         requeryLogic.onRefresh()
         if isError || webView.url == nil, let url = url {
             load(url: url)
@@ -3589,11 +3657,11 @@ extension TabViewController: UIGestureRecognizerDelegate {
 
 // MARK: - UserContentControllerDelegate
 extension TabViewController: DaxEasterEggDelegate {
-    
+
     func daxEasterEggHandler(_ handler: DaxEasterEggHandling, didFindLogoURL logoURL: String?, for pageURL: String) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            
+
             Logger.daxEasterEgg.debug("Handler found logo - Page: \(pageURL), Logo: \(logoURL ?? "nil")")
             self.delegate?.tab(self, didExtractDaxEasterEggLogoURL: logoURL)
         }
@@ -3631,8 +3699,12 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
-        
+
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
+        userScripts.aiChatUserScript.setFocusChatInputHandler { [weak self] in
+            guard let self else { return }
+            (self.parent as? MainViewController)?.focusUnifiedToggleInputForActiveChat(from: self.webView)
+        }
         userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
             guard let self else { return .notFireMode }
             return .resolve(isFireMode: self.tabModel.fireTab,
@@ -3658,7 +3730,7 @@ extension TabViewController: UserContentControllerDelegate {
             userScripts.youtubeOverlayScript?.webView = webView
             userScripts.youtubePlayerUserScript?.webView = webView
         }
-        
+
         breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: breakageReportingSubfeature!)
 
@@ -3666,7 +3738,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: siteLoadingPerformanceSubfeature!)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
-        
+
         cachedMapper = nil
         cachedMapperVendor = nil
         cachedMapperAttributionTrackerData = nil
@@ -3689,6 +3761,12 @@ extension TabViewController: UserContentControllerDelegate {
     func onOpenInSafariFromErrorPage() {
         guard let safariRedirectLoopErrorURL else { return }
         openExternally(url: makeXSafariHTTPSURL(from: safariRedirectLoopErrorURL))
+    }
+
+    @objc
+    func onReportBrokenSiteFromErrorPage() {
+        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage, error: nil, withAdditionalParameters: [:])
+        delegate?.tabDidRequestReportBrokenSite(tab: self)
     }
 
 }
@@ -3813,7 +3891,7 @@ extension TabViewController: ContentScopeUserScriptDelegate {
 
 // MARK: - AutoconsentUserScriptDelegate
 extension TabViewController: AutoconsentUserScriptDelegate {
-    
+
     func autoconsentUserScript(consentStatus: CookieConsentInfo) {
         privacyInfo?.cookieConsentManaged = consentStatus
     }
@@ -3909,7 +3987,7 @@ extension TabViewController {
             webView.scrollView.refreshControl?.tintColor = .secondaryLabel
         }
     }
-    
+
 }
 
 // MARK: - NSError+failedUrl
@@ -3918,7 +3996,7 @@ extension NSError {
     var failedUrl: URL? {
         return userInfo[NSURLErrorFailingURLErrorKey] as? URL
     }
-    
+
 }
 
 extension TabViewController: SecureVaultManagerDelegate {
@@ -3931,7 +4009,7 @@ extension TabViewController: SecureVaultManagerDelegate {
         let manager = SaveAutofillLoginManager(credentials: credentials, vaultManager: vault, autofillScript: autofillUserScript)
         manager.prepareData { [weak self] in
             guard let self = self else { return }
-            
+
             let saveLoginController = SaveLoginViewController(credentialManager: manager,
                                                               appSettings: self.appSettings,
                                                               featureFlagger: self.featureFlagger,
@@ -3954,13 +4032,13 @@ extension TabViewController: SecureVaultManagerDelegate {
             self.present(saveLoginController, animated: true, completion: nil)
         }
     }
-    
+
     private func presentSaveCreditCardModal(with vault: SecureVaultManager, creditCard: SecureVaultModels.CreditCard) {
         guard CreditCardValidation.isValidCardNumber(creditCard.cardNumber) else {
             Logger.autofill.debug("Invalid credit card number, not presenting save prompt")
             return
         }
-        
+
         let saveCreditCardController = SaveCreditCardViewController(creditCard: creditCard, accountDomain: self.url?.host ?? "", domainLastShownOn: self.domainSaveCreditCardPromptLastShownOn)
         self.domainSaveCreditCardPromptLastShownOn = self.url?.host
         saveCreditCardController.delegate = self
@@ -3974,10 +4052,10 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
             presentationController.prefersScrollingExpandsWhenScrolledToEdge = false
         }
-        
+
         self.present(saveCreditCardController, animated: true, completion: nil)
     }
-    
+
     func secureVaultError(_ error: SecureStorageError) {
         SecureVaultReporter().secureVaultError(error)
     }
@@ -3991,7 +4069,7 @@ extension TabViewController: SecureVaultManagerDelegate {
         featureFlagger.isFeatureOn(.autofillCreditCards) &&
         !isLinkPreview
     }
-    
+
     func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
         let isCredentialsEnabled = AutofillSettingStatus.isAutofillEnabledInSettings &&
                         featureFlagger.isFeatureOn(.autofillCredentialInjecting) &&
@@ -4013,7 +4091,7 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_ vault: SecureVaultManager,
                             promptUserToStoreAutofillData data: AutofillData,
                             withTrigger trigger: AutofillUserScript.GetTriggerType?) {
-        
+
         if let credentials = data.credentials,
             AutofillSettingStatus.isAutofillEnabledInSettings,
             featureFlagger.isFeatureOn(.autofillCredentialsSaving) {
@@ -4039,7 +4117,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.presentSaveCreditCardModal(with: vault, creditCard: creditCard)
             }
-            
+
         }
     }
 
@@ -4049,7 +4127,7 @@ extension TabViewController: SecureVaultManagerDelegate {
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
                             onAccountSelected: @escaping (SecureVaultModels.WebsiteAccount?) -> Void,
                             completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
-  
+
         if !AutofillSettingStatus.isAutofillEnabledInSettings, featureFlagger.isFeatureOn(.autofillCredentialInjecting) {
             completionHandler(nil)
             return
@@ -4457,7 +4535,7 @@ extension TabViewController: SecureVaultManagerDelegate {
 
         Pixel.fire(pixel: .autofillJSPixelFired(pixel))
     }
-    
+
 }
 
 extension TabViewController: SaveLoginViewControllerDelegate {
@@ -4482,7 +4560,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
     private func confirmSavedCredentialsFor(credentialID: Int64, message: String) {
         do {
             let vault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
-            
+
             if let newCredential = try vault.websiteCredentialsFor(accountId: credentialID) {
                 DispatchQueue.main.async {
                     let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
@@ -4505,15 +4583,15 @@ extension TabViewController: SaveLoginViewControllerDelegate {
             Logger.general.error("failed to fetch credentials: \(error.localizedDescription, privacy: .public)")
         }
     }
-    
+
     func saveLoginViewController(_ viewController: SaveLoginViewController, didSaveCredentials credentials: SecureVaultModels.WebsiteCredentials) {
         saveCredentials(credentials, withSuccessMessage: UserText.autofillLoginSavedToastMessage)
     }
-    
+
     func saveLoginViewController(_ viewController: SaveLoginViewController, didUpdateCredentials credentials: SecureVaultModels.WebsiteCredentials) {
         saveCredentials(credentials, withSuccessMessage: UserText.autofillLoginUpdatedToastMessage)
     }
-    
+
     func saveLoginViewControllerDidCancel(_ viewController: SaveLoginViewController) {
         saveLoginPromptLastDismissed = Date()
         saveLoginPromptIsPresenting = false
@@ -4529,7 +4607,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
             Logger.general.error("failed to save never prompt for website: \(error.localizedDescription, privacy: .public)")
         }
     }
-    
+
     func saveLoginViewControllerConfirmKeepUsing(_ viewController: SaveLoginViewController) {
         Pixel.fire(pixel: .autofillLoginsFillLoginInlineDisableSnackbarShown)
         DispatchQueue.main.async {
@@ -4560,7 +4638,7 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
         })
         syncService.scheduler.notifyDataChanged()
     }
-    
+
     func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController) {
         DispatchQueue.main.async {
             let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
@@ -4569,7 +4647,7 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
                                       presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
                                       duration: 4.0,
                                       onAction: { [weak self] in
-                
+
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
                 mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveCreditCardDisablePrompt)
                 Pixel.fire(pixel: .autofillCardsSaveDisableSnackbarOpenSettings)
@@ -4604,7 +4682,7 @@ extension TabViewController: ContextualOnboardingEventDelegate {
 
     func didShowContextualOnboardingTrackersDialog() {
         guard contextualOnboardingLogic.shouldShowPrivacyButtonPulse else { return }
-        
+
         delegate?.tabDidRequestPrivacyDashboardButtonPulse(tab: self, animated: true)
     }
 
@@ -4661,22 +4739,22 @@ extension TabViewController: SpecialErrorPageNavigationDelegate {
 
 // This Protocol allows DuckPlayerHandler access tabs
 extension TabViewController: DuckPlayerTabNavigationHandling {
-    
+
     func openTab(for url: URL) {
         delegate?.tab(self,
                       didRequestNewTabForUrl: url,
                       openedByPage: true,
                       inheritingAttribution: adClickAttributionLogic.state)
-        
+
     }
-    
+
     func closeTab() {
         if openingTab != nil {
             delegate?.tabDidRequestClose(self)
             return
         }
     }
-    
+
 }
 
 private extension TabViewController {
@@ -4705,13 +4783,13 @@ private extension TabViewController {
 
 // Landscape/Portrait mode customizations
 extension TabViewController {
-    
+
     /// Stores WebView settings and
     /// Updates its properties when displaying video in landscape mode
     // This is used by DuckPlayer when rotating to landscape
     func setupWebViewForLandscapeVideo() {
         guard let webView = webView else { return }
-        
+
         // Store original settings
         savedViewSettings = ViewSettings(
             viewBackground: view.backgroundColor,
@@ -4719,26 +4797,26 @@ extension TabViewController {
             webViewOpaque: webView.isOpaque,
             scrollViewBackground: webView.scrollView.backgroundColor
         )
-        
+
         // Apply landscape settings
         view.backgroundColor = .black
         webView.backgroundColor = .black
         webView.isOpaque = true
         webView.scrollView.backgroundColor = .black
     }
-    
+
     /// Resets the webview to its original settings
     /// This is used by DuckPlayer when rotating back to portrait
     func setupWebViewForPortraitVideo() {
         guard let webView = webView else { return }
-        
+
         // Restore original settings if they were stored
         let settings = savedViewSettings ?? ViewSettings.default
         view.backgroundColor = settings.viewBackground
         webView.backgroundColor = settings.webViewBackground
         webView.isOpaque = settings.webViewOpaque
         webView.scrollView.backgroundColor = settings.scrollViewBackground
-        
+
         // Clear stored settings
         savedViewSettings = nil
     }
@@ -4762,7 +4840,7 @@ extension TabViewController: DuckPlayerHosting {
     var contentBottomConstraint: NSLayoutConstraint? {
         return webViewBottomAnchorConstraint
     }
-    
+
     var persistentBottomBarHeight: CGFloat {
         return chromeDelegate?.barsMaxHeight ?? 0.0
     }
@@ -4782,14 +4860,14 @@ extension TabViewController: DuckPlayerHosting {
 }
 
 extension TabViewController {
-        
+
     // This is used to handle the webView constraint changes when DuckPlayer is presented
     private func setupDuckPlayerConstraintHandling(publisher: AnyPublisher<DuckPlayerConstraintUpdate, Never>) {
         publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] update in
                 guard let self = self else { return }
-                
+
                 switch update {
                 case .showPill(let height):
                     if self.appSettings.currentAddressBarPosition == .bottom {
@@ -4803,7 +4881,7 @@ extension TabViewController {
                     let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
                     self.webViewBottomAnchorConstraint?.constant = self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
                 }
-                
+
                 self.view.layoutIfNeeded()
             }
             .store(in: &cancellables)
@@ -4837,5 +4915,18 @@ extension TabViewController: SafariRedirectHandlerDelegate {
         DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
         showSafariRedirectLoopError(for: url)
+    }
+}
+
+private extension WKProcessTerminationReason {
+
+    var pixelName: String {
+        switch self {
+        case .exceededMemoryLimit: return "exceeded_memory_limit"
+        case .exceededCPULimit: return "exceeded_cpu_limit"
+        case .requestedByClient: return "requested_by_client"
+        case .crash: return "crash"
+        case .exceededSharedProcessCrashLimit: return "exceeded_shared_process_crash_limit"
+        }
     }
 }

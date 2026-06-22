@@ -45,7 +45,7 @@ public final class LaunchOptionsHandler {
         static let configRolloutPrefix = "config.rollout."
 
         /// Launch param format: experiment.<featureFlagRawValue>=<cohortID>
-        /// Example: -experiment.onboardingDuckAIQueryExperiment treatmentA
+        /// Example: -experiment.someExperimentFlag treatmentA
         static let experimentCohortPrefix = "experiment."
 
         static let internalUserKey = "isInternalUser"

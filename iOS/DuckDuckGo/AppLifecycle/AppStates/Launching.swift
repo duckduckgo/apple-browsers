@@ -79,6 +79,8 @@ struct Launching: LaunchingHandling {
             featureFlagger.isFeatureOn(.appRebranding)
         }
 
+        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .rebranded : .default
+
         favicons = Favicons(fireproofing: fireproofing)
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()

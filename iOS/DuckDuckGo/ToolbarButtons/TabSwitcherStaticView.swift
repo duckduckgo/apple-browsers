@@ -124,7 +124,7 @@ final class TabSwitcherStaticView: UIView {
         clipsToBounds = false
 
         unreadDotImageView.isUserInteractionEnabled = false
-        unreadDotImageView.tintColor = UIColor(designSystemColor: .accent)
+        unreadDotImageView.tintColor = UIColor(designSystemColor: .accentPrimary)
         unreadDotImageView.isHidden = true
 
         fireOverlayImageView.isUserInteractionEnabled = false
@@ -146,7 +146,7 @@ final class TabSwitcherStaticView: UIView {
             iconImageView.image = DesignSystemImages.Glyphs.Size24.tabMobileAlert
             fireOverlayImageView.isHidden = true
             unreadDotImageView.isHidden = false
-            unreadDotImageView.tintColor = UIColor(designSystemColor: .accent)
+            unreadDotImageView.tintColor = UIColor(designSystemColor: .accentPrimary)
         case (true, false):
             iconImageView.image = DesignSystemImages.Glyphs.Size24.fireTabMobileFrame
             fireOverlayImageView.isHidden = false

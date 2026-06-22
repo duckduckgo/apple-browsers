@@ -20,9 +20,12 @@
 import Combine
 import CombineExtensions
 import ConcurrencyExtensions
+import Core
 import Foundation
+import PrivacyConfig
 import UserNotifications
 import VPN
+import BrowserServicesKit
 
 enum NetworkProtectionNotificationsViewKind: Equatable {
     case loading
@@ -33,7 +36,14 @@ enum NetworkProtectionNotificationsViewKind: Equatable {
 final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
     private let controller: TunnelController
     private let settings: VPNSettings
+    private let featureFlagger: FeatureFlagger
     private var cancellables: Set<AnyCancellable> = []
+
+    @Published private(set) var isStrictRoutingAvailable: Bool
+
+    var isExcludeCGNATAvailable: Bool {
+        featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle)
+    }
 
     private var notificationsAuthorization: NotificationsAuthorizationControlling
     @Published var viewKind: NetworkProtectionNotificationsViewKind = .loading
@@ -59,21 +69,60 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
         }
     }
 
+    @Published public var enforceRoutes: Bool {
+        didSet {
+            guard oldValue != enforceRoutes else {
+                return
+            }
+
+            settings.enforceRoutes = enforceRoutes
+        }
+    }
+
+    @Published public var excludeCGNAT: Bool {
+        didSet {
+            guard settings.excludeCGNAT != excludeCGNAT else {
+                return
+            }
+
+            settings.excludeCGNAT = excludeCGNAT
+
+            Task {
+                try await Task.sleep(interval: 0.1)
+                try await controller.command(.restartAdapter)
+            }
+        }
+    }
+
     @Published public var usesCustomDNS = false
     @Published public var dnsServers: String = UserText.vpnSettingDNSServerDefaultValue
 
     init(notificationsAuthorization: NotificationsAuthorizationControlling,
          controller: TunnelController,
-         settings: VPNSettings) {
+         settings: VPNSettings,
+         featureFlagger: FeatureFlagger) {
 
         self.controller = controller
+        self.featureFlagger = featureFlagger
+        self.isStrictRoutingAvailable = featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+
         self.excludeLocalNetworks = settings.excludeLocalNetworks
+        self.enforceRoutes = settings.enforceRoutes
+        self.excludeCGNAT = settings.excludeCGNAT
         self.settings = settings
         self.notificationsAuthorization = notificationsAuthorization
-        
+
         settings.excludeLocalNetworksPublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.excludeLocalNetworks, onWeaklyHeld: self)
+            .store(in: &cancellables)
+        settings.enforceRoutesPublisher
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.enforceRoutes, onWeaklyHeld: self)
+            .store(in: &cancellables)
+        settings.excludeCGNATPublisher
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.excludeCGNAT, onWeaklyHeld: self)
             .store(in: &cancellables)
         settings.dnsSettingsPublisher
             .receive(on: DispatchQueue.main)
@@ -85,10 +134,21 @@ final class NetworkProtectionVPNSettingsViewModel: ObservableObject {
             .map { String(describing: $0) }
             .assign(to: \.dnsServers, onWeaklyHeld: self)
             .store(in: &cancellables)
+
+        // Keep the toggle's availability in sync as the feature flag changes at runtime
+        // (remote config update or a local override), so the row appears/disappears live.
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.isStrictRoutingAvailable = self.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+            }
+            .store(in: &cancellables)
     }
 
     @MainActor
     func onViewAppeared() async {
+        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
         let status = await notificationsAuthorization.authorizationStatus
         updateViewKind(for: status)
     }

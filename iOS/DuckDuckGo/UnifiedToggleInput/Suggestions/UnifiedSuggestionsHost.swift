@@ -22,8 +22,8 @@ import SwiftUI
 import UIKit
 
 /// Hosts the SwiftUI `UnifiedSuggestionsView` for any UTI surface (Duck.ai, Search). Parameterized
-/// by `UnifiedSuggestionsHostConfig` so the host is surface-agnostic. Dax logo stays driven by
-/// `DaxLogoManager`.
+/// by `UnifiedSuggestionsHostConfig` so the host is surface-agnostic. The empty-state logo and fire
+/// screen render inside the view; the host no longer touches `DaxLogoManager`.
 @MainActor
 final class UnifiedSuggestionsHost {
 
@@ -36,9 +36,6 @@ final class UnifiedSuggestionsHost {
     /// config's install-time value, which is stale once the bar position is finalized).
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
-    private var escapeHatchModel: EscapeHatchModel?
-    /// Duck.ai sync-promo card shown below the escape hatch in non-typing states; nil when hidden.
-    private var syncPromo: AnyView?
     private var escapeHatchTopInset: CGFloat = 0
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
@@ -67,10 +64,6 @@ final class UnifiedSuggestionsHost {
 
     // MARK: - Container-facing surface
 
-    var hasContent: Bool { config.hasContent() }
-
-    func hasSettled(forQuery query: String) -> Bool { config.hasSettled(query) }
-
     func start<P: Publisher>(in containerView: UIView,
                              parentViewController: UIViewController,
                              textPublisher: P) where P.Output == String, P.Failure == Never {
@@ -91,8 +84,6 @@ final class UnifiedSuggestionsHost {
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            header: makeHeader(),
-            syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
         let hosting = UIHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
@@ -112,29 +103,40 @@ final class UnifiedSuggestionsHost {
         hostingController = hosting
     }
 
-    func setEscapeHatch(_ model: EscapeHatchModel?) {
-        escapeHatchModel = model
-        rebuildRootView()
+    var isShowingLogo: Bool { viewModel.isShowingLogo }
+    var isShowingFavorites: Bool { viewModel.isShowingFavorites }
+
+    /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
+    func setIsFireTab(_ value: Bool) {
+        viewModel.setFireTab(value)
     }
 
-    /// Installs (or clears) the sync-promo card view. Set once when the surface is available; its
-    /// show/hide is then driven reactively by `setSyncPromoVisible` so it animates with the content.
-    func setSyncPromo(_ view: AnyView?) {
-        guard (syncPromo == nil) != (view == nil) else { return }
-        syncPromo = view
-        rebuildRootView()
+    /// iPhone landscape suppresses the empty state (no room) — matches the unfocused NTP.
+    func setLandscape(_ value: Bool) {
+        viewModel.setLandscape(value)
     }
 
-    /// Toggles the sync-promo's visibility. Snaps (no animation) to match the content, which also
-    /// snaps while the promo is shown.
-    func setSyncPromoVisible(_ visible: Bool) {
-        viewModel.showsSyncPromo = visible
+    /// List/logo→favorites collapse: fade the focused content out as the NTP content takes over.
+    func beginDismissFade() {
+        viewModel.beginDismissFade()
+    }
+
+    /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible (no fade),
+    /// sped up to finish within the bar's `collapseDuration`.
+    func morphLogoHomeForDismiss(matching collapseDuration: TimeInterval) {
+        viewModel.morphLogoHomeForDismiss(matching: collapseDuration)
+    }
+
+    /// Resets the dismiss/morph state on each focus.
+    func prepareForActivation() {
+        viewModel.prepareForActivation()
     }
 
     func setAdditionalTopInset(_ inset: CGFloat) {
         escapeHatchTopInset = inset
         applyCombinedInsets()
     }
+
 
     /// Updates the tap-ahead arrow direction to match the UTI's current position.
     func setIsAddressBarAtBottom(_ value: Bool) {
@@ -151,8 +153,10 @@ final class UnifiedSuggestionsHost {
     }
 
     private func applyCombinedInsets() {
+        let top = escapeHatchTopInset + contentInsets.top
+        viewModel.chromeInsetTop = top
         hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
-            top: escapeHatchTopInset + contentInsets.top,
+            top: top,
             left: contentInsets.left,
             bottom: contentInsets.bottom,
             right: contentInsets.right
@@ -161,9 +165,6 @@ final class UnifiedSuggestionsHost {
         // container's layoutIfNeeded) so the content glides inside the UTI's height animation.
         hostingController?.view.layoutIfNeeded()
     }
-
-    /// No-op: visibility gating is handled by `DaxLogoManager` + `hasContent`/`hasSettled`.
-    func setIsVisibleContent(_ visible: Bool) {}
 
     // MARK: - Duck.ai surface (single-host path)
 
@@ -207,18 +208,11 @@ final class UnifiedSuggestionsHost {
 
     // MARK: - Private
 
-    private func makeHeader() -> AnyView? {
-        guard let escapeHatchModel else { return nil }
-        return AnyView(EscapeHatchView(model: escapeHatchModel))
-    }
-
     private func rebuildRootView() {
         guard let hosting = hostingController else { return }
         hosting.rootView = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            header: makeHeader(),
-            syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
     }
 }

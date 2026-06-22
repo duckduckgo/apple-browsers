@@ -254,8 +254,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         largeSizeSpacingConstraint?.isActive = showButtons
 
         let isExpandedPhone = newMode == .expandedPhone
-        leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
-        trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
+        leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : Metrics.iPadButtonSpacing
+        trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : Metrics.iPadButtonSpacing
         stackView.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeSpacing : Metrics.expandedPadSizeSpacing
         stackViewLeadingConstraint?.constant = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
         stackViewTrailingConstraint?.constant = isExpandedPhone ? -Metrics.expandedPhoneSizeMargins.trailing : -Metrics.textAreaHorizontalPadding
@@ -609,7 +609,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         activeOutlineView.isUserInteractionEnabled = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
-        activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
+        activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accentPrimary).cgColor
         activeOutlineView.layer.borderWidth = Metrics.activeBorderWidth
         activeOutlineView.layer.cornerRadius = Metrics.activeBorderRadius
         activeOutlineView.layer.cornerCurve = .continuous
@@ -717,7 +717,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
         } else {
             searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
-            activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
+            activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accentPrimary).cgColor
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
@@ -1023,6 +1023,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             trailing: expandedPadSizeSpacing
         )
 
+        static let iPadButtonSpacing: CGFloat = 12.0
         static let expandedPhoneSizeSpacing: CGFloat = 16.0
         static let expandedPhoneSizeButtonSpacing: CGFloat = 10.0
         static let expandedPhoneSizeMargins = NSDirectionalEdgeInsets(
@@ -1291,7 +1292,7 @@ extension DefaultOmniBarView {
     func setUpExpandedTextViewProperties() {
         aiChatTextView.font = UIFont.daxBodyRegular()
         aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
-        aiChatTextView.tintColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        aiChatTextView.tintColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         aiChatTextView.autocapitalizationType = .none
         aiChatTextView.autocorrectionType = .no
         aiChatTextView.spellCheckingType = .no
@@ -1393,7 +1394,7 @@ extension DefaultOmniBarView {
     }
 
     func updateAIChatSendButton(hasText: Bool) {
-        let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if hasText {
             aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
             aiChatSendButton.backgroundColor = accentColor
@@ -1460,22 +1461,26 @@ final class RebrandPreviewOverride: ObservableObject {
     private let isRebranded: Bool
     private let previousAppRebrand: () -> Bool
     private let previousDesignSystemRebrand: () -> Bool
+    private let previousPalette: ColorPalette
 
     init(isRebranded: Bool) {
         self.isRebranded = isRebranded
         previousAppRebrand = AppRebrand.isAppRebranded
         previousDesignSystemRebrand = DesignSystemRebrand.isAppRebranded
+        previousPalette = DesignSystemPalette.current
         apply()
     }
 
     func apply() {
         AppRebrand.isAppRebranded = { [isRebranded] in isRebranded }
         DesignSystemRebrand.isAppRebranded = { [isRebranded] in isRebranded }
+        DesignSystemPalette.current = isRebranded ? .rebranded : .default
     }
 
     deinit {
         AppRebrand.isAppRebranded = previousAppRebrand
         DesignSystemRebrand.isAppRebranded = previousDesignSystemRebrand
+        DesignSystemPalette.current = previousPalette
     }
 }
 

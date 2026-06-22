@@ -266,7 +266,7 @@ class TabViewCell: UICollectionViewCell {
     }
     
     var accentColor: UIColor {
-        isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
     }
 
     // MARK: - Programmatic Layout
@@ -464,7 +464,7 @@ class TabViewCell: UICollectionViewCell {
             if isFireTab {
                 return UIColor(singleUseColor: .fireModeAccent)
             }
-            return isSelectionModeEnabled ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .decorationTertiary)
+            return isSelectionModeEnabled ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .decorationTertiary)
         }
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
         border.layer.borderColor = borderColor.cgColor

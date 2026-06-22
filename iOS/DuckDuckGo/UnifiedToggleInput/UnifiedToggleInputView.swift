@@ -128,6 +128,9 @@ final class UnifiedToggleInputView: UIView {
         // Fire / voice fade in once the pill has finished shrinking into its flanked frame.
         static let aiTabCollapsedAccessoryFadeDelay: TimeInterval = 0.18
         static let aiTabCollapsedAccessoryFadeDuration: TimeInterval = 0.12
+        // Subtler than the fire button (0.16) to match the visual weight of top-toolbar elements.
+        static let aiTabCollapsedMenuButtonShadowOpacity: Float = 0.04
+        static let aiTabCollapsedMenuButtonDisabledShadowOpacity: Float = 0.0
     }
 
     // MARK: - Hit Testing
@@ -508,6 +511,7 @@ final class UnifiedToggleInputView: UIView {
         self.isToggleEnabled = isToggleEnabled
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
+        textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
         setupUI()
         setupSubscriptions()
     }
@@ -570,7 +574,7 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isUserInteractionEnabled = !dimmed
         // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
         handler.isOnboardingLocked = dimmed
-        let shadowOpacity: Float = dimmed ? 0.04 : 0.16
+        let shadowOpacity = dimmed ? Constants.aiTabCollapsedMenuButtonDisabledShadowOpacity : Constants.aiTabCollapsedMenuButtonShadowOpacity
         Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
     }
 
@@ -651,6 +655,7 @@ final class UnifiedToggleInputView: UIView {
     func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
+        textEntryView.style = enabled ? .multiLine : .singleLine
         if isExpanded {
             applyCardLayout(.collapsed, animated: false)
             applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: showsToolbar), animated: false)
@@ -664,6 +669,7 @@ final class UnifiedToggleInputView: UIView {
         if isToggleEnabled {
             toggleView.setMode(mode, animated: animated)
         }
+        textEntryView.style = mode == .aiChat ? .multiLine : .singleLine
         // Drive textView pose synchronously inside the caller's UIView.animate so the
         // placeholder constraint switch animates rather than snapping when the publisher
         // subscriber fires after the animation transaction has already committed.
@@ -882,6 +888,16 @@ final class UnifiedToggleInputView: UIView {
             applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
         case (_, _):
             applyCardLayout(.collapsed, animated: false)
+            // Pre-apply the inline dismiss leading inset so the text area is already at its
+            // final width before animation — otherwise the width change animates with the card.
+            if !isToggleEnabled {
+                UIView.performWithoutAnimation {
+                    self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: true)
+                    self.applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: true)
+                    self.layoutIfNeeded()
+                }
+            }
+            textEntryView.clearDismissSnapshot()
         }
         alignWithOmnibarChrome()
     }

@@ -46,8 +46,8 @@ extension AppDelegate {
 
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
+        PixelKit.fire(UpdateFlowPixels.checkForUpdatesFromMainMenu, frequency: .dailyAndCount)
         if StandardApplicationBuildType().isAppStoreBuild {
-            PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
             NSWorkspace.shared.open(.appStore)
         } else if StandardApplicationBuildType().isSparkleBuild {
             if SupportedOSChecker().showsSupportWarning {
@@ -66,8 +66,21 @@ extension AppDelegate {
     }
 
     @objc func newBurnerWindow(_ sender: Any?) {
+        // Distinguish between "user pressed ⌘N and Open Fire Window by default is enabled" vs
+        // "user explicitly chose to open a Fire Window".
+        //
+        // If the user opens a Fire Window by pressing ⌘N while they have "Open Fire Window by default"
+        // enabled, we record that path as an automatic Fire Window open.
+        //
+        // Every other invocation — mouse clicks on the menu item, the Dock menu, the Fire popover button,
+        // and ⇧⌘N when the preference is off — is an explicit user choice and is recorded as a manual
+        // Fire Window open.
+        let isKeyShortcut = NSApp.currentEvent?.type == .keyDown
+        let isFireWindowOpenedDueToDefaultPreferenceEnabled: Bool = isKeyShortcut
+            && visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled
         DispatchQueue.main.async {
-            WindowsManager.openNewWindow(burnerMode: BurnerMode(isBurner: true))
+            WindowsManager.openNewWindow(burnerMode: BurnerMode(isBurner: true),
+                                         isOpenedAutomatically: isFireWindowOpenedDueToDefaultPreferenceEnabled)
         }
     }
 
@@ -789,11 +802,6 @@ extension AppDelegate {
         duckPlayer.preferences.youtubeOverlayInteracted = false
     }
 
-    @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
-        homePageSetUpDependencies.clearAll()
-    }
-
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
     }
@@ -1479,6 +1487,11 @@ extension MainViewController {
     @objc func showManageBookmarks(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .bookmarks)
+    }
+
+    @objc func inspectFavicons(_ sender: Any?) {
+        makeKeyIfNeeded()
+        browserTabViewController.openNewTab(with: .url(.favicons, source: .ui))
     }
 
     @objc func showHistory(_ sender: Any?) {

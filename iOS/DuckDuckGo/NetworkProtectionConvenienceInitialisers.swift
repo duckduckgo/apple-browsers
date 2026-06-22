@@ -61,7 +61,8 @@ extension NetworkProtectionVPNSettingsViewModel {
         self.init(
             notificationsAuthorization: NotificationsAuthorizationController(),
             controller: AppDependencyProvider.shared.networkProtectionTunnelController,
-            settings: AppDependencyProvider.shared.vpnSettings
+            settings: AppDependencyProvider.shared.vpnSettings,
+            featureFlagger: AppDependencyProvider.shared.featureFlagger
         )
     }
 }

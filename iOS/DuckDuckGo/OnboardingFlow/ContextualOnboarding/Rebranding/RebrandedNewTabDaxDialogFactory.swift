@@ -102,9 +102,7 @@ extension RebrandedNewTabDaxDialogFactory {
 
     func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         let onDismiss = { [weak self] in
-            if self?.onboardingFlowProvider.currentOnboardingFlow == .default {
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
-            }
+            self?.onboardingPixelReporter.measureDuckAIFinalDialogCTAAction()
             onDismiss()
         }
 
@@ -126,9 +124,7 @@ extension RebrandedNewTabDaxDialogFactory {
             .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTPChat)
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                if self?.onboardingFlowProvider.currentOnboardingFlow == .default {
-                    self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
-                }
+                self?.onboardingPixelReporter.measureDuckAIFinalDialogImpression()
                 self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
             }
         )
@@ -162,7 +158,8 @@ private extension RebrandedNewTabDaxDialogFactory {
         return FadeInView {
             OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
-        .applyNewTabOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
+        .applyNewTabOnboardingBackground(backgroundType: isChatPath ? .tryVisitingASiteChatPath : .tryVisitingASiteNTP,
+                                         keyboardBehavior: isChatPath ? .ignoreKeyboard : .adjustForKeyboard)
         .onFirstAppear { [weak self] in
             if isChatPath {
                 self?.daxDialogsFlowCoordinator.setChatPathVisitSiteSeen()

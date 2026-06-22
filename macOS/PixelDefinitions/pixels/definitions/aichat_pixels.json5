@@ -175,6 +175,13 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
+    "m_mac_aichat_tab_termination_loop": {
+        "description": "Fired when a Duck.ai tab enters a WebKit content-process crash loop (repeated terminations within the crash-loop window). Daily counts users affected; count tracks how often Duck.ai pages break. underlyingErrorCode carries the WKProcessTerminationReason.",
+        "owners": ["aataraxiaa", "Bunn", "samsymons"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
     "m_mac_aichat_sidebar_closed": {
         "description": "Fired when the AI Chat sidebar is closed",
         "owners": ["miasma13"],

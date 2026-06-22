@@ -57,7 +57,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
             "unprotectedTemporary": []
         }
         """.data(using: .utf8)!
-        
+
         let mockEmbeddedData = MockEmbeddedDataProvider(data: embeddedConfig, etag: "embedded")
 
 
@@ -92,7 +92,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
         )
         waitForExpectations(timeout: 1.0)
     }
-    
+
     @MainActor
     func testInitResponds() {
         let expect = expectation(description: "tt")

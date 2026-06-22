@@ -87,9 +87,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
 
     @discardableResult
     func run() -> DuckAiNativeStorageContainerMigrationOutcome {
-        // Legacy gate (kill switch): when the fix is disabled, defer up front so
-        // behavior matches the pre-fix code exactly — even an already-completed
-        // migration is skipped on a locked / background launch.
         if !lockedLaunchFixEnabled, let deferred = deferIfProtectedDataUnavailable() {
             return deferred
         }
@@ -107,9 +104,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         }
     }
 
-    /// Returns `.skip` (after logging and firing the defer pixel) when protected
-    /// data is unavailable, else `nil`. Shared by the legacy up-front gate in
-    /// `run()` and the relocation-only gate in `performMigration()`.
     private func deferIfProtectedDataUnavailable() -> DuckAiNativeStorageContainerMigrationOutcome? {
         guard !isProtectedDataAvailable() else { return nil }
         Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] protected data unavailable; deferring")
@@ -134,12 +128,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
             return .proceed
         }
 
-        // The relocation reads the protected App-Group source. With the fix on,
-        // defer only here so completed / not-needed migrations (handled above)
-        // still open on locked launches instead of nilling the handler — the cause
-        // of the Duck.ai T&C re-prompt (`aichat.terms.accepted.duplicate`) spike.
-        // The migrated destination is completeUntilFirstUserAuthentication,
-        // readable while locked. When the fix is off, `run()` already gated above.
         if lockedLaunchFixEnabled, let deferred = deferIfProtectedDataUnavailable() {
             return deferred
         }

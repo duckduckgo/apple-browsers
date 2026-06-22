@@ -51,6 +51,7 @@ import AIChat
 import PixelKit
 import PrivacyConfig
 import WebExtensions
+import DesignResourcesKitIcons
 
 class TabViewController: UIViewController {
 
@@ -1008,10 +1009,17 @@ class TabViewController: UIViewController {
             self?.handlePullToRefresh()
         })
 
+        // Symptom detection + pixels ship to production behind the `webScrollFreezeObservability` kill switch
+        // (on by default). The heavy on-device freeze capture is injected only when `webScrollFreezeCapture`
+        // (internal-only) is on — in production `captureFreeze` is a no-op.
         if webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) {
+            let captureEnabled = featureFlagger.isFeatureOn(.webScrollFreezeCapture)
             webScrollObserver = WebScrollObserver(container: webViewContainer,
                                                   scrollView: { [weak self] in self?.webView?.scrollView },
-                                                  currentURL: { [weak self] in self?.webView?.url })
+                                                  currentURL: { [weak self] in self?.webView?.url },
+                                                  captureFreeze: captureEnabled
+                                                    ? { FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow()) }
+                                                    : {})
             webScrollObserver?.install()
         }
 
@@ -1476,7 +1484,7 @@ class TabViewController: UIViewController {
         webpageDidFailToLoad()
     }
 
-    private func setErrorInfoImage(resource: ImageResource = .errorInfoUniversal) {
+    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy) {
         errorInfoImage.image = UIImage(resource: resource)
         errorInfoImage.isHidden = false
     }

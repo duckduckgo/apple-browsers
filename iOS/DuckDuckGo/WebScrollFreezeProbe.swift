@@ -39,17 +39,19 @@ enum WebScrollFreezeProbe {
         out += featureFlagsSection() + "\n"
         out += currentTabSection() + "\n"
         out += scrollViewsSection() + "\n"
+        out += allScrollViewsSection() + "\n"
+        out += windowWideRecognizerSuspectsSection() + "\n"
         out += presentationSection() + "\n"
         out += windowSection() + "\n"
         out += "## Recent interaction logs (last 5 min)\n" + recentInteractionLogs()
         return out
     }
 
-    // MARK: Touch ledger (reserved for Part 2 — not instrumented in Part 1)
+    // MARK: Touch ledger
 
     @MainActor
     private static func touchSection() -> String {
-        "## Touch ledger\n- (not instrumented in this build — Part 2 work)\n"
+        "## Touch ledger\n" + TouchCensus.report() + "\n"
     }
 
     private static func featureFlagsSection() -> String {
@@ -113,6 +115,112 @@ enum WebScrollFreezeProbe {
         }
         if !found { out += "- (none active — all idle)\n" }
         return out
+    }
+
+    /// Every UIScrollView in every window — regardless of gesture state — so a frozen scroll view that is
+    /// NOT mid-gesture (e.g. stuck after a failed reset) still shows up. Listed per window with host view
+    /// type, interaction flags, gesture state, content geometry, and whether it could be the culprit.
+    private static func allScrollViewsSection() -> String {
+        var out = "## All scroll views (window-wide)\n"
+        var count = 0
+        for window in allWindows() {
+            let windowName = typeName(window)
+            walkSubviews(window) { view in
+                guard let sv = view as? UIScrollView else { return }
+                count += 1
+                let pan = sv.panGestureRecognizer
+                let contentRange = sv.contentSize.height - sv.bounds.height
+                out += "- \(typeName(sv)) in \(windowName)\n"
+                out += "    scrollEnabled=\(sv.isScrollEnabled) userInteractionEnabled=\(sv.isUserInteractionEnabled)\n"
+                out += "    tracking=\(sv.isTracking) dragging=\(sv.isDragging) decelerating=\(sv.isDecelerating)\n"
+                out += "    pan: state=\(pan.state.diagnosticName) touches=\(pan.numberOfTouches)\n"
+                out += "    contentOffset=\(sv.contentOffset) contentSize.h=\(sv.contentSize.height)"
+                    + " bounds.h=\(sv.bounds.height) range=\(contentRange)\n"
+            }
+        }
+        if count == 0 { out += "- (no UIScrollViews found)\n" }
+        return out
+    }
+
+    /// Window-wide scan of all gesture recognizers, grouped into three buckets:
+    ///   (a) `.began` / `.changed` — actively tracking a gesture right now,
+    ///   (b) `numberOfTouches > 0` — holding touch references without being active,
+    ///   (c) WebKit/private recognizers that are `.possible` with `numberOfTouches == 0` — the idle
+    ///       suspects that should be compared against a healthy-baseline capture.
+    /// Each entry includes a short superview-chain path, frame, window, visibility, and alpha.
+    private static func windowWideRecognizerSuspectsSection() -> String {
+        var active: [(UIGestureRecognizer, UIView, UIWindow)] = []
+        var holdingTouches: [(UIGestureRecognizer, UIView, UIWindow)] = []
+        var webKitIdle: [(UIGestureRecognizer, UIView, UIWindow)] = []
+
+        for window in allWindows() {
+            walkSubviews(window) { view in
+                guard let recognizers = view.gestureRecognizers else { return }
+                for recognizer in recognizers {
+                    let state = recognizer.state
+                    let touches = recognizer.numberOfTouches
+                    if state == .began || state == .changed {
+                        active.append((recognizer, view, window))
+                    } else if touches > 0 {
+                        holdingTouches.append((recognizer, view, window))
+                    } else if isWebKitPrivate(recognizer) && state == .possible && touches == 0 {
+                        webKitIdle.append((recognizer, view, window))
+                    }
+                }
+            }
+        }
+
+        var out = "## Window-wide recognizer suspects\n"
+
+        out += "\n### (a) Active recognizers (.began / .changed)\n"
+        if active.isEmpty {
+            out += "- (none)\n"
+        } else {
+            for (recognizer, view, window) in active {
+                out += "- ⚠️ \(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
+                    + " touches=\(recognizer.numberOfTouches)\n"
+                out += "    \(viewContextDescription(view, window: window))\n"
+            }
+        }
+
+        out += "\n### (b) Recognizers holding touches (numberOfTouches > 0, not active)\n"
+        if holdingTouches.isEmpty {
+            out += "- (none)\n"
+        } else {
+            for (recognizer, view, window) in holdingTouches {
+                out += "- ⚠️ \(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
+                    + " touches=\(recognizer.numberOfTouches)\n"
+                out += "    \(viewContextDescription(view, window: window))\n"
+            }
+        }
+
+        out += "\n### (c) WebKit/private recognizers (.possible, 0 touches — idle suspects)\n"
+        out += "- NOTE: .possible/0-touches is the NORMAL idle state for WebKit gates."
+            + " Useful only when diffed against a healthy-baseline capture.\n"
+        if webKitIdle.isEmpty {
+            out += "- (none)\n"
+        } else {
+            for (recognizer, view, window) in webKitIdle {
+                out += "- \(typeName(recognizer))\n"
+                out += "    \(viewContextDescription(view, window: window))\n"
+            }
+        }
+
+        return out
+    }
+
+    /// Short description of a view's position in the window hierarchy: superview type chain, frame,
+    /// which window it lives in, and visibility.
+    private static func viewContextDescription(_ view: UIView, window: UIWindow) -> String {
+        var chain: [String] = []
+        var cursor: UIView? = view.superview
+        while let current = cursor, !(current is UIWindow) {
+            chain.append(typeName(current))
+            cursor = current.superview
+        }
+        let path = chain.isEmpty ? "(root)" : chain.joined(separator: " > ")
+        return "host=\(typeName(view)) superviews=[\(path)] frame=\(view.frame)"
+            + " window=\(typeName(window)) hidden=\(view.isHidden) alpha=\(view.alpha)"
     }
 
     /// A presentation/transition left mid-flight can wedge UIKit's pan routing while taps still work.

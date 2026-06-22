@@ -1020,6 +1020,9 @@ class TabViewController: UIViewController {
                                                     ? { FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow()) }
                                                     : {})
             webScrollObserver?.install()
+            if captureEnabled, let window = WebScrollFreezeProbe.keyWindow() {
+                TouchCensus.installIfNeeded(on: window)
+            }
         }
 
         if isAITab {

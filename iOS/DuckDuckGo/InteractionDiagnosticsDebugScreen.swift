@@ -73,16 +73,18 @@ private struct InteractionCaptureView: View {
             Section {
                 Button { model.probeProgrammaticScroll() } label: { Text(verbatim: "Scrollability probe (programmatic scroll ±400pt)") }
                 Button { model.runRecovery(.resetDeferringGates) } label: { Text(verbatim: "Reset WebKit deferring gates (scoped, self-skips on live touch)") }
+                Button { model.runRecovery(.resetScrollPan) } label: { Text(verbatim: "Reset web scroll pan only (scoped, self-skips on live touch)") }
                 if !model.actionResult.isEmpty {
                     Text(verbatim: model.actionResult).font(.footnote)
                 }
             } header: {
                 Text(verbatim: "Diagnostics (safe)")
             } footer: {
-                Text(verbatim: "Both are safe — no broad recogniser/window toggling. Scrollability probe: setContentOffset "
-                     + "(MOVES → block is in gesture delivery; doesn't → scroll view itself is stuck). Reset deferring gates: "
-                     + "WebKit's own scoped pattern — resets only the webView's deferring gates, self-skips if a touch is "
-                     + "live; if scrolling recovers after, the deferring gate WAS the cause.")
+                Text(verbatim: "All three are safe — no broad recogniser or window toggling. "
+                     + "Scrollability probe: setContentOffset (MOVES → block is in gesture delivery; doesn't → scroll view itself is stuck). "
+                     + "Both resets are scoped and self-skip if a touch is in flight. "
+                     + "Each reset AUTO-SAVES a pre- and post-reset capture to the ring buffer — compare those captures to see what changed. "
+                     + "If scrolling recovers after a reset, that supports (but does not prove) the corresponding hypothesis.")
             }
             Section {
                 Text(verbatim: "Saved captures: \(model.savedCount)")

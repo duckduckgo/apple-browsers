@@ -38,7 +38,6 @@ protocol UserScriptWithAutoconsent: UserScript {
 final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, UserScriptWithAutoconsent {
 
     private struct Constants {
-        static let filterListCmpName = "filterList" // special CMP name used for reports from the cosmetic filterlist
         static let maximumCPMErrorsLength = 255
         static let multipleCMPsError = "multiple_cmps"
     }
@@ -370,20 +369,6 @@ extension AutoconsentUserScript {
         }
         let remoteConfig = self.config.settings(for: .autoconsent)
         let disabledCMPs = remoteConfig["disabledCMPs"] as? [String] ?? []
-        let filterlistExceptions = remoteConfig["filterlistExceptions"] as? [String] ?? []
-
-#if DEBUG
-        // The `filterList` feature flag being disabled causes the integration test suite to fail - this is a temporary change to hardcode the
-        // flag to true when integration tests are running. In all other cases, continue to use the flag as usual.
-        let enableFilterList: Bool
-        if [.integrationTests].contains(AppVersion.runType) {
-            enableFilterList = true
-        } else {
-            enableFilterList = config.isSubfeatureEnabled(AutoconsentSubfeature.filterlist) && !self.matchDomainList(domain: topURLDomain, domainsList: filterlistExceptions)
-        }
-#else
-        let enableFilterList = config.isSubfeatureEnabled(AutoconsentSubfeature.filterlist) && !self.matchDomainList(domain: topURLDomain, domainsList: filterlistExceptions)
-#endif
 
         var autoAction: String?
         if preferences.isAutoconsentEnabled == true {
@@ -410,7 +395,6 @@ extension AutoconsentUserScript {
                 "enableCosmeticRules": true,
                 "detectRetries": 20,
                 "isMainWorld": false,
-                "enableFilterList": enableFilterList,
                 "enableHeuristicDetection": true,
                 "enableHeuristicAction": consentHeuristicEnabled ?? false // default to false if not enrolled
             ] as [String: Any?]
@@ -484,28 +468,7 @@ extension AutoconsentUserScript {
         // Check for reload loop
         detectReloadLoop(cmpName: messageData.cmp)
 
-        // if popupFound is sent with "filterList", it indicates that cosmetic filterlist matched in the prehide stage,
-        // but a real opt-out may still follow. See https://github.com/duckduckgo/autoconsent/blob/main/api.md#messaging-api
-        if messageData.cmp == Constants.filterListCmpName {
-            refreshDashboardState(
-                consentManaged: true,
-                cosmetic: true,
-                optoutFailed: false,
-                selftestFailed: nil,
-                consentReloadLoop: reloadLoopDetected,
-                consentRule: messageData.cmp,
-                consentHeuristicEnabled: consentHeuristicEnabled
-            )
-            // trigger animation
-            Logger.autoconsent.debug("Starting animation for cosmetic filters")
-            // post popover notification
-            NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
-                "topUrl": self.topUrl ?? url,
-                "isCosmetic": true
-            ])
-        } else {
-            refreshCPMDiagnostics()
-        }
+        refreshCPMDiagnostics()
 
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
     }
@@ -589,15 +552,13 @@ extension AutoconsentUserScript {
 
         // Show animation and remember that we did it for this site
         management.sitesNotifiedCache.insert(host)
-        if messageData.cmp != Constants.filterListCmpName { // filterlist animation should have been triggered already (see handlePopupFound)
-            Logger.autoconsent.debug("Starting animation for the handled cookie popup")
-            // post popover notification
-            NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
-                "topUrl": self.topUrl ?? url,
-                "isCosmetic": messageData.isCosmetic
-            ])
-            firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
-        }
+        Logger.autoconsent.debug("Starting animation for the handled cookie popup")
+        // post popover notification
+        NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
+            "topUrl": self.topUrl ?? url,
+            "isCosmetic": messageData.isCosmetic
+        ])
+        firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
 
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
 

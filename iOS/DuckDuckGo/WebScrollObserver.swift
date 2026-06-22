@@ -59,7 +59,7 @@ final class WebScrollObserver: NSObject {
     private let scrollViewProvider: () -> UIScrollView?
     private let currentURL: () -> URL?
     private let firePixelDailyAndCount: (Pixel.Event, [String: String]) -> Void
-    /// Debug-only freeze capture, injected by `TabViewController` only when `webScrollFreezeObservability`
+    /// Debug-only freeze capture, injected by `TabViewController` only when `webScrollFreezeCapture`
     /// is on. The production observer (symptom detection + pixels) is unaffected — default is a no-op.
     private let captureFreeze: () -> Void
     private let now: () -> Date
@@ -178,7 +178,7 @@ final class WebScrollObserver: NSObject {
 
         // Capture LIBERALLY (once per streak, before the precision gate) so a real freeze always leaves the
         // touch/recognizer census. Injected closure: a no-op in production, the real capture only when the
-        // debug flag `webScrollFreezeObservability` is on. The pixel below ships to everyone regardless.
+        // debug flag `webScrollFreezeCapture` is on. The pixel below ships to everyone regardless.
         if !capturedThisStreak {
             capturedThisStreak = true
             captureFreeze()

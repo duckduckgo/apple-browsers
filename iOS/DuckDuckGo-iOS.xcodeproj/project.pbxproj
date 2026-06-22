@@ -872,7 +872,7 @@
 		857229882BBEE74100E2E802 /* AppRatingPromptDatabaseMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857229872BBEE74100E2E802 /* AppRatingPromptDatabaseMigrationTests.swift */; };
 		8572298A2BBEF0C800E2E802 /* AppRatingPrompt_v1 in Resources */ = {isa = PBXBuildFile; fileRef = 857229892BBEF0C800E2E802 /* AppRatingPrompt_v1 */; };
 		857448232E84189300516EAB /* ResizableTintableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857448222E84183D00516EAB /* ResizableTintableImage.swift */; };
-		8577A1C5255D2C0D00D43FCD /* HitTestingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8577A1C4255D2C0D00D43FCD /* HitTestingToolbar.swift */; };
+		8577A1C5255D2C0D00D43FCD /* BrowserToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8577A1C4255D2C0D00D43FCD /* BrowserToolbarView.swift */; };
 		857917E22D806C1900E23CDC /* BulkGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857917E12D806C1900E23CDC /* BulkGeneratorView.swift */; };
 		8579791C2E4A3BF900A9F6DB /* AIChatSettingsMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8579791B2E4A3BF300A9F6DB /* AIChatSettingsMigrationTests.swift */; };
 		857BAE932E3BB7FC00231728 /* SwitchBarTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857BAE922E3BB7FC00231728 /* SwitchBarTextView.swift */; };
@@ -3520,7 +3520,7 @@
 		857229872BBEE74100E2E802 /* AppRatingPromptDatabaseMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptDatabaseMigrationTests.swift; sourceTree = "<group>"; };
 		857229892BBEF0C800E2E802 /* AppRatingPrompt_v1 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AppRatingPrompt_v1; sourceTree = "<group>"; };
 		857448222E84183D00516EAB /* ResizableTintableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableTintableImage.swift; sourceTree = "<group>"; };
-		8577A1C4255D2C0D00D43FCD /* HitTestingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HitTestingToolbar.swift; sourceTree = "<group>"; };
+		8577A1C4255D2C0D00D43FCD /* BrowserToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolbarView.swift; sourceTree = "<group>"; };
 		857917E12D806C1900E23CDC /* BulkGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkGeneratorView.swift; sourceTree = "<group>"; };
 		8579791B2E4A3BF300A9F6DB /* AIChatSettingsMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsMigrationTests.swift; sourceTree = "<group>"; };
 		857BAE922E3BB7FC00231728 /* SwitchBarTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarTextView.swift; sourceTree = "<group>"; };
@@ -11406,7 +11406,7 @@
 				6AC6DAB228804F97002723C0 /* BarsAnimator.swift */,
 				8563A03B1F9288D600F04442 /* BrowserChromeManager.swift */,
 				854A012E2A5563A400FCC628 /* FindInPage.xib */,
-				8577A1C4255D2C0D00D43FCD /* HitTestingToolbar.swift */,
+				8577A1C4255D2C0D00D43FCD /* BrowserToolbarView.swift */,
 				85DDE03F2AC6FF65006ABCA2 /* MainView.swift */,
 				F17669D61E43401C003D3222 /* MainViewController.swift */,
 				F0A1B2C3D4E5F60718293A01 /* FloatingUIManager.swift */,
@@ -12717,7 +12717,7 @@
 				8528AE81212F15D600D0BD74 /* AppRatingPrompt.xcdatamodeld in Sources */,
 				1E24295E293F57FA00584836 /* LottieView.swift in Sources */,
 				BB490ECF2EBDF36B00649B5B /* WinBackOfferFactory.swift in Sources */,
-				8577A1C5255D2C0D00D43FCD /* HitTestingToolbar.swift in Sources */,
+				8577A1C5255D2C0D00D43FCD /* BrowserToolbarView.swift in Sources */,
 				6FE095D82BD90AFB00490FF8 /* UniversalOmniBarState.swift in Sources */,
 				4B359FD52FB52B810020D70F /* PrivacyStatsDatabase.swift in Sources */,
 				4B359FD62FB52B810020D70F /* PrivacyStatsProviding.swift in Sources */,

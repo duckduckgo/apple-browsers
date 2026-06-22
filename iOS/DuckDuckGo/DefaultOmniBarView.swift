@@ -407,6 +407,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
+    private let isFloatingUIEnabled = FloatingUIManager().isFloatingUIEnabled
     fileprivate var savedBarChromeBackgroundColor: UIColor?
     fileprivate var savedBarViewBackgroundColor: UIColor?
 
@@ -418,6 +419,30 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let activeOutlineView = UIView()
 
     private let stackView = UIStackView()
+
+    private let glassEffect: UIView = {
+        let view: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            view = UIVisualEffectView(effect: UIGlassEffect())
+            view.cornerConfiguration = .capsule()
+        } else {
+            view = UIVisualEffectView()
+        }
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        return view
+    }()
+
+    private let opaqueEffect: UIView = {
+        let view: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            view = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+            view.cornerConfiguration = .capsule()
+        } else {
+            view = UIVisualEffectView()
+        }
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        return view
+    }()
 
     static func create() -> Self {
         Self.init()
@@ -440,6 +465,28 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    func makeGlass() {
+        guard isFloatingUIEnabled else {
+            makeOpaque()
+            return
+        }
+        glassEffect.removeFromSuperview()
+        opaqueEffect.removeFromSuperview()
+        glassEffect.frame = searchAreaContainerView.bounds
+        searchAreaContainerView.insertSubview(glassEffect, at: 0)
+        searchAreaContainerView.backgroundColor = .clear
+    }
+
+    func makeOpaque() {
+        glassEffect.removeFromSuperview()
+        opaqueEffect.removeFromSuperview()
+//        opaqueEffect.frame = searchAreaContainerView.bounds
+//        searchAreaContainerView.insertSubview(opaqueEffect, at: 0)
+        searchAreaContainerView.backgroundColor = isFloatingUIEnabled
+            ? UIColor(designSystemColor: .backgroundTertiary)
+            : UIColor(designSystemColor: .urlBar)
     }
 
     private func setUpSubviews() {
@@ -590,7 +637,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        backgroundColor = defaultBackgroundColor
+        backgroundColor = isFloatingUIEnabled ? .clear : defaultBackgroundColor
 
         searchAreaAlignmentView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         searchAreaAlignmentView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -725,11 +772,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateShadows() {
-        if isActiveState {
-            searchAreaContainerView.applyActiveShadow()
-        } else {
-            searchAreaContainerView.applyDefaultShadow()
-        }
+//        if isActiveState {
+//            searchAreaContainerView.applyActiveShadow()
+//        } else {
+//            searchAreaContainerView.applyDefaultShadow()
+//        }
     }
 
     private func setUpAccessibility() {
@@ -1215,9 +1262,9 @@ extension DefaultOmniBarView {
 
     // Used to mask shadows going outside of bounds to prevent them covering other content
     func updateMaskLayer(maskTop: Bool, clip: Bool) {
-        self.masksTop = maskTop
-        self.clipsContent = clip
-        updateMaskLayer()
+//        self.masksTop = maskTop
+//        self.clipsContent = clip
+//        updateMaskLayer()
     }
 
     private func updateMaskLayer() {
@@ -1304,7 +1351,7 @@ extension DefaultOmniBarView {
         applyTextViewVisibility()
 
         guard animated else {
-            searchAreaContainerView.applyShadowOpacityMultiplier(1)
+//            searchAreaContainerView.applyShadowOpacityMultiplier(1)
             aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
             if !isSearchAreaExpanded {
                 aiChatSendButton.isHidden = true
@@ -1330,7 +1377,7 @@ extension DefaultOmniBarView {
         layoutIfNeeded()
 
         if isSearchAreaExpanded {
-            searchAreaContainerView.applyShadowOpacityMultiplier(0)
+//            searchAreaContainerView.applyShadowOpacityMultiplier(0)
             applyExpansionClipping()
         }
 
@@ -1338,17 +1385,17 @@ extension DefaultOmniBarView {
 
         UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             if self.isSearchAreaExpanded {
-                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+//                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.alpha = 1
             } else {
-                self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
+//                self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
                 self.aiChatSendButton.alpha = 0
             }
             self.layoutIfNeeded()
         } completion: { _ in
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
-                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+//                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.isHidden = true
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil

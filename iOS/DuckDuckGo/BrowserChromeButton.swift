@@ -31,7 +31,7 @@ class BrowserChromeButton: UIButton {
 
     var type: ButtonType {
         didSet {
-            applyConfiguration()
+            // applyConfiguration()
         }
     }
 
@@ -43,16 +43,17 @@ class BrowserChromeButton: UIButton {
         self.type = type
         super.init(frame: .zero)
 
-        applyConfiguration(animated: false)
+        // applyConfiguration(animated: false)
     }
     
     required init?(coder: NSCoder) {
         self.type = .primary
         super.init(coder: coder)
 
-        applyConfiguration(animated: false)
+        // applyConfiguration(animated: false)
     }
 
+    /*
     func addBorder(borderFrame: CGRect = CGRect(x: 0, y: 0, width: 80, height: 40)) {
         automaticallyUpdatesConfiguration = false
         guard border == nil else { return }
@@ -99,15 +100,24 @@ class BrowserChromeButton: UIButton {
         setNeedsDisplay()
     }
 
+    override var intrinsicContentSize: CGSize {
+        switch type {
+        case .toolbar:
+            return CGSize(width: 34, height: 44)
+        default:
+            return super.intrinsicContentSize
+        }
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
         border?.center = center
     }
-
+*/
     func setImage(_ image: UIImage?) {
-        configuration?.image = image
+//        configuration?.image = image
+        setImage(image, for: .normal)
     }
-
     var hasImage: Bool {
         configuration?.image != nil
     }
@@ -115,7 +125,7 @@ class BrowserChromeButton: UIButton {
     var hasTitle: Bool {
         !(configuration?.title?.isEmpty ?? true) || !(currentTitle?.isEmpty ?? true)
     }
-
+/*
     override func setNeedsDisplay() {
         border?.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
         super.setNeedsDisplay()
@@ -143,8 +153,8 @@ class BrowserChromeButton: UIButton {
 
         configurationUpdateHandler = { button in
             var newConfiguration = button.configuration ?? defaultConfiguration
-            newConfiguration.baseForegroundColor = type.foregroundColor(for: button.state)
-            newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
+            // newConfiguration.baseForegroundColor = type.foregroundColor(for: button.state)
+            // newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
             if animated {
                 UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
                     button.configuration = newConfiguration
@@ -165,6 +175,7 @@ class BrowserChromeButton: UIButton {
             return .omniBarDefault()
         }
     }
+     */
 }
 
 private extension BrowserChromeButton.ButtonType {
@@ -237,24 +248,35 @@ private extension UIButton.Configuration {
 
 extension BrowserChromeButton {
 
-    static func createToolbarButtonItem(title: String, image: UIImage?, action: (() -> Void)? = nil) -> UIBarButtonItem {
+    /// Toolbar control for custom `BrowserToolbarView` layouts (preferred over bar items for the main browser toolbar).
+    static func createToolbarButton(title: String, image: UIImage?, action: (() -> Void)? = nil) -> BrowserChromeButton {
         let button = BrowserChromeButton(.toolbar)
         if let image = image {
             button.setImage(image)
         }
 
         if let action = action {
-            button.addAction(UIAction{ _ in
+            button.addAction(UIAction { _ in
                 action()
             }, for: .touchUpInside)
         }
 
-        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        button.accessibilityLabel = title
+        return button
+    }
+
+    static func createToolbarButtonItem(title: String, image: UIImage?, action: (() -> Void)? = nil) -> UIBarButtonItem {
+        let button = createToolbarButton(title: title, image: image, action: action)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 34),
+            button.heightAnchor.constraint(equalToConstant: 44),
+        ])
 
         let barItem = UIBarButtonItem(customView: button)
 
         if #available(iOS 26.0, *) {
-            barItem.hidesSharedBackground = true
+//            barItem.hidesSharedBackground = true
         }
 
         barItem.title = title

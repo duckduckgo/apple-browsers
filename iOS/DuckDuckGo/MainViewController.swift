@@ -1156,16 +1156,15 @@ class MainViewController: UIViewController {
 
     private func setUpToolbarButtonsActions() {
 
-        viewCoordinator.toolbarBackButton.setCustomItemAction(on: self, action: #selector(onBackPressed))
-        viewCoordinator.toolbarForwardButton.setCustomItemAction(on: self, action: #selector(onForwardPressed))
-        viewCoordinator.toolbarPasswordsButton.setCustomItemAction(on: self, action: #selector(onPasswordsPressed))
-        viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
-        viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
+        viewCoordinator.toolbarBackButton.addTarget(self, action: #selector(onBackPressed), for: .touchUpInside)
+        viewCoordinator.toolbarForwardButton.addTarget(self, action: #selector(onForwardPressed), for: .touchUpInside)
+        viewCoordinator.toolbarPasswordsButton.addTarget(self, action: #selector(onPasswordsPressed), for: .touchUpInside)
+        viewCoordinator.toolbarBookmarksButton.addTarget(self, action: #selector(onToolbarBookmarksPressed), for: .touchUpInside)
+        viewCoordinator.menuToolbarButton.addTarget(self, action: #selector(onMenuPressed), for: .touchUpInside)
 
-        viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(performCustomizationActionForToolbar))
+        viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(performCustomizationActionForToolbar), for: .touchUpInside)
 
-        viewCoordinator.menuToolbarButton.customView?
-            .addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuToolbarLongPressed)))
+        viewCoordinator.menuToolbarButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuToolbarLongPressed)))
     }
 
     private func registerForPageRefreshPatterns() {
@@ -1292,6 +1291,9 @@ class MainViewController: UIViewController {
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
         }
+
+        viewCoordinator.updateToolbarLayoutForAddressBarPosition(position)
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
         omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
@@ -1437,12 +1439,12 @@ class MainViewController: UIViewController {
         tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
 
         tabSwitcherButton?.delegate = self
-        viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+        viewCoordinator.toolbarHandler.setTabSwitcherView(tabSwitcherButton!)
 
         assert(tabSwitcherButton != nil)
 
-        viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
-        viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
+        viewCoordinator.toolbarTabSwitcherView.isAccessibilityElement = true
+        viewCoordinator.toolbarTabSwitcherView.accessibilityTraits = .button
 
         // Omnibar tab switcher button (for iPhone landscape combined bar)
         let omniBarTabSwitcher = TabSwitcherStaticButton(showMenuOnLongPress: fireModeCapability.isFireModeEnabled)
@@ -2295,7 +2297,7 @@ class MainViewController: UIViewController {
     }
 
     private func refreshTabIcon() {
-        viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.currentTabsModel.count)
+        viewCoordinator.toolbarTabSwitcherView.accessibilityHint = UserText.numberOfTabs(tabManager.currentTabsModel.count)
         assert(tabSwitcherButton != nil)
         let count = tabManager.currentTabsModel.count
         let hasUnread = tabManager.currentTabsModel.hasUnread
@@ -3740,7 +3742,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var toolbarHeight: CGFloat {
-        viewCoordinator.constraints.toolbarHeightConstraint.constant
+        viewCoordinator.constraints.toolbarHeight.constant
     }
     
     var barsMaxHeight: CGFloat {
@@ -4562,10 +4564,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     private func shareCurrentURLFromToolbar() {
-        guard let targetView = viewCoordinator.toolbarFireBarButtonItem.customView else {
-            assertionFailure("Expected custom view on toolbar fire button")
-            return
-        }
+        let targetView = viewCoordinator.toolbarFireButton
         // Pixels coming later.
         guard let link = currentTab?.link else { return }
         currentTab?.onShareAction(forLink: link, fromView: targetView)
@@ -5337,7 +5336,7 @@ extension MainViewController: TabDelegate {
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
     }
-    
+
     func tabDidFinishNavigation(_ tab: TabViewController) {
         // For the current tab, `tabLoadingStateDidChange` (called immediately before this)
         // already triggers a save, so skip here to avoid a redundant save in the same run loop.
@@ -6151,14 +6150,14 @@ extension MainViewController {
             if isInMinimalChromeLayout {
                 return viewCoordinator.omniBar.barView.fireButton
             }
-            return viewCoordinator.toolbarFireBarButtonItem.customView
+            return viewCoordinator.toolbarFireButton
         } else if state.currentAddressBarButton == .fire {
             return viewCoordinator.omniBar.barView.customizableButton
         } else {
             if isInMinimalChromeLayout {
                 return viewCoordinator.omniBar.barView.menuButton
             }
-            return viewCoordinator.menuToolbarButton.customView
+            return viewCoordinator.menuToolbarButton
         }
 
     }
@@ -6431,14 +6430,12 @@ extension MainViewController {
 
         view.backgroundColor = theme.mainViewBackgroundColor
 
-        decorateToolbar(viewCoordinator.toolbar, with: theme)
         viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
 
-        viewCoordinator.toolbar.barTintColor = theme.barBackgroundColor
         viewCoordinator.toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 
-        viewCoordinator.toolbarTabSwitcherButton.tintColor = UIColor(singleUseColor: .toolbarButton)
+        viewCoordinator.toolbarTabSwitcherView.tintColor = UIColor(singleUseColor: .toolbarButton)
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
 
@@ -6449,6 +6446,7 @@ extension MainViewController {
     private func applyFloatingUIIfNeeded() {
         let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
+        viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)
     }
 
 }
@@ -6628,11 +6626,11 @@ extension MainViewController {
         
         let backMenu = historyMenu(with: currentTab.webView.backForwardList.backList.reversed())
         viewCoordinator.omniBar.barView.backButton.menu = backMenu
-        viewCoordinator.toolbarBackButton.setCustomItemMenu(backMenu)
+        viewCoordinator.toolbarBackButton.menu = backMenu
 
         let forwardMenu = historyMenu(with: currentTab.webView.backForwardList.forwardList)
         viewCoordinator.omniBar.barView.forwardButton.menu = forwardMenu
-        viewCoordinator.toolbarForwardButton.setCustomItemMenu(forwardMenu)
+        viewCoordinator.toolbarForwardButton.menu = forwardMenu
     }
 
     private func historyMenu(with backForwardList: [WKBackForwardListItem]) -> UIMenu {
@@ -6752,24 +6750,6 @@ extension MainViewController: AIChatContentHandlingDelegate {
         closeTab(tab)
     }
 
-}
-
-private extension UIBarButtonItem {
-    func setCustomItemAction(on target: Any?, action: Selector) {
-        if let customControl = customView as? UIControl {
-            customControl.addTarget(target, action: action, for: .touchUpInside)
-        } else {
-            self.action = action
-        }
-    }
-
-    func setCustomItemMenu(_ menu: UIMenu) {
-        if let customControl = customView as? UIButton {
-            customControl.menu = menu
-        } else {
-            self.menu = menu
-        }
-    }
 }
 
 /// This extension allows delegating from the RMF action button when the action type is 'navigation'.  It shadows existing functions.
@@ -7008,11 +6988,7 @@ extension MainViewController {
 
     /// Applies customization if enabled, ensures default otherwise.
     private func applyCustomizationForToolbar(_ state: MobileCustomization.State) {
-        guard let toolbarFireButton = viewCoordinator.toolbarFireBarButtonItem.customView as? BrowserChromeButton else {
-            assertionFailure("Expected BrowserChromeButton")
-            return
-        }
-
+        let toolbarFireButton = viewCoordinator.toolbarFireButton
         customizeFireButton(toolbarFireButton, state: state)
 
         if let omniBarFireButton = viewCoordinator.omniBar.barView.fireButton as? BrowserChromeButton {

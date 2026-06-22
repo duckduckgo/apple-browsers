@@ -146,14 +146,14 @@ extension MainViewController {
         viewCoordinator.toolbarForwardButton.isEnabled = locked ? false : canGoForward
         viewCoordinator.omniBar.isBackButtonEnabled = locked ? false : canGoBack
         viewCoordinator.omniBar.isForwardButtonEnabled = locked ? false : canGoForward
-        viewCoordinator.toolbarTabSwitcherButton.isEnabled = !locked
+        if let tabSwitcherButton = viewCoordinator.toolbarTabSwitcherView as? BrowserChromeButton {
+            tabSwitcherButton.isEnabled = !locked
+        }
         viewCoordinator.menuToolbarButton.isEnabled = !locked
         viewCoordinator.toolbarPasswordsButton.isEnabled = !locked
         viewCoordinator.toolbarBookmarksButton.isEnabled = !locked
-        if let tabSwitcherView = viewCoordinator.toolbarTabSwitcherButton.customView {
-            tabSwitcherView.alpha = locked ? 0.5 : 1
-            tabSwitcherView.isUserInteractionEnabled = !locked
-        }
+        viewCoordinator.toolbarTabSwitcherView.alpha = locked ? 0.5 : 1
+        viewCoordinator.toolbarTabSwitcherView.isUserInteractionEnabled = !locked
         swipeTabsCoordinator?.isEnabled = !locked
         viewCoordinator.omniBar.barView.isUserInteractionEnabled = !locked
         viewCoordinator.omniBar.barView.menuButton.isUserInteractionEnabled = !locked

@@ -22,13 +22,14 @@ import UIKit
 struct FloatingUIChromeStyler {
 
     func decorateMainViewIfNeeded(manager: FloatingUIManaging, coordinator: MainViewCoordinator) {
-        guard manager.isFloatingUIEnabled else { return }
-        coordinator.omniBar.barView.backgroundColor = .red
+        coordinator.toolbar.setFloatingStyleEnabled(manager.isFloatingUIEnabled, animated: false)
+        if manager.isFloatingUIEnabled {
+            coordinator.navigationBarContainer.backgroundColor = .clear
+        }
     }
 
     func decorateTabSwitcherIfNeeded(manager: FloatingUIManaging, view: UIView) {
         guard manager.isFloatingUIEnabled else { return }
-        view.backgroundColor = .red
     }
 
 }

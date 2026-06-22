@@ -184,6 +184,20 @@ extension MainViewFactory {
     }
     
     final class NavigationBarContainer: UIView {
+        private static let floatingInsets = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
+        private static let floatingCornerRadius: CGFloat = 24
+
+        private let floatingMaterialView: UIVisualEffectView = {
+            let view = UIVisualEffectView(effect: nil)
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.isUserInteractionEnabled = false
+            view.clipsToBounds = true
+            view.layer.cornerCurve = .continuous
+            return view
+        }()
+
+        private var floatingMaterialConstraints: [NSLayoutConstraint] = []
+        private var isFloatingStyleEnabled = false
 
         /// Enables overflow hit testing for iPad expanded search area.
         /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
@@ -196,6 +210,30 @@ extension MainViewFactory {
                     removeGestureRecognizer(overflowTapGesture)
                 }
             }
+        }
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            addSubview(floatingMaterialView)
+            floatingMaterialConstraints = [
+                floatingMaterialView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                floatingMaterialView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                floatingMaterialView.topAnchor.constraint(equalTo: topAnchor),
+                floatingMaterialView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ]
+            NSLayoutConstraint.activate(floatingMaterialConstraints)
+            applyFloatingStyle(animated: false)
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        func setFloatingStyleEnabled(_ enabled: Bool) {
+            guard isFloatingStyleEnabled != enabled else { return }
+            isFloatingStyleEnabled = enabled
+            applyFloatingStyle(animated: true)
         }
 
         private lazy var overflowTapGesture: UITapGestureRecognizer = {
@@ -248,9 +286,42 @@ extension MainViewFactory {
             }
             return nil
         }
+
+        private func applyFloatingStyle(animated: Bool) {
+            let updates = {
+                if self.isFloatingStyleEnabled {
+                    self.floatingMaterialConstraints[0].constant = Self.floatingInsets.left
+                    self.floatingMaterialConstraints[1].constant = -Self.floatingInsets.right
+                    self.floatingMaterialConstraints[2].constant = Self.floatingInsets.top
+                    self.floatingMaterialConstraints[3].constant = -Self.floatingInsets.bottom
+                    self.floatingMaterialView.layer.cornerRadius = Self.floatingCornerRadius
+                    if #available(iOS 26.0, *) {
+                        self.floatingMaterialView.effect = UIGlassEffect(style: .regular)
+                    } else {
+                        self.floatingMaterialView.effect = UIBlurEffect(style: .systemThinMaterial)
+                    }
+                } else {
+                    self.floatingMaterialConstraints[0].constant = 0
+                    self.floatingMaterialConstraints[1].constant = 0
+                    self.floatingMaterialConstraints[2].constant = 0
+                    self.floatingMaterialConstraints[3].constant = 0
+                    self.floatingMaterialView.layer.cornerRadius = 0
+                    self.floatingMaterialView.effect = nil
+                }
+                self.layoutIfNeeded()
+            }
+
+            if animated {
+                UIView.animate(withDuration: 0.2, animations: updates)
+            } else {
+                updates()
+            }
+        }
     }
     private func createNavigationBarContainer() {
         coordinator.navigationBarContainer = NavigationBarContainer()
+        let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        coordinator.navigationBarContainer.setFloatingStyleEnabled(floatingUIManager.isFloatingUIEnabled)
         superview.addSubview(coordinator.navigationBarContainer)
     }
 
@@ -260,9 +331,18 @@ extension MainViewFactory {
         superview.addSubview(coordinator.contentContainer)
     }
 
-    final class StatusBackgroundView: UIView { }
+    final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
-        coordinator.statusBackground = StatusBackgroundView()
+        let floatingUIManager = FloatingUIManager()
+        if floatingUIManager.isFloatingUIEnabled, #available(iOS 26.1, *) {
+            let effect = UIColorEffect(color: UIColor(designSystemColor: .surface).withAlphaComponent(0.5))
+            let view = StatusBackgroundView(effect: effect)
+            coordinator.statusBackground = view
+        } else {
+            let view = StatusBackgroundView(effect: nil)
+            view.backgroundColor = UIColor(designSystemColor: .background)
+            coordinator.statusBackground = view
+        }
         superview.addSubview(coordinator.statusBackground)
     }
 
@@ -289,8 +369,10 @@ extension MainViewFactory {
     }
 
     private func createToolbar() {
-        coordinator.toolbar = HitTestingToolbar()
-        coordinator.toolbar.isTranslucent = false
+        let floatingUIManager = FloatingUIManager()
+        coordinator.toolbar = BrowserToolbarView()
+        coordinator.toolbar.setFloatingStyleEnabled(floatingUIManager.isFloatingUIEnabled)
+        coordinator.toolbar.backgroundColor = .clear
         superview.addSubview(coordinator.toolbar)
         coordinator.toolbarHandler = ToolbarHandler(toolbar: coordinator.toolbar)
         coordinator.updateToolbarWithState(.newTab)
@@ -372,6 +454,8 @@ extension MainViewFactory {
         let container = coordinator.navigationBarContainer!
         let toolbar = coordinator.toolbar!
         let navigationBarCollectionView = coordinator.navigationBarCollectionView!
+        let isFloatingTopContainerEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let horizontalInset: CGFloat = isFloatingTopContainerEnabled ? 24 : 0
 
         if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
@@ -393,8 +477,8 @@ extension MainViewFactory {
             coordinator.constraints.navigationBarContainerHeight,
             navigationBarCollectionView.constrainAttribute(.height, to: barHeight),
             navigationBarCollectionView.constrainView(container, by: .top),
-            navigationBarCollectionView.constrainView(container, by: .leading),
-            navigationBarCollectionView.constrainView(container, by: .trailing),
+            navigationBarCollectionView.constrainView(container, by: .leading, constant: horizontalInset),
+            navigationBarCollectionView.constrainView(container, by: .trailing, constant: -horizontalInset),
         ])
     }
 
@@ -430,6 +514,7 @@ extension MainViewFactory {
             statusBackground.constrainView(superview, by: .width),
             statusBackground.constrainView(superview, by: .centerX),
             statusBackground.constrainView(superview, by: .top),
+            // statusBackground.bottomAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
             coordinator.constraints.statusBackgroundToNavigationBarContainerBottom,
         ])
     }
@@ -455,15 +540,15 @@ extension MainViewFactory {
     private func constrainToolbar() {
 
         // Changing this?  Best change TabSwitcherViewController too
-        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+        let toolbarWidthMod = 0.0 // isiOS26 ? 14.0 : 4.0
 
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
-        coordinator.constraints.toolbarHeightConstraint = toolbar.constrainAttribute(.height, to: 49)
+        coordinator.constraints.toolbarHeight = toolbar.constrainAttribute(.height, to: BrowserToolbarView.totalHeight(withOmnibarHeight: 0))
         NSLayoutConstraint.activate([
             toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),
-            coordinator.constraints.toolbarHeightConstraint,
+            coordinator.constraints.toolbarHeight,
             coordinator.constraints.toolbarBottom,
         ])
     }

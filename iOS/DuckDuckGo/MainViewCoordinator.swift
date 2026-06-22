@@ -50,18 +50,17 @@ class MainViewCoordinator {
     var aiTabCollapsedTopSeparator: UIView!
     private var aiTabCollapsedTopSeparatorLogicallyVisible = false
     var unifiedInputContentContainer: UIView!
-
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
     private var omnibarDismissAnimator: UIViewPropertyAnimator?
-    var toolbar: UIToolbar!
+    var toolbar: BrowserToolbarView!
     var toolbarSpacer: UIView!
-    var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
-    var toolbarFireBarButtonItem: UIBarButtonItem { toolbarHandler.fireBarButtonItem }
-    var toolbarForwardButton: UIBarButtonItem { toolbarHandler.forwardButton }
-    var toolbarTabSwitcherButton: UIBarButtonItem { toolbarHandler.tabSwitcherButton }
-    var menuToolbarButton: UIBarButtonItem { toolbarHandler.browserMenuButton }
-    var toolbarPasswordsButton: UIBarButtonItem { toolbarHandler.passwordsButton }
-    var toolbarBookmarksButton: UIBarButtonItem { toolbarHandler.bookmarkButton }
+    var toolbarBackButton: BrowserChromeButton { toolbarHandler.backButton }
+    var toolbarFireButton: BrowserChromeButton { toolbarHandler.fireButton }
+    var toolbarForwardButton: BrowserChromeButton { toolbarHandler.forwardButton }
+    var toolbarTabSwitcherView: UIView { toolbarHandler.tabSwitcherView }
+    var menuToolbarButton: BrowserChromeButton { toolbarHandler.browserMenuButton }
+    var toolbarPasswordsButton: BrowserChromeButton { toolbarHandler.passwordsButton }
+    var toolbarBookmarksButton: BrowserChromeButton { toolbarHandler.bookmarkButton }
 
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
@@ -70,6 +69,7 @@ class MainViewCoordinator {
     private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
+    private(set) var isOmnibarInToolbar = false
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
         isNavBarContainerBottomKeyboardBased
@@ -88,7 +88,7 @@ class MainViewCoordinator {
     }
 
     func hideToolbarSeparator() {
-        toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
+        // `UIToolbar` separator/shadow removed with custom `BrowserToolbarView`.
     }
 
     class Constraints {
@@ -100,7 +100,7 @@ class MainViewCoordinator {
         var navigationBarContainerMinHeight: NSLayoutConstraint!
         var navigationBarCollectionViewSafeAreaBottom: NSLayoutConstraint!
         var toolbarBottom: NSLayoutConstraint!
-        var toolbarHeightConstraint: NSLayoutConstraint!
+        var toolbarHeight: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
         var tabBarContainerTop: NSLayoutConstraint!
         var progressBarTop: NSLayoutConstraint?
@@ -119,6 +119,23 @@ class MainViewCoordinator {
         var contentContainerTopToSafeArea: NSLayoutConstraint!
         var contentContainerTopToAIChatHeader: NSLayoutConstraint!
 
+    }
+
+    func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
+        switch position {
+        case .top:
+            toolbar.setOmnibarView(nil, height: 0)
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+            navigationBarContainer.isHidden = false
+            isOmnibarInToolbar = false
+        case .bottom:
+            toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
+            omniBar.barView.alpha = 1
+            navigationBarContainer.isHidden = true
+            setContentContainerBottomAnchorMode(.toolbar)
+            isOmnibarInToolbar = true
+        }
     }
 
     func showTopSlideContainer() {
@@ -147,9 +164,11 @@ class MainViewCoordinator {
 
         switch position {
         case .top:
+            omniBar.barView.makeGlass()
             setAddressBarBottomActive(false)
             setAddressBarTopActive(true)
         case .bottom:
+            omniBar.barView.makeOpaque()
             setAddressBarTopActive(false)
             setAddressBarBottomActive(true)
         }
@@ -159,8 +178,16 @@ class MainViewCoordinator {
 
     func hideNavigationBarWithBottomPosition() {
         guard addressBarPosition.isBottom else { return }
+        let isFloatingUIEnabled = FloatingUIManager().isFloatingUIEnabled
 
-        navigationBarContainer.isHidden = true
+        if isOmnibarInToolbar {
+            if !isFloatingUIEnabled {
+                toolbar.setOmnibarView(nil, height: 0)
+                constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+            }
+        } else {
+            navigationBarContainer.isHidden = true
+        }
 
         setContentContainerBottomAnchorMode(.safeArea)
     }
@@ -168,7 +195,14 @@ class MainViewCoordinator {
     func showNavigationBarWithBottomPosition() {
         guard addressBarPosition.isBottom else { return }
 
-        navigationBarContainer.isHidden = false
+        if isOmnibarInToolbar {
+            toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
+            omniBar.barView.alpha = 1
+            navigationBarContainer.isHidden = true
+        } else {
+            navigationBarContainer.isHidden = false
+        }
 
         if isNavigationChromeHidden {
             setContentContainerBottomAnchorMode(.unifiedToggleInput)

@@ -166,8 +166,7 @@ final class AIChatPreferences: ObservableObject {
                 self.serpSettings.searchAssistFrequency = newValue
                 PixelKit.fire(Self.searchAssistPixel(for: newValue),
                               frequency: .dailyAndCount,
-                              includeAppVersionParameter: true,
-                              doNotEnforcePrefix: true)
+                              includeAppVersionParameter: true)
             }
         )
     }
@@ -181,8 +180,7 @@ final class AIChatPreferences: ObservableObject {
                 self.serpSettings.hideAIGeneratedImages = newValue.hidden
                 PixelKit.fire(newValue.hidden ? AIChatPixel.aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff,
                               frequency: .dailyAndCount,
-                              includeAppVersionParameter: true,
-                              doNotEnforcePrefix: true)
+                              includeAppVersionParameter: true)
             }
         )
     }
@@ -231,8 +229,7 @@ final class AIChatPreferences: ObservableObject {
         serpSettings.hideAIGeneratedImages = true
         PixelKit.fire(AIChatPixel.aiFeaturesDisabled,
                       frequency: .dailyAndCount,
-                      includeAppVersionParameter: true,
-                      doNotEnforcePrefix: true)
+                      includeAppVersionParameter: true)
     }
 
     // Properties for managing the current state of AI Chat preference options

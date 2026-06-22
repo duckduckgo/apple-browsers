@@ -1633,8 +1633,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                   hideAIImages: hideAIImages,
                                                   noAI: noAI),
                       frequency: .daily,
-                      includeAppVersionParameter: true,
-                      doNotEnforcePrefix: true)
+                      includeAppVersionParameter: true)
     }
 
     private func fireDailyAdBlockingPixel() {

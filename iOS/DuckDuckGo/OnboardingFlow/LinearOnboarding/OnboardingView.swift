@@ -263,7 +263,7 @@ struct OnboardingView: View {
         DuckAIExperimentSearchContent(
             defaultMode: defaultMode,
             animateTitle: $model.introState.animateIntroText,
-            onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
+            onModeConfirmed: model.selectDuckAIQueryAction(selection:),
             openAIChatAction: model.openAIChatFromOnboarding,
             openSearchAction: model.searchFromOnboarding,
             measureQuerySubmissionAction: model.measureDuckAIQuerySubmission,
@@ -374,12 +374,6 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         }
     }
 
-    var duckAIQueryExperimentDefaultMode: DuckAIQueryMode? {
-        if case .duckAIQueryExperimentDialog(_, let mode) = self {
-            return mode
-        }
-        return nil
-    }
 }
 
 // MARK: - Metrics

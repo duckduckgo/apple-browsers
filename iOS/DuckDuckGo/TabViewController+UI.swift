@@ -146,7 +146,7 @@ extension TabViewController {
         errorContentStack.translatesAutoresizingMaskIntoConstraints = false
         error.addSubview(errorContentStack)
 
-        errorInfoImage = UIImageView(image: UIImage(resource: .errorInfoUniversal))
+        errorInfoImage = UIImageView(image: UIImage(rebrandable: "Dax-Accident"))
         errorInfoImage.contentMode = .scaleAspectFit
         errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
 

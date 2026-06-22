@@ -103,6 +103,12 @@ final class FaviconImageCache: FaviconImageCaching {
     @MainActor
     private var inFlightImageLoads = Set<URL>()
 
+    // Tail of a serial chain of store-mutating work from `insert(_:)`. Each insert enqueues its
+    // remove+save after this task so concurrent inserts can't interleave their remove/save and leave
+    // duplicate rows behind in the store. See `insert(_:)`.
+    @MainActor
+    private var storeWriteTask: Task<Void, Never>?
+
     init(faviconStoring: FaviconStoring) {
         storing = faviconStoring
     }
@@ -143,7 +149,14 @@ final class FaviconImageCache: FaviconImageCaching {
             cacheImage(favicon.image, for: favicon.url)
         }
 
-        Task {
+        // Chain this store write after any in-flight one. Concurrent inserts for the same favicon URL
+        // each remove the previous row and save a new one; if those remove/save pairs interleave, a
+        // removal can run before the row it supersedes has been saved, leaving the old row behind as a
+        // duplicate. Serializing the writes guarantees each insert's save completes before the next
+        // insert's removal runs, so exactly one row survives per favicon URL.
+        let previousWrite = storeWriteTask
+        storeWriteTask = Task {
+            await previousWrite?.value
             do {
                 await self.removeFaviconsFromStore(oldMetadata)
                 try await self.storing.save(favicons)
@@ -470,6 +483,11 @@ final class EagerFaviconImageCache: FaviconImageCaching {
     @MainActor
     private var entries = [URL: Favicon]()
 
+    // Tail of a serial chain of store-mutating work from `insert(_:)`; see the lazy `FaviconImageCache`
+    // twin for why concurrent inserts must be serialized to avoid leaving duplicate rows.
+    @MainActor
+    private var storeWriteTask: Task<Void, Never>?
+
     init(faviconStoring: FaviconStoring) {
         storing = faviconStoring
     }
@@ -508,7 +526,11 @@ final class EagerFaviconImageCache: FaviconImageCaching {
             entries[favicon.url] = favicon
         }
 
-        Task {
+        // Chain this store write after any in-flight one so concurrent inserts for the same favicon URL
+        // can't interleave their remove/save and leave a superseded row behind. See the lazy twin.
+        let previousWrite = storeWriteTask
+        storeWriteTask = Task {
+            await previousWrite?.value
             do {
                 await self.removeFaviconsFromStore(oldFavicons)
                 try await self.storing.save(favicons)
@@ -625,6 +647,7 @@ final class EagerFaviconImageCache: FaviconImageCaching {
         return await removeFaviconsFromStore(faviconsToRemove)
     }
 
+    @discardableResult
     private func removeFaviconsFromStore(_ favicons: [Favicon]) async -> Result<Void, Error> {
         guard !favicons.isEmpty else { return .success(()) }
 

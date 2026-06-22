@@ -39,18 +39,17 @@ class TabViewCell: UICollectionViewCell {
 
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
-        static let borderRadius: CGFloat = 14.0
+        static var borderRadius: CGFloat { AppRebrand.isAppRebranded() ? 28.0 : 14.0 }
 
-        static let cellCornerRadius: CGFloat = 12.0
+        static var cellCornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 26.0 : 12.0 }
         static let cellHeaderHeight: CGFloat = 36.0 + 4.0 // height + top padding
         static let cellLogoSize: CGFloat = 68.0
-
-        static let previewCornerRadius: CGFloat = 8
 
         static let selectedBorderWidth: CGFloat = 2.0
         static let unselectedBorderWidth: CGFloat = 0.0
         static let previewPadding: CGFloat = 4.0
-
+        static var previewCornerRadius: CGFloat { cellCornerRadius - previewPadding }
+        
         static let removeButtonTextSpacingRegular: CGFloat = -12
         static let removeButtonTextSpacingHighlighted: CGFloat = 2
 
@@ -238,26 +237,27 @@ class TabViewCell: UICollectionViewCell {
         return asset
     }
 
-    private static let regularLogoImage: UIImage = {
-        let image = UIImage(resource: .logo)
+    private static let legacyLogoImage: UIImage = {
         let renderFormat = UIGraphicsImageRendererFormat.default()
         renderFormat.opaque = false
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: Constants.cellLogoSize,
                                                             height: Constants.cellLogoSize),
                                                format: renderFormat)
         return renderer.image { _ in
-            image.draw(in: CGRect(x: 0,
-                                  y: 0,
-                                  width: Constants.cellLogoSize,
-                                  height: Constants.cellLogoSize))
+            UIImage(resource: .logo).draw(in: CGRect(x: 0,
+                                                     y: 0,
+                                                     width: Constants.cellLogoSize,
+                                                     height: Constants.cellLogoSize))
         }
     }()
 
     static func logoImage(for tab: Tab?) -> UIImage {
         if let tab, tab.fireTab {
             return DesignSystemImages.Color.Size96.fireTab
+        } else if AppRebrand.isAppRebranded() {
+            return DesignSystemImages.Color.Size96.duckDuckGo
         } else {
-            return regularLogoImage
+            return legacyLogoImage
         }
     }
 

@@ -259,21 +259,19 @@ final class OnboardingIntroViewModel: ObservableObject {
     func selectSearchExperienceAction() {
         if onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding {
             pixelReporter.measureChooseAIChat()
-            insertExperimentStepIfNeeded()
+            insertDuckAIQuerySelectionStepIfNeeded()
         } else {
             pixelReporter.measureChooseSearchOnly()
         }
         makeNextViewState()
     }
 
-    func selectDuckAIQueryExperimentAction(selection: DuckAIQueryMode) {
-        if resolveDuckAIQueryExperimentCohortID() != nil {
-            switch selection {
-            case .duckAI:
-                pixelReporter.measureDuckAIQueryExperimentChooseAIChat()
-            case .search:
-                pixelReporter.measureDuckAIQueryExperimentChooseSearchOnly()
-            }
+    func selectDuckAIQueryAction(selection: DuckAIQueryMode) {
+        switch selection {
+        case .duckAI:
+            pixelReporter.measureDuckAIQueryChooseAIChat()
+        case .search:
+            pixelReporter.measureDuckAIQueryChooseSearchOnly()
         }
         makeNextViewState()
     }
@@ -291,17 +289,10 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
-        if resolveDuckAIQueryExperimentCohortID() != nil {
-            pixelReporter.measureDuckAIQueryExperimentQuerySubmission(
-                selection: selection,
-                promptSource: promptSource
-            )
-        } else {
-            pixelReporter.measureDuckAIQuerySubmission(
-                selection: selection,
-                promptSource: promptSource
-            )
-        }
+        pixelReporter.measureDuckAIQuerySubmission(
+            selection: selection,
+            promptSource: promptSource
+        )
     }
 
     func restoreSyncAccountAction() {
@@ -410,9 +401,9 @@ private extension OnboardingIntroViewModel {
                 )
             case .duckAIQuerySelection:
                 let isDuckAiTailoredFlow = onboardingManager.currentOnboardingFlow == .duckAI
-                // Duck.ai Tailored flow shows only Duck.ai options while experiment shows toggle with "Search" and "Ask AI"
-                let duckAIQueryMode: DuckAIQueryMode = isDuckAiTailoredFlow ? .duckAI : duckAIQueryExperimentDefaultMode
-                // Duck.ai Tailored flow shows step counter while experiment does not.
+                // Duck.ai Tailored flow pre-selects Duck.ai; the default flow always pre-selects Search.
+                let duckAIQueryMode: DuckAIQueryMode = isDuckAiTailoredFlow ? .duckAI : .search
+                // Duck.ai Tailored flow shows step counter; the default flow hides it.
                 let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
                 return .onboarding(
                     .init(
@@ -475,15 +466,6 @@ private extension OnboardingIntroViewModel {
 
         switch resumeStep {
         case .duckAIQuerySelection:
-            // The step is reachable either as an experimental insertion in the default flow,
-            // or as a standard step in the Duck.ai tailored flow — the two flags are independent.
-            guard
-                featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) ||
-                    onboardingManager.currentOnboardingFlow == .duckAI
-            else {
-                OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
-                return
-            }
             if !introSteps.contains(.duckAIQuerySelection) {
                 let insertIndex = introSteps.firstIndex(of: .searchExperienceSelection).map { $0 + 1 } ?? introSteps.count
                 introSteps.insert(.duckAIQuerySelection, at: insertIndex)
@@ -539,43 +521,17 @@ private extension OnboardingIntroViewModel {
         case .chooseSearchExperienceDialog:
             pixelReporter.measureSearchExperienceSelectionImpression()
         case .duckAIQueryExperimentDialog:
-            // Both the experiment and the Duck.ai tailored flow reach this view state. Only the
-            // experiment cohort should fire experiment-flavoured pixels; tailored-flow users get
-            // the plain shared toggle-shown pixel.
-            if resolveDuckAIQueryExperimentCohortID() != nil {
-                pixelReporter.measureDuckAIQueryExperimentSelectionImpression()
-            } else {
-                pixelReporter.measureDuckAIQuerySelectionImpression()
-            }
+            pixelReporter.measureDuckAIQuerySelectionImpression()
         }
     }
 
-    func insertExperimentStepIfNeeded() {
-        guard case .introDialog(isReturningUser: false) = introSteps.first,
-              !restorePromptHandler.isEligibleForRestorePrompt(),
-              let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
-              let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
+    func insertDuckAIQuerySelectionStepIfNeeded() {
+        guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
+              onboardingManager.currentOnboardingFlow == .default,
               !introSteps.contains(.duckAIQuerySelection) else {
             return
         }
         introSteps.insert(.duckAIQuerySelection, at: currentStepIndex + 1)
-    }
-
-    var duckAIQueryExperimentDefaultMode: DuckAIQueryMode {
-        switch resolveDuckAIQueryExperimentCohortID() {
-        case .treatmentB:
-            .search
-        case .treatmentA:
-            .duckAI
-        case .control, .none:
-            .search
-        }
-    }
-
-    func resolveDuckAIQueryExperimentCohortID() -> FeatureFlag.DuckAIQueryExperimentCohort? {
-        // Do not enroll users experiencing Duck.ai tailored flow in the experiment
-        guard onboardingManager.currentOnboardingFlow == .default && featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) else { return nil }
-        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingDuckAIQueryTrackersDemoExperiment) as? FeatureFlag.DuckAIQueryExperimentCohort
     }
 
     func introDialogType(isReturningUser: Bool) -> OnboardingView.ViewState.Intro.IntroDialogType {

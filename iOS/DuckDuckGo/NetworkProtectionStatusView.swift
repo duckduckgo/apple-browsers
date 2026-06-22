@@ -164,7 +164,7 @@ struct NetworkProtectionStatusView: View {
                     headerAnimationView("vpn-dark-mode-legacy")
                 }
                 Text(statusModel.headerTitle)
-                    .daxHeadline()
+                    .daxTitle2()
                     .multilineTextAlignment(.center)
                     .foregroundColor(.init(designSystemColor: .textPrimary))
                 Text(statusModel.isNetPEnabled ? UserText.netPStatusHeaderMessageOn : UserText.netPStatusHeaderMessageOff)

@@ -924,6 +924,15 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         case .userDidAcceptTermsAndConditions:
             handleTermsAccepted()
             completion?()
+        case .userDidSelectSuggestion:
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSuggestionInvoked(
+                    suggestion: metric.suggestionId ?? "",
+                    pageType: metric.pageType ?? "none"
+                ),
+                frequency: .standard
+            )
+            completion?()
         default:
             completion?()
             return

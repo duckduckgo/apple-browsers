@@ -96,6 +96,44 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_suggestion_invoked": {
+        "description": "Fired when the user taps a page suggestion in Duck.ai (a tailored prompt or \"Ask about this page\")",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "suggestion",
+                "description": "Fixed catalog key identifying which suggestion was tapped (e.g. summarize-page, translate-page, ask-about-page)",
+                "type": "string"
+            },
+            {
+                "key": "page_type",
+                "description": "Coarse page classification derived by the FE from JSON-LD/OpenGraph (never the URL, domain, or content)",
+                "type": "string",
+                "enum": [
+                    "recipe",
+                    "product",
+                    "article",
+                    "video",
+                    "job",
+                    "book",
+                    "event",
+                    "place",
+                    "forum",
+                    "code",
+                    "course",
+                    "review",
+                    "person",
+                    "howto",
+                    "faq",
+                    "none"
+                ]
+            },
+            "channel"
+        ]
+    },
     "m_mac_aichat_sidebar_resized": {
         "description": "Fired when user finishes dragging the sidebar resize grip (after 500 ms debounce)",
         "owners": ["jaceklyp"],

@@ -10,21 +10,18 @@ public struct DeferredReadingListView: View {
     @ObservedObject private var controller: DeferredReadingController
     private let onOpenURL: (URL) -> Void
     private let faviconLoader: ((URL, @escaping (UIImage?) -> Void) -> Void)?
-    private let previewContentBuilder: ((URL) -> AnyView)?
-    private let onPreviewDismissed: ((URL) -> Void)?
     @State private var isShowingSettings = false
-    @State private var previewSheet: PreviewSheet?
+    @State private var previewSheet: DeferredReadingPreviewSheet?
+    @StateObject private var previewCoordinator: DeferredReadingPreviewCoordinator
 
     public init(controller: DeferredReadingController,
                 faviconLoader: ((URL, @escaping (UIImage?) -> Void) -> Void)? = nil,
-                previewContentBuilder: ((URL) -> AnyView)? = nil,
-                onPreviewDismissed: ((URL) -> Void)? = nil,
+                previewSessionProvider: (any DeferredReadingPreviewSessionProviding)? = nil,
                 onOpenURL: @escaping (URL) -> Void) {
         self.controller = controller
         self.faviconLoader = faviconLoader
-        self.previewContentBuilder = previewContentBuilder
-        self.onPreviewDismissed = onPreviewDismissed
         self.onOpenURL = onOpenURL
+        _previewCoordinator = StateObject(wrappedValue: DeferredReadingPreviewCoordinator(previewSessionProvider: previewSessionProvider))
     }
 
     public var body: some View {
@@ -103,14 +100,19 @@ public struct DeferredReadingListView: View {
             }
             .sheet(item: $previewSheet) { sheet in
                 DeferredReadingPreviewSheetView(url: sheet.url,
-                                               content: sheet.content,
+                                               content: AnyView(DeferredReadingViewControllerContainer(controller: sheet.previewController)),
                                                onClose: {
-                    onPreviewDismissed?(sheet.url)
+                    previewCoordinator.closeActivePreview()
                     previewSheet = nil
                 },
                                                onOpenInTab: {
-                    onOpenURL(sheet.url)
                     previewSheet = nil
+                    dismiss()
+                    DispatchQueue.main.async {
+                        if !previewCoordinator.openActivePreviewInTab(for: sheet.url) {
+                            onOpenURL(sheet.url)
+                        }
+                    }
                 })
             }
         }
@@ -121,11 +123,13 @@ public struct DeferredReadingListView: View {
     private func itemRow(_ item: DeferredReadingItem) -> some View {
         Button {
             if let url = controller.open(item) {
-                if let previewContentBuilder {
-                    previewSheet = PreviewSheet(url: url,
-                                                content: previewContentBuilder(url))
+                if let sheet = previewCoordinator.previewSheet(for: url) {
+                    previewSheet = sheet
                 } else {
-                    onOpenURL(url)
+                    dismiss()
+                    DispatchQueue.main.async {
+                        onOpenURL(url)
+                    }
                 }
             }
         } label: {
@@ -185,12 +189,6 @@ public struct DeferredReadingListView: View {
 
 }
 
-private struct PreviewSheet: Identifiable {
-    let id = UUID()
-    let url: URL
-    let content: AnyView
-}
-
 private struct DeferredReadingPreviewSheetView: View {
     let url: URL
     let content: AnyView
@@ -243,19 +241,43 @@ private struct DeferredReadingOpaqueNavigationBarConfigurator: UIViewControllerR
     }
 
     final class Controller: UIViewController {
+        private var hasCapturedAppearance = false
+        private var previousTintColor: UIColor?
+        private var previousNavigationControllerBackgroundColor: UIColor?
+        private var previousStandardAppearance: UINavigationBarAppearance?
+        private var previousScrollEdgeAppearance: UINavigationBarAppearance?
+        private var previousCompactAppearance: UINavigationBarAppearance?
+        private var previousCompactScrollEdgeAppearance: UINavigationBarAppearance?
 
         override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             applyAppearanceIfPossible()
         }
 
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            applyAppearanceIfPossible()
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            restoreAppearanceIfNeeded()
+        }
+
+        deinit {
+            restoreAppearanceIfNeeded()
         }
 
         func applyAppearanceIfPossible() {
-            guard let navigationBar = navigationController?.navigationBar else { return }
+            guard let navigationController else { return }
+            let navigationBar = navigationController.navigationBar
+
+            if !hasCapturedAppearance {
+                hasCapturedAppearance = true
+                previousTintColor = navigationBar.tintColor
+                previousNavigationControllerBackgroundColor = navigationController.view.backgroundColor
+                previousStandardAppearance = navigationBar.standardAppearance
+                previousScrollEdgeAppearance = navigationBar.scrollEdgeAppearance
+                previousCompactAppearance = navigationBar.compactAppearance
+                if #available(iOS 15.0, *) {
+                    previousCompactScrollEdgeAppearance = navigationBar.compactScrollEdgeAppearance
+                }
+            }
 
             let backgroundColor = UIColor(designSystemColor: .backgroundSheets)
             let foregroundColor = UIColor(designSystemColor: .textPrimary)
@@ -274,7 +296,32 @@ private struct DeferredReadingOpaqueNavigationBarConfigurator: UIViewControllerR
             if #available(iOS 15.0, *) {
                 navigationBar.compactScrollEdgeAppearance = appearance
             }
-            navigationController?.view.backgroundColor = backgroundColor
+            navigationController.view.backgroundColor = backgroundColor
+        }
+
+        private func restoreAppearanceIfNeeded() {
+            guard hasCapturedAppearance,
+                  let navigationController else { return }
+            let navigationBar = navigationController.navigationBar
+
+            if let previousTintColor {
+                navigationBar.tintColor = previousTintColor
+            }
+            if let previousStandardAppearance {
+                navigationBar.standardAppearance = previousStandardAppearance
+            }
+            if let previousScrollEdgeAppearance {
+                navigationBar.scrollEdgeAppearance = previousScrollEdgeAppearance
+            }
+            if let previousCompactAppearance {
+                navigationBar.compactAppearance = previousCompactAppearance
+            }
+            if #available(iOS 15.0, *), let previousCompactScrollEdgeAppearance {
+                navigationBar.compactScrollEdgeAppearance = previousCompactScrollEdgeAppearance
+            }
+            navigationController.view.backgroundColor = previousNavigationControllerBackgroundColor
+
+            hasCapturedAppearance = false
         }
     }
 }

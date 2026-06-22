@@ -1402,7 +1402,7 @@ private extension UnifiedToggleInputView {
         // need to match that initial layout exactly. AI-tab callers transition into `.flanked`
         // explicitly; `applyCardLayout(.flanked)` then writes the AI-tab-pose values.
         cardTopConstraint = cardView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.collapsedCardTopMargin)
-        cardLeadingConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.cardHorizontalMargin)
+        cardLeadingConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.omnibarMatchingHorizontalMargin)
         // Anchoring to self (not to the flank buttons) keeps voice/fire out of the card's
         // dependency chain. Inner content's intrinsic width pressure can no longer slide
         // voice — Auto Layout has to compress the content instead.
@@ -1411,7 +1411,7 @@ private extension UnifiedToggleInputView {
             + Constants.aiTabCollapsedAccessorySpacing
         cardLeadingFlankedConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: flankedHorizontalInset)
         cardLeadingFlankedConstraint.isActive = false
-        cardTrailingConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin)
+        cardTrailingConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.omnibarMatchingHorizontalMargin)
         cardTrailingFlankedConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -flankedHorizontalInset)
         cardTrailingFlankedConstraint.isActive = false
         cardBottomConstraint = cardView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.collapsedCardBottomMargin)

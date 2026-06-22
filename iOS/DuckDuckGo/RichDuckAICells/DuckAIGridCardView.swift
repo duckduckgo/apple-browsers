@@ -191,6 +191,10 @@ final class DuckAIGridCardView: UIView {
                                                                  constant: -Metrics.snippetChipSpacing)
         snippetBottom.priority = .defaultHigh
 
+        // Target 80pt, but yield on short cells so the clamps below win instead of breaking.
+        let mascotHeight = mascotImageView.heightAnchor.constraint(equalToConstant: Metrics.voiceMascotHeight)
+        mascotHeight.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.contentTopInset),
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
@@ -214,7 +218,7 @@ final class DuckAIGridCardView: UIView {
             // row or chip (aspect-fit, dark card only).
             mascotImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
             mascotImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            mascotImageView.heightAnchor.constraint(equalToConstant: Metrics.voiceMascotHeight),
+            mascotHeight,
             mascotImageView.topAnchor.constraint(greaterThanOrEqualTo: titleLabel.bottomAnchor, constant: Metrics.voiceMascotVerticalSpacing),
             mascotImageView.bottomAnchor.constraint(lessThanOrEqualTo: chipView.topAnchor, constant: -Metrics.voiceMascotVerticalSpacing)
         ])

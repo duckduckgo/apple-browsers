@@ -54,12 +54,22 @@ final class DuckAIGridCardView: UIView {
     /// Apply the supplied grid item to the view.
     /// Callers pass `nil` when they want the screenshot fallback
     func configure(with item: DuckAIGridItem) {
+        // TODO: - Consider reducing repitition
         switch item {
         case .text(let title, let snippet):
             titleLabel.text = title
             snippetLabel.text = snippet
             snippetLabel.isHidden = false
             configureChatChip()
+            setThumbnailVisible(false)
+
+        case .transcript(let title, let snippet):
+            // A finished voice chat: same light layout as `.text`, distinguished by the
+            // "Transcript" chip.
+            titleLabel.text = title
+            snippetLabel.text = snippet
+            snippetLabel.isHidden = false
+            configureTranscriptChip()
             setThumbnailVisible(false)
 
         case .image(let title, _):
@@ -91,6 +101,12 @@ final class DuckAIGridCardView: UIView {
     private func configureChatChip() {
         chipView.configure(icon: DesignSystemImages.Glyphs.Size12.chat,
                            label: UserText.aiChatTabSwitcherCardChipChat)
+        chipView.isHidden = false
+    }
+
+    private func configureTranscriptChip() {
+        chipView.configure(icon: DesignSystemImages.Glyphs.Size12.voice,
+                           label: UserText.aiChatTabSwitcherCardChipTranscript)
         chipView.isHidden = false
     }
 
@@ -167,7 +183,7 @@ final class DuckAIGridCardView: UIView {
 
     private func updateAccessibility(for item: DuckAIGridItem) {
         switch item {
-        case .text(let title, let snippet):
+        case .text(let title, let snippet), .transcript(let title, let snippet):
             accessibilityLabel = title
             accessibilityValue = snippet
         case .image(let title, _), .voice(let title), .empty(let title):

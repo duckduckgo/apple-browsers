@@ -31,6 +31,7 @@ final class PixelRetryQueueTests: XCTestCase {
         super.setUp()
         store = MockPixelRetryQueueStore()
         fireMock = FireRequestMock()
+        fireMock.retryQueueStore = store
         lastProcessingStorage = MockKeyValueStore()
         now = Date(timeIntervalSince1970: 1_700_000_000)
     }
@@ -88,7 +89,6 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertEqual(stored.pixelName, "m_organic")
         XCTAssertEqual(stored.headers, ["H": "V"])
         XCTAssertEqual(stored.parameters["k"], "v")
-        XCTAssertNotNil(stored.parameters["originalPixelTimestamp"])
         XCTAssertEqual(stored.timestamp, now)
     }
 
@@ -112,7 +112,7 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertEqual(fireMock.calls.first?.pixelName, "m_queued")
     }
 
-    func testWhenReplayingItem_ThenRetriedPixelParameterIsAdded() {
+    func testWhenReplayingItem_ThenItemIsFiredAsRetryWithUnmodifiedParameters() {
         let item = makeItem(name: "m_queued")
         try? store.append([item])
         let queue = makeQueue()
@@ -122,8 +122,8 @@ final class PixelRetryQueueTests: XCTestCase {
         wait(for: [drained], timeout: 2.0)
 
         let call = fireMock.calls.first
-        XCTAssertEqual(call?.parameters["retriedPixel"], "1")
-        XCTAssertEqual(call?.parameters["key"], "value")
+        XCTAssertTrue(call?.isRetry == true)
+        XCTAssertEqual(call?.parameters, ["key": "value"])
     }
 
     func testWhenItemIsOlderThan28Days_ThenItIsNotSentButIsRemoved() {

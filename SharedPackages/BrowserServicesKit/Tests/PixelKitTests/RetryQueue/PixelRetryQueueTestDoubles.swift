@@ -57,10 +57,15 @@ final class MockPixelRetryQueueStore: PixelRetryQueueStoring {
     }
 }
 
-/// Controllable `PixelKit.FireRequest`. Distinguishes organic fires from retries by the `retriedPixel`
-/// parameter that `PixelRetryQueue` adds on replay. Retries can be held (deferred) to drive concurrency
-/// tests, mirroring iOS `DelayedPixelFiringMock`.
+/// Controllable `PixelKit.FireRequest`. Distinguishes organic fires from retries by whether the fired
+/// pixel is a replay of an item still in the queue store (replays fire while their item is queued; it's
+/// removed only once the send completes). Retries can be held (deferred) to drive concurrency tests,
+/// mirroring iOS `DelayedPixelFiringMock`.
 final class FireRequestMock {
+
+    /// The store the decorated `PixelRetryQueue` drains from. A fire whose pixel name matches a queued
+    /// item is treated as a retry. Set this to the same store passed to the queue under test.
+    weak var retryQueueStore: MockPixelRetryQueueStore?
 
     struct Call {
         let pixelName: String
@@ -96,7 +101,7 @@ final class FireRequestMock {
 
     var fireRequest: PixelKit.FireRequest {
         { [self] pixelName, headers, parameters, allowedChars, _, onComplete in
-            let isRetry = parameters["retriedPixel"] == "1"
+            let isRetry = retryQueueStore?.items.contains { $0.pixelName == pixelName } ?? false
             let call = Call(pixelName: pixelName,
                             headers: headers,
                             parameters: parameters,

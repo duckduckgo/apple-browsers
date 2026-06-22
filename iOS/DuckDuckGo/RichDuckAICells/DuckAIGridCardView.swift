@@ -238,7 +238,7 @@ final class DuckAIGridCardView: UIView {
             accessibilityLabel = title
             accessibilityValue = nil
         case .voice:
-            accessibilityLabel = UserText.aiChatTabSwitcherCardVoiceListening
+            accessibilityLabel = UserText.aiChatTabSwitcherCardVoiceListeningAccessibilityLabel
             accessibilityValue = nil
         }
     }

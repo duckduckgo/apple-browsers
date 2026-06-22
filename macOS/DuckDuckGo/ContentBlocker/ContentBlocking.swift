@@ -22,6 +22,7 @@ import Combine
 import ContentBlocking
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import os.log
 import Persistence
 import PixelKit

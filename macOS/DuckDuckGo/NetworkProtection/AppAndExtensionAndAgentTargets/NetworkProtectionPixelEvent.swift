@@ -33,7 +33,7 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
     case networkProtectionControllerStartFailure(_ error: Error)
 
     case networkProtectionTunnelStartAttempt
-    case networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken
+    case networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken(_ error: Error)
     case networkProtectionTunnelStartSuccess
     case networkProtectionTunnelStartFailure(_ error: Error)
     case networkProtectionConnectionFailureLoopDetected(_ error: Error)
@@ -430,6 +430,8 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
             return error.pixelParameters
         case .networkProtectionConnectionFailureLoopDetected(let error):
             return error.pixelParameters
+        case .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken(let error):
+            return error.pixelParameters
         case .networkProtectionActiveUser,
                 .networkProtectionNewUser,
                 .networkProtectionControllerStartAttempt,
@@ -437,7 +439,6 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
                 .networkProtectionControllerStartCancelled,
                 .networkProtectionControllerStartFailure,
                 .networkProtectionTunnelStartAttempt,
-                .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
                 .networkProtectionTunnelStartSuccess,
                 .networkProtectionTunnelStartFailure,
                 .networkProtectionTunnelStopAttempt,

@@ -20,6 +20,7 @@
 import Foundation
 import UserNotifications
 import Common
+import FoundationExtensions
 import os.log
 import DataBrokerProtectionCore
 

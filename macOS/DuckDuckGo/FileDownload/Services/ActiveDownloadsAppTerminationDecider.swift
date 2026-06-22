@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 
 /// Handles active downloads during app termination.

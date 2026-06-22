@@ -20,6 +20,7 @@
 import AIChat
 import Bookmarks
 import Combine
+import Core
 import DesignResourcesKit
 import Subscription
 import Suggestions
@@ -36,6 +37,10 @@ extension MainViewController {
         static let floatingReturnKeyActiveAnchorPriority = UILayoutPriority(999)
         static let floatingReturnKeyInactiveAnchorPriority = UILayoutPriority(250)
 
+        /// Gap kept between the bottom of the expanded UTI and the top of the keyboard when
+        /// constraining the UTI's growth to the available space (landscape).
+        static let utiLandscapeKeyboardGap: CGFloat = 8
+
         // Bottom is longer to accommodate concurrent keyboard descent.
         static func omnibarTransitionDuration(isBottom: Bool) -> TimeInterval {
             isBottom ? 0.35 : 0.25
@@ -43,9 +48,6 @@ extension MainViewController {
 
         /// Stretch the icon fade-in past UTI's collapse so the build-up reads rather than front-loading.
         static let omnibarIconFadeInDurationMultiplier: Double = 1.2
-
-        static let bottomDaxLogoTransitionYOffset: CGFloat = -DefaultOmniBarView.expectedHeight / 2
-        static let topDaxLogoTransitionYOffset: CGFloat = 2
     }
 
     enum UnifiedInputChromeBackgroundState: String {
@@ -55,6 +57,14 @@ extension MainViewController {
     }
 
     func setUpUnifiedToggleInputIfNeeded() {
+        // Idempotent: callable from viewDidLoad, MainCoordinator.startOnboardingFlowIfNotSeenBefore,
+        // and onboardingCompleted — first call that passes the gates wins.
+        guard unifiedToggleInputCoordinator == nil else { return }
+        // Defer setup until linear onboarding for default flow has completed, so that any experiment
+        // cohort enrollment that happens during onboarding is reflected in
+        // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
+        // Duck.ai tailored-flow users are need UTI during the linear onboarding otherwise they will not see the new UI in the Duck.ai page that is shown during the linear onboarding interlude.
+        // Returning users (who skip linear onboarding) fall through immediately.
         guard unifiedToggleInputFeature.isAvailable else { return }
 
         let aiChatPreferences = AIChatPreferencesPersistor()
@@ -71,10 +81,14 @@ extension MainViewController {
             host: .omnibar,
             isToggleEnabled: initialToggleEnabled,
             isFireTab: isCurrentTabFireTab(),
+            hidesToggleOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
-            stateStore: stateStore
+            stateStore: stateStore,
+            syncService: syncService,
+            aiChatSyncCleaner: aiChatSyncCleaner,
+            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
@@ -93,6 +107,14 @@ extension MainViewController {
         }
 
         setUpAIChatTabChatHeader()
+
+        // If the Duck.ai fire onboarding flow armed its lock before the coordinator existed
+        // (coordinator creation is deferred until after linear onboarding completes), sync
+        // the persisted lock state to both freshly-created objects now.
+        if experimentDuckAIFireOnboardingFlow.controlsLocked {
+            coordinator.setOnboardingControlsLocked(true)
+            aiChatTabChatHeaderView?.setOnboardingLocked(true)
+        }
         installUnifiedInputContentViewController()
         installFloatingReturnKeyViewController()
         installSwipeTabsGesturesForUnifiedInput()
@@ -101,6 +123,14 @@ extension MainViewController {
         subscribeToModeChanges(coordinator)
         subscribeToSystemEvents()
         subscribeToToggleSettings()
+
+        // Immediately reconcile chrome for the already-selected tab. If a tab was
+        // selected before UTI existed (e.g. a duck.ai tab opened from onboarding
+        // before linear onboarding completed), the legacy nav bar would otherwise
+        // remain visible until the next tab-change event triggered a refresh.
+        if let currentTab {
+            refreshUnifiedToggleInput(for: currentTab)
+        }
     }
 
     func updateUnifiedToggleInputKeyboardVisibility(_ keyboardVisible: Bool) {
@@ -143,14 +173,6 @@ extension MainViewController {
         reconcileVoiceSessionChromeForCurrentTab()
     }
 
-    /// Force-shows the header back arrow when the toggle UI is unavailable so the user always
-    /// has an exit. Wraps the onboarding-aware lookup so both callers (refreshControls + the
-    /// settings sink) stay in sync — keeps the raw setting and the onboarding-deferred value
-    /// from racing during onboarding hand-off.
-    func reconcileBackArrowForceVisibility() {
-        aiChatTabChatHeaderView?.setForceBackButtonVisible(!isAIChatSearchInputToggleEnabledForCurrentOnboardingState())
-    }
-
     /// Programmatic dismiss of an active UTI omnibar session (the intent-path used by
     /// `dismissOmniBar`, toolbar buttons, etc.). On a Duck.ai tab this routes through the snap
     /// dismiss so the AI tab's auto-expand doesn't bring the keyboard back up.
@@ -168,10 +190,35 @@ extension MainViewController {
     /// standard browser controls while searching. Idempotent; safe with the feature flag off.
     func reconcileToolbarVisibilityForCurrentTab() {
         let isFocusedOmnibarSession = unifiedToggleInputCoordinator?.isOmnibarSession == true
+        let wasHidden = viewCoordinator.toolbar.isHidden
         if isCurrentTabUsingUnifiedInputAIChrome && !isFocusedOmnibarSession {
             viewCoordinator.toolbar.isHidden = true
         } else {
             viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
+            // Self-heal a stale clamp. `updateToolbarConstant` deliberately pushes the
+            // toolbar's constraint off-screen whenever `toolbar.isHidden == true`. This
+            // is required for iPad and minimal-chrome layouts, where the toolbar is
+            // permanently hidden and its off-screen layout slot acts as a spacer.
+            //
+            // The UTI AI-tab phase reuses `isHidden = true` *transiently*. Any
+            // `setBarsVisibility(1)` call during that phase (refreshAITab, BarsAnimator,
+            // applyExperimentDuckAIFireChromeState, etc.) writes the same off-screen
+            // value via the clamp. When `isHidden` flips back to false here, nothing
+            // else recomputes the constant; the toolbar is unhidden but laid out
+            // off-screen. Snap it back to 0.
+            //
+            // `alpha == 1` excludes mid-scroll partial-hides. `BarsAnimator` writes
+            // matching `alpha` and `constant` values together, so they can only
+            // disagree when the clamp suppressed a write.
+            if !viewCoordinator.toolbar.isHidden
+                && viewCoordinator.toolbar.alpha == 1.0
+                && viewCoordinator.constraints.toolbarBottom.constant != 0 {
+                viewCoordinator.constraints.toolbarBottom.constant = 0
+            }
+        }
+        // `toolbarBottom.constant` is derived from `isHidden`; recompute when it flips.
+        if wasHidden != viewCoordinator.toolbar.isHidden {
+            setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
         }
     }
 
@@ -206,6 +253,8 @@ extension MainViewController {
             }
         case .refreshNonAITab:
             refreshNonAITab(tab: tab, coordinator: coordinator)
+        case .preserveOmnibarSession:
+            return
         }
 
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
@@ -224,7 +273,7 @@ extension MainViewController {
         case .standardChrome:
             statusBackgroundPresentation = .standard
             rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
-            navigationBarContainerColor = nil
+            navigationBarContainerColor = ThemeManager.shared.currentTheme.barBackgroundColor
             inputContentContainerColor = .clear
             unifiedToggleInputContainerColor = .clear
             webViewBackgroundColor = nil
@@ -252,12 +301,10 @@ extension MainViewController {
                 unifiedToggleInputContainerColor = .clear
                 webViewBackgroundColor = rootBackgroundColor
             } else {
-                // Match Figma's `--ds-surface-tertiary` (#3D3D3D dark / white light) so the chrome
-                // is the same tone as the card. The card defines itself via its halo rim shadow.
-                rootBackgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+                rootBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
                 navigationBarContainerColor = .clear
-                unifiedToggleInputContainerColor = .clear
-                webViewBackgroundColor = .clear
+                unifiedToggleInputContainerColor = UIColor(designSystemColor: .surfaceCanvas)
+                webViewBackgroundColor = UIColor(designSystemColor: .surfaceCanvas)
             }
         }
 
@@ -285,13 +332,110 @@ extension MainViewController {
               coordinator.isInputEditing else {
             return
         }
-        let height = coordinator.editingHeight()
+        updateLandscapeEditingCap()
+        var height = coordinator.editingHeight()
+        if let cap = landscapeEditingHeightCap {
+            height = min(height, cap)
+        }
         guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else { return }
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         coordinator.pushContentInsets()
     }
 
+    /// Caps the expandable editing field to the space above the keyboard in landscape (the field
+    /// scrolls internally), and lifts the cap in portrait. The single source of truth for the cap;
+    /// call it from any path that changes the keyboard, orientation, or content.
+    func updateLandscapeEditingCap() {
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isInputEditing else { return }
+        coordinator.viewController.setAvailableExpandedHeight(landscapeEditingHeightCap)
+    }
+
+    /// Height budget above the keyboard the expanded UTI must fit within, or nil when unconstrained.
+    var landscapeEditingHeightCap: CGFloat? {
+        isPhoneLandscape ? availableUTIEditingHeight() : nil
+    }
+
+    private func availableUTIEditingHeight() -> CGFloat {
+        // Measure from the top safe-area edge — a stable reference. The container's own top moves
+        // with its height when it's keyboard-anchored from the bottom, so it can't be used here.
+        let keyboardTopY = view.keyboardLayoutGuide.layoutFrame.minY
+        let safeAreaTopY = view.safeAreaInsets.top
+        return max(0, keyboardTopY - safeAreaTopY - Constants.utiLandscapeKeyboardGap)
+    }
+
+}
+
+// MARK: - UTI Refresh-Action Decision (pure)
+
+enum UnifiedToggleInputRefreshAction: Equatable {
+    case unbindInactiveNonAITab
+    case refreshAITab(AITabRefreshBehavior)
+    case refreshNonAITab
+    /// The coordinator is mid-omnibar session on a non-AI tab — leave it alone.
+    case preserveOmnibarSession
+}
+
+enum AITabRefreshBehavior: Equatable {
+    case preserveCurrentPresentation(allowsEarlyReturn: Bool)
+    case showCollapsed(expandAfterRefresh: Bool)
+}
+
+struct UnifiedToggleInputRefreshActionInputs: Equatable {
+    let tabIsAITab: Bool
+    let tabURL: URL?
+    let tabLinkURL: URL?
+    let tabIsVoiceModeRequested: Bool
+    let coordinatorIsAITabState: Bool
+    let coordinatorIsActive: Bool
+    let coordinatorIsOmnibarSession: Bool
+    let coordinatorHasSubmittedPrompt: Bool
+    let isAITabChatHeaderContainerHidden: Bool
+    let isNavigationChromeHidden: Bool
+}
+
+extension MainViewController {
+
+    static func decideRefreshAction(for inputs: UnifiedToggleInputRefreshActionInputs) -> UnifiedToggleInputRefreshAction {
+        // During a fresh navigation (e.g. opening a chat in a new tab), `tabModel.link` is briefly
+        // set to nil before WebView reports the new URL. `tab.isAITab` is link-derived, so it would
+        // momentarily report false and route us through `refreshNonAITab` → `coordinator.hide()`,
+        // tearing down the UTI we just set up. Preserve the current AI presentation through that
+        // window — the next refresh, after WebView reports the URL, resolves correctly.
+        if inputs.tabLinkURL == nil && inputs.coordinatorIsAITabState {
+            return .refreshAITab(.preserveCurrentPresentation(allowsEarlyReturn: true))
+        }
+
+        if !inputs.tabIsAITab {
+            if !inputs.coordinatorIsActive && inputs.isAITabChatHeaderContainerHidden {
+                return .unbindInactiveNonAITab
+            }
+            if inputs.coordinatorIsOmnibarSession {
+                return .preserveOmnibarSession
+            }
+            return .refreshNonAITab
+        }
+
+        // `tab.url` lags behind `tab.link?.url` during a freshly-opened tab; use the same
+        // fallback for hasExistingChat so we don't spuriously auto-expand the UTI on top of
+        // an existing-chat URL whose query string only just arrived.
+        let resolvedURL = inputs.tabURL ?? inputs.tabLinkURL
+        let isVoiceMode = resolvedURL?.isDuckAIVoiceMode == true || inputs.tabIsVoiceModeRequested
+
+        if inputs.coordinatorIsAITabState {
+            // Voice never inherits an expanded chat presentation: voice hides the input box, so once it ends the bottom chrome would render expanded (no fire button / app menu) over a non-focused tab. Force collapse so the standard collapsed accessories return on dismiss.
+            if isVoiceMode {
+                return .refreshAITab(.showCollapsed(expandAfterRefresh: false))
+            }
+            return .refreshAITab(.preserveCurrentPresentation(allowsEarlyReturn: inputs.isNavigationChromeHidden))
+        }
+
+        let hasExistingChat = resolvedURL?.duckAIChatID != nil
+        let isSidebarOpen = resolvedURL?.isDuckAISidebarOpen == true
+        let isSettingsOpen = resolvedURL?.isDuckAISettingsOpen == true
+        let shouldExpandAfterRefresh = !hasExistingChat && !inputs.coordinatorHasSubmittedPrompt && !isVoiceMode && !isSidebarOpen && !isSettingsOpen
+        return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
+    }
 }
 
 private extension MainViewController {
@@ -301,17 +445,6 @@ private extension MainViewController {
     /// Search-only hides the toggle, while Search & Duck.ai keeps it visible.
     func isAIChatSearchInputToggleEnabledForCurrentOnboardingState() -> Bool {
         onboardingSearchExperienceSettingsResolver.deferredValue ?? aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-    }
-
-    enum UnifiedToggleInputRefreshAction {
-        case unbindInactiveNonAITab
-        case refreshAITab(AITabRefreshBehavior)
-        case refreshNonAITab
-    }
-
-    enum AITabRefreshBehavior {
-        case preserveCurrentPresentation(allowsEarlyReturn: Bool)
-        case showCollapsed(expandAfterRefresh: Bool)
     }
 
     func installUnifiedToggleInputViewController(_ inputVC: UnifiedToggleInputViewController) {
@@ -346,6 +479,8 @@ private extension MainViewController {
             .sink { [weak self] in
                 guard let self, let coordinator = unifiedToggleInputCoordinator else { return }
                 if coordinator.isInputEditing {
+                    // Attachments grow the card, so re-cap before sizing or it overflows in landscape.
+                    updateLandscapeEditingCap()
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
                 }
                 updateFloatingReturnKeyVisibility()
@@ -383,6 +518,11 @@ private extension MainViewController {
     func handleModeChange(_ mode: TextEntryMode) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        postIdleSessionInstrumentation.toggleUsed()
+
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
         } else if coordinator.isAITabExpanded {
@@ -394,24 +534,12 @@ private extension MainViewController {
     }
 
     func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        let previousLottieProgress = coordinator.contentViewController.daxLogoManager.lottieProgress
-        let wasLogoVisible = coordinator.contentViewController.daxLogoManager.isLogoVisible
-        // If the swipe gesture already drove progress to the target, skip the
-        // programmatic animation — the swipe handled the visual transition.
-        let swipeProgress = coordinator.contentViewController.daxLogoManager.currentProgress
-        let targetProgress: CGFloat = mode == .aiChat ? 1 : 0
-        let wasSwipeDriven = abs(swipeProgress - targetProgress) < 0.01
-
+        // The empty-state logo morph is driven by the SwiftUI host (`FocusedLogoModel`) off the committed
+        // mode — no manager animation here.
         updateUnifiedInputContentVisibility(for: coordinator)
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
-        if !wasSwipeDriven {
-            coordinator.contentViewController.daxLogoManager.animateLogoTransition(
-                toMode: mode,
-                fromProgress: previousLottieProgress,
-                wasLogoVisible: wasLogoVisible)
-        }
         updateFloatingReturnKeyVisibility()
     }
 
@@ -487,26 +615,68 @@ private extension MainViewController {
                 self?.updateVoiceSessionActive(false, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatNewImageGenerationChatStarted)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.handleNewImageGenerationChatStarted(for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatShowModelPicker)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] webView in
+                self?.handleShowModelPicker(for: webView)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+    }
+
+    /// Routes the FE's `showModelPicker` to the foreground Duck.ai tab's UTI so the user can pick a
+    /// supported model for the active chat (recovery-card "Switch Model" CTA). No-op when there's no
+    /// foreground Duck.ai UTI.
+    private func handleShowModelPicker(for webView: WKWebView) {
+        let isCurrent = tabManager.controller(forWebView: webView) === currentTab
+        let isAITab = currentTab?.isAITab == true
+        guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
+            return
+        }
+        coordinator.presentModelPickerForActiveChat()
+    }
+
+    /// Updates the foreground tab's UTI to reflect an FE-initiated image-generation chat.
+    /// Backgrounded tabs without a live coordinator are intentionally ignored — revisit if
+    /// the FE starts firing this for non-foreground chats.
+    private func handleNewImageGenerationChatStarted(for webView: WKWebView) {
+        guard let controller = tabManager.controller(forWebView: webView),
+              controller === currentTab,
+              unifiedToggleInputCoordinator != nil else { return }
+        // Mirror the New-Chat-from-sidebar path (`aiChatContentHandlerDidReceiveNewChatCreated`):
+        // defer so the URL-change refresh lands first, then run `startNewChat` + `showExpanded`
+        // on a clean state. `selectTool` slots between them because `startNewChat` resets tools.
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  let coordinator = self.unifiedToggleInputCoordinator,
+                  self.tabManager.controller(forWebView: webView) === self.currentTab else { return }
+            coordinator.startNewChat()
+            coordinator.selectTool(.imageGeneration)
+            coordinator.showExpanded(inputMode: .aiChat)
+        }
     }
 
     private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
         if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
-            applyVoiceSessionTransition(active: active, to: coordinator)
+            coordinator.isVoiceSessionActive = active
             return
         }
         guard let stateStore = unifiedInputStateStore else { return }
         let current = stateStore.state(for: controller.tabModel.uid)
-        let updated = current.applyingVoiceSessionTransition(active: active)
+        var updated = current
+        updated.isVoiceSessionActive = active
         if updated != current {
             stateStore.update(updated, for: controller.tabModel.uid)
-        }
-    }
-
-    private func applyVoiceSessionTransition(active: Bool, to coordinator: UnifiedToggleInputCoordinator) {
-        coordinator.isVoiceSessionActive = active
-        if !active, coordinator.aiChatInputBoxVisibility == .hidden {
-            coordinator.aiChatInputBoxVisibility = .visible
         }
     }
 
@@ -516,44 +686,26 @@ private extension MainViewController {
             .sink { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 let enabled = self.isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
-                self.reconcileBackArrowForceVisibility()
                 coordinator.updateToggleEnabled(enabled)
-                coordinator.contentViewController.isSwipeEnabled = enabled
                 coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
             }
             .store(in: &unifiedToggleInputCancellables)
     }
 
     func refreshAction(for tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) -> UnifiedToggleInputRefreshAction {
-        // During a fresh navigation (e.g. opening a chat in a new tab), `tabModel.link` is briefly
-        // set to nil before WebView reports the new URL. `tab.isAITab` is link-derived, so it would
-        // momentarily report false and route us through `refreshNonAITab` → `coordinator.hide()`,
-        // tearing down the UTI we just set up. Preserve the current AI presentation through that
-        // window — the next refresh, after WebView reports the URL, resolves correctly.
-        if tab.link == nil && coordinator.isAITabState {
-            return .refreshAITab(.preserveCurrentPresentation(allowsEarlyReturn: true))
-        }
-
-        if !tab.isAITab {
-            if !coordinator.isActive && viewCoordinator.aiChatTabChatHeaderContainer.isHidden {
-                return .unbindInactiveNonAITab
-            }
-            return .refreshNonAITab
-        }
-
-        if coordinator.isAITabState {
-            return .refreshAITab(.preserveCurrentPresentation(allowsEarlyReturn: viewCoordinator.isNavigationChromeHidden))
-        }
-
-        // `tab.url` lags behind `tab.link?.url` during a freshly-opened tab; use the same
-        // fallback for hasExistingChat so we don't spuriously auto-expand the UTI on top of
-        // an existing-chat URL whose query string only just arrived.
-        let tabURL = tab.url ?? tab.link?.url
-        let hasExistingChat = tabURL?.duckAIChatID != nil
-        let isVoiceMode = tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested
-        let isSidebarOpen = tabURL?.isDuckAISidebarOpen == true
-        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt && !isVoiceMode && !isSidebarOpen
-        return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
+        let inputs = UnifiedToggleInputRefreshActionInputs(
+            tabIsAITab: tab.isAITab,
+            tabURL: tab.url,
+            tabLinkURL: tab.link?.url,
+            tabIsVoiceModeRequested: tab.isVoiceModeRequested,
+            coordinatorIsAITabState: coordinator.isAITabState,
+            coordinatorIsActive: coordinator.isActive,
+            coordinatorIsOmnibarSession: coordinator.isOmnibarSession,
+            coordinatorHasSubmittedPrompt: coordinator.hasSubmittedPrompt,
+            isAITabChatHeaderContainerHidden: viewCoordinator.aiChatTabChatHeaderContainer.isHidden,
+            isNavigationChromeHidden: viewCoordinator.isNavigationChromeHidden
+        )
+        return MainViewController.decideRefreshAction(for: inputs)
     }
 
     func refreshInactiveNonAITab(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
@@ -577,11 +729,13 @@ private extension MainViewController {
         let hasExistingChat = tabURL?.duckAIChatID != nil
         bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: hasExistingChat)
         // Assert input-hidden synchronously for voice-mode tabs so the bottom chrome doesn't
-        // flash visible during the FE's "Connecting…" window. The FE's `hideChatInput` is
-        // idempotent over this. Persisted per tab in `TabInputState`.
-        if tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested {
+        // flash visible during the FE's "Connecting…" window. One-shot intent — consume the
+        // flag here so later refreshes (e.g. AI→AI navigation taking the preserve-current
+        // path) don't re-hide the UTI after the FE has shown it.
+        if tab.isVoiceModeRequested, coordinator.aiChatInputBoxVisibility != .hidden {
             coordinator.aiChatInputBoxVisibility = .hidden
         }
+        tab.isVoiceModeRequested = false
         // Before the early-return so AI→AI tab transitions (`preserveCurrentPresentation`) also
         // override the `UIView`-default-visible borders on a freshly-bound tab.
         tab.borderView.isTopVisible = false
@@ -593,9 +747,6 @@ private extension MainViewController {
             syncPreservedAITabPresentation(coordinator: coordinator)
             return false
         }
-
-        // Clear after the link==nil bridge so an in-flight voice request survives the transient.
-        tab.isVoiceModeRequested = false
         ensureStandardChromeVisibleForAITabRefresh()
         tab.webView.scrollView.contentInset = .zero
         // We're swapping into AI-tab layout, not dismissing the omnibar in place.
@@ -673,7 +824,8 @@ private extension MainViewController {
         tab.borderView.isBottomVisible = true
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
-        showBars()
+        // Snap chrome revealed — prior chat-scroll could have hidden bars under the AI header, so without this the omnibar flies in on return.
+        chromeManager.reset(animated: false)
         if coordinator.isActive {
             coordinator.deactivateToOmnibar()
             coordinator.hide()
@@ -682,11 +834,9 @@ private extension MainViewController {
     }
 
     func setUpAIChatTabChatHeader() {
-        let headerView = AIChatTabChatHeaderView()
+        let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled)
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
-        headerView.tabSwitcherButton.delegate = self
-        headerView.tabSwitcherButton.showMenuOnLongPress = fireModeCapability.isFireModeEnabled
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),
@@ -694,6 +844,11 @@ private extension MainViewController {
             headerView.trailingAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.trailingAnchor),
             headerView.bottomAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.bottomAnchor),
         ])
+        headerView.setTabIconState(
+            count: tabManager.currentTabsModel.count,
+            hasUnread: tabManager.currentTabsModel.hasUnread,
+            isFireMode: tabManager.currentBrowsingMode == .fire
+        )
         self.aiChatTabChatHeaderView = headerView
     }
 
@@ -767,6 +922,10 @@ extension MainViewController {
         contentVC.onDismissRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
+                if let tab = self.tabManager.currentTabsModel.currentTab, tab.link == nil {
+                    self.ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
+                }
+                self.postIdleSessionInstrumentation.backPressed()
                 self.dismissUnifiedToggleInputOmnibarSession(coordinator: coordinator)
             } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
@@ -776,7 +935,6 @@ extension MainViewController {
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             coordinator.dismissOmnibarKeyboard()
         }
-        contentVC.isSwipeEnabled = coordinator.isToggleEnabled
 
         addChild(contentVC)
         contentVC.view.translatesAutoresizingMaskIntoConstraints = false
@@ -819,8 +977,18 @@ extension MainViewController {
     func updateFloatingReturnKeyVisibility() {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         let renderState = coordinator.computeRenderState()
-        updateFloatingReturnKeyAnchor(aboveUnifiedInput: renderState.isFloatingReturnKeyVisible && renderState.cardPosition == .bottom)
-        coordinator.floatingReturnKeyViewController.view.isHidden = !renderState.isFloatingReturnKeyVisible
+        // In phone landscape the return key moves into the tools toolbar (between the model
+        // chip and submit) so it clears the Dynamic Island; otherwise it floats above the UTI.
+        let useInlineToolbarReturnKey = renderState.isFloatingReturnKeyVisible && isPhoneLandscape
+        let showFloating = renderState.isFloatingReturnKeyVisible && !isPhoneLandscape
+        updateFloatingReturnKeyAnchor(aboveUnifiedInput: showFloating && renderState.cardPosition == .bottom)
+        coordinator.floatingReturnKeyViewController.view.isHidden = !showFloating
+        coordinator.viewController.isToolbarReturnKeyHidden = !useInlineToolbarReturnKey
+    }
+
+    var isPhoneLandscape: Bool {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return false }
+        return view.window?.windowScene?.interfaceOrientation.isLandscape ?? false
     }
 
     func updateFloatingReturnKeyAnchor(aboveUnifiedInput: Bool) {
@@ -833,7 +1001,7 @@ extension MainViewController {
     }
 }
 
-private extension MainViewController {
+extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
@@ -845,44 +1013,21 @@ private extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
 
-        let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
-        let utiStartCenterY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY
-        let ntpStartCenterY = ntpLogoWindowCenterY()
-        let isBottom = coordinator.cardPosition.isBottom
+        // Pick the NTP handoff from the host's current content + the NTP's *resting* content (the NTP's
+        // `isShowing*` is unreliable here — the focus handoff hid one for the session). logo→logo morphs
+        // to the Dax mark, favorites→favorites hands the embedded copy over, everything else fades.
+        let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
+            && newTabPageViewController?.restingContentIsLogo == true
+        let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
+            && newTabPageViewController?.restingContentIsFavorites == true
 
-        // For logo-to-logo: keep the UTI Logo visible and animate it to the NTP Logo's
-        // natural (post-dismiss) position.
-        if isLogoToLogo,
-           let utiY = utiStartCenterY {
-            let ntpNaturalY: CGFloat
-            if isBottom {
-                // The bottom UTI logo is centered against a guide ending one omnibar-height
-                // below the keyboard; compensate by half that height to match the NTP logo.
-                ntpNaturalY = (ntpStartCenterY ?? utiY) + Constants.bottomDaxLogoTransitionYOffset
-            } else {
-                // Top bar: the nav bar shrinks back to standard height, making the
-                // contentContainer taller and shifting the NTP Logo center up by half the delta.
-                let navHeightDelta = viewCoordinator.constraints.navigationBarContainerHeight.constant
-                    - viewCoordinator.standardNavigationBarContainerHeight
-                ntpNaturalY = (ntpStartCenterY ?? utiY) - navHeightDelta / 2 + Constants.topDaxLogoTransitionYOffset
-            }
-
-            // How far the UTI Logo needs to move to land at the NTP Logo's final position.
-            let offset = ntpNaturalY - utiY
-
-            // Hide the NTP Logo — the UTI Logo takes over for the duration of the animation.
+        if isLogoToLogo {
             newTabPageViewController?.setLogoHidden(true)
-
-            // If the UTI Logo is showing the duck.ai state, morph it to the search state
-            // so it matches the NTP Logo by the time the swap happens.
-            if coordinator.contentViewController.daxLogoManager.lottieProgress > 0 {
-                coordinator.contentViewController.daxLogoManager.animateProgress(to: 0)
-            }
-
-            // Shift the UTI Logo's centering constraint so the dismiss animation drives it
-            // to the NTP Logo's post-dismiss position.
-            let currentOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
-            coordinator.contentViewController.daxLogoManager.setLogoYOffset(currentOffset + offset)
+            coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
+        } else if isFavoritesToFavorites {
+            newTabPageViewController?.setFavoritesHidden(true)
+        } else {
+            coordinator.contentViewController.beginDismissFade()
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
@@ -896,12 +1041,13 @@ private extension MainViewController {
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
-                // Mirror the focus path: push updated content insets so the suggestion
-                // tray content (including the escape hatch) animates with the bar collapse.
+                // Mirror the focus path: settle the collapsed bar layout first so `pushContentInsets`
+                // reads the *target* (collapsed) height, then push insets so the favorites/hatch
+                // animate with the collapse instead of snapping.
+                self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
-                if !isLogoToLogo {
-                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                }
+                // (Favorites case no longer fades the container — the embedded favorites stay visible
+                // and animate; the real NTP favorites, hidden above, are revealed at completion.)
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
@@ -912,12 +1058,11 @@ private extension MainViewController {
                 // content container, so the NTP Logo is rendered in the same frame
                 // and there's no one-frame gap where neither logo is visible.
                 self.newTabPageViewController?.setLogoHidden(false)
+                self.newTabPageViewController?.setFavoritesHidden(false)
                 self.newTabPageViewController?.view.setNeedsLayout()
                 self.newTabPageViewController?.view.layoutIfNeeded()
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
-                coordinator.contentViewController.setLogoHidden(false)
                 coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()
@@ -979,17 +1124,35 @@ private extension MainViewController {
         completion?()
     }
 
+    func focusUnifiedToggleInputForActiveChat(from webView: WKWebView) {
+        guard let controller = tabManager.controller(forWebView: webView),
+              controller === currentTab,
+              let coordinator = unifiedToggleInputCoordinator,
+              coordinator.isAITabState else { return }
+        coordinator.showExpanded(inputMode: .aiChat)
+    }
+
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
-        let isAITabSubmission = currentTab?.isAITab == true
-        if isAITabSubmission {
-            viewCoordinator.hideAITabChrome()
-            applyUnifiedInputChromeBackground(.standardChrome, updateWebView: false)
-            // Preempt any synchronous UI refresh triggered by loadQuery so the presentation stays mapped to standard chrome.
+        fireDirectDuckAINavigationPixelIfNeeded(for: query)
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         loadQuery(query)
-        if isAITabSubmission {
-            applyUnifiedInputChromeBackground(.standardChrome)
-        }
+    }
+
+    /// Fires when Duck.ai is disabled under AI Features settings yet the user still reaches Duck.ai by
+    /// typing its address into the UTI. Counts those direct navigations to gauge residual Duck.ai
+    /// demand among users who have turned it off. (Disabling Duck.ai also forces the Search↔Duck.ai
+    /// toggle off, so the `isAIChatEnabled` check is sufficient.) Mirrors `loadQuery`'s URL resolution
+    /// so detection matches what actually gets navigated.
+    private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
+        guard !aiChatSettings.isAIChatEnabled,
+              let url = URL.makeSearchURL(query: query,
+                                          useUnifiedLogic: isUnifiedURLPredictionEnabled,
+                                          queryContext: currentTab?.url),
+              url.isDuckAIURL else { return }
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
     }
 
 }
@@ -998,16 +1161,21 @@ private extension MainViewController {
 
 extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
-    func activateFromOmnibarIfNeeded(currentText: String?) -> UnifiedToggleInputActivationDecision {
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision {
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
             return .allowDefault
         }
+        if tapped {
+            onExperimentalAddressBarTapped()
+        }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        let inputMode = tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) } ?? .search
+        let inputMode = textEntryMode
+            ?? tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) }
+            ?? .search
+        coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
-        coordinator.contentViewController.isSwipeEnabled = isToggleEnabled
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept
     }
@@ -1019,15 +1187,32 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         // No per-tab persistence: existing tabs read from URL; new tabs read from setting + app-wide last-used.
-        // The app-wide last-used is written through `UnifiedInputStateStore.recordUserChoice` on submission.
+        // The app-wide last-used is written through `UnifiedInputStateStore.commitToggleMode` on submit, which fires this delegate.
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+        // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
+        // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.
+        if currentTab?.isAITab != true,
+           images?.isEmpty ?? true, files?.isEmpty ?? true,
+           let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
+           url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
+            loadUrlRespectingAIBoundary(url)
+            return
+        }
         openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
         handleUnifiedToggleInputSearchSubmission(query)
+    }
+
+    func unifiedToggleInputDidTapClearText() {
+        onExperimentalAddressBarClearPressed()
+    }
+
+    func unifiedToggleInputDidTapToActivate() {
+        onExperimentalAddressBarTapped()
     }
 
     func unifiedToggleInputDidRequestVoiceSearch() {
@@ -1043,9 +1228,14 @@ extension MainViewController: UnifiedToggleInputDelegate {
         let trimmed = prefilledText.trimmingWhitespace()
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
-        // On a Duck.ai tab, load a new chat URL here so the previous chat goes into WebView back-history.
+        // On a Duck.ai tab, route through openAIChat so the "new tab when current has content" rule applies.
+        // This opens the chip handoff in a fresh chat tab and avoids the contextual-sheet branch in onAIChatPressed.
         if currentTab?.isAITab == true {
-            currentTab?.load(trimmed.isEmpty ? nil : trimmed, autoSend: !trimmed.isEmpty)
+            if trimmed.isEmpty {
+                openAIChat()
+            } else {
+                openAIChat(trimmed, autoSend: true)
+            }
             return
         }
         onAIChatPressed(prefilledText: trimmed.isEmpty ? nil : trimmed)
@@ -1059,8 +1249,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onFirePressed()
     }
 
-    func unifiedToggleInputDidRequestDuckAIVoiceMode() {
-        onDuckAIVoiceModeRequested()
+    func unifiedToggleInputDidRequestAppMenu() {
+        onMenuPressed()
     }
 
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
@@ -1120,6 +1310,10 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         onChatHistorySelected(url: url)
     }
 
+    func unifiedInputEditingStateDidSelectViewAllChats() {
+        openAIChatHistory(source: .addressBar)
+    }
+
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {
         onSwitchToTab(tab)
     }
@@ -1134,7 +1328,14 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {
-        unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(mode)
+        // Route through the same path as a toggle tap so the toggle indicator, content swap, and
+        // input-height all animate together in one transaction (a swipe is a user-driven switch).
+        unifiedToggleInputCoordinator?.updateInputMode(mode, animated: true)
+    }
+
+    func unifiedInputEditingStateDidRequestSyncSetup() {
+        unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
+        segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.aiChatPromotion)
     }
 }
 
@@ -1143,8 +1344,46 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapChatList() {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarSidebarButtonTapped)
         unifiedToggleInputCoordinator?.showCollapsed()
         currentTab?.submitToggleSidebarAction()
+    }
+
+    func aiChatTabChatHeaderDidTapUpgrade() {
+        if let subscriptionState = unifiedToggleInputCoordinator?.subscriptionState, !subscriptionState.hasActiveSubscription {
+            Pixel.fire(pixel: .unifiedToggleInputChatHeaderUpgradeTapped)
+        }
+        NotificationCenter.default.post(
+            name: .settingsDeepLinkNotification,
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow()
+        )
+    }
+
+    /// Close the chat tab. Selection follows the tab-switcher rule; chat is recoverable via Duck.ai → Recent chats.
+    func aiChatTabChatHeaderDidTapClose() {
+        guard let tab = currentTab?.tabModel else {
+            // The X is only visible from a Duck.ai tab header, which is only attached when a
+            // current tab exists — nil here means the header outlived its tab. Surface it.
+            assertionFailure("aiChatTabChatHeaderDidTapClose fired with no currentTab")
+            newTab(reuseExisting: true, allowingKeyboard: true)
+            return
+        }
+        // Snapshot the chat tab view before swapping tabs and fade it out on top of the
+        // destination so chrome + content transition feels gradual instead of an instant pop.
+        let snapshot = view.snapshotView(afterScreenUpdates: false)
+        if let snapshot {
+            snapshot.isUserInteractionEnabled = false
+            snapshot.frame = view.bounds
+            snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            view.addSubview(snapshot)
+        }
+        closeTab(tab, behavior: .onlyClose)
+        guard let snapshot else { return }
+        UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
+            snapshot.alpha = 0
+        }, completion: { _ in
+            snapshot.removeFromSuperview()
+        })
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {
@@ -1153,39 +1392,28 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         currentTab?.submitStartChatAction()
     }
 
-    func aiChatTabChatHeaderDidTapUpgrade() {
-        NotificationCenter.default.post(
-            name: .settingsDeepLinkNotification,
-            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow()
-        )
+    func aiChatTabChatHeaderDidTapNewVoiceChat() {
+        onDuckAIVoiceModeRequested()
     }
 
-    func aiChatTabChatHeaderDidTapAppMenu() {
-        onMenuPressed()
+    func aiChatTabChatHeaderDidTapNewTab() {
+        newTab(reuseExisting: false, allowingKeyboard: false)
     }
 
-    func aiChatTabChatHeaderDidTapBack() {
-        if currentTab?.canGoBack == true {
-            onBackPressed()
-        } else {
-            presentFocusedOmnibarFromAITab()
-        }
+    /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.
+    func aiChatTabChatHeaderDidTapNewSearch() {
+        newTab(reuseExisting: false, allowingKeyboard: true)
+        unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(.search)
     }
 
-    func aiChatTabChatHeaderDidTapForward() {
-        onForwardPressed()
+    func aiChatTabChatHeaderDidTapNewFireTab() {
+        tabManager.setBrowsingMode(.fire, source: .aiChatHeaderPlusMenu)
+        newTab(reuseExisting: false, allowingKeyboard: true)
     }
 
-    /// Hides only the AI Chat header (NOT the nav chrome via `hideAITabChrome()`) so the standard
-    /// omnibar stays suppressed and dismiss skips its omnibar crossfade.
-    private func presentFocusedOmnibarFromAITab() {
-        guard let coordinator = unifiedToggleInputCoordinator else { return }
-        viewCoordinator.hideAIChatTabChatHeader()
-        applyUnifiedInputChromeBackground(.standardChrome)
-
-        let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        coordinator.activateFromOmnibar(prefilledText: nil, inputMode: .search, cardPosition: position)
-        reconcileToolbarVisibilityForCurrentTab()
+    func aiChatTabChatHeaderDidTapTabSwitcher() {
+        // Via `requestTabSwitcher()` not `showTabSwitcher()` — fires the same pixels as every other entry point.
+        requestTabSwitcher()
     }
 }
 

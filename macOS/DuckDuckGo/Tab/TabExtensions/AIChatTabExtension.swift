@@ -122,6 +122,11 @@ final class AIChatTabExtension {
                     self?.aiChatUserScript?.handler.submitAIChatPageContext(pageContext)
                     self?.temporaryPageContext = nil
                 }
+
+                if self?.temporaryOpenSettingsRequest == true {
+                    self?.aiChatUserScript?.requestOpenSettingsAction()
+                    self?.temporaryOpenSettingsRequest = false
+                }
             }
         }.store(in: &cancellables)
     }
@@ -200,6 +205,16 @@ final class AIChatTabExtension {
         }
 
         aiChatUserScript.handler.submitAIChatNativePrompt(prompt)
+    }
+
+    private var temporaryOpenSettingsRequest = false
+    func requestOpenSettings() {
+        guard let aiChatUserScript else {
+            // User script not yet loaded — apply when it becomes available
+            temporaryOpenSettingsRequest = true
+            return
+        }
+        aiChatUserScript.requestOpenSettingsAction()
     }
 
     private var temporaryPageContext: AIChatPageContextData?
@@ -325,6 +340,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func setAIChatRestorationData(_ data: AIChatRestorationData?)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
+    func requestOpenSettings()
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }

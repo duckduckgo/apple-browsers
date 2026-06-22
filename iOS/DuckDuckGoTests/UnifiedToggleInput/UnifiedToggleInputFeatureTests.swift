@@ -20,6 +20,7 @@
 import XCTest
 @testable import DuckDuckGo
 @testable import Core
+import PrivacyConfig
 
 final class UnifiedToggleInputFeatureTests: XCTestCase {
 
@@ -48,7 +49,8 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
     private func makeFeature(flagEnabled: Bool, isIphone: Bool) -> UnifiedToggleInputFeature {
         MockDevicePlatform.isIphone = isIphone
         let flags: [FeatureFlag] = flagEnabled ? [.unifiedToggleInput] : []
-        UnifiedToggleInputFeature.resolve(using: MockFeatureFlagger(enabledFeatureFlags: flags))
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flags)
+        UnifiedToggleInputFeature.resolve(using: featureFlagger)
         return UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
     }
 

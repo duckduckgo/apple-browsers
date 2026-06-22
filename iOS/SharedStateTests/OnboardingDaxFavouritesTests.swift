@@ -137,17 +137,18 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: MockKeyValueFileStore(),
-                                    daxDialogsManager: DummyDaxDialogsManager(),
+                                    daxDialogsManager: MockDaxDialogsManager(),
                                     aiChatSettings: aiChatSettings,
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
                                     voiceSearchHelper: MockVoiceSearchHelper(),
                                     launchSourceManager: MockLaunchSourceManager(),
-                                    darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
+                                    darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+                                    adBlockingAvailability: StubAdBlockingAvailability()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
-                                        daxDialogsManager: DummyDaxDialogsManager(),
+                                        daxDialogsManager: MockDaxDialogsManager(),
                                         syncService: syncService,
                                         bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
                                         fireproofing: fireproofing,
@@ -181,6 +182,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             featureFlagger: featureFlagger,
             idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
             afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .lastUsedTab, keyValueStore: keyValueStore),
+            lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: keyValueStore),
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
@@ -196,7 +198,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider(),
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
-            daxDialogsManager: DummyDaxDialogsManager(),
+            daxDialogsManager: MockDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
             freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
                 featureFlagger: featureFlagger,

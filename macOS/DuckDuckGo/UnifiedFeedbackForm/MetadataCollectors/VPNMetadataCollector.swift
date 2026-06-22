@@ -19,6 +19,7 @@
 import Foundation
 import AppKit
 import Common
+import FoundationExtensions
 import LoginItems
 import Network
 import NetworkProtectionIPC
@@ -62,6 +63,7 @@ struct VPNMetadata: Encodable {
         let includeAllNetworksEnabled: Bool
         let enforceRoutesEnabled: Bool
         let excludeLocalNetworksEnabled: Bool
+        let excludeCGNATEnabled: Bool
         let notifyStatusChangesEnabled: Bool
         let showInMenuBarEnabled: Bool
         let selectedServer: String
@@ -202,13 +204,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private func collectDeviceInfoMetadata() -> VPNMetadata.DeviceInfo {
         let buildFlavor = AppVersion.isAppStoreBuild ? "appstore" : "dmg"
         let osVersion = AppVersion.shared.osVersionMajorMinorPatch
-        let lowPowerModeEnabled: Bool
-
-        if #available(macOS 12.0, *) {
-            lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
-        } else {
-            lowPowerModeEnabled = false
-        }
+        let lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
 
         let architecture = getMachineArchitecture()
 
@@ -298,6 +294,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             includeAllNetworksEnabled: settings.includeAllNetworks,
             enforceRoutesEnabled: settings.enforceRoutes,
             excludeLocalNetworksEnabled: settings.excludeLocalNetworks,
+            excludeCGNATEnabled: settings.excludeCGNAT,
             notifyStatusChangesEnabled: settings.notifyStatusChanges,
             showInMenuBarEnabled: settings.showInMenuBar,
             selectedServer: settings.selectedServer.stringValue ?? "automatic",

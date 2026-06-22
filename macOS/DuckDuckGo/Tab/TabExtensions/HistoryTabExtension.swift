@@ -16,15 +16,18 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
+import CombineExtensions
 import Common
+import ConcurrencyExtensions
 import ContentBlocking
 import Foundation
+import FoundationExtensions
 import History
+import HistoryView
 import Navigation
 import WebKit
-import BrowserServicesKit
-import HistoryView
 
 protocol HistoryUserScriptProvider {
     var historyViewUserScript: HistoryViewUserScript { get }

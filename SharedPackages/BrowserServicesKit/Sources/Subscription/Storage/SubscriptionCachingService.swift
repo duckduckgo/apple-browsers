@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 /// Manages caching of `DuckDuckGoSubscription` with thread-safe access and expiration logic.

@@ -303,11 +303,7 @@ public final class SuggestionsReader: SuggestionsReading {
             self.navigationContinuation?.resume(returning: .failure(ReaderError.operationSuperseded))
             self.navigationContinuation = continuation
 
-            if #available(iOS 15.0, macOS 12.0, *) {
-                webView.loadSimulatedRequest(URLRequest(url: url), responseHTML: "")
-            } else {
-                webView.loadHTMLString("", baseURL: url)
-            }
+            webView.loadSimulatedRequest(URLRequest(url: url), responseHTML: "")
         }
     }
 

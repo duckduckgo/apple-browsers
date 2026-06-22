@@ -33,15 +33,15 @@ extension OnboardingView {
         static let legacyTitleToPickerTopPadding: CGFloat = 8
         static let rebrandedTitleToPickerTopPadding: CGFloat = 16
         static let fieldToFirstChipTopPadding: CGFloat = 16
-        static let queryFieldBottomPadding: CGFloat = -8
+        static let queryFieldBottomPadding: CGFloat = 0
         static let queryFieldTopPadding: CGFloat = -12
         static let queryFieldContentSpacing: CGFloat = 8
         static let queryFieldHorizontalPadding: CGFloat = 16
-        static let queryFieldVerticalPadding: CGFloat = 16.33
+        static let queryFieldVerticalPadding: CGFloat = 7
         static let disabledPrimaryActionOpacity: CGFloat = 0.3
 
         // MARK: Sizing
-        static let pickerWidth: CGFloat = 216
+        static let pickerMaxWidth: CGFloat = 320
         static let pickerHeight: CGFloat = 38
         static let pickerContainerHeight: CGFloat = 40
         static let pickerVerticalPadding: CGFloat = 0.5
@@ -50,10 +50,10 @@ extension OnboardingView {
         static let multilineFieldHeight: CGFloat = 56
         static let queryFieldActionButtonSize: CGFloat = 28
         static let queryFieldCornerRadius: CGFloat = 14
-        static let queryFieldInnerBorderInset: CGFloat = 2
         static let maxSuggestionCount = 3
-        static let legacyQueryFieldBorderWidth: CGFloat = 1
-        static let rebrandedQueryFieldBorderWidth: CGFloat = 1
+        static let queryFieldShadowColor: Color = .black.opacity(0.16)
+        static let queryFieldShadowRadius: CGFloat = 16
+        static let queryFieldShadowOffset = CGPoint(x: 0, y: 8)
 
         // MARK: Animation
         static let controlsRevealDelayAfterTitleAnimation: TimeInterval = 0.3
@@ -70,7 +70,7 @@ extension OnboardingView {
 
         // MARK: Offset
         static let queryFieldActionOffsetX: CGFloat = 2.33
-        static let queryFieldActionOffsetY: CGFloat = 1
+        static let queryFieldActionOffsetY: CGFloat = 0
     }
 
     struct DuckAIExperimentSearchContent: View {
@@ -84,10 +84,10 @@ extension OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         private let content: OnboardingDuckAIQueryContent
-        private let onModeConfirmed: (DuckAIQueryExperimentMode) -> Void
+        private let onModeConfirmed: (DuckAIQueryMode) -> Void
         private let openAIChatAction: (String?, Bool) -> Void
         private let openSearchAction: (String) -> Void
-        private let measureQuerySubmissionAction: (DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void
+        private let measureQuerySubmissionAction: (DuckAIQueryMode, DuckAIQueryPromptSource) -> Void
         private let startExitTransitionAction: () -> Void
         private let visualStyle: VisualStyle
         private var animateTitle: Binding<Bool>
@@ -96,7 +96,7 @@ extension OnboardingView {
 
         // MARK: State
         @State private var query = ""
-        @State private var selectedMode: DuckAIQueryExperimentMode
+        @State private var selectedMode: DuckAIQueryMode
         @State private var isInputFocused = false
         @State private var visibleSuggestionCount = 0
         @State private var isTransitioningOut = false
@@ -117,7 +117,7 @@ extension OnboardingView {
                 unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
             ),
             ImageSegmentedPickerItem(
-                text: UserText.Onboarding.DuckAIQueryExperiment.toggleAILabel,
+                text: UserText.Onboarding.DuckAIQuery.toggleAILabel,
                 selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChatGradientColor),
                 unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
             )
@@ -125,18 +125,18 @@ extension OnboardingView {
 
         init(
             content: OnboardingDuckAIQueryContent = .init(
-                title: UserText.Onboarding.DuckAIQueryExperiment.title,
-                searchPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
-                aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder,
+                title: UserText.Onboarding.DuckAIQuery.title,
+                searchPlaceholder: UserText.Onboarding.DuckAIQuery.searchPlaceholder,
+                aiPlaceholder: UserText.Onboarding.DuckAIQuery.aiPlaceholder,
                 isToggleVisible: true
             ),
-            defaultMode: DuckAIQueryExperimentMode,
+            defaultMode: DuckAIQueryMode,
             visualStyle: VisualStyle = .legacy,
             animateTitle: Binding<Bool> = .constant(false),
-            onModeConfirmed: @escaping (DuckAIQueryExperimentMode) -> Void,
+            onModeConfirmed: @escaping (DuckAIQueryMode) -> Void,
             openAIChatAction: @escaping (String?, Bool) -> Void,
             openSearchAction: @escaping (String) -> Void,
-            measureQuerySubmissionAction: @escaping (DuckAIQueryExperimentMode, DuckAIQueryExperimentPromptSource) -> Void,
+            measureQuerySubmissionAction: @escaping (DuckAIQueryMode, DuckAIQueryPromptSource) -> Void,
             startExitTransitionAction: @escaping () -> Void
         ) {
             self.content = content
@@ -152,7 +152,8 @@ extension OnboardingView {
             _pickerViewModel = StateObject(wrappedValue: ImageSegmentedPickerViewModel(
                 items: Self.pickerItems,
                 selectedItem: initialSelection,
-                configuration: ImageSegmentedPickerConfiguration(itemContentSpacing: Metrics.queryFieldContentSpacing),
+                configuration: ImageSegmentedPickerConfiguration(itemContentSpacing: Metrics.queryFieldContentSpacing,
+                                                                 textLineLimit: 1),
                 scrollProgress: defaultMode == .duckAI ? 1 : 0,
                 isScrollProgressDriven: false
             ))
@@ -187,12 +188,12 @@ extension OnboardingView {
                     if content.isToggleVisible {
                         // Search / Duck.ai segmented control.
                         ImageSegmentedPickerView(viewModel: pickerViewModel)
-                            .frame(width: Metrics.pickerWidth, height: Metrics.pickerHeight)
+                            .frame(maxWidth: Metrics.pickerMaxWidth, minHeight: Metrics.pickerHeight, maxHeight: Metrics.pickerHeight)
                             .padding(.vertical, Metrics.pickerVerticalPadding)
-                            .frame(width: Metrics.pickerWidth, height: Metrics.pickerContainerHeight)
+                            .frame(maxWidth: Metrics.pickerMaxWidth, minHeight: Metrics.pickerContainerHeight, maxHeight: Metrics.pickerContainerHeight)
                         // Drive content mode (Search vs Duck.ai) from user picker selection.
                             .onChange(of: pickerViewModel.selectedItem) { [reduceMotion] selectedItem in
-                                let newMode: DuckAIQueryExperimentMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
+                                let newMode: DuckAIQueryMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
                                 if reduceMotion {
                                     selectedMode = newMode
                                 } else {
@@ -258,23 +259,15 @@ extension OnboardingView {
 
         // MARK: Style
         private var accentColor: Color {
-            visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentPrimary)) : Color(designSystemColor: .accent)
+            visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentPrimary)) : Color(designSystemColor: .accentPrimary)
         }
 
         private var titleToPickerTopPadding: CGFloat {
             visualStyle == .rebranded ? Metrics.rebrandedTitleToPickerTopPadding : Metrics.legacyTitleToPickerTopPadding
         }
 
-        private var accentSecondaryColor: Color {
-            visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentAltGlowPrimary)) : Color(designSystemColor: .accentGlowSecondary)
-        }
-
         private var queryFieldBackgroundColor: Color {
             visualStyle == .rebranded ? onboardingTheme.colorPalette.background : Color(designSystemColor: .surface)
-        }
-
-        private var queryFieldBorderWidth: CGFloat {
-            visualStyle == .rebranded ? Metrics.rebrandedQueryFieldBorderWidth : Metrics.legacyQueryFieldBorderWidth
         }
 
         private var initialInputFocusDelayAfterAppear: TimeInterval {
@@ -366,17 +359,9 @@ extension OnboardingView {
             .padding(.horizontal, Metrics.queryFieldHorizontalPadding)
             .padding(.vertical, Metrics.queryFieldVerticalPadding)
             .background(queryFieldBackgroundColor)
-            .overlay(
-                RoundedRectangle(cornerRadius: Metrics.queryFieldCornerRadius)
-                    .strokeBorder(accentSecondaryColor, lineWidth: queryFieldBorderWidth)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Metrics.queryFieldCornerRadius)
-                    .inset(by: Metrics.queryFieldInnerBorderInset)
-                    .strokeBorder(accentColor, lineWidth: queryFieldBorderWidth)
-            )
             .cornerRadius(Metrics.queryFieldCornerRadius)
             .frame(maxWidth: .infinity)
+            .shadow(color: Metrics.queryFieldShadowColor, radius: Metrics.queryFieldShadowRadius, x: Metrics.queryFieldShadowOffset.x, y: Metrics.queryFieldShadowOffset.y)
             .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
         }
 
@@ -416,7 +401,7 @@ extension OnboardingView {
             !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
 
-        private func openSelectedExperience(prompt: String?, autoSend: Bool, promptSource: DuckAIQueryExperimentPromptSource) {
+        private func openSelectedExperience(prompt: String?, autoSend: Bool, promptSource: DuckAIQueryPromptSource) {
             if autoSend {
                 measureQuerySubmissionAction(selectedMode, promptSource)
             }
@@ -514,8 +499,8 @@ extension OnboardingView {
 
 // MARK: - OnboardingQueryField
 private struct OnboardingQueryField: UIViewRepresentable {
-    private static let singleLineTopInset: CGFloat = 5.0 / 3.0
-    private static let multiLineTopInset: CGFloat = 10.0 / 3.0
+    private static let singleLineTopInset: CGFloat = 4.0 / 3.0
+    private static let multiLineTopInset: CGFloat = 9.0 / 3.0
 
     @Binding var text: String
     let placeholder: String
@@ -545,15 +530,17 @@ private struct OnboardingQueryField: UIViewRepresentable {
         context.coordinator.placeholderLabel.text = placeholder
         context.coordinator.placeholderLabel.font = textView.font
         context.coordinator.placeholderLabel.textColor = UIColor(designSystemColor: .textTertiary)
+        context.coordinator.placeholderLabel.numberOfLines = isSingleLine ? 1 : 0
         context.coordinator.placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
         textView.addSubview(context.coordinator.placeholderLabel)
 
-        let placeholderTopConstraint = context.coordinator.placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor)
+        let placeholderTopConstraint = context.coordinator.placeholderLabel.topAnchor.constraint(equalTo: textView.frameLayoutGuide.topAnchor)
         context.coordinator.placeholderTopConstraint = placeholderTopConstraint
 
         NSLayoutConstraint.activate([
-            context.coordinator.placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor),
+            context.coordinator.placeholderLabel.leadingAnchor.constraint(equalTo: textView.frameLayoutGuide.leadingAnchor),
+            context.coordinator.placeholderLabel.trailingAnchor.constraint(equalTo: textView.frameLayoutGuide.trailingAnchor),
             placeholderTopConstraint
         ])
 
@@ -572,9 +559,12 @@ private struct OnboardingQueryField: UIViewRepresentable {
 
         if context.coordinator.isSingleLine != isSingleLine {
             context.coordinator.isSingleLine = isSingleLine
+            context.coordinator.placeholderLabel.numberOfLines = isSingleLine ? 1 : 0
             applyModeConfiguration(to: textView, isSingleLine: isSingleLine, context: context)
         }
 
+        // Adjust UITextView‘s single-line and multiline text offset to match
+        // when switching between Search and Ask AI modes
         let topInset = isSingleLine ? Self.singleLineTopInset : Self.multiLineTopInset
 
         UIView.performWithoutAnimation {
@@ -743,7 +733,7 @@ private struct OnboardingSuggestionChips: View {
     let isDuckAIMode: Bool
     let visibleCount: Int
     let visualStyle: OnboardingView.DuckAIExperimentSearchContent.VisualStyle
-    let onItemTap: (ContextualOnboardingListItem, DuckAIQueryExperimentPromptSource) -> Void
+    let onItemTap: (ContextualOnboardingListItem, DuckAIQueryPromptSource) -> Void
 
     // MARK: Computed Properties
     private var visibleItems: [ContextualOnboardingListItem] {
@@ -774,7 +764,7 @@ private struct OnboardingSuggestionChips: View {
         return OnboardingSuggestionsChipsMetrics.interChipSpacingLegacy
     }
 
-    private func promptSource(for index: Int) -> DuckAIQueryExperimentPromptSource {
+    private func promptSource(for index: Int) -> DuckAIQueryPromptSource {
         switch index {
         case 0: return .option1
         case 1: return .option2

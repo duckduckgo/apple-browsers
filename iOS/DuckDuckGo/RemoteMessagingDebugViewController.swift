@@ -25,6 +25,7 @@ import CoreData
 import Combine
 import Persistence
 import OSLog
+import FoundationExtensions
 
 class RemoteMessagingDebugViewController: UIHostingController<RemoteMessagingDebugRootView> {
 
@@ -42,9 +43,32 @@ struct RemoteMessagingDebugRootView: View {
         self.model = RemoteMessagingDebugViewModel(remoteMessagingDebugHandler: remoteMessagingDebugHandler)
     }
     @State private var shareItem: ShareItem?
+    @State private var isShowingDaysAlert = false
+    @State private var daysInput = ""
 
     var body: some View {
         List {
+            Section {
+                HStack {
+                    Text(verbatim: "Days Since Installed")
+                        .font(.system(size: 15))
+                    Spacer()
+                    Text(model.currentDaysSinceInstalled.map(String.init) ?? "Not set")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(baseColor: .gray70))
+                }
+                Button {
+                    daysInput = model.currentDaysSinceInstalled.map(String.init) ?? ""
+                    isShowingDaysAlert = true
+                } label: {
+                    Text(verbatim: "Set Days Since Installed…")
+                }
+            } header: {
+                Text(verbatim: "Install Date")
+            } footer: {
+                Text(verbatim: "Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Refresh Config” afterwards to re-evaluate.")
+            }
+
             Section {
                 if let configInfo = model.configInfo {
                     VStack(alignment: .leading, spacing: 6) {
@@ -130,6 +154,17 @@ struct RemoteMessagingDebugRootView: View {
             } footer: {
                 Text("Shows logs from the last minute, to help diagnose issues immediately after a refresh.")
             }
+
+            Section {
+                NavigationLink(destination: RemoteMessagingUIPreviewsDebugView()) {
+                    Text(verbatim: "RMF UI previews")
+                        .font(.system(size: 15))
+                }
+            } header: {
+                Text(verbatim: "Previews")
+            } footer: {
+                Text(verbatim: "Renders a UI preview of each remote message type.")
+            }
         }
         .navigationTitle("Remote Messaging Debug")
         .toolbar {
@@ -138,6 +173,18 @@ struct RemoteMessagingDebugRootView: View {
         }
         .sheet(item: $shareItem) { item in
             ShareSheet(activityItems: [item.fileURL])
+        }
+        .alert("Set Days Since Installed", isPresented: $isShowingDaysAlert) {
+            TextField("Days", text: $daysInput)
+                .keyboardType(.numberPad)
+            Button("Cancel", role: .cancel) {}
+            Button("Set") {
+                if let days = Int(daysInput.trimmingCharacters(in: .whitespaces)), days >= 0 {
+                    model.setDaysSinceInstalled(days)
+                }
+            }
+        } message: {
+            Text("Enter a non-negative number of days. The install date will be set to that many days ago.")
         }
     }
 }
@@ -232,6 +279,7 @@ class RemoteMessagingDebugViewModel: ObservableObject {
     @Published var configInfo: ConfigDebugModel?
     @Published var recentLogs: [LogEntry] = []
     @Published var isLoadingLogs: Bool = false
+    @Published var currentDaysSinceInstalled: Int?
 
     let database: CoreDataDatabase
     private let remoteMessagingDebugHandler: RemoteMessagingDebugHandling?
@@ -241,6 +289,7 @@ class RemoteMessagingDebugViewModel: ObservableObject {
         database = Database.shared
         fetchMessages()
         fetchConfigInfo()
+        fetchInstallDateInfo()
         Task {
             await fetchLogs()
         }
@@ -275,6 +324,19 @@ class RemoteMessagingDebugViewModel: ObservableObject {
 
     func refreshConfig() {
         remoteMessagingDebugHandler?.refreshRemoteMessages()
+    }
+
+    func fetchInstallDateInfo() {
+        guard let installDate = StatisticsUserDefaults().installDate else {
+            currentDaysSinceInstalled = nil
+            return
+        }
+        currentDaysSinceInstalled = Calendar.current.numberOfDaysBetween(installDate, and: Date())
+    }
+
+    func setDaysSinceInstalled(_ days: Int) {
+        StatisticsUserDefaults().installDate = Calendar.current.date(byAdding: .day, value: -days, to: Date())
+        fetchInstallDateInfo()
     }
 
     func fetchMessages() {

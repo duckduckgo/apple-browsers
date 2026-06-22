@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import DuckAiDataStore
 import Foundation
 import os.log

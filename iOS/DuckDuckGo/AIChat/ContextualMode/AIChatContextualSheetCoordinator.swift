@@ -21,6 +21,7 @@ import AIChat
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import os.log
 import PrivacyConfig
@@ -42,6 +43,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user taps expand to open duck.ai in a new tab with the given chat URL.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL)
+
+    /// Called when the user taps "View all chats" to open the native chat history page.
+    func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator)
 
     /// Called when the user requests to open AI Chat settings.
     func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator)
@@ -96,10 +100,10 @@ final class AIChatContextualSheetCoordinator {
     /// Session timer for auto-resetting the chat after inactivity
     private var sessionTimer: AIChatSessionTimer?
 
-    /// Returns true if the sheet is currently presented.
-    var isSheetPresented: Bool {
-        sheetViewController?.presentingViewController != nil
-    }
+    /// Whether the sheet is currently presented on screen. Tracked as `@Published`
+    /// so chrome surfaces (e.g. the iPad tabs-bar Duck.ai chip) can swap their
+    /// state-aware glyph and respond to swipe-to-dismiss.
+    @Published private(set) var isSheetPresented: Bool = false
 
     /// Whether the sheet is presented and actively observing page context updates.
     private var isActivelyObservingContext: Bool {
@@ -171,11 +175,24 @@ final class AIChatContextualSheetCoordinator {
     }
 
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.
+    /// State cleanup (flag + cancellables + session timer) runs from the VC's `viewDidDisappear` hook.
     func dismissSheet() {
         sheetViewController?.dismiss(animated: true)
     }
-    
+
+    private func handleSheetDismissed() {
+        guard isSheetPresented else { return }
+        isSheetPresented = false
+        stopObservingContextUpdates()
+        startSessionTimer()
+    }
+
+    // Mirrors handleSheetDismissed but deliberately skips startSessionTimer — a fire-button
+    // clear nukes the chat and doesn't want a pending timer firing afterwards. Keep aligned
+    // when adding side effects to handleSheetDismissed.
     func clearActiveChat() {
+        sheetViewController?.notifySheetDismissed()
+        isSheetPresented = false
         sheetViewController = nil
         stopObservingContextUpdates()
         pageContextHandler.clear()
@@ -219,11 +236,17 @@ private extension AIChatContextualSheetCoordinator {
     
     func presentExistingSheet(_ sheetVC: AIChatContextualSheetViewController, from presentingVC: UIViewController) {
         guard sheetVC.presentingViewController == nil else { return }
+        // UIKit silently drops present() if the presenter already has a presentedViewController;
+        // bail so isSheetPresented doesn't get stuck true.
+        guard presentingVC.presentedViewController == nil else { return }
         sheetVC.configureSheetPresentation()
         presentingVC.present(sheetVC, animated: true)
+        isSheetPresented = true
     }
 
     func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?) {
+        guard presentingVC.presentedViewController == nil else { return }
+
         if let restoreURL {
             sessionState.restoreChat(with: restoreURL)
         }
@@ -246,6 +269,7 @@ private extension AIChatContextualSheetCoordinator {
         sheetViewController = sheetVC
 
         presentingVC.present(sheetVC, animated: true)
+        isSheetPresented = true
     }
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
@@ -399,18 +423,22 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidRequestDismiss(_ viewController: AIChatContextualSheetViewController) {
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.aiChatContextualSheetViewControllerDidDismiss(viewController)
-        }
+        viewController.dismiss(animated: true)
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL) {
         delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url)
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.startSessionTimer()
-        }
-        stopObservingContextUpdates()
+        viewController.dismiss(animated: true)
         sessionState.cancelManualAttach()
+    }
+
+    func aiChatContextualSheetViewControllerDidRequestViewAllChats(_ viewController: AIChatContextualSheetViewController) {
+        sessionState.cancelManualAttach()
+        // Dismiss the sheet first, then open the native history page so it isn't presented over a dismissing sheet.
+        viewController.dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinatorDidRequestViewAllChats(self)
+        }
     }
 
     func aiChatContextualSheetViewControllerDidRequestOpenSettings(_ viewController: AIChatContextualSheetViewController) {
@@ -453,8 +481,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
-        stopObservingContextUpdates()
-        startSessionTimer()
+        handleSheetDismissed()
     }
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {
@@ -462,6 +489,9 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String) {
+        let hasPageContext: Bool
+        if case .attached = sessionState.chipState { hasPageContext = true } else { hasPageContext = false }
+        sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         sessionState.handlePromptSubmission(prompt)
     }
 

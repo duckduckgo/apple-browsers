@@ -19,7 +19,9 @@
 import Foundation
 import DDGSync
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI
@@ -35,7 +37,12 @@ extension SyncDevice {
     }
 
     init(_ device: RegisteredDevice) {
-        let kind: Kind = device.type == "desktop" ? .desktop : .mobile
+        let kind: Kind
+        if device.credentialId == SyncCredentialID.thirdParty {
+            kind = .thirdParty
+        } else {
+            kind = device.type == "desktop" ? .desktop : .mobile
+        }
         self.init(kind: kind, name: device.name, id: device.id)
     }
 }

@@ -48,6 +48,10 @@ final class OnboardingIntroViewController<Content: View>: UIHostingController<Co
             guard let self, let delegate else { return }
             delegate.searchFromOnboarding(for: query)
         }
+        viewModel.onOnboardingInterlude = { [weak self] interlude in
+            guard let self, let delegate else { return }
+            delegate.didStartOnboardingInterlude(interlude)
+        }
     }
 
     @available(*, unavailable)
@@ -66,56 +70,6 @@ final class OnboardingIntroViewController<Content: View>: UIHostingController<Co
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         viewModel.tapped()
-    }
-
-}
-
-extension OnboardingIntroViewController where Content == OnboardingView {
-
-    static func legacy(
-        onboardingPixelReporter: OnboardingPixelReporting,
-        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
-        daxDialogsManager: ContextualDaxDialogDisabling,
-        syncAutoRestoreHandler: SyncAutoRestoreHandling,
-        onboardingManager: OnboardingManaging
-    ) -> OnboardingIntroViewController {
-        let viewModel = OnboardingIntroViewModel(
-            pixelReporter: onboardingPixelReporter,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager,
-            restorePromptHandler: OnboardingRestorePromptHandler(
-                configuration: .enabled,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
-            ),
-            onboardingManager: onboardingManager
-        )
-        let rootView = OnboardingView(model: viewModel)
-        return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
-    }
-
-}
-
-extension OnboardingIntroViewController where Content == RebrandedOnboardingView {
-
-    static func rebranded(
-        onboardingPixelReporter: OnboardingPixelReporting,
-        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
-        daxDialogsManager: ContextualDaxDialogDisabling,
-        syncAutoRestoreHandler: SyncAutoRestoreHandling,
-        onboardingManager: OnboardingManaging
-    ) -> OnboardingIntroViewController {
-        let viewModel = OnboardingIntroViewModel(
-            pixelReporter: onboardingPixelReporter,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager,
-            restorePromptHandler: OnboardingRestorePromptHandler(
-                configuration: .enabled,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
-            ),
-            onboardingManager: onboardingManager
-        )
-        let rootView = RebrandedOnboardingView(model: viewModel)
-        return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
     }
 
 }

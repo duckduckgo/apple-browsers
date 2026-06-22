@@ -21,6 +21,7 @@ import MetricKit
 import Persistence
 import os.log
 import Common
+import FoundationExtensions
 
 public enum CrashCollectionPlatform {
     case iOS, macOS, macOSAppStore
@@ -47,7 +48,7 @@ public enum CrashReportPixelParameter: String {
 }
 
 @available(iOSApplicationExtension, unavailable)
-@available(iOS 13, macOS 12, *)
+@available(iOS 13, *)
 public final class CrashCollection {
 
     public init(crashReportSender: CrashReportSending,

@@ -21,6 +21,7 @@ import UIKit
 import AttributedMetric
 import PixelKit
 import Common
+import FoundationExtensions
 import Core
 
 final class AttributedMetricsDebugViewController: UITableViewController {

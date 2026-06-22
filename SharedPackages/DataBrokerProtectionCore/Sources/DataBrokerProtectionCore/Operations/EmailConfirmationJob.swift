@@ -217,9 +217,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             throw DataBrokerProtectionError.dataNotInDatabase
         }
 
-        let applicationNameForUserAgent: String? = jobDependencies.featureFlagger.isWebViewUserAgentOn
-            ? jobDependencies.applicationNameForUserAgent
-            : nil
+        let applicationNameForUserAgentProvider: () -> String? = jobDependencies.featureFlagger.isWebViewUserAgentOn
+            ? jobDependencies.applicationNameForUserAgentProvider
+            : { nil }
 
         let webRunner: BrokerProfileOptOutSubJobWebProtocol
         if let webRunnerForTesting = self.webRunnerForTesting {
@@ -232,11 +232,12 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 emailConfirmationDataService: jobDependencies.emailConfirmationDataService,
                 captchaService: jobDependencies.captchaService,
                 featureFlagger: jobDependencies.featureFlagger,
-                applicationNameForUserAgent: applicationNameForUserAgent,
+                applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
                 stageCalculator: stageDurationCalculator,
                 pixelHandler: jobDependencies.pixelHandler,
                 executionConfig: jobDependencies.executionConfig,
                 actionsHandlerMode: .emailConfirmation(confirmationURL),
+                contentBlocking: jobDependencies.contentBlocking,
                 shouldRunNextStep: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
@@ -258,7 +259,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
                 },
-                applicationNameForUserAgent: applicationNameForUserAgent
+                applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
+                contentBlocking: jobDependencies.contentBlocking
             )
         } else {
             assertionFailure("webRunner must conform to CCFCommunicationDelegate")

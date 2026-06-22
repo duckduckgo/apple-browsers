@@ -24,6 +24,7 @@ import Persistence
 import PrivacyConfig
 import Configuration
 import Common
+import FoundationExtensions
 import Networking
 import PixelKit
 

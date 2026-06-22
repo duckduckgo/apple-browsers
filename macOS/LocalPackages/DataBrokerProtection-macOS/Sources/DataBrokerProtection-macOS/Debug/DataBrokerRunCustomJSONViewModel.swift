@@ -16,16 +16,18 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
-import DataBrokerProtectionCore
 import Common
+import ConcurrencyExtensions
 import ContentScopeScripts
-import os.log
+import DataBrokerProtectionCore
+import enum UserScript.UserScriptError
 import FeatureFlags
+import Foundation
+import FoundationExtensions
+import os.log
 import PixelKit
 import PrivacyConfig
-import enum UserScript.UserScriptError
 
 struct ExtractedAddress: Codable {
     let state: String
@@ -211,7 +213,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let contentScopeProperties: ContentScopeProperties
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     let featureFlagger: DBPFeatureFlagging
-    let applicationNameForUserAgent: String?
+    let applicationNameForUserAgentProvider: () -> String?
 
     private var isSyncingAgeFields = false
 
@@ -231,10 +233,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
          featureFlagger: DBPFeatureFlagging,
-         applicationNameForUserAgent: String?) {
+         applicationNameForUserAgentProvider: @escaping () -> String?) {
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgent = applicationNameForUserAgent
+        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
                                                   credentialsAutofill: false,
@@ -285,9 +287,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                              settings: dbpSettings,
                                              servicePixel: backendServicePixels)
 
-        if #available(macOS 12.0, *) {
-            loadPresets()
-        }
+        loadPresets()
     }
 
     @MainActor
@@ -332,7 +332,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 emailConfirmationDataService: self.emailConfirmationDataService,
                                 captchaService: self.captchaService,
                                 featureFlagger: self.featureFlagger,
-                                applicationNameForUserAgent: self.applicationNameForUserAgent,
+                                applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                                 stageDurationCalculator: stageCalculator,
                                 pixelHandler: fakePixelHandler,
                                 executionConfig: .init(),
@@ -429,7 +429,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
-                    applicationNameForUserAgent: self.applicationNameForUserAgent,
+                    applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                     stageCalculator: stageCalculator,
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),
@@ -580,7 +580,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     var applicationNameForUserAgentDisplayValue: String {
-        applicationNameForUserAgent ?? "nil"
+        applicationNameForUserAgentProvider() ?? "nil"
     }
 
     func addDebugEvent(kind: DebugEventKind, summary: String, profileQueryLabel: String, details: String, progressText: String) {
@@ -636,19 +636,16 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
 extension DataBrokerRunCustomJSONViewModel {
     func loadPresets() {
-        guard #available(macOS 12.0, *) else { return }
         presetsText = UserDefaults.dbp.string(forKey: ProfilePreset.Constants.presetKey) ?? ""
         presets = parsePresets(from: presetsText)
     }
 
     func savePresets() {
-        guard #available(macOS 12.0, *) else { return }
         UserDefaults.dbp.set(presetsText, forKey: ProfilePreset.Constants.presetKey)
         presets = parsePresets(from: presetsText)
     }
 
     func applyPreset(_ preset: ProfilePreset) {
-        guard #available(macOS 12.0, *) else { return }
         names = Array(preset.names.prefix(Constants.maxNames))
         addresses = Array(preset.addresses.prefix(Constants.maxAddresses))
         if names.isEmpty { names = [NameUI.empty()] }
@@ -658,8 +655,6 @@ extension DataBrokerRunCustomJSONViewModel {
     }
 
     func saveCurrentFormAsPreset() {
-        guard #available(macOS 12.0, *) else { return }
-
         let namesLine = names.compactMap { name in
             guard let components = PersonNameComponents(name: name) else { return nil }
             let formatted = PersonNameComponentsFormatter().string(from: components)
@@ -710,7 +705,6 @@ fileprivate extension String {
 
     func toNames() -> [NameUI] {
         split(by: ProfilePreset.Constants.entrySeparator).compactMap { entry in
-            guard #available(macOS 12.0, *) else { return nil }
             let formatter = PersonNameComponentsFormatter()
             let components = formatter.personNameComponents(from: entry)
             return components.flatMap { NameUI(components: $0) }
@@ -740,8 +734,6 @@ fileprivate extension PersonNameComponents {
         if trimmedFirst.isEmpty && trimmedMiddle.isEmpty && trimmedLast.isEmpty {
             return nil
         }
-
-        guard #available(macOS 12.0, *) else { return nil }
 
         self.init()
         self.givenName = trimmedFirst

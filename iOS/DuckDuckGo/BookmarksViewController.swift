@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import UIKit
 import Core
 import DDGSync

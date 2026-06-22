@@ -27,6 +27,20 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_settings_navigation_bar_turned_on": {
+        "description": "Fired when the user enables the Navigation Bar shortcut in AI Chat settings",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_settings_navigation_bar_turned_off": {
+        "description": "Fired when the user disables the Navigation Bar shortcut in AI Chat settings",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_single_delete_successful": {
         "description": "Fired when a single AI chat is deleted successfully",
         "owners": ["hassaanelgarem"],

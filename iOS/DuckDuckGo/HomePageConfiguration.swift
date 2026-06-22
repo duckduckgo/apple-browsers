@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import RemoteMessaging
 import Common
+import FoundationExtensions
 import Core
 import Bookmarks
 import os.log

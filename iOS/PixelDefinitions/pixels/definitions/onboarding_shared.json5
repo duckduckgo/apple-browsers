@@ -44,6 +44,21 @@
             "onboardingFlow"
         ]
     },
+    "m_ios_onboarding_ai-intro": {
+        "description": "Fired during linear onboarding on the AI Comparison ('AI Protections Activated!') step of the Duck.ai tailored flow.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
+    },
     "m_ios_onboarding_add-to-dock": {
         "description": "Fired during linear onboarding on the Add to Dock step.",
         "owners": ["rachelmcr"],

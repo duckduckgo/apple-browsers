@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 
 /// An image view that doesn't intercept mouse events, allowing its superview to handle them.
 private final class NonInteractiveImageView: NSImageView {
@@ -62,6 +63,15 @@ final class AIChatOmnibarToolButton: NSView {
     private var trailingImageTrailingConstraint: NSLayoutConstraint?
 
     private let backgroundLayer = CALayer()
+    private let focusRingLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.fillColor = nil
+        layer.lineWidth = 1.5
+        layer.lineCap = .round
+        layer.lineJoin = .round
+        layer.isHidden = true
+        return layer
+    }()
 
     weak var target: AnyObject?
     var action: Selector?
@@ -80,6 +90,22 @@ final class AIChatOmnibarToolButton: NSView {
         didSet {
             updateAppearance()
         }
+    }
+
+    /// Stroke colour for the keyboard-focus ring. Defaults to the design-system primary
+    /// accent; the container VC re-assigns this from `theme.colorsProvider.accentPrimaryColor`
+    /// via `applyTheme(theme:)` so the ring follows in-app theme switches (Pink, Blue, etc.).
+    var focusRingColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
+        didSet { updateFocusRingStrokeColor() }
+    }
+
+    private func updateFocusRingStrokeColor() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            focusRingLayer.strokeColor = focusRingColor.cgColor
+        }
+        CATransaction.commit()
     }
 
     /// When true, the icon always uses the leading constraint instead of centering.
@@ -202,22 +228,41 @@ final class AIChatOmnibarToolButton: NSView {
     override var canBecomeKeyView: Bool { true }
 
     override func becomeFirstResponder() -> Bool {
-        setNeedsDisplay(bounds.insetBy(dx: -3, dy: -3))
-        return super.becomeFirstResponder()
+        let didBecome = super.becomeFirstResponder()
+        if didBecome { setFocusRingHidden(false) }
+        return didBecome
     }
 
     override func resignFirstResponder() -> Bool {
-        setNeedsDisplay(bounds.insetBy(dx: -3, dy: -3))
-        return super.resignFirstResponder()
+        let didResign = super.resignFirstResponder()
+        if didResign { setFocusRingHidden(true) }
+        return didResign
+    }
+
+    private func setFocusRingHidden(_ hidden: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        focusRingLayer.isHidden = hidden
+        CATransaction.commit()
     }
 
     private func setupView() {
         wantsLayer = true
+        // The focus ring sublayer extends 1pt past the view's bounds. On macOS Monterey
+        // the hosting layer clips its sublayers to bounds by default, which would hide
+        // the ring; explicitly disable masking so the ring renders on every supported OS.
+        layer?.masksToBounds = false
         setAccessibilityRole(.button)
 
         // Setup background layer (shape updated in layout())
         backgroundLayer.opacity = 0
         layer?.insertSublayer(backgroundLayer, at: 0)
+
+        // Focus ring sublayer sits above the background so it stays visible while hovered/toggled.
+        // Stroke colour follows `focusRingColor` and re-resolves against the view's effective
+        // appearance — see `updateFocusRingStrokeColor()`.
+        layer?.addSublayer(focusRingLayer)
+        updateFocusRingStrokeColor()
 
         // Setup icon image view
         addSubview(iconImageView)
@@ -268,6 +313,22 @@ final class AIChatOmnibarToolButton: NSView {
             )
             backgroundLayer.cornerRadius = Constants.buttonSize / 2
         }
+
+        // Focus ring tracks the background's shape, offset 1pt outward so the stroke
+        // sits just outside the visible button. Rendered as a sublayer rather than
+        // in `draw(_:)` so the 1pt overflow is not clipped by the view's backing layer
+        // (which was the cause of the broken ring on macOS Monterey).
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let ringRect = backgroundLayer.frame.insetBy(dx: -1, dy: -1)
+        focusRingLayer.frame = ringRect
+        focusRingLayer.path = CGPath(
+            roundedRect: focusRingLayer.bounds,
+            cornerWidth: ringRect.height / 2,
+            cornerHeight: ringRect.height / 2,
+            transform: nil
+        )
+        CATransaction.commit()
     }
 
     private func updateAppearance() {
@@ -382,25 +443,6 @@ final class AIChatOmnibarToolButton: NSView {
         isMouseDown = false
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        guard window?.firstResponder == self else { return }
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-
-        context.saveGState()
-        context.resetClip()
-
-        NSColor.controlAccentColor.setStroke()
-        let borderRect = bounds.insetBy(dx: -1, dy: -1)
-        let focusPath = NSBezierPath(roundedRect: borderRect, xRadius: borderRect.height / 2, yRadius: borderRect.height / 2)
-        focusPath.lineWidth = 1.5
-        focusPath.lineCapStyle = .round
-        focusPath.lineJoinStyle = .round
-        focusPath.stroke()
-
-        context.restoreGState()
-    }
-
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case 48: // Tab
@@ -421,6 +463,7 @@ final class AIChatOmnibarToolButton: NSView {
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         updateAppearance()
+        updateFocusRingStrokeColor()
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {

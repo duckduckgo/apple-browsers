@@ -241,7 +241,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
     @MainActor
     func testLegacyTabEncodedArchiveDecodesAsTabRestorationData() throws {
         let url = URL(string: "https://legacy.example.com")!
-        let tab = Tab(content: .url(url, credential: nil, source: .link), shouldLoadInBackground: true)
+        let tab = Tab(content: .url(url, credential: nil, source: .link))
         tab.title = "Legacy Tab"
 
         // Encode exactly as old TabCollection.encode(with:) did — no class name remapping

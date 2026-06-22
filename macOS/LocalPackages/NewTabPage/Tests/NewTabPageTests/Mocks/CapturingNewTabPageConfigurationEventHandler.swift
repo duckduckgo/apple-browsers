@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import NewTabPage
 
 final class CapturingNewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigurationEvent> {

@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import DesignResourcesKit

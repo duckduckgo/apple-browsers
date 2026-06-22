@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct SyncWithServerView: View {
 
@@ -43,7 +44,7 @@ public struct SyncWithServerView: View {
                 }
                 .frame(height: 56)
                 .padding(.bottom, 20)
-                Image("Sync-Server-128")
+                Image(rebrandable: "Sync-Server-128")
                     .padding(.bottom, 20)
 
                 Text(UserText.connectWithServerSheetTitle)

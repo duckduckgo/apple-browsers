@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import ContentScopeScripts
 import Foundation
 import PrivacyConfig

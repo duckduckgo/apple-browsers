@@ -21,6 +21,7 @@ import XCTest
 import AuthenticationServices
 @testable import BrowserServicesKit
 import Common
+import FoundationExtensions
 import SecureStorage
 @testable import DuckDuckGo
 

@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 import Networking
 import PixelKit
@@ -72,7 +73,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
     func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error>
 
-    @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
+    @available(iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
 
     /// Subscription feature related URL that matches current environment
     func url(for type: SubscriptionURL) -> URL
@@ -231,6 +232,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let requestCoalescer = SubscriptionRequestCoalescer()
     private let wideEvent: WideEventManaging?
     private let isAuthV2WideEventEnabled: () -> Bool
+    private let authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting?
     private let tierOptionsProvider: SubscriptionTierOptionsProviding
 
     public init(storePurchaseManager: StorePurchaseManager? = nil,
@@ -245,6 +247,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 isInternalUserEnabled: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging? = nil,
                 isAuthV2WideEventEnabled: @escaping () -> Bool = { false },
+                authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting? = nil,
                 tierOptionsProvider: SubscriptionTierOptionsProviding? = nil) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
@@ -257,6 +260,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         self.isInternalUserEnabled = isInternalUserEnabled
         self.wideEvent = wideEvent
         self.isAuthV2WideEventEnabled = isAuthV2WideEventEnabled
+        self.authV2TokenRefreshInstrumentation = authV2TokenRefreshInstrumentation
         self.tierOptionsProvider = tierOptionsProvider ?? DefaultSubscriptionTierOptionsProvider(
             subscriptionEnvironmentPlatform: subscriptionEnvironment.purchasePlatform,
             storePurchaseManager: storePurchaseManager,
@@ -265,11 +269,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         if initForPurchase {
             switch currentEnvironment.purchasePlatform {
             case .appStore:
-                if #available(macOS 12.0, iOS 15.0, *) {
-                    setupForAppStore()
-                } else {
-                    assertionFailure("Trying to setup AppStore where not supported")
-                }
+                setupForAppStore()
             case .stripe:
                 break
             }
@@ -287,7 +287,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
     }
 
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     public func storePurchaseManager() -> StorePurchaseManager {
         return _storePurchaseManager!
     }
@@ -314,7 +314,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     // MARK: - Environment
 
-    @available(macOS 12.0, iOS 15.0, *) private func setupForAppStore() {
+    @available(iOS 15.0, *) private func setupForAppStore() {
         storePurchaseManager().areProductsAvailablePublisher
             .sink { [weak self] value in
                 self?.hasAppStoreProductsAvailableSubject.send(value)
@@ -351,7 +351,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         guard let cached = await subscriptionCachingService.get() else {
             throw fallbackError
         }
-        if cached.isActive { pixelHandler.handle(pixel: .subscriptionIsActive) }
+        if cached.isActive {
+            pixelHandler.handle(pixel: .subscriptionIsActive)
+            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
+        }
         return cached
     }
 
@@ -422,7 +425,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             subscription = finalSubscription
         }
 
-        if subscription.isActive { pixelHandler.handle(pixel: .subscriptionIsActive) }
+        if subscription.isActive {
+            pixelHandler.handle(pixel: .subscriptionIsActive)
+            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
+        }
         return subscription
     }
 
@@ -608,10 +614,20 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
                     return recoveredTokenContainer
-                } catch {
+                } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
+                    // No restore ran (no handler, or the platform can't restore): record the refresh
+                    // as a failure whose recovery was never attempted, keeping its invalid-token error.
                     await signOut(notifyUI: false, userInitiated: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
+                    throw SubscriptionManagerError.noTokenAvailable
+                } catch {
+                    // A restore ran but did not yield a valid token.
+                    await signOut(notifyUI: false, userInitiated: false)
+                    pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .failed, error: error)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 
@@ -627,7 +643,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
         guard let tokenRecoveryHandler else {
             Logger.subscription.log("Recovery not possible, no handler configured.")
-            throw SubscriptionManagerError.noTokenAvailable
+            throw SubscriptionManagerError.tokenRecoveryNotAttempted
         }
 
         try await tokenRecoveryHandler()
@@ -643,16 +659,22 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public func adopt(accessToken: String, refreshToken: String) async throws {
         Logger.subscriptionTokensManagement.log("Adopting and decoding token container")
         let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken, refreshID: nil)
-        try await adopt(tokenContainer: tokenContainer)
+        // This entry point is the subscription page email-restore flow.
+        try await adopt(tokenContainer: tokenContainer, source: .webRestore)
     }
 
     public func adopt(tokenContainer: TokenContainer) async throws {
+        try await adopt(tokenContainer: tokenContainer, source: nil)
+    }
+
+    public func adopt(tokenContainer: TokenContainer, source: AuthV2TokenAdoptionWideEventData.AdoptionSource?) async throws {
         let adoptionID = UUID().uuidString
 
         if isAuthV2WideEventEnabled(), let wideEvent {
             let globalData = WideEventGlobalData(id: adoptionID)
             let data = AuthV2TokenAdoptionWideEventData(globalData: globalData)
             data.failingStep = .adoptingToken
+            data.adoptionSource = source
             wideEvent.startFlow(data)
         }
 
@@ -669,7 +691,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
             // It’s important to force refresh the token to immediately branch from the one received.
             // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-            let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
+            let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh, trigger: .tokenAdoption)
 
             updateCachedIsUserAuthenticated(true)
             updateCachedUserEntitlements(refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements)
@@ -723,11 +745,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public var currentStorefrontRegion: SubscriptionRegion {
         switch currentEnvironment.purchasePlatform {
         case .appStore:
-            if #available(macOS 12.0, iOS 15.0, *) {
-                return storePurchaseManager().currentStorefrontRegion
-            } else {
-                return .usa
-            }
+            return storePurchaseManager().currentStorefrontRegion
         case .stripe:
             return .usa
         }
@@ -771,18 +789,16 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     /// Checks if the user is eligible for a free trial.
     ///
-    /// Returns `true` for Stripe-based purchases (on all macOS versions)
-    /// or delegates to the store purchase manager for App Store purchases (requires macOS 12.0+).
+    /// Returns `true` for Stripe-based purchases
+    /// or delegates to the store purchase manager for App Store purchases.
     ///
     /// - Returns:
-    ///   - `true` for Stripe platform regardless of macOS version
-    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store on macOS 12.0+
-    ///   - `false` for App Store on macOS < 12.0
+    ///   - `true` for Stripe platform
+    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store.
     public func isUserEligibleForFreeTrial() -> Bool {
         if currentEnvironment.purchasePlatform == .stripe {
             return true
         }
-        guard #available(macOS 12.0, iOS 15.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 

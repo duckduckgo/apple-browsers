@@ -41,7 +41,7 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_ntp_image_generation_submitted": {
         "description": "Fired when user submits a prompt while image generation mode is active on the New Tab Page",

@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import Common
+import FoundationExtensions
 import Persistence
 
 protocol TextZoomStoring {

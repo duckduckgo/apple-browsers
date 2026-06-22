@@ -21,6 +21,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 
 final class CSVImporterIntegrationTests: XCTestCase {
 

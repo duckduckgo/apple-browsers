@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct SaveRecoveryKeyView: View {
 
@@ -78,7 +79,7 @@ public struct SaveRecoveryKeyView: View {
             .padding(.leading, 48)
             .padding(.bottom, 16)
             .buttonStyle(.plain)
-            .foregroundColor(Color(designSystemColor: .accent))
+            .foregroundColor(Color(designSystemColor: .accentPrimary))
             .daxBodyRegular()
         }
         .background(RoundedRectangle(cornerRadius: 12).foregroundColor(Color(designSystemColor: .backgroundTertiary)))
@@ -114,7 +115,7 @@ public struct SaveRecoveryKeyView: View {
     @ViewBuilder
     func mainContent() -> some View {
         VStack(spacing: 0) {
-            Image("Sync-QR-Download-128")
+            Image(rebrandable: "Sync-QR-Download-128")
                 .padding(.bottom, 16)
 
             Text(UserText.saveRecoveryCodeSheetTitle)
@@ -153,7 +154,7 @@ public struct SaveRecoveryKeyView: View {
                 Text(UserText.autoRestoreToggleLabel)
                     .daxBodyRegular()
             }
-            .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accent)))
+            .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accentPrimary)))
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .background(RoundedRectangle(cornerRadius: 12).foregroundColor(Color(designSystemColor: .backgroundTertiary)))

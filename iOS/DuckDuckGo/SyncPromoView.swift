@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 struct SyncPromoView: View {
 
@@ -31,7 +32,7 @@ struct SyncPromoView: View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 8) {
                 Group {
-                    Image(viewModel.image)
+                    Image(rebrandable: viewModel.image)
                         .scaledToFit()
                         .accessibilityHidden(true)
                     
@@ -43,15 +44,14 @@ struct SyncPromoView: View {
                         .daxSubheadRegular()
                         .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 12)
 
-                HStack {
+                HStack(spacing: ButtonStackMetrics.interButtonSpacing) {
                     Button {
                         viewModel.dismissButtonAction?()
                     } label: {
                         Text(viewModel.secondaryButtonTitle)
                     }
-                    .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
+                    .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
                     .accessibilityLabel(viewModel.secondaryButtonTitle)
 
                     Button {
@@ -59,16 +59,16 @@ struct SyncPromoView: View {
                     } label: {
                         Text(viewModel.primaryButtonTitle)
                     }
-                    .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: false))
+                    .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
                     .accessibilityLabel(viewModel.primaryButtonTitle)
 
                 }
                 .padding(.top, 12)
-                .padding(.horizontal, 8)
             }
             .multilineTextAlignment(.center)
-            .padding(.vertical)
-            .padding(.horizontal, 8)
+            .padding(.top)
+            .padding(.bottom, ButtonStackMetrics.containerPadding)
+            .padding(.horizontal, ButtonStackMetrics.containerPadding)
 
             VStack {
                 HStack {
@@ -90,7 +90,7 @@ struct SyncPromoView: View {
             .accessibilityHidden(true)
         }
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                 .foregroundColor(Color(designSystemColor: .surface))
         )
         .padding(.horizontal, 20)

@@ -18,6 +18,7 @@
 
 import Crashes
 import Common
+import FoundationExtensions
 import PixelKit
 
 extension CrashReportSender {

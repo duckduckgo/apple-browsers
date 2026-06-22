@@ -20,6 +20,7 @@ import AppKit
 import Bookmarks
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import PixelKit
 

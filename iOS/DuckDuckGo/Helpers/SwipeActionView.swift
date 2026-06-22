@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Common
+import FoundationExtensions
 
 private final class SwipeActionViewState: ObservableObject {
     let haptics = UIImpactFeedbackGenerator(style: .light)

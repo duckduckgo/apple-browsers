@@ -48,6 +48,7 @@ struct OnboardingStepsHelper {
             .introDialog(isReturningUser: isReturningUser),
             .aiComparison,
             .duckAIQuerySelection,
+            .interlude(.duckAI),
             .addToDockPromo,
             .browserComparison,
             .addressBarPositionSelection

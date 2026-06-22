@@ -22,6 +22,7 @@ import XCTest
 import Core
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 
 class DataImportViewModelTests: XCTestCase {
 

@@ -54,6 +54,24 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
+    func test_dismissPoseFadesAttachmentsStripOutSoItAnimatesWithTheCollapse() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        sut.addAttachment(makeFileAttachment())
+        flushMainQueue()
+
+        let strip = try XCTUnwrap(firstDescendant(of: UnifiedToggleInputAttachmentsStripView.self, in: sut))
+        XCTAssertEqual(strip.alpha, 1, accuracy: 0.001)
+
+        // The top + toggle-on dismiss pose. Without fading the strip here it stays fully opaque
+        // through the collapse and then blinks out when the container is hidden.
+        sut.applyToggleHideChanges()
+
+        XCTAssertEqual(strip.alpha, 0, accuracy: 0.001)
+    }
+
     func test_attachmentStripScrollsToTrailingEdgeAfterAttachmentLayoutChange() throws {
         let sut = UnifiedToggleInputAttachmentsStripView()
         sut.frame = .zero
@@ -209,6 +227,55 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.arrowUp)
     }
 
+    // MARK: - Recovery-Card Submit Block
+
+    func test_recoveryCardBlock_disablesSubmit_whenContentPresent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertFalse(submitButton.isEnabled,
+                       "Recovery card must block submit while there is submittable content")
+    }
+
+    func test_recoveryCardBlock_leavesVoiceButtonUntouched_whenNoContent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isAIVoiceChatActive = true
+        sut.isSubmitEnabled = false
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertTrue(submitButton.isEnabled,
+                      "With no text the Voice affordance must stay active — the block only suppresses submit")
+        XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.voice)
+    }
+
+    func test_clearingRecoveryCardBlock_reenablesSubmit_whenContentPresent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        sut.isSubmitBlockedByRecoveryCard = true
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertFalse(submitButton.isEnabled)
+
+        sut.isSubmitBlockedByRecoveryCard = false
+
+        XCTAssertTrue(submitButton.isEnabled,
+                      "Clearing the recovery block re-enables submit when content is present")
+    }
+
+    func test_clearingRecoveryCardBlock_doesNotForceEnableSubmit_whenNoContent() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = false
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.isSubmitBlockedByRecoveryCard = false
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut))
+        XCTAssertFalse(submitButton.isEnabled,
+                       "enableChatInput must not force-enable submit when another reason (no content) still blocks it")
+    }
+
     func test_insertNewlineAtCursor_whenTextIsEmpty() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = SwitchBarTextEntryView(handler: handler)
@@ -339,6 +406,27 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
     }
 
+    func test_legacyExpandedAIChatLayoutTopPlaceholderAlignsWithTextContainerTopInset() throws {
+        let handler = LegacyTextEntryMockHandler(
+            currentToggleState: .aiChat,
+            isTopBarPosition: true,
+            isUsingFadeOutAnimation: true,
+            usesExpandedAIChatTextEntryLayout: true
+        )
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        let height = applyFittingHeight(to: sut)
+
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        let expectedPlaceholderMinY = textView.convert(CGPoint(x: 0, y: textView.textContainerInset.top), to: sut).y
+
+        XCTAssertEqual(height, 68, accuracy: 1)
+        XCTAssertFalse(placeholderLabel.isHidden)
+        XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+    }
+
     func test_barPositionChangeRefreshesExpandedAIChatPose() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         handler.updateBarPosition(isTop: false)
@@ -454,6 +542,63 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         XCTAssertFalse(shadowView.isHidden)
         assertColor(rimShadowLayer.shadowColor, equals: expectedShadowColor)
+    }
+
+    private let longURL = "https://www.cinemark.com/theatres/ca-playa-vista/cinemark-playa-vista-and-xd?showDate=2026-06-12"
+
+    // A long URL expands to multiple lines once the user taps in, so the caret can reach its end to
+    // edit — in search mode too (the single-line gating from #5373/#5429 was reverted; see isUnexpandedURL).
+    func test_urlExpandsHeightInSearchModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.search)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.style = .singleLine // UnifiedToggleInputView sets singleLine for search mode
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(heightAfterTap, singleLineHeight, accuracy: 1)
+    }
+
+    func test_urlCanExpandInAIChatModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        handler.setToggleState(.aiChat)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertGreaterThan(heightAfterTap, singleLineHeight)
+    }
+
+    // Search-only: UTI shown without a toggle (AI chat unavailable), but the handler keeps its
+    // `.aiChat` default toggle state. A tapped URL expands to multiple lines so the user can edit
+    // its end — matching AI chat mode. (The single-line gating for this case was reverted; see
+    // isUnexpandedURL.)
+    func test_urlExpandsHeightInSearchOnlyModeAfterUserTap() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.style = .singleLine // UnifiedToggleInputView sets singleLine for toggle-disabled mode
+        sut.isExpandable = true
+        prepareForFitting(sut)
+        sut.setQueryText(longURL)
+        let singleLineHeight = applyFittingHeight(to: sut)
+
+        sut.hasBeenInteractedWith = true
+        sut.updatePoseForCurrentState()
+        let heightAfterTap = applyFittingHeight(to: sut)
+
+        XCTAssertEqual(heightAfterTap, singleLineHeight, accuracy: 1)
     }
 
     private func flushMainQueue() {
@@ -591,6 +736,7 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isFireTab: Bool = false
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool
+    var usesExpandedAIChatTextEntryLayout: Bool
     var shouldDisableAutocorrectOnEmpty: Bool = false
     var hidesVoiceButton: Bool = false
     var hasSubmittedPrompt: Bool = false
@@ -606,10 +752,14 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
 
-    init(currentToggleState: TextEntryMode, isTopBarPosition: Bool, isUsingFadeOutAnimation: Bool) {
+    init(currentToggleState: TextEntryMode,
+         isTopBarPosition: Bool,
+         isUsingFadeOutAnimation: Bool,
+         usesExpandedAIChatTextEntryLayout: Bool = false) {
         self.currentToggleState = currentToggleState
         self.isTopBarPosition = isTopBarPosition
         self.isUsingFadeOutAnimation = isUsingFadeOutAnimation
+        self.usesExpandedAIChatTextEntryLayout = usesExpandedAIChatTextEntryLayout
     }
 
     func updateCurrentText(_ text: String) {

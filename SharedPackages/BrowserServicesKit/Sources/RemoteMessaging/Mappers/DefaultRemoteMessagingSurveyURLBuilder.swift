@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 
 public protocol VPNActivationDateProviding {

@@ -20,6 +20,7 @@ import AppKit
 import AppKitExtensions
 import Carbon
 import Common
+import FoundationExtensions
 import SwiftUI
 import CoreAudioTypes
 final class FireproofDomainsViewController: NSViewController {

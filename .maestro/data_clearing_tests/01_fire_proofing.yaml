@@ -42,8 +42,9 @@ tags:
 # Fire Button - twice, just to be sure
 - runFlow:
     file: ../shared/use_firebutton.yaml
-- assertVisible: "Cancel"
-- tapOn: "Cancel"
+# Dismiss the focused address bar ("Cancel" classic / "Back" under the unified toggle input).
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 - assertVisible:
     id: "searchEntry"
 - runFlow:

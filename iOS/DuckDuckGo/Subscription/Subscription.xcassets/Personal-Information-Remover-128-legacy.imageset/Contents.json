@@ -1,0 +1,15 @@
+{
+  "images" : [
+    {
+      "filename" : "Personal-Information-Remover-128-legacy.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "template-rendering-intent" : "original"
+  }
+}

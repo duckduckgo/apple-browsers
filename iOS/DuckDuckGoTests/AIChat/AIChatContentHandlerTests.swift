@@ -602,7 +602,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockDelegate.requestedOpenURL, url)
     }
 
-    func testDidReceiveVoiceSessionUserEndedNotifiesDelegate() throws {
+    func testDidReceiveNewChatStartedNotifiesDelegate() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
         let mockWebView = WKWebView()
@@ -611,26 +611,11 @@ final class AIChatContentHandlerTests: XCTestCase {
         handler.delegate = mockDelegate
 
         // When
-        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .voiceSessionUserEnded)
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .newChatStarted)
 
         // Then
-        XCTAssertEqual(mockDelegate.didReceiveVoiceSessionUserEndedRequestCallCount, 1)
+        XCTAssertEqual(mockDelegate.didReceiveNewChatCreatedCallCount, 1)
         XCTAssertEqual(mockDelegate.didReceiveCloseChatRequestCallCount, 0)
-    }
-
-    func testDidReceiveVoiceSessionEndedDoesNotNotifyVoiceSessionUserEndedDelegate() throws {
-        // Given
-        let mockUserScript = MockAIChatUserScript()
-        let mockWebView = WKWebView()
-        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
-        let mockDelegate = MockAIChatContentHandlingDelegate()
-        handler.delegate = mockDelegate
-
-        // When
-        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .voiceSessionEnded)
-
-        // Then
-        XCTAssertEqual(mockDelegate.didReceiveVoiceSessionUserEndedRequestCallCount, 0)
     }
 
     // MARK: - fireAIChatTelemetry
@@ -700,9 +685,11 @@ final class MockAIChatRequestAuthHandler: AIChatRequestAuthorizationHandling {
 
 final class MockUnifiedToggleInputFeatureProvider: UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool
+    var isToggleHiddenOnDuckAITab: Bool
 
-    init(isAvailable: Bool = false) {
+    init(isAvailable: Bool = false, isToggleHiddenOnDuckAITab: Bool = false) {
         self.isAvailable = isAvailable
+        self.isToggleHiddenOnDuckAITab = isToggleHiddenOnDuckAITab
     }
 }
 
@@ -715,6 +702,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         get { nil }
         set { webViewSet = true }
     }
+    var canDispatchBridgeMessages: Bool = true
 
     var delegateSet = false
     var webViewSet = false
@@ -781,6 +769,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     var displayMode: AIChatDisplayMode?
     var isFireModeProvider: (() -> Bool)?
+    var focusChatInputHandler: (@MainActor () -> Void)?
 
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {}
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {}
@@ -817,6 +806,11 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func responseReceived(params: Any, message: any UserScriptMessage) async -> (any Encodable)? { nil }
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
 }
 // swiftlint:enable inclusive_language
 

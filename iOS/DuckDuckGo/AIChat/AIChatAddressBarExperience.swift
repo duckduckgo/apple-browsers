@@ -32,6 +32,12 @@ struct SystemUserInterfaceIdiomProvider: UserInterfaceIdiomProviding {
     }
 }
 
+protocol LargeWidthProviding {
+    var isLargeWidth: Bool { get }
+}
+
+extension AppWidthObserver: LargeWidthProviding {}
+
 protocol AIChatAddressBarExperienceProviding {
     var shouldShowDuckAIAddressBarButton: Bool { get }
     var shouldShowModeToggle: Bool { get }
@@ -44,13 +50,16 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
     private let featureFlagger: FeatureFlagger
     private let aiChatSettings: AIChatSettingsProvider
     private let userInterfaceIdiomProvider: UserInterfaceIdiomProviding
+    private let largeWidthProvider: LargeWidthProviding
 
     init(featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettingsProvider,
-         userInterfaceIdiomProvider: UserInterfaceIdiomProviding = SystemUserInterfaceIdiomProvider()) {
+         userInterfaceIdiomProvider: UserInterfaceIdiomProviding = SystemUserInterfaceIdiomProvider(),
+         largeWidthProvider: LargeWidthProviding = AppWidthObserver.shared) {
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
         self.userInterfaceIdiomProvider = userInterfaceIdiomProvider
+        self.largeWidthProvider = largeWidthProvider
     }
 
     var isIPadAIToggleExperienceEnabled: Bool {
@@ -58,7 +67,18 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
             && featureFlagger.isFeatureOn(.iPadAIToggle)
     }
 
+    private var isIPadChromeShortcutInPlay: Bool {
+        userInterfaceIdiomProvider.userInterfaceIdiom == .pad
+            && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+    }
+
     var shouldShowDuckAIAddressBarButton: Bool {
+        if isIPadChromeShortcutInPlay {
+            return DuckAIChromeShortcutVisibility.isAddressBarButtonVisibleOnIPad(
+                isLargeWidth: largeWidthProvider.isLargeWidth,
+                isTabBarShortcutEnabled: aiChatSettings.isAIChatTabBarUserSettingsEnabled
+            )
+        }
         return aiChatSettings.isAIChatAddressBarUserSettingsEnabled
     }
 

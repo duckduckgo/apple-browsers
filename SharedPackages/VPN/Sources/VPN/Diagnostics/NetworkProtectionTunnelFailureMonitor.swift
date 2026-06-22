@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import Combine
+import ConcurrencyExtensions
 import Foundation
 import Network
 import NetworkExtension
 import os.log
-import Combine
 
 public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
     public enum Result {

@@ -245,6 +245,26 @@ class AppUserDefaultsTests: XCTestCase {
         XCTAssertTrue(appUserDefaults.showTrackersBlockedAnimation)
     }
 
+    // MARK: - Ad-blocking rollout onboarding default
+
+    func testWhenAdBlockingRolloutInactiveThenOnboardingDefaultsKeepDuckPlayerAtDefaults() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+
+        appUserDefaults.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: false)
+
+        XCTAssertEqual(appUserDefaults.duckPlayerMode, .alwaysAsk)
+        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .ask)
+    }
+
+    func testWhenAdBlockingRolloutActiveThenOnboardingDefaultsDisableDuckPlayer() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+
+        appUserDefaults.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: true)
+
+        XCTAssertEqual(appUserDefaults.duckPlayerMode, .disabled)
+        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .never)
+    }
+
     // MARK: - Mock Creation
 
     private func mockConfiguration(subfeatureEnabled: Bool) -> PrivacyConfiguration {

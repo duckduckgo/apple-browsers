@@ -42,8 +42,8 @@ struct SubscriptionPromoLaunchView: View {
                 .padding(.horizontal, Metrics.Header.horizontalPadding)
             Content(title: title, message: message)
                 .padding(.horizontal, horizontalPadding)
-                .padding(.bottom, Metrics.Content.bottomPadding)
-            Footer(ctaText: ctaText, dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.notNow, ctaAction: ctaAction, dismissAction: closeAction)
+                .padding(.bottom, SheetMetrics.contentBottomPadding)
+            Footer(ctaText: ctaText, dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip, ctaAction: ctaAction, dismissAction: closeAction)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, Metrics.Footer.verticalPadding)
         }
@@ -82,15 +82,15 @@ private extension SubscriptionPromoLaunchView {
         let message: AttributedString
 
         var body: some View {
-            VStack(spacing: Metrics.Content.itemsVerticalSpacing) {
+            VStack(spacing: SheetMetrics.contentSpacing) {
                 let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-                Image(.privacyProHeader)
+                Image(rebrandable: "SheetIcon")
                     .resizable()
                     .scaledToFit()
                     .frame(width: imageSize.width, height: imageSize.height)
 
-                VStack(spacing: Metrics.Content.textVerticalSpacing) {
+                VStack(spacing: SheetMetrics.headerSpacing) {
                     Text(title)
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
@@ -147,10 +147,7 @@ private enum Metrics {
     }
 
     enum Content {
-        static let itemsVerticalSpacing: CGFloat = 24
-        static let textVerticalSpacing: CGFloat = 4
         static let imageSize = MetricBuilder<CGSize>(default: CGSize(width: 128, height: 96)).iPhone(landscape: .init(width: 96, height: 72))
-        static let bottomPadding: CGFloat = 20
     }
 
     enum Footer {
@@ -164,7 +161,7 @@ private enum Metrics {
 #Preview {
     SubscriptionPromoLaunchView(
         title: "Did you know?",
-        message: AttributedString("DuckDuckGo also has an optional paid subscription, with a secure VPN and advanced, private AI."),
+        message: AttributedString("DuckDuckGo also has an optional paid subscription, available with a VPN and advanced, private AI."),
         ctaText: "Learn More",
         closeAction: {},
         ctaAction: {}

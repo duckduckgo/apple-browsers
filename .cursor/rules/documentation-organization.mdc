@@ -1,0 +1,12 @@
+---
+description: How to organize DocC documentation between package and app level; the entry point for any task that creates or updates DocC articles.
+alwaysApply: false
+---
+## Documentation Organization
+
+When creating or updating DocC documentation:
+1. Determine if content is **package-level** (protocol APIs, reusable) or **app-level** (integration, platform-specific)
+2. See `documentation-principles.mdc` for detailed guidelines, and `documentation-macOS-app.mdc` for macOS app article specifics
+3. Follow the package vs app documentation separation principle
+
+**Rule**: Package APIs go in package Documentation.docc/, app integration goes in app Documentation.docc/

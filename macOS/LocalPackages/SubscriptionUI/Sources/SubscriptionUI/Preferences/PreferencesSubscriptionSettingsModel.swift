@@ -441,13 +441,11 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     func refreshSubscriptionPendingState() {
 
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
-            if #available(macOS 12.0, *) {
-                Task {
-                    let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
-                                                                           storePurchaseManager: subscriptionManager.storePurchaseManager())
-                    await appStoreRestoreFlow.restoreAccountFromPastPurchase()
-                    fetchAndUpdateSubscriptionDetails()
-                }
+            Task {
+                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                       storePurchaseManager: subscriptionManager.storePurchaseManager())
+                await appStoreRestoreFlow.restoreAccountFromPastPurchase()
+                fetchAndUpdateSubscriptionDetails()
             }
         } else {
             fetchAndUpdateSubscriptionDetails()

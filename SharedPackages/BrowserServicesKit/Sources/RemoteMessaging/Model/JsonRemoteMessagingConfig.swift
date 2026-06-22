@@ -88,6 +88,9 @@ public enum RemoteMessageResponse {
         /// by their rules, sections are removed if none of their referenced itemIds exist.
         /// Ignored for `two_line_list_item` type.
         let itemIDs: [String]?
+        /// Optional remote image URL for this item. Only applicable to `two_line_list_item`
+        /// and `featured_two_line_single_action_list_item` types. Ignored for `section_title`.
+        let imageUrl: String?
     }
 
     enum JsonListItemType: String, CaseIterable {

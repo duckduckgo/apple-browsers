@@ -24,15 +24,15 @@ enum RebrandingColor {
 
     enum GrayScale {
         static let white = Color(0xFFFFFF)
-        static let gray0 = Color(0xFCFCFC)
+        static let gray0 = Color(0xFAFAFA)
         static let gray10 = Color(0xF5F5F5)
-        static let gray20 = Color(0xE5E5E5)
-        static let gray30 = Color(0xC5C5C5)
+        static let gray20 = Color(0xEEEEEE)
+        static let gray30 = Color(0xCCCCCC)
         static let gray40 = Color(0xAAAAAA)
         static let gray50 = Color(0x888888)
         static let gray60 = Color(0x686868)
         static let gray70 = Color(0x484848)
-        static let gray80 = Color(0x383838)
+        static let gray80 = Color(0x333333)
         static let gray90 = Color(0x222222)
         static let gray100 = Color(0x181818)
         static let gray111 = Color(0x111111)
@@ -50,12 +50,12 @@ enum RebrandingColor {
         static let eggshell70 = Color(0x454443)
         static let eggshell80 = Color(0x30302F)
         static let eggshell90 = Color(0x242323)
-        static let eggshell100 = Color(0x171716)
+        static let eggshell100 = Color(0x181817)
     }
 
     enum Mandarin {
         static let mandarin0 = Color(0xFFFAF9)
-        static let mandarin10 = Color(0xFFEDE5)
+        static let mandarin10 = Color(0xFFEBE5)
         static let mandarin20 = Color(0xFFDACC)
         static let mandarin30 = Color(0xFFB294)
         static let mandarin40 = Color(0xFF8D5C)
@@ -124,12 +124,12 @@ enum RebrandingColor {
     }
 
     enum Red {
-        static let red0 = Color(0xFEF9FA)
-        static let red10 = Color(0xFCECF0)
-        static let red20 = Color(0xFAD8DC)
-        static let red30 = Color(0xF7AAAD)
-        static let red40 = Color(0xF06565)
-        static let red50 = Color(0xEC434F)
+        static let red0 = Color(0xFCECF0)
+        static let red10 = Color(0xFAD8DC)
+        static let red20 = Color(0xF7AAAD)
+        static let red30 = Color(0xF06565)
+        static let red40 = Color(0xE44D55)
+        static let red50 = Color(0xD83544)
         static let red60 = Color(0xCA2B3D)
         static let red70 = Color(0xA02231)
         static let red80 = Color(0x671421)
@@ -138,7 +138,13 @@ enum RebrandingColor {
     }
 
     enum Green {
-        static let green40 = Color(0x39B25E)
+        static let green20 = Color(0x81D59E)
+        static let green30 = Color(0x5EC987)
+        static let green40 = Color(0x38B26A)
+        static let green50 = Color(0x269B61)
+        static let green60 = Color(0x138356)
+        static let green70 = Color(0x006B4B)
+        static let green80 = Color(0x00523F)
     }
 
 }

@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "AddressBarPerformance",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(

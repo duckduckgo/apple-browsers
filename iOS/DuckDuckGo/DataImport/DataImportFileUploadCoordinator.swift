@@ -21,6 +21,7 @@ import UIKit
 import Bookmarks
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Core
 import UniformTypeIdentifiers
 import DDGSync

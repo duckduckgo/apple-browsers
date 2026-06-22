@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import ContentBlocking
 import Foundation
 import Navigation
@@ -56,6 +57,7 @@ final class ContentBlockingTabExtension: NSObject {
     private let fbBlockingEnabledProvider: FbBlockingEnabledProvider
     private let tld: TLD
     private let contentBlockingManager: ContentBlockerRulesManagerProtocol
+    private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor()
 
     private var cachedMapper: TrackerProtectionEventMapper?
     private var cachedMapperVendor: String?
@@ -159,7 +161,9 @@ extension ContentBlockingTabExtension: NavigationResponder {
             // ContentScopeUserScript needs to be loaded for https://duckduckgo.com/identity-theft-restoration
             || navigationAction.url.absoluteString.hasPrefix(SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production).absoluteString)
             // ContentScopeUserScript needs to be loaded for Duck.ai
-            || navigationAction.url.isDuckAIURL {
+            || navigationAction.url.isDuckAIURL
+            // HomepageSearchModeToggleSeedUserScript must install before the homepage reads its settings
+            || (navigationAction.url.isDuckDuckGo && homepageSearchModeSeedPersistor.pendingShowSearchModeToggle != nil) {
             await prepareForContentBlocking()
         }
 

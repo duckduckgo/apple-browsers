@@ -20,6 +20,7 @@
 import Foundation
 import Bookmarks
 import Common
+import FoundationExtensions
 import DDGSync
 import Persistence
 import CoreData

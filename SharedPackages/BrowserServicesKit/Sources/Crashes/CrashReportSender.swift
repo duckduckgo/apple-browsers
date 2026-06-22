@@ -19,6 +19,7 @@
 import Foundation
 import MetricKit
 import Common
+import FoundationExtensions
 import os.log
 
 public protocol CrashReportSending {

@@ -106,6 +106,15 @@ extension UnifiedToggleInputModelMenu.Item {
 
 extension AIChatModel {
     var lowestPublicAccessTier: AIChatModelPublicAccessTier? {
+        lowestPublicAccessTier(from: accessTier)
+    }
+
+    func lowestPublicAccessTier(for effort: AIChatReasoningEffort) -> AIChatModelPublicAccessTier? {
+        guard let accessTier = accessTier(for: effort) else { return nil }
+        return lowestPublicAccessTier(from: accessTier)
+    }
+
+    private func lowestPublicAccessTier(from accessTier: [String]) -> AIChatModelPublicAccessTier? {
         if accessTier.contains(AIChatUserTier.free.rawValue) {
             return .free
         }

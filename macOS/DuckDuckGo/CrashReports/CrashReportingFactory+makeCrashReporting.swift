@@ -38,10 +38,6 @@ extension CrashReportingFactory {
                                    keyValueStore: any ThrowingKeyValueStoring,
                                    buildType: any ApplicationBuildType = StandardApplicationBuildType()) -> any CrashReporting {
         if buildType.isAppStoreBuild {
-            guard #available(macOS 12.0, *) else {
-                fatalError("App Store crash reporting requires macOS 12.0 or newer")
-            }
-
             // `AppStoreCrashReportingFactory` conformance is implemented in
             // `LocalPackages/CrashReporting/Sources/AppStoreCrashCollection/AppStoreCrashCollection.swift`.
             // App Store build is linked against the `AppStoreCrashCollection` lib, providing this conformance.

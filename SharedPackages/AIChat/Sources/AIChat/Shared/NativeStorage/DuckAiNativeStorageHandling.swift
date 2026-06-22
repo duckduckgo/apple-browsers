@@ -19,7 +19,7 @@
 import Foundation
 import DuckAiDataStore
 
-/// 
+///
 public protocol DuckAiNativeStorageHandling {
 
     // MARK: - Entries

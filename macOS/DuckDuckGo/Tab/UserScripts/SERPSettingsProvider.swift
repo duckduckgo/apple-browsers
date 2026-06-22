@@ -21,14 +21,14 @@ import Foundation
 import SERPSettings
 import UserScript
 import AIChat
-import PrivacyConfig
 import Persistence
 import Common
+import FoundationExtensions
 
 /// macOS implementation of SERP settings provider.
 ///
 /// This class provides the concrete implementation of `SERPSettingsProviding`
-/// for macOS, integrating with the app's storage, AI preferences, and feature flags.
+/// for macOS, integrating with the app's storage and AI preferences.
 ///
 /// ## Architecture
 ///
@@ -43,10 +43,6 @@ import Common
 /// to ensure thread-safe access to the underlying key-value store.
 ///
 final class SERPSettingsProvider: SERPSettingsProviding {
-    /// Feature flagger for controlling SERP settings availability.
-    ///
-    /// Currently unused but reserved for future feature flag integration.
-    private let featureFlagger: FeatureFlagger
 
     /// Internal storage for the event mapper.
     ///
@@ -78,15 +74,12 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     ///
     /// - Parameters:
     ///   - aiStorage: Storage for AI chat preferences (defaults to global storage)
-    ///   - featureFlagger: Feature flag controller (defaults to app delegate)
     ///   - keyValueStore: Persistent storage (defaults to app delegate's store)
     ///   - eventMapper: Error event handler (defaults to new `SERPSettingsEventHandler`)
     init(aiStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore,
          eventMapper: EventMapping<SERPSettingsError>? = SERPSettingsEventHandler()) {
         self.aiChatPreferencesStorage = aiStorage
-        self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
         self._eventMapper = eventMapper
     }
@@ -105,15 +98,5 @@ final class SERPSettingsProvider: SERPSettingsProviding {
         }
 
         return rules
-    }
-
-    /// Determines if SERP settings synchronization is enabled.
-    ///
-    /// Currently always returns `true`. This will be connected to a feature flag
-    /// in a future update to allow remote control of the feature.
-    ///
-    /// - Returns: `true` (feature is always enabled)
-    func isSERPSettingsFeatureOn() -> Bool {
-        return featureFlagger.isFeatureOn(.storeSerpSettings)
     }
 }

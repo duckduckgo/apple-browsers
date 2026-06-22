@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 import SwiftUIExtensions
 
@@ -23,13 +24,13 @@ import SwiftUIExtensions
 struct WinBackOfferPromptView: ModalView {
 
     fileprivate enum Constants {
-        static let viewWidth: CGFloat = 352
+        static let viewWidth: CGFloat = AppVersion.isLiquidGlassSupported ? 360 : 352
         static let imageHeight: CGFloat = 72
         static let imageWidth: CGFloat = 96
         static let buttonHeight: CGFloat = 28
-        static let horizontalPadding: CGFloat = 16
+        static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
         static let topPadding: CGFloat = 8
-        static let bottomPadding: CGFloat = 16
+        static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
         static let betweenButtonsSpacing: CGFloat = 8
         static let titleAndMessageSpacing: CGFloat = 12
         static let buttonTopPadding: CGFloat = 12
@@ -86,7 +87,7 @@ struct WinBackOfferPromptView: ModalView {
                         .frame(height: Constants.buttonHeight)
                 }
                 .frame(height: 28)
-                .buttonStyle(StandardButtonStyle())
+                .buttonStyle(StandardButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true))
 
                  Button {
                     viewModel.confirmAction()
@@ -97,7 +98,7 @@ struct WinBackOfferPromptView: ModalView {
                         .frame(height: Constants.buttonHeight)
                 }
                 .frame(height: 28)
-                .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, shouldBeFixedVertical: false, pillShape: true))
             }
             .frame(height: Constants.buttonHeight)
         }

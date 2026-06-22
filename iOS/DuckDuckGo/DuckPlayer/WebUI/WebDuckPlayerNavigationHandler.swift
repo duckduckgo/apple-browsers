@@ -22,6 +22,7 @@ import ContentScopeScripts
 import WebKit
 import Core
 import Common
+import FoundationExtensions
 import PrivacyConfig
 import DuckPlayer
 import os.log
@@ -82,7 +83,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     /// Cancellable for observing DuckPlayer Navigation Request
     private var duckPlayerNavigationRequestCancellable: AnyCancellable?
 
-    private struct Constants {
+    struct Constants {
         static let SERPURL =  "duckduckgo.com/"
         static let refererHeader = "Referer"
         static let templateDirectory = "pages/duckplayer"
@@ -237,14 +238,6 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     private var duckPlayerMode: DuckPlayerMode {
         let isEnabled = isDuckPlayerFeatureEnabled
         return isEnabled ? duckPlayer.settings.mode : .disabled
-    }
-
-    /// Checks if the YouTube app is installed on the device.
-    private var isYouTubeAppInstalled: Bool {
-        if let youtubeURL = URL(string: Constants.youtubeScheme) {
-            return UIApplication.shared.canOpenURL(youtubeURL)
-        }
-        return false
     }
 
     /// Extracts a YouTube URL from a Duck Player "Open in YouTube" link.
@@ -614,21 +607,15 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     private func handleOpenInYoutubeLink(url: URL, webView: WKWebView) {
 
         // Handle "open in YouTube" links (duck://player/openInYoutube)
-        guard let (videoID, _) = url.youtubeVideoParams else {
+        guard url.youtubeVideoParams != nil else {
             return
         }
 
         // Fire a Pixel for Open in YouTube
         self.fireOpenInYoutubePixel()
 
-        // Attempt to open in YouTube app or load in webView
-        if appSettings.allowUniversalLinks, isYouTubeAppInstalled,
-        let youtubeAppURL = URL(string: "\(Constants.youtubeScheme)\(videoID)") {
-            UIApplication.shared.open(youtubeAppURL)
-        } else {
-            // Watch in YT videos always open in new tab
-            redirectToYouTubeVideo(url: url, webView: webView, forceNewTab: true)
-        }
+        // Watch in YT videos always open in new tab
+        redirectToYouTubeVideo(url: url, webView: webView, forceNewTab: true)
     }
 
     /// Checks if a URL contains a hash

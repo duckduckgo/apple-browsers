@@ -21,6 +21,7 @@ import os.log
 import BrowserServicesKit
 import Persistence
 import Common
+import FoundationExtensions
 import Configuration
 import PixelKit
 import DataBrokerProtectionCore

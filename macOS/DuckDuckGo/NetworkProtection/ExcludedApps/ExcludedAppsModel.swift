@@ -18,6 +18,7 @@
 
 import AppInfoRetriever
 import AppKit
+import ConcurrencyExtensions
 import Foundation
 import NetworkProtectionIPC
 import NetworkProtectionProxy

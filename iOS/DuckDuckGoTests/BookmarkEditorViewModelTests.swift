@@ -22,6 +22,7 @@ import XCTest
 import Bookmarks
 import Persistence
 import Common
+import FoundationExtensions
 import DuckDuckGo
 
 class BookmarkEditorViewModelTests: XCTestCase {

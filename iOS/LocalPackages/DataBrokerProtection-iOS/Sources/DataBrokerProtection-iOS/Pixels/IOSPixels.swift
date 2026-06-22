@@ -19,6 +19,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import DataBrokerProtectionCore
@@ -74,17 +75,14 @@ public class IOSPixelsHandler: EventMapping<IOSPixels> {
     public init(pixelKit: PixelKit) {
         self.pixelKit = pixelKit
 
-        super.init { _, _, _, _ in
-        }
-
-        self.eventMapper = { event, _, _, _ in
+        super.init { event, _, _, _ in
             switch event {
             case .backgroundTaskStarted,
                     .backgroundTaskExpired,
                     .backgroundTaskEndedHavingCompletedAllJobs:
-                self.pixelKit.fire(event)
+                pixelKit.fire(event)
             case .backgroundTaskSchedulingFailed(let error):
-                self.pixelKit.fire(DebugEvent(event, error: error))
+                pixelKit.fire(DebugEvent(event, error: error))
             }
         }
     }

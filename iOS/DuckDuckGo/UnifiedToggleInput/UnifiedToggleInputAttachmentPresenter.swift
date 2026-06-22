@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Core
 import DesignResourcesKitIcons
 import PhotosUI
 import UIKit
@@ -96,23 +97,6 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
 
 private extension UnifiedToggleInputAttachmentPresenter {
 
-    enum PDFInspectionResult: Sendable {
-        case notPDF
-        case readable(pageCount: Int)
-        case encrypted
-        case unreadable
-
-        var pageCount: Int? {
-            guard case .readable(let pageCount) = self else { return nil }
-            return pageCount
-        }
-
-        var isEncrypted: Bool {
-            guard case .encrypted = self else { return false }
-            return true
-        }
-    }
-
     func presentCamera(from presenter: UIViewController) {
         let picker = UIImagePickerController()
         picker.sourceType = .camera
@@ -173,7 +157,7 @@ private extension UnifiedToggleInputAttachmentPresenter {
             let data = try Data(contentsOf: metadata.url)
             guard !Task.isCancelled else { return nil }
 
-            let pdfInspection = Self.inspectPDF(data: data, mimeType: metadata.mimeType)
+            let pdfInspection = AIChatPDFInspector.inspect(data: data, mimeType: metadata.mimeType)
 
             return AIChatFileAttachment(
                 id: id,
@@ -189,20 +173,6 @@ private extension UnifiedToggleInputAttachmentPresenter {
         }
     }
 
-    nonisolated static func inspectPDF(data: Data, mimeType: String) -> PDFInspectionResult {
-        guard mimeType == "application/pdf" else { return .notPDF }
-        guard let provider = CGDataProvider(data: data as CFData),
-              let document = CGPDFDocument(provider) else {
-            return .unreadable
-        }
-        guard document.isEncrypted == false || document.isUnlocked else {
-            return .encrypted
-        }
-
-        let pageCount = document.numberOfPages
-        guard pageCount > 0 else { return .unreadable }
-        return .readable(pageCount: pageCount)
-    }
 }
 
 extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate {
@@ -220,6 +190,10 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
                 guard let image = object as? UIImage else { return }
 
                 Task { @MainActor in
+                    DailyPixel.fireDailyAndCount(
+                        pixel: .unifiedToggleInputImageAttached,
+                        withAdditionalParameters: ["source": "photo_library"]
+                    )
                     self?.onImagePicked?(image, suggestedName)
                 }
             }
@@ -233,6 +207,10 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
         picker.dismiss(animated: true)
         onExpandIfNeeded?()
         guard let image = info[.originalImage] as? UIImage else { return }
+        DailyPixel.fireDailyAndCount(
+            pixel: .unifiedToggleInputImageAttached,
+            withAdditionalParameters: ["source": "camera"]
+        )
         onImagePicked?(image, "photo")
     }
 

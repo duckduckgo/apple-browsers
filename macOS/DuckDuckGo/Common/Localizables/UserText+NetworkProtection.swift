@@ -321,6 +321,14 @@ extension UserText {
 
     static let vpnExcludeLocalNetworksSettingDescription = NSLocalizedString("vpn.setting.description.exclude.local.networks", value: "Bypass the VPN for local network connections, like to a printer.", comment: "Exclude Local Networks setting description")
 
+    static let vpnStrictRoutingSettingTitle = NSLocalizedString("vpn.setting.title.strict.routing", value: "Strict routing", comment: "Strict routing setting title")
+
+    static let vpnStrictRoutingSettingDescription = NSLocalizedString("vpn.setting.description.strict.routing", value: "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like AirDrop, Sidecar, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)", comment: "Strict routing setting description. The 'Learn more' text is a Markdown link.")
+
+    static let vpnExcludeCGNATSettingTitle = NSLocalizedString("vpn.setting.title.exclude.cgnat", value: "Exclude carrier services", comment: "Exclude CGNAT setting title")
+
+    static let vpnExcludeCGNATSettingDescription = NSLocalizedString("vpn.setting.description.exclude.cgnat", value: "Recommended off so all your traffic goes through the VPN. If you have problems connecting to online services, try turning it on.", comment: "Exclude CGNAT setting description")
+
     static let openVPNButtonTitle = NSLocalizedString("vpn.button.title.open.vpn", value: "Open VPN…", comment: "Uninstall VPN button title")
 
     static let uninstallVPNButtonTitle = NSLocalizedString("vpn.button.title.uninstall.vpn", value: "Uninstall DuckDuckGo VPN…", comment: "Open VPN button title")

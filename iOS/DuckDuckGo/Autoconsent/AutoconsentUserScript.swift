@@ -19,6 +19,7 @@
 
 import WebKit
 import Common
+import FoundationExtensions
 import Core
 import PrivacyConfig
 import UserScript

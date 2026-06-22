@@ -19,6 +19,7 @@
 import Foundation
 import Networking
 import Common
+import FoundationExtensions
 
 struct SubscriptionRequest {
     let apiRequest: APIRequestV2

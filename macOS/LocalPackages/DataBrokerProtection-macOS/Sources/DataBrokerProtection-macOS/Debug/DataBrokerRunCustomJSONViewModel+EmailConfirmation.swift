@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import ConcurrencyExtensions
 import DataBrokerProtectionCore
+import Foundation
 import UserScript
 
 extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
@@ -82,7 +83,7 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
                     emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
-                    applicationNameForUserAgent: self.applicationNameForUserAgent,
+                    applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                     stageCalculator: stageCalculator,
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),

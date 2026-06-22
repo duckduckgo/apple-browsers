@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import WebKit
 import BrowserServicesKit
-import UserScript
-import os.log
 import Common
+import ConcurrencyExtensions
+import Foundation
+import os.log
+import UserScript
+import WebKit
 
 public protocol CCFCommunicationDelegate: AnyObject {
     func loadURL(url: URL) async

@@ -41,9 +41,11 @@ ipa_dir_url="${IPA_URL%/*}"
 ipa_dir_s3="${IPA_S3_PATH%/*}"
 install_filename="${OUTPUT_NAME}.install.html"
 manifest_filename="${OUTPUT_NAME}.manifest.plist"
+qr_filename="${OUTPUT_NAME}.qr.png"
 
 manifest_url="${ipa_dir_url}/${manifest_filename}"
 install_url="${ipa_dir_url}/${install_filename}"
+qr_url="${ipa_dir_url}/${qr_filename}"
 
 # URL-encode the manifest URL for embedding in the itms-services link.
 manifest_url_encoded="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "${manifest_url}")"
@@ -76,3 +78,18 @@ aws s3 cp "${install_filename}" "${ipa_dir_s3}/${install_filename}" \
 
 echo "install-url=${install_url}" >> "${GITHUB_OUTPUT}"
 echo "title=${TITLE}" >> "${GITHUB_OUTPUT}"
+
+# QR code pointing at the install page, so the build runner can scan it straight
+# from the GitHub Actions run summary and open the page on the iPhone. This is
+# best-effort and runs last: the install page above is the primary artifact, so
+# a hiccup installing the QR dependency must never fail the build or drop the
+# install-url output. Each step is chained in the `if` so `set -e` won't abort.
+qr_venv="$(mktemp -d)/venv"
+if python3 -m venv "${qr_venv}" \
+  && "${qr_venv}/bin/pip" install --quiet --disable-pip-version-check -r "${action_dir}/requirements.txt" \
+  && "${qr_venv}/bin/python" "${action_dir}/generate_qr.py" "${install_url}" "${qr_filename}" \
+  && aws s3 cp "${qr_filename}" "${ipa_dir_s3}/${qr_filename}" --acl public-read --content-type "image/png"; then
+  echo "qr-url=${qr_url}" >> "${GITHUB_OUTPUT}"
+else
+  echo "QR code generation failed; continuing without it." >&2
+fi

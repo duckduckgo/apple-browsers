@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 public enum WideEventFailureEvent {
     public static let eventMapping: EventMapping<WideEventFailureEvent> = .init { event, _, _, _ in

@@ -20,6 +20,7 @@ import Foundation
 import AttributedMetric
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import PrivacyConfig
 import Subscription
 import AppKit

@@ -53,7 +53,6 @@ public class SchemeHandler {
         case shortcutsProduction = "shortcuts-production"
         case workflow
         case marketplaceKit = "marketplace-kit"
-        case safariHTTPS = "x-safari-https"
     }
 
     private enum BlockedScheme: String {
@@ -84,7 +83,7 @@ public class SchemeHandler {
             } else {
                 return .unknown
             }
-        case .sms, .mailto, .itms, .itmss, .itunes, .itmsApps, .itmsAppss, .shortcuts, .shortcutsProduction, .workflow, .safariHTTPS:
+        case .sms, .mailto, .itms, .itmss, .itunes, .itmsApps, .itmsAppss, .shortcuts, .shortcutsProduction, .workflow:
             return .external(.askForConfirmation)
         case .none:
             return .unknown

@@ -20,6 +20,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import os.log
@@ -52,9 +53,11 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
+                                  applicationNameForUserAgentProvider: @escaping () -> String?,
                                   freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                                   isWebViewInspectable: Bool = false,
-                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
+                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
+                                  contentBlocking: DBPWebViewContentBlocking?) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -140,10 +143,11 @@ public class DataBrokerProtectionIOSManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
             wideEvent: wideEvent,
+            contentBlocking: contentBlocking,
             isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated }
         )
 

@@ -19,6 +19,7 @@
 import AppKit
 import AttributedMetric
 import Common
+import FoundationExtensions
 import Foundation
 import Persistence
 
@@ -116,11 +117,7 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
     private func formatOptionalDate(_ date: Date?) -> String {
         guard let date = date else { return "nil" }
-        if #available(macOS 12.0, *) {
-            return date.ISO8601Format()
-        } else {
-            return date.debugDescription
-        }
+        return date.ISO8601Format()
     }
 
     // MARK: - Actions

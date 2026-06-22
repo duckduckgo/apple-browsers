@@ -39,8 +39,13 @@ protocol UnifiedInputStateStoring: AnyObject {
 
     /// Records a user-deliberate choice. Updates the entry for `uid`, the `lastUsed`
     /// snapshot used to seed new tabs, and writes through the seedable fields to
-    /// their canonical global homes.
-    func recordUserChoice(_ state: TabInputState, for uid: TabUID)
+    /// their canonical global homes. Toggle mode is excluded — it is committed
+    /// separately on submit via `commitToggleMode`.
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID, isNewChatContext: Bool)
+
+    /// Promotes a toggle-mode change to the global last-used default. Called on submit only,
+    /// so a non-committed in-flight toggle does not leak into the next UTI activation.
+    func commitToggleMode(_ mode: TextEntryMode)
 
     /// Removes the entry for `uid`. No-op if absent.
     func remove(for uid: TabUID)

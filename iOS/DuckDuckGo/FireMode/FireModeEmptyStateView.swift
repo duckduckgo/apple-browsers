@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 struct FireModeEmptyStateView: View {
     
@@ -54,7 +55,6 @@ struct FireModeEmptyStateView: View {
     // MARK: - Variables
 
     private let type: ViewType
-    private let escapeHatch: EscapeHatchModel?
 
     private var onNewFireTab: NewFireTabBlock? {
         if case .tabSwitcher(let onNewFireTab) = type {
@@ -65,17 +65,15 @@ struct FireModeEmptyStateView: View {
 
     // MARK: - Initializer
 
-    init(type: ViewType, escapeHatch: EscapeHatchModel? = nil) {
+    init(type: ViewType) {
         self.type = type
-        self.escapeHatch = escapeHatch
     }
-    
+
     // MARK: - Body
 
     var body: some View {
         ScrollView {
             VStack(spacing: Constants.mainSectionSpacing) {
-                escapeHatchSection
                 headerSection
                 contentCard
             }
@@ -84,15 +82,6 @@ struct FireModeEmptyStateView: View {
             .frame(maxWidth: Constants.maxViewWidth)
         }
         .modifier(ScrollBounceBehaviorModifier())
-    }
-
-    // MARK: - Escape Hatch
-
-    @ViewBuilder
-    private var escapeHatchSection: some View {
-        if let escapeHatch {
-            ReturnToTabCard(model: escapeHatch)
-        }
     }
 
     // MARK: - Header
@@ -120,7 +109,7 @@ struct FireModeEmptyStateView: View {
         }
         .padding(Constants.cardPadding)
         .background(Color(designSystemColor: .surface))
-        .clipShape(RoundedRectangle(cornerRadius: Constants.cardCornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius))
     }
 
     // MARK: - Bullet Points
@@ -176,18 +165,29 @@ struct FireModeEmptyStateView: View {
     @ViewBuilder
     private var newFireTabButton: some View {
         if let onNewFireTab {
-            Button(action: onNewFireTab) {
-                HStack(spacing: Constants.iconTextSpacing) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size16.add)
-                    Text(UserText.fireModeEmptyStateNewFireTab)
-                        .daxButton()
+            if AppRebrand.isAppRebranded() {
+                Button(action: onNewFireTab) {
+                    newFireTabButtonLabel
                 }
-                .foregroundColor(Color(designSystemColor: .accentContentPrimary))
-                .frame(height: Constants.buttonHeight)
-                .padding(.horizontal, Constants.buttonHorizontalPadding)
-                .background(Color(singleUseColor: .fireModeAccent))
-                .clipShape(RoundedRectangle(cornerRadius: Constants.buttonCornerRadius))
+                .buttonStyle(SecondaryFillButtonStyle())
+            } else {
+                Button(action: onNewFireTab) {
+                    newFireTabButtonLabel
+                        .foregroundColor(Color(designSystemColor: .accentContentPrimary))
+                        .frame(height: Constants.buttonHeight)
+                        .padding(.horizontal, Constants.buttonHorizontalPadding)
+                        .background(Color(singleUseColor: .fireModeAccent))
+                        .clipShape(RoundedRectangle(cornerRadius: Constants.buttonCornerRadius))
+                }
             }
+        }
+    }
+
+    private var newFireTabButtonLabel: some View {
+        HStack(spacing: Constants.iconTextSpacing) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.add)
+            Text(UserText.fireModeEmptyStateNewFireTab)
+                .daxButton()
         }
     }
 
@@ -203,7 +203,6 @@ struct FireModeEmptyStateView: View {
 
         static let cardContentSpacing: CGFloat = 24
         static let cardPadding: CGFloat = 24
-        static let cardCornerRadius: CGFloat = 16
 
         static let bulletSpacing: CGFloat = 12
         static let iconTextSpacing: CGFloat = 8

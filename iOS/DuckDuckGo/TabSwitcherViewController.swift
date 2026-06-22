@@ -19,6 +19,7 @@
 
 import UIKit
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import WebKit
@@ -154,6 +155,7 @@ class TabSwitcherViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
+    private let duckAIGridContentProvider: DuckAIGridContentProviding?
     var tabsModel: TabsModelManaging {
         tabManager.tabsModel(for: selectedBrowsingMode)
     }
@@ -202,7 +204,8 @@ class TabSwitcherViewController: UIViewController {
                    keyValueStore: ThrowingKeyValueStoring,
                    tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
                    daxDialogsManager: DaxDialogsManaging,
-                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State) {
+                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
+                   duckAIGridContentProvider: DuckAIGridContentProviding?) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -220,6 +223,7 @@ class TabSwitcherViewController: UIViewController {
         self.tabSwitcherSettings = tabSwitcherSettings
         self.daxDialogsManager = daxDialogsManager
         self.initialTrackerCountState = initialTrackerCountState
+        self.duckAIGridContentProvider = duckAIGridContentProvider
         let tabCountModel = TabCountModel()
         self.tabCountModel = tabCountModel
         self.pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem(tabCountModel: tabCountModel) }
@@ -290,8 +294,8 @@ class TabSwitcherViewController: UIViewController {
         }
 
         fireTabsTipTask = Task { @MainActor [weak self] in
-            guard let self else { return }
             for await shouldDisplay in tip.shouldDisplayUpdates {
+                guard let self else { return }
                 if shouldDisplay {
                     self.fireModePromotionsCoordinator?.markTabSwitcherTipShown()
                     let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
@@ -483,7 +487,8 @@ class TabSwitcherViewController: UIViewController {
                 previewsSource: previewsSource,
                 tabSwitcherSettings: tabSwitcherSettings,
                 trackerCountViewModel: nil,
-                isFireModeEnabled: isFireModeEnabled)
+                isFireModeEnabled: isFireModeEnabled,
+                duckAIGridContentProvider: duckAIGridContentProvider)
             firePageController?.pageDelegate = self
             firePageController?.onNewFireTab = { [weak self] in
                 self?.addNewTab()
@@ -503,7 +508,8 @@ class TabSwitcherViewController: UIViewController {
             previewsSource: previewsSource,
             tabSwitcherSettings: tabSwitcherSettings,
             trackerCountViewModel: trackerCountViewModel,
-            isFireModeEnabled: isFireModeEnabled)
+            isFireModeEnabled: isFireModeEnabled,
+            duckAIGridContentProvider: duckAIGridContentProvider)
         normalPageController.pageDelegate = self
         embedPageController(normalPageController, in: normalPageContainer)
 
@@ -824,6 +830,16 @@ extension TabSwitcherViewController {
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 
+        // This may move when the feature is further developed
+        applyFloatingUIIfNeeded()
+    }
+
+    private func applyFloatingUIIfNeeded() {
+        let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        FloatingUIChromeStyler().decorateTabSwitcherIfNeeded(
+            manager: floatingUIManager,
+            view: view
+        )
     }
 
 }

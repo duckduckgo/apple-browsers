@@ -19,14 +19,16 @@
 import BrowserServicesKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
 import Foundation
+import FoundationExtensions
 import LoginItems
-import VPN
-import NetworkProtectionUI
 import NetworkProtectionIPC
+import NetworkProtectionUI
 import PixelKit
 import Subscription
+import VPN
 
 /// Implements the sequence of steps that the VPN needs to execute when the App starts up.
 ///

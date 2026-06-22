@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import XCTest
 
 final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {

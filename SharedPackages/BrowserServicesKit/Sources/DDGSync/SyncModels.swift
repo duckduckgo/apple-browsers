@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 public struct SyncAccount: Codable, Sendable {
     public let deviceId: String
@@ -28,15 +29,31 @@ public struct SyncAccount: Codable, Sendable {
     public let token: String?
     public let state: SyncAuthState
 
-    /// Convenience var which calls `SyncCode().toJSON().base64EncodedString()`
-    public var recoveryCode: String? {
-        do {
-            let json = try SyncCode(recovery: .init(userId: userId, primaryKey: primaryKey)).toJSON()
-            return json.base64EncodedString()
-        } catch {
-            assertionFailure(error.localizedDescription)
+    /// Legacy native/DDG V1 recovery code.
+    public var legacyRecoveryCodeV1: String? {
+        guard let data = try? SyncCode(recovery: .v1(.init(userId: userId, primaryKey: primaryKey))).toJSON() else {
             return nil
         }
+        return data.base64EncodedString()
+    }
+
+    /// Native/DDG V2 recovery code.
+    public var recoveryCodeV2: String? {
+        let payload = SyncCode.RecoveryKeyV2(
+            userId: userId,
+            secret: Base64URL.encode(primaryKey),
+            cid: SyncCredentialID.defaultCredential,
+            v: SyncCode.RecoveryKeyV2.currentVersion
+        )
+        guard let data = try? SyncCode(recovery: .v2(payload)).toJSON() else {
+            return nil
+        }
+        return Base64URL.encode(data)
+    }
+
+    @available(*, deprecated, message: "Use recoveryCodeV2 or legacyRecoveryCodeV1 explicitly.")
+    public var recoveryCode: String? {
+        legacyRecoveryCodeV1
     }
 
     init(
@@ -100,11 +117,17 @@ public struct SyncAccount: Codable, Sendable {
 }
 
 public struct RegisteredDevice: Codable, Sendable {
-
     public let id: String
     public let name: String
     public let type: String
+    public let credentialId: String?
 
+    public init(id: String, name: String, type: String, credentialId: String? = nil) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.credentialId = credentialId
+    }
 }
 
 public struct AccountCreationKeys {
@@ -140,13 +163,20 @@ public struct ExchangeMessage: Codable, Sendable {
 }
 
 public struct PairingInfo {
+    enum Kind {
+        case legacy
+        case pairingV2(URL)
+    }
+
     enum Keys {
         static let code = "code"
+        static let pairingV2Code = "code2"
         static let deviceName = "deviceName"
     }
 
     public let base64Code: String
     public let deviceName: String
+    let kind: Kind
 
     public init?(url: URL) {
         guard Self.isPairing(url: url) else {
@@ -155,6 +185,50 @@ public struct PairingInfo {
         guard let fragment = URLComponents(url: url, resolvingAgainstBaseURL: false)?.fragment else {
             return nil
         }
+        let dict = Self.fragmentParameters(from: fragment)
+        guard let code = dict[Keys.code], let deviceName = dict[Keys.deviceName] else {
+            return nil
+        }
+        self.init(base64Code: Self.restoreBase64(from: code),
+                  deviceName: deviceName)
+    }
+
+    init(base64Code: String, deviceName: String, kind: Kind = .legacy) {
+        self.base64Code = base64Code
+        self.deviceName = deviceName
+        self.kind = kind
+    }
+
+    init(pairingV2URL: URL, deviceName: String) {
+        self.init(base64Code: pairingV2URL.absoluteString, deviceName: deviceName, kind: .pairingV2(pairingV2URL))
+    }
+
+    public func toURL(baseURL: URL) -> URL {
+        if case .pairingV2(let url) = kind {
+            return url
+        }
+
+        let url = baseURL.appendingPathComponent("sync/pairing/")
+        var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let fragment = "&\(Keys.code)=\(base64URLCode)&\(Keys.deviceName)=\(deviceName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? deviceName)"
+        urlComponents?.fragment = fragment
+        return urlComponents?.url ?? url
+    }
+
+    public static func isPairingV2URL(_ url: URL) -> Bool {
+        guard Self.isPairing(url: url),
+              let fragment = URLComponents(url: url, resolvingAgainstBaseURL: false)?.fragment else {
+            return false
+        }
+
+        return Self.fragmentParameters(from: fragment)[Keys.pairingV2Code] != nil
+    }
+
+    private static func isPairing(url: URL) -> Bool {
+        url.pathComponents.contains("sync") && url.pathComponents.last == "pairing" && url.isPart(ofDomain: "duckduckgo.com")
+    }
+
+    private static func fragmentParameters(from fragment: String) -> [String: String] {
         let params = fragment
             .split(separator: "&")
             .compactMap { part -> (String, String)? in
@@ -163,29 +237,7 @@ public struct PairingInfo {
                 return (keyValue[0], keyValue[1].removingPercentEncoding ?? keyValue[1])
             }
 
-        let dict = Dictionary(uniqueKeysWithValues: params)
-        guard let code = dict[Keys.code], let deviceName = dict[Keys.deviceName] else {
-            return nil
-        }
-        self.init(base64Code: Self.restoreBase64(from: code),
-                  deviceName: deviceName)
-    }
-
-    init(base64Code: String, deviceName: String) {
-        self.base64Code = base64Code
-        self.deviceName = deviceName
-    }
-
-    public func toURL(baseURL: URL) -> URL {
-        let url = baseURL.appendingPathComponent("sync/pairing/")
-        var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        let fragment = "&\(Keys.code)=\(base64URLCode)&\(Keys.deviceName)=\(deviceName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? deviceName)"
-        urlComponents?.fragment = fragment
-        return urlComponents?.url ?? url
-    }
-
-    private static func isPairing(url: URL) -> Bool {
-        url.pathComponents.contains("sync") && url.pathComponents.last == "pairing" && url.isPart(ofDomain: "duckduckgo.com")
+        return Dictionary(uniqueKeysWithValues: params)
     }
 
     private static func restoreBase64(from base64URLCode: String) -> String {
@@ -199,10 +251,124 @@ public struct PairingInfo {
     }
 }
 
+// MARK: - Scoped Access Credentials
+
+public enum SyncCredentialID {
+    public static let defaultCredential = "ddg"
+    public static let thirdParty = "3party"
+}
+
+// AccessCredential is decoded from API responses using JSONDecoder.snakeCaseKeys. The server key
+// is "encrypted_3party_credential", and .convertFromSnakeCase maps that to encrypted3PartyCredential.
+// Adding a CodingKeys raw value for the literal server key would make decoding return nil.
+public struct AccessCredential: Decodable, Sendable {
+    public let id: String
+    public let scope: String?
+    public let encrypted3PartyCredential: String?
+}
+
+public struct ProtectedKey: Codable, Sendable {
+    public let kid: String
+    public let encryptedPrivateKey: String
+    public let publicKey: ProtectedKeyPublicKey
+    public let encryptedWith: String
+    public let purpose: String
+
+    enum CodingKeys: String, CodingKey {
+        case kid
+        case encryptedPrivateKey
+        case publicKey
+        case encryptedWith
+        case purpose
+    }
+
+    public init(kid: String,
+                encryptedPrivateKey: String,
+                publicKey: ProtectedKeyPublicKey,
+                encryptedWith: String,
+                purpose: String) {
+        self.kid = kid
+        self.encryptedPrivateKey = encryptedPrivateKey
+        self.publicKey = publicKey
+        self.encryptedWith = encryptedWith
+        self.purpose = purpose
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        kid = try container.decode(String.self, forKey: .kid)
+        encryptedPrivateKey = try container.decode(String.self, forKey: .encryptedPrivateKey)
+        publicKey = try container.decode(ProtectedKeyPublicKey.self, forKey: .publicKey)
+        purpose = try container.decode(String.self, forKey: .purpose)
+
+        if let encryptedWith = try container.decodeIfPresent(String.self, forKey: .encryptedWith), !encryptedWith.isEmpty {
+            self.encryptedWith = encryptedWith
+        } else {
+            // Legacy/server compatibility: treat missing/empty encrypted_with as the default credential.
+            Logger.sync.error("Protected key response missing encrypted_with; defaulting to ddg for compatibility")
+            encryptedWith = SyncCredentialID.defaultCredential
+        }
+    }
+}
+
+public struct ProtectedKeyPublicKey: Codable, Sendable, Equatable {
+    public let alg: String
+    public let e: String?
+    public let ext: Bool?
+    public let keyOps: [String]?
+    public let kty: String
+    public let n: String?
+    public let use: String?
+}
+
+private struct ProtectedKeyWrappingIdentity: Hashable {
+    let kid: String
+    let encryptedWith: String
+    let purpose: String
+
+    init(key: ProtectedKey) {
+        self.kid = key.kid
+        self.encryptedWith = key.encryptedWith
+        self.purpose = key.purpose
+    }
+}
+
+extension ProtectedKey {
+    func hasSameWrappingIdentity(as other: ProtectedKey) -> Bool {
+        kid == other.kid && encryptedWith == other.encryptedWith && purpose == other.purpose
+    }
+}
+
+extension Sequence where Element == ProtectedKey {
+    func removingDuplicateWrappingIdentities() -> [ProtectedKey] {
+        var seenIdentities: Set<ProtectedKeyWrappingIdentity> = []
+        return filter { key in
+            seenIdentities.insert(ProtectedKeyWrappingIdentity(key: key)).inserted
+        }
+    }
+}
+
+enum SyncProtocolVersion {
+    static func parseMajor(_ raw: String) -> Int? {
+        guard let majorString = raw.split(separator: ".").first,
+              let major = Int(majorString),
+              major >= 0 else {
+            return nil
+        }
+        return major
+    }
+}
+
 public struct SyncCode: Codable {
 
     public enum Base64Error: Error {
         case error
+    }
+
+    public enum RecoveryCodeVersionError: Error, Equatable {
+        case malformed(String)
+        case unsupported(String)
     }
 
     public struct RecoveryKey: Codable, Sendable, Equatable {
@@ -220,7 +386,81 @@ public struct SyncCode: Codable {
         let publicKey: Data
     }
 
-    public var recovery: RecoveryKey?
+    /// V2 recovery code payload. All fields are snake_case on the wire.
+    /// `secret` is base64URL of the raw default-credential secret (`cid == "ddg"`) or scoped-password bytes (`cid == "3party"`).
+    /// `v` is `"major.minor"` to allow additive minor schema changes.
+    public struct RecoveryKeyV2: Codable, Sendable, Equatable {
+        static let currentVersion = "2.0"
+        static let thirdPartyCredentialId = SyncCredentialID.thirdParty
+
+        let userId: String
+        let secret: String
+        let cid: String
+        let v: String
+    }
+
+    /// Versioned `recovery` payload. Distinguishes v1 (no `v` field — current native shape
+    /// with `primary_key`) from v2 (`v: "2.0"` — scoped credential payload with `secret`/`cid`).
+    ///
+    /// Per versioning rules:
+    /// - missing `v` field is treated as v1
+    /// - `v` major == `Self.supportedMajor` is accepted; unknown fields are ignored for minor versions
+    /// - `v` major > `Self.supportedMajor` is rejected with `RecoveryCodeVersionError.unsupported`,
+    ///   even if the payload is otherwise structurally parseable
+    public enum Recovery: Codable, Sendable, Equatable {
+        case v1(RecoveryKey)
+        case v2(RecoveryKeyV2)
+
+        /// Highest major version of the recovery payload this client understands.
+        public static let supportedMajor = 2
+
+        private enum ProbeKeys: CodingKey {
+            case v
+        }
+
+        public init(from decoder: Decoder) throws {
+            let probe = try decoder.container(keyedBy: ProbeKeys.self)
+            let rawVersion = try probe.decodeIfPresent(String.self, forKey: .v)
+            switch rawVersion {
+            case nil:
+                self = .v1(try RecoveryKey(from: decoder))
+            case let raw?:
+                guard let major = SyncProtocolVersion.parseMajor(raw) else {
+                    throw RecoveryCodeVersionError.malformed(raw)
+                }
+                guard major <= Self.supportedMajor else {
+                    throw RecoveryCodeVersionError.unsupported(raw)
+                }
+                self = .v2(try RecoveryKeyV2(from: decoder))
+            }
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            switch self {
+            case .v1(let v1):
+                try v1.encode(to: encoder)
+            case .v2(let v2):
+                try v2.encode(to: encoder)
+            }
+        }
+
+        public func defaultCredentialRecoveryKey() throws -> RecoveryKey {
+            switch self {
+            case .v1(let recoveryKey):
+                return recoveryKey
+            case .v2(let recoveryKey):
+                guard recoveryKey.cid == SyncCredentialID.defaultCredential,
+                      let primaryKey = Base64URL.decode(recoveryKey.secret),
+                      !primaryKey.isEmpty else {
+                    throw SyncError.invalidRecoveryKey
+                }
+                return RecoveryKey(userId: recoveryKey.userId, primaryKey: primaryKey)
+            }
+        }
+
+    }
+
+    public var recovery: Recovery?
     public var connect: ConnectCode?
     public var exchangeKey: ExchangeKey?
 
@@ -232,8 +472,25 @@ public struct SyncCode: Codable {
         return try JSONEncoder.snakeCaseKeys.encode(self)
     }
 
+    /// Decodes a `SyncCode` payload from either encoding. Tries standard base64
+    /// first (the v1 wire format), then tries base64URL (the v2 wire format).
+    /// The second decode attempt is unambiguous because Foundation's
+    /// `Data(base64Encoded:)` strictly rejects the URL-safe alphabet (`-`/`_`),
+    /// so the second branch only matches inputs the first one couldn't decode.
     public static func decodeBase64String(_ string: String) throws -> Self {
-        guard let data = Data(base64Encoded: string) else {
+        if let data = Data(base64Encoded: string) {
+            return try Self.decode(data)
+        }
+        if let data = Base64URL.decode(string) {
+            return try Self.decode(data)
+        }
+        throw Base64Error.error
+    }
+
+    /// Decodes a strictly base64URL-encoded `SyncCode` payload. Most callers
+    /// should use `decodeBase64String(_:)` instead, which accepts both encodings.
+    public static func decodeBase64URLString(_ string: String) throws -> Self {
+        guard let data = Base64URL.decode(string) else {
             throw Base64Error.error
         }
         return try Self.decode(data)

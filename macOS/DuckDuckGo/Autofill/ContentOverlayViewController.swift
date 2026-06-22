@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import PixelKit
 import PrivacyConfig
 import SecureStorage

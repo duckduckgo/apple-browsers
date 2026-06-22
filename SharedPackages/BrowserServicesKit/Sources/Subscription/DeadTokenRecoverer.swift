@@ -25,11 +25,12 @@ public actor DeadTokenRecoverer {
 
     public init() {}
 
-    @available(macOS 12.0, *)
     public func attemptRecoveryFromPastPurchase(purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
                                                 restoreFlow: any AppStoreRestoreFlow) async throws {
         guard purchasePlatform == .appStore else {
-            throw SubscriptionManagerError.noTokenAvailable
+            // Recovery via past purchase only exists for App Store subscriptions; other platforms
+            // cannot restore, so recovery is not attempted (distinct from an attempt that failed).
+            throw SubscriptionManagerError.tokenRecoveryNotAttempted
         }
 
         // If recovery is in progress or completed, wait for it

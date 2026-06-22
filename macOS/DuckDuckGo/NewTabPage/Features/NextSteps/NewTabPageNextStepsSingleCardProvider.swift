@@ -24,6 +24,7 @@ import DDGSync
 import Foundation
 import NewTabPage
 import PrivacyConfig
+import WebExtensions
 
 extension NewTabPageDataModel {
     /// Levels assigned to Next Steps cards to control their display order.
@@ -52,6 +53,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let isAppStoreBuild: Bool
 
     private let scheduler: AnySchedulerOf<DispatchQueue>
@@ -59,6 +61,12 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private var debugPersistor: NewTabPageNextStepsCardsDebugPersistor = {
         NewTabPageNextStepsCardsDebugPersistor()
     }()
+
+    private static let onboardingCardIDs: Set<NewTabPageDataModel.CardID> = [
+        .defaultApp,
+        .addAppToDockMac,
+        .bringStuff
+    ]
 
     enum Constants {
         /// Maximum times a card can be dismissed before it is permanently hidden.
@@ -75,6 +83,11 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     /// Whether to use standard or advanced ordering for the card list.
     private var shouldUseAdvancedCardOrdering: Bool
+
+    /// Whether the day-0 delay for onboarding-related cards is active.
+    private var isOnboardingCardDelayEnabled: Bool {
+        shouldUseAdvancedCardOrdering
+    }
 
     /// Which card level to show first in the list of cards.
     /// This is used to swap the card order after `cardLevel1DemonstrationDays` have passed.
@@ -95,7 +108,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     /// Cards sorted in default order, for standard ordering.
     private let defaultStandardCards: [NewTabPageDataModel.CardID] = [
-        .duckplayer,
+        .youtubeAdBlocking,
         .emailProtection,
         .defaultApp,
         .addAppToDockMac,
@@ -114,7 +127,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         LeveledCard(cardID: .emailProtection, level: .level1),
         LeveledCard(cardID: .defaultApp, level: .level2),
         LeveledCard(cardID: .addAppToDockMac, level: .level2),
-        LeveledCard(cardID: .duckplayer, level: .level2),
+        LeveledCard(cardID: .youtubeAdBlocking, level: .level2),
         LeveledCard(cardID: .bringStuff, level: .level2),
         LeveledCard(cardID: .subscription, level: .level2)
     ]
@@ -133,10 +146,14 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     @Published private var cardList: [NewTabPageDataModel.CardID] = []
 
+    var isNextStepsCardsComplete: Bool {
+        appearancePreferences.isContinueSetUpCardsViewOutdated || appearancePreferences.continueSetUpCardsClosed
+    }
+
     /// Returns the list of cards to be displayed, or an empty list if the continue set up cards view is considered outdated or was previously closed.
     /// The widget only shows the first card in the list, but we provide the full list of available cards so it can show a progress indicator.
     var cards: [NewTabPageDataModel.CardID] {
-        guard !appearancePreferences.isContinueSetUpCardsViewOutdated, !appearancePreferences.continueSetUpCardsClosed else {
+        guard !isNextStepsCardsComplete else {
             return []
         }
         return cardList
@@ -176,6 +193,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
          syncService: DDGSyncing?,
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
          applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
          scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.cardActionHandler = cardActionHandler
@@ -192,6 +210,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.duckPlayerPreferences = duckPlayerPreferences
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
+        self.adBlockingAvailability = adBlockingAvailability
         self.isAppStoreBuild = applicationBuildType.isAppStoreBuild
         self.scheduler = scheduler
         self.shouldUseAdvancedCardOrdering = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering)
@@ -203,11 +222,11 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         }
 
         shuffleStandardCardsIfNeeded()
-        refreshCardList()
+        refreshCardList(recordNewCardImpression: false)
         observeCardVisibilityChanges()
         observeKeyWindowChanges()
         observeNewTabPageWebViewDidAppear()
-        observeNewHomePageTabOpen()
+        observeNewTabPageOpen()
         observeFeatureFlagChanges()
     }
 
@@ -234,7 +253,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         if let card = cards.first {
             pixelHandler.fireNextStepsCardShownPixels([card])
             pixelHandler.fireAddToDockPresentedPixelIfNeeded([card])
-            persistor.incrementTimesShown(for: card)
         }
     }
 }
@@ -243,12 +261,49 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
 private extension NewTabPageNextStepsSingleCardProvider {
 
-    func refreshCardList() {
-        let cards = shouldUseAdvancedCardOrdering ? getOrderedCardsWithAdvancedOrdering() : standardCards.filter(shouldShowCard)
-        if cards.isEmpty {
+    /// Refreshes the card list based on card visibility conditions and ordering logic.
+    ///
+    /// - Parameters:
+    ///   - updateOrder: Whether to update the card order. Set to false to check if cards are still eligible to be shown, for example after returning to the app or changing a setting that impacts card visibility, without affecting card order. Defaults to true.
+    ///   - recordNewCardImpression: Whether to record an impression for the newly visible card if the first card in the list has changed after the refresh. Defaults to true.
+    func refreshCardList(updateOrder: Bool = true, recordNewCardImpression: Bool = true) {
+        let cards = visibleCards(updateOrder: updateOrder)
+        if cards.isEmpty && !hasPendingOnboardingCards() {
             appearancePreferences.continueSetUpCardsClosed = true
         }
+
+        if recordNewCardImpression, let newVisibleCard = cards.first, newVisibleCard != self.cards.first {
+            recordImpression(for: newVisibleCard)
+        }
+
         cardList = cards
+    }
+
+    func visibleCards(updateOrder: Bool) -> [NewTabPageDataModel.CardID] {
+        guard shouldUseAdvancedCardOrdering else {
+            return standardCards.filter(shouldShowCard)
+        }
+
+        var ordered = persistor.orderedCardIDs ?? defaultAdvancedCards.map(\.cardID)
+        if updateOrder {
+            ordered = applyAdvancedCardOrdering(to: ordered)
+        }
+        let orderedVisibleCards = ordered.filter(shouldShowCard)
+
+        let buildType = StandardApplicationBuildType()
+        if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
+            // Persist visible cards for debug menu actions
+            // Otherwise, we don't need to persist this because we want to check card visibility each time cards are shown
+            debugPersistor.debugVisibleCards = orderedVisibleCards
+        }
+
+        return orderedVisibleCards
+    }
+
+    /// Records an impression for the provided card.
+    func recordImpression(for card: NewTabPageDataModel.CardID?) {
+        guard !isNextStepsCardsComplete, let card else { return }
+        persistor.incrementTimesShown(for: card)
     }
 
     /// If this is not the first session, sorts `standardCards` with the `defaultApp` card first, and the remaining cards in random order.
@@ -258,19 +313,19 @@ private extension NewTabPageNextStepsSingleCardProvider {
         standardCards = [.defaultApp] + shuffledCards
     }
 
-    /// Gets a list of cards, sorted by card level and persisted card order.
-    /// Returns only the visible cards (filtered by shouldShowCard).
-    func getOrderedCardsWithAdvancedOrdering() -> [NewTabPageDataModel.CardID] {
-        // Get the card list based on persisted or default order
-        var orderedCards = persistor.orderedCardIDs ?? defaultAdvancedCards.map { $0.cardID }
+    /// Returns the card list sorted by card level and persisted card order.
+    func applyAdvancedCardOrdering(to cards: [NewTabPageDataModel.CardID]) -> [NewTabPageDataModel.CardID] {
+        var orderedCards = cards
 
         // Check if the first visible card has been shown 10+ times, and move it to the end of the list
-        if let firstVisibleCard = orderedCards.first(where: shouldShowCard),
-           persistor.timesShown(for: firstVisibleCard) >= Constants.maxTimesCardShown,
-           let index = orderedCards.firstIndex(where: { $0 == firstVisibleCard }) {
-            let card = orderedCards.remove(at: index)
-            orderedCards.append(card)
-            persistor.setTimesShown(0, for: card)
+        if let firstVisibleCard = orderedCards.first(where: shouldShowCard) {
+            let cardImpressions = persistor.timesShown(for: firstVisibleCard)
+            if cardImpressions > 0,
+               cardImpressions % Constants.maxTimesCardShown == 0,
+               let index = orderedCards.firstIndex(where: { $0 == firstVisibleCard }) {
+                let card = orderedCards.remove(at: index)
+                orderedCards.append(card)
+            }
         }
 
         // Swap the order of levels if needed.
@@ -288,26 +343,28 @@ private extension NewTabPageNextStepsSingleCardProvider {
             persistor.orderedCardIDs = orderedCards
         }
 
-        let orderedVisibleCards = orderedCards.filter(shouldShowCard)
-
-        let buildType = StandardApplicationBuildType()
-        if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
-            // Persist visible cards for debug menu actions
-            // Otherwise, we don't need to persist this because we want to check card visibility each time cards are shown
-            debugPersistor.debugVisibleCards = orderedVisibleCards
-        }
-
-        // Return only the visible cards
-        return orderedVisibleCards
+        return orderedCards
     }
 
     /// Returns whether the card should be shown in the list of visible cards.
-    /// This checks both if the card has been permanently dismissed and if the card's specific visibility conditions are met.
+    /// This checks the following conditions:
+    /// - Whether the card has been permanently dismissed
+    /// - Whether the card's specific visibility conditions are met.
+    /// - For onboarding cards when `nextStepsListAdvancedCardOrdering` is enabled, whether the delay has passed to start showing them.
     func shouldShowCard(_ card: NewTabPageDataModel.CardID) -> Bool {
         guard !isCardPermanentlyDismissed(card) else {
             return false
         }
+        guard isCardEligible(card) else {
+            return false
+        }
+        if isOnboardingCardDelayEnabled && Self.onboardingCardIDs.contains(card) {
+            return appearancePreferences.isOnboardingNextStepsCardsDelayMet
+        }
+        return true
+    }
 
+    func isCardEligible(_ card: NewTabPageDataModel.CardID) -> Bool {
         switch card {
         case .defaultApp:
             return !defaultBrowserProvider.isDefault
@@ -316,7 +373,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .addAppToDockMac:
             return !isAppStoreBuild && !dockCustomizer.isAddedToDock
         case .duckplayer:
-            return duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
+            return false
         case .emailProtection:
             return !emailManager.isSignedIn
         case .subscription:
@@ -325,6 +382,20 @@ private extension NewTabPageNextStepsSingleCardProvider {
             return !appearancePreferences.didChangeAnyNewTabPageCustomizationSetting
         case .sync:
             return syncService?.featureFlags.contains(.all) == true && syncService?.authState == .inactive
+        case .youtubeAdBlocking:
+            return adBlockingAvailability.isEnabled
+        }
+    }
+
+    func hasPendingOnboardingCards() -> Bool {
+        guard isOnboardingCardDelayEnabled else {
+            return false
+        }
+        guard !appearancePreferences.isOnboardingNextStepsCardsDelayMet else {
+            return false
+        }
+        return Self.onboardingCardIDs.contains { card in
+            isCardEligible(card) && !isCardPermanentlyDismissed(card)
         }
     }
 
@@ -343,6 +414,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
             dismissedLegacySetting = !legacyPersistor.shouldShowImportSetting
         case .subscription:
             dismissedLegacySetting = !legacySubscriptionCardPersistor.shouldShowSubscriptionSetting
+        case .youtubeAdBlocking:
+            dismissedLegacySetting = !legacyPersistor.shouldShowYouTubeAdBlockingSetting
         default:
             dismissedLegacySetting = false // No legacy setting for other (new) cards
         }
@@ -361,7 +434,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .combineLatest(appearancePreferences.$didChangeAnyNewTabPageCustomizationSetting.removeDuplicates())
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.refreshCardList()
+                // Only refresh the list based on card visibility changes.
+                self?.refreshCardList(updateOrder: false)
             }
             .store(in: &cancellables)
     }
@@ -374,7 +448,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
         NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
             .sink { _ in
                 DispatchQueue.main.async { [weak self] in
-                    self?.refreshCardList()
+                    // Only refresh the list based on card visibility changes, e.g. if the default browser setting has changed.
+                    self?.refreshCardList(updateOrder: false)
                 }
             }
             .store(in: &cancellables)
@@ -387,6 +462,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
+
                 let buildType = StandardApplicationBuildType()
                 if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
                     // Reset standard card list and mark first session as complete for debug menu reset action, if needed
@@ -395,17 +471,21 @@ private extension NewTabPageNextStepsSingleCardProvider {
                         standardCards = defaultStandardCards
                     }
                 }
-                refreshCardList()
+                // We record an impression for the visible card unconditionally when the New Tab Page is opened,
+                // not only when a new card is visible due to the card list refresh.
+                refreshCardList(recordNewCardImpression: false)
+                if !isNextStepsCardsComplete {
+                    recordImpression(for: cards.first)
+                    persistor.ntpImpressionCount += 1
+                }
             }
             .store(in: &cancellables)
     }
 
-    /// Observes the `HomePage.Models.newHomePageTabOpen` notification to reshuffle the cards, if needed.
+    /// Observes the `newTabPageOpen` notification to reshuffle the cards, if needed.
     ///
-    /// Note: This notification is not triggered on every new tab page open, for example when a new tab is opened in the same window.
-    /// However, for now we want to shuffle the cards with the same timing as in `HomePage.Models.ContinueSetUpModel`.
-    func observeNewHomePageTabOpen() {
-        NotificationCenter.default.publisher(for: HomePage.Models.newHomePageTabOpen)
+    func observeNewTabPageOpen() {
+        NotificationCenter.default.publisher(for: .newTabPageOpen)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -436,4 +516,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
             }
             .store(in: &cancellables)
     }
+}
+
+extension Notification.Name {
+    static let newTabPageOpen = Notification.Name("newTabPageOpen")
 }

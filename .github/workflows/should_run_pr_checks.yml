@@ -51,6 +51,9 @@ jobs:
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
             echo "Non-PR event, running checks"
+          elif [[ "${{ github.event.action }}" == "edited" && "${{ github.event.sender.type }}" == "Bot" ]]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "PR edited by a bot (${{ github.event.sender.login }}), skipping checks"
           elif [[ "${{ github.event.action }}" == "ready_for_review" ]]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
             echo "PR was unmarked as draft, running checks"

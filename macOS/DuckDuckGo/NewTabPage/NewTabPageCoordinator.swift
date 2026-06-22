@@ -20,6 +20,7 @@ import AIChat
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import DDGSync
 import Foundation
 import History

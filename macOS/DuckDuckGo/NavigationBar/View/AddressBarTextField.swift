@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Carbon.HIToolbox
 import Combine
 import Common
+import FoundationExtensions
 import PixelKit
 import Suggestions
 import Subscription
@@ -579,6 +580,7 @@ final class AddressBarTextField: NSTextField {
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result {
+            suggestionContainerViewModel?.prewarmRemoteSuggestionsConnection()
             reconcilePerformanceCoordinator()
             performanceCoordinator?.resetForNewInteraction()
             focusDelegate?.addressBarDidFocus(self)
@@ -808,6 +810,7 @@ final class AddressBarTextField: NSTextField {
         guard !suggestionWindow.isVisible, isFirstResponder else { return }
 
         window.addChildWindow(suggestionWindow, ordered: .above)
+        NotificationCenter.default.post(name: .suggestionWindowDidShow, object: self)
 
         windowFrameCancellable = window.publisher(for: \.frame)
             .sink { [weak self] _ in
@@ -1279,6 +1282,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
         if commandSelector == #selector(insertNewline)
             || commandSelector == #selector(insertNewlineIgnoringFieldEditor)
             || commandSelector == Selector(("noop:")) && NSApp.isReturnOrEnterPressed {
+            // The window-level key monitor should catch the common IME flow first; keep this guard for any input path that
+            // reaches the delegate with marked text.
+            if Application.appDelegate.featureFlagger.isFeatureOn(.addressBarIMEConfirmFix),
+               textView.hasMarkedText() {
+                return false
+            }
             self.addressBarEnterPressed()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
@@ -1631,4 +1640,8 @@ extension AddressBarTextField: SharingMenuDelegate {
 
         return (selectedTabViewModel.title, [url])
     }
+}
+
+extension Notification.Name {
+    static let suggestionWindowDidShow = Notification.Name("suggestionWindowDidShow")
 }

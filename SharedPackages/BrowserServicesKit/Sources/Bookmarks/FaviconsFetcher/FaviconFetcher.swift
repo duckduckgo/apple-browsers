@@ -31,13 +31,9 @@ public final class FaviconFetcher: NSObject, FaviconFetching {
 
         // Allow LinkPresentation to fail so that we can fall back to fetching hardcoded paths
         let metadata: LPLinkMetadata? = await { @MainActor in
-            if #available(iOS 15.0, macOS 12.0, *) {
-                var request = URLRequest(url: url)
-                request.attribution = .user
-                return try? await metadataFetcher.startFetchingMetadata(for: request)
-            } else {
-                return try? await metadataFetcher.startFetchingMetadata(for: url)
-            }
+            var request = URLRequest(url: url)
+            request.attribution = .user
+            return try? await metadataFetcher.startFetchingMetadata(for: request)
         }()
 
         // If LinkPresentation returned metadata, try retrieving favicon data

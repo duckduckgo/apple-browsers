@@ -33,9 +33,11 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
+    func unifiedToggleInputView(_ view: UnifiedToggleInputView, isDraggingToggle isDragging: Bool)
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
-    func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -73,7 +75,7 @@ final class UnifiedToggleInputView: UIView {
         // `.collapsed` layout — UTI mimics the regular omnibar pill so the snap between the two
         // surfaces reads as one continuous element.
         static let collapsedCardHeight: CGFloat = 44
-        static let cardCornerRadiusCollapsed: CGFloat = 16
+        static var cardCornerRadiusCollapsed: CGFloat { OmniBarMetrics.cornerRadius }
         static let collapsedCardTopMargin: CGFloat = 10
         static let collapsedCardBottomMargin: CGFloat = 6
         // `.flanked` layout — 48pt capsule sized to match the fire/voice accessory height.
@@ -93,9 +95,9 @@ final class UnifiedToggleInputView: UIView {
         static let toggleTopPadding: CGFloat = 8
         static let toggleBottomPadding: CGFloat = 4
         /// Bottom padding between the input content and the card edge when the AI tools
-        /// toolbar is hidden, mirroring `toggleBottomPadding` so the input sits centered
-        /// inside its 64pt row per the Figma spec.
-        static let inputBottomPadding: CGFloat = 4
+        /// toolbar is hidden. Slightly larger than the matching top gap so the cursor doesn't
+        /// crowd the card's bottom curve in Search mode.
+        static let inputBottomPadding: CGFloat = 8
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25
@@ -126,6 +128,9 @@ final class UnifiedToggleInputView: UIView {
         // Fire / voice fade in once the pill has finished shrinking into its flanked frame.
         static let aiTabCollapsedAccessoryFadeDelay: TimeInterval = 0.18
         static let aiTabCollapsedAccessoryFadeDuration: TimeInterval = 0.12
+        // Subtler than the fire button (0.16) to match the visual weight of top-toolbar elements.
+        static let aiTabCollapsedMenuButtonShadowOpacity: Float = 0.04
+        static let aiTabCollapsedMenuButtonDisabledShadowOpacity: Float = 0.0
     }
 
     // MARK: - Hit Testing
@@ -198,6 +203,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
     }
 
+    var isToolbarSubmitBlockedByRecoveryCard: Bool = false {
+        didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
+    }
+
     var isGenerating: Bool = false {
         didSet { toolsToolbar.isGenerating = isGenerating }
     }
@@ -210,6 +219,11 @@ final class UnifiedToggleInputView: UIView {
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
         set { toolsToolbar.modelPickerMenu = newValue }
+    }
+
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        toolsToolbar.presentModelPickerMenu()
     }
 
     var toolsMenu: UIMenu? {
@@ -252,6 +266,25 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isReasoningButtonHidden = newValue }
     }
 
+    var isToolbarReturnKeyHidden: Bool {
+        get { toolsToolbar.isReturnKeyHidden }
+        set { toolsToolbar.isReturnKeyHidden = newValue }
+    }
+
+    /// Caps the text field so the whole card fits within `available` height (the gap above the
+    /// keyboard in landscape); nil lifts the cap. Chrome is constant, so the field's ceiling is
+    /// the budget minus chrome, and it scrolls beyond that.
+    func setAvailableExpandedHeight(_ available: CGFloat?) {
+        guard let available else {
+            textEntryView.externalMaxHeightCap = nil
+            return
+        }
+        layoutIfNeeded()
+        guard bounds.height > 0 else { return }
+        let chrome = bounds.height - textEntryView.bounds.height
+        textEntryView.externalMaxHeightCap = available - chrome
+    }
+
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
     /// so that sibling views (e.g. the content container) animate in sync.
     /// The owning view controller sets this.
@@ -276,7 +309,7 @@ final class UnifiedToggleInputView: UIView {
 
     // MARK: - Attachment Callbacks
 
-    var onAttachmentRemoved: ((UUID) -> Void)?
+    var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
 
@@ -364,11 +397,14 @@ final class UnifiedToggleInputView: UIView {
         return button
     }()
 
-    private lazy var aiTabCollapsedVoiceButton: UIButton = {
-        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.voice, traitCollection: traitCollection)
+    /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
+    var aiTabFireButton: UIButton { aiTabCollapsedFireButton }
+
+    private lazy var aiTabCollapsedMenuButton: UIButton = {
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.menuHamburger, traitCollection: traitCollection)
         button.isHidden = true
-        button.accessibilityLabel = UserText.actionDuckAIVoice
-        button.addTarget(self, action: #selector(voiceTapped), for: .touchUpInside)
+        button.accessibilityLabel = UserText.menuButtonHint
+        button.addTarget(self, action: #selector(appMenuTapped), for: .touchUpInside)
         return button
     }()
 
@@ -376,8 +412,8 @@ final class UnifiedToggleInputView: UIView {
         delegate?.unifiedToggleInputViewDidTapFire(self)
     }
 
-    @objc private func voiceTapped() {
-        delegate?.unifiedToggleInputViewDidTapVoice(self)
+    @objc private func appMenuTapped() {
+        delegate?.unifiedToggleInputViewDidTapAppMenu(self)
     }
 
     // MARK: - Shadow
@@ -475,6 +511,7 @@ final class UnifiedToggleInputView: UIView {
         self.isToggleEnabled = isToggleEnabled
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
+        textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
         setupUI()
         setupSubscriptions()
     }
@@ -511,13 +548,34 @@ final class UnifiedToggleInputView: UIView {
     private func refreshGlassAITabAccessoryConfigurations() {
         guard #available(iOS 26, *) else { return }
         // Rebuilds config from scratch — re-apply any per-button tweaks here if added later.
-        for button in [aiTabCollapsedFireButton, aiTabCollapsedVoiceButton] {
+        for button in [aiTabCollapsedFireButton, aiTabCollapsedMenuButton] {
             guard let currentImage = button.configuration?.image else { continue }
             var config = Self.glassAccessoryConfiguration(for: traitCollection)
             config.image = currentImage
             config.cornerStyle = .capsule
             button.configuration = config
         }
+    }
+
+    // MARK: - Onboarding
+
+    /// Dims the input bar during the fire-education onboarding step while keeping the fire button
+    /// fully visible and the text entry non-interactive.
+    func setOnboardingDimmed(_ dimmed: Bool) {
+        // Dim all direct subviews except the fire and voice accessory buttons — both are rendered
+        // at full alpha to avoid a muddy semi-transparent shadow. The voice button's disabled
+        // appearance is handled via isEnabled below.
+        subviews.filter { $0 !== aiTabCollapsedFireButton && $0 !== aiTabCollapsedMenuButton }.forEach {
+            $0.alpha = dimmed ? 0.5 : 1
+        }
+        // Show the voice button as cleanly disabled (design-system icon tint) rather than dimmed.
+        aiTabCollapsedMenuButton.isEnabled = !dimmed
+        // Block the text view from directly becoming first responder when the user taps the pill.
+        textEntryView.isUserInteractionEnabled = !dimmed
+        // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
+        handler.isOnboardingLocked = dimmed
+        let shadowOpacity = dimmed ? Constants.aiTabCollapsedMenuButtonDisabledShadowOpacity : Constants.aiTabCollapsedMenuButtonShadowOpacity
+        Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
     }
 
     // MARK: - Fire Mode
@@ -546,7 +604,7 @@ final class UnifiedToggleInputView: UIView {
             $0 !== cardView &&
             $0 !== expandedShadowView &&
             $0 !== aiTabCollapsedFireButton &&
-            $0 !== aiTabCollapsedVoiceButton
+            $0 !== aiTabCollapsedMenuButton
         }
     }
 
@@ -597,6 +655,7 @@ final class UnifiedToggleInputView: UIView {
     func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
+        textEntryView.style = enabled ? .multiLine : .singleLine
         if isExpanded {
             applyCardLayout(.collapsed, animated: false)
             applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: showsToolbar), animated: false)
@@ -610,6 +669,7 @@ final class UnifiedToggleInputView: UIView {
         if isToggleEnabled {
             toggleView.setMode(mode, animated: animated)
         }
+        textEntryView.style = mode == .aiChat ? .multiLine : .singleLine
         // Drive textView pose synchronously inside the caller's UIView.animate so the
         // placeholder constraint switch animates rather than snapping when the publisher
         // subscriber fires after the animation transaction has already committed.
@@ -638,10 +698,10 @@ final class UnifiedToggleInputView: UIView {
         if active {
             // alpha-0 before unhide avoids a 1-frame flash on top of the still-wide pill.
             aiTabCollapsedFireButton.alpha = 0
-            aiTabCollapsedVoiceButton.alpha = 0
+            aiTabCollapsedMenuButton.alpha = 0
         }
         aiTabCollapsedFireButton.isHidden = !active
-        aiTabCollapsedVoiceButton.isHidden = !active
+        aiTabCollapsedMenuButton.isHidden = !active
         textEntryView.placeholderTextAlignment = active ? .center : .natural
 
         guard active else { return }
@@ -652,7 +712,7 @@ final class UnifiedToggleInputView: UIView {
                        delay: Constants.aiTabCollapsedAccessoryFadeDelay,
                        options: .curveEaseOut) {
             self.aiTabCollapsedFireButton.alpha = 1
-            self.aiTabCollapsedVoiceButton.alpha = 1
+            self.aiTabCollapsedMenuButton.alpha = 1
         }
     }
 
@@ -687,17 +747,13 @@ final class UnifiedToggleInputView: UIView {
         let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
-        // Flanked layout has its own external voice flank — suppress the in-pill duplicate.
-        // Snap the icon style synchronously so the focus animation drives the visual transition
-        // — animating the buttons-row crossfade here would snapshot at the old layout and drift.
+        // Flanked: hide the in-pill voice icon (external accessories flank the pill, voice is in the Plus menu).
+        // Snap synchronously so the focus animation drives the transition — animating here would snapshot at the old layout and drift.
         textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : .aiVoicePlain), animated: false)
         if layout != .flanked {
-            // Non-flanked layouts let the card span the full width; the external fire/voice
-            // accessories must hide or they overlap the card's edges. The opposite direction
-            // (showing them on `.flanked`) is handled by `setAITabCollapsedFooterPoseActive`,
-            // which adds the fade-in animation.
+            // Non-flanked: card spans full width, so external fire/menu must hide. The reverse is `setAITabCollapsedFooterPoseActive` (fades in).
             aiTabCollapsedFireButton.isHidden = true
-            aiTabCollapsedVoiceButton.isHidden = true
+            aiTabCollapsedMenuButton.isHidden = true
         }
         guard layout != currentLayout else { return }
         currentLayout = layout
@@ -832,6 +888,16 @@ final class UnifiedToggleInputView: UIView {
             applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
         case (_, _):
             applyCardLayout(.collapsed, animated: false)
+            // Pre-apply the inline dismiss leading inset so the text area is already at its
+            // final width before animation — otherwise the width change animates with the card.
+            if !isToggleEnabled {
+                UIView.performWithoutAnimation {
+                    self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: true)
+                    self.applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: true)
+                    self.layoutIfNeeded()
+                }
+            }
+            textEntryView.clearDismissSnapshot()
         }
         alignWithOmnibarChrome()
     }
@@ -923,6 +989,8 @@ final class UnifiedToggleInputView: UIView {
         toolbarBottomConstraint.constant = 0
         toolbarHeightConstraint.constant = 0
         toolsToolbar.alpha = 0
+        attachmentsStripHeightConstraint.constant = 0
+        attachmentsStrip.alpha = 0
         textEntryView.isExpandable = false
     }
 
@@ -1139,7 +1207,7 @@ private extension UnifiedToggleInputView {
     /// Mirrors `AIChatTabChatHeaderView`'s glass-pill style swap: regular glass in light mode
     /// (visible material on white chrome), clear glass in dark mode (lighter, refractive).
     @available(iOS 26, *)
-    fileprivate static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
+    static func glassAccessoryConfiguration(for traitCollection: UITraitCollection) -> UIButton.Configuration {
         traitCollection.userInterfaceStyle == .dark ? .clearGlass() : .glass()
     }
 
@@ -1158,9 +1226,9 @@ private extension UnifiedToggleInputView {
         button.clipsToBounds = false
     }
 
-    private static func applyAITabAccessoryShadow(to button: UIButton) {
+    private static func applyAITabAccessoryShadow(to button: UIButton, opacity: Float = 0.16) {
         button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOpacity = 0.16
+        button.layer.shadowOpacity = opacity
         button.layer.shadowOffset = CGSize(width: 0, height: 8)
         button.layer.shadowRadius = 16
     }
@@ -1190,7 +1258,7 @@ private extension UnifiedToggleInputView {
         cardView.isUserInteractionEnabled = false
         addSubview(cardView)
         addSubview(aiTabCollapsedFireButton)
-        addSubview(aiTabCollapsedVoiceButton)
+        addSubview(aiTabCollapsedMenuButton)
 
         NSLayoutConstraint.activate([
             expandedShadowView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
@@ -1208,6 +1276,10 @@ private extension UnifiedToggleInputView {
             if self.isExpanded {
                 self.textEntryView.becomeFirstResponder()
             }
+        }
+        toggleView.onDragStateChanged = { [weak self] isDragging in
+            guard let self else { return }
+            self.delegate?.unifiedToggleInputView(self, isDraggingToggle: isDragging)
         }
         addSubview(toggleView)
 
@@ -1234,8 +1306,8 @@ private extension UnifiedToggleInputView {
             onNeedsHierarchyLayout?()
             onAttachmentsLayoutDidChange?()
         }
-        attachmentsStrip.onAttachmentRemoved = { [weak self] id in
-            self?.onAttachmentRemoved?(id)
+        attachmentsStrip.onAttachmentRemoved = { [weak self] id, attachment, isUserInitiated in
+            self?.onAttachmentRemoved?(id, attachment, isUserInitiated)
         }
         addSubview(attachmentsStrip)
 
@@ -1255,6 +1327,10 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onSelectedToolClearTapped = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputViewDidClearSelectedTool(self)
+        }
+        toolsToolbar.onReturnKeyTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidTapReturnKey(self)
         }
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)
@@ -1347,10 +1423,10 @@ private extension UnifiedToggleInputView {
             aiTabCollapsedFireButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
             aiTabCollapsedFireButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
 
-            aiTabCollapsedVoiceButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin),
-            aiTabCollapsedVoiceButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
-            aiTabCollapsedVoiceButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
-            aiTabCollapsedVoiceButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
+            aiTabCollapsedMenuButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin),
+            aiTabCollapsedMenuButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
+            aiTabCollapsedMenuButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
+            aiTabCollapsedMenuButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
         ])
     }
 

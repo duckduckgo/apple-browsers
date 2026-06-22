@@ -22,6 +22,8 @@ import SwiftUI
 import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckUI
+import MetricBuilder
 
 /// Constants used in DuckPlayerWelcomePillView
 private struct Constants {
@@ -35,8 +37,6 @@ private struct Constants {
     static let shadowOpacity: CGFloat = 0.1
     static let shadowRadius: CGFloat = 3
     static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
-    static let mainButtonHeight: CGFloat = 40
-    static let buttonCornerRadius: CGFloat = 12
     static let primingImageName: String = "DuckPlayer-PrimingAnimation"
     static let imageWidth: CGFloat = 150
     static let imageHeight: CGFloat = 150
@@ -75,27 +75,17 @@ struct DuckPlayerWelcomePillView: View {
     }
 
     private var mainActionButton: some View {
-        Button(
-            action: { viewModel.openInDuckPlayer() },
-            label: {
-                HStack(spacing: Constants.buttonIconSpacing) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size20.videoPlaySolid)
-                        .foregroundColor(.white)
-                    Text(UserText.duckPlayerOptInPillTitle)
-                        .daxButton()
-                        .foregroundColor(.white)
-                        .font(.headline)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: Constants.mainButtonHeight)
-                 .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
-                .background(Color(designSystemColor: .buttonsPrimaryDefault))
-                .cornerRadius(Constants.buttonCornerRadius)
-            })
-            .padding(.top, Constants.buttonTopPadding)
-            .accessibilityLabel("Watch in DuckPlayer")
-            .accessibilityHint("Opens the video in DuckPlayer for privacy protection")
-            .accessibilityIdentifier("duckPlayerWelcomeButton")
+        Button(action: { viewModel.openInDuckPlayer() }) {
+            HStack(spacing: Constants.buttonIconSpacing) {
+                Image(uiImage: DesignSystemImages.Glyphs.Size20.videoPlaySolid)
+                Text(UserText.duckPlayerOptInPillTitle)
+            }
+        }
+        .buttonStyle(PrimaryButtonStyle())
+        .padding(.top, Constants.buttonTopPadding)
+        .accessibilityLabel("Watch in DuckPlayer")
+        .accessibilityHint("Opens the video in DuckPlayer for privacy protection")
+        .accessibilityIdentifier("duckPlayerWelcomeButton")
     }
     
     private var closeButton: some View {
@@ -155,12 +145,16 @@ struct DuckPlayerWelcomePillView: View {
                 }
                 mainActionButton
             }
-            .padding(.horizontal, Constants.horizontalPadding)
+            .padding(.horizontal, AppRebrand.isAppRebranded() ?
+                     ButtonStackMetrics.containerPadding
+                     : Constants.horizontalPadding)
             .padding(.vertical, Constants.verticalPadding)
             .background(
                 Color(designSystemColor: colorScheme == .dark ? .controlsFillPrimary  : .backgroundSheets)
             )
-            .cornerRadius(Constants.cornerRadius)
+            .cornerRadius(AppRebrand.isAppRebranded() ?
+                          ContainerMetrics.cornerRadius
+                          : Constants.cornerRadius)
             .shadow(
                 color: Color.black.opacity(Constants.shadowOpacity),
                 radius: Constants.shadowRadius,

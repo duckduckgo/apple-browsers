@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#CCDAFF" fill-rule="evenodd" d="M12 21.375a9.375 9.375 0 1 0 0-18.75 9.375 9.375 0 1 0 0 18.75Z" clip-rule="evenodd"/>
+  <path fill="url(#Downloads-Color-24_svg__a)" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2Zm0 1.25a8.75 8.75 0 1 0 0 17.5 8.75 8.75 0 0 0 0-17.5Z"/>
+  <path fill="#2B55CA" d="M16.375 16a.625.625 0 0 1 0 1.25h-8.75a.625.625 0 0 1 0-1.25h8.75ZM12 5c.345 0 .625.28.625.625v7.616l3.058-3.058.023-.022a.625.625 0 0 1 .883.883l-.022.023-3.065 3.064c-.83.83-2.175.83-3.005 0l-3.064-3.064-.022-.023a.625.625 0 0 1 .882-.883l.024.022 3.058 3.058V5.625c0-.345.28-.625.625-.625Z"/>
+  <defs>
+    <linearGradient id="Downloads-Color-24_svg__a" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#557FF3"/>
+      <stop offset="1" stop-color="#2B55CA"/>
+    </linearGradient>
+  </defs>
+</svg>

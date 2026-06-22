@@ -80,13 +80,21 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var webExtensionLifecycleCoordinatorStorage: Any?
+
+    @available(iOS 18.4, *)
+    var webExtensionLifecycleCoordinator: WebExtensionLifecycleCoordinator? {
+        get { webExtensionLifecycleCoordinatorStorage as? WebExtensionLifecycleCoordinator }
+        set { webExtensionLifecycleCoordinatorStorage = newValue }
+    }
     private var dataImportUserActivityHandler: DataImportUserActivityHandling?
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
-    private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
+    private var protectedDataCancellable: AnyCancellable?
+    private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let onboardingManager: OnboardingFlowManaging
 
@@ -210,7 +218,8 @@ final class MainCoordinator {
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                fireModePromotionEligibility: fireModePromotionsCoordinator)
+                                fireModePromotionEligibility: fireModePromotionsCoordinator,
+                                adBlockingAvailability: contentBlockingService.adBlockingAvailability)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -244,6 +253,7 @@ final class MainCoordinator {
             keyValueStore: keyValueStore,
             idleReturnEligibilityManager: idleReturnEligibilityManager
         )
+        let lastTabShortcutAdapter = LastTabShortcutAdapter(keyValueStore: keyValueStore)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -266,6 +276,7 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         idleReturnEligibilityManager: idleReturnEligibilityManager,
                                         afterInactivityOptionAdapter: afterInactivityOptionAdapter,
+                                        lastTabShortcutAdapter: lastTabShortcutAdapter,
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
@@ -275,6 +286,7 @@ final class MainCoordinator {
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         aiChatAddressBarExperience: aiChatAddressBarExperience,
                                         themeManager: ThemeManager.shared,
                                         keyValueStore: keyValueStore,
@@ -353,6 +365,13 @@ final class MainCoordinator {
             .removeDuplicates()
             .eraseToAnyPublisher()
 
+        let adBlockingDefaultsPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
         youTubeAdBlockingCancellable = NotificationCenter.default
             .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
             .sink { [weak self] _ in
@@ -366,6 +385,7 @@ final class MainCoordinator {
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
             onFeatureFlagEnabled: { [weak self] in
                 self?.initializeWebExtensions()
             },
@@ -376,6 +396,9 @@ final class MainCoordinator {
                 await self?.syncEmbeddedExtensions()
             },
             onAdBlockingExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            },
+            onAdBlockingDefaultsFlagChanged: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             }
         )
@@ -406,6 +429,14 @@ final class MainCoordinator {
         )
         self.webExtensionManager = webExtensionManager
 
+        let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
+            manager: webExtensionManager,
+            pixelFiring: iOSWebExtensionPixelFiring()
+        ) { [weak self] in
+            self?.enabledEmbeddedExtensionTypes() ?? []
+        }
+        self.webExtensionLifecycleCoordinator = lifecycleCoordinator
+
         self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(
             webExtensionManager: webExtensionManager,
             mainViewController: controller
@@ -414,6 +445,7 @@ final class MainCoordinator {
         tabManager.setWebExtensionManager(webExtensionManager)
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
+        controller.setWebExtensionLifecycleCoordinator(lifecycleCoordinator)
         subscribeToDarkReaderChanges()
 
         // Defer extension loading until onAppReadyForInteractions to ensure
@@ -434,14 +466,55 @@ final class MainCoordinator {
 
     @available(iOS 18.4, *)
     private func scheduleExtensionLoad() {
+        // Reading the extension archive from Application Support while protected data is
+        // unavailable (device locked / before first unlock) makes WKWebExtension fail with
+        // WKWebExtensionErrorInvalidArchive (domain code 9). Stay pending and retry on unlock.
+        // Failsafe-disableable via .webExtensionProtectedDataLoadGate (off → load immediately).
+        if featureFlagger.isFeatureOn(.webExtensionProtectedDataLoadGate),
+           !UIApplication.shared.isProtectedDataAvailable {
+            isWebExtensionLoadPending = true
+            deferUntilProtectedDataAvailable { [weak self] in
+                self?.loadWebExtensionsIfPending()
+            }
+            return
+        }
+
         isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
         webExtensionLoadTask = Task { @MainActor [weak self] in
-            guard let self, let manager = self.webExtensionManager as? WebExtensionManager else { return }
-            await self.loadAndSyncEmbeddedExtensions(manager)
+            guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
+            await coordinator.loadAndSync().value
             guard !Task.isCancelled else { return }
             self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
+    }
+
+    /// Runs `operation` when protected data becomes available. Web extension loading and
+    /// embedded-extension installing read the extension archive from Application Support, which
+    /// fails with WKWebExtensionErrorInvalidArchive (domain code 9) while protected data is
+    /// unavailable (device locked). Deferred work is coalesced and run once on the next
+    /// `protectedDataDidBecomeAvailable`.
+    @available(iOS 18.4, *)
+    private func deferUntilProtectedDataAvailable(_ operation: @escaping () -> Void) {
+        pendingProtectedDataWork.append(operation)
+        DailyPixel.fireDailyAndCount(pixel: .webExtensionDeferredProtectedDataUnavailable,
+                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+
+        guard protectedDataCancellable == nil else { return }
+        protectedDataCancellable = NotificationCenter.default
+            .publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.protectedDataCancellable = nil
+                    let pendingWork = self.pendingProtectedDataWork
+                    self.pendingProtectedDataWork.removeAll()
+                    guard !pendingWork.isEmpty else { return }
+                    DailyPixel.fireDailyAndCount(pixel: .webExtensionResumedProtectedDataAvailable,
+                                                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                    pendingWork.forEach { $0() }
+                }
+            }
     }
 
     @available(iOS 18.4, *)
@@ -462,19 +535,21 @@ final class MainCoordinator {
 
     @available(iOS 18.4, *)
     private func syncEmbeddedExtensions() async {
-        guard !isSyncingEmbeddedExtensions else { return }
-        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+        guard let coordinator = webExtensionLifecycleCoordinator else { return }
 
-        isSyncingEmbeddedExtensions = true
-        defer { isSyncingEmbeddedExtensions = false }
+        // Installing copies/loads the extension archive from Application Support; like the load
+        // path this fails with WKWebExtensionErrorInvalidArchive (code 9) while protected data is
+        // unavailable. Defer the sync until protected data becomes available.
+        // Failsafe-disableable via .webExtensionProtectedDataLoadGate (off → install immediately).
+        if featureFlagger.isFeatureOn(.webExtensionProtectedDataLoadGate),
+           !UIApplication.shared.isProtectedDataAvailable {
+            deferUntilProtectedDataAvailable { [weak self] in
+                Task { @MainActor in await self?.syncEmbeddedExtensions() }
+            }
+            return
+        }
 
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
-    }
-
-    @available(iOS 18.4, *)
-    @MainActor
-    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
-        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+        await coordinator.sync().value
     }
 
     @available(iOS 18.4, *)
@@ -496,6 +571,13 @@ final class MainCoordinator {
         isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
         webExtensionLoadTask = nil
+        protectedDataCancellable = nil
+        pendingProtectedDataWork.removeAll()
+        if #available(iOS 18.4, *) {
+            webExtensionLifecycleCoordinator?.cancelAll()
+            webExtensionLifecycleCoordinator = nil
+            controller.setWebExtensionLifecycleCoordinator(nil)
+        }
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
         darkReaderCancellables.removeAll()
@@ -551,18 +633,17 @@ final class MainCoordinator {
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager,
-                        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) })
+                        dataStoreIDManager: dataStoreIDManager)
     }
 
     // MARK: - Public API
 
-    func segueToDuckDuckGoSubscription() {
-        controller.segueToDuckDuckGoSubscription()
+    func segueToDuckDuckGoSubscription(origin: String?) {
+        controller.segueToDuckDuckGoSubscription(origin: origin)
     }
 
-    func presentNetworkProtectionStatusSettingsModal() {
-        controller.presentNetworkProtectionStatusSettingsModal()
+    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
+        controller.presentNetworkProtectionStatusSettingsModal(origin: origin)
     }
 
     func presentDataBrokerProtectionDashboard() {
@@ -674,7 +755,7 @@ extension MainCoordinator: URLHandling {
         case .newEmail:
             controller.newEmailAddress()
         case .openVPN:
-            presentNetworkProtectionStatusSettingsModal()
+            presentNetworkProtectionStatusSettingsModal(origin: .widgetVPN)
         case .openPasswords:
             handleOpenPasswords(url: url)
         case .openAIChat:
@@ -743,7 +824,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.passwords {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
-            controller.presentNetworkProtectionStatusSettingsModal()
+            controller.presentNetworkProtectionStatusSettingsModal(origin: .shortcutVPN)
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {
@@ -809,6 +890,17 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             return
         }
 
+        // Already on the NTP — no rebuild needed. This preserves any existing
+        // escape hatch state, avoids bouncing the omnibar/keyboard on idle return,
+        // and avoids surfacing a stale hatch when the user has already consumed
+        // the after-idle moment and returned to the NTP.
+        //
+        // We require a non-nil current tab here: if there is no current tab,
+        // we still want to fall through to `newTab(...)` to create one.
+        if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
+            return
+        }
+
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
@@ -851,6 +943,10 @@ extension MainCoordinator: OnboardingPresenting {
     func startOnboardingFlowIfNotSeenBefore(url: URL?) {
         // 1. Configure Onboarding Flow
         onboardingManager.configureOnboardingFlow(from: url)
+
+        // The flow is now known. Duck.ai tailored-flow users need UTI set up before the
+        // Duck.ai interlude runs inside their onboarding
+        controller.setUpUnifiedToggleInputIfNeeded()
 
         // 2. Presenting Onboarding Flow if needed
         guard !hasPresentedOnboarding, controller.isStartupOnboardingPending else { return }

@@ -19,6 +19,8 @@
 
 import AIChat
 import Core
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckAiDataStore
 import Persistence
 import PrivacyConfig
@@ -43,9 +45,7 @@ struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
     private let voiceSearchHelper = VoiceSearchHelper()
-    private let fireproofing: Fireproofing = UserDefaultsFireproofing(
-        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) }
-    )
+    private let fireproofing: Fireproofing = UserDefaultsFireproofing()
     private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
@@ -66,6 +66,20 @@ struct Launching: LaunchingHandling {
 
     init() throws {
         Logger.lifecycle.info("Launching: \(#function)")
+
+        // Wire the DesignSystem rebrand singleton to the live feature flag.
+        // Consumed by `DesignSystemImages` accessors and the `Image(rebrandable:)` initializer
+        // so call sites don't need to read the flag directly.
+        AppRebrand.isAppRebranded = { [featureFlagger] in
+            featureFlagger.isFeatureOn(.appRebranding)
+        }
+
+        // Temporary feature flag and wiring during rebrand rollout – used to enable color palette updates.
+        DesignSystemRebrand.isAppRebranded = { [featureFlagger] in
+            featureFlagger.isFeatureOn(.appRebranding)
+        }
+
+        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .rebranded : .default
 
         favicons = Favicons(fireproofing: fireproofing)
 
@@ -107,10 +121,19 @@ struct Launching: LaunchingHandling {
         let contentBlocking = ContentBlocking.shared
 
         onboardingManager = OnboardingManager(appDefaults: appSettings, featureFlagger: featureFlagger, variantManager: configuration.atbAndVariantConfiguration.variantManager, tutorialSettings: DefaultTutorialSettings())
+
+        // Construct the storage handler before SyncService so AIChatSyncCleaner has the
+        // storage hook it needs to flush pending pin updates on each sync cycle.
+        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(
+            featureFlagger: featureFlagger,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-                                      faviconStoring: favicons)
+                                      faviconStoring: favicons,
+                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let webExtensionManagerHolder = WebExtensionManagerHolder()
         let webExtensionAvailability = WebExtensionAvailability(
@@ -119,12 +142,20 @@ struct Launching: LaunchingHandling {
                 webExtensionManagerHolder.manager
             }
         )
-
-        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(featureFlagger: featureFlagger)
         let fireModeStorageController = FireModeNativeStorageController(
             featureFlagger: featureFlagger,
             consentSeedSource: duckAiNativeStorageHandler,
-            appConfigurationGroupName: Global.appConfigurationGroupName
+            appConfigurationGroupName: Global.appConfigurationGroupName,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
+        let adBlockingAvailabilityStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
+        let adBlockingAvailability: AdBlockingAvailabilityProviding = AdBlockingAvailability(
+            featureFlagger: featureFlagger,
+            isEnabledByUserProvider: { [featureFlagger] in
+                (try? adBlockingAvailabilityStorage.value(for: \.youTubeAdBlockingEnabled))
+                    ?? featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+            }
         )
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
@@ -137,7 +168,8 @@ struct Launching: LaunchingHandling {
                                                             keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                            fireModeStorageController: fireModeStorageController)
+                                                            fireModeStorageController: fireModeStorageController,
+                                                            adBlockingAvailability: adBlockingAvailability)
 
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
@@ -364,12 +396,47 @@ struct Launching: LaunchingHandling {
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
     }
 
-    private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger) -> DuckAiNativeStorageHandling? {
-        guard featureFlagger.isFeatureOn(.aiChatNativeStorage),
-              let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) else {
-            return nil
+    private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger,
+                                                 keyValueStore: ThrowingKeyValueStoring) -> DuckAiNativeStorageHandling? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeStorage) else { return nil }
+
+        let containerURL: URL
+        if featureFlagger.isFeatureOn(.duckAINativeStoragePathMigration) {
+            guard let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+                return nil
+            }
+            containerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
+
+            if let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
+                let outcome = DuckAiNativeStorageContainerMigration(
+                    oldURL: groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName),
+                    newURL: containerURL,
+                    migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
+                    label: .default,
+                    keyValueStore: keyValueStore,
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                ).run()
+                if outcome == .skip {
+                    return nil
+                }
+            }
+
+            DuckAiNativeStorageContainerMigration.excludeFromBackup(containerURL,
+                                                                    label: .default,
+                                                                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter())
+        } else {
+            // Path migration disabled: keep the legacy App Group container.
+            guard let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) else {
+                return nil
+            }
+            containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
         }
-        let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
+
+        let dbURL = containerURL.appendingPathComponent("chats.db")
+        if !FileManager.default.fileExists(atPath: dbURL.path) {
+            Logger.aiChat.info("[NativeStorage] DB does not exist yet, will be created at: \(dbURL.path)")
+        }
+
         do {
             return try DuckAiNativeStorageHandler(
                 .disk(path: containerURL,
@@ -434,7 +501,9 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .initSuccess:
             Pixel.fire(pixel: .duckAiNativeStorageInitSuccess)
         case .initError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageInitError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageInitError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .migrationDone(let key):
             UniquePixel.fire(pixel: .duckAiNativeStorageMigrationDoneUnique(key: key))
             Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneCount(key: key))
@@ -447,29 +516,53 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .migrationError(let error):
             Pixel.fire(pixel: .duckAiNativeStorageMigrationError, error: error)
         case .settingsPutError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageSettingsPutError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsPutError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .settingsGetError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageSettingsGetError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsGetError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .settingsDeleteError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageSettingsDeleteError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsDeleteError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .chatPutError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageChatPutError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatPutError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .chatGetError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageChatGetError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatGetError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .chatDeleteError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageChatDeleteError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatDeleteError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .filePutError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageFilePutError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFilePutError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .fileGetError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageFileGetError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileGetError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .fileListError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageFileListError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileListError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .fileDeleteError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageFileDeleteError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileDeleteError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .lastUsedModelParseError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageLastUsedModelParseError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageLastUsedModelParseError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         case .lastUsedReasoningModeParseError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageLastUsedReasoningModeParseError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageLastUsedReasoningModeParseError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
         }
     }
 }

@@ -168,11 +168,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         return await withCheckedContinuation { continuation in
             self.navigationContinuation = continuation
 
-            if #available(iOS 15.0, macOS 12.0, *) {
-                webView.loadSimulatedRequest(URLRequest(url: requestURL), responseHTML: "")
-            } else {
-                webView.loadHTMLString("", baseURL: requestURL)
-            }
+            webView.loadSimulatedRequest(URLRequest(url: requestURL), responseHTML: "")
         }
     }
 

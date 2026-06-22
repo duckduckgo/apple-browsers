@@ -21,6 +21,7 @@ import Foundation
 import Bookmarks
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import Core
 import Persistence
 import DDGSync

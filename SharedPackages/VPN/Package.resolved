@@ -1,13 +1,13 @@
 {
-  "originHash" : "cd9934a6076329ada80b916fba729440e4a6d22283d0c35bd40833ac3aaeb087",
+  "originHash" : "97eb89b67758195a37be37b66fc840af53faa98c42daa879520c95f70c908afb",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "4d35a8c3e8e613bc4f5217c9ff3238e6857e1ad7",
-        "version" : "14.7.0"
+        "revision" : "512a2657dd2f3b73682babf77561068cccd28c41",
+        "version" : "15.0.0"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "c8ce2e7cdcca4226c96350dcd49323298b941592",
-        "version" : "19.0.0"
+        "revision" : "84b5e3019b2c7b3c90e8d296f30fcfd53768bcd8",
+        "version" : "19.1.0"
       }
     },
     {

@@ -146,6 +146,10 @@ final class SwitchBarHandler: SwitchBarHandling {
         return false
     }
 
+    var usesExpandedAIChatTextEntryLayout: Bool {
+        devicePlatform.isIphone && !unifiedToggleInputFeature.isAvailable
+    }
+
     var shouldDisableAutocorrectOnEmpty: Bool {
         devicePlatform.isIphone
     }

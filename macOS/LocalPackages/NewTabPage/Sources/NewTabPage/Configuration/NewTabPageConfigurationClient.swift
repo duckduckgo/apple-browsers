@@ -19,13 +19,13 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 import UserScriptActionsManager
 import WebKit
 
 public protocol NewTabPageSectionsAvailabilityProviding: AnyObject {
     var isOmnibarAvailable: Bool { get }
-    var isNextStepsListWidgetAvailable: Bool { get }
 }
 
 public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
@@ -154,7 +154,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .subscriptionWinBackBanner),
-            sectionsAvailabilityProvider.isNextStepsListWidgetAvailable ? .init(id: .nextStepsList) : .init(id: .nextSteps),
+            .init(id: .nextStepsList),
             .init(id: .favorites),
             .init(id: .protections)
         ]

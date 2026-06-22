@@ -132,29 +132,79 @@ extension OnboardingManager: OnboardingNewUserProviderDebugging {
 
 // MARK: - Onboarding Steps Provider
 
+/// Represent a single step in the linear-onboarding sequence.
 enum OnboardingIntroStep: Equatable {
-    case introDialog(isReturningUser: Bool)
-    case browserComparison
-    case aiComparison
-    case appIconSelection
-    case addToDockPromo
-    case addressBarPositionSelection
-    case searchExperienceSelection
-    case duckAIQuerySelection
+    /// A step that render a `ViewState` in the onboarding view. Maps to a dialog in the linear onboarding sequence.
+    case renderable(RenderableStep)
+
+    /// A step that pauses the linear onboarding to hand control to the host (e.g. for a short, contextual browsing session), then expects the host to resume the linear flow once it completes.
+    /// Unlike renderable cases, an interlude step does not render a view state in the onboarding view.
+    case interlude(Interlude)
+
+    var isInterlude: Bool {
+        switch self {
+        case .interlude:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+// Ergonomic factories so call sites can write `.browserComparison` instead of `.renderable(.browserComparison)`.
+// Mirror every new `RenderableStep` case here.
+extension OnboardingIntroStep {
+    static let browserComparison: Self = .renderable(.browserComparison)
+    static let aiComparison: Self = .renderable(.aiComparison)
+    static let addToDockPromo: Self = .renderable(.addToDockPromo)
+    static let appIconSelection: Self = .renderable(.appIconSelection)
+    static let addressBarPositionSelection: Self = .renderable(.addressBarPositionSelection)
+    static let searchExperienceSelection: Self = .renderable(.searchExperienceSelection)
+    static let duckAIQuerySelection: Self = .renderable(.duckAIQuerySelection)
+
+    static func introDialog(isReturningUser: Bool) -> Self {
+        .renderable(.introDialog(isReturningUser: isReturningUser))
+    }
+}
+
+extension OnboardingIntroStep {
+
+    enum RenderableStep: Equatable {
+        case introDialog(isReturningUser: Bool)
+        case browserComparison
+        case aiComparison
+        case appIconSelection
+        case addToDockPromo
+        case addressBarPositionSelection
+        case searchExperienceSelection
+        case duckAIQuerySelection
+    }
+
+    /// Identifies which interlude experience the host should run.
+    ///
+    /// New interlude types can be added here without changing the linear
+    /// onboarding's view-state mapping — the view model treats all interludes
+    /// uniformly (callback out, no view state).
+    enum Interlude: Equatable {
+        /// Hands off to the Duck.ai Fire onboarding flow after the user
+        /// submits their first query on the Duck.ai query-selection step.
+        case duckAI
+    }
 }
 
 extension OnboardingIntroStep {
     /// The resume checkpoint that should be persisted when this step is reached, or `nil` if no checkpoint is needed.
     var resumeStep: OnboardingResumeStep? {
         switch self {
-        case .introDialog: return nil
-        case .browserComparison: return .browserComparison
-        case .aiComparison: return .aiComparison
-        case .addToDockPromo: return .addToDockPromo
-        case .appIconSelection: return .appIconSelection
-        case .addressBarPositionSelection: return .addressBarPositionSelection
-        case .searchExperienceSelection: return .searchExperienceSelection
-        case .duckAIQuerySelection: return .duckAIQuerySelection
+        case .renderable(.introDialog): return nil
+        case .renderable(.browserComparison): return .browserComparison
+        case .renderable(.aiComparison): return .aiComparison
+        case .renderable(.addToDockPromo): return .addToDockPromo
+        case .renderable(.appIconSelection): return .appIconSelection
+        case .renderable(.addressBarPositionSelection): return .addressBarPositionSelection
+        case .renderable(.searchExperienceSelection): return .searchExperienceSelection
+        case .renderable(.duckAIQuerySelection): return .duckAIQuerySelection
+        case .interlude(.duckAI): return .interludeDuckAI
         }
     }
 }
@@ -171,6 +221,9 @@ enum OnboardingResumeStep: String {
     case duckAIQuerySelection
     /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
     case duckAIAnswerStep
+    /// User is currently inside the Duck.ai interlude (a contextual browsing session
+    /// hosted outside the linear onboarding); on relaunch, the host re-enters the interlude.
+    case interludeDuckAI
 }
 
 protocol OnboardingStepsProvider: AnyObject {
@@ -223,6 +276,36 @@ extension OnboardingManager: OnboardingFlowManaging {
             return
         }
 
+        let resolvedFlow: OnboardingFlowType
+        let onboardingSource: OnboardingSource
+
+#if DEBUG || ALPHA
+        switch appDefaults.onboardingFlowType {
+        case .none:
+            (resolvedFlow, onboardingSource) = resolveOnboardingFromEvaluator(url: url)
+        case .default:
+            Logger.onboarding.debug("Onboarding flow - Debug `.default` flow override active")
+            resolvedFlow = .default
+            onboardingSource = .default
+        case .duckAI:
+            Logger.onboarding.debug("Onboarding flow - Debug `.duckAI` flow override active")
+            resolvedFlow = .duckAI
+            onboardingSource = .duckAICPP
+        }
+#else
+        (resolvedFlow, onboardingSource) = resolveOnboardingFromEvaluator(url: url)
+#endif
+
+        // Clear any stale resume checkpoint persisted before the flow was configured
+        // (e.g. by a previous build that didn't set onboardingFlowType), so we don't
+        // resume into a step that appears at a different point of the flow causing the user to skip important steps.
+        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
+
+        tutorialSettings.onboardingFlowType = resolvedFlow
+        persistOnboardingPixelContext(flow: resolvedFlow, source: onboardingSource)
+    }
+
+    private func resolveOnboardingFromEvaluator(url: URL?) -> (flow: OnboardingFlowType, source: OnboardingSource) {
         let evaluatedOnboarding = onboardingFlowEvaluator.evaluateOnboardingFlow(from: url)
         Logger.onboarding.debug("Configured onboarding flow: \(evaluatedOnboarding.flow.rawValue, privacy: .public)")
 
@@ -237,14 +320,7 @@ extension OnboardingManager: OnboardingFlowManaging {
         default:
             resolvedFlow = evaluatedOnboarding.flow
         }
-
-        // Clear any stale resume checkpoint persisted before the flow was configured
-        // (e.g. by a previous build that didn't set onboardingFlowType), so we don't
-        // resume into a step that appears at a different point of the flow causing the user to skip important steps.
-        OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
-
-        tutorialSettings.onboardingFlowType = resolvedFlow
-        persistOnboardingPixelContext(flow: resolvedFlow, source: evaluatedOnboarding.source)
+        return (resolvedFlow, evaluatedOnboarding.source)
     }
 
 }
@@ -275,7 +351,7 @@ private extension OnboardingManager {
     }
 
     func duckAITailoredFlowSteps() -> [OnboardingIntroStep] {
-        [.aiComparison, .duckAIQuerySelection, .addToDockPromo, .browserComparison, .addressBarPositionSelection]
+        [.aiComparison, .duckAIQuerySelection, .interlude(.duckAI), .addToDockPromo, .browserComparison, .addressBarPositionSelection]
     }
 
 }

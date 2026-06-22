@@ -23,7 +23,6 @@ public enum AutomationServerError: Error {
     case invalidWindowHandle
     case tabNotFound
     case jsonEncodingFailed
-    case unsupportedOSVersion
     case unknownMethod
     case invalidURL
     case scriptExecutionFailed

@@ -19,7 +19,10 @@
 
 import AIChat
 import Combine
+import Core
 import UIKit
+import UserScript
+import WebKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -30,17 +33,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var mockDelegate: MockUnifiedToggleInputDelegate!
     private var mockPreferences: MockAIChatPreferences!
     private var mockToggleModeStorage: MockToggleModeStorage!
+    private var mockSubmissionMetrics: MockSwitchBarSubmissionMetrics!
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
         super.setUp()
         mockPreferences = MockAIChatPreferences()
         mockToggleModeStorage = MockToggleModeStorage()
+        mockSubmissionMetrics = MockSwitchBarSubmissionMetrics()
         sut = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
-            toggleModeStorage: mockToggleModeStorage
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics
         )
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
@@ -52,6 +58,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockDelegate = nil
         mockPreferences = nil
         mockToggleModeStorage = nil
+        mockSubmissionMetrics = nil
         super.tearDown()
     }
 
@@ -125,9 +132,205 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.textState, .empty)
     }
 
+    // MARK: - Model Picker (showModelPicker)
+
+    func test_modelChip_isHidden_duringActiveChat_byDefault() {
+        _ = sut.prepareExternalPromptSubmission()
+
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    func test_presentModelPickerForActiveChat_revealsModelChip_duringActiveChat() {
+        _ = sut.prepareExternalPromptSubmission()
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+
+        sut.presentModelPickerForActiveChat()
+
+        XCTAssertTrue(sut.hasSubmittedPrompt) // still an active chat — no new chat started
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_selectingSupportedModel_afterPresentingModelPicker_keepsModelChipVisible() {
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.modelStore.models = [
+            AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)
+        ]
+        sut.handleModelSelection("gpt-5")
+
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_submittingPrompt_afterPresentingModelPickerAndSelectingModel_hidesModelChip() {
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        sut.modelStore.models = [
+            AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)
+        ]
+        sut.handleModelSelection("gpt-5")
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    // MARK: - Recovery-Card Submit Block
+
+    func test_recoveryCardBlock_propagatesToViewController() {
+        sut.isSubmitBlockedByRecoveryCard = true
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByRecoveryCard)
+
+        sut.isSubmitBlockedByRecoveryCard = false
+        XCTAssertFalse(sut.viewController.isSubmitBlockedByRecoveryCard)
+    }
+
+    func test_handleModelSelection_supportedModel_clearsRecoveryBlock() {
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.handleModelSelection("gpt-5")
+
+        XCTAssertFalse(sut.isSubmitBlockedByRecoveryCard)
+    }
+
+    func test_handleModelSelection_gatedModel_keepsRecoveryBlock() {
+        sut.modelStore.models = [makeModel(id: "gated", access: false)]
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.handleModelSelection("gated")
+
+        XCTAssertTrue(sut.isSubmitBlockedByRecoveryCard, "A gated selection routes to the upsell — the recovery block must remain")
+    }
+
+    func test_presentModelPickerForActiveChat_withSupportedModel_clearsRecoveryBlock() {
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.presentModelPickerForActiveChat()
+
+        XCTAssertFalse(sut.isSubmitBlockedByRecoveryCard, "Entering Switch Model with a supported model already selected reconciles and unblocks submit")
+    }
+
+    func test_presentModelPickerForActiveChat_withNoSupportedModel_keepsRecoveryBlock() {
+        mockPreferences.selectedModelId = nil
+        sut.modelStore.models = [makeModel(id: "gated", access: false)]
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.presentModelPickerForActiveChat()
+
+        XCTAssertTrue(sut.isSubmitBlockedByRecoveryCard,
+                      "With no accessible model there is nothing to adopt — the block (and recovery card) must remain")
+    }
+
+    func test_presentModelPickerForActiveChat_withEmptyModelList_keepsRecoveryBlock() {
+        sut.modelStore.updateSelectedModel("gated", isNewChatContext: false)
+        sut.modelStore.models = []
+        sut.isSubmitBlockedByRecoveryCard = true
+
+        sut.presentModelPickerForActiveChat()
+
+        XCTAssertTrue(sut.isSubmitBlockedByRecoveryCard,
+                      "Empty model list ⇒ no access-checked selectedModel ⇒ block must remain")
+    }
+
+    // MARK: - Recovery Picker Session Pixels
+
+    func test_recoveryPickerSession_fullFunnel_smokeTest() {
+        let previousDryRun = Pixel.isDryRun
+        Pixel.isDryRun = true
+        defer { Pixel.isDryRun = previousDryRun }
+
+        _ = sut.prepareExternalPromptSubmission()
+        let userScript = makeBridgeReadyUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
+
+        sut.presentModelPickerForActiveChat()
+        sut.handleModelSelection("gpt-5")
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    func test_recoveryPickerSession_submitChangeModelPixel_smokeTest_withoutRecoveryPin() {
+        let previousDryRun = Pixel.isDryRun
+        Pixel.isDryRun = true
+        defer { Pixel.isDryRun = previousDryRun }
+
+        _ = sut.prepareExternalPromptSubmission()
+        let userScript = makeBridgeReadyUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        sut.modelStore.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "gpt-5", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+
+        sut.handleModelSelection("gpt-5")
+    }
+
+    func test_recoveryPickerSession_promptSentPixel_notFiredWithoutRecoveryPin() {
+        let previousDryRun = Pixel.isDryRun
+        Pixel.isDryRun = true
+        defer { Pixel.isDryRun = previousDryRun }
+
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first prompt", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+    }
+
+    func test_hide_clearsRecoveryBlock() {
+        sut.isSubmitBlockedByRecoveryCard = true
+        sut.hide()
+        XCTAssertFalse(sut.isSubmitBlockedByRecoveryCard)
+    }
+
+    func test_startNewChat_clearsRecoveryBlock() {
+        sut.isSubmitBlockedByRecoveryCard = true
+        sut.startNewChat()
+        XCTAssertFalse(sut.isSubmitBlockedByRecoveryCard)
+    }
+
     func test_showExpanded_withNilPrefilledText_doesNotSetPrefilledState() {
         sut.showExpanded(prefilledText: nil)
         XCTAssertEqual(sut.textState, .empty)
+    }
+
+    // MARK: - Onboarding Lock
+
+    func test_showExpanded_whenOnboardingLocked_doesNotChangeDisplayState() {
+        sut.setOnboardingControlsLocked(true)
+        sut.showExpanded()
+        XCTAssertNotEqual(sut.displayState, .aiTab(.expanded),
+                          "showExpanded must be a no-op while the onboarding lock is active")
+    }
+
+    func test_showExpanded_whenOnboardingLocked_doesNotEmitIntent() {
+        let exp = expectation(description: "showExpanded intent must not be emitted when locked")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { if case .showExpanded = $0 { exp.fulfill() } }
+            .store(in: &cancellables)
+
+        sut.setOnboardingControlsLocked(true)
+        sut.showExpanded()
+
+        waitForExpectations(timeout: 0.3)
+    }
+
+    func test_showExpanded_afterUnlocking_changesDisplayState() {
+        sut.setOnboardingControlsLocked(true)
+        sut.showExpanded()
+        XCTAssertNotEqual(sut.displayState, .aiTab(.expanded))
+
+        sut.setOnboardingControlsLocked(false)
+        sut.showExpanded()
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded),
+                       "Unlocking must restore normal showExpanded behaviour")
     }
 
     // MARK: - Display State: hide
@@ -275,6 +478,30 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didChangeText: "hello")
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
         XCTAssertEqual(sut.textState, .empty)
+    }
+
+    // MARK: - VC Delegate: Submit — Submission Metrics
+
+    func test_submitAIChat_processesSubmissionMetricsForAIChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
+
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.count, 1)
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.first?.text, "hello AI")
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.first?.mode, .aiChat)
+    }
+
+    func test_submitSearch_nonURL_processesSubmissionMetricsForSearch() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "best privacy browser", mode: .search)
+
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.count, 1)
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.first?.text, "best privacy browser")
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.first?.mode, .search)
+    }
+
+    func test_submitSearch_validURL_doesNotProcessSubmissionMetrics() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "https://duckduckgo.com", mode: .search)
+
+        XCTAssertTrue(mockSubmissionMetrics.processedSubmissions.isEmpty)
     }
 
     // MARK: - VC Delegate: Submit — AI Chat Mode, With Bound Script
@@ -759,18 +986,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.handler.isFireTab)
     }
 
-    func test_updateIsFireTab_noChangeDoesNotRebuildDaxLogoManager() {
-        let initialManager = sut.contentViewController.daxLogoManager
-        sut.updateIsFireTab(false)
-        XCTAssertTrue(sut.contentViewController.daxLogoManager === initialManager)
-    }
-
-    func test_updateIsFireTab_trueRebuildsDaxLogoManager() {
-        let initialManager = sut.contentViewController.daxLogoManager
-        sut.updateIsFireTab(true)
-        XCTAssertFalse(sut.contentViewController.daxLogoManager === initialManager)
-    }
-
     // MARK: - Submit From Omnibar Editing
 
     func test_submitSearch_fromOmnibarEditing_deactivates() {
@@ -961,12 +1176,61 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
-    func test_toolsMenu_doesNotContainCustomizeResponsesAction_onAITab() {
+    func test_customizeResponsesTap_preservesSelectedTool() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.showExpanded()
+        sut.handleToolsMenuSelection(.webSearch)
+        XCTAssertEqual(sut.selectedTool, .webSearch)
+
+        sut.handleToolsMenuSelection(.customizeResponses)
+
+        XCTAssertEqual(sut.selectedTool, .webSearch)
+        XCTAssertEqual(sut.viewController.selectedTool, .webSearch)
+    }
+
+    func test_toolsMenu_containsCustomizeResponsesAction_onAITab() {
         sut.showExpanded()
 
         let actionTitles = toolsMenuActions().map(\.title)
 
-        XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+        XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+    }
+
+    func test_toolsMenu_customizeResponsesHasNoIcon_onAITab() {
+        sut.showExpanded()
+
+        let customize = toolsMenuActions().first { $0.title == UserText.aiChatToolbarCustomizeResponsesMenuTitle }
+
+        XCTAssertNotNil(customize)
+        XCTAssertNil(customize?.image)
+    }
+
+    func test_toolsMenu_separatesCustomizeResponsesFromToolsWithDivider_onAITab() {
+        sut.showExpanded()
+
+        let children = sut.viewController.toolsMenu?.children ?? []
+        let topLevelActionTitles = children.compactMap { ($0 as? UIAction)?.title }
+        let inlineMenus = children.compactMap { $0 as? UIMenu }.filter { $0.options.contains(.displayInline) }
+
+        // Customize Responses stays a top-level action; the tools live in their own inline
+        // (divider-separated) section.
+        XCTAssertEqual(topLevelActionTitles, [UserText.aiChatToolbarCustomizeResponsesMenuTitle])
+        XCTAssertEqual(inlineMenus.count, 1)
+        let inlineTitles = inlineMenus.first?.children.compactMap { ($0 as? UIAction)?.title } ?? []
+        XCTAssertTrue(inlineTitles.contains(UserText.aiChatToolbarWebSearchToolTitle))
+        XCTAssertTrue(inlineTitles.contains(UserText.aiChatToolbarImageGenerationToolTitle))
+    }
+
+    func test_handleToolsMenuSelection_customizeResponses_forwardsToHandler() {
+        let exp = expectation(description: "didPressCustomizeResponsesButton fires")
+        sut.didPressCustomizeResponsesButton
+            .sink { exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.handleToolsMenuSelection(.customizeResponses)
+
+        waitForExpectations(timeout: 1)
     }
 
     func test_toolsMenu_doesNotContainCustomizeResponsesAction_inOmnibar() {
@@ -1063,6 +1327,41 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         toolsController.toggleSelection(for: .webSearch, modelStore: sut.modelStore)
 
         XCTAssertNil(toolsController.selectedTool)
+    }
+
+    func test_handleToolsMenuSelection_selectsWebSearchTool() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.handleToolsMenuSelection(.webSearch)
+
+        XCTAssertEqual(sut.selectedTool, .webSearch)
+        XCTAssertEqual(sut.viewController.selectedTool, .webSearch)
+    }
+
+    func test_handleToolsMenuSelection_togglesOffSelectedWebSearchTool() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleToolsMenuSelection(.webSearch)
+
+        sut.handleToolsMenuSelection(.webSearch)
+
+        XCTAssertNil(sut.selectedTool)
+        XCTAssertNil(sut.viewController.selectedTool)
+    }
+
+    func test_handleToolsMenuSelection_replacesPreviousToolSelection() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch, .imageGeneration])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleToolsMenuSelection(.webSearch)
+
+        sut.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
     }
 
     func test_updateSelectedModel_clearsSelectedToolWhenNewModelDoesNotSupportIt() {
@@ -1168,6 +1467,23 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.selectTool(.imageGeneration)
 
         XCTAssertNil(sut.selectedTool)
+    }
+
+    /// Mirrors `handleNewImageGenerationChatStarted` on the host: the FE message must leave
+    /// the UTI expanded with the image-generation tool selected so the user lands in an
+    /// editing pose ready to type their prompt. `selectTool` sits between `startNewChat`
+    /// (which resets tools) and `showExpanded`.
+    func test_startNewChat_selectTool_imageGeneration_thenShowExpanded_endsExpandedWithToolSelected() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+
+        sut.startNewChat()
+        sut.selectTool(.imageGeneration)
+        sut.showExpanded(inputMode: .aiChat)
+
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
     }
 
     func test_toolsController_toggleSelection_togglesOffSelectedImageGenerationTool() {
@@ -1310,6 +1626,64 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_updateSelectedModel_persistsToPreferences() {
         sut.updateSelectedModel("gpt-5")
         XCTAssertEqual(mockPreferences.selectedModelId, "gpt-5")
+    }
+
+    // MARK: - Model Selection: new-chat vs ongoing-chat picks
+
+    func test_updateSelectedModel_onNewChat_writesPreferredModelToPreferences() {
+        sut.modelStore.models = [makeModel(id: "haiku", access: true)]
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+
+        sut.updateSelectedModel("haiku")
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
+    }
+
+    func test_updateSelectedModel_afterPromptSubmitted_doesNotChangePreferredModel() {
+        sut.modelStore.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.updateSelectedModel("mistral")
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku",
+                       "ongoing-chat picks must not retarget the cross-platform new-chat default")
+        XCTAssertEqual(sut.modelStore.currentModelId, "mistral",
+                       "ongoing-chat pick still updates the live current-tab model")
+    }
+
+    func test_updateSelectedModel_onExistingChatBoundTab_doesNotChangePreferredModel() {
+        sut.modelStore.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.updateSelectedModel("mistral")
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
+    }
+
+    func test_persistedModelId_fallsBackToPreferredModel_onFreshTabActivation() {
+        sut.modelStore.models = [
+            makeModel(id: "gpt-5", access: true),
+            makeModel(id: "haiku", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        sut.modelStore.applyPersistedSelection(modelID: nil, reasoningMode: nil)
+
+        XCTAssertEqual(sut.persistedModelId, "haiku",
+                       "opening a new tab should return to the user's last new-chat pick")
     }
 
     func test_handleModelSelection_whenModelHasAccess_persistsToPreferences() {
@@ -1991,6 +2365,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.modelStore.attachmentLimits = makeLimits()
     }
 
+    private func makeBridgeReadyUserScript() -> AIChatUserScript {
+        let userScript = makeTestUserScript()
+        let webView = WKWebView()
+        let broker = UserScriptMessageBroker(context: "test", requiresRunInPageContentWorld: true)
+        userScript.with(broker: broker)
+        userScript.webView = webView
+        return userScript
+    }
+
     private func makeModel(id: String,
                            access: Bool,
                            supportsImageUpload: Bool = false,
@@ -2014,7 +2397,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     private func toolsMenuActions() -> [UIAction] {
-        (sut.viewController.toolsMenu?.children ?? []).compactMap { $0 as? UIAction }
+        // Tools are grouped into an inline submenu (for the divider), so flatten recursively.
+        func flatten(_ elements: [UIMenuElement]) -> [UIAction] {
+            elements.flatMap { element -> [UIAction] in
+                if let action = element as? UIAction {
+                    return [action]
+                } else if let submenu = element as? UIMenu {
+                    return flatten(submenu.children)
+                }
+                return []
+            }
+        }
+        return flatten(sut.viewController.toolsMenu?.children ?? [])
     }
 
     private func findButton(accessibilityIdentifier: String, in view: UIView) -> UIButton? {
@@ -2027,6 +2421,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             }
         }
         return nil
+    }
+
+    // MARK: - App-menu forwarding (Duck.ai tab UTI bottom-right)
+
+    func test_appMenuTap_forwardsThroughChainToDelegate() {
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
+        sut.unifiedToggleInputVCDidTapAppMenu(sut.viewController)
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 1)
+    }
+
+    func test_appMenuTap_suppressedWhileOnboardingLocked() {
+        sut.setOnboardingControlsLocked(true)
+        sut.unifiedToggleInputVCDidTapAppMenu(sut.viewController)
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
     }
 }
 
@@ -2184,6 +2592,158 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         }
         return nil
     }
+
+    // MARK: - aiChatTabHideToggle truth table
+
+    func test_aiChatTabHideToggle_off_onAITab_togglesShowsAccordingToUserSetting() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertTrue(coord.computeRenderState().cardLayout.showsToggle)
+    }
+
+    func test_aiChatTabHideToggle_on_onAITab_hidesToggleRegardlessOfUserSetting() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertFalse(coord.computeRenderState().cardLayout.showsToggle)
+    }
+
+    func test_aiChatTabHideToggle_on_offAITab_doesNotAffectToggleVisibility() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertFalse(coord.isAITabState)
+        XCTAssertTrue(coord.computeRenderState().cardLayout.showsToggle)
+    }
+
+    // MARK: - isToggleVisible (drives swipe-between-modes gating alongside the toggle row)
+
+    func test_isToggleVisible_returnsFalse_whenUserSettingOff() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: false,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertFalse(coord.isToggleVisible, "Swipe must follow the user setting when off")
+    }
+
+    func test_isToggleVisible_returnsTrue_onAITab_whenKillSwitchOff() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertTrue(coord.isToggleVisible, "AI tab with kill-switch off must keep swipe enabled when user setting is on")
+    }
+
+    func test_isToggleVisible_returnsFalse_onAITab_whenKillSwitchOn() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        XCTAssertFalse(coord.isToggleVisible, "Kill-switch on an AI tab must also disable the swipe gesture, not just the toggle row")
+    }
+
+    func test_isToggleVisible_returnsTrue_offAITab_whenKillSwitchOn() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertFalse(coord.isAITabState)
+        XCTAssertTrue(coord.isToggleVisible, "Kill-switch only applies on Duck.ai tabs — non-AI tabs follow the user setting")
+    }
+
+    // MARK: - Content swipe suppression while the toggle pill is being dragged
+
+    func test_draggingToggle_disablesContentSwipe_soTheTwoGesturesDoNotGlitchEachOther() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.contentViewController.isSwipeEnabled, "Precondition: content swipe is enabled when the toggle is visible")
+
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: true)
+
+        XCTAssertFalse(coord.contentViewController.isSwipeEnabled, "Content swipe must be suppressed while the toggle pill is being dragged")
+    }
+
+    func test_endingToggleDrag_restoresContentSwipeToToggleVisibility() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: true)
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: false)
+
+        XCTAssertEqual(coord.contentViewController.isSwipeEnabled, coord.isToggleVisible, "Once the drag ends, content swipe must return to following toggle visibility")
+        XCTAssertTrue(coord.contentViewController.isSwipeEnabled)
+    }
+
+    func test_endingToggleDrag_keepsContentSwipeDisabled_whenToggleIsNotVisible() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: false,
+            hidesToggleOnDuckAITab: false,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertFalse(coord.isToggleVisible)
+
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: true)
+        coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: false)
+
+        XCTAssertFalse(coord.contentViewController.isSwipeEnabled, "Restoring after a drag must not enable swipe when the toggle is hidden")
+    }
+
+    /// Mirrors `test_syncInputModeFromExternalSource_toggleDisabled_forcesAIChatInAITabSession`
+    /// for the kill-switch path: the toggle row is hidden by the remote flag (not by the user
+    /// setting), so the user has no way to flip back — `effectiveInputMode` must clamp.
+    func test_syncInputModeFromExternalSource_killSwitchOn_forcesAIChatOnAITab() {
+        let coord = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            hidesToggleOnDuckAITab: true,
+            preferences: MockAIChatPreferences()
+        )
+        coord.showExpanded(inputMode: .aiChat)
+        XCTAssertTrue(coord.isAITabState)
+        coord.syncInputModeFromExternalSource(.search)
+        XCTAssertEqual(coord.inputMode, .aiChat, "Programmatic .search on a kill-switched Duck.ai tab must clamp to .aiChat")
+    }
 }
 
 // MARK: - Mock Delegate
@@ -2201,6 +2761,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var didRequestVoiceSearchCount = 0
     var didRequestAIVoiceChatCount = 0
     var didRequestAIChatCount = 0
+    var didRequestAppMenuCount = 0
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
         submittedPrompt = prompt
@@ -2223,7 +2784,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         committedMode = mode
     }
     func unifiedToggleInputDidRequestFire() {}
-    func unifiedToggleInputDidRequestDuckAIVoiceMode() {}
+    func unifiedToggleInputDidRequestAppMenu() { didRequestAppMenuCount += 1 }
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {
@@ -2262,13 +2823,22 @@ private final class FakeInputStateStore: UnifiedInputStateStoring {
         states[uid] = state
     }
 
-    func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID, isNewChatContext: Bool) {
         states[uid] = state
         lastUsedDefaults = LastUsedInputDefaults(
-            toggleMode: state.toggleMode,
-            selectedModelID: state.selectedModelID,
+            toggleMode: lastUsedDefaults.toggleMode,
+            selectedModelID: isNewChatContext ? state.selectedModelID : lastUsedDefaults.selectedModelID,
             selectedReasoningMode: state.selectedReasoningMode,
             selectedTool: state.selectedTool
+        )
+    }
+
+    func commitToggleMode(_ mode: TextEntryMode) {
+        lastUsedDefaults = LastUsedInputDefaults(
+            toggleMode: mode,
+            selectedModelID: lastUsedDefaults.selectedModelID,
+            selectedReasoningMode: lastUsedDefaults.selectedReasoningMode,
+            selectedTool: lastUsedDefaults.selectedTool
         )
     }
 
@@ -2282,13 +2852,17 @@ private final class FakeInputStateStore: UnifiedInputStateStoring {
 @MainActor
 final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
 
-    private func makeSUT(stateStore: UnifiedInputStateStoring) -> UnifiedToggleInputCoordinator {
+    private func makeSUT(
+        stateStore: UnifiedInputStateStoring,
+        duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil
+    ) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: MockAIChatPreferencesForPerTab(),
             toggleModeStorage: MockToggleModeStorageForPerTab(),
-            stateStore: stateStore
+            stateStore: stateStore,
+            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
         )
     }
 
@@ -2318,6 +2892,43 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertFalse(sut.isVoiceSessionActive)
         sut.activateForTab("tab-A")
         XCTAssertTrue(sut.isVoiceSessionActive)
+    }
+
+    func test_activateForTab_roundTripsModelPickerForcedVisible() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.activateForTab("tab-B")
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+
+        sut.activateForTab("tab-A")
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_bindToTab_afterActivateForTab_preservesModelPickerPin() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        let scriptA = makeTestUserScript()
+        let scriptB = makeTestUserScript()
+
+        sut.activateForTab("tab-A")
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        sut.bindToTab(scriptA, hasExistingChat: true)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+
+        sut.activateForTab("tab-B")
+        sut.bindToTab(scriptB, hasExistingChat: true)
+
+        sut.activateForTab("tab-A")
+        sut.bindToTab(scriptA, hasExistingChat: true)
+
+        XCTAssertFalse(sut.viewController.isModelChipHidden,
+                      "bindToTab must not reset the pin applyState restored — mirrors AI-tab → AI-tab switch")
     }
 
     func test_endToEnd_twoTabSwitches_preserveIndependentState() {
@@ -2384,6 +2995,58 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.states["tab-A"]?.attachments.count, 1)
         XCTAssertEqual(sut.viewController.text, "")
         XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
+    }
+
+    // Regression: a Duck.ai tab → non-AI tab transition routes through
+    // `resetUnifiedToggleInputForTabTransition` → `coordinator.hide()`, which clears
+    // currentTabUID before the next `activateForTab` runs. Without firing the wide-event
+    // cancellation here, the matching call in `activateForTab` sees `previous == nil`
+    // and the active Duck.ai prompt flow orphans until the next app launch.
+    func test_hide_firesTabSwitchedAwayDuringGenerationForCurrentTab() {
+        let store = FakeInputStateStore()
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let sut = makeSUT(stateStore: store, duckAIWideEventInstrumentation: instrumentation)
+        sut.activateForTab("tab-A")
+
+        sut.hide()
+
+        XCTAssertEqual(instrumentation.tabSwitchedAwayCalls, ["tab-A"])
+    }
+
+    func test_hide_doesNotFireTabSwitchedAway_whenNoCurrentTab() {
+        let store = FakeInputStateStore()
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let sut = makeSUT(stateStore: store, duckAIWideEventInstrumentation: instrumentation)
+
+        sut.hide()
+
+        XCTAssertTrue(instrumentation.tabSwitchedAwayCalls.isEmpty)
+    }
+
+    func test_duckAISubmissionAfterHideUsesLastActivatedTabScope() {
+        let store = FakeInputStateStore()
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let sut = makeSUT(stateStore: store, duckAIWideEventInstrumentation: instrumentation)
+        sut.activateForTab("tab-A")
+        sut.hide()
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
+    }
+
+    func test_submitAfterHide_clearsPersistedModelPickerPin() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        _ = sut.prepareExternalPromptSubmission()
+        sut.presentModelPickerForActiveChat()
+        XCTAssertTrue(store.states["tab-A"]?.isModelPickerForcedVisible == true)
+
+        sut.hide()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertEqual(store.states["tab-A"]?.isModelPickerForcedVisible, false)
     }
 
     // Regression: applyState must always sync the live model store from per-tab
@@ -2630,14 +3293,18 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.lastUsed, baseline)
     }
 
-    func test_updateInputMode_mutatesLastUsed() {
+    // Toggle mode is intentionally treated like a draft: in-flight changes update the
+    // per-tab state but must NOT promote to the global `lastUsed` snapshot. Promotion
+    // happens via `commitToggleMode` on submit (covered in `UnifiedInputStateStoreTests`).
+    func test_updateInputMode_doesNotMutateLastUsedToggleMode() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)
         sut.activateForTab("tab-A")
+        let baseline = store.lastUsed.toggleMode
 
         sut.updateInputMode(.aiChat, animated: false)
 
-        XCTAssertEqual(store.lastUsed.toggleMode, .aiChat)
+        XCTAssertEqual(store.lastUsed.toggleMode, baseline)
     }
 
     func test_selectTool_mutatesLastUsed() {
@@ -2944,4 +3611,42 @@ private final class MockToggleModeStorageForPerTab: ToggleModeStoring {
     private var storedMode: TextEntryMode?
     func save(_ mode: TextEntryMode) { storedMode = mode }
     func restore() -> TextEntryMode? { storedMode }
+}
+
+final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
+    private(set) var processedSubmissions: [(text: String, mode: TextEntryMode)] = []
+
+    func process(_ text: String, for submissionMode: TextEntryMode) {
+        processedSubmissions.append((text, submissionMode))
+    }
+}
+
+@MainActor
+private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
+    private(set) var submissionStartedScopes: [DuckAIWideEventFlowScope] = []
+    private(set) var tabSwitchedAwayCalls: [TabUID] = []
+
+    func submissionStarted(scope: DuckAIWideEventFlowScope,
+                           modelId: String?,
+                           userTier: AIChatUserTier,
+                           reasoningEffort: AIChatReasoningEffort?,
+                           entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                           inputMode: DuckAIPromptWideEventData.InputMode,
+                           fireMode: Bool,
+                           isFirstPrompt: Bool,
+                           frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath,
+                           hasPageContext: Bool,
+                           toolsSelected: Bool,
+                           attachmentsSelected: Bool) {
+        submissionStartedScopes.append(scope)
+    }
+    func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {}
+    func frontendSubmissionAcknowledged(scope: DuckAIWideEventFlowScope) {}
+    func chatStatusChanged(_ status: AIChatStatusValue, scope: DuckAIWideEventFlowScope) {}
+    func stopGeneratingTapped(scope: DuckAIWideEventFlowScope) {}
+    func tabClosedDuringGeneration(tabID: TabUID) {}
+    func tabSwitchedAwayDuringGeneration(tabID: TabUID) { tabSwitchedAwayCalls.append(tabID) }
+    func fireButtonClearedTabDuringGeneration(tabID: TabUID) {}
+    func sheetDismissedDuringGeneration(scope: DuckAIWideEventFlowScope) {}
+    func pageLoadFailed(scope: DuckAIWideEventFlowScope, error: Error) {}
 }

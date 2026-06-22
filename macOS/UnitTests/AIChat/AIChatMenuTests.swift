@@ -392,6 +392,12 @@ private final class StubAIChatSyncCleaning: AIChatSyncCleaning {
     func recordChatDeletion(chatID: String) async {}
 
     func deleteIfNeeded() async {}
+
+    func recordChatUpdate(chatID: String) async {}
+
+    func updateIfNeeded() async {}
+
+    func scheduleSync() {}
 }
 
 private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {

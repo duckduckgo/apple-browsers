@@ -113,6 +113,11 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         onRemoveActionRequested?()
     }
 
+    var pendingAttachedContextData: AIChatPageContextData? {
+        guard attachmentDeliveryState == .pendingSubmit else { return nil }
+        return attachedContext?.contextData
+    }
+
     /// Mark the current attachment as delivered (submitted in a prompt). Hides the chip if the
     /// attachment is matching — we don't need to keep showing what's silently riding along.
     func markPromptSubmitted() {

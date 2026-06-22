@@ -225,19 +225,14 @@ public struct TunnelControllerView: View {
                             }
                         }
                     }
-                    if #available(macOS 12, *) {
-                        if isHovered {
-                            Text(model.plainLocation)
-                                .applyLocationAttributes()
-                                .foregroundColor(.white)
-                        } else {
-                            Text(model.formattedLocation(colorScheme: colorScheme))
-                                .applyLocationAttributes()
-                        }
-                    } else {
+
+                    if isHovered {
                         Text(model.plainLocation)
                             .applyLocationAttributes()
-                            .foregroundColor(isHovered ? .white: Color(.defaultText))
+                            .foregroundColor(.white)
+                    } else {
+                        Text(model.formattedLocation(colorScheme: colorScheme))
+                            .applyLocationAttributes()
                     }
                 }
             }

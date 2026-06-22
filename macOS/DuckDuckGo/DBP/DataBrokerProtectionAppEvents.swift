@@ -19,6 +19,7 @@
 import Foundation
 import LoginItems
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import os.log
 

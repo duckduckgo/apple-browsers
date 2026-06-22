@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct RecoverSyncedDataView: View {
 
@@ -43,7 +44,7 @@ public struct RecoverSyncedDataView: View {
                     Spacer()
                 }
                 .frame(height: 56)
-                Image("Sync-Recover-128")
+                Image(rebrandable: "Sync-Recover-128")
                     .padding(20)
 
                 Text(UserText.recoverSyncedDataTitle)

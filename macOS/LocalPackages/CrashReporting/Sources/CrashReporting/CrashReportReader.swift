@@ -17,11 +17,12 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 
-final class CrashReportReader {
+public final class CrashReportReader {
 
-    static func validBundleIdentifiers() -> [String] {
+    public static func validBundleIdentifiers() -> [String] {
         [
             Bundle.main.bundleIdentifier,
             Bundle.main.vpnMenuAgentBundleId,
@@ -35,12 +36,16 @@ final class CrashReportReader {
     private let validBundleIdentifierProvider: () -> [String]
     private let dateProvider: () -> Date
 
-    init(fileManager: FileManager = .default,
-         validBundleIdentifierProvider: @escaping () -> [String] = CrashReportReader.validBundleIdentifiers,
-         dateProvider: @escaping () -> Date = Date.init) {
+    public init(fileManager: FileManager = .default,
+                validBundleIdentifierProvider: @escaping () -> [String] = CrashReportReader.validBundleIdentifiers,
+                dateProvider: @escaping () -> Date = Date.init) {
         self.fileManager = fileManager
         self.validBundleIdentifierProvider = validBundleIdentifierProvider
         self.dateProvider = dateProvider
+    }
+
+    public func hasNewCrashReport(forBundleIdentifier bundleIdentifier: String, since lastCheckDate: Date) -> Bool {
+        getCrashReports(since: lastCheckDate).contains { $0.bundleID == bundleIdentifier }
     }
 
     func getCrashReports(since lastCheckDate: Date) -> [CrashReport] {

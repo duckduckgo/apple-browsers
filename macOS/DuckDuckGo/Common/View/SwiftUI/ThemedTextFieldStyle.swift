@@ -31,16 +31,11 @@ struct ThemedTextFieldStyle: TextFieldStyle {
 
     // swiftlint:disable identifier_name
     func _body(configuration: TextField<Self._Label>) -> some View {
-        if #available(macOS 12.0, *) {
-            FocusableThemedTextFieldStyle(configuration: configuration, backgroundColor: backgroundColor, focusBorderColor: focusBorderColor)
-        } else {
-            LegacyThemedTextFieldStyle(configuration: configuration, backgroundColor: backgroundColor)
-        }
+        FocusableThemedTextFieldStyle(configuration: configuration, backgroundColor: backgroundColor, focusBorderColor: focusBorderColor)
     }
     // swiftlint:enable identifier_name
 }
 
-@available(macOS 12.0, *)
 struct FocusableThemedTextFieldStyle<Label: View>: View {
     @FocusState private var isFocused: Bool
     let configuration: TextField<Label>
@@ -60,19 +55,5 @@ struct FocusableThemedTextFieldStyle<Label: View>: View {
                     .stroke(focusBorderColor, lineWidth: 3)
                     .opacity(isFocused ? 1 : 0)
             )
-    }
-}
-
-struct LegacyThemedTextFieldStyle<Label: View>: View {
-    let configuration: TextField<Label>
-    let backgroundColor: Color
-
-    var body: some View {
-        configuration
-            .textFieldStyle(.plain)
-            .padding([.top, .bottom], 5)
-            .padding([.leading, .trailing], 6)
-            .background(backgroundColor)
-            .cornerRadius(4)
     }
 }

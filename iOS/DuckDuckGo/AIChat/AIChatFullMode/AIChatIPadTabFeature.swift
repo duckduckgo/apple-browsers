@@ -20,6 +20,7 @@
 import Foundation
 import PrivacyConfig
 import Common
+import FoundationExtensions
 
 /// Provides access to Duck AI iPad tab mode availability.
 protocol AIChatIPadTabFeatureProviding {

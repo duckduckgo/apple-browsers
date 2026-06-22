@@ -23,7 +23,7 @@ import SubscriptionTestingUtilities
 import NetworkingTestingUtils
 import PixelKitTestingUtilities
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 final class AppStorePurchaseFlowTests: XCTestCase {
 
     private var sut: DefaultAppStorePurchaseFlow!
@@ -227,7 +227,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
 
 // MARK: - Mock
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 private final class MockPendingTransactionHandler: PendingTransactionHandling {
     var markPurchasePendingCalled = false
     var handleSubscriptionActivatedCalled = false

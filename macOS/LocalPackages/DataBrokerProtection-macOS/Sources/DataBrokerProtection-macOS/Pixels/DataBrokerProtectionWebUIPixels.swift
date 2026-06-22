@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import DataBrokerProtectionCore
@@ -30,10 +31,13 @@ final class DataBrokerProtectionWebUIPixels {
     }
 
     let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
+    private let isUserSubscribed: () -> Bool
     private var wasHTTPErrorPixelFired = false
 
-    init(pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>) {
+    init(pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
+         isUserSubscribed: @escaping () -> Bool) {
         self.pixelHandler = pixelHandler
+        self.isUserSubscribed = isUserSubscribed
     }
 
     func firePixel(for error: Error) {
@@ -64,7 +68,7 @@ final class DataBrokerProtectionWebUIPixels {
         case .loading:
             pixelHandler.fire(.webUILoadingStarted(environment: environment))
         case .success:
-            pixelHandler.fire(.webUILoadingSuccess(environment: environment))
+            pixelHandler.fire(.webUILoadingSuccess(environment: environment, subscribed: isUserSubscribed()))
         }
     }
 }

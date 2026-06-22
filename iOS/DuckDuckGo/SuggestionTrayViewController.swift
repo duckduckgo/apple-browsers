@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Combine
 import Core
 import Bookmarks
 import Suggestions
@@ -29,9 +30,30 @@ import UIComponents
 import RemoteMessaging
 import AIChat
 import Subscription
+import Onboarding
+
+/// Which suggestions surface the iPad popover currently shows.
+enum PopoverSuggestionsMode {
+    case search
+    case duckAI
+}
+
+/// Routes iPad Duck.ai row interactions (resolved by the tray) to the owner for navigation.
+@MainActor
+protocol SuggestionTrayDuckAINavigationDelegate: AnyObject {
+    func suggestionTrayDidSelectDuckAI(_ selection: DuckAISuggestionsSelection)
+    /// A Duck.ai URL suggestion's history was deleted; the owner refreshes the search surface too.
+    func suggestionTrayDidDeleteDuckAIURLSuggestion()
+    /// Present the recent-chat delete confirmation, anchored to `sourceRect` (the 🔥 button's
+    /// global frame) for the iPad popover.
+    func suggestionTrayRequestsDuckAIChatDeletionConfirmation(for chat: AIChatSuggestion,
+                                                              sourceRect: CGRect,
+                                                              onConfirm: @escaping () -> Void,
+                                                              onCancel: @escaping () -> Void)
+}
 
 class SuggestionTrayViewController: UIViewController {
-    
+
     weak var backgroundView: CompositeShadowView!
     weak var containerView: UIView!
     var variableWidthConstraint: NSLayoutConstraint!
@@ -49,7 +71,7 @@ class SuggestionTrayViewController: UIViewController {
     var dismissHandler: (() -> Void)?
 
     var isShowingAutocompleteSuggestions: Bool {
-        autocompleteController != nil
+        autocompleteController != nil || popoverSearchController != nil
     }
 
     var isShowingFavorites: Bool {
@@ -63,6 +85,10 @@ class SuggestionTrayViewController: UIViewController {
     /// Called when URL-only fallback visibility changes, so the host can update Dax visibility.
     var onURLFallbackVisibilityChanged: (() -> Void)?
 
+    /// Fires as the iPad Duck.ai list gains/loses rows, so the owner can show/hide the popover
+    /// reactively (the list's content loads asynchronously after the query is set).
+    var onPopoverDuckAIContentChanged: ((_ hasContent: Bool) -> Void)?
+
     var suggestionFilter: AutocompleteSuggestionFilter = .all {
         didSet { autocompleteController?.suggestionFilter = suggestionFilter }
     }
@@ -72,9 +98,39 @@ class SuggestionTrayViewController: UIViewController {
         }
     }
 
+    /// Updates the top inset, optionally gliding the popover to its new position in lock-step with the
+    /// iPad omnibar's expand/collapse (`DefaultOmniBarView` uses 0.25s `.curveEaseInOut`).
+    func setAdditionalTopInset(_ inset: CGFloat, animated: Bool) {
+        guard animated, additionalTopInset != inset else {
+            additionalTopInset = inset
+            return
+        }
+        additionalTopInset = inset
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            self.view.layoutIfNeeded()
+        }
+    }
+
     private var autocompleteController: AutocompleteViewController?
+    /// iPad renders the shared SwiftUI suggestions surface in the popover instead of
+    /// `AutocompleteViewController`; its source is retained here for row-tap resolution.
+    private var popoverSearchController: PopoverSuggestionsController?
+    private var popoverSearchSource: SearchSuggestionsSource?
+    /// iPad Duck.ai surface hosted in the same popover; source provided by the owner.
+    weak var duckAINavigationDelegate: SuggestionTrayDuckAINavigationDelegate?
+    private var popoverDuckAIController: PopoverSuggestionsController?
+    private var popoverDuckAISource: DuckAISuggestionsSource?
+    private var popoverDuckAIQuery = ""
+    private(set) var popoverMode: PopoverSuggestionsMode = .search
+    /// Last content height reported per mode, so toggling modes re-applies the right popover height.
+    private var popoverContentHeights: [PopoverSuggestionsMode: CGFloat] = [:]
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
+
+    /// Allows to defer autocomplete presentation to avoid short UI glitch (blink) when presenting
+    /// autocomplete suggestions when unifiedToggleInput flag is on.
+    var deferAutocompleteReveal = false
+    private var pendingDeferredAutocompleteReveal = false
     private var pendingEscapeHatchModel: EscapeHatchModel?
     private var pendingSuggestionsSectionTitle: String?
     private var pendingFavoritesSectionTitle: String?
@@ -90,25 +146,38 @@ class SuggestionTrayViewController: UIViewController {
 
     var coversFullScreen: Bool = false
 
+    /// Horizontal inset applied to the autocomplete content only. Favorites and the shared container stay
+    /// full width, so switching between favorites and autocomplete doesn't resize/recenter the container
+    /// (which would visibly shift the still-mounted favorites view before autocomplete reveals).
+    var autocompleteHorizontalInset: CGFloat = 0
+
     var selectedSuggestion: Suggestion? {
-        autocompleteController?.selectedSuggestion
+        if let id = popoverSearchController?.selectedRowID {
+            return popoverSearchSource?.suggestion(forRowID: id)
+        }
+        return autocompleteController?.selectedSuggestion
     }
-    
+
+
     enum SuggestionType: Equatable {
-    
+
         case autocomplete(query: String)
+        /// iPad Duck.ai mode: the shared SwiftUI list (recents + URL hits + Search row) in the popover.
+        case duckAISuggestions(query: String)
         case favorites
-        
+
         func hideOmnibarSeparator() -> Bool {
             switch self {
-            case .autocomplete: return true
+            case .autocomplete, .duckAISuggestions: return true
             case .favorites: return false
             }
         }
-        
+
         static func == (lhs: SuggestionTrayViewController.SuggestionType, rhs: SuggestionTrayViewController.SuggestionType) -> Bool {
             switch (lhs, rhs) {
             case let (.autocomplete(queryLHS), .autocomplete(queryRHS)):
+                return queryLHS == queryRHS
+            case let (.duckAISuggestions(queryLHS), .duckAISuggestions(queryRHS)):
                 return queryLHS == queryRHS
             case (.favorites, .favorites):
                 return true
@@ -125,7 +194,8 @@ class SuggestionTrayViewController: UIViewController {
         let homePageMessagesConfiguration: HomePageMessagesConfiguration
         let subscriptionDataReporting: SubscriptionDataReporting?
         let newTabDialogFactory: NewTabDaxDialogsProvider
-        let newTabDaxDialogManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
+        let newTabDaxDialogManager: DaxDialogsManaging
+        let onboardingFlowProvider: OnboardingFlowProviding
         let faviconLoader: FavoritesFaviconLoading
         let faviconsCache: FavoritesFaviconCaching
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
@@ -231,6 +301,9 @@ class SuggestionTrayViewController: UIViewController {
         switch type {
         case .autocomplete(let query):
             canShow = canDisplayAutocompleteSuggestions(forQuery: query, animated: animated)
+        case .duckAISuggestions:
+            // Show whenever the Duck.ai list has rows (recents and/or URL hits); height is the proxy.
+            canShow = (popoverContentHeights[.duckAI] ?? 0) > 0
         case .favorites:
             canShow = canDisplayFavorites || hasRemoteMessages || pendingEscapeHatchModel != nil
         }
@@ -243,6 +316,9 @@ class SuggestionTrayViewController: UIViewController {
         switch type {
         case .autocomplete(let query):
             displayAutocompleteSuggestions(forQuery: query, animated: animated)
+        case .duckAISuggestions:
+            removeNewTabPage(animated: false)
+            setPopoverMode(.duckAI)
         case .favorites:
             if isPad {
                 removeAutocomplete(animated: animated)
@@ -261,19 +337,48 @@ class SuggestionTrayViewController: UIViewController {
         return containerView.frame
     }
 
+    func refreshSuggestionsIfNeeded() {
+        autocompleteController?.refreshSuggestions()
+    }
+
     func didHide(animated: Bool) {
         removeAutocomplete(animated: animated)
         removeNewTabPage(animated: animated)
+        teardownPopoverDuckAIController()
     }
     
     @objc func keyboardMoveSelectionDown() {
+        popoverSearchController?.keyboardMoveSelectionDown()
         autocompleteController?.keyboardMoveSelectionDown()
     }
 
     @objc func keyboardMoveSelectionUp() {
+        popoverSearchController?.keyboardMoveSelectionUp()
         autocompleteController?.keyboardMoveSelectionUp()
     }
-    
+
+    // MARK: - Duck.ai keyboard navigation (iPad popover)
+
+    var hasDuckAIHighlight: Bool { popoverDuckAIController?.selectedRowID != nil }
+
+    func duckAIKeyboardMoveSelectionDown() { popoverDuckAIController?.keyboardMoveSelectionDown() }
+    func duckAIKeyboardMoveSelectionUp() { popoverDuckAIController?.keyboardMoveSelectionUp() }
+    func clearDuckAIKeyboardSelection() { popoverDuckAIController?.clearKeyboardSelection() }
+
+    /// Clears any keyboard/pointer highlight on both surfaces — used when the popover is hidden so a
+    /// stale selection can't survive a collapse (which would leave the arrow keys claimed).
+    func clearKeyboardSelections() {
+        popoverSearchController?.clearKeyboardSelection()
+        popoverDuckAIController?.clearKeyboardSelection()
+    }
+
+    /// Commits the highlighted Duck.ai row (Enter); returns false when nothing is highlighted.
+    func activateHighlightedDuckAISuggestion() -> Bool {
+        guard let id = popoverDuckAIController?.selectedRowID else { return false }
+        handlePopoverDuckAISelection(rowID: id)
+        return true
+    }
+
     func float(withWidth width: CGFloat) {
         containerView.layer.cornerRadius = 24
         containerView.layer.masksToBounds = true
@@ -290,6 +395,7 @@ class SuggestionTrayViewController: UIViewController {
 
         variableWidthConstraint.constant = width
         fullWidthConstraint.isActive = false
+        fullWidthConstraint.constant = 0
         fullHeightConstraint.isActive = false
         fullHeightSafeAreaConstraint.isActive = false
         fullHeightSafeAreaInequalityConstraint.isActive = true
@@ -309,6 +415,7 @@ class SuggestionTrayViewController: UIViewController {
         backgroundView.backgroundColor = UIColor.clear
 
         fullWidthConstraint.isActive = true
+        fullWidthConstraint.constant = 0
         fullHeightConstraint.isActive = coversFullScreen
         fullHeightSafeAreaConstraint.isActive = !coversFullScreen
         fullHeightSafeAreaInequalityConstraint.isActive = !coversFullScreen
@@ -374,6 +481,7 @@ class SuggestionTrayViewController: UIViewController {
             subscriptionDataReporting: dependencies.subscriptionDataReporting,
             newTabDialogFactory: dependencies.newTabDialogFactory,
             daxDialogsManager: dependencies.newTabDaxDialogManager,
+            onboardingFlowProvider: dependencies.onboardingFlowProvider,
             faviconLoader: dependencies.faviconLoader,
             remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
@@ -409,12 +517,192 @@ class SuggestionTrayViewController: UIViewController {
     }
     
     private func displayAutocompleteSuggestions(forQuery query: String, animated: Bool) {
-        if autocompleteController == nil {
-            installAutocompleteSuggestions(animated: animated)
+        if isPad {
+            removeNewTabPage(animated: false)
+            preparePopoverSearchController()
+            popoverSearchController?.updateQuery(query)
+        } else {
+            if autocompleteController == nil {
+                installAutocompleteSuggestions(animated: animated)
+            }
+            autocompleteController?.updateQuery(query)
         }
-        autocompleteController?.updateQuery(query)
     }
-    
+
+    /// Builds the iPad search surface once and keeps it for the whole focus session (so toggling
+    /// search↔Duck.ai swaps visibility instead of tearing down + rebuilding, which flashed).
+    func preparePopoverSearchController() {
+        guard popoverSearchController == nil else { return }
+        installPopoverSearchController()
+    }
+
+    var hasPopoverDuckAISource: Bool { popoverDuckAISource != nil }
+
+    /// Builds the shared SwiftUI search surface (own request runner/loader, mirroring the UTI
+    /// container) and embeds it in the popover. Row taps resolve through `popoverSearchSource`.
+    private func installPopoverSearchController() {
+        let requestRunner = AutocompleteRequestRunner()
+        let dataSource = AutocompleteSuggestionsDataSource(
+            historyManager: historyManager,
+            bookmarksDatabase: bookmarksDatabase,
+            featureFlagger: featureFlagger,
+            tabsModel: tabsModelProvider()
+        ) { request, completion in
+            requestRunner.run(request, completion: completion)
+        }
+        let loader = SearchSuggestionsLoader(dataSource: dataSource,
+                                             useUnifiedURLPrediction: featureFlagger.isFeatureOn(.unifiedURLPredictor))
+        let querySubject = CurrentValueSubject<String, Never>("")
+        let source = SearchSuggestionsSource(loader: loader,
+                                             query: { querySubject.value },
+                                             showAskAIChat: aiChatSettings.isAIChatEnabled)
+        popoverSearchSource = source
+
+        let controller = PopoverSuggestionsController(
+            source: source,
+            isAddressBarAtBottom: appSettings.currentAddressBarPosition == .bottom,
+            querySubject: querySubject)
+        controller.onContentHeightChange = { [weak self] height in
+            self?.applyPopoverContentHeight(height, from: .search)
+        }
+        controller.onSelectRow = { [weak self] id in
+            guard let suggestion = source.suggestion(forRowID: id) else { return }
+            self?.autocompleteDelegate?.autocomplete(selectedSuggestion: suggestion)
+        }
+        controller.onTapAheadRow = { [weak self] id in
+            guard let suggestion = source.suggestion(forRowID: id) else { return }
+            self?.autocompleteDelegate?.autocomplete(pressedPlusButtonForSuggestion: suggestion)
+        }
+        controller.onHighlightRow = { [weak self] id in
+            guard let suggestion = source.suggestion(forRowID: id) else { return }
+            self?.autocompleteDelegate?.autocomplete(highlighted: suggestion, for: querySubject.value)
+        }
+        controller.onClearHighlight = { [weak self] in
+            // Selection cleared → restore the user's typed query in place of the last previewed suggestion.
+            let query = querySubject.value
+            self?.autocompleteDelegate?.autocomplete(highlighted: .phrase(phrase: query), for: query)
+        }
+        controller.onDeleteRow = { [weak self, weak loader] id in
+            guard let self,
+                  let suggestion = source.suggestion(forRowID: id),
+                  case .historyEntry(_, let url, _) = suggestion else { return }
+            Task { @MainActor in
+                await SuggestionHistoryDeletion.delete(url, using: self.historyManager)
+                loader?.fetch(query: querySubject.value)
+                self.autocompleteDelegate?.autocomplete(deletedSuggestion: suggestion)
+            }
+        }
+
+        install(controller: controller,
+                animated: false,
+                additionalInsets: UIEdgeInsets(top: 0, left: autocompleteHorizontalInset, bottom: 0, right: autocompleteHorizontalInset))
+        controller.view.isHidden = (popoverMode != .search)
+        popoverSearchController = controller
+    }
+
+    // MARK: - iPad Duck.ai surface
+
+    /// Hosts (or clears) the Duck.ai source in the popover. The tray builds a controller around it,
+    /// resolves row taps via the source, and routes navigation to `duckAINavigationDelegate`.
+    func setPopoverDuckAISource(_ source: DuckAISuggestionsSource?,
+                                querySubject: CurrentValueSubject<String, Never>? = nil) {
+        teardownPopoverDuckAIController()
+        guard let source, let querySubject else { return }
+        popoverDuckAISource = source
+
+        let controller = PopoverSuggestionsController(
+            source: source,
+            isAddressBarAtBottom: appSettings.currentAddressBarPosition == .bottom,
+            querySubject: querySubject)
+        controller.onContentHeightChange = { [weak self] height in
+            self?.applyPopoverContentHeight(height, from: .duckAI)
+        }
+        controller.onSelectRow = { [weak self] id in self?.handlePopoverDuckAISelection(rowID: id) }
+        controller.onTapAheadRow = { [weak self] id in self?.handlePopoverDuckAISelection(rowID: id) }
+        controller.onDeleteRow = { [weak self] id in self?.handlePopoverDuckAIURLDelete(rowID: id) }
+        controller.onFireDeleteRow = { [weak self] id, sourceRect in self?.handlePopoverDuckAIChatDelete(rowID: id, sourceRect: sourceRect) }
+
+        install(controller: controller, animated: false,
+                additionalInsets: UIEdgeInsets(top: 0, left: autocompleteHorizontalInset, bottom: 0, right: autocompleteHorizontalInset))
+        controller.view.isHidden = (popoverMode != .duckAI)
+        popoverDuckAIController = controller
+    }
+
+    /// Whether the Duck.ai list currently has rows (its last reported content height is non-zero).
+    var popoverDuckAIHasContent: Bool { (popoverContentHeights[.duckAI] ?? 0) > 0 }
+
+    func updatePopoverDuckAIQuery(_ query: String) {
+        popoverDuckAIQuery = query
+        popoverDuckAIController?.updateQuery(query)
+    }
+
+    /// Toggles which embedded controller is visible and re-applies that mode's last popover height.
+    func setPopoverMode(_ mode: PopoverSuggestionsMode) {
+        popoverMode = mode
+        popoverSearchController?.view.isHidden = (mode != .search)
+        popoverDuckAIController?.view.isHidden = (mode != .duckAI)
+        if let height = popoverContentHeights[mode] {
+            autocompleteDidChangeContentHeight(height: height)
+        }
+    }
+
+    private func applyPopoverContentHeight(_ height: CGFloat, from mode: PopoverSuggestionsMode) {
+        popoverContentHeights[mode] = height
+        if mode == .duckAI {
+            onPopoverDuckAIContentChanged?(height > 0)
+        }
+        guard mode == popoverMode else { return }
+        autocompleteDidChangeContentHeight(height: height)
+    }
+
+    /// Tears down both iPad suggestion surfaces (search + Duck.ai) without hiding the container —
+    /// used on tab switch so the next focus session rebuilds fresh for the current tab.
+    func teardownPopoverSuggestions() {
+        removeAutocomplete(animated: false)
+        teardownPopoverDuckAIController()
+    }
+
+    private func teardownPopoverDuckAIController() {
+        guard let controller = popoverDuckAIController else { return }
+        controller.tearDown()
+        removeController(controller, animated: false)
+        popoverDuckAIController = nil
+        popoverDuckAISource = nil
+        popoverContentHeights[.duckAI] = nil
+    }
+
+    private func handlePopoverDuckAISelection(rowID id: String) {
+        guard let selection = popoverDuckAISource?.selection(forRowID: id) else { return }
+        duckAINavigationDelegate?.suggestionTrayDidSelectDuckAI(selection)
+    }
+
+    private func handlePopoverDuckAIURLDelete(rowID id: String) {
+        guard let source = popoverDuckAISource,
+              case .url(let suggestion) = source.selection(forRowID: id),
+              case .historyEntry(_, let url, _) = suggestion else { return }
+        Task { @MainActor in
+            await SuggestionHistoryDeletion.delete(url, using: self.historyManager)
+            source.fetchURLSuggestions(query: self.popoverDuckAIQuery)
+            self.duckAINavigationDelegate?.suggestionTrayDidDeleteDuckAIURLSuggestion()
+        }
+    }
+
+    private func handlePopoverDuckAIChatDelete(rowID id: String, sourceRect: CGRect) {
+        guard let source = popoverDuckAISource,
+              case .chat(let chat) = source.selection(forRowID: id) else { return }
+        DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
+        duckAINavigationDelegate?.suggestionTrayRequestsDuckAIChatDeletionConfirmation(
+            for: chat,
+            sourceRect: sourceRect,
+            onConfirm: { [weak source] in
+                source?.deleteChat(chat)
+                DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteConfirmed)
+            },
+            onCancel: {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
+            })
+    }
+
     private func installAutocompleteSuggestions(animated: Bool) {
         let controller = AutocompleteViewController(historyManager: historyManager,
                                                     bookmarksDatabase: bookmarksDatabase,
@@ -425,7 +713,13 @@ class SuggestionTrayViewController: UIViewController {
                                                     featureDiscovery: featureDiscovery,
                                                     productSurfaceTelemetry: productSurfaceTelemetry)
         controller.suggestionFilter = suggestionFilter
-        install(controller: controller, animated: animated)
+        install(controller: controller,
+                animated: deferAutocompleteReveal ? false : animated,
+                additionalInsets: UIEdgeInsets(top: 0, left: autocompleteHorizontalInset, bottom: 0, right: autocompleteHorizontalInset))
+        if deferAutocompleteReveal {
+            controller.view.isHidden = true
+            pendingDeferredAutocompleteReveal = true
+        }
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self
         autocompleteController = controller
@@ -435,9 +729,16 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     private func removeAutocomplete(animated: Bool) {
+        if let popoverController = popoverSearchController {
+            popoverController.tearDown()
+            removeController(popoverController, animated: animated)
+            popoverSearchController = nil
+            popoverSearchSource = nil
+        }
         guard let controller = autocompleteController else { return }
-        removeController(controller, animated: animated)
+        removeController(controller, animated: deferAutocompleteReveal ? false : animated)
         autocompleteController = nil
+        pendingDeferredAutocompleteReveal = false
     }
 
     private func removeNewTabPage(animated: Bool) {
@@ -506,9 +807,15 @@ extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDe
     }
 
     func autocompleteDidReloadResults(_ controller: AutocompleteViewController) {
-        guard controller.suggestionFilter == .urlsOnly else { return }
-        view.isHidden = controller.isEmpty
-        onURLFallbackVisibilityChanged?()
+        if controller.suggestionFilter == .urlsOnly {
+            view.isHidden = controller.isEmpty
+            onURLFallbackVisibilityChanged?()
+            return
+        }
+        if pendingDeferredAutocompleteReveal, controller === autocompleteController {
+            pendingDeferredAutocompleteReveal = false
+            controller.view.isHidden = false
+        }
     }
 
 }

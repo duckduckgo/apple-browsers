@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 struct LocaleMatchingAttribute: SingleValueMatching {
     var value: [String]? = []
@@ -190,6 +191,11 @@ struct InteractedWithDeprecatedMacRemoteMessageMatchingAttribute: SingleValueMat
 }
 
 struct IsInstalledMacAppStoreMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct OSUpgradeCapabilityMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
 }

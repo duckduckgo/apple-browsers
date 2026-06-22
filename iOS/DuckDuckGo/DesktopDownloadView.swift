@@ -77,7 +77,7 @@ struct DesktopDownloadView: View {
 
                     menuView
                         .daxHeadline()
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                         .fixedSize()
                     
                     Button(
@@ -126,7 +126,7 @@ struct DesktopDownloadView: View {
                         }, label: {
                             Text(viewModel.browserDetails.otherPlatformText)
                                 .daxHeadline()
-                                .foregroundColor(Color(designSystemColor: .accent))
+                                .foregroundColor(Color(designSystemColor: .accentPrimary))
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(5)
                         }
@@ -148,7 +148,7 @@ struct DesktopDownloadView: View {
     @ViewBuilder
     private var headerView: some View {
             VStack(spacing: 18) {
-                Image(viewModel.browserDetails.imageName)
+                Image(rebrandable: viewModel.browserDetails.imageName)
 
                 Text(viewModel.browserDetails.title)
                     .daxTitle3()

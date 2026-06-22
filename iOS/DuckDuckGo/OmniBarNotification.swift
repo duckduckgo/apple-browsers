@@ -19,6 +19,8 @@
 
 import SwiftUI
 import UIKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct OmniBarNotification: View {
 
@@ -35,14 +37,24 @@ struct OmniBarNotification: View {
                 animation
                 text
             }
-            .background(
-                RoundedRectangle(cornerRadius: Constants.Radius.background)
-                    .foregroundColor(Constants.Colors.background)
-                    .offset(x: textOffset)
-                    .clipShape(RoundedRectangle(cornerRadius: Constants.Radius.background))
-            )
-            
+            .background(background)
+
             Spacer()
+        }
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        if DesignSystemRebrand.isAppRebranded() {
+            Capsule()
+                .foregroundColor(Constants.Colors.background)
+                .offset(x: textOffset)
+                .clipShape(Capsule())
+        } else {
+            RoundedRectangle(cornerRadius: Constants.Radius.background)
+                .foregroundColor(Constants.Colors.background)
+                .offset(x: textOffset)
+                .clipShape(RoundedRectangle(cornerRadius: Constants.Radius.background))
         }
     }
     
@@ -62,7 +74,7 @@ struct OmniBarNotification: View {
                 .padding(.bottom, 7)
                 .padding(.trailing, 9)
         } else {
-            Image("ShieldColor")
+            Image(uiImage: DesignSystemImages.Color.Size24.shield)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: Constants.Size.staticIcon.width, height: Constants.Size.staticIcon.height)
@@ -149,3 +161,54 @@ private enum Constants {
         static let background: CGFloat = 12
     }
 }
+
+#if DEBUG
+private struct OmniBarNotificationGallery: View {
+    @StateObject private var rebrandOverride: RebrandPreviewOverride
+    @Environment(\.colorScheme) private var colorScheme
+
+    init(isRebranded: Bool) {
+        _rebrandOverride = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
+    }
+
+    private static let samples: [(name: String, type: OmniBarNotificationType)] = [
+        ("Cookies managed (animated cookie)", .cookiePopupManaged),
+        ("Cookie popup hidden (animated cookie)", .cookiePopupHidden),
+        ("Trackers blocked (shield)", .trackersBlocked(count: 12)),
+        ("YouTube ads blocked (video-player icon)", .youTubeAdBlockOn)
+    ]
+
+    var body: some View {
+        rebrandOverride.apply()
+        return VStack(alignment: .leading, spacing: 20) {
+            ForEach(Self.samples, id: \.name) { sample in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(sample.name)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    OmniBarNotification(viewModel: openViewModel(for: sample.type))
+                        .frame(height: 44)
+                }
+            }
+        }
+        .padding()
+    }
+
+    private func openViewModel(for type: OmniBarNotificationType) -> OmniBarNotificationViewModel {
+        let viewModel = OmniBarNotificationContainerView.makeNotificationViewModel(
+            for: type,
+            useDarkStyle: colorScheme == .dark
+        )
+        viewModel.isOpen = true
+        return viewModel
+    }
+}
+
+#Preview("Notifications / Legacy") {
+    OmniBarNotificationGallery(isRebranded: false)
+}
+
+#Preview("Notifications / Rebranded") {
+    OmniBarNotificationGallery(isRebranded: true)
+}
+#endif

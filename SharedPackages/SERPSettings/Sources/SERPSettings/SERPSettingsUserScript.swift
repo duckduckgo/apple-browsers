@@ -17,13 +17,12 @@
 //
 
 import Common
+import FoundationExtensions
 import UserScript
 import Foundation
 import WebKit
 import Persistence
-#if os(macOS)
 import Combine
-#endif
 
 // MARK: - UserScript Messages
 
@@ -72,6 +71,16 @@ public enum SERPSettingsUserScriptMessages: String, CaseIterable {
     ///
     /// **Parameters**: Boolean value of `isAIChatEnabled`
     case nativeDuckAiSettingChanged
+
+    /// Notification from native that one or more synced SERP settings changed.
+    ///
+    /// **Direction**: Native → SERP
+    ///
+    /// Pushed when a native control writes a synced setting (e.g. Search Assist or
+    /// Hide AI-Generated Images) so an open SERP can update without a reload.
+    ///
+    /// **Parameters**: Full snapshot of every synced setting, e.g. `{ "kbe": "2", "kbj": "-1" }`
+    case nativeSettingsDidChange
 
     /// Request from SERP for current Duck.ai enabled state.
     ///
@@ -130,6 +139,9 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     private var aiFeaturesCancellable: AnyCancellable?
 #endif
 
+    // Combine subscription to native-originated SERP settings changes.
+    private var settingsDidChangeCancellable: AnyCancellable?
+
     // MARK: - Initialization
 
     public init(serpSettingsProviding: SERPSettingsProviding) {
@@ -150,6 +162,12 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// - **macOS**: Uses Combine publisher from `AIChatPreferencesStorage`
     /// - **iOS**: Uses NotificationCenter with `.aiChatSettingsChanged` notification
     private func setupAISettingsObserver() {
+        // Push native-originated synced-setting changes (Search Assist, Hide AI Images) to any open SERP.
+        settingsDidChangeCancellable = NotificationCenter.default.publisher(for: .serpSettingsDidChange)
+            .sink { [weak self] _ in
+                self?.nativeSettingsDidChange()
+            }
+
         #if os(macOS)
         // Subscribe to AI features changes via Combine publisher
         aiFeaturesCancellable = serpSettingsProviding.aiChatPreferencesStorage.isAIFeaturesEnabledPublisher
@@ -211,6 +229,9 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
         case .nativeDuckAiSettingChanged:
             // This message is sent FROM native TO SERP, never handled as incoming
             return nil
+        case .nativeSettingsDidChange:
+            // This message is sent FROM native TO SERP, never handled as incoming
+            return nil
         }
     }
 
@@ -224,14 +245,9 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// - Parameters:
     ///   - params: Unused parameters from the message
     ///   - message: The message context
-    /// - Returns: JSONBlob containing stored settings, or `nil` if feature is disabled
+    /// - Returns: JSONBlob containing stored settings
     @MainActor
     private func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        // Feature flag check - allows disabling the feature remotely
-        guard serpSettingsProviding.isSERPSettingsFeatureOn() else {
-            return nil
-        }
-
         return serpSettingsProviding.getSERPSettings()
     }
 
@@ -252,11 +268,6 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// - Returns: Always returns `nil` (no response needed)
     @MainActor
     private func updateNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        // Feature flag check
-        guard serpSettingsProviding.isSERPSettingsFeatureOn() else {
-            return nil
-        }
-
         // Validate parameters are a dictionary
         guard let settings = params as? [String: Any] else { return nil }
 
@@ -342,6 +353,19 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
                      into: webView)
     }
 
+    /// Pushes the full synced-settings snapshot so an open SERP updates without a reload.
+    /// Invoked from the `.serpSettingsDidChange` observer set up in `setupAISettingsObserver()`.
+    func nativeSettingsDidChange() {
+        guard let webView else {
+            return
+        }
+
+        broker?.push(method: SERPSettingsUserScriptMessages.nativeSettingsDidChange.rawValue,
+                     params: serpSettingsProviding.currentNativeSettingsSnapshot(),
+                     for: self,
+                     into: webView)
+    }
+
     // MARK: - Cleanup
 
     deinit {
@@ -362,6 +386,11 @@ public extension Notification.Name {
     static let aiChatSettingsChanged = Notification.Name("com.duckduckgo.aichat.settings.changed")
 }
 #endif
+
+public extension Notification.Name {
+    /// Posted when a native-originated SERP setting changes, so open SERPs push the new snapshot.
+    static let serpSettingsDidChange = Notification.Name("com.duckduckgo.serpsettings.didchange")
+}
 
 /// Model that holds the state of the Duck.ai state
 /// Needed for sending/receiving between SERP and Native.

@@ -45,12 +45,13 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
     private let newTabPageNavigator: NewTabPageNavigator
     private let syncLauncher: SyncDeviceFlowLaunching?
-    private let featureFlagger: FeatureFlagger
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
         return duckPlayerSettings["tryDuckPlayerLink"] as? String ?? "https://www.youtube.com/watch?v=yKWIA-Pys4c"
     }
+
+    let youtubeAdBlockingURL = "https://www.youtube.com/watch?v=yKWIA-Pys4c"
 
     init(defaultBrowserProvider: DefaultBrowserProvider,
          dockCustomizer: DockCustomization,
@@ -59,8 +60,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          privacyConfigurationManager: PrivacyConfigurationManaging,
          pixelHandler: NewTabPageNextStepsCardsPixelHandling,
          newTabPageNavigator: NewTabPageNavigator,
-         syncLauncher: SyncDeviceFlowLaunching? = nil,
-         featureFlagger: FeatureFlagger) {
+         syncLauncher: SyncDeviceFlowLaunching? = nil) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
@@ -70,7 +70,6 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.pixelHandler = pixelHandler
         self.newTabPageNavigator = newTabPageNavigator
         self.syncLauncher = syncLauncher
-        self.featureFlagger = featureFlagger
     }
 
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
@@ -92,6 +91,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
             performPersonalizeBrowserAction()
         case .sync:
             performSyncAction(completion: refreshCardsAction)
+        case .youtubeAdBlocking:
+            performYoutubeAdBlockingAction()
         }
     }
 }
@@ -126,7 +127,7 @@ private extension NewTabPageNextStepsCardsActionHandler {
 
     func performDockAction(completion: (() -> Void)?) {
         pixelHandler.fireAddedToDockPixel()
-        if dockCustomizer.addToDock(), featureFlagger.isFeatureOn(.nextStepsListWidget) {
+        if dockCustomizer.addToDock() {
             completion?()
         }
     }
@@ -152,5 +153,13 @@ private extension NewTabPageNextStepsCardsActionHandler {
             return Logger.sync.error("DeviceSyncCoordinator is not available to perform Next Steps sync action")
         }
         syncLauncher.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
+    }
+
+    @MainActor
+    func performYoutubeAdBlockingAction() {
+        if let videoUrl = URL(string: youtubeAdBlockingURL) {
+            let tab = Tab(content: .url(videoUrl, source: .link), shouldLoadInBackground: true)
+            tabOpener.openTab(tab)
+        }
     }
 }

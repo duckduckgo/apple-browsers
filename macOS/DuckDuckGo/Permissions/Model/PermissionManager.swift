@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 
 /// Read-path interceptor used by `PermissionManager.permission(forDomain:permissionType:)`. When

@@ -34,6 +34,9 @@ outputs:
   install-url:
     description: 'Public URL for the generated install page.'
     value: ${{ steps.generate-ota.outputs.install-url }}
+  qr-url:
+    description: 'Public URL for the generated QR code image pointing at the install page.'
+    value: ${{ steps.generate-ota.outputs.qr-url }}
   title:
     description: 'Display title for the generated install page.'
     value: ${{ steps.generate-ota.outputs.title }}

@@ -23,6 +23,7 @@ import Core
 import DesignResourcesKitIcons
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Networking
 import PixelKit
 import AIChat
@@ -34,7 +35,7 @@ struct SettingsAIFeaturesView: View {
         List {
 
             VStack(alignment: .center) {
-                Image(.settingAIFeaturesHero)
+                Image(rebrandable: "SettingAIFeaturesHero")
                     .padding(.top, -20)
 
                 Text(UserText.settingsAiFeatures)
@@ -50,7 +51,7 @@ struct SettingsAIFeaturesView: View {
                     } label: {
                         Text(UserText.aiFeaturesLearnMore)
                             .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .textLink))
+                            .foregroundColor(Color(designSystemColor: .accentTextPrimary))
                     }
                     .buttonStyle(.plain)
                 }
@@ -64,7 +65,20 @@ struct SettingsAIFeaturesView: View {
                 SettingsCellView(label: UserText.settingsEnableAiChat,
                                  subtitle: UserText.settingsEnableAiChatSubtitle,
                                  image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
-                                 accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding))
+                                 accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding),
+                                 accessoryAccessibilityIdentifier: "Settings.AIFeatures.EnableToggle")
+
+                if viewModel.isAiChatEnabledBinding.wrappedValue {
+                    SettingsCellView(label: UserText.settingsDuckAISettings,
+                                     image: Image(uiImage: DesignSystemImages.Glyphs.Size24.settingsAiChat),
+                                     action: { viewModel.openDuckAIChat() },
+                                     accessory: .custom(AnyView(
+                                        Image(uiImage: DesignSystemImages.Glyphs.Size24.openInSmall)
+                                            .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                                     )),
+                                     isButton: true)
+                    .accessibilityIdentifier("Settings.AIFeatures.DuckAISettings")
+                }
             }
 
             if viewModel.isAiChatEnabledBinding.wrappedValue {
@@ -122,25 +136,27 @@ struct SettingsAIFeaturesView: View {
 
             if !viewModel.openedFromSERPSettingsButton {
                 Section {
-                    NavigationLink(destination: SERPSettingsView(page: .searchAssist, featureFlagger: viewModel.featureFlagger)) {
+                    NavigationLink(destination: SERPSettingsView(page: .searchAssist,
+                                                                 contentBlockingAssetsPublisher: viewModel.contentBlockingAssetsPublisher,
+                                                                 keyValueStore: viewModel.keyValueStore)) {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                          subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
                                          image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
                     }
                     .listRowBackground(Color(designSystemColor: .surface))
 
-                    if viewModel.shouldShowHideAIGeneratedImagesSection {
-                        NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages, featureFlagger: viewModel.featureFlagger)
-                                .onAppear {
-                                    PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
-                                }
-                        ) {
-                            SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
-                                             subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
-                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
-                        }
-                        .listRowBackground(Color(designSystemColor: .surface))
+                    NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages,
+                                                                 contentBlockingAssetsPublisher: viewModel.contentBlockingAssetsPublisher,
+                                                                 keyValueStore: viewModel.keyValueStore)
+                            .onAppear {
+                                PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
+                            }
+                    ) {
+                        SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
+                                         subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
+                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
                     }
+                    .listRowBackground(Color(designSystemColor: .surface))
                 }
             }
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
@@ -168,7 +184,7 @@ private extension SettingsAIFeaturesView {
     var footerAttributedString: AttributedString {
         var base = AttributedString(UserText.settingsAIPickerFooterDescription + " ")
         var link = AttributedString(UserText.subscriptionFeedback)
-        link.foregroundColor = Color(designSystemColor: .accent)
+        link.foregroundColor = Color(designSystemColor: .accentPrimary)
         link.link = FooterAction.shareFeedback.url
         base.append(link)
         return base

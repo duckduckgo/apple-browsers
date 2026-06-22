@@ -19,12 +19,16 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import History
 import os.log
 import PixelKit
 import PrivacyConfig
 import Suggestions
+
+private let maximumURLSessionTaskPriority: Float = 1.0
+private let remoteSuggestionsConnectionPrewarmInterval: TimeInterval = 30
 
 protocol SuggestionContainerProtocol {
     @MainActor
@@ -83,6 +87,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
     private(set) var suggestionDataCache: Data?
 
     private var latestQuery: String?
+    private var lastRemoteSuggestionsConnectionPrewarmDate: Date?
 
     private let urlSession: URLSession
 
@@ -148,6 +153,26 @@ final class SuggestionContainer: SuggestionContainerProtocol {
             self.result = result
             completion?(result)
         }
+    }
+
+    @MainActor
+    func prewarmRemoteSuggestionsConnection() {
+        let now = Date()
+        if let lastRemoteSuggestionsConnectionPrewarmDate,
+           now.timeIntervalSince(lastRemoteSuggestionsConnectionPrewarmDate) < remoteSuggestionsConnectionPrewarmInterval {
+            return
+        }
+
+        lastRemoteSuggestionsConnectionPrewarmDate = now
+
+        var request = URLRequest.defaultRequest(with: SuggestionLoader.remoteSuggestionsURL)
+        request.httpMethod = "HEAD"
+        request.timeoutInterval = 1
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+
+        let task = urlSession.dataTask(with: request)
+        task.priority = maximumURLSessionTaskPriority
+        task.resume()
     }
 
     func stopGettingSuggestions() {
@@ -272,10 +297,12 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         var request = URLRequest.defaultRequest(with: url)
         request.timeoutInterval = 1
 
-        urlSession.dataTask(with: request) { (data, _, error) in
+        let task = urlSession.dataTask(with: request) { (data, _, error) in
             self.suggestionDataCache = data
             completion(data, error)
-        }.resume()
+        }
+        task.priority = maximumURLSessionTaskPriority
+        task.resume()
     }
 
 }

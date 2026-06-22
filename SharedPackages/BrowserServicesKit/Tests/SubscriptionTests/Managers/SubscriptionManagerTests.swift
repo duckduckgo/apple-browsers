@@ -23,6 +23,7 @@ import Common
 import SubscriptionTestingUtilities
 import NetworkingTestingUtils
 import PixelKit
+import PixelKitTestingUtilities
 
 class SubscriptionManagerTests: XCTestCase {
 
@@ -37,6 +38,7 @@ class SubscriptionManagerTests: XCTestCase {
     var mockStorePurchaseManager: StorePurchaseManagerMock!
     var mockAppStoreRestoreFlowV2: AppStoreRestoreFlowMock!
     fileprivate var mockPixelHandler: MockSubscriptionPixelHandler!
+    var mockWideEvent: WideEventMock!
     var overrideTokenResponseInRecoveryHandler: Result<Networking.TokenContainer, Error>?
 
     override func setUp() {
@@ -48,6 +50,9 @@ class SubscriptionManagerTests: XCTestCase {
         mockStorePurchaseManager = StorePurchaseManagerMock()
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMock()
         mockPixelHandler = MockSubscriptionPixelHandler()
+        mockWideEvent = WideEventMock()
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: mockWideEvent,
+                                                                                    isFeatureEnabled: { true })
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: mockStorePurchaseManager,
@@ -56,7 +61,10 @@ class SubscriptionManagerTests: XCTestCase {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionCachingService: mockSubscriptionCachingService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-            pixelHandler: mockPixelHandler
+            pixelHandler: mockPixelHandler,
+            wideEvent: mockWideEvent,
+            isAuthV2WideEventEnabled: { true },
+            authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation
         )
 
         subscriptionManager.tokenRecoveryHandler = {
@@ -80,6 +88,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockSubscriptionCachingService = nil
         mockStorePurchaseManager = nil
         mockPixelHandler = nil
+        mockWideEvent = nil
         super.tearDown()
     }
 
@@ -158,6 +167,147 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
     }
 
+    // MARK: - Invalid-token recovery wide event completion
+
+    func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_CompletesWideEventAsRecoveredWithoutError() async throws {
+        // Simulate the refresh flow the OAuthClient event mapping leaves pending on an invalid token:
+        // marked .recoverInvalidToken, carrying the originating error, with the recovery clock started.
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          globalData: WideEventGlobalData(id: "refresh-1"))
+        pendingFlow.errorData = WideEventErrorData(error: OAuthClientError.invalidTokenRequest(.reused))
+        pendingFlow.recoveryDuration = .startingNow()
+        mockWideEvent.startFlow(pendingFlow)
+
+        let recoveredTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        overrideTokenResponseInRecoveryHandler = .success(recoveredTokenContainer)
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertEqual(data.globalData.id, "refresh-1")
+        // Recovery SUCCESS is a plain SUCCESS with no status reason; the recovery is recorded via the outcome.
+        XCTAssertEqual(status, .success(reason: nil))
+        let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
+        XCTAssertEqual(refreshData.recoveryOutcome, .succeeded)
+        // A recovered SUCCESS must not carry the stale invalid_token_request error, or the sender will
+        // emit a self-contradictory "successful failure" (WideEventSending merges errorData regardless of status).
+        XCTAssertNil(refreshData.errorData)
+        XCTAssertNil(refreshData.failingStep)
+        XCTAssertNotNil(refreshData.recoveryDuration?.end)
+    }
+
+    func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_CompletesWideEventAsFailure() async throws {
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          globalData: WideEventGlobalData(id: "refresh-1"))
+        pendingFlow.recoveryDuration = .startingNow()
+        mockWideEvent.startFlow(pendingFlow)
+
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        overrideTokenResponseInRecoveryHandler = .failure(OAuthClientError.invalidTokenRequest(.reused))
+
+        do {
+            _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? SubscriptionManagerError, .noTokenAvailable)
+        }
+
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertEqual(status, .failure)
+        let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
+        XCTAssertNotNil(refreshData.errorData)
+        // A restore ran and failed - the outcome reflects a real (failed) recovery attempt.
+        XCTAssertEqual(refreshData.recoveryOutcome, .failed)
+    }
+
+    func testGetTokenContainer_InvalidTokenRequest_RecoveryNotAttempted_CompletesWideEventAsNotAttempted() async throws {
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          globalData: WideEventGlobalData(id: "refresh-1"))
+        pendingFlow.errorData = WideEventErrorData(error: OAuthClientError.invalidTokenRequest(.reused))
+        pendingFlow.recoveryDuration = .startingNow()
+        mockWideEvent.startFlow(pendingFlow)
+
+        // With no recovery handler, recovery cannot even be attempted (as on non-App-Store platforms).
+        subscriptionManager.tokenRecoveryHandler = nil
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+
+        do {
+            _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? SubscriptionManagerError, .noTokenAvailable)
+        }
+
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertEqual(status, .failure)
+        let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
+        XCTAssertEqual(refreshData.recoveryOutcome, .notAttempted)
+        // No restore ran, so the meaningless recovery latency is dropped, but the original
+        // invalid-token error is preserved for debugging.
+        XCTAssertNil(refreshData.recoveryDuration)
+        XCTAssertNotNil(refreshData.errorData)
+    }
+
+    func testGetTokenContainer_InvalidTokenRequest_SelectsNewestPendingFlow() async throws {
+        // An older orphan from the recovery-less callback path must NOT be the one completed.
+        let staleFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                        globalData: WideEventGlobalData(id: "stale"))
+        staleFlow.recoveryDuration = WideEvent.MeasuredInterval(start: Date(timeIntervalSinceNow: -120), end: nil)
+        mockWideEvent.startFlow(staleFlow)
+
+        let freshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                        globalData: WideEventGlobalData(id: "fresh"))
+        freshFlow.recoveryDuration = .startingNow()
+        mockWideEvent.startFlow(freshFlow)
+
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        overrideTokenResponseInRecoveryHandler = .success(OAuthTokensFactory.makeValidTokenContainer())
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        let (data, _) = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertEqual(data.globalData.id, "fresh")
+    }
+
+    func testGetTokenContainer_UsesClientTrigger_SoInvalidTokenRecoveryCanDefer() async throws {
+        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockOAuthClient.getTokensTriggers, [.client])
+    }
+
+    func testAdopt_FromWebRestore_RecordsWebRestoreAdoptionSource() async throws {
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.decodeResponse = .success(tokenContainer)
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+
+        try await subscriptionManager.adopt(accessToken: "at", refreshToken: "rt")
+
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertEqual(status, .success(reason: nil))
+        let adoptionData = try XCTUnwrap(data as? AuthV2TokenAdoptionWideEventData)
+        XCTAssertEqual(adoptionData.adoptionSource, .webRestore)
+    }
+
+    func testAdoptToken_FromVPN_RecordsVPNAdoptionSource() async throws {
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+
+        try await subscriptionManager.adoptToken(tokenContainer)
+
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let (data, status) = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertEqual(status, .success(reason: nil))
+        let adoptionData = try XCTUnwrap(data as? AuthV2TokenAdoptionWideEventData)
+        XCTAssertEqual(adoptionData.adoptionSource, .vpn)
+    }
+
     func testGetTokenContainer_OtherError_ReportsPixelAndUnderlyingError() async throws {
         let expectedError = OAuthServiceError.invalidResponseCode(.badRequest)
         mockOAuthClient.getTokensResponse = .failure(expectedError)
@@ -200,6 +350,8 @@ class SubscriptionManagerTests: XCTestCase {
         let subscription = try await subscriptionManager.getSubscription(forceRefresh: true)
         XCTAssertNotNil(subscription)
         XCTAssertTrue(subscription!.isActive)
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.subscriptionIsActive))
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.osDistributionActiveSubscription))
     }
 
     func testRefreshCachedSubscription_ExpiredSubscription() async throws {
@@ -226,6 +378,8 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertNotNil(subscription, "Expired subscription should still be returned")
         XCTAssertFalse(subscription!.isActive, "Expired subscription should not be active")
         XCTAssertEqual(subscription!.status, .expired)
+        XCTAssertFalse(mockPixelHandler.handledPixels.contains(.osDistributionActiveSubscription),
+                       "OS-distribution pixel must not fire for an inactive subscription")
     }
 
     func testGetSubscription_NoDataOnBackend_ReturnsNil() async throws {

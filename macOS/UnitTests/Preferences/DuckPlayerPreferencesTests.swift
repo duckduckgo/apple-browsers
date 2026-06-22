@@ -16,7 +16,11 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import DuckPlayer
+import FeatureFlags
 import Foundation
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -85,5 +89,60 @@ final class DuckPlayerPreferencesTests: XCTestCase {
         XCTAssertTrue(persister2.duckPlayerModeBool!)
         XCTAssertTrue(persister2.youtubeOverlayInteracted)
         XCTAssertTrue(persister2.youtubeOverlayAnyButtonPressed)
+    }
+
+    // MARK: - Ad-blocking rollout onboarding default
+
+    func testWhenAdBlockingRolloutInactiveThenOnboardingCompletionKeepsDuckPlayerAtAlwaysAsk() {
+        UserDefaultsWrapper<Any>.clearAll()
+
+        OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: MockFeatureFlagger())
+
+        let storedMode = DuckPlayerMode(DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool)
+        XCTAssertEqual(storedMode, .alwaysAsk)
+    }
+
+    func testWhenAdBlockingRolloutActiveThenOnboardingCompletionDisablesDuckPlayer() {
+        UserDefaultsWrapper<Any>.clearAll()
+        let featureFlagger = MockFeatureFlagger(featuresStub: [
+            FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true,
+            FeatureFlag.webExtensions.rawValue: true
+        ])
+
+        OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
+
+        let storedMode = DuckPlayerMode(DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool)
+        if #available(macOS 15.4, *) {
+            XCTAssertEqual(storedMode, .disabled)
+        } else {
+            // The ad-blocking extension is unsupported below macOS 15.4, so the default is unchanged.
+            XCTAssertEqual(storedMode, .alwaysAsk)
+        }
+    }
+
+    func testWhenAdBlockingRolloutActiveThenLiveDuckPlayerPreferencesRefreshesToDisabled() {
+        UserDefaultsWrapper<Any>.clearAll()
+        let preferences = DuckPlayerPreferences(persistor: DuckPlayerPreferencesUserDefaultsPersistor())
+        XCTAssertEqual(preferences.duckPlayerMode, .alwaysAsk)
+
+        let featureFlagger = MockFeatureFlagger(featuresStub: [
+            FeatureFlag.adBlockingExtensionEnabledByDefault.rawValue: true,
+            FeatureFlag.webExtensions.rawValue: true
+        ])
+
+        OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
+        drainMainQueue()
+
+        if #available(macOS 15.4, *) {
+            XCTAssertEqual(preferences.duckPlayerMode, .disabled, "Live in-memory mode must refresh without a relaunch")
+        } else {
+            XCTAssertEqual(preferences.duckPlayerMode, .alwaysAsk)
+        }
+    }
+
+    private func drainMainQueue() {
+        let exp = expectation(description: "main queue drained")
+        DispatchQueue.main.async { exp.fulfill() }
+        wait(for: [exp], timeout: 1.0)
     }
 }

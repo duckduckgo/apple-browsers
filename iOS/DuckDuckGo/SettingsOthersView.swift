@@ -23,6 +23,7 @@ import Networking
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Common
+import FoundationExtensions
 
 struct SettingsOthersView: View {
 

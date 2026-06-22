@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import History
@@ -444,8 +445,8 @@ final class TabCollectionViewModel: NSObject {
         shouldReturnToPreviousActiveTab = true
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
-            NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
-            if isBurner, featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
+            NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
+            if isBurner {
                 var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
                 if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
                     persistor.fireTabVisitCount += 1

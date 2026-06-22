@@ -25,6 +25,15 @@
 /* No comment provided by engineer. */
 "%@s" = "%@s";
 
+/* Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\". */
+"accessibility.label.aiChat.openDuckAI" = "Duck.ai öffnen";
+
+/* Accessibility value when the Duck.ai contextual sheet is closed. */
+"accessibility.value.aiChat.contextualSheet.closed" = "Geschlossen";
+
+/* Accessibility value when the Duck.ai contextual sheet is open. */
+"accessibility.value.aiChat.contextualSheet.open" = "Offen";
+
 /* No comment provided by engineer. */
 "Account" = "Konto";
 
@@ -55,14 +64,32 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Hinzufügen";
 
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
+"action.title.aiChat.hideContextualSheetButton" = "Shortcut zum Ausblenden des unteren Teils";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the Duck.ai (open) button half. */
+"action.title.aiChat.hideDuckAIButton" = "Duck.ai-Shortcut ausblenden";
+
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.ai-Chats";
 
 /* Start new AI Chat action in the menu list */
 "action.title.aiChat.new" = "Neuer Chat";
 
+/* Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. */
+"action.title.aiChat.openSettings" = "KI-Einstellungen öffnen";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai-Einstellungen";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the bottom-sheet button half. */
+"action.title.aiChat.showContextualSheetButton" = "Shortcut zum Einblenden des unteren Teils";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
+"action.title.aiChat.showDuckAIButton" = "Duck.ai-Shortcut anzeigen";
+
+/* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
+"action.title.aiChat.toggleContextualSheet" = "Duck.ai-Blatt umschalten";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Passwörter";
@@ -123,6 +150,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "In einem Fire-Tab öffnen";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Neuer Tab";
 
@@ -183,6 +211,12 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Description of the Ad Blocking feature in settings */
+"ad.blocking.description" = "Blockiert invasive Tracker, bevor sie geladen werden, und eliminiert so effektiv Werbung, die auf Tracking basiert.";
+
+/* Section header for YouTube-specific ad blocking settings */
+"ad.blocking.youtube.section.header" = "YouTube-Werbeblocker";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Unten";
 
@@ -213,10 +247,77 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "KI-Funktionen";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Chats";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Chatverlauf";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Chat-Einstellungen";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Du kannst nur %d Dateien pro Gespräch anhängen.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Wir können die angehängten Dateien nicht lesen, weil mindestens eine davon verschlüsselt ist.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Die angehängten Dateien überschreiten die Größenbegrenzung von %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Diese Datei ist zu groß. Die maximale Dateigröße beträgt %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Eine der beigefügten Dateien enthält mehr Seiten, als wir unterstützen. Bitte lade Dateien mit %d Seiten oder weniger hoch.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Wir können eine der angehängten Dateien nicht lesen. Bitte überprüfe, ob die Datei beschädigt ist, und versuche es erneut.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Du kannst nur %d Bilder pro Gespräch anhängen.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Du kannst jeweils nur %d Bilder anhängen.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Datei hinzufügen";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Bild hinzufügen";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Foto machen";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Diese Nachricht ist zu lang, um sie mit Anhängen zu versenden.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Anhänge sind vorübergehend nicht verfügbar. Bitte versuche es zu einem späteren Zeitpunkt erneut.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Dieser Dateityp wird nicht unterstützt";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Dieser Dateityp wird nicht unterstützt. Bitte hänge eine %1$@- oder %2$@-Datei an.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Dieser Dateityp wird nicht unterstützt. Bitte %@ anhängen.";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Neu";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Neues Fire-Tab";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Neue Suche";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Neuer Tab";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Neuer Voice-Chat";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Für analytische Aufgaben";
@@ -236,6 +337,30 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Begründung";
 
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Finde den QR-Code in der DuckDuckGo-App auf deinem anderen Gerät unter **Einstellungen** › **Sync & Backup** › **Mit anderem Gerät synchronisieren**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Jetzt nicht";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "QR-Code scannen";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Lass uns deine Chats auf deinen Geräten synchronisieren!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Mit anderem Gerät synchronisieren";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Synchronisierungs-Werbung verwerfen";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Mit Sync & Backup kannst du geräteübergreifend auf deine Chats zugreifen.";
+
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Ton, Länge und Verhalten festlegen";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Antworten anpassen";
 
@@ -246,13 +371,22 @@
 "aichat.toolbar.tools.imagegeneration.title" = "Bild erstellen";
 
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Aktuelle Informationen finden";
+"aichat.toolbar.tools.websearch.subtitle" = "Antworten aus dem Web beziehen";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Websuche";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Bestehende Lesezeichen werden nicht kopiert.";
+
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "Verstanden";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "Du bist bereits auf beiden Geräten mit diesem Konto gekoppelt.";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "Bereits gekoppelt";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Einige Lesezeichen sind falsch formatiert oder zu lang und wurden nicht synchronisiert.";
@@ -262,6 +396,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "Lesezeichen-Synchronisierung ist angehalten";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "Verstanden";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "Bitte versuche es noch einmal.";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "Die Synchronisierung auf deinem anderen Gerät wurde abgebrochen.";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "Besuche in deinem Browser duck.ai, gehe zu „Einstellungen“, wähle unter „Sync & Backup“ die Option „Aktivieren“ und anschließend „Mit anderem Gerät synchronisieren“.";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Scanne diesen Code in den Duck.ai-Einstellungen.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Einige Passwörter sind falsch formatiert oder zu lang und wurden nicht synchronisiert.";
@@ -286,6 +435,9 @@
 
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Synchronisierungseinstellungen";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "Bitte synchronisiere dieses Gerät mit einem bereits verbundenen DuckDuckGo-Browser auf einem anderen Gerät.";
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synchronisierung wurde angehalten. Wenn du die Synchronisierung dieses Geräts fortsetzen möchtest, stelle die Verbindung mit einem anderen Gerät oder deinem Wiederherstellungscode wieder her.";
@@ -319,6 +471,12 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup ist vorübergehend nicht verfügbar.";
+
+/* Description for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-description" = "Dieser Code wird in der aktuellen App-Version nicht unterstützt.";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "Aktualisiere den DuckDuckGo-Browser und versuche es erneut.";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "Synchronisierungsfehler";
@@ -1308,7 +1466,7 @@
 "data.import.detail.passwords.description" = "Du musst die Passwort-App öffnen und dann den Schritten zum Importieren folgen.";
 
 /* Step 1 instruction for importing from the Passwords app */
-"data.import.detail.passwords.step1" = "Tippe auf **···** > ** Daten in eine andere App exportieren**";
+"data.import.detail.passwords.step1" = "Tippe auf **···** > **Daten in eine andere App exportieren**";
 
 /* Step 2 instruction for importing from the Passwords app */
 "data.import.detail.passwords.step2" = "Tippe auf **Alles auswählen** > **Weiter**";
@@ -1526,9 +1684,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Fehlerbehebung";
 
-/* No comment provided by engineer. */
-"Delete" = "Löschen";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "Gerät";
 
@@ -1640,17 +1795,26 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Die KI-Funktionen von DuckDuckGo sind privat und optional. Ihre Daten werden nicht zum Trainieren von KI verwendet.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Seiteninhalt anhängen";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Frage zur Seite";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Seiteninhalt anhängen";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Diese Seite zusammenfassen";
 
 /* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
 "duckai.quick.action.summarize.page" = "Seite zusammenfassen";
+
+/* Destructive button confirming deletion of a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.button" = "Löschen";
+
+/* Message of the confirmation alert shown before deleting a recent Duck.ai chat. %@ is the chat title. */
+"duckai.recent.chat.remove.confirmation.message" = "„%@“ wird dauerhaft überall gelöscht.";
+
+/* Title of the confirmation alert shown before deleting a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.title" = "Diesen Chat löschen?";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Duck.ai zum Kontrollzentrum hinzufügen";
@@ -1679,8 +1843,14 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Browsermenü";
 
+/* Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings */
+"duckai.settings.enable.tab-bar-subtitle" = "Je nach Fenstergröße in der Tab-Leiste des Browsers oder in der Adressleiste anzeigen.";
+
+/* Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar) */
+"duckai.settings.enable.tab-bar-toggle" = "Tab-Leiste";
+
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Tab-Bildschirm";
+"duckai.settings.enable.tab-switcher-toggle" = "Tab-Manager-Bildschirm";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Sprachsuche";
@@ -1709,11 +1879,8 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Sprich mit Duck.ai mithilfe von Siri!";
 
-/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Alle Chats sind %@ privat";
-
-/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "privat";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo für iOS";
@@ -1750,6 +1917,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nie";
+
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "In der YouTube-App öffnen";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -1956,6 +2126,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Gib eine nicht-negative Anzahl von Tagen ein. Das Installationsdatum wird auf die entsprechende Anzahl von Tagen zurückgesetzt.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -1997,11 +2170,11 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Zuletzt verwendeter Fire-Tab";
 
-/* Menu item that burns (closes and clears data for) the tab referenced by the escape hatch card */
-"escapeHatch.menu.burnTab" = "Tab löschen";
-
 /* Menu item that closes the open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeTab" = "Tab schließen";
+
+/* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.deleteTab" = "Tab löschen";
 
 /* Menu item that returns the user to the open tab from the escape hatch card */
 "escapeHatch.menu.returnToTab" = "Zurück zum Tab";
@@ -2362,6 +2535,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-Tab";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftstrom";
 
@@ -2410,6 +2584,18 @@
 /* Home tab title */
 "homeTab.title" = "Startseite";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Mehrere Ereignisse werden nicht unterstützt. Versuche stattdessen, die heruntergeladene Datei zu öffnen.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Diese Datei kann nicht verarbeitet werden. Versuche stattdessen, die heruntergeladene Datei zu öffnen.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Nicht unterstützte Zeitzone. Versuche stattdessen, die heruntergeladene Datei zu öffnen.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Ereignis zum Apple-Kalender hinzugefügt";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 
@@ -2429,7 +2615,7 @@
 "input.field.placeholder.duckai" = "Alles privat fragen";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Stelle eine Folgefrage ...";
+"input.field.placeholder.duckai.followup" = "Antworten ...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Erweiterung installieren";
@@ -2509,11 +2695,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Neu laden";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Zoom zurücksetzen";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Auswählen";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Alle Tabs anzeigen";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Heranzoomen";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Herauszoomen";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Zuletzt verarbeitet: %@";
@@ -2806,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datenvolumen";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Es wird empfohlen, diese Option zu deaktivieren, damit dein gesamter Datenverkehr über das VPN läuft. Solltest du Probleme mit Funktionen wie WLAN-Anrufen, Nachrichten oder Voicemail haben, versuche, diese zu aktivieren.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Dienste von Netzbetreibern ausschließen";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Lass den lokalen Datenverkehr das VPN umgehen und dich mit Geräten in deinem lokalen Netzwerk verbinden, beispielsweise einem Drucker.";
 
@@ -2865,6 +3066,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Shortcuts";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Empfohlen in Netzwerken, denen du nicht vertraust, z. B. öffentliches WLAN in Hotels, Bars usw. Solltest du Probleme mit Funktionen (wie CarPlay, AirDrop usw.) oder der Verbindung zu anderen Geräten haben, versuche, diese zu deaktivieren. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Striktes Routing";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bestätigen";
@@ -2952,6 +3159,51 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Wähle deinen Browser";
+
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Ich bleibe in der Nähe, damit du täglich auf KI-Chats zugreifen und browsen kannst.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Alle Chats werden anonymisiert";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Kein Konto erforderlich, um auf alle KI-Funktionen zuzugreifen";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Verwendet deine Chats niemals zum Trainieren von KI";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Zugriff auf ChatGPT, Claude und mehr, alles an einem Ort";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Probiere Duck.ai aus!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Beliebte KIs";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "KI-Schutz aktiviert!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Möchtest du DuckDuckGo zu deinem Standardbrowser machen?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Starte einen privaten KI-Chat mit Duck.ai oder wechsle zur Suche, um sicher zu browsen.\n\nDu kannst Duck.ai überall dort nutzen, wo du das Chat-Symbol [[chat_icon]] siehst";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Wir bieten auch ein kostenpflichtiges Abonnement für fortschrittliche KI-Modelle mit höheren Chat-Limits von GPT, Claude und Llama sowie ein sicheres VPN und mehr an.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Probiere jetzt einen privaten KI-Chat aus!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Bereit, privat und kostenlos mit ChatGPT, Claude und anderen KIs zu chatten, in einem Browser, der dich aktiv schützt?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "KI-Chat starten";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Zur Erinnerung: Du kannst Duck.ai überall dort nutzen, wo du das Chat-Symbol [[chat_icon]] siehst.";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo bietet auch ein %1$@ mit einem %2$@ und %3$@.";
@@ -3340,26 +3592,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "In einer anderen App öffnen?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Zurück";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Wir haben versucht, es privat zu laden, aber es wird nicht angezeigt.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Möchtest du diese Seite in Safari öffnen?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "In Safari öffnen";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Leider konnte die Seite nicht geladen werden.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Diese Seite lässt sich nur in Safari laden";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "In Safari öffnen";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Diese Website hat ein ungültiges Sicherheitszertifikat und ist möglicherweise nicht sicher zu besuchen.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Bleib auf DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Einige Funktionen der Website sind mit diesem Browser möglicherweise nicht kompatibel.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Diese Seite möchte in Safari geöffnet werden.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo kann diese Seite nicht laden.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Aktuelle Verarbeitungsprotokolle";
@@ -3529,17 +3775,20 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Inaktivitätstimer";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Eröffnungsbildschirm";
-
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Zuletzt verwendeter Tab";
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Neuer Tab";
 
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Nach Inaktivität";
+
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Probiere die neue Option aus, um in der Adressleiste zwischen Suchen und Duck.ai zu wechseln.";
+
+/* Settings row that opens Duck.ai in a new tab */
+"settings.aichat.duckai.settings" = "Duck.ai-Einstellungen";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Duck.ai-Shortcuts verwalten";
@@ -4375,6 +4624,21 @@
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Serverdaten löschen?";
 
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "Jetzt synchronisieren";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "„%@“ kann auf deine synchronisierten DuckDuckGo-Passwörter, Autofill-Daten und Duck.ai-Chats zugreifen.";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "„%@“ kann auf deine synchronisierten Duck.ai-Chats zugreifen.";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "Neues Gerät synchronisieren?";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "das andere Gerät";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Kein Konto erforderlich. Ende-zu-Ende-Verschlüsselung bedeutet, dass niemand außer dir deine Lesezeichen sehen kann, nicht einmal wir.";
 
@@ -4438,9 +4702,6 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Gerät entfernen?";
 
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Code kopiert";
-
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Gerät erfolgreich synchronisiert!";
 
@@ -4491,6 +4752,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Tab schließen";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Startseiten-Tab schließen";
 
@@ -4502,6 +4764,7 @@
 
 /* New tab title */
 "tab.new.title" = "Neuer Tab";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Startseiten-Tab öffnen";
 
@@ -4510,6 +4773,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Fire-Tab öffnen";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "„%1$@“ auf %2$@ öffnen";
 
@@ -4593,6 +4857,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kontakt kann nicht hinzugefügt werden. Versuche stattdessen, die Kontaktdatei aus den Downloads zu öffnen.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt hinzugefügt";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Version: %@";
@@ -4924,11 +5194,41 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hol dir DuckDuckGo für Windows!";
 
-/* Explanation text for YouTube Ad Blocking feature */
-"youtube.ad.blocking.explanation" = "DuckDuckGo entfernt Video-Werbung auf YouTube, sodass du Videos ohne Unterbrechungen ansehen kannst.";
+/* Body text of the bottom sheet asking the user to send an anonymous breakage report */
+"youtube.ad.blocking.breakage-report.message" = "Sende einen anonymen Störungsbericht an DuckDuckGo. Hilf mit, den Werbeblocker für alle zu verbessern!";
 
-/* Settings screen title for YouTube Ad Blocking */
-"youtube.ad.blocking.title" = "YouTube-Werbung blockieren";
+/* Primary action sending an anonymous YouTube ad-blocking breakage report */
+"youtube.ad.blocking.breakage-report.send" = "Störungsbericht senden";
+
+/* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
+"youtube.ad.blocking.breakage-report.title" = "YouTube-Werbeblockierung funktioniert nicht?";
+
+/* Settings cell subtitle indicating YouTube ad blocking will re-enable on next app launch */
+"youtube.ad.blocking.disabled-until-relaunch" = "Deaktiviert bis zum Neustart";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo blockiert Video-Werbung auf YouTube, sodass du Videos ohne Unterbrechungen ansehen kannst.";
+
+/* Browsing menu row that turns YouTube ad blocking back on after the user has disabled it */
+"youtube.ad.blocking.menu.enable" = "YouTube-Werbeblocker aktivieren";
+
+/* Browsing menu row that opens the YouTube ad-block mode picker */
+"youtube.ad.blocking.menu.toggle" = "YouTube-Werbeblocker deaktivieren";
+
+/* Picker option keeping YouTube ad blocking always off */
+"youtube.ad.blocking.mode.always-off" = "Immer aus";
+
+/* Picker option keeping YouTube ad blocking always on */
+"youtube.ad.blocking.mode.always-on" = "Immer aktiviert";
+
+/* Picker option disabling YouTube ad blocking until the next app launch */
+"youtube.ad.blocking.mode.disable-until-relaunch" = "Deaktivieren bis zum Neustart";
+
+/* Title of the YouTube ad-block mode picker bottom sheet */
+"youtube.ad.blocking.picker.title" = "YouTube-Werbeblocker";
+
+/* Settings screen title for Ad Blocking */
+"youtube.ad.blocking.title" = "Werbeblockierung";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Werbung auf YouTube blockieren";
@@ -4938,6 +5238,15 @@
 
 /* Learn More link appended after the YouTube ad blocking toggle description */
 "youtube.ad.blocking.toggle.footer.learn-more" = "Mehr erfahren";
+
+/* Acknowledgement button on the YouTube ad-blocking unavailable bottom sheet */
+"youtube.ad.blocking.unavailable.got-it" = "Verstanden";
+
+/* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.message" = "Die Werbeblockierung wurde durch die jüngsten Änderungen bei YouTube beeinträchtigt. Vielen Dank für dein Verständnis, während wir daran arbeiten, diese Probleme zu beheben.";
+
+/* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.title" = "YouTube-Werbeblocker nicht verfügbar";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Lesezeichen";
@@ -4954,3 +5263,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Was möchtest du importieren?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Keine Treffer für \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Verwende die Adressleiste, um zu suchen und Websites zu besuchen oder für private KI-Chats zu Duck.ai zu wechseln.\n\nDu kannst Duck.ai überall dort nutzen, wo du das Chat-Symbol [[chat_icon]] siehst";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Private KI-Chats, die du jederzeit mit dem Fire Button löschen kannst. Probier’s doch mal aus! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Das ist Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Alles privat fragen";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Privat suchen";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Erkläre den Aktienmarkt, als wäre ich 10";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Plane einen perfekten Tag in London";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Was sind 10 faszinierende Fakten aus Wissenschaft, Natur und Geschichte?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Bereit anzufangen?\nProbier die Suchfunktion oder den KI-Chat!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Frag die KI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Code kopiert";

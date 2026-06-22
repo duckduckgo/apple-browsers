@@ -20,6 +20,7 @@
 import UIKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import OSLog
 
 class AutofillCredentialsDebugViewController: UITableViewController {

@@ -335,7 +335,7 @@ private struct MenuRowButton: View {
         var body: some View {
             HStack(spacing: Metrics.detailStackSpacing) {
                 if entryData.showNotificationDot {
-                    Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
+                    Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accentPrimary))
                         .frame(width: Metrics.dotSize, height: Metrics.dotSize)
                 }
 
@@ -438,6 +438,10 @@ private struct BrowsingMenuHeaderView: View {
             switch iconType {
             case .aiChat:
                 Image(uiImage: DesignSystemImages.Color.Size24.aiChatGradient)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            case .duckAILogo:
+                Image(uiImage: DesignSystemImages.Color.Size24.duckAI)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
             case .easterEgg(let url):

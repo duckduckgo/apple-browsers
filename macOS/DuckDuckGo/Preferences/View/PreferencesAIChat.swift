@@ -50,6 +50,23 @@ extension Preferences {
                                                        image: Image(nsImage: DesignSystemImages.Color.Size16.aiChatGradient),
                                                        bottomPadding: 2)
                             TextMenuItemCaption(UserText.aiChatDescription)
+
+                            if model.shouldShowDuckAiSettingsLink {
+                                Button {
+                                    model.openDuckAiSettings()
+                                } label: {
+                                    HStack {
+                                        Text(UserText.duckAiSettingsLink)
+                                        Image(.externalAppScheme)
+                                    }
+                                    .foregroundColor(Color.linkBlue)
+                                    .cursor(.pointingHand)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, 6)
+                                .accessibilityIdentifier("Preferences.AIChat.duckAiSettingsLink")
+                                .visibility(model.shouldShowAIFeatures ? .visible : .gone)
+                            }
                         }
 
                         Button(model.isAIFeaturesEnabled ? UserText.aiChatDisableButton : UserText.aiChatEnableButton) {
@@ -177,28 +194,26 @@ extension Preferences {
                     }
                 }
 
-                if model.shouldShowHideAIGeneratedImagesSection {
-                    PreferencePaneSection {
-                        VStack(alignment: .leading) {
-                            TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
-                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
-                                                       bottomPadding: 2)
+                PreferencePaneSection {
+                    VStack(alignment: .leading) {
+                        TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
+                                                   image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
+                                                   bottomPadding: 2)
 
-                            TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
-                                .padding(.bottom, 6)
-                            Button {
-                                PixelKit.fire(GeneralPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
-                                model.openSearchAssistSettings()
-                            } label: {
-                                HStack {
-                                    Text(UserText.searchAIFeaturesSettingsLink)
-                                    Image(.externalAppScheme)
-                                }
-                                .foregroundColor(Color.linkBlue)
-                                .cursor(.pointingHand)
+                        TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
+                            .padding(.bottom, 6)
+                        Button {
+                            PixelKit.fire(GeneralPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
+                            model.openSearchAssistSettings()
+                        } label: {
+                            HStack {
+                                Text(UserText.searchAIFeaturesSettingsLink)
+                                Image(.externalAppScheme)
                             }
-                            .buttonStyle(.plain)
+                            .foregroundColor(Color.linkBlue)
+                            .cursor(.pointingHand)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }

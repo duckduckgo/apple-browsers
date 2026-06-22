@@ -84,7 +84,7 @@ struct SafariExportInterstitialView: View {
         return !(horizontalSizeClass == .compact && verticalSizeClass == .regular)
     }
 
-    private struct ExportAnimationView: View {
+    fileprivate struct ExportAnimationView: View {
         @Environment(\.colorScheme) private var colorScheme
         @StateObject private var loopCoordinator = AnimationLoopCoordinator()
 
@@ -177,4 +177,12 @@ struct SafariExportInterstitialView: View {
             }
         }
     }
+}
+
+#Preview {
+    SafariExportInterstitialView(onOpenSettingsToExport: {}, onCancel: {})
+}
+
+#Preview("Export Animation") {
+    SafariExportInterstitialView.ExportAnimationView()
 }

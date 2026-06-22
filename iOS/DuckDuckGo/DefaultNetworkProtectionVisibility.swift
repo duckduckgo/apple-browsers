@@ -24,6 +24,7 @@ import Core
 import Subscription
 import Networking
 import Common
+import FoundationExtensions
 
 struct DefaultNetworkProtectionVisibility: NetworkProtectionFeatureVisibility {
 

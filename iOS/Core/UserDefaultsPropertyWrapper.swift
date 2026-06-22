@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 
 // Inspired by https://swiftsenpai.com/swift/create-the-perfect-userdefaults-wrapper-using-property-wrapper/

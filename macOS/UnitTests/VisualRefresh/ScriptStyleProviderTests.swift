@@ -22,6 +22,7 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
 import Common
+import FoundationExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor

@@ -37,6 +37,7 @@ struct SettingsSubscriptionView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
+
     @State var isShowingDBP = false
     @State var isShowingITP = false
     @State var isShowingVPN = false
@@ -98,7 +99,7 @@ struct SettingsSubscriptionView: View {
             SettingsCustomCell(content: {
                 Text(UserText.winBackCampaignSubscriptionSettingsMenuCTA)
                     .daxBodyRegular()
-                    .foregroundColor(Color.init(designSystemColor: .accent))
+                    .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
                 Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
@@ -145,9 +146,10 @@ struct SettingsSubscriptionView: View {
             SettingsCustomCell(content: {
                 Text(settingsViewModel.purchaseButtonText)
                     .daxBodyRegular()
-                    .foregroundColor(Color.init(designSystemColor: .accent))
+                    .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
+                Pixel.fire(pixel: .subscriptionEntrySettingsSubscriptionClick)
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }, isButton: true)
 
@@ -161,6 +163,9 @@ struct SettingsSubscriptionView: View {
                            isActive: $isShowingRestoreFlow) {
                 SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
             }
+        }
+        .onFirstAppear {
+            Pixel.fire(pixel: .subscriptionEntrySettingsImpression)
         }
     }
 
@@ -178,7 +183,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCustomCell(content: {
                     Text(UserText.settingsPProFreemiumDBPFreeScanCTA)
                         .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                         .padding(.leading, 32.0)
                 }, action: {
                     Pixel.fire(pixel: .freemiumPIRSettingsEntryPointClicked)
@@ -421,7 +426,7 @@ struct SettingsSubscriptionView: View {
 
                 let footerLink = Link(UserText.settingsPProSectionFooter,
                                       destination: ViewConstants.privacyPolicyURL)
-                    .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accent))
+                    .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accentPrimary))
 
                 Section(header: Text(UserText.settingsSubscriptionSection),
                         footer: !isSignedIn ? footerLink : nil

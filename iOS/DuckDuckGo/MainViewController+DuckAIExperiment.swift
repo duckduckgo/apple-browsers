@@ -18,7 +18,9 @@
 //
 
 import AIChat
+import Combine
 import Core
+import DesignResourcesKit
 import UIKit
 
 // MARK: - Duck.ai Query Experiment — onboarding fire flow types
@@ -90,14 +92,6 @@ extension MainViewController {
     // MARK: Fire dialog triggering
 
     func showExperimentFireDialogAfterAIChatResponseIfReady() {
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) else {
-            if experimentDuckAIFireOnboardingFlow.state != .completed {
-                experimentDuckAIFireOnboardingFlow.state = .idle
-            }
-            setExperimentFireControlsLocked(false)
-            return
-        }
-
         guard experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse,
               currentTab?.isAITab == true else {
             return
@@ -106,7 +100,12 @@ extension MainViewController {
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
         experimentDuckAIFireOnboardingFlow.state = .active
-        onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+        // The Duck.ai flow persists the interlude step `.interludeDuckAI` when the interlude started;
+        // The reason is that for that specific flow the Duck.ai chat happens in between the linear onboarding and the linear flow needs to resume when the interlude (Duck.ai chat) finishes
+        // Overwriting it the resume step with `.duckAIAnswerStep` would lose the signal that linear onboarding needs to resume on relaunch.
+        if linearOnboardingContext?.activeInterlude != .duckAI {
+            onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+        }
         applyExperimentDuckAIFireChromeState()
         setExperimentFireControlsLocked(true)
         if presentedViewController == nil {
@@ -158,6 +157,11 @@ extension MainViewController {
         swipeTabsCoordinator?.isEnabled = !locked
         viewCoordinator.omniBar.barView.isUserInteractionEnabled = !locked
         viewCoordinator.omniBar.barView.menuButton.isUserInteractionEnabled = !locked
+        viewCoordinator.omniBar.barView.alpha = locked ? 0.5 : 1
+
+        // Lock Duck.ai unified input controls during the fire onboarding step.
+        aiChatTabChatHeaderView?.setOnboardingLocked(locked)
+        unifiedToggleInputCoordinator?.setOnboardingControlsLocked(locked)
     }
 
     // MARK: Completion
@@ -169,7 +173,12 @@ extension MainViewController {
         // The experiment path skips fireButtonPulseStarted() so no timer auto-hides the highlight.
         // Dismiss it explicitly now that the fire step is complete.
         ViewHighlighter.hideAll()
-        daxDialogsManager.setAsChatFirstPath()
+        // The tracker-blocking demo post-fire sequence (visit-site -> tracker-blocked -> EOJ) is
+        // feature-flagged. When enabled, mark this as a chat-first path so DaxDialogs drives that
+        // sequence. When disabled, fall back to the standard contextual dialog flow.
+        if featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) {
+            daxDialogsManager.setAsChatFirstPath()
+        }
         daxDialogsManager.setFireEducationMessageSeen()
         setExperimentFireControlsLocked(false)
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
@@ -189,10 +198,10 @@ extension MainViewController {
         daxDialogsManager.setSearchMessageSeen()
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
         OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
-        ensureExperimentCompletionDialogPresentationPrerequisites()
+        ensureDuckAiCompletionDialogPresentationPrerequisites()
     }
 
-    private func ensureExperimentCompletionDialogPresentationPrerequisites() {
+    func ensureDuckAiCompletionDialogPresentationPrerequisites() {
         // Defer disabling dialogs when a subscription promo is still pending: the NTP's
         // showNextDaxDialogNew will call dialogProvider.dismiss() (equivalent) after the
         // promo is dismissed, so contextual dialogs are disabled at the right time.
@@ -231,15 +240,12 @@ extension MainViewController {
     // MARK: App resume
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) else {
-            // Experiment steps are stale when the flag is off, so clear them to avoid resuming into a dead screen.
-            if [.duckAIAnswerStep, .duckAIQuerySelection].contains(onboardingResumeStepStore.resumeStep) {
-                OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
-            }
-            return
-        }
-        guard onboardingResumeStepStore.resumeStep == .duckAIAnswerStep,
-              currentTab?.isAITab == true else {
+        // `.duckAIAnswerStep` (experiment flow) and `.interludeDuckAI` (tailored flow) describe the same
+        // physical state — the Fire onboarding is mid-flight and needs its AI tab + Fire dialog restored.
+        guard
+            [.duckAIAnswerStep, .interludeDuckAI].contains(onboardingResumeStepStore.resumeStep),
+            currentTab?.isAITab == true
+        else {
             return
         }
 
@@ -293,7 +299,14 @@ extension MainViewController {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         self?.refreshOmniBar()
                     }
-                    self?.completeExperimentDuckAIFireOnboarding()
+                    // If Duck.ai flow resume linear onboarding first and then complete duck.ai query 
+                    if self?.linearOnboardingContext?.activeInterlude == .duckAI {
+                        self?.finishOnboardingInterlude {
+                            self?.completeExperimentDuckAIFireOnboarding()
+                        }
+                    } else {
+                        self?.completeExperimentDuckAIFireOnboarding()
+                    }
                 }
             },
             onCancel: { [weak self] in
@@ -311,39 +324,140 @@ extension MainViewController {
 
     func onboardingCompletedWithExperimentTransition(controller: UIViewController) {
         enforceSingleTabAfterOnboardingIfNeeded()
-        let onboardingTransitionSnapshotView = showOnboardingTransitionSnapshot(from: controller)
+        let snapshot = showOnboardingTransitionSnapshot(from: controller)
+
+        // In UTI mode the coordinator is active immediately after openAIChatFromOnboarding fires.
+        // Calling setBarsVisibility(0) would kill the UTI session via dismissOmniBar(), so we take
+        // a simpler snapshot-only path: dismiss the intro modal, let UTI manage chrome, fade snapshot.
+        let isUTIActive = unifiedToggleInputCoordinator != nil
+
+        if isUTIActive {
+            prepareUTIChromeForSlideIn()
+        }
+
         controller.dismiss(animated: false) { [weak self] in
             guard let self else { return }
-            let chromeRevealDelay: TimeInterval = 0.05
-            let chromeRevealDuration: CGFloat = 0.25
-            let onboardingTransitionBottomFillView = self.showOnboardingTransitionBottomFill()
-
-            self.setBarsVisibility(0, animated: false, animationDuration: nil)
-            self.viewCoordinator.toolbar.alpha = 1 // keep toolbar at its off-screen start position
-            self.setOnboardingChromeOffscreenStartPosition()
-            self.viewCoordinator.statusBackground.alpha = 0
-            self.viewCoordinator.topSlideContainer.alpha = 0
-            onboardingTransitionBottomFillView?.alpha = 0
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + chromeRevealDelay) {
-                CATransaction.begin()
-                CATransaction.setCompletionBlock {
-                    UIView.animate(withDuration: 0.25) {
-                        onboardingTransitionSnapshotView?.alpha = 0
-                    } completion: { _ in
-                        self.hideOnboardingTransitionSnapshot(onboardingTransitionSnapshotView)
-                        self.hideOnboardingTransitionBottomFill(onboardingTransitionBottomFillView)
-                    }
-                }
-                self.setBarsVisibility(1, animated: true, animationDuration: chromeRevealDuration)
-                UIView.animate(withDuration: chromeRevealDuration) {
-                    self.viewCoordinator.statusBackground.alpha = 1
-                    self.viewCoordinator.topSlideContainer.alpha = 1
-                    onboardingTransitionBottomFillView?.alpha = 1
-                }
-                CATransaction.commit()
+            if isUTIActive {
+                self.runUTIOnboardingTransition(snapshot: snapshot)
+            } else {
+                self.runLegacyOnboardingTransition(snapshot: snapshot)
             }
             self.newTabPageViewController?.onboardingCompleted()
+        }
+    }
+
+    // Slide UTI chrome off-screen so it enters the same way the legacy bars do.
+    // transform-based so Auto Layout is unaffected and the content area doesn't shift.
+    private func prepareUTIChromeForSlideIn() {
+        let safeTop = view.safeAreaInsets.top
+        let headerH = viewCoordinator.aiChatTabChatHeaderContainer.bounds.height
+        viewCoordinator.aiChatTabChatHeaderContainer.transform =
+            CGAffineTransform(translationX: 0, y: -(headerH + safeTop))
+
+        let safeBottom = view.safeAreaInsets.bottom
+        let inputBarH = viewCoordinator.navigationBarContainer.bounds.height
+        viewCoordinator.navigationBarContainer.transform =
+            CGAffineTransform(translationX: 0, y: inputBarH + safeBottom)
+    }
+
+    private func runUTIOnboardingTransition(snapshot: UIView?) {
+        viewCoordinator.aiChatTabChatHeaderContainer.alpha = 0
+        viewCoordinator.navigationBarContainer.alpha = 0
+        viewCoordinator.statusBackground.alpha = 0
+
+        let chromeRevealDelay: TimeInterval = 0.05
+        DispatchQueue.main.asyncAfter(deadline: .now() + chromeRevealDelay) {
+            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
+                snapshot?.alpha = 0
+                self.viewCoordinator.aiChatTabChatHeaderContainer.transform = .identity
+                self.viewCoordinator.navigationBarContainer.transform = .identity
+            } completion: { _ in
+                self.hideOnboardingTransitionSnapshot(snapshot)
+            }
+        }
+
+        // Hide content so no partially-loaded web view bleeds through the fading snapshot.
+        viewCoordinator.contentContainer.alpha = 0
+
+        // Full-screen surface fill placed behind the content container. This prevents the
+        // root view's surfaceCanvas background from bleeding through the transparent
+        // contentContainer during both the snapshot fade and the subsequent content fade-in.
+        // It must be removed only after contentContainer is fully opaque.
+        let transitionFill = UIView()
+        transitionFill.backgroundColor = UIColor(singleUseColor: .duckAIWebViewBackground)
+        var fillFrame = view.bounds
+        fillFrame.size.height -= view.safeAreaInsets.bottom
+        transitionFill.frame = fillFrame
+        transitionFill.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        transitionFill.isUserInteractionEnabled = false
+        view.insertSubview(transitionFill, belowSubview: viewCoordinator.contentContainer)
+
+        UIView.animate(withDuration: 0.3) {
+            snapshot?.alpha = 0
+            self.viewCoordinator.aiChatTabChatHeaderContainer.alpha = 1
+            self.viewCoordinator.navigationBarContainer.alpha = 1
+            self.viewCoordinator.statusBackground.alpha = 1
+        } completion: { _ in
+            self.hideOnboardingTransitionSnapshot(snapshot)
+
+            let revealContent = {
+                UIView.animate(withDuration: 0.25) {
+                    self.viewCoordinator.contentContainer.alpha = 1
+                } completion: { _ in
+                    transitionFill.removeFromSuperview()
+                }
+            }
+
+            // Trigger the fade-in only once the web view has finished loading so the
+            // content is rendered before it becomes visible, not while it's still blank.
+            guard let webView = self.currentTab?.webView, webView.isLoading else {
+                revealContent()
+                return
+            }
+
+            var cancellable: AnyCancellable?
+            cancellable = webView.publisher(for: \.isLoading)
+                .filter { !$0 }
+                .first()
+                // delay before the web view content starts rendering before revealing it
+                .delay(for: .seconds(0.5), scheduler: DispatchQueue.main)
+                .sink { _ in
+                    cancellable = nil
+                    revealContent()
+                }
+            _=cancellable // suppress warning
+        }
+    }
+
+    private func runLegacyOnboardingTransition(snapshot: UIView?) {
+        let chromeRevealDelay: TimeInterval = 0.05
+        let chromeRevealDuration: CGFloat = 0.25
+        let onboardingTransitionBottomFillView = showOnboardingTransitionBottomFill()
+
+        setBarsVisibility(0, animated: false, animationDuration: nil)
+        viewCoordinator.toolbar.alpha = 1 // keep toolbar at its off-screen start position
+        setOnboardingChromeOffscreenStartPosition()
+        viewCoordinator.statusBackground.alpha = 0
+        viewCoordinator.topSlideContainer.alpha = 0
+        onboardingTransitionBottomFillView?.alpha = 0
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + chromeRevealDelay) {
+            CATransaction.begin()
+            CATransaction.setCompletionBlock {
+                UIView.animate(withDuration: 0.25) {
+                    snapshot?.alpha = 0
+                } completion: { _ in
+                    self.hideOnboardingTransitionSnapshot(snapshot)
+                    self.hideOnboardingTransitionBottomFill(onboardingTransitionBottomFillView)
+                }
+            }
+            self.setBarsVisibility(1, animated: true, animationDuration: chromeRevealDuration)
+            UIView.animate(withDuration: chromeRevealDuration) {
+                self.viewCoordinator.statusBackground.alpha = 1
+                self.viewCoordinator.topSlideContainer.alpha = 1
+                onboardingTransitionBottomFillView?.alpha = 1
+            }
+            CATransaction.commit()
         }
     }
 
@@ -354,7 +468,11 @@ extension MainViewController {
 
         if shouldArmExperimentFireOnboarding {
             experimentDuckAIFireOnboardingFlow.state = .awaitingFirstResponse
-            onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+            // Don't overwrite the tailored flow's interlude checkpoint with .duckAIAnswerStep as it's the signal that
+            // linear onboarding needs to resume after the Fire flow.
+            if linearOnboardingContext?.activeInterlude != .duckAI {
+                onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
+            }
             onboardingResumeStepStore.resumeExperimentPrompt = query
             enforceSingleTabAfterOnboardingIfNeeded()
         } else if experimentDuckAIFireOnboardingFlow.state != .completed {

@@ -24,6 +24,7 @@ import DDGSync
 import Bookmarks
 import Subscription
 import Common
+import FoundationExtensions
 import VPN
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
@@ -114,6 +115,7 @@ final class AppDependencyProvider: DependencyProvider {
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source.rawValue,
+                       session: "ios-browser",
                        defaultHeaders: [:],
                        defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
@@ -135,13 +137,6 @@ final class AppDependencyProvider: DependencyProvider {
         }
 
         let featureFlagOverrideStore = UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!
-
-        // Apply UI test overrides
-        LaunchOptionsHandler().applyUITestOverrides(
-            featureFlagOverrideStore: featureFlagOverrideStore,
-            configRolloutStore: .standard
-        )
-
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: featureFlagOverrideStore,
                                                                 actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
         )
@@ -158,11 +153,21 @@ final class AppDependencyProvider: DependencyProvider {
             let defaultFeatureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
                                                               privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                                               localOverrides: featureFlaggerOverrides,
+                                                              allowOverrides: { [internalUserDecider, isUITesting=LaunchOptionsHandler().isUITesting] in
+                                                                  internalUserDecider.isInternalUser || isUITesting
+                                                              },
                                                               experimentManager: experimentManager,
                                                               for: FeatureFlag.self)
             self.featureFlagger = defaultFeatureFlagger
             self.contentScopeExperimentsManager = defaultFeatureFlagger
             featureFlagger = defaultFeatureFlagger
+
+            // Applied after DefaultFeatureFlagger.init, which clears local overrides for non-internal users.
+            // Writing overrides afterwards keeps them intact for UI test mode where allowOverrides also returns true.
+            LaunchOptionsHandler().applyUITestOverrides(
+                featureFlagOverrideStore: featureFlagOverrideStore,
+                configRolloutStore: .standard
+            )
         }
 
         // Configure PixelKit Experiments
@@ -207,17 +212,19 @@ final class AppDependencyProvider: DependencyProvider {
         let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
         let authService = DefaultOAuthService(baseURL: authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
-        let refreshEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+        let isAuthV2WideEventEnabled = {
 #if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
+            return true
 #else
             return authEnvironment == .production
 #endif
-        })
+        }
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
 
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             authService: authService,
-                                            refreshEventMapping: refreshEventMapper)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
@@ -234,7 +241,7 @@ final class AppDependencyProvider: DependencyProvider {
 
             if tokenContainer.decodedAccessToken.isExpired() {
                 Logger.OAuth.debug("Refreshing tokens")
-                let tokens = try await authClient.getTokens(policy: .localForceRefresh)
+                let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
                 return tokens.accessToken
             } else {
                 Logger.general.debug("Trying to refresh valid token, using the old one")
@@ -260,7 +267,10 @@ final class AppDependencyProvider: DependencyProvider {
                                                                pixelHandler: pixelHandler,
                                                                isInternalUserEnabled: {
             ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
-        })
+                                                               },
+                                                               wideEvent: wideEvent,
+                                                               isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
         self.tokenHandlerProvider = subscriptionManager
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                      storePurchaseManager: storePurchaseManager,

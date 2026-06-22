@@ -28,13 +28,15 @@ struct TabSwitcherPill: View {
 
     let count: Int
     let isExpanded: Bool
+    let showsEndArrow: Bool
     let onTap: () -> Void
 
     @StateObject private var tabCountModel: TabCountModel
 
-    init(count: Int, isExpanded: Bool = false, onTap: @escaping () -> Void) {
+    init(count: Int, isExpanded: Bool = false, showsEndArrow: Bool = true, onTap: @escaping () -> Void) {
         self.count = count
         self.isExpanded = isExpanded
+        self.showsEndArrow = showsEndArrow
         self.onTap = onTap
         // Seed the model with the correct count up front so the badge
         // renders with the number on the first frame instead of flashing empty.
@@ -82,9 +84,11 @@ struct TabSwitcherPill: View {
 
         Spacer(minLength: 0)
 
-        Image(uiImage: DesignSystemImages.Glyphs.Size24.arrowRight)
-            .foregroundColor(Color(designSystemColor: .icons))
-            .transition(.move(edge: .trailing).combined(with: .opacity))
+        if showsEndArrow {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.arrowRight)
+                .foregroundColor(Color(designSystemColor: .icons))
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+        }
     }
 
     private enum Metrics {

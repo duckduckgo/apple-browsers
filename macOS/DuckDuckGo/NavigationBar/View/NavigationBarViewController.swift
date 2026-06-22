@@ -20,7 +20,9 @@ import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import DesignResourcesKitIcons
 import Freemium
 import History
@@ -1474,11 +1476,13 @@ final class NavigationBarViewController: NSViewController {
 
     private func toggleNetworkProtectionPopover() {
         guard Application.appDelegate.subscriptionManager.isUserAuthenticated else {
+            PixelKit.fire(SubscriptionPixel.subscriptionToolbarButtonClicked)
             popovers.toggleVPNUpsellPopover(from: networkProtectionButton)
             vpnUpsellVisibilityManager.dismissNotificationDot()
             return
         }
 
+        PixelKit.fire(SubscriptionPixel.subscriptionToolbarVPNButtonClicked)
         popovers.toggleNetworkProtectionPopover(from: networkProtectionButton, withDelegate: networkProtectionButtonModel)
     }
 
@@ -1946,24 +1950,30 @@ extension NavigationBarViewController: NSMenuDelegate {
         HomeButtonMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences, pinningManager: pinningManager)
         let shareTitle = pinningManager.shortcutTitle(for: .share)
         menu.addItem(withTitle: shareTitle, action: #selector(toggleSharePanelPinning), keyEquivalent: "")
+            .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
 
         let downloadsTitle = pinningManager.shortcutTitle(for: .downloads)
         menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
+            .withImage(DesignSystemImages.Glyphs.Size12.download)
 
         let autofillTitle = pinningManager.shortcutTitle(for: .autofill)
         menu.addItem(withTitle: autofillTitle, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "A")
+            .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
 
         let bookmarksTitle = pinningManager.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: bookmarksTitle, action: #selector(toggleBookmarksPanelPinning), keyEquivalent: "K")
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
 
         if !isInPopUpWindow && DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
             let networkProtectionTitle = pinningManager.shortcutTitle(for: .networkProtection)
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
+                .withImage(DesignSystemImages.Glyphs.Size12.vpnUnlock)
         }
 
         if !isInPopUpWindow && NSApp.delegateTyped.internalUserDecider.isInternalUser {
             let feedbackTitle = pinningManager.shortcutTitle(for: .feedback)
             menu.addItem(withTitle: feedbackTitle, action: #selector(toggleFeedbackPanelPinning), keyEquivalent: "")
+                .withImage(DesignSystemImages.Glyphs.Size12.feedback)
         }
     }
 
@@ -2217,7 +2227,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     func optionsButtonMenuRequestedSubscriptionPurchasePage(_ menu: NSMenu) {
         let url = subscriptionManager.url(for: .purchase)
         showTab(.subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appMenu.rawValue)))
-        PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
+        PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: SubscriptionFunnelOrigin.appMenu.rawValue))
     }
 
     func optionsButtonMenuRequestedWinBackOfferPurchasePage(_ menu: NSMenu) {

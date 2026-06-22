@@ -21,12 +21,14 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import Network
 import NetworkExtension
-import UserNotifications
 import os.log
 import PixelKit
+import UserNotifications
 
 open class PacketTunnelProvider: NEPacketTunnelProvider {
 
@@ -38,7 +40,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case tunnelStopAttempt(_ step: TunnelStopAttemptStep)
         case tunnelUpdateAttempt(_ step: TunnelUpdateAttemptStep)
         case tunnelWakeAttempt(_ step: TunnelWakeAttemptStep)
-        case tunnelStartOnDemandWithoutAccessToken
+        case tunnelStartOnDemandWithoutAccessToken(_ error: Error)
         case reportTunnelFailure(result: NetworkProtectionTunnelFailureMonitor.Result)
         case reportLatency(result: NetworkProtectionLatencyMonitor.Result, location: VPNSettings.SelectedLocation)
         case rekeyAttempt(_ step: RekeyAttemptStep)
@@ -105,9 +107,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         /// Whether attempts from this source should be recorded in the connection-attempt SLO.
         public var isConnectionAttempt: Bool {
             switch self {
-            case .start, .rekey, .serverChange, .locationChange,
+            case .start, .serverChange, .locationChange,
                  .adapterRestart, .failureRecovery, .serverMigration:
                 return true
+            case .rekey:
+                return false
             }
         }
     }
@@ -400,6 +404,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let providerEvents: EventMapping<Event>
     public let entitlementCheck: (() async -> Result<Bool, Error>)?
     public let loopDetector: ConnectionFailureLoopDetector
+    private let heartbeatStore: TunnelHeartbeatStore?
+    private var heartbeatTask: Task<Never, Error>? {
+        willSet { heartbeatTask?.cancel() }
+    }
+    private static let heartbeatInterval: TimeInterval = 15
 
     @MainActor
     public init(notificationsPresenter: VPNNotificationsPresenting,
@@ -428,7 +437,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 tunnelFailureMonitor: TunnelFailureMonitoring? = nil,
                 failureRecoveryHandler: FailureRecoveryHandling? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?,
-                loopDetector: ConnectionFailureLoopDetector) {
+                loopDetector: ConnectionFailureLoopDetector,
+                heartbeatStore: TunnelHeartbeatStore? = nil) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
         self.notificationsPresenter = notificationsPresenter
@@ -448,6 +458,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck
         self.loopDetector = loopDetector
+        self.heartbeatStore = heartbeatStore
 
         self.wideEvent = wideEvent ?? WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
@@ -792,8 +803,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
 #if os(iOS)
-            if (try? await tokenHandlerProvider.getToken()) == nil {
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
+            do {
+                _ = try await tokenHandlerProvider.getToken()
+            } catch {
+                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
             }
 
             // Load resources that require the device to be unlocked.
@@ -811,7 +824,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // manual start attempt that preceded failed, or if the subscription has
                 // expired.  In either case it should be enough to record the manual failures
                 // for these prerequisited to avoid flooding our metrics.
-                providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken)
+                providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken(error))
                 Logger.networkProtection.log("Going to sleep...")
                 try? await Task.sleep(interval: .seconds(15))
                 Logger.networkProtection.log("Waking up...")
@@ -843,6 +856,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             providerEvents.fire(.tunnelStartAttempt(.success))
             providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: .start))
             loopDetector.connectionSucceeded()
+            startHeartbeat()
             completeAndCleanupConnectionWideEvent()
         } catch {
             if loopDetector.connectionFailed(isOnDemand: startupOptions.startupMethod == .automaticOnDemand) {
@@ -959,6 +973,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     open override func stopTunnel(with reason: NEProviderStopReason) async {
         providerEvents.fire(.tunnelStopAttempt(.begin))
+        stopHeartbeat()
 
         Logger.networkProtection.log("🛑 Stopping tunnel with reason \(String(describing: reason), privacy: .public)")
 
@@ -990,6 +1005,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     func cancelTunnel(with stopError: Error) async {
         providerEvents.fire(.tunnelStopAttempt(.begin))
+        stopHeartbeat()
 
         Logger.networkProtection.error("Stopping tunnel with error \(stopError.localizedDescription, privacy: .public)")
 
@@ -1071,48 +1087,68 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             providerEvents.fire(.reportConnectionAttempt(attempt: .connecting, source: attemptSource))
         }
 
-        if reassert {
-            await stopMonitors()
+        try await TunnelConfigurationUpdateOperation.run(
+            reassert: reassert,
+            generateTunnelConfiguration: {
+                switch updateMethod {
+                case .selectServer(let serverSelectionMethod):
+                    return try await generateTunnelConfiguration(
+                        serverSelectionMethod: serverSelectionMethod,
+                        dnsSettings: settings.dnsSettings,
+                        regenerateKey: regenerateKey)
+
+                case .useConfiguration(let newTunnelConfiguration):
+                    return newTunnelConfiguration
+                }
+            },
+            stopMonitors: { [weak self] in
+                await self?.stopMonitors()
+            },
+            updateAdapterConfiguration: { [weak self] tunnelConfiguration in
+                guard let self else { throw CancellationError() }
+                try await self.updateAdapterConfiguration(tunnelConfiguration: tunnelConfiguration, reassert: reassert)
+            },
+            handleAdapterStarted: { [weak self] in
+                guard let self else { throw CancellationError() }
+                try await self.handleAdapterStarted(startReason: .reconnected)
+            },
+            handleFailure: { [weak self] error in
+                guard let self else { return false }
+                return await self.handleTunnelConfigurationUpdateFailure(error, attemptSource: attemptSource)
+            },
+            restartMonitorsAfterFailure: { [weak self] in
+                await self?.restartMonitorsAfterFailedReassert()
+            }
+        )
+
+        providerEvents.fire(.tunnelUpdateAttempt(.success))
+        if attemptSource.isConnectionAttempt {
+            providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: attemptSource))
+        }
+    }
+
+    @MainActor
+    private func handleTunnelConfigurationUpdateFailure(_ error: Error, attemptSource: ConnectionAttemptSource) async -> Bool {
+        providerEvents.fire(.tunnelUpdateAttempt(.failure(error)))
+        if attemptSource.isConnectionAttempt {
+            providerEvents.fire(.reportConnectionAttempt(attempt: .failure, source: attemptSource))
         }
 
+        switch error {
+        case WireGuardAdapterError.setWireguardConfig:
+            await cancelTunnel(with: error)
+            return true
+        default:
+            return false
+        }
+    }
+
+    @MainActor
+    private func restartMonitorsAfterFailedReassert() async {
         do {
-            let tunnelConfiguration: TunnelConfiguration
-
-            switch updateMethod {
-            case .selectServer(let serverSelectionMethod):
-                tunnelConfiguration = try await generateTunnelConfiguration(
-                    serverSelectionMethod: serverSelectionMethod,
-                    dnsSettings: settings.dnsSettings,
-                    regenerateKey: regenerateKey)
-
-            case .useConfiguration(let newTunnelConfiguration):
-                tunnelConfiguration = newTunnelConfiguration
-            }
-
-            try await updateAdapterConfiguration(tunnelConfiguration: tunnelConfiguration, reassert: reassert)
-
-            if reassert {
-                try await handleAdapterStarted(startReason: .reconnected)
-            }
-
-            providerEvents.fire(.tunnelUpdateAttempt(.success))
-            if attemptSource.isConnectionAttempt {
-                providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: attemptSource))
-            }
+            try await startMonitors(testImmediately: true)
         } catch {
-            providerEvents.fire(.tunnelUpdateAttempt(.failure(error)))
-            if attemptSource.isConnectionAttempt {
-                providerEvents.fire(.reportConnectionAttempt(attempt: .failure, source: attemptSource))
-            }
-
-            switch error {
-            case WireGuardAdapterError.setWireguardConfig:
-                await cancelTunnel(with: error)
-            default:
-                break
-            }
-
-            throw error
+            Logger.networkProtection.error("Failed to restart monitors after failed reassert update: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -1151,6 +1187,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             configurationResult = try await deviceManager.generateTunnelConfiguration(
                 resolvedSelectionMethod: resolvedServerSelectionMethod,
                 excludeLocalNetworks: settings.excludeLocalNetworks,
+                excludeCGNAT: settings.excludeCGNAT,
                 dnsSettings: dnsSettings,
                 regenerateKey: regenerateKey
             )
@@ -1226,6 +1263,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 .setDNSSettings,
                 .setEnforceRoutes,
                 .setExcludeLocalNetworks,
+                .setExcludeCGNAT,
                 .setExcludeAPNs,
                 .setExcludeCellularServices,
                 .setExcludeDeviceCommunication,
@@ -1239,6 +1277,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // Some of these don't require further action
             // Some may require an adapter restart, but it's best if that's taken care of by
             // the app that's coordinating the updates.
+            //
+            // enforceRoutes specifically is bound to the NECP session at creation time, so a
+            // network-settings re-push here can't change it. The controller re-saves the protocol
+            // and fully restarts the tunnel when this setting changes instead.
             break
         }
     }
@@ -1318,16 +1360,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         switch startReason {
         case .manual, .onDemand, .snoozeEnded:
             if leakCheckService == nil {
-                // Capture the interface name on the main actor; the resolver itself
-                // (which may consult NWPathMonitor) is safe to call off-main.
-                let fallbackInterfaceName = adapter.interfaceName
                 let service = VPNLeakCheckService(
                     configuration: .default,
                     egressInfo: { [weak self] in
                         await self?.currentEgressInfo()
                     },
                     tunnelInterface: { [weak self] in
-                        await self?.resolveTunnelInterface(fallbackInterfaceName: fallbackInterfaceName)
+                        guard let self else { return .unavailable }
+                        // Read the utun name live per check: the service outlives rekeys/reconnects/wake,
+                        // any of which can rebind the tunnel to a new utun. A stale name makes the
+                        // older-OS fallback (no `virtualInterface`) pin probes to the wrong interface → false leak.
+                        let currentInterfaceName = await self.tunnelInterfaceName
+                        return await self.resolveTunnelInterface(fallbackInterfaceName: currentInterfaceName)
                     },
                     tunnelPathGeneration: { [weak self] in
                         guard let self else { return 0 }
@@ -1457,6 +1501,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     public override func sleep() async {
         Logger.networkProtectionSleep.log("Sleep")
+        stopHeartbeat()
         await stopMonitors()
     }
 
@@ -1479,11 +1524,26 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 try await handleAdapterStarted(startReason: .wake)
                 Logger.networkProtectionConnectionTester.log("🟢 Wake success")
                 providerEvents.fire(.tunnelWakeAttempt(.success))
+                startHeartbeat()
             } catch {
                 Logger.networkProtection.error("🔴 Wake error: \(error.localizedDescription, privacy: .public)")
                 providerEvents.fire(.tunnelWakeAttempt(.failure(error)))
             }
         }
+    }
+
+    // MARK: - Tunnel heartbeat
+
+    private func startHeartbeat() {
+        guard settings.isOrphanProxyDetectionEnabled else { return }
+        guard let heartbeatStore else { return }
+        heartbeatTask = Task.periodic(interval: Self.heartbeatInterval) { [weak heartbeatStore] in
+            heartbeatStore?.recordHeartbeat()
+        }
+    }
+
+    private func stopHeartbeat() {
+        heartbeatTask = nil
     }
 
     // MARK: - Snooze

@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Combine
 
 /// This protocol defines a common interface for feature flags managed by FeatureFlagger.

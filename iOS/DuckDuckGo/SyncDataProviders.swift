@@ -21,6 +21,7 @@ import Bookmarks
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import DDGSync
 import Persistence
 import PrivacyConfig

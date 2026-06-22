@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import UniformTypeIdentifiers
 import PixelKit
 import os.log
@@ -104,6 +105,10 @@ struct DataImportViewModel {
     var selectedProfile: BrowserProfile?
     /// selected Data Types to import (bookmarks/passwords)
     var selectedDataTypes: Set<DataType> = []
+    /// True once the user explicitly toggles a data-type checkbox.
+    /// Lets `update(with:)` tell user intent apart from a selection that's
+    /// just a side-effect of the current source's supported types.
+    var hasUserModifiedDataTypeSelection: Bool = false
     var isPickerExpanded: Bool = false
 
     enum DataTypeSelection: Equatable {
@@ -206,6 +211,7 @@ struct DataImportViewModel {
          preferredImportSources: [Source] = [.chrome, .firefox, .safari],
          summary: [DataTypeImportResult] = [],
          selectedDataTypes: Set<DataType>? = nil,
+         hasUserModifiedDataTypeSelection: Bool = false,
          isPickerExpanded: Bool = false,
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,
          syncFeatureVisibility: SyncFeatureVisibility = .hide,
@@ -263,6 +269,7 @@ struct DataImportViewModel {
             previousSelectedTypes: selectedDataTypes,
             availableTypes: availableImportTypes
         )
+        self.hasUserModifiedDataTypeSelection = hasUserModifiedDataTypeSelection
 
         self.summary = summary
         self.isPickerExpanded = isPickerExpanded
@@ -910,8 +917,11 @@ extension DataImportViewModel {
             wideEvent.discardFlow(dataImportWideEventData)
             self.dataImportWideEventData = nil
         }
+        // Only carry the user's selection forward if they actually chose it.
+        // Otherwise let the new source default to its full set of types.
         self = .init(importSource: importSource,
-                     selectedDataTypes: self.selectedDataTypes,
+                     selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
+                     hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,
                      isPickerExpanded: self.isPickerExpanded,
                      isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
                      syncFeatureVisibility: syncFeatureVisibility,

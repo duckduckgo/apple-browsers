@@ -329,6 +329,40 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
+    // MARK: - Bound user-script provider
+
+    func test_bindToUserScript_attachedPageContextProvider_returnsContextWhilePending() {
+        // User taps chip → collection → context lands as .pendingSubmit. The next prompt's
+        // payload must carry it so duck.ai can attribute the initial prompt.
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.chipViewModel.tapToAttach()
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: url.absoluteString))
+
+        let userScript = makeTestUserScript()
+        sut.bindToUserScript(userScript)
+
+        XCTAssertEqual(userScript.attachedPageContextProvider?()?.title, "Page A")
+    }
+
+    func test_bindToUserScript_attachedPageContextProvider_returnsNilAfterMarkPromptSubmitted() {
+        // Once the chip flips to .delivered, the bound provider must
+        // stop emitting context — otherwise every follow-up prompt's payload carries it and
+        // duck.ai renders "Page content from..." beneath each follow-up.
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.chipViewModel.tapToAttach()
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: url.absoluteString))
+
+        let userScript = makeTestUserScript()
+        sut.bindToUserScript(userScript)
+        sut.markPromptSubmitted()
+
+        XCTAssertNil(userScript.attachedPageContextProvider?() ?? nil)
+    }
+
     // MARK: - Helpers
 
     private func makeContext(title: String, url: String) -> AIChatPageContext {

@@ -22,6 +22,7 @@ import SwiftUI
 import Onboarding
 import Subscription
 import Common
+import FoundationExtensions
 
 typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & SubscriptionPromotionCoordinating
 
@@ -54,17 +55,21 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
+    private let onboardingFlowProvider: OnboardingFlowProviding
 
     init(
         delegate: OnboardingNavigationDelegate?,
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
+        onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
+        onboardingFlowProvider: OnboardingFlowProviding = OnboardingManager()
+
     ) {
         self.delegate = delegate
         self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+        self.onboardingFlowProvider = onboardingFlowProvider
     }
 
     @ViewBuilder
@@ -185,7 +190,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
 
     func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         let onDismiss = { [weak self] in
-            self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
+            self?.onboardingPixelReporter.measureDuckAIFinalDialogCTAAction()
             onDismiss()
         }
 
@@ -200,7 +205,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
             .onboardingContextualBackgroundStyle(background: .illustratedGradient)
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
+                self?.onboardingPixelReporter.measureDuckAIFinalDialogImpression()
             }
         )
     }
@@ -218,7 +223,8 @@ private extension NewTabDaxDialogFactory {
                 proceedAction: { [weak self] in
                     self?.onboardingPixelReporter.measureSubscriptionPromoEngageCTAAction()
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
-                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
+                    let featurePage: OnboardingSubscriptionPromotionPage? = self?.onboardingFlowProvider.currentOnboardingFlow == .duckAI ? .duckAI : nil
+                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents(featurePage: featurePage)
                     NotificationCenter.default.post(
                         name: .settingsDeepLinkNotification,
                         object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),

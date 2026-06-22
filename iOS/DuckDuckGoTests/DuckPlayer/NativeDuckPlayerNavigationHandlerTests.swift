@@ -22,6 +22,7 @@ import WebKit
 import DuckPlayer
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import Core
 import Combine
 import BrowserServicesKitTestsUtils

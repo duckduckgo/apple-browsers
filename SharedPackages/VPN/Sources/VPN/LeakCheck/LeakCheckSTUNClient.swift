@@ -17,7 +17,9 @@
 //
 
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import Network
 
 public protocol LeakCheckSTUNClient: Sendable {

@@ -20,6 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import UIKit
 import Combine
 import Core

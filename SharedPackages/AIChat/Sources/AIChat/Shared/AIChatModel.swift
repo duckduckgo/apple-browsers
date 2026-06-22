@@ -42,6 +42,8 @@ public struct AIChatModel {
     public let accessTier: [String]
     /// Supported reasoning effort levels. Empty when reasoning is not supported.
     public let supportedReasoningEffort: [AIChatReasoningEffort]
+    /// Per-effort access metadata from the `/models` API. `nil` when the backend omits the field.
+    public let reasoningEffortAccess: [AIChatReasoningEffortAccess]?
 
     public enum ModelProvider {
         case openAI
@@ -67,7 +69,8 @@ public struct AIChatModel {
         supportedTools: [AIChatRAGTool] = [],
         entityHasAccess: Bool,
         accessTier: [String] = [],
-        supportedReasoningEffort: [AIChatReasoningEffort] = []
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
     ) {
         self.id = id
         self.name = name
@@ -80,6 +83,7 @@ public struct AIChatModel {
         self.entityHasAccess = entityHasAccess
         self.accessTier = accessTier
         self.supportedReasoningEffort = supportedReasoningEffort
+        self.reasoningEffortAccess = reasoningEffortAccess
     }
 
     public func supportsTool(_ tool: AIChatRAGTool) -> Bool {

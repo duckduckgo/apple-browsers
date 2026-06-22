@@ -212,6 +212,87 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertEqual(items.first?.descriptionText, "Original Item Description")
     }
 
+    func testThatCardsListPreservesPerItemImageUrlThroughTranslation() throws {
+        // GIVEN
+        let imageUrl = URL(string: "https://example.com/item.png")
+        let item = RemoteMessageModelType.ListItem(
+            id: "item1",
+            type: .twoLinesItem(
+                titleText: "Original Title",
+                descriptionText: "Original Description",
+                placeholderImage: .announce,
+                imageUrl: imageUrl,
+                action: nil
+            ),
+            matchingRules: [],
+            exclusionRules: []
+        )
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Title", items: [item], primaryActionText: "Done")
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "item1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Title",
+                descriptionText: "Translated Description",
+                primaryActionText: nil
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+        guard case let .twoLinesItem(_, _, _, translatedImageUrl, _) = items.first?.type else {
+            XCTFail("Expected twoLinesItem type")
+            return
+        }
+        XCTAssertEqual(translatedImageUrl, imageUrl, "imageUrl should be preserved across translation")
+    }
+
+    func testThatFeaturedItemPreservesImageUrlThroughTranslation() throws {
+        // GIVEN
+        let imageUrl = URL(string: "https://example.com/featured.png")
+        let item = RemoteMessageModelType.ListItem(
+            id: "featured1",
+            type: .featuredTwoLinesSingleActionItem(
+                titleText: "Original Title",
+                descriptionText: "Original Description",
+                placeholderImage: .announce,
+                imageUrl: imageUrl,
+                primaryActionText: "Original Action",
+                primaryAction: .dismiss
+            ),
+            matchingRules: [],
+            exclusionRules: []
+        )
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Title", items: [item], primaryActionText: "Done")
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "featured1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Title",
+                descriptionText: "Translated Description",
+                primaryActionText: "Translated Action"
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+        guard case let .featuredTwoLinesSingleActionItem(_, _, _, translatedImageUrl, _, _) = items.first?.type else {
+            XCTFail("Expected featuredTwoLinesSingleActionItem type")
+            return
+        }
+        XCTAssertEqual(translatedImageUrl, imageUrl, "imageUrl should be preserved across translation")
+    }
+
     func testThatCardsListPreservesNonTranslatableFields() throws {
         // GIVEN
         let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", titleText: "Original Title", descriptionText: "Original Description", placeholder: .keyImport, action: .urlInContext(value: "www.duckduckgo.com"), matchingRules: [5], exclusionRules: [6])
@@ -249,6 +330,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
                 titleText: "Translated Title",
                 descriptionText: "Translated Description",
                 placeholderImage: .keyImport,
+                imageUrl: nil,
                 action: .urlInContext(value: "www.duckduckgo.com")
             )
         )
@@ -553,6 +635,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
                 titleText: "Translated Title",
                 descriptionText: "Translated Description",
                 placeholderImage: .visualDesignUpdate,
+                imageUrl: nil,
                 primaryActionText: "Translated Action",
                 primaryAction: .navigation(value: .settings)
             )

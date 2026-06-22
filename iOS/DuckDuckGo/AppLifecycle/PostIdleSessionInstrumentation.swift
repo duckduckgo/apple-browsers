@@ -41,6 +41,15 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// User pressed back / cancel from the post-idle surface.
     func backPressed()
 
+    /// User changed the Opening Screen option from the escape hatch's settings menu.
+    func openingScreenChanged()
+
+    /// User closed the open tab from the escape hatch's menu. Idempotent within a session.
+    func closeTabTapped()
+
+    /// User burned the open tab from the escape hatch's menu. Idempotent within a session.
+    func burnTabTapped()
+
     /// Terminal user action ended the session (bar used, return-to-page, etc.).
     func sessionEnded(reason: PostIdleSessionWideEventData.StatusReason)
 
@@ -101,6 +110,27 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     func backPressed() {
         updateActiveSession { data in
             data.backPressed = true
+            markFirstInteractionIfNeeded(on: data, at: dateProvider())
+        }
+    }
+
+    func openingScreenChanged() {
+        updateActiveSession { data in
+            data.openingScreenChanged = true
+            markFirstInteractionIfNeeded(on: data, at: dateProvider())
+        }
+    }
+
+    func closeTabTapped() {
+        updateActiveSession { data in
+            data.closeTabTapped = true
+            markFirstInteractionIfNeeded(on: data, at: dateProvider())
+        }
+    }
+
+    func burnTabTapped() {
+        updateActiveSession { data in
+            data.burnTabTapped = true
             markFirstInteractionIfNeeded(on: data, at: dateProvider())
         }
     }

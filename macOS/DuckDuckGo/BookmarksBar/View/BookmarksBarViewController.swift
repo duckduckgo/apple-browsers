@@ -19,9 +19,11 @@
 import AppKit
 import Combine
 import Common
-import Foundation
-import os.log
+import ConcurrencyExtensions
 import DesignResourcesKitIcons
+import Foundation
+import FoundationExtensions
+import os.log
 import PrivacyConfig
 
 final class BookmarksBarViewController: NSViewController {

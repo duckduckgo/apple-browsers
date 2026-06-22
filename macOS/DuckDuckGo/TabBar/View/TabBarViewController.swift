@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import Lottie
 import os.log
 import PixelKit
@@ -1053,7 +1054,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         //         ↪ AXImage (TabBarViewItem.favicon)
         //         ↪ AXStaticText (TabBarViewItem.title)
         //         ↪ AXButton (TabBarViewItem.closeButton)
-        //         ↪ AXButton (TabBarViewItem.permissionButton)
         //         ↪ AXButton (TabBarViewItem.muteButton)
         //         ↪ AXButton (TabBarViewItem.crashButton)
         //      ↪ …
@@ -2170,12 +2170,11 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCrashMultipleTimesAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
-            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+        guard let tab = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab else {
+            assertionFailure("TabBarViewController: Failed to get tab for tab bar view item")
             return
         }
-
-        tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.killWebContentProcessMultipleTimes()
+        tab.killWebContentProcessMultipleTimes()
     }
 
     func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_ tabBarViewItem: TabBarViewItem, sender: NSButton, shouldShow: Bool) {
@@ -2451,23 +2450,6 @@ extension TabBarViewController: TabBarViewItemDelegate {
         tabCollectionViewModel.remove(at: tabIndex)
     }
 
-    func tabBarViewItemTogglePermissionAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let indexPath = collectionView.indexPath(for: tabBarViewItem),
-              let permissions = tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.permissions
-        else {
-            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item or its permissions")
-            return
-        }
-
-        if permissions.permissions.camera.isActive || permissions.permissions.microphone.isActive {
-            permissions.set([.camera, .microphone], muted: true)
-        } else if permissions.permissions.camera.isPaused || permissions.permissions.microphone.isPaused {
-            permissions.set([.camera, .microphone], muted: false)
-        } else {
-            assertionFailure("Unexpected Tab Permissions state")
-        }
-    }
-
     func tabBarViewItemCloseOtherAction(_ tabBarViewItem: TabBarViewItem) {
         guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
             assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
@@ -2514,47 +2496,26 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemFireproofSite(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-        let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let url = tabCollection?.tabs[safe: indexPath.item]?.url
-        else {
-            assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
+        guard let url = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.url else {
+            assertionFailure("TabBarViewController: Failed to get URL for tab bar view item")
             return
         }
-
         fireproof(url: url)
     }
 
     func tabBarViewItemMuteUnmuteSite(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-        let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]
-        else {
-            assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
+        guard let tab = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab else {
+            assertionFailure("TabBarViewController: Failed to get tab for tab bar view item")
             return
         }
-
         tab.muteUnmuteTab()
     }
 
     func tabBarViewItemRemoveFireproofing(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
-        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-        let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let url = tabCollection?.tabs[safe: indexPath.item]?.url
-        else {
-            assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
+        guard let url = (tabBarViewItem.tabViewModel as? TabViewModel)?.tab.url else {
+            assertionFailure("TabBarViewController: Failed to get URL for tab bar view item")
             return
         }
-
         removeFireproofing(url: url)
     }
 

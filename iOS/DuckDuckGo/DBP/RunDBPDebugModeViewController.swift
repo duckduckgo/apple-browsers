@@ -17,20 +17,22 @@
 //  limitations under the License.
 //
 
-import UIKit
-import SwiftUI
-import DataBrokerProtectionCore
-import DataBrokerProtection_iOS
 import BrowserServicesKit
-import ContentScopeScripts
-import WebKit
-import Common
 import Combine
+import Common
+import ConcurrencyExtensions
+import ContentScopeScripts
+import Core
+import DataBrokerProtection_iOS
+import DataBrokerProtectionCore
+import enum UserScript.UserScriptError
+import FoundationExtensions
 import os.log
 import PixelKit
 import PrivacyConfig
-import Core
-import enum UserScript.UserScriptError
+import SwiftUI
+import UIKit
+import WebKit
 
 // MARK: - Main View Controller
 
@@ -373,6 +375,11 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return ContentBlocking.shared.privacyConfigurationManager
     }
 
+    private func makeContentBlocking() -> DBPWebViewContentBlocking? {
+        guard featureFlagger.isContentBlockingOn else { return nil }
+        return DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+    }
+
     private let contentScopeProperties: ContentScopeProperties
     private let emailConfirmationDataService: EmailConfirmationDataService
     private let debugEmailConfirmationStore: DebugEmailConfirmationStore
@@ -556,10 +563,11 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         emailConfirmationDataService: emailConfirmationDataService,
                         captchaService: captchaService,
                         featureFlagger: featureFlagger,
-                        applicationNameForUserAgent: nil,
+                        applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                         stageDurationCalculator: FakeStageDurationCalculator(),
                         pixelHandler: fakePixelHandler,
-                        executionConfig: executionConfig
+                        executionConfig: executionConfig,
+                        contentBlocking: makeContentBlocking()
                     ) { true }
 
                     self.currentRunner = runner
@@ -688,11 +696,12 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
-                    applicationNameForUserAgent: nil,
+                    applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,
-                    actionsHandlerMode: .optOut
+                    actionsHandlerMode: .optOut,
+                    contentBlocking: makeContentBlocking()
                 ) { true }
                 
                 self.currentOptOutRunner = runner
@@ -861,11 +870,12 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
-                    applicationNameForUserAgent: nil,
+                    applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,
-                    actionsHandlerMode: .emailConfirmation(confirmationURL)
+                    actionsHandlerMode: .emailConfirmation(confirmationURL),
+                    contentBlocking: makeContentBlocking()
                 ) { true }
 
                 self.currentOptOutRunner = runner

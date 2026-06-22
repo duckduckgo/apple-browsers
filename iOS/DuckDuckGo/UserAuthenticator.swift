@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import LocalAuthentication
 import Core

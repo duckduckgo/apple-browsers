@@ -7,14 +7,14 @@
         "suffixes": [
             {
                 "description": "Permission type being requested",
-                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external_scheme"]
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme"]
             },
             {
                 "description": "User's decision",
                 "enum": ["allow", "deny"]
             }
         ],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_permission_center_changed": {
         "description": "Fired when user changes a permission decision in the Permission Center dropdown",
@@ -23,7 +23,7 @@
         "suffixes": [
             {
                 "description": "Permission type being changed",
-                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external_scheme", "autoplay_policy"]
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme", "autoplay-policy"]
             },
             {
                 "description": "Literal 'to' separator",
@@ -37,6 +37,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "from",
                 "type": "string",
@@ -52,7 +53,7 @@
         "suffixes": [
             {
                 "description": "Permission type being reset",
-                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external_scheme", "autoplay_policy"]
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme", "autoplay-policy"]
             }
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
@@ -67,6 +68,6 @@
                 "enum": ["camera", "microphone", "geolocation", "notification"]
             }
         ],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

@@ -1,11 +1,13 @@
 {
+  "originHash" : "1e2ceaf8ddf1f5a196d2325f90db3f4ad2a04d18a4a18c839bcafddc7fe8394e",
   "pins" : [
     {
-      "identity" : "apple-toolbox",
+      "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/apple-toolbox.git",
+      "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "6704f157d3887a6d292a5cb1e6a148e2d1c696fd"
+        "revision" : "24a5cd08938f22092dcd0c140b153b36d6468736",
+        "version" : "15.1.0"
       }
     },
     {
@@ -13,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "0b91be6b29805466d101b556f775763f7c0c5c18",
-        "version" : "18.4.0"
+        "revision" : "84b5e3019b2c7b3c90e8d296f30fcfd53768bcd8",
+        "version" : "19.1.0"
       }
     },
     {
@@ -31,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/jwt-kit.git",
       "state" : {
-        "revision" : "c2595b9ad7f512d7f334830b4df1fed6e917946a",
-        "version" : "4.13.4"
+        "revision" : "13e7513b3ba0afa13967daf77af2fb4ad087306c",
+        "version" : "4.13.5"
       }
     },
     {
@@ -40,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "fd3b7e2d8194e265c537f227c706de7db3085da5",
-        "version" : "9.4.0"
+        "revision" : "40a8c752fb73a15738899dc0edb5e17e33302a37",
+        "version" : "9.10.1"
       }
     },
     {
@@ -60,15 +62,6 @@
       "state" : {
         "revision" : "87e50f483c54e6efd60e885f7f5aa946cee68023",
         "version" : "1.2.1"
-      }
-    },
-    {
-      "identity" : "swift-argument-parser",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-argument-parser.git",
-      "state" : {
-        "revision" : "cdd0ef3755280949551dc26dee5de9ddeda89f54",
-        "version" : "1.6.2"
       }
     },
     {
@@ -99,15 +92,6 @@
       }
     },
     {
-      "identity" : "swift-syntax",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-syntax",
-      "state" : {
-        "revision" : "f99ae8aa18f0cf0d53481901f88a0991dc3bd4a2",
-        "version" : "601.0.1"
-      }
-    },
-    {
       "identity" : "sync_crypto",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/sync_crypto",
@@ -121,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/TrackerRadarKit.git",
       "state" : {
-        "revision" : "a3f0ade39904602aa45874a7d71db4fafa10f7d9",
-        "version" : "3.0.1"
+        "revision" : "6d2db2a50cbd6d0a33d40864953bbef523489b28",
+        "version" : "3.1.0"
       }
     },
     {
@@ -130,10 +114,10 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/weichsel/ZIPFoundation.git",
       "state" : {
-        "revision" : "02b6abe5f6eef7e3cbd5f247c5cc24e246efcfe0",
-        "version" : "0.9.19"
+        "revision" : "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
+        "version" : "0.9.20"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

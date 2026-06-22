@@ -79,6 +79,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             didRequestExpandURLs.append(url)
         }
 
+        var viewAllChatsCallCount = 0
+
+        func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {
+            viewAllChatsCallCount += 1
+        }
+
         func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator) {
             openSettingsCallCount += 1
         }
@@ -123,6 +129,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockPresentingVC: MockPresentingViewController!
     private var mockSettings: MockAIChatSettingsProvider!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
     private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
@@ -135,6 +142,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         super.setUp()
         mockSettings = MockAIChatSettingsProvider()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
@@ -145,6 +153,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             pageContextHandler: mockPageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
@@ -164,6 +173,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPresentingVC = nil
         mockSettings = nil
         mockFeatureFlagger = nil
+        mockUnifiedToggleInputFeature = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
         originatingTabURLSubject = nil

@@ -148,7 +148,7 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         let policy = makePolicy(attachmentLimits: makeLimits(maxFileSizeMB: 5))
 
         XCTAssertEqual(
-            policy.fileMetadataValidationMessage(mimeType: "application/pdf", fileSizeBytes: 5_242_881),
+            policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 5_242_881)?.message,
             UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 5)
         )
     }
@@ -157,7 +157,7 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         let policy = makePolicy(includeAttachmentLimits: false)
 
         XCTAssertEqual(
-            policy.fileMetadataValidationMessage(mimeType: "application/pdf", fileSizeBytes: 100),
+            policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.message,
             UserText.aiChatAttachmentUnavailable
         )
     }
@@ -166,7 +166,7 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         let policy = makePolicy()
 
         XCTAssertEqual(
-            policy.fileMetadataValidationMessage(mimeType: "text/plain", fileSizeBytes: 100),
+            policy.fileMetadataValidationError(mimeType: "text/plain", fileSizeBytes: 100)?.message,
             UserText.aiChatAttachmentUnsupportedFileType(acceptedFileType: "PDF")
         )
     }
@@ -175,7 +175,7 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         let policy = makePolicy(model: makeModel(supportedFileTypes: ["image/png", "image/jpeg", "application/pdf"]))
 
         XCTAssertEqual(
-            policy.fileMetadataValidationMessage(mimeType: "text/plain", fileSizeBytes: 100),
+            policy.fileMetadataValidationError(mimeType: "text/plain", fileSizeBytes: 100)?.message,
             UserText.aiChatAttachmentUnsupportedFileType(acceptedFileTypes: ["PNG", "JPG", "PDF"])
         )
     }
@@ -184,9 +184,50 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         let policy = makePolicy(model: makeModel(supportedFileTypes: []))
 
         XCTAssertEqual(
-            policy.fileMetadataValidationMessage(mimeType: "text/plain", fileSizeBytes: 100),
+            policy.fileMetadataValidationError(mimeType: "text/plain", fileSizeBytes: 100)?.message,
             UserText.aiChatAttachmentUnsupportedFileType
         )
+    }
+
+    // MARK: - fileMetadataValidationError reason mapping
+
+    func test_fileMetadataValidationError_whenModelDoesNotSupportFiles_returnsUnsupportedTypeReason() {
+        let policy = makePolicy(model: makeModel(supportedFileTypes: []))
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.reason, .unsupportedType)
+    }
+
+    func test_fileMetadataValidationError_whenLimitsAreMissing_returnsOtherReason() {
+        let policy = makePolicy(includeAttachmentLimits: false)
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.reason, .other)
+    }
+
+    func test_fileMetadataValidationError_whenMimeTypeNotSupported_returnsUnsupportedTypeReason() {
+        let policy = makePolicy()
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "text/plain", fileSizeBytes: 100)?.reason, .unsupportedType)
+    }
+
+    func test_fileMetadataValidationError_whenFileCountExceeded_returnsCountExceededReason() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxFilesPerConversation: 3),
+            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 3, fileSizeBytesUsed: 0)
+        )
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 100)?.reason, .countExceeded)
+    }
+
+    func test_fileMetadataValidationError_whenFileTooLarge_returnsSizeExceededReason() {
+        let policy = makePolicy(attachmentLimits: makeLimits(maxFileSizeMB: 5))
+
+        XCTAssertEqual(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: 5_242_881)?.reason, .sizeExceeded)
+    }
+
+    func test_fileMetadataValidationError_whenMetadataIsValid_returnsNil() {
+        let policy = makePolicy()
+
+        XCTAssertNil(policy.fileMetadataValidationError(mimeType: "application/pdf", fileSizeBytes: nil))
     }
 
     func test_fileValidation_rejectsFileAboveRemainingTotalSize() {
@@ -424,6 +465,85 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         )
 
         XCTAssertEqual(policy.imageSubmissionValidationMessage(), UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: 3))
+    }
+
+    // MARK: - fileValidationError reason mapping
+    // These pin down the `reason` value used by the `m_aichat_unified_input_file_validation_failed` pixel.
+
+    func test_fileValidationError_whenModelDoesNotSupportFiles_returnsUnsupportedTypeReason() {
+        let policy = makePolicy(model: makeModel(supportedFileTypes: []))
+        let file = makeFile(mimeType: "application/pdf")
+
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .unsupportedType)
+    }
+
+    func test_fileValidationError_whenLimitsAreMissing_returnsOtherReason() {
+        let policy = makePolicy(includeAttachmentLimits: false)
+        let file = makeFile()
+
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .other)
+    }
+
+    func test_fileValidationError_whenMimeTypeNotSupported_returnsUnsupportedTypeReason() {
+        let policy = makePolicy()
+        let file = makeFile(mimeType: "text/plain")
+
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .unsupportedType)
+    }
+
+    func test_fileValidationError_whenFileCountExceeded_returnsCountExceededReason() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxFilesPerConversation: 3),
+            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 3, fileSizeBytesUsed: 0)
+        )
+        let file = makeFile()
+
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .countExceeded)
+    }
+
+    func test_fileValidationError_whenFileTooLarge_returnsSizeExceededReason() {
+        let policy = makePolicy(attachmentLimits: makeLimits(maxFileSizeMB: 5))
+        let file = makeFile(size: 5_242_881)
+
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .sizeExceeded)
+    }
+
+    func test_fileValidationError_whenTotalSizeExceeded_returnsSizeExceededReason() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxTotalFileSizeBytes: 5_242_880),
+            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 0, fileSizeBytesUsed: 5_000_000)
+        )
+        let file = makeFile(size: 500_000)
+
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .sizeExceeded)
+    }
+
+    func test_fileValidationError_whenPdfHasTooManyPages_returnsCountExceededReason() {
+        let policy = makePolicy(attachmentLimits: makeLimits(maxPagesPerFile: 15))
+        let file = makeFile(pageCount: 16)
+
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .countExceeded)
+    }
+
+    func test_fileValidationError_whenPdfIsEncrypted_returnsEncryptedReason() {
+        let policy = makePolicy()
+        let file = makeFile(pageCount: nil, isEncrypted: true)
+
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .encrypted)
+    }
+
+    func test_fileValidationError_whenPdfIsUnreadable_returnsUnreadableReason() {
+        let policy = makePolicy()
+        let file = makeFile(pageCount: nil, isEncrypted: false)
+
+        XCTAssertEqual(policy.fileValidationError(for: file)?.reason, .unreadable)
+    }
+
+    func test_fileValidationError_whenFileIsValid_returnsNil() {
+        let policy = makePolicy()
+        let file = makeFile(pageCount: 1)
+
+        XCTAssertNil(policy.fileValidationError(for: file))
     }
 
     private func makePolicy(

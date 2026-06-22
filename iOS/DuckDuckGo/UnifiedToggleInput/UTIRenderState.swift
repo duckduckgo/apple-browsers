@@ -27,7 +27,6 @@ struct UTIRenderState: Equatable {
     var usesOmnibarMargins: Bool
     var inactiveAppearance: Bool
     var isFloatingReturnKeyVisible: Bool
-    var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
     /// True when the UTI is hosted by a Duck.ai tab.

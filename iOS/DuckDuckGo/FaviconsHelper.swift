@@ -21,6 +21,7 @@ import UIKit
 import Core
 import Kingfisher
 import Common
+import FoundationExtensions
 import DesignResourcesKit
 
 struct FaviconsHelper {

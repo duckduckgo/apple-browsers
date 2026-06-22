@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 private enum AttributesKey: String, CaseIterable {
@@ -48,6 +49,7 @@ private enum AttributesKey: String, CaseIterable {
     case interactedWithMessage
     case interactedWithDeprecatedMacRemoteMessage
     case installedMacAppStore
+    case canUpgradeOS
     case pinnedTabs
     case customHomePage
     case duckPlayerOnboarded
@@ -94,6 +96,7 @@ private enum AttributesKey: String, CaseIterable {
             jsonMatchingAttribute: jsonMatchingAttribute
         )
         case .installedMacAppStore: return IsInstalledMacAppStoreMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .canUpgradeOS: return OSUpgradeCapabilityMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .pinnedTabs: return PinnedTabsMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .customHomePage: return CustomHomePageMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .duckPlayerOnboarded: return DuckPlayerOnboardedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
@@ -490,20 +493,22 @@ private extension JsonToRemoteMessageModelMapper {
                 let titleText = try validator.notEmpty(\.titleText)
                 let descriptionText = try validator.notNilOrEmpty(\.descriptionText)
                 let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+                let imageUrl = jsonListItem.imageUrl.flatMap(URL.init(string:))
                 let primaryRemoteAction = jsonListItem.primaryAction.flatMap { action in
                     mapToAction(action, surveyActionMapper: surveyActionMapper)
                 }
-                listItemType = .featuredTwoLinesSingleActionItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, primaryActionText: jsonListItem.primaryActionText, primaryAction: primaryRemoteAction)
+                listItemType = .featuredTwoLinesSingleActionItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, imageUrl: imageUrl, primaryActionText: jsonListItem.primaryActionText, primaryAction: primaryRemoteAction)
                 matchingRules = jsonListItem.matchingRules ?? []
                 exclusionRules = jsonListItem.exclusionRules ?? []
             case .twoLinesItem:
                 let titleText = try validator.notEmpty(\.titleText)
                 let descriptionText = jsonListItem.descriptionText ?? ""
                 let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+                let imageUrl = jsonListItem.imageUrl.flatMap(URL.init(string:))
                 let remoteAction = jsonListItem.primaryAction.flatMap { action in
                     mapToAction(action, surveyActionMapper: surveyActionMapper)
                 }
-                listItemType = .twoLinesItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, action: remoteAction)
+                listItemType = .twoLinesItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, imageUrl: imageUrl, action: remoteAction)
                 matchingRules = jsonListItem.matchingRules ?? []
                 exclusionRules = jsonListItem.exclusionRules ?? []
             case .titledSection:

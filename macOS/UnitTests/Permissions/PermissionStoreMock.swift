@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import ConcurrencyExtensions
 import CoreData
 import Foundation
 

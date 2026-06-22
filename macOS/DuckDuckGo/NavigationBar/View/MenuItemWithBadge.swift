@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Common
 import SwiftUI
 import DesignResourcesKit
 
@@ -48,13 +49,13 @@ struct MenuItemWithBadgeConstants {
     // MARK: - Menu Item Layout Constants
 
     /// Corner radius for the menu item hover background
-    static let menuItemCornerRadius: CGFloat = 4
+    static let menuItemCornerRadius: CGFloat = AppVersion.isLiquidGlassSupported ? 7 : 4
 
     /// Horizontal padding for the menu item hover background
     static let menuItemHorizontalPadding: CGFloat = 5
 
     /// Size of the menu item icon
-    static let iconSize: CGFloat = 16
+    static let iconSize: CGFloat = 12
 
     /// Spacing between icon and title text
     static let iconTitleSpacing: CGFloat = 6
@@ -63,7 +64,7 @@ struct MenuItemWithBadgeConstants {
     static let titleBadgeSpacing: CGFloat = 16
 
     /// Left padding for the icon
-    static let iconLeftPadding: CGFloat = 14
+    static let iconLeftPadding: CGFloat = 16
 
     /// Right padding for the badge
     static let badgeRightPadding: CGFloat = 14
@@ -71,7 +72,15 @@ struct MenuItemWithBadgeConstants {
     // MARK: - Menu Item Hosting View Constants
 
     /// Default height for the menu item hosting view
-    static let hostingViewHeight: CGFloat = 22
+    static let hostingViewHeight: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 22
+
+    static let hoverColor: Color = {
+        if #available(macOS 12.0, *) {
+            return Color(nsColor: .selectedContentBackgroundColor)
+        }
+        return .menuItemHover
+    }()
+
 }
 
 // MARK: - Custom Badge Shape
@@ -195,7 +204,7 @@ struct MenuItemWithBadge: View {
         ZStack {
             // Background highlight that appears on hover
             RoundedRectangle(cornerRadius: MenuItemWithBadgeConstants.menuItemCornerRadius)
-                .fill(isHovered ? .menuItemHover : Color.clear)
+                .fill(isHovered ? MenuItemWithBadgeConstants.hoverColor : Color.clear)
                 .padding([.leading, .trailing], MenuItemWithBadgeConstants.menuItemHorizontalPadding)
                 .frame(maxWidth: .infinity)
 

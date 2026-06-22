@@ -1,0 +1,58 @@
+# duckai_chrome_shortcut_long_press_hide.yaml
+#
+# Scenario 4: The long-press menu hides/shows each half of the chip independently.
+# Hiding one half leaves the other (and the chip) visible; hiding both removes the chip.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - duckai_chrome_shortcut
+
+---
+
+- runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
+
+# Both halves are visible on a clean launch.
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
+
+# Hide the Duck.ai (text) half -> the icon half and chip stay.
+- longPressOn:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+- tapOn: "Hide Duck.ai Shortcut"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertNotVisible:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
+
+# Show the Duck.ai half again from the (still visible) icon half.
+- longPressOn:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
+- tapOn: "Show Duck.ai Shortcut"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+
+# Hide the bottom-sheet (icon) half -> the text half and chip stay.
+- longPressOn:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+- tapOn: "Hide Bottom Sheet Shortcut"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertNotVisible:
+    id: "Browser.TabsBar.AIChatChip.SheetToggleButton"
+- assertVisible:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+
+# Hiding the remaining half too removes the whole chip.
+- longPressOn:
+    id: "Browser.TabsBar.AIChatChip.OpenButton"
+- tapOn: "Hide Duck.ai Shortcut"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertNotVisible:
+    id: "Browser.TabsBar.AIChatChip"

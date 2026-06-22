@@ -1,26 +1,8 @@
 /* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
 "2pp-PM-6rW.title" = "Tastatūra";
 
-/* Class = "UILabel"; text = "Clear Tabs Only"; ObjectID = "3WZ-Fi-HIH"; */
-"3WZ-Fi-HIH.text" = "Notīrīt tikai cilnes";
-
-/* Class = "UILabel"; text = "App Exit, Inactive for 30 Minutes"; ObjectID = "5Yd-7i-bey"; */
-"5Yd-7i-bey.text" = "Iziešana no lietotnes, neaktīva 30 minūtes";
-
-/* Class = "UILabel"; text = "Automatically Clear Data"; ObjectID = "5YD-Od-uDU"; */
-"5YD-Od-uDU.text" = "Automātiski notīrīt datus";
-
-/* Class = "UILabel"; text = "App Exit, Inactive for 1 Hour"; ObjectID = "9EC-lx-77p"; */
-"9EC-lx-77p.text" = "Iziešana no lietotnes, neaktīva 1 stundu";
-
-/* Class = "UILabel"; text = "Clear Tabs and Data"; ObjectID = "9fc-9r-4aA"; */
-"9fc-9r-4aA.text" = "Notīrīt cilnes un datus";
-
 /* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
 "13n-KI-KLq.text" = "Lietotnes palaišana";
-
-/* Class = "UITableViewSection"; footerTitle = "Data and/or tabs will be cleared upon restart of the app."; ObjectID = "BGs-JL-4ib"; */
-"BGs-JL-4ib.footerTitle" = "Restartējot lietotni, dati un/vai cilnes tiks notīrītas.";
 
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Pierakstoties prasīt padarīt vietnes ugunsdrošas";
@@ -34,26 +16,14 @@
 /* Class = "UIBarButtonItem"; title = "Add"; ObjectID = "CxT-QK-iVn"; */
 "CxT-QK-iVn.title" = "Pievienot";
 
-/* Class = "UILabel"; text = "App Exit, Inactive for 15 Minutes"; ObjectID = "D0R-jp-UY8"; */
-"D0R-jp-UY8.text" = "Iziešana no lietotnes, neaktīva 15 minūtes";
-
 /* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
 "dud-qo-Ces.text" = "Etiķete";
 
 /* Class = "UILabel"; text = "Label"; ObjectID = "EIq-Ev-nfj"; */
 "EIq-Ev-nfj.text" = "Etiķete";
 
-/* Class = "UILabel"; text = "App Exit, Inactive for 5 Minutes"; ObjectID = "ElX-yE-4PX"; */
-"ElX-yE-4PX.text" = "Iziešana no lietotnes, neaktīva 5 minūtes";
-
 /* Class = "UINavigationItem"; title = "App Icon"; ObjectID = "eMH-uv-Kms"; */
 "eMH-uv-Kms.title" = "Lietotnes ikona";
-
-/* Class = "UILabel"; text = "App Exit Only"; ObjectID = "Fal-1Y-o2S"; */
-"Fal-1Y-o2S.text" = "Tikai iziešana no lietotnes";
-
-/* Class = "UITableViewController"; title = "Automatically Clear Data"; ObjectID = "fdJ-b1-Des"; */
-"fdJ-b1-Des.title" = "Automātiski notīrīt datus";
 
 /* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
 "fV3-86-QQj.title" = "Globālā privātuma kontrole (GPC)";
@@ -79,17 +49,8 @@
 /* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
 "tWw-Lh-ZT1.title" = "Globālā privātuma kontrole (GPC)";
 
-/* Class = "UITableViewSection"; headerTitle = "Action"; ObjectID = "U2M-6p-6nl"; */
-"U2M-6p-6nl.headerTitle" = "Darbība";
-
 /* Class = "UILabel"; text = "Remove All Fireproof Sites"; ObjectID = "UZx-52-aer"; */
 "UZx-52-aer.text" = "Noņemt visas ugunsdrošās vietnes";
-
-/* Class = "UITableViewSection"; footerTitle = "App exit is defined by swiping the app to close it while inactivity is when the app is in the background."; ObjectID = "vSJ-YJ-bBs"; Note = "Timing setting for automatic data clearing function"; */
-"vSJ-YJ-bBs.footerTitle" = "Iziešana no lietotnes tiek veikta, pavelkot lietotni, lai to aizvērtu, un lietotne nav aktīva tad, kad tā darbojas fonā.";
-
-/* Class = "UITableViewSection"; headerTitle = "Desired timing"; ObjectID = "vSJ-YJ-bBs"; Note = "Timing setting for automatic data clearing function"; */
-"vSJ-YJ-bBs.headerTitle" = "Vēlamais laiks";
 
 /* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
 "xUX-nF-HOl.title" = "Ugunsdrošas vietnes";

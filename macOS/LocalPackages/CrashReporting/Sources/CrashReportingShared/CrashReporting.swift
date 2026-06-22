@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Crashes
 import FeatureFlags
 import Foundation
@@ -41,7 +42,6 @@ public protocol SparkleCrashReportingFactory {
                             promptForConsent: @escaping (CrashReportPresenting) async -> Bool) -> any CrashReporting
 }
 
-@available(macOS 12.0, *)
 public protocol AppStoreCrashReportingFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
                             featureFlagger: FeatureFlagger,

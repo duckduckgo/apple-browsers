@@ -20,6 +20,7 @@
 import Foundation
 import Bookmarks
 import Core
+import Onboarding
 import WidgetKit
 
 public class AppUserDefaults: AppSettings {
@@ -109,6 +110,7 @@ public class AppUserDefaults: AppSettings {
         static let contentScopeDebugStateEnabledKey = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
         static let onboardingIsNewUserKey = "com.duckduckgo.ios.debug.onboardingIsNewUser"
         static let onboardingForceRestorePromptEligibleKey = "com.duckduckgo.ios.debug.onboardingForceRestorePromptEligible"
+        static let onboardingFlowTypeKey = "com.duckduckgo.ios.debug.onboardingFlowType"
         static let shakeToOpenDebugMenuEnabledKey = "com.duckduckgo.ios.debug.shakeToOpenDebugMenuEnabled"
     }
 
@@ -618,6 +620,16 @@ public class AppUserDefaults: AppSettings {
         }
         set {
             userDefaults?.set(newValue, forKey: DebugKeys.onboardingForceRestorePromptEligibleKey)
+        }
+    }
+
+    var onboardingFlowType: OnboardingFlowType? {
+        get {
+            guard let rawValue = userDefaults?.string(forKey: DebugKeys.onboardingFlowTypeKey) else { return nil }
+            return OnboardingFlowType(rawValue: rawValue)
+        }
+        set {
+            userDefaults?.set(newValue?.rawValue, forKey: DebugKeys.onboardingFlowTypeKey)
         }
     }
 

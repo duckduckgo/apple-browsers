@@ -54,6 +54,7 @@ public enum OnboardingRebrandingImages {
         public static let shieldIcon = Image("Rebranding/Comparison-Shield", bundle: .module)
         public static let blockCookiesIcon = Image("Rebranding/Comparison-BlockCookies", bundle: .module)
         public static let blockAdsIcon = Image("Rebranding/Comparison-BlockAds", bundle: .module)
+        public static let blockYouTubeAdsIcon = Image("Rebranding/Comparison-BlockYouTubeAds", bundle: .module)
         public static let eraseDataIcon = Image("Rebranding/Comparison-EraseData", bundle: .module)
         public static let lockIcon = Image("Rebranding/Comparison-Lock", bundle: .module)
         public static let aiIcon = Image("Rebranding/Comparison-Ai", bundle: .module)

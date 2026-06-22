@@ -190,8 +190,13 @@ final class PixelRetryQueue {
                 continue
             }
 
+            // Strip the legacy retry timestamp that older builds baked into the persisted parameters, so
+            // items queued before this key was dropped don't keep sending it on replay.
+            // For more info see https://app.asana.com/1/137249556945/task/1215909080171360?focus=true
+            let parameters = item.parameters.filter { $0.key != "originalPixelTimestamp" }
+
             dispatchGroup.enter()
-            underlyingFireRequest(item.pixelName, item.headers, item.parameters, item.allowedQueryReservedCharacters, false) { success, _ in
+            underlyingFireRequest(item.pixelName, item.headers, parameters, item.allowedQueryReservedCharacters, false) { success, _ in
                 if success {
                     idsAccessQueue.sync { _ = idsToRemove.insert(item.id) }
                 }

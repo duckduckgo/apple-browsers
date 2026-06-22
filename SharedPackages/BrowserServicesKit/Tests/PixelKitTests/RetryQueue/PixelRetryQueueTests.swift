@@ -109,6 +109,23 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertEqual(fireMock.calls.count, 1)
         XCTAssertEqual(fireMock.calls.first?.pixelName, "m_queued")
         // The replay carries the item's stored parameters unchanged — nothing is injected on send.
+        XCTAssertEqual(fireMock.calls.first?.parameters, item.parameters)
+    }
+
+    func testWhenReplayingItemWithLegacyTimestampParameter_ThenItIsStrippedBeforeSending() {
+        // Items persisted by builds that still baked in `originalPixelTimestamp` must not replay with it.
+        let legacy = PixelRetryQueueItem(pixelName: "m_queued",
+                                         headers: [:],
+                                         parameters: ["key": "value", "originalPixelTimestamp": "2026-06-11T00:00:00Z"],
+                                         allowedQueryReservedCharacters: nil,
+                                         timestamp: now)
+        try? store.append([legacy])
+        let queue = makeQueue()
+        let drained = expectation(description: "drained")
+
+        queue.sendQueuedPixels { _ in drained.fulfill() }
+        wait(for: [drained], timeout: 2.0)
+
         XCTAssertEqual(fireMock.calls.first?.parameters, ["key": "value"])
     }
 

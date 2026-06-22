@@ -75042,6 +75042,30 @@
         }
       }
     },
+    "password.manager.alert.missing.website.or.username.description" : {
+      "comment" : "Body text of alert shown when saving a password that has neither a website nor a username",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "To save this password, enter a website or username."
+          }
+        }
+      }
+    },
+    "password.manager.alert.missing.website.or.username.title" : {
+      "comment" : "Title of alert shown when saving a password that has neither a website nor a username",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Website or Username Required"
+          }
+        }
+      }
+    },
     "Passwords:" : {
       "comment" : "Data import summary format of how many passwords were successfully imported.",
       "localizations" : {

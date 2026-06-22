@@ -624,24 +624,29 @@ enum WebScrollFreezeBreadcrumb {
     private static var ring: [Entry] = []
     private static let ringCapacity = 20
 
-    /// Captures a lightweight snapshot and appends it to the in-memory ring buffer (capped at ~20 entries).
-    /// Logs a concise summary line via `Logger.interaction`.
-    static func drop(_ label: String) {
-        let touchInFlight = anyTouchInFlight()
-        let activeCount = activeRecognizerCount()
-        let panState = webScrollPanStateName()
-        let suspectCount = wkSuspectCount()
-        Logger.interaction.debug("Breadcrumb [\(label, privacy: .public)]: touchInFlight=\(touchInFlight, privacy: .public) activeRecognizers=\(activeCount, privacy: .public) webScrollPan=\(panState, privacy: .public) wkSuspects=\(suspectCount, privacy: .public)")
-        let entry = Entry(
-            timestamp: Date(),
-            label: label,
-            touchInFlight: touchInFlight,
-            activeRecognizerCount: activeCount,
-            webScrollPanState: panState,
-            wkSuspectCount: suspectCount
-        )
-        if ring.count >= ringCapacity { ring.removeFirst() }
-        ring.append(entry)
+    /// Captures a lightweight snapshot and appends it to the in-memory ring buffer (capped at ~20 entries);
+    /// logs a concise summary via `Logger.interaction`. `nonisolated` so non-`@MainActor` call sites (e.g.
+    /// `SwipeTabsCoordinator`) can drop a breadcrumb without each needing the annotation; `assumeIsolated`
+    /// bridges to the main actor — safe because every breadcrumb site (gesture handlers, view transitions)
+    /// already runs on the main thread.
+    nonisolated static func drop(_ label: String) {
+        MainActor.assumeIsolated {
+            let touchInFlight = anyTouchInFlight()
+            let activeCount = activeRecognizerCount()
+            let panState = webScrollPanStateName()
+            let suspectCount = wkSuspectCount()
+            Logger.interaction.debug("Breadcrumb [\(label, privacy: .public)]: touchInFlight=\(touchInFlight, privacy: .public) activeRecognizers=\(activeCount, privacy: .public) webScrollPan=\(panState, privacy: .public) wkSuspects=\(suspectCount, privacy: .public)")
+            let entry = Entry(
+                timestamp: Date(),
+                label: label,
+                touchInFlight: touchInFlight,
+                activeRecognizerCount: activeCount,
+                webScrollPanState: panState,
+                wkSuspectCount: suspectCount
+            )
+            if ring.count >= ringCapacity { ring.removeFirst() }
+            ring.append(entry)
+        }
     }
 
     /// Formats the ring buffer as a multi-line string for inclusion in a freeze capture. Returns a

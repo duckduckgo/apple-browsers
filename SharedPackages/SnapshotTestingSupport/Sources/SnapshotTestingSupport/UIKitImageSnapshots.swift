@@ -46,7 +46,7 @@ public func assertImageSnapshot(
                 drawHierarchyInKeyWindow: false,
                 perceptualPrecision: perceptualPrecision,
                 size: snapshotSize,
-                traits: configuration.appearance.traits
+                traits: configuration.traits
             ),
             named: configuration.name,
             record: SnapshotRecordMode.snapshotTestingRecord(record: record),
@@ -83,7 +83,7 @@ public func assertImageSnapshot(
                 drawHierarchyInKeyWindow: false,
                 perceptualPrecision: perceptualPrecision,
                 size: snapshotSize,
-                traits: configuration.appearance.traits
+                traits: configuration.traits
             ),
             named: configuration.name,
             record: SnapshotRecordMode.snapshotTestingRecord(record: record),
@@ -220,7 +220,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
                 drawHierarchyInKeyWindow: false,
                 perceptualPrecision: perceptualPrecision,
                 layout: .sizeThatFits,
-                traits: configuration.appearance.traits
+                traits: configuration.traits
             ),
             named: configuration.name,
             record: SnapshotRecordMode.snapshotTestingRecord(record: record),
@@ -238,7 +238,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
                 drawHierarchyInKeyWindow: false,
                 perceptualPrecision: perceptualPrecision,
                 layout: .sizeThatFits,
-                traits: configuration.appearance.traits
+                traits: configuration.traits
             ),
             named: configuration.name,
             record: SnapshotRecordMode.snapshotTestingRecord(record: record),
@@ -265,7 +265,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
                 drawHierarchyInKeyWindow: false,
                 perceptualPrecision: perceptualPrecision,
                 layout: .fixed(width: snapshotSize.width, height: snapshotSize.height),
-                traits: configuration.appearance.traits
+                traits: configuration.traits
             ),
             named: configuration.name,
             record: SnapshotRecordMode.snapshotTestingRecord(record: record),
@@ -288,7 +288,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
                 drawHierarchyInKeyWindow: false,
                 perceptualPrecision: perceptualPrecision,
                 layout: .fixed(width: snapshotSize.width, height: snapshotSize.height),
-                traits: configuration.appearance.traits
+                traits: configuration.traits
             ),
             named: configuration.name,
             record: SnapshotRecordMode.snapshotTestingRecord(record: record),
@@ -332,16 +332,32 @@ private struct SheetSnapshotContainer<Content: SwiftUI.View>: SwiftUI.View {
     }
 }
 
-private extension SnapshotAppearance {
+private extension SnapshotImageConfiguration {
     var traits: UITraitCollection {
-        UITraitCollection(
-            traitsFrom: [
-                UITraitCollection(displayScale: CGFloat(SnapshotEnvironment.expectedIOSDisplayScale)),
-                UITraitCollection(userInterfaceStyle: userInterfaceStyle)
-            ]
-        )
-    }
+        var traits = [
+            UITraitCollection(displayScale: CGFloat(SnapshotEnvironment.expectedIOSDisplayScale)),
+            UITraitCollection(userInterfaceStyle: appearance.userInterfaceStyle)
+        ]
 
+        if let device {
+            traits.append(device.traits)
+        }
+
+        return UITraitCollection(traitsFrom: traits)
+    }
+}
+
+private extension SnapshotDevice {
+    var traits: UITraitCollection {
+        UITraitCollection(traitsFrom: [
+            UITraitCollection(userInterfaceIdiom: userInterfaceIdiom),
+            UITraitCollection(horizontalSizeClass: horizontalSizeClass),
+            UITraitCollection(verticalSizeClass: verticalSizeClass)
+        ])
+    }
+}
+
+private extension SnapshotAppearance {
     var userInterfaceStyle: UIUserInterfaceStyle {
         switch self {
         case .light:

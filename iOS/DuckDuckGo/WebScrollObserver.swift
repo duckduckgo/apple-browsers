@@ -354,92 +354,54 @@ final class WebScrollObserverGestureRecognizer: UIGestureRecognizer {
     override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
 }
 
-// MARK: - Recovery (manual debug rungs — internal only)
+// MARK: - Recovery (single manual debug rung — internal only)
 
-/// Self-heal actions for the web-scroll-freeze. `recover()` is the surgical reset (pan + wedged recognizers);
-/// the individual rungs are exposed for the debug Recovery screen to find the minimal sufficient action.
-/// Debug-only and manual for now — there is no production auto-recovery; that is productionised in Part 3.
-/// All are idempotent and meant to run BETWEEN gestures (no active touch).
+/// Single safe recovery rung for the web-scroll-freeze: `resetDeferringGates`, scoped to the WKWebView's
+/// WKDeferringGestureRecognizers (WebKit's own pattern) and guarded against live touches via
+/// `anyTouchInFlight`. Debug-only and manual — there is no production auto-recovery. Meant to run BETWEEN
+/// gestures (no active touch).
 @MainActor
 enum WebScrollFreezeRecovery {
 
-    enum Rung { case flushAppRecognizers, bounceWindowInteraction, flushAll }
-
-    /// Surgical self-heal: reset only the recognisers that can actually block scrolling — pan recognisers
-    /// (incl. the web scroll view's own pan) and anything stuck mid-gesture. Does NOT touch window
-    /// interaction (toggling `isUserInteractionEnabled` orphans touches into a stuck Stationary/nil-window
-    /// state — the very freeze we're fixing) and leaves taps untouched.
-    @discardableResult
-    static func recover() -> String {
-        let count = resetBlockingRecognizers()
-        Logger.interaction.error("Manual recovery ran: reset \(count, privacy: .public) pan/wedged recognizers")
-        return "recover: reset \(count) pan/wedged recognizers"
-    }
-
-    /// Reset pan recognisers + any recogniser stuck in `began`/`changed`. Skips UIKit-internal (`_UI…`)
-    /// system gates and all taps. Typically a handful, not the whole app.
-    @discardableResult
-    private static func resetBlockingRecognizers() -> Int {
-        var count = 0
-        for window in windows() {
-            forEachRecognizer(in: window) { recognizer in
-                guard !String(describing: type(of: recognizer)).hasPrefix("_") else { return }
-                let isPan = recognizer is UIPanGestureRecognizer
-                let isWedged = recognizer.state == .began || recognizer.state == .changed
-                guard isPan || isWedged else { return }
-                recognizer.isEnabled = false
-                recognizer.isEnabled = true
-                count += 1
-            }
-        }
-        return count
-    }
+    enum Rung { case resetDeferringGates }
 
     @discardableResult
     static func runRung(_ rung: Rung) -> String {
         switch rung {
-        case .flushAppRecognizers: return "reset \(flushAppRecognizers()) app recognizers"
-        case .bounceWindowInteraction: bounceWindowInteraction(); return "bounced window interaction"
-        case .flushAll: return "reset \(flushAll()) recognizers (all, incl. system)"
+        case .resetDeferringGates: return resetDeferringGates()
         }
     }
 
-    /// Reset every non-UIKit-internal recogniser (skip `_UI…` classes so we don't disturb system gates).
-    /// This also re-arms the web scroll view's own pan.
+    /// PRIMARY safe recovery candidate (WebKit's own pattern, scoped). The leading-hypothesis freeze is a
+    /// WKDeferringGestureRecognizer wedged in `.possible`: it gates the scroll pan (which `require(toFail:)`s
+    /// it), so the pan never begins — and it's invisible to the `.began`/`.changed` wedge scan. This resets
+    /// ONLY those deferring gates, and ONLY when no touch is in flight (toggling a recogniser's `isEnabled`
+    /// while a touch is live is what orphans touches and bricked the broad rungs). Surgical + guarded = safe.
     @discardableResult
-    private static func flushAppRecognizers() -> Int {
-        var count = 0
-        for window in windows() {
-            forEachRecognizer(in: window) { recognizer in
-                guard !String(describing: type(of: recognizer)).hasPrefix("_") else { return }
-                recognizer.isEnabled = false
-                recognizer.isEnabled = true
-                count += 1
-            }
+    private static func resetDeferringGates() -> String {
+        guard !anyTouchInFlight() else {
+            return "deferring-gate reset SKIPPED — a touch is in flight (would orphan it). Auto-recovery only fires between gestures."
         }
-        return count
+        guard let webView = WebScrollFreezeProbe.findMainViewController()?.currentTab?.webView else {
+            return "deferring-gate reset: no webView found"
+        }
+        let gates = WebScrollFreezeProbe.deferringGates(in: webView)
+        for gate in gates {
+            gate.isEnabled = false
+            gate.isEnabled = true
+        }
+        Logger.interaction.error("Deferring-gate reset: reset \(gates.count, privacy: .public) deferring recognizers")
+        return "deferring-gate reset: reset \(gates.count) WKDeferringGestureRecognizer(s)"
     }
 
-    /// Cancel any touches the gesture environment is still tracking (the phantom-touch flush). The async
-    /// re-enable lets UIKit process the cancellation; the gap is one run-loop tick, imperceptible.
-    private static func bounceWindowInteraction() {
-        for window in windows() where window.isKeyWindow {
-            window.isUserInteractionEnabled = false
-            DispatchQueue.main.async { window.isUserInteractionEnabled = true }
-        }
-    }
-
-    @discardableResult
-    private static func flushAll() -> Int {
-        var count = 0
+    /// True if any recogniser in any window is currently tracking touches — i.e. a gesture is live and it is
+    /// NOT safe to toggle `isEnabled` (that would strand the touch).
+    private static func anyTouchInFlight() -> Bool {
+        var found = false
         for window in windows() {
-            forEachRecognizer(in: window) { recognizer in
-                recognizer.isEnabled = false
-                recognizer.isEnabled = true
-                count += 1
-            }
+            forEachRecognizer(in: window) { if $0.numberOfTouches > 0 { found = true } }
         }
-        return count
+        return found
     }
 
     private static func windows() -> [UIWindow] {

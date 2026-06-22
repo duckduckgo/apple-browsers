@@ -25,6 +25,7 @@ import HistoryView
 import PersistenceTestingUtils
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+import PrivacyDashboard
 import WebKit
 import XCTest
 

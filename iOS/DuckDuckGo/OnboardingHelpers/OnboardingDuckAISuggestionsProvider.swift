@@ -24,11 +24,11 @@ struct OnboardingDuckAISuggestionsProvider: OnboardingSuggestionsItemsProviding 
 
     var list: [ContextualOnboardingListItem] {
         return [
-            .aiChat(title: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption1),
-            .aiChat(title: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption2),
+            .aiChat(title: UserText.Onboarding.DuckAIQuery.suggestionOption1),
+            .aiChat(title: UserText.Onboarding.DuckAIQuery.suggestionOption2),
             .surprise(
-                title: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption3Prompt,
-                visibleTitle: UserText.Onboarding.DuckAIQueryExperiment.suggestionOption3VisibleTitle
+                title: UserText.Onboarding.DuckAIQuery.suggestionOption3Prompt,
+                visibleTitle: UserText.Onboarding.DuckAIQuery.suggestionOption3VisibleTitle
             )
         ]
     }

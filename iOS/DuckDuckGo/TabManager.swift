@@ -633,7 +633,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     func invalidateCache(forController controller: TabViewController) {
         if current() === controller {
-            Pixel.fire(pixel: .webKitTerminationDidReloadCurrentTab)
+            DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+
+            if controller.url?.isDuckAIURL == true {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+            }
+
             current()?.reload()
         } else {
             removeFromCache(controller)

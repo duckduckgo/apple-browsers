@@ -838,10 +838,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.applyCardLayout(.collapsed, animated: false)
         let renderState = computeRenderState()
-        viewController.apply(renderState.viewConfig, animated: false)
-        applyToolbarPresentation()
-        fetchModels()
 
+        // Set text before apply so clearDismissSnapshot sees the correct handler state when
+        // it fires inside applyCardLayout — otherwise textRightInset starts at the no-button value.
         let shouldSelectAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             setText(text)
@@ -851,6 +850,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             shouldSelectAllText = false
         }
         updateFloatingReturnKeyState()
+
+        viewController.apply(renderState.viewConfig, animated: false)
+        applyToolbarPresentation()
+        fetchModels()
 
         let expandedHeight = editingHeight()
 
@@ -989,9 +992,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if animated {
             UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
                 applyModeChange()
+                // Push the new mode's content inset here (target height) so the suggestions content and
+                // the logo move in the same pass as the bar — not reactively after the height callback.
+                if didModeChange { self.pushContentInsets() }
             }
         } else {
             applyModeChange()
+            if didModeChange { pushContentInsets() }
         }
 
         applyToolbarPresentation()

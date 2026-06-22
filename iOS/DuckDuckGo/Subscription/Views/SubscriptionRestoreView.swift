@@ -181,7 +181,7 @@ struct SubscriptionRestoreView: View {
         VStack(spacing: Constants.headerItemSpacing) {
             Image(rebrandable: Constants.heroImage)
             Text(UserText.subscriptionActivateHeaderTitle)
-                .daxTitle1()
+                .daxTitle2()
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
         }
@@ -290,7 +290,7 @@ private struct RoundedCardView: View {
                 }, label: {
                     Text(buttonTitle)
                         .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                 })
             }
         }

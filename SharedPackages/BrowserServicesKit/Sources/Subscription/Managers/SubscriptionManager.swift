@@ -232,6 +232,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let requestCoalescer = SubscriptionRequestCoalescer()
     private let wideEvent: WideEventManaging?
     private let isAuthV2WideEventEnabled: () -> Bool
+    private let authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting?
     private let tierOptionsProvider: SubscriptionTierOptionsProviding
 
     public init(storePurchaseManager: StorePurchaseManager? = nil,
@@ -246,6 +247,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 isInternalUserEnabled: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging? = nil,
                 isAuthV2WideEventEnabled: @escaping () -> Bool = { false },
+                authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting? = nil,
                 tierOptionsProvider: SubscriptionTierOptionsProviding? = nil) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
@@ -258,6 +260,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         self.isInternalUserEnabled = isInternalUserEnabled
         self.wideEvent = wideEvent
         self.isAuthV2WideEventEnabled = isAuthV2WideEventEnabled
+        self.authV2TokenRefreshInstrumentation = authV2TokenRefreshInstrumentation
         self.tierOptionsProvider = tierOptionsProvider ?? DefaultSubscriptionTierOptionsProvider(
             subscriptionEnvironmentPlatform: subscriptionEnvironment.purchasePlatform,
             storePurchaseManager: storePurchaseManager,
@@ -611,10 +614,20 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
                     return recoveredTokenContainer
-                } catch {
+                } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
+                    // No restore ran (no handler, or the platform can't restore): record the refresh
+                    // as a failure whose recovery was never attempted, keeping its invalid-token error.
                     await signOut(notifyUI: false, userInitiated: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
+                    throw SubscriptionManagerError.noTokenAvailable
+                } catch {
+                    // A restore ran but did not yield a valid token.
+                    await signOut(notifyUI: false, userInitiated: false)
+                    pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .failed, error: error)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 
@@ -630,7 +643,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
         guard let tokenRecoveryHandler else {
             Logger.subscription.log("Recovery not possible, no handler configured.")
-            throw SubscriptionManagerError.noTokenAvailable
+            throw SubscriptionManagerError.tokenRecoveryNotAttempted
         }
 
         try await tokenRecoveryHandler()
@@ -646,16 +659,22 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public func adopt(accessToken: String, refreshToken: String) async throws {
         Logger.subscriptionTokensManagement.log("Adopting and decoding token container")
         let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken, refreshID: nil)
-        try await adopt(tokenContainer: tokenContainer)
+        // This entry point is the subscription page email-restore flow.
+        try await adopt(tokenContainer: tokenContainer, source: .webRestore)
     }
 
     public func adopt(tokenContainer: TokenContainer) async throws {
+        try await adopt(tokenContainer: tokenContainer, source: nil)
+    }
+
+    public func adopt(tokenContainer: TokenContainer, source: AuthV2TokenAdoptionWideEventData.AdoptionSource?) async throws {
         let adoptionID = UUID().uuidString
 
         if isAuthV2WideEventEnabled(), let wideEvent {
             let globalData = WideEventGlobalData(id: adoptionID)
             let data = AuthV2TokenAdoptionWideEventData(globalData: globalData)
             data.failingStep = .adoptingToken
+            data.adoptionSource = source
             wideEvent.startFlow(data)
         }
 
@@ -672,7 +691,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
             // It’s important to force refresh the token to immediately branch from the one received.
             // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-            let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
+            let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh, trigger: .tokenAdoption)
 
             updateCachedIsUserAuthenticated(true)
             updateCachedUserEntitlements(refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements)

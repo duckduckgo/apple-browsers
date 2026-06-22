@@ -56,6 +56,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Surfaces
     private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let surfaceSecondary = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
     private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
     private static let surfaceCanvas = DynamicColor(lightColor: xFAFAFA, darkColor: x1C1C1C)
 
@@ -117,12 +118,19 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let accentTertiary = DynamicColor(lightColor: .blue70, darkColor: .blue50)
 
     // Text
-    private static let textLink = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let accentTextPrimary = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let textSelectionFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
 
     // Brand
-    private static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let accentPrimary = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let accentGlowSecondary = DynamicColor(lightColor: .blue50.opacity(0.12), darkColor: x7295F6.opacity(0.12))
+    // Unused in the default palette (rebrand only). Falls back to the legacy ghost glow.
+    private static let accentGlowPrimary = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+
+    // Unused in the default palette (rebrand only). Falls back to the primary accent blue.
+    private static let accentBrandPrimary = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let accentBrandTertiary = DynamicColor(lightColor: .blue70, darkColor: .blue50)
+    private static let accentBrandContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
     // System
     private static let border = DynamicColor(lightColor: .gray30, darkColor: .gray40)
@@ -134,6 +142,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Destructive
     private static let destructivePrimary = DynamicColor(lightColor: .alertRed, darkColor: .alertRed20)
+    private static let destructiveContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
+    // Unused in the default palette (rebrand only). Falls back to the legacy destructove pressed / glow.
+    private static let destructiveTertiary = DynamicColor(lightColor: .alertRed80, darkColor: .alertRed40)
+    private static let destructiveGlowPrimary = DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xE5244B).opacity(0.2))
 
     // Buttons/Primary
     private static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
@@ -208,18 +220,21 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .accentTertiary: return accentTertiary
 
         case .surface: return surface
+        case .surfaceSecondary: return surfaceSecondary
         case .surfaceTertiary: return surfaceTertiary
         case .surfaceCanvas: return surfaceCanvas
 
-        case .accent:
-            return DesignSystemRebrand.isAppRebranded() ? dynamicColor(for: SingleUseColor.Rebranding.accentPrimary) : accent
+        case .accentPrimary: return accentPrimary
+        case .accentGlowPrimary: return accentGlowPrimary
         case .accentGlowSecondary: return accentGlowSecondary
+        case .accentBrandPrimary: return accentBrandPrimary
+        case .accentBrandTertiary: return accentBrandTertiary
+        case .accentBrandContentPrimary: return accentBrandContentPrimary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .shieldPrivacy: return shieldPrivacy
         case .border: return border
-        case .textLink:
-            return DesignSystemRebrand.isAppRebranded() ? dynamicColor(for: SingleUseColor.Rebranding.textLink) : textLink
+        case .accentTextPrimary: return accentTextPrimary
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
         case .textTertiary: return textTertiary
@@ -227,6 +242,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
         // Destructive
         case .destructivePrimary: return destructivePrimary
+        case .destructiveTertiary: return destructiveTertiary
+        case .destructiveContentPrimary: return destructiveContentPrimary
+        case .destructiveGlowPrimary: return destructiveGlowPrimary
 
             // Buttons/SecondaryFill
         case .buttonsSecondaryFillDefault: return buttonsSecondaryFillDefault
@@ -284,6 +302,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: background.darkColor)
         case .duckAIContextualSheetBackground:
             return DynamicColor(lightColor: .white, darkColor: .x161616)
+        case .duckAIWebViewBackground:
+            return DynamicColor(lightColor: .white, darkColor: .x111111)
         case .unifiedToggleInputCardBackground:
             return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
         case .unifiedToggleInputStopButtonBackground:
@@ -330,28 +350,28 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .accentGlowPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
-        case .accentAltPrimary:
-            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
-        case .accentAltGlowPrimary:
-            return DynamicColor(lightColor: Color(0xA1CFF7).opacity(0.16), darkColor: Color(0xA1CFF7).opacity(0.16))
         case .backdrop:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: .blue80)
-        case .surfaceTertiary:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x011D34))
         case .buttonsPrimaryDefault:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen40)
         case .buttonsPrimaryPressed:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen60)
         case .buttonsPrimaryText:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        case .buttonsContentDisabled:
+            return DynamicColor(lightColor: Color(0xF5F4F6), darkColor: Color(0x212020))
         case .buttonsSecondaryDefault:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.04))
         case .buttonsSecondaryPressed:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.12), darkColor: RebrandingColor.GrayScale.white.opacity(0.24))
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.12), darkColor: RebrandingColor.GrayScale.white.opacity(0.08))
         case .buttonsSecondaryText:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
+        case .buttonsSecondaryDisabledBackground:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: .clear)
+        case .buttonsSecondaryDisabledText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.36), darkColor: Color(0x707070))
         case .destructivePrimary:
-            return DynamicColor(lightColor: Color(0xD83544), darkColor: Color(0xE44D55))
+            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
         case .destructivePrimaryPressed:
             return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
         case .destructivePrimaryText:
@@ -364,8 +384,6 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.09), darkColor: RebrandingColor.GrayScale.white.opacity(0.06))
         case .decorationSecondary:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.16), darkColor: RebrandingColor.GrayScale.white.opacity(0.09))
-        case .backgroundAccent:
-            return DynamicColor(lightColor: Color(0x7295F6).opacity(0.20), darkColor: Color(0x8FABF9).opacity(0.20))
         case .alertGreen:
             return DynamicColor(staticColor: RebrandingColor.Green.green40)
         }

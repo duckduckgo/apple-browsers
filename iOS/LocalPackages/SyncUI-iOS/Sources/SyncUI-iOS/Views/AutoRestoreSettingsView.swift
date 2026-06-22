@@ -37,7 +37,7 @@ struct AutoRestoreSettingsView: View {
         List {
             Section(footer: Text(UserText.autoRestoreScreenDescription)) {
                 Toggle(UserText.autoRestoreSettingsRowLabel, isOn: autoRestoreBinding)
-                    .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accent)))
+                    .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accentPrimary)))
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .disabled(model.isAutoRestoreUpdating)

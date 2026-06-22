@@ -419,7 +419,7 @@ struct DataImportSummaryView: View {
         }
 
         fileprivate enum Metrics {
-            static let imageSize: CGFloat = 64
+            static var imageSize: CGFloat { AppRebrand.isAppRebranded() ? 96 : 64 }
         }
     }
 

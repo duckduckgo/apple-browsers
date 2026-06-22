@@ -330,7 +330,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     
     func testWhenDaxDialogsIsShowingFireDialogThenSubtitleIsNil() {
         // Given
-        let mockDaxDialogsManager = DummyDaxDialogsManager()
+        let mockDaxDialogsManager = MockDaxDialogsManager()
         mockDaxDialogsManager.isShowingFireDialog = true
         let tabViewModel = createTabViewModel()
         
@@ -517,7 +517,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     
     private func makeSUT(tabViewModel: TabViewModel?,
                          source: FireRequest.Source = .browsing,
-                         fireContext: ScopedFireConfirmationViewModel.FireContext = .default(daxDialogsManager: DummyDaxDialogsManager()),
+                         fireContext: ScopedFireConfirmationViewModel.FireContext = .default(daxDialogsManager: MockDaxDialogsManager()),
                          browsingMode: BrowsingMode = .normal,
                          onConfirm: @escaping (FireRequest) -> Void = { _ in },
                          onCancel: @escaping () -> Void = { }) -> ScopedFireConfirmationViewModel {

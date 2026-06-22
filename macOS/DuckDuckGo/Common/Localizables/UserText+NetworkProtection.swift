@@ -77,7 +77,7 @@ extension UserText {
 
     static let vpnSettingsCopyDiagnosticsCaption = NSLocalizedString(
         "vpn.preferences.copy-diagnostics.caption",
-        value: "Copies anonymized VPN diagnostic information to your clipboard. Include it when contacting Support to help us troubleshoot your connection.",
+        value: "Include a copy of these anonymized VPN diagnostics when contacting Support to help us troubleshoot your connection.",
         comment: "Caption beneath the Copy VPN Diagnostics button in VPN settings, explaining what the button does.")
 
     static let vpnSettingsCopyDiagnosticsCopiedButtonTitle = NSLocalizedString(

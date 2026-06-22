@@ -114396,7 +114396,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Füge bei deiner Kontaktaufnahme mit dem Support eine Kopie dieser anonymisierten VPN-Diagnosedaten bei, damit wir dein Verbindungsproblem beheben können."
+            "value" : "Reiche eine Kopie dieser anonymisierten VPN-Diagnosen beim Support mit ein, wenn du uns wegen der Fehlersuche bei deiner Verbindung kontaktierst."
           }
         },
         "en" : {
@@ -114408,43 +114408,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Incluye una copia de estos diagnósticos anónimos de la VPN cuando te pongas en contacto con el servicio de asistencia para ayudarnos a solucionar los problemas de conexión."
+            "value" : "Incluye una copia de estos diagnósticos de VPN anónimos cuando contactes con el servicio de asistencia para ayudarnos a solucionar problemas de conexión."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Joignez une copie de ces diagnostics VPN anonymisés lorsque vous contactez l'assistance pour nous aider à résoudre vos problèmes de connexion."
+            "value" : "Veuillez joindre une copie de ces diagnostics VPN anonymisés lorsque vous contactez le service d'assistance afin de nous aider à résoudre vos problèmes de connexion."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Includi una copia di questi dati diagnostici VPN anonimizzati quando contatti l'assistenza per aiutarci a risolvere il problema della tua connessione."
+            "value" : "Includi una copia di questi dati di diagnostica VPN anonimi quando contatti l'assistenza per aiutarci a risolvere i problemi di connessione."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voeg een kopie van deze geanonimiseerde VPN-diagnostiek toe wanneer je contact opneemt met de klantenservice, zodat we je verbindingsproblemen kunnen oplossen."
+            "value" : "Voeg een kopie van deze geanonimiseerde VPN-diagnostiek toe wanneer je contact opneemt met de ondersteuning om ons te helpen problemen met je verbinding op te lossen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dołącz kopię tych anonimowych danych diagnostycznych VPN, gdy skontaktujesz się z pomocą techniczną, aby pomóc nam rozwiązać problem z Twoim połączeniem."
+            "value" : "Dołącz kopię tej anonimowej diagnostyki VPN podczas kontaktu z pomocą techniczną, aby pomóc nam rozwiązać problemy z połączeniem."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclui uma cópia destes diagnósticos da VPN anonimizados ao contactares o serviço de apoio para nos ajudares a solucionar problemas de ligação."
+            "value" : "Ao contactares o Apoio ao Cliente, inclui uma cópia destes diagnósticos de VPN anonimizados para nos ajudar a resolver o problema da tua ligação."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Приложите копию этих анонимизированных данных диагностики VPN к обращению в службу поддержки, чтобы мы могли помочь вам устранить неполадки с подключением."
+            "value" : "Приложите копию этих анонимных данных диагностики VPN при обращении в службу поддержки, чтобы мы могли помочь вам устранить неполадки с подключением."
           }
         }
       }

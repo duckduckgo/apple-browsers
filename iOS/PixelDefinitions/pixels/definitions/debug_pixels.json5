@@ -146,5 +146,31 @@
             }
         ],
         "expires": "2026-09-21"
+    },
+    "m_debug_interaction_recovery_attempted": {
+        "description": "Scoped auto-recovery attempted after a confirmed scroll freeze (gated by webScrollFreezeAutoRecovery, internal/off by default). Fires immediately before the recovery sequence runs.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion"
+        ],
+        "expires": "2026-09-21"
+    },
+    "m_debug_interaction_recovery_outcome": {
+        "description": "Outcome on the next scroll event after an auto-recovery attempt. Emitted only when a prior recovery was attempted.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "outcome",
+                "description": "Whether the scroll recovered after the auto-recovery attempt.",
+                "type": "string",
+                "enum": ["recovered", "still_frozen"]
+            }
+        ],
+        "expires": "2026-09-21"
     }
 }

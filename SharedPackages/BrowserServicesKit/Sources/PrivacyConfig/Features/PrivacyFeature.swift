@@ -269,6 +269,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// from `webScrollFreezeObservability` so the production observer ships without the capture.
     case webScrollFreezeCapture
 
+    /// Speculative, scoped auto-recovery triggered on a confirmed freeze; default internal/off.
+    case webScrollFreezeAutoRecovery
+
     case screenTimeCleaning
 
     case minimalChromeInLandscape

@@ -1018,7 +1018,10 @@ class TabViewController: UIViewController {
                                                   currentURL: { [weak self] in self?.webView?.url },
                                                   captureFreeze: captureEnabled
                                                     ? { FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow()) }
-                                                    : {})
+                                                    : {},
+                                                  autoRecover: featureFlagger.isFeatureOn(.webScrollFreezeAutoRecovery)
+                                                    ? { DailyPixel.fireDailyAndCount(pixel: .debugInteractionRecoveryAttempted, withAdditionalParameters: [:]); _ = WebScrollFreezeRecovery.autoRecover(); return true }
+                                                    : { false })
             webScrollObserver?.install()
             if captureEnabled, let window = WebScrollFreezeProbe.keyWindow() {
                 TouchCensus.installIfNeeded(on: window)

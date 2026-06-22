@@ -36,6 +36,7 @@ enum WebScrollFreezeProbe {
         var out = "# Interaction Diagnostics — \(Date())\n"
         out += "App: \(appVersion)\n\n"
         out += touchSection() + "\n"
+        out += breadcrumbSection() + "\n"
         out += featureFlagsSection() + "\n"
         out += currentTabSection() + "\n"
         out += scrollViewsSection() + "\n"
@@ -52,6 +53,11 @@ enum WebScrollFreezeProbe {
     @MainActor
     private static func touchSection() -> String {
         "## Touch ledger\n" + TouchCensus.report() + "\n"
+    }
+
+    @MainActor
+    private static func breadcrumbSection() -> String {
+        "## Recent transition breadcrumbs\n" + WebScrollFreezeBreadcrumb.recent() + "\n"
     }
 
     private static func featureFlagsSection() -> String {
@@ -142,16 +148,19 @@ enum WebScrollFreezeProbe {
         return out
     }
 
-    /// Window-wide scan of all gesture recognizers, grouped into three buckets:
+    /// Window-wide scan of all gesture recognizers, grouped into four buckets:
     ///   (a) `.began` / `.changed` — actively tracking a gesture right now,
-    ///   (b) `numberOfTouches > 0` — holding touch references without being active,
-    ///   (c) WebKit/private recognizers that are `.possible` with `numberOfTouches == 0` — the idle
-    ///       suspects that should be compared against a healthy-baseline capture.
+    ///   (b) `.began` / `.changed` AND `numberOfTouches == 0` — active with no live touches, a suspect
+    ///       pattern worth comparing against a healthy baseline (a recognizer in (b) also appears in (a)),
+    ///   (c) `numberOfTouches > 0` — holding touch references without being active,
+    ///   (d) WebKit/private recognizers in `.possible`, `.began`, or `.changed` — compare against a
+    ///       healthy baseline; `.possible`/0-touches is also the normal idle state for these gates.
     /// Each entry includes a short superview-chain path, frame, window, visibility, and alpha.
     private static func windowWideRecognizerSuspectsSection() -> String {
         var active: [(UIGestureRecognizer, UIView, UIWindow)] = []
+        var activeZeroTouches: [(UIGestureRecognizer, UIView, UIWindow)] = []
         var holdingTouches: [(UIGestureRecognizer, UIView, UIWindow)] = []
-        var webKitIdle: [(UIGestureRecognizer, UIView, UIWindow)] = []
+        var webKitNonEnded: [(UIGestureRecognizer, UIView, UIWindow)] = []
 
         for window in allWindows() {
             walkSubviews(window) { view in
@@ -159,12 +168,17 @@ enum WebScrollFreezeProbe {
                 for recognizer in recognizers {
                     let state = recognizer.state
                     let touches = recognizer.numberOfTouches
-                    if state == .began || state == .changed {
+                    let isActive = state == .began || state == .changed
+                    if isActive {
                         active.append((recognizer, view, window))
+                        if touches == 0 {
+                            activeZeroTouches.append((recognizer, view, window))
+                        }
                     } else if touches > 0 {
                         holdingTouches.append((recognizer, view, window))
-                    } else if isWebKitPrivate(recognizer) && state == .possible && touches == 0 {
-                        webKitIdle.append((recognizer, view, window))
+                    }
+                    if isWebKitPrivate(recognizer) && (state == .possible || state == .began || state == .changed) {
+                        webKitNonEnded.append((recognizer, view, window))
                     }
                 }
             }
@@ -183,7 +197,19 @@ enum WebScrollFreezeProbe {
             }
         }
 
-        out += "\n### (b) Recognizers holding touches (numberOfTouches > 0, not active)\n"
+        out += "\n### (b) Active with zero touches (.began / .changed, numberOfTouches == 0 — wedge suspects)\n"
+        out += "- NOTE: active-but-zero-touches is a suspect pattern; compare against a healthy-baseline capture to assess.\n"
+        if activeZeroTouches.isEmpty {
+            out += "- (none)\n"
+        } else {
+            for (recognizer, view, window) in activeZeroTouches {
+                out += "- ⚠️ \(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
+                    + " touches=\(recognizer.numberOfTouches)\n"
+                out += "    \(viewContextDescription(view, window: window))\n"
+            }
+        }
+
+        out += "\n### (c) Recognizers holding touches (numberOfTouches > 0, not active)\n"
         if holdingTouches.isEmpty {
             out += "- (none)\n"
         } else {
@@ -194,14 +220,15 @@ enum WebScrollFreezeProbe {
             }
         }
 
-        out += "\n### (c) WebKit/private recognizers (.possible, 0 touches — idle suspects)\n"
+        out += "\n### (d) WebKit/private recognizers (.possible / .began / .changed)\n"
         out += "- NOTE: .possible/0-touches is the NORMAL idle state for WebKit gates."
             + " Useful only when diffed against a healthy-baseline capture.\n"
-        if webKitIdle.isEmpty {
+        if webKitNonEnded.isEmpty {
             out += "- (none)\n"
         } else {
-            for (recognizer, view, window) in webKitIdle {
-                out += "- \(typeName(recognizer))\n"
+            for (recognizer, view, window) in webKitNonEnded {
+                out += "- \(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
+                    + " touches=\(recognizer.numberOfTouches)\n"
                 out += "    \(viewContextDescription(view, window: window))\n"
             }
         }
@@ -275,10 +302,10 @@ enum WebScrollFreezeProbe {
     }
 
     /// Dumps EVERY gesture recogniser in the webView's SUBTREE (descending into WKScrollView / WKContentView)
-    /// — the recognisers the `webView → window` ancestor chain never reaches, and where the leading-hypothesis
-    /// wedge lives (a WebKit deferring/gating recogniser). We list all of them (robust to not knowing the exact
-    /// WebKit class names) with full public state, classify each, and flag `.possible`-with-0-touches WebKit
-    /// recognisers as SUSPECTS — deliberately NOT "wedged", because those states are also the normal idle state.
+    /// — the recognisers the `webView → window` ancestor chain never reaches, and where a suspected wedge
+    /// may reside (e.g. a WebKit deferring/gating recogniser). We list all of them (robust to not knowing the
+    /// exact WebKit class names) with full public state, classify each, and flag `.possible`-with-0-touches
+    /// WebKit recognisers as SUSPECTS — deliberately NOT "wedged", because those states are also the normal idle state.
     @MainActor
     private static func webViewSubtreeSection(of webView: UIView) -> String {
         var entries: [(recognizer: UIGestureRecognizer, host: UIView)] = []

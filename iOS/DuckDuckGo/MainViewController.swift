@@ -2175,6 +2175,7 @@ class MainViewController: UIViewController {
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
         guard let tab else { return }
+        WebScrollFreezeBreadcrumb.drop("mainVC.tabTransition")
         previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
@@ -2243,6 +2244,7 @@ class MainViewController: UIViewController {
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
         addChild(controller)
+        WebScrollFreezeBreadcrumb.drop("mainVC.contentContainer.remove")
         viewCoordinator.contentContainer.subviews.forEach { $0.removeFromSuperview() }
         viewCoordinator.contentContainer.addSubview(controller.view)
 

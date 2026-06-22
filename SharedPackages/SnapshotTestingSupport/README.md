@@ -27,7 +27,7 @@ final class MyViewTests {
     @Test(.timeLimit(.minutes(1)))
     func testMyViewSnapshot() {
         assertImageSnapshot(
-            matching: MyView().withBackground,
+            matching: MyView().snapshotBackground(),
             size: .intrinsicContentSize
         )
     }
@@ -87,7 +87,7 @@ assertSnapshot(of: value, as: .json)
 | `.sheet` | Sheet presentation; iPhone bottom-aligned, iPad centered with padding | iPhone + iPad on iOS |
 | `.fixed(CGSize)` | Explicit size (typical for macOS windows/panels) | none |
 
-Only `.sheet` adds a backdrop automatically (it simulates the sheet chrome). For every other mode the snapshot reflects the view as-is — call `.withBackground` on your view if you want `systemBackground` / `windowBackgroundColor` behind it.
+Only `.sheet` adds a backdrop automatically (it simulates the sheet chrome). For every other mode the snapshot reflects the view as-is — call `.snapshotBackground()` on your view if you want `systemBackground` / `windowBackgroundColor` behind it.
 
 On macOS, device variants don't apply — `.screen`/`.sheet`/`.fixed` all resolve to the configuration's size (default `800x600` if unspecified).
 
@@ -147,7 +147,7 @@ Real test sites you can crib from:
 
 ### macOS — direct SwiftUI intrinsic size (`.intrinsicContentSize`)
 - Test: `macOS/UnitTests/InfoViews/InfoViewTests.swift`
-- Smallest possible direct snapshot — combine with `.withBackground` to make the surface explicit.
+- Smallest possible direct snapshot — combine with `.snapshotBackground()` to make the surface explicit.
 
 ### macOS — existing Point-Free AppKit image snapshots
 - Test: `macOS/UnitTests/URLDragPreviewProvider/URLDragPreviewProviderTests.swift`

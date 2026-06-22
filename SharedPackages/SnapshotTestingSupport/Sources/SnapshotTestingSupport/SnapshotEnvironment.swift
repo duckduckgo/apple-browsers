@@ -102,10 +102,8 @@ public enum SnapshotEnvironment {
 
     #if os(iOS)
     private static func currentIOSDisplayScale() -> Double? {
-        let windowScene = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first
-        guard let scale = windowScene?.screen.scale else {
+        let scale = UITraitCollection.current.displayScale
+        guard scale > 0 else {
             return nil
         }
         return Double(scale)

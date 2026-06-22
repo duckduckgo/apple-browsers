@@ -28,7 +28,7 @@ final class InfoViewTests {
     @Test(.timeLimit(.minutes(1)))
     func testInfoViewSnapshot() {
         assertImageSnapshot(
-            matching: InfoView(info: "DuckDuckGo snapshot testing support").withBackground,
+            matching: InfoView(info: "DuckDuckGo snapshot testing support").snapshotBackground(),
             size: .intrinsicContentSize
         )
     }

@@ -35,6 +35,7 @@ final class DuckAIGridCardView: UIView {
         static let chipHeight: CGFloat = 22
         static let thumbnailCornerRadius: CGFloat = 16
         static let voiceMascotVerticalSpacing: CGFloat = 8
+        static let voiceMascotHeight: CGFloat = 80
     }
 
     private let titleLabel = UILabel()
@@ -209,11 +210,13 @@ final class DuckAIGridCardView: UIView {
             thumbnailImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
             thumbnailImageView.bottomAnchor.constraint(equalTo: chipView.topAnchor, constant: -Metrics.imageVerticalSpacing),
 
-            // Voice mascot: centred between the status row and the chip (aspect-fit, dark card only).
+            // Voice mascot: fixed-height, centred, clamped so it never collides with the status
+            // row or chip (aspect-fit, dark card only).
             mascotImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
             mascotImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            mascotImageView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Metrics.voiceMascotVerticalSpacing),
-            mascotImageView.bottomAnchor.constraint(equalTo: chipView.topAnchor, constant: -Metrics.voiceMascotVerticalSpacing)
+            mascotImageView.heightAnchor.constraint(equalToConstant: Metrics.voiceMascotHeight),
+            mascotImageView.topAnchor.constraint(greaterThanOrEqualTo: titleLabel.bottomAnchor, constant: Metrics.voiceMascotVerticalSpacing),
+            mascotImageView.bottomAnchor.constraint(lessThanOrEqualTo: chipView.topAnchor, constant: -Metrics.voiceMascotVerticalSpacing)
         ])
     }
 

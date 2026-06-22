@@ -100,22 +100,14 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     for configuration in strategy.configurations(for: .macOS, size: size) {
         let rootView = view.environment(\.colorScheme, configuration.appearance.colorScheme)
         let viewController = NSHostingController(rootView: rootView)
-        let snapshotSize = resolvedSize(
-            for: viewController.view,
-            configuration: configuration,
-            size: size
-        )
-        viewController.view.setFrameSize(snapshotSize)
         viewController.view.appearance = configuration.appearance.nsAppearance
 
-        assertSnapshot(
-            of: viewController.view,
-            as: .image(
-                perceptualPrecision: perceptualPrecision,
-                size: snapshotSize
-            ),
-            named: configuration.name,
-            record: SnapshotRecordMode.snapshotTestingRecord(record: record),
+        assertSwiftUIImageSnapshot(
+            of: viewController,
+            configuration: configuration,
+            size: size,
+            record: record,
+            perceptualPrecision: perceptualPrecision,
             fileID: fileID,
             file: file,
             testName: testName,
@@ -164,6 +156,76 @@ private func constrainedSize(for view: NSView, width: CGFloat) -> CGSize {
     }
 
     return CGSize(width: width, height: SnapshotDevice.macOSDefaultSize.height)
+}
+
+private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
+    of viewController: NSHostingController<Value>,
+    configuration: SnapshotImageConfiguration,
+    size: SnapshotImageSize,
+    record: Bool,
+    perceptualPrecision: Float,
+    fileID: StaticString,
+    file: StaticString,
+    testName: String,
+    line: UInt,
+    column: UInt
+) {
+    let snapshotSize = swiftUISnapshotSize(
+        for: viewController,
+        configuration: configuration,
+        size: size
+    )
+    viewController.view.setFrameSize(snapshotSize)
+
+    assertSnapshot(
+        of: viewController.view,
+        as: .image(
+            perceptualPrecision: perceptualPrecision,
+            size: snapshotSize
+        ),
+        named: configuration.name,
+        record: SnapshotRecordMode.snapshotTestingRecord(record: record),
+        fileID: fileID,
+        file: file,
+        testName: testName,
+        line: line,
+        column: column
+    )
+}
+
+private func swiftUISnapshotSize<Value: SwiftUI.View>(
+    for viewController: NSHostingController<Value>,
+    configuration: SnapshotImageConfiguration,
+    size: SnapshotImageSize
+) -> CGSize {
+    if let width = size.fixedConstrainedWidth {
+        let measuredSize = viewController.sizeThatFits(
+            in: CGSize(width: width, height: .greatestFiniteMagnitude)
+        )
+
+        if measuredSize.height > 0 {
+            return CGSize(width: width, height: measuredSize.height)
+        }
+    }
+
+    if let snapshotSize = size.resolvedSize(
+        for: configuration,
+        defaultSize: SnapshotDevice.macOSDefaultSize
+    ) {
+        return snapshotSize
+    }
+
+    let measuredSize = viewController.sizeThatFits(
+        in: CGSize(
+            width: CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude
+        )
+    )
+    if measuredSize.width > 0, measuredSize.height > 0 {
+        return measuredSize
+    }
+
+    return resolvedSize(for: viewController.view)
 }
 
 private extension SnapshotAppearance {

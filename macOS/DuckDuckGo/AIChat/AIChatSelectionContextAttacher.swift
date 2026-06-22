@@ -79,13 +79,16 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
 
         let truncated = text.count > Constants.maxSelectionContextLength
         let content = truncated ? String(text.prefix(Constants.maxSelectionContextLength)) : text
+        // Count words on the full selection (not the truncated `content`) so the FE shows the real size.
+        let wordCount = text.split(whereSeparator: \.isWhitespace).count
         let selection = AIChatSelectionContextData(
             id: UUID().uuidString,
             title: UserText.aiChatTextSelection,
             url: url?.absoluteString ?? "",
             content: content,
             truncated: truncated,
-            fullContentLength: text.count
+            fullContentLength: text.count,
+            wordCount: wordCount
         )
 
         // Append the selection, then reveal the sidebar; the tab extension flushes it once the chat VC is up.

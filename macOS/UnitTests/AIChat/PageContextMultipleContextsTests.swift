@@ -137,7 +137,8 @@ struct SelectionContextTests {
             url: url,
             content: content,
             truncated: truncated,
-            fullContentLength: text.count
+            fullContentLength: text.count,
+            wordCount: text.split(whereSeparator: \.isWhitespace).count
         )
     }
 
@@ -149,6 +150,16 @@ struct SelectionContextTests {
         #expect(item.url == "https://example.com")
         #expect(item.truncated == false)
         #expect(item.fullContentLength == 11)
+        #expect(item.wordCount == 2)
+    }
+
+    @Test("Word count covers the full selection even when truncated")
+    func wordCountReflectsFullSelection() {
+        // 6000 two-char words separated by spaces → 11999 chars, truncated at 9500, but wordCount is the full 6000.
+        let longText = Array(repeating: "ab", count: 6000).joined(separator: " ")
+        let item = buildSelectionItem(text: longText, url: "https://example.com")
+        #expect(item.truncated == true)
+        #expect(item.wordCount == 6000)
     }
 
     @Test("Long selection is truncated to the max length and reports the original length")

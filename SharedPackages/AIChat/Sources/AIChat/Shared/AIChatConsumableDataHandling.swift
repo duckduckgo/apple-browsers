@@ -236,8 +236,11 @@ public struct AIChatSelectionContextData: Codable, Equatable {
     public let content: String
     public let truncated: Bool
     public let fullContentLength: Int
+    /// Word count of the *full* selection (before truncation), computed natively. The FE can't
+    /// derive this reliably from `content` because `content` is truncated, so native owns it.
+    public let wordCount: Int
 
-    public init(id: String, title: String, favicon: [AIChatPageContextData.PageContextFavicon] = [], url: String, content: String, truncated: Bool, fullContentLength: Int) {
+    public init(id: String, title: String, favicon: [AIChatPageContextData.PageContextFavicon] = [], url: String, content: String, truncated: Bool, fullContentLength: Int, wordCount: Int) {
         self.id = id
         self.title = title
         self.favicon = favicon
@@ -245,6 +248,7 @@ public struct AIChatSelectionContextData: Codable, Equatable {
         self.content = content
         self.truncated = truncated
         self.fullContentLength = fullContentLength
+        self.wordCount = wordCount
     }
 }
 

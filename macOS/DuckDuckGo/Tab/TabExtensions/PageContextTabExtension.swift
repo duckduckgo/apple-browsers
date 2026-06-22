@@ -307,7 +307,8 @@ final class PageContextTabExtension {
             url: selection.url,
             content: selection.content,
             truncated: selection.truncated,
-            fullContentLength: selection.fullContentLength
+            fullContentLength: selection.fullContentLength,
+            wordCount: selection.wordCount
         )
     }
 

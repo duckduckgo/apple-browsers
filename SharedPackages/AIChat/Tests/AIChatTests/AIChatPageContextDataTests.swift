@@ -125,7 +125,8 @@ final class AIChatSelectionContextDataTests: XCTestCase {
             url: "https://example.com",
             content: "selected text",
             truncated: false,
-            fullContentLength: 13
+            fullContentLength: 13,
+            wordCount: 2
         )
 
         let data = try JSONEncoder().encode(selection)
@@ -133,6 +134,7 @@ final class AIChatSelectionContextDataTests: XCTestCase {
 
         XCTAssertEqual(decoded, selection)
         XCTAssertEqual(decoded.favicon.first?.href, "data:image/png;base64,abc")
+        XCTAssertEqual(decoded.wordCount, 2)
     }
 
     func testEncodesExpectedFields() throws {
@@ -142,7 +144,8 @@ final class AIChatSelectionContextDataTests: XCTestCase {
             url: "https://example.com",
             content: "xxx",
             truncated: true,
-            fullContentLength: 9999
+            fullContentLength: 9999,
+            wordCount: 1500
         )
 
         let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(selection)) as? [String: Any]
@@ -153,6 +156,7 @@ final class AIChatSelectionContextDataTests: XCTestCase {
         XCTAssertEqual(object?["content"] as? String, "xxx")
         XCTAssertEqual(object?["truncated"] as? Bool, true)
         XCTAssertEqual(object?["fullContentLength"] as? Int, 9999)
+        XCTAssertEqual(object?["wordCount"] as? Int, 1500)
         XCTAssertNotNil(object?["favicon"] as? [Any], "favicon must be present (empty array when none cached)")
     }
 }

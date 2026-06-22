@@ -157,7 +157,7 @@ struct AIChatUserScriptHandlerTests {
     @Test("getAIChatSelectionContext returns the stored selections", .timeLimit(.minutes(1)))
     @MainActor
     func testThatGetAIChatSelectionContextReturnsStoredSelections() {
-        let selection = AIChatSelectionContextData(id: "id-1", title: "Text selection", url: "https://example.com", content: "hi", truncated: false, fullContentLength: 2)
+        let selection = AIChatSelectionContextData(id: "id-1", title: "Text selection", url: "https://example.com", content: "hi", truncated: false, fullContentLength: 2, wordCount: 1)
         messageHandler.getSelectionContextsImpl = { [selection] }
 
         let response = handler.getAIChatSelectionContext(params: [], message: WKScriptMessage.mock()) as? SelectionContextResponse

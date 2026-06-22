@@ -370,16 +370,13 @@ extension AutoconsentUserScript {
         let remoteConfig = self.config.settings(for: .autoconsent)
         let disabledCMPs = remoteConfig["disabledCMPs"] as? [String] ?? []
 
-        var autoAction: String?
-        if preferences.isAutoconsentEnabled == true {
-            // Check for reload loop and disable autoAction if needed
-            if reloadLoopDetected {
-                // prevent further reloads
-                Logger.autoconsent.debug("Reload loop prevention: disabling autoAction for \(messageData.url)")
-            } else {
-                // normal case: autoconsent feature is enabled, and no reload loop detected
-                autoAction = "optOut"
-            }
+        let autoAction: String?
+        if reloadLoopDetected {
+            // prevent further reloads
+            Logger.autoconsent.debug("Reload loop prevention: disabling autoAction for \(messageData.url)")
+            autoAction = nil
+        } else {
+            autoAction = "optOut"
         }
 
         let autoconsentConfig = [

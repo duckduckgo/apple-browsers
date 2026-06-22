@@ -17,6 +17,7 @@
 //
 
 import WebKit
+import os.log
 
 @available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionEventsListening {
@@ -89,9 +90,10 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
         notifyController { $0.didChangeTabProperties(properties, for: tab) }
     }
 
-    private func notifyController(_ callback: (WKWebExtensionController) -> Void) {
+    private func notifyController(_ callback: (WKWebExtensionController) -> Void, caller: String = #function) {
         guard let controller else {
             droppedCallbacksCount += 1
+            Logger.webExtensions.warning("⚠️ Dropped web extension callback '\(caller, privacy: .public)' — controller is nil (total dropped: \(self.droppedCallbacksCount, privacy: .public))")
             return
         }
 

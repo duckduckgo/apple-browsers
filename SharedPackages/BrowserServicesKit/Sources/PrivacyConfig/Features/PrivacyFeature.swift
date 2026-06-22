@@ -573,6 +573,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// legacy App Group path.
     case nativeStoragePathMigration
 
+    /// Once the native-storage path migration is complete (or not needed), opens
+    /// the store on locked / background launches instead of deferring on the
+    /// protected-data gate. Off keeps the legacy behavior where any locked launch
+    /// nils the handler — which makes the Duck.ai front-end re-prompt T&C.
+    case nativeStorageMigrationLockedLaunchFix
+
     /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
     /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
     /// screenshot preview.

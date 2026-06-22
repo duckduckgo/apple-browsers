@@ -200,12 +200,14 @@ private func swiftUISnapshotSize<Value: SwiftUI.View>(
 ) -> CGSize {
     if let width = size.fixedConstrainedWidth {
         let measuredSize = viewController.sizeThatFits(
-            in: CGSize(width: width, height: .greatestFiniteMagnitude)
+            in: CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
         )
 
         if measuredSize.height > 0 {
             return CGSize(width: width, height: measuredSize.height)
         }
+
+        return CGSize(width: width, height: SnapshotDevice.macOSDefaultSize.height)
     }
 
     if let snapshotSize = size.resolvedSize(

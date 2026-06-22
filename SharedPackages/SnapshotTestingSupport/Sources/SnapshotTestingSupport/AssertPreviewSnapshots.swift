@@ -18,7 +18,6 @@
 
 import PreviewSnapshots
 import SwiftUI
-import XCTest
 
 public func assertImageSnapshots<State>(
     _ previews: PreviewSnapshots<State>,
@@ -60,10 +59,12 @@ public func assertImageSnapshots<State>(
 ) {
     let snapshotConfigurations = previews.snapshotConfigurations
     guard !snapshotConfigurations.isEmpty else {
-        XCTFail(
+        recordSnapshotIssue(
             "No snapshot configurations found. At least one preview configuration must include the .snapshots scope.",
+            fileID: fileID,
             file: file,
-            line: line
+            line: line,
+            column: column
         )
         return
     }

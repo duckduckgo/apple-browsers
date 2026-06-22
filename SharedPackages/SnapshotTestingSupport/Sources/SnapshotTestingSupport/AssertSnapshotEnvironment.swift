@@ -36,7 +36,7 @@ func assertSnapshotEnvironment(
     return false
 }
 
-private func recordSnapshotIssue(
+func recordSnapshotIssue(
     _ message: String,
     fileID: StaticString,
     file: StaticString,

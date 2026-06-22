@@ -306,6 +306,29 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertEqual(pixelSpy.firedEventNames, ["protectedDataUnavailable", "success"])
     }
 
+    func testWhenMigratedAndProtectedDataIsUnavailableThenProceedsAsNoOpWithoutDeferring() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try? keyValueStore.set(true, forKey: migratedKey)
+
+        let outcome = migrate(from: oldURL, to: newURL, isProtectedDataAvailable: { false })
+
+        XCTAssertEqual(outcome, .proceed)
+        XCTAssertTrue(pixelSpy.firedEventNames.isEmpty,
+                      "a completed migration must not fire protectedDataUnavailable on a locked launch")
+    }
+
+    func testWhenMigrationNotNeededAndProtectedDataIsUnavailableThenMarksDoneWithoutDeferring() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+
+        let outcome = migrate(from: oldURL, to: newURL, isProtectedDataAvailable: { false })
+
+        XCTAssertEqual(outcome, .proceed)
+        XCTAssertTrue(keyValueStore.bool(forKey: migratedKey))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["notNeeded"])
+    }
+
     // MARK: - Exhausted retry budget reset
 
     func testWhenAttemptsAreAtCapWithoutMigratedFlagThenBudgetResetsAndMigrationRuns() throws {

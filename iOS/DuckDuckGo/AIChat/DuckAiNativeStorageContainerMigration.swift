@@ -80,12 +80,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
 
     @discardableResult
     func run() -> DuckAiNativeStorageContainerMigrationOutcome {
-        guard isProtectedDataAvailable() else {
-            Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] protected data unavailable; deferring")
-            pixelFiring.fire(.protectedDataUnavailable(label: label))
-            return .skip
-        }
-
         do {
             return try performMigration()
         } catch let kvError as MigrationStateStore.ReadError {
@@ -108,8 +102,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
             return .proceed
         }
 
-        Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] starting (prior attempts: \(state.attempts)); old=\(oldURL.path, privacy: .public) new=\(newURL.path, privacy: .public)")
-
         guard fileManager.fileExists(atPath: oldURL.path) else {
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] no old directory; marking done")
             stateStore.markMigrated()
@@ -117,6 +109,14 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
             ensureProtection(priorAttempts: state.protectionAttempts)
             return .proceed
         }
+
+        guard isProtectedDataAvailable() else {
+            Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] protected data unavailable; deferring")
+            pixelFiring.fire(.protectedDataUnavailable(label: label))
+            return .skip
+        }
+
+        Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] starting (prior attempts: \(state.attempts)); old=\(oldURL.path, privacy: .public) new=\(newURL.path, privacy: .public)")
 
         if fileManager.fileExists(atPath: newURL.path) {
             // Destination exists without `migrated`. If data is present, treat

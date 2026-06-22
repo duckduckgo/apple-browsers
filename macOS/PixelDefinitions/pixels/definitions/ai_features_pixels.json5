@@ -11,8 +11,7 @@
             {
                 "key": "duck_ai",
                 "description": "Whether Duck.ai is enabled.",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "search_assist",
@@ -29,8 +28,7 @@
             {
                 "key": "no_ai",
                 "description": "Derived: Duck.ai off AND Search Assist never AND Hide AI Images on.",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },
@@ -87,7 +85,7 @@
         "description": "Fired when a stored SERP setting value cannot be decoded into the native enum (SERP/native contract mismatch)",
         "owners": ["dus7"],
         "triggers": ["other"],
-        "suffixes": ["daily_count"],
+        "suffixes": ["daily"],
         "parameters": [
             "appVersion",
             "pixelSource",

@@ -439,9 +439,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215106459483563?focus=true
     case duckAINativeStoragePathMigration
 
-    /// Once the native-storage path migration is done (or not needed), opens the
-    /// store on locked/background launches instead of deferring — fixes the
-    /// Duck.ai T&C re-prompt (`m.aichat.terms.accepted.duplicate`) spike.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215920422347500?focus=true
     case duckAINativeStorageMigrationLockedLaunchFix
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375

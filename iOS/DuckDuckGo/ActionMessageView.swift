@@ -109,14 +109,14 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     }
 
     private func applySystemFonts() {
-        let messageFont = UIFont.daxBodyRegular()
+        let messageFont = AppRebrand.isAppRebranded() ? UIFont.daxBodyRegular() : UIFont.daxSubheadRegular()
         if let attributedText = message.attributedText {
             message.attributedText = attributedText.withFont(messageFont)
         } else {
             message.font = messageFont
         }
 
-        let buttonFont = UIFont.daxBodySemibold()
+        let buttonFont = AppRebrand.isAppRebranded() ? UIFont.daxBodySemibold() : UIFont.daxSubheadSemibold()
         if let attributedTitle = actionButton.attributedTitle(for: .normal) {
             actionButton.setAttributedTitle(attributedTitle.withFont(buttonFont), for: .normal)
         } else {

@@ -120,16 +120,23 @@ struct HomeMessageView: View {
     }
 
     @ViewBuilder
+    private func subtitleFont(_ text: Text) -> some View {
+        if AppRebrand.isAppRebranded() {
+            text.daxSubheadRegular()
+        } else {
+            text.daxBodyRegular()
+        }
+    }
+
+    @ViewBuilder
     private var subtitle: some View {
         if let attributed = try? AttributedString(markdown: viewModel.subtitle) {
-            Text(attributed)
+            subtitleFont(Text(attributed))
                 .fixedSize(horizontal: false, vertical: true)
-                .daxSubheadRegular()
                 .foregroundColor(subtitleColor)
         } else {
-            Text(viewModel.subtitle)
+            subtitleFont(Text(viewModel.subtitle))
                 .fixedSize(horizontal: false, vertical: true)
-                .daxSubheadRegular()
                 .foregroundColor(subtitleColor)
         }
     }

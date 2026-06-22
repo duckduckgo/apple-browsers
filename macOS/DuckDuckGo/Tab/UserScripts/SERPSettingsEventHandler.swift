@@ -61,6 +61,12 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
             case .keyValueStoreWriteError:
                 // Fires when writing to persistent storage fails.
                 PixelKit.fire(GeneralPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
+            case .unrecognizedValue(let key, let value):
+                // No `m_mac_` prefix so the wire name matches the other platforms exactly.
+                PixelKit.fire(AIChatPixel.serpSettingsUnrecognizedValue(key: key, value: value),
+                              frequency: .dailyAndCount,
+                              includeAppVersionParameter: true,
+                              doNotEnforcePrefix: true)
             }
         }
     }

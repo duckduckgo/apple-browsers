@@ -164,6 +164,10 @@ final class AIChatPreferences: ObservableObject {
                 guard newValue != self.serpSettings.searchAssistFrequency else { return }
                 self.objectWillChange.send()
                 self.serpSettings.searchAssistFrequency = newValue
+                PixelKit.fire(Self.searchAssistPixel(for: newValue),
+                              frequency: .dailyAndCount,
+                              includeAppVersionParameter: true,
+                              doNotEnforcePrefix: true)
             }
         )
     }
@@ -175,6 +179,10 @@ final class AIChatPreferences: ObservableObject {
                 guard newValue.hidden != self.serpSettings.hideAIGeneratedImages else { return }
                 self.objectWillChange.send()
                 self.serpSettings.hideAIGeneratedImages = newValue.hidden
+                PixelKit.fire(newValue.hidden ? AIChatPixel.aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff,
+                              frequency: .dailyAndCount,
+                              includeAppVersionParameter: true,
+                              doNotEnforcePrefix: true)
             }
         )
     }
@@ -194,6 +202,16 @@ final class AIChatPreferences: ObservableObject {
         )
     }
 
+    /// Maps a Search Assist frequency to its value-in-name AI Features pixel.
+    private static func searchAssistPixel(for frequency: SearchAssistFrequency) -> AIChatPixel {
+        switch frequency {
+        case .never: return .aiFeaturesSearchAssistNever
+        case .onDemand: return .aiFeaturesSearchAssistOnDemand
+        case .sometimes: return .aiFeaturesSearchAssistSometimes
+        case .often: return .aiFeaturesSearchAssistOften
+        }
+    }
+
     // Duck.ai-only; `isAIFeaturesEnabled` is the legacy name (kept to avoid an app-wide rename).
     private var isDuckAIEnabled: Bool {
         get { isAIFeaturesEnabled }
@@ -211,6 +229,10 @@ final class AIChatPreferences: ObservableObject {
         isDuckAIEnabled = false
         serpSettings.searchAssistFrequency = .never
         serpSettings.hideAIGeneratedImages = true
+        PixelKit.fire(AIChatPixel.aiFeaturesDisabled,
+                      frequency: .dailyAndCount,
+                      includeAppVersionParameter: true,
+                      doNotEnforcePrefix: true)
     }
 
     // Properties for managing the current state of AI Chat preference options

@@ -80,9 +80,9 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
                 // Fires when writing to persistent storage fails.
                 PixelKit.fire(SERPSettingsPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
             case .unrecognizedValue(let key, let value):
-                // Standard iOS pixel (not PixelKit) so the wire name matches macOS exactly.
-                DailyPixel.fireDailyAndCount(pixel: .serpSettingsUnrecognizedValue,
-                                             withAdditionalParameters: ["key": key, "value": value])
+                // Daily-only: the SERP getters run on every read, so a count variant would spam.
+                DailyPixel.fire(pixel: .serpSettingsUnrecognizedValue,
+                                withAdditionalParameters: ["key": key, "value": value])
             }
         }
     }

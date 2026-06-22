@@ -770,7 +770,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingRebranding:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingRebranding))
         case .appRebranding:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled))
         case .webExtensionLightweightReload:

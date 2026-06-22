@@ -871,7 +871,7 @@ final class AutofillLoginListViewController: UIViewController {
             emptySearchView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
 
             lockedView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            lockedView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            lockedView.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
             lockedView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.padding),
             lockedView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
 

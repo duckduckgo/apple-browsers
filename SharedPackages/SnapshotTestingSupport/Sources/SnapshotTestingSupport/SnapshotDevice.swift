@@ -18,10 +18,35 @@
 
 import CoreGraphics
 
+#if os(iOS)
+import UIKit
+#endif
+
 public struct SnapshotDevice: Equatable {
     public let name: String
     public let size: CGSize
 
+    #if os(iOS)
+    let userInterfaceIdiom: UIUserInterfaceIdiom
+    let horizontalSizeClass: UIUserInterfaceSizeClass
+    let verticalSizeClass: UIUserInterfaceSizeClass
+    #endif
+
+    #if os(iOS)
+    public init(
+        name: String,
+        size: CGSize,
+        userInterfaceIdiom: UIUserInterfaceIdiom = .unspecified,
+        horizontalSizeClass: UIUserInterfaceSizeClass = .unspecified,
+        verticalSizeClass: UIUserInterfaceSizeClass = .unspecified
+    ) {
+        self.name = name
+        self.size = size
+        self.userInterfaceIdiom = userInterfaceIdiom
+        self.horizontalSizeClass = horizontalSizeClass
+        self.verticalSizeClass = verticalSizeClass
+    }
+    #else
     public init(
         name: String,
         size: CGSize
@@ -29,7 +54,25 @@ public struct SnapshotDevice: Equatable {
         self.name = name
         self.size = size
     }
+    #endif
 
+    #if os(iOS)
+    public static let iPhoneDefault = SnapshotDevice(
+        name: "iPhoneDefault",
+        size: CGSize(width: 390, height: 844),
+        userInterfaceIdiom: .phone,
+        horizontalSizeClass: .compact,
+        verticalSizeClass: .regular
+    )
+
+    public static let iPadDefault = SnapshotDevice(
+        name: "iPadDefault",
+        size: CGSize(width: 820, height: 1180),
+        userInterfaceIdiom: .pad,
+        horizontalSizeClass: .regular,
+        verticalSizeClass: .regular
+    )
+    #else
     public static let iPhoneDefault = SnapshotDevice(
         name: "iPhoneDefault",
         size: CGSize(width: 390, height: 844)
@@ -39,6 +82,7 @@ public struct SnapshotDevice: Equatable {
         name: "iPadDefault",
         size: CGSize(width: 820, height: 1180)
     )
+    #endif
 
     public static let defaultIOSDevices: [SnapshotDevice] = [
         .iPhoneDefault,

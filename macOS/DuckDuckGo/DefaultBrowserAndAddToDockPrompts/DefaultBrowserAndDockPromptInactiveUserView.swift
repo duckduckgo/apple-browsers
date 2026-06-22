@@ -16,9 +16,12 @@
 //  limitations under the License.
 //
 
-import PreviewSnapshots
 import SwiftUI
 import Utilities
+
+#if DEBUG
+import PreviewSnapshots
+#endif
 
 final class DefaultBrowserAndDockPromptInactiveUserViewModel {
     let message: String
@@ -135,6 +138,7 @@ private enum Metrics {
     static let height: CGFloat = 508
 }
 
+#if DEBUG
 struct DefaultBrowserAndDockPromptInactiveUserView_Previews: PreviewProvider {
     typealias State = DefaultBrowserAndDockPromptInactiveUserViewModel
 
@@ -156,3 +160,4 @@ struct DefaultBrowserAndDockPromptInactiveUserView_Previews: PreviewProvider {
         }
     )
 }
+#endif

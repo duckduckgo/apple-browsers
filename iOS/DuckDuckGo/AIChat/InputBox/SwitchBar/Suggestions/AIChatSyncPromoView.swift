@@ -21,8 +21,11 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
-import PreviewSnapshots
 import SwiftUI
+
+#if DEBUG
+import PreviewSnapshots
+#endif
 
 struct AIChatSyncPromoView: View {
 
@@ -67,6 +70,7 @@ struct AIChatSyncPromoView: View {
     }
 }
 
+#if DEBUG
 struct AIChatSyncPromoView_Previews: PreviewProvider {
 
     static var previews: some View {
@@ -82,3 +86,4 @@ struct AIChatSyncPromoView_Previews: PreviewProvider {
         }
     )
 }
+#endif

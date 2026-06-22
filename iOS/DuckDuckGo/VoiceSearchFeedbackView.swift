@@ -20,7 +20,10 @@
 import SwiftUI
 import DesignResourcesKitIcons
 import UIComponents
+
+#if DEBUG
 import PreviewSnapshots
+#endif
 
 struct VoiceSearchFeedbackView: View {
     @ObservedObject var speechModel: VoiceSearchFeedbackViewModel
@@ -226,6 +229,7 @@ extension VoiceSearchFeedbackView {
 
 // MARK: - Preview
 
+#if DEBUG
 struct VoiceSearchFeedbackView_Previews: PreviewProvider {
     typealias State = VoiceSearchFeedbackViewModel
 
@@ -243,3 +247,4 @@ struct VoiceSearchFeedbackView_Previews: PreviewProvider {
         }
     )
 }
+#endif

@@ -450,54 +450,28 @@ final class ProbeProgrammaticScrollTests: XCTestCase {
 /// wording and do NOT make definitive causal claims.
 final class RecoveryWordingTests: XCTestCase {
 
-    /// Known result strings — collected from the source rather than running them, because running
-    /// `runRung` needs a live `MainViewController` (it calls `WebScrollFreezeProbe.findMainViewController()`).
-    /// Each string is verified here in its source form rather than at runtime.
-    func testRecoveryStrings_doNotContainWasTheCause() {
-        // These are the strings the code actually returns; grep them for banned wording.
-        let recoveryStrings = [
-            // From resetDeferringGates / resetScrollPan when no touch is in flight:
-            "reset deferring gate(s); pre/post captures saved — compare them",
-            "reset web scroll pan; pre/post captures saved — compare them",
-            // From autoRecover:
-            "auto-recover: applied scroll-pan + deferring-gate resets; pre/post captures saved — compare them",
-            // From resetDeferringGates / resetScrollPan when a touch is in flight:
-            "skipped — touch in flight (would orphan it)",
-            "skipped — touch in flight",
-            // From no-webView paths:
-            "deferring-gate reset: no webView found",
-            "scroll-pan reset: no webView found",
-            "auto-recover: no webView found",
-        ]
-
-        for s in recoveryStrings {
-            XCTAssertFalse(s.contains("WAS the cause"),
-                           "Recovery message must not make definitive causal claim: \"\(s)\"")
-            XCTAssertFalse(s.contains("proven"),
-                           "Recovery message must not use 'proven': \"\(s)\"")
-        }
-    }
-
-    func testRecoveryStrings_compareThemPhraseSignalsHypothesisWording() {
-        // The canonical hypothesis-language pattern is "compare them" — that phrase means
-        // "look at the evidence, draw your own conclusion", which is the intended signal.
-        let comparingStrings = [
-            "reset deferring gate(s); pre/post captures saved — compare them",
-            "reset web scroll pan; pre/post captures saved — compare them",
-            "auto-recover: applied scroll-pan + deferring-gate resets; pre/post captures saved — compare them",
-        ]
-        for s in comparingStrings {
-            XCTAssertTrue(s.contains("compare them"),
-                          "Recovery message that runs a reset should direct user to compare captures: \"\(s)\"")
-        }
-    }
-
+    /// Recovery result strings must never claim a proven cause. Exercises the LIVE return values — in the
+    /// test host there is no MainViewController, so each rung returns its non-causal "no web view" status.
     @MainActor
-    func testAutoRecoverInTestHostReturnsFalse() {
-        // autoRecover() returns Bool — true only if it actually ran the scoped resets. In the test host
-        // there is no MainViewController, so it finds no web view and returns false (never a false success).
-        XCTAssertFalse(WebScrollFreezeRecovery.autoRecover(),
-                       "autoRecover must return false when there is no web view to recover.")
+    func testRecoveryResultStringsMakeNoCausalClaim() {
+        let results = [
+            WebScrollFreezeRecovery.runRung(.resetScrollPan),
+            WebScrollFreezeRecovery.runRung(.resetDeferringGates)
+        ]
+        for result in results {
+            XCTAssertFalse(result.contains("WAS the cause"),
+                           "Recovery result must not claim a proven cause: \"\(result)\"")
+            XCTAssertFalse(result.contains("proven"),
+                           "Recovery result must not use 'proven': \"\(result)\"")
+        }
+    }
+
+    /// autoRecover returns Bool — true only if it actually ran the scoped resets. With no scroll view it
+    /// returns false (never a false success), which is also what happens in the test host.
+    @MainActor
+    func testAutoRecoverWithNoScrollViewReturnsFalse() {
+        XCTAssertFalse(WebScrollFreezeRecovery.autoRecover(scrollView: nil),
+                       "autoRecover must return false when there is no scroll view to recover.")
     }
 
     // Scoped recovery skips when a recognizer has touches:

@@ -166,5 +166,3 @@ final class InteractionDiagnosticsModel: ObservableObject {
             : "Scroll probe: offset \(Int(before)) → \(Int(after)) (target \(Int(targetY))) — DID NOT MOVE ❌ scroll view / content itself is stuck."
     }
 }
-
-// MARK: - Diagnostics model uses WebScrollFreezeProbe (capture) and WebScrollFreezeRecovery (scoped reset).

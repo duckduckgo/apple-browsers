@@ -75,6 +75,7 @@ final class WebScrollObserver: NSObject {
     private var capturedThisStreak = false
     private var autoRecoveredThisStreak = false
     private var pendingOutcomeCheck = false
+    private var outcomeArmedAt: Date?
 
     private weak var wedgeCandidate: UIGestureRecognizer?
 
@@ -125,6 +126,7 @@ final class WebScrollObserver: NSObject {
         capturedThisStreak = false
         autoRecoveredThisStreak = false
         pendingOutcomeCheck = false
+        outcomeArmedAt = nil
     }
 
     // MARK: - Symptom detection (C1)
@@ -145,7 +147,18 @@ final class WebScrollObserver: NSObject {
 
     /// Internal (not private) so unit tests can drive classification directly, bypassing the post-gesture
     /// `asyncAfter` recheck. In production this is only ever called from `dragEnded`.
+    ///
+    /// Also resolves a pending auto-recovery outcome: a stale one (older than the streak window, with no
+    /// real scroll attempt to resolve it) is dropped so it can't be mis-attributed to a later/unrelated
+    /// drag; otherwise `recovery_outcome` fires on the next eligible vertical drag. reset() clears it on
+    /// navigation / tab change / streak expiry.
     func classifyDrag(dx: CGFloat, dy: CGFloat, startOffsetY: CGFloat, startScreenY: CGFloat) {
+        if pendingOutcomeCheck, let armedAt = outcomeArmedAt,
+           now().timeIntervalSince(armedAt) > Constant.streakWindow {
+            pendingOutcomeCheck = false
+            outcomeArmedAt = nil
+        }
+
         guard isEligible(), let scrollView = scrollViewProvider() else { return }
 
         // Only count vertical-dominant drags long enough to be a real scroll attempt.
@@ -164,8 +177,8 @@ final class WebScrollObserver: NSObject {
         let moved = abs(scrollView.contentOffset.y - startOffsetY) >= Constant.movedThreshold
         if pendingOutcomeCheck {
             pendingOutcomeCheck = false
-            let outcome = moved ? "recovered" : "still_frozen"
-            firePixelDailyAndCount(.debugInteractionRecoveryOutcome, ["outcome": outcome])
+            outcomeArmedAt = nil
+            firePixelDailyAndCount(.debugInteractionRecoveryOutcome, ["outcome": moved ? "recovered" : "still_frozen"])
         }
         if moved {
             reset()
@@ -184,6 +197,7 @@ final class WebScrollObserver: NSObject {
             capturedThisStreak = false
             autoRecoveredThisStreak = false
             pendingOutcomeCheck = false
+            outcomeArmedAt = nil
         }
         failureStreak += 1
         lastFailureAt = now()
@@ -231,10 +245,11 @@ final class WebScrollObserver: NSObject {
         ])
 
         if !autoRecoveredThisStreak {
-            autoRecoveredThisStreak = true
-            // Arm the outcome pixel ONLY if recovery actually ran (flag on + no live touch); otherwise the
-            // default `{ false }` closure leaves the production path untouched and fires no outcome pixel.
-            pendingOutcomeCheck = autoRecover()
+            if autoRecover() {
+                autoRecoveredThisStreak = true
+                pendingOutcomeCheck = true
+                outcomeArmedAt = now()
+            }
         }
     }
 
@@ -805,13 +820,12 @@ enum WebScrollFreezeRecovery {
     /// attempt does not emit a misleading recovery outcome. The leading hypothesis is that one or both
     /// resets may help; compare the pre/post captures rather than treating the return value as confirmation.
     @discardableResult
-    static func autoRecover() -> Bool {
+    static func autoRecover(scrollView: UIScrollView?) -> Bool {
         guard !anyTouchInFlight() else { return false }
-        guard let webView = WebScrollFreezeProbe.findMainViewController()?.currentTab?.webView else { return false }
-        let pan = webView.scrollView.panGestureRecognizer
+        guard let scrollView else { return false }
         FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow())
-        applyScrollPanReset(pan)
-        applyDeferringGateReset(in: webView)
+        applyScrollPanReset(scrollView.panGestureRecognizer)
+        applyDeferringGateReset(in: scrollView)
         FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow())
         Logger.interaction.error("Auto-recover: applied scroll-pan + deferring-gate resets; pre/post captures saved")
         return true

@@ -1020,10 +1020,8 @@ class TabViewController: UIViewController {
                                                     ? { FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow()) }
                                                     : {},
                                                   autoRecover: featureFlagger.isFeatureOn(.webScrollFreezeAutoRecovery)
-                                                    ? {
-                                                        // Fire the attempt pixel + arm the outcome ONLY if recovery actually ran
-                                                        // (autoRecover returns false when it skips on a live touch / missing web view).
-                                                        let ran = WebScrollFreezeRecovery.autoRecover()
+                                                    ? { [weak self] in
+                                                        let ran = WebScrollFreezeRecovery.autoRecover(scrollView: self?.webView?.scrollView)
                                                         if ran { DailyPixel.fireDailyAndCount(pixel: .debugInteractionRecoveryAttempted, withAdditionalParameters: [:]) }
                                                         return ran
                                                     }

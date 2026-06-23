@@ -2244,7 +2244,7 @@ class MainViewController: UIViewController {
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
         addChild(controller)
-        WebScrollFreezeBreadcrumb.drop("mainVC.contentContainer.remove")
+        WebScrollFreezeBreadcrumb.drop("mainVC.contentContainer.swap")
         viewCoordinator.contentContainer.subviews.forEach { $0.removeFromSuperview() }
         viewCoordinator.contentContainer.addSubview(controller.view)
 

@@ -541,18 +541,6 @@ class MainViewController: UIViewController {
         self.fireModeCapability = FireModeCapability.create()
         self.fireModePromotionEligibility = fireModePromotionEligibility
         self.onboardingManager = onboardingManager
-        // debugDaxSettings.browsingMajorTrackingSiteShown = false
-        // debugDaxSettings.fireButtonEducationShownOrExpired = false
-        // debugDaxSettings.fireMessageExperimentShown = false
-        // debugDaxSettings.fireButtonPulseDateShown = nil
-        // debugDaxSettings.privacyButtonPulseShown = false
-        // debugDaxSettings.browsingFinalDialogShown = false
-        // debugDaxSettings.subscriptionPromotionDialogShown = false
-        // debugDaxSettings.chatPathVisitSiteSeen = false
-        // debugDaxSettings.isChatFirstPath = false
-        // // Clear any resume checkpoint from a previous partial onboarding run.
-        // OnboardingResumeCheckpointStore.clearAll(in: UserDefaults.app.keyedStoring())
-        // // END TODO OVERRIDE
 
         super.init(nibName: nil, bundle: nil)
         

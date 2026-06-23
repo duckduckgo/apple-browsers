@@ -101,6 +101,32 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    // MARK: - NTPAfterIdleEnabled
+
+    func testWhenNTPAfterIdleEnabledMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isNTPAfterIdleEnabled: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleEnabledMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenNTPAfterIdleEnabledDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isNTPAfterIdleEnabled: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleEnabledMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenNTPAfterIdleDisabledMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isNTPAfterIdleEnabled: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleEnabledMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenNTPAfterIdleDisabledDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isNTPAfterIdleEnabled: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleEnabledMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
     // MARK: - FreemiumPIREligible
 
     func testWhenIsFreemiumPIREligibleMatchesThenReturnMatch() throws {
@@ -192,7 +218,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                                            isFreemiumPIREligible: Bool = false,
                                            isFreemiumPIRActivated: Bool = false,
                                            freemiumPIRFirstScanResult: String? = nil,
-                                           isCurrentPIRUser: Bool = false) {
+                                           isCurrentPIRUser: Bool = false,
+                                           isNTPAfterIdleEnabled: Bool = false) {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -222,7 +249,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isFreemiumPIREligible: isFreemiumPIREligible,
             isFreemiumPIRActivated: isFreemiumPIRActivated,
             freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
-            isCurrentPIRUser: isCurrentPIRUser
+            isCurrentPIRUser: isCurrentPIRUser,
+            isNTPAfterIdleEnabled: isNTPAfterIdleEnabled
         )
     }
 }

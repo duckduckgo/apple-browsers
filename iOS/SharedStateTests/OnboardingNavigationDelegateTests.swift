@@ -37,6 +37,13 @@ import PrivacyConfig
 
 // swiftlint:disable force_try
 
+private final class MockIdleReturnEligibilityManager: IdleReturnEligibilityManaging {
+    func isFeatureAvailable() -> Bool { false }
+    func isEligibleForNTPAfterIdle() -> Bool { false }
+    func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
+    func idleThresholdSeconds() -> Int { 60 }
+}
+
 final class OnboardingNavigationDelegateTests: XCTestCase {
 
     var mainVC: MainViewController!
@@ -87,7 +94,8 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
                 subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
                 freemiumPIRDebugSettings: freemiumPIRDebugSettings
             ),
-            freemiumDBPUserStateManager: freemiumDBPUserStateManager
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            idleReturnEligibilityManager: MockIdleReturnEligibilityManager()
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter())
         let tabsModel = TabsModel(desktop: true)

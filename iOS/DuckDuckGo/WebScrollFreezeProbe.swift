@@ -187,53 +187,30 @@ enum WebScrollFreezeProbe {
         var out = "## Window-wide recognizer suspects\n"
 
         out += "\n### (a) Active recognizers (.began / .changed)\n"
-        if active.isEmpty {
-            out += "- (none)\n"
-        } else {
-            for (recognizer, view, window) in active {
-                out += "- ⚠️ \(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
-                    + " touches=\(recognizer.numberOfTouches)\n"
-                out += "    \(viewContextDescription(view, window: window))\n"
-            }
-        }
-
+        out += formatRecognizerBucket(active)
         out += "\n### (b) Active with zero touches (.began / .changed, numberOfTouches == 0 — wedge suspects)\n"
         out += "- NOTE: active-but-zero-touches is a suspect pattern; compare against a healthy-baseline capture to assess.\n"
-        if activeZeroTouches.isEmpty {
-            out += "- (none)\n"
-        } else {
-            for (recognizer, view, window) in activeZeroTouches {
-                out += "- ⚠️ \(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
-                    + " touches=\(recognizer.numberOfTouches)\n"
-                out += "    \(viewContextDescription(view, window: window))\n"
-            }
-        }
-
+        out += formatRecognizerBucket(activeZeroTouches)
         out += "\n### (c) Recognizers holding touches (numberOfTouches > 0, not active)\n"
-        if holdingTouches.isEmpty {
-            out += "- (none)\n"
-        } else {
-            for (recognizer, view, window) in holdingTouches {
-                out += "- ⚠️ \(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
-                    + " touches=\(recognizer.numberOfTouches)\n"
-                out += "    \(viewContextDescription(view, window: window))\n"
-            }
-        }
-
+        out += formatRecognizerBucket(holdingTouches)
         out += "\n### (d) WebKit/private recognizers (.possible / .began / .changed)\n"
         out += "- NOTE: .possible/0-touches is the NORMAL idle state for WebKit gates."
             + " Useful only when diffed against a healthy-baseline capture.\n"
-        if webKitNonEnded.isEmpty {
-            out += "- (none)\n"
-        } else {
-            for (recognizer, view, window) in webKitNonEnded {
-                out += "- \(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
-                    + " touches=\(recognizer.numberOfTouches)\n"
-                out += "    \(viewContextDescription(view, window: window))\n"
-            }
-        }
+        out += formatRecognizerBucket(webKitNonEnded, warning: false)
 
         return out
+    }
+
+    private static func formatRecognizerBucket(
+        _ entries: [(UIGestureRecognizer, UIView, UIWindow)],
+        warning: Bool = true
+    ) -> String {
+        guard !entries.isEmpty else { return "- (none)\n" }
+        return entries.map { recognizer, view, window in
+            "- \(warning ? "⚠️ " : "")\(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
+                + " touches=\(recognizer.numberOfTouches)\n"
+                + "    \(viewContextDescription(view, window: window))\n"
+        }.joined()
     }
 
     /// Short description of a view's position in the window hierarchy: superview type chain, frame,

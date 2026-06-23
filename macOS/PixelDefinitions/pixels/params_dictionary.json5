@@ -374,8 +374,8 @@
     },
     "consentHeuristicEnabled": {
         "key": "consentHeuristicEnabled",
-        "description": "The mode of the consent heuristic feature: off, 0 (heuristic disabled), 1 (reject-only), tier1, tier2",
+        "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
         "type": "string",
-        "enum": ['off', '0', '1', 'tier1', 'tier2']
+        "enum": ['', 'off', 'reject', 'tier1', 'tier2']
     }
 }

@@ -152,6 +152,21 @@ final class WebScrollObserverTests: XCTestCase {
 
         XCTAssertTrue(firedPixels.isEmpty, "Short or horizontal drags are not scroll attempts")
     }
+
+    func testNormalScrollsNeverFirePixel() {
+        let observer = makeObserver()
+
+        // 20 successful scrolls across all three screen regions — content moves each time.
+        for i in 0..<20 {
+            let startY: CGFloat = 100
+            scrollView.contentOffset = CGPoint(x: 0, y: startY + 100)
+            let screenY = CGFloat([100, 300, 500][i % 3])
+            observer.classifyDrag(dx: 0, dy: -100, startOffsetY: startY, startScreenY: screenY)
+        }
+
+        XCTAssertTrue(firedPixels.isEmpty,
+                      "m_debug_interaction_repeated_failed_scroll must not fire for successful scrolls")
+    }
 }
 
 // MARK: - Bucket helper tests
@@ -412,6 +427,7 @@ final class DeferringGateCollectionTests: XCTestCase {
         XCTAssertTrue(gates.contains { $0 === d1 })
         XCTAssertTrue(gates.contains { $0 === d2 })
     }
+
 }
 
 // MARK: - Non-scrollable probe tests

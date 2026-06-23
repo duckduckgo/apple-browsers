@@ -288,6 +288,21 @@ extension AutoconsentUserScript {
     }
 
     @MainActor
+    private func heuristicModeValue() -> String {
+        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
+        if !(consentHeuristicEnabled ?? false) {
+            return "off"
+        }
+        if preferences.cookiePopupPreference == .max {
+            return "tier2"
+        }
+        if preferences.cookiePopupPreference == .default {
+            return config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+        }
+        return "off"
+    }
+
+    @MainActor
     func handleInit(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageData: InitMessage = decodeMessageBody(from: message.body),
               let url = URL(string: messageData.url) else {
@@ -372,19 +387,6 @@ extension AutoconsentUserScript {
                 autoAction = "optOut"
             }
         }
-        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
-        let heuristicMode = {
-            if !(self.consentHeuristicEnabled ?? false) {
-                return "off"
-            }
-            if self.preferences.cookiePopupPreference == .max {
-                return "tier2"
-            }
-            if self.preferences.cookiePopupPreference == .default {
-                return self.config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
-            }
-            return "off"
-        }()
 
         let autoconsentConfig = [
             "type": "initResp",
@@ -400,7 +402,7 @@ extension AutoconsentUserScript {
                 "detectRetries": 20,
                 "isMainWorld": false,
                 "enableFilterList": enableFilterList,
-                "heuristicMode": heuristicMode
+                "heuristicMode": heuristicModeValue()
             ] as [String: Any?]
         ] as [String: Any?]
 

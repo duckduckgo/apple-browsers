@@ -328,19 +328,6 @@ extension AutoconsentUserScript {
         } else {
             autoAction = "optOut"
         }
-        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
-        let heuristicMode = {
-            if !(self.consentHeuristicEnabled ?? false) {
-                return "off"
-            }
-            if self.preferences.cookiePopupPreference == .max {
-                return "tier2"
-            }
-            if self.preferences.cookiePopupPreference == .default {
-                return self.config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
-            }
-            return "off"
-        }()
 
         replyHandler([
             "type": "initResp",
@@ -355,7 +342,7 @@ extension AutoconsentUserScript {
                 "enableCosmeticRules": true,
                 "detectRetries": 20,
                 "isMainWorld": false,
-                "heuristicMode": heuristicMode
+                "heuristicMode": heuristicModeValue()
             ] as [String: Any?]
         ] as [String: Any?], nil)
     }
@@ -600,6 +587,21 @@ extension AutoconsentUserScript {
         let isEnabled = featureFlagger.isFeatureOn(.heuristicAction)
         Logger.autoconsent.debug("heuristic action enabled: \(isEnabled)")
         return isEnabled
+    }
+
+    @MainActor
+    private func heuristicModeValue() -> String {
+        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
+        if !(consentHeuristicEnabled ?? false) {
+            return "off"
+        }
+        if preferences.cookiePopupPreference == .max {
+            return "tier2"
+        }
+        if preferences.cookiePopupPreference == .default {
+            return config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+        }
+        return "off"
     }
 
     @MainActor

@@ -85,6 +85,22 @@ However a `"key"` should NOT be specified when it doesn't actually occur in the 
 
 Flag any parameters defined with `"type": "string"` that have an enum containing ONLY "true" and/or "false".  They should just be redefined as type "boolean" instead with no enum.
 
+#### Wire Format vs Schema Type (do NOT flag)
+
+The pixel/wide-event transport stringifies every value when serializing to URL parameters. Tests therefore assert string values for parameters of every type. This is purely a transport detail — it has nothing to do with the declared schema type, and the ingest pipeline coerces values back to their declared types.
+
+Do NOT flag a `"type"` declaration as wrong on the basis that:
+- A test asserts the wire value as a string (e.g. `XCTAssertEqual(params["...free_trial_eligible"], "true")`, `XCTAssertEqual(params["...latency_ms_bucketed"], "5000")`).
+- The value appears as a string in a URL parameter, log, or pixel request.
+- The same conceptual field is defined with a different type in a different schema file (e.g. a legacy `pixels/definitions/*.json5` params definition uses `"type": "string"` with `enum: ["true", "false"]` while the corresponding `wide_events/definitions/*.json5` uses `"type": "boolean"`). The two schemas describe different layers and are allowed to diverge.
+
+The following non-string types are valid in both pixel parameter definitions and wide-event definitions even though the wire format stringifies them:
+- `"type": "boolean"` — values `true` / `false` (sent as `"true"` / `"false"`).
+- `"type": "integer"` — values like `5000` (sent as `"5000"`).
+- `"type": "number"` — values like `1.5` (sent as `"1.5"`).
+
+If you are tempted to flag a `boolean`/`integer`/`number` type because the value "is actually a string on the wire", do not flag it. Apply the same logic uniformly: if `account_creation_latency_ms_bucketed` is allowed to be `"type": "integer"` despite the test asserting `"5000"`, then `free_trial_eligible` is allowed to be `"type": "boolean"` despite the test asserting `"true"`.
+
 ### Flag duplication
 
 Pixels should not redefine existing params that are already defined in `params_dictionary.json5` or suffixes that are already defined in `suffixes_dictionary.json5`.  These should only be flagged if not just the type and enum are identical, but the description and name seem similar.  This is not a hard rule as it requires individual judgement, so frame this as a question to the developer rather than a requirement.
@@ -130,6 +146,8 @@ One more case to flag: a wide event added in Swift with no definition files at a
 - Minor ordering differences in the `parameters` array.
 - Existing definitions in files touched by the PR that were not themselves modified.
 - Schema validation issues that CI tooling (`npm run validate-pixel-defs`) already covers.
+- `"type": "boolean" | "integer" | "number"` fields on the basis that tests or wire payloads show their values as strings — the transport stringifies all values; the schema type describes the typed JSON the pipeline coerces to. See "Wire Format vs Schema Type".
+- Generated schemas under `wide_events/generated_schemas/` — these are generated artifacts.
 
 ## Dependency Changes
 

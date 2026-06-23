@@ -465,9 +465,8 @@
             },
             {
                 "key": "feature.data.ext.free_trial_eligible",
-                "type": "string",
-                "description": "Whether a free trial was available",
-                "enum": ["true", "false"]
+                "type": "boolean",
+                "description": "Whether a free trial was available"
             },
             {
                 "key": "feature.data.ext.account_creation_latency_ms_bucketed",

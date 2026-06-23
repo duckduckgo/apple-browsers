@@ -3666,6 +3666,7 @@ extension MainViewController: BrowserChromeDelegate {
         }
 
         let updateBlock = {
+            self.viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
             self.updateToolbarConstant(percent)
             self.updateNavBarConstant(percent)
             self.currentTab?.updateWebViewBottomAnchor(for: percent)
@@ -3704,6 +3705,7 @@ extension MainViewController: BrowserChromeDelegate {
 
     func setNavigationBarHidden(_ hidden: Bool) {
         if hidden { hideKeyboard() }
+        viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
 
         if viewCoordinator.addressBarPosition.isBottom {
             if hidden {
@@ -3717,8 +3719,13 @@ extension MainViewController: BrowserChromeDelegate {
         // When the omnibar is locked (e.g. dimmed to 0.5 alpha during Duck.ai fire onboarding),
         // skip the chrome-hide alpha reset so we don't overwrite the dim.
         let isOmniBarLocked = !viewCoordinator.omniBar.barView.isUserInteractionEnabled
-        if !isOmniBarLocked {
+        let isBottomOmnibarHostedInToolbar = viewCoordinator.addressBarPosition.isBottom && viewCoordinator.isOmnibarInToolbar
+        if !isOmniBarLocked && !isBottomOmnibarHostedInToolbar {
             viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
+        } else if isBottomOmnibarHostedInToolbar {
+            // In bottom mode the omnibar is physically hosted inside the toolbar; keep it visible and
+            // let toolbar offset/alpha animations own chrome visibility to avoid blank "missing" bars.
+            viewCoordinator.omniBar.barView.alpha = 1
         }
         viewCoordinator.tabBarContainer.alpha = hidden ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1

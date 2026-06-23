@@ -197,6 +197,8 @@ final class BrowserToolbarView: UIView {
         omnibarHeightConstraint.constant = height
         buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height)
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.isUserInteractionEnabled = true
+        (view as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
         omnibarContainer.addSubview(view)
         hostedOmnibarView = view
         
@@ -208,6 +210,10 @@ final class BrowserToolbarView: UIView {
         ])
         
         updateCornerStyle()
+    }
+
+    func isHostingOmnibarView(_ view: UIView) -> Bool {
+        hostedOmnibarView === view
     }
 
     func setExpandedContentView(_ view: UIView?, height: CGFloat, animated: Bool) {
@@ -345,6 +351,13 @@ final class BrowserToolbarView: UIView {
     }
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let omnibarView = hostedOmnibarView {
+            let location = convert(point, to: omnibarView)
+            if let hit = omnibarView.hitTest(location, with: event) {
+                return hit
+            }
+        }
+
         if hasExpandedContent, let expandedContentView = hostedExpandedContentView {
             let location = convert(point, to: expandedContentView)
             if let hit = expandedContentView.hitTest(location, with: event) {

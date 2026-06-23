@@ -25,6 +25,9 @@ struct FloatingUIChromeStyler {
         coordinator.toolbar.setFloatingStyleEnabled(manager.isFloatingUIEnabled, animated: false)
         if manager.isFloatingUIEnabled {
             coordinator.navigationBarContainer.backgroundColor = .clear
+            coordinator.statusBackground.isHidden = true
+        } else {
+            coordinator.statusBackground.isHidden = false
         }
     }
 

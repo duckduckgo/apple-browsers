@@ -454,8 +454,7 @@ extension MainViewFactory {
         let container = coordinator.navigationBarContainer!
         let toolbar = coordinator.toolbar!
         let navigationBarCollectionView = coordinator.navigationBarCollectionView!
-        let isFloatingTopContainerEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
-        let horizontalInset: CGFloat = isFloatingTopContainerEnabled ? 24 : 0
+        let horizontalInset: CGFloat = 0
 
         if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))

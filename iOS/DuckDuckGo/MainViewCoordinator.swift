@@ -122,20 +122,42 @@ class MainViewCoordinator {
     }
 
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
+        addressBarPosition = position
         switch position {
         case .top:
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
             navigationBarContainer.isHidden = false
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
             isOmnibarInToolbar = false
         case .bottom:
             toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
             omniBar.barView.alpha = 1
+            omniBar.barView.isUserInteractionEnabled = true
             navigationBarContainer.isHidden = true
+            navigationBarContainer.alpha = 0
+            navigationBarContainer.isUserInteractionEnabled = false
+            superview.bringSubviewToFront(toolbar)
             setContentContainerBottomAnchorMode(.toolbar)
             isOmnibarInToolbar = true
         }
+    }
+
+    func ensureBottomOmnibarAttachedToToolbarIfNeeded() {
+        guard addressBarPosition.isBottom else { return }
+        guard !toolbar.isHostingOmnibarView(omniBar.barView) else { return }
+
+        toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
+        omniBar.barView.alpha = 1
+        omniBar.barView.isUserInteractionEnabled = true
+        navigationBarContainer.isHidden = true
+        navigationBarContainer.alpha = 0
+        navigationBarContainer.isUserInteractionEnabled = false
+        superview.bringSubviewToFront(toolbar)
+        isOmnibarInToolbar = true
     }
 
     func showTopSlideContainer() {
@@ -178,13 +200,10 @@ class MainViewCoordinator {
 
     func hideNavigationBarWithBottomPosition() {
         guard addressBarPosition.isBottom else { return }
-        let isFloatingUIEnabled = FloatingUIManager().isFloatingUIEnabled
 
         if isOmnibarInToolbar {
-            if !isFloatingUIEnabled {
-                toolbar.setOmnibarView(nil, height: 0)
-                constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
-            }
+            // Keep the bottom omnibar attached while hiding chrome.
+            // Visibility is handled via alpha/offset animations in MainViewController.
         } else {
             navigationBarContainer.isHidden = true
         }
@@ -196,12 +215,11 @@ class MainViewCoordinator {
         guard addressBarPosition.isBottom else { return }
 
         if isOmnibarInToolbar {
-            toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
-            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
-            omniBar.barView.alpha = 1
-            navigationBarContainer.isHidden = true
+            ensureBottomOmnibarAttachedToToolbarIfNeeded()
         } else {
             navigationBarContainer.isHidden = false
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
         }
 
         if isNavigationChromeHidden {

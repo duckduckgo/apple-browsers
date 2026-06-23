@@ -887,11 +887,14 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var omniBar: OmniBar? {
         willSet {
-            (omniBar?.barView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
-            omniBar?.barView.removeFromSuperview()
+            guard let currentBarView = omniBar?.barView, currentBarView.superview === self else { return }
+            (currentBarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
+            currentBarView.removeFromSuperview()
         }
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
+            guard coordinator?.isOmnibarInToolbar != true else { return }
+            guard omniBarView.superview == nil || omniBarView.superview === self else { return }
 
             omniBarView.translatesAutoresizingMaskIntoConstraints = false
             (omniBarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = true

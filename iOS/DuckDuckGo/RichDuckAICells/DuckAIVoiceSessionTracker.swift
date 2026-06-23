@@ -79,12 +79,14 @@ final class DuckAIVoiceSessionTracker: NSObject, DuckAIVoiceSessionTracking {
     }
 
     @objc private func voiceSessionStarted(_ note: Notification) {
+        dispatchPrecondition(condition: .onQueue(.main))
         guard let tab = resolveTab(from: note) else { return }
         activeTabs.add(tab)
         changesSubject.send()
     }
 
     @objc private func voiceSessionEnded(_ note: Notification) {
+        dispatchPrecondition(condition: .onQueue(.main))
         guard let tab = resolveTab(from: note) else { return }
         // Hold the tab active briefly so the live card holds until the transcript persists (avoids a screenshot flash).
         // TODO: replace the fixed delay with the native-storage persistence signal (chatUpdatesPublisher).

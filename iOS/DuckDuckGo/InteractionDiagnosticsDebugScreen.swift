@@ -53,6 +53,17 @@ struct InteractionDiagnosticsDebugScreen: View {
                      + "shipping path (no reliable safe action found); the one safe scoped experiment lives under "
                      + "Capture → Diagnostics. Each submenu is short so it fits even if the screen can't scroll.")
             }
+            Section {
+                Button { model.injectStuckGesture() } label: { Text(verbatim: "Inject stuck gesture (freezes scroll)") }
+                Button(role: .destructive) { model.clearStuckGesture() } label: { Text(verbatim: "Clear stuck gesture") }
+            } header: {
+                Text(verbatim: "Pixel test (provocation, debug-only)")
+            } footer: {
+                Text(verbatim: "Verifies the production freeze pixel end-to-end. Arm this, leave the screen, then drag a long "
+                     + "web page a few times across the screen: scroll stays dead (taps stay alive) and "
+                     + "m_debug_interaction_repeated_failed_scroll fires (mechanism wedged:*) — confirm it in the pixel log. "
+                     + "It only CREATES the freeze and runs no recovery, so it can't brick taps. Clear (or force-quit) to recover.")
+            }
         }
         .navigationTitle("Interaction Diagnostics")
     }
@@ -141,6 +152,16 @@ final class InteractionDiagnosticsModel: ObservableObject {
         savedCount = WebScrollFreezeDebugCaptureStore.count()
     }
 
+    @MainActor
+    func injectStuckGesture() {
+        actionResult = WebScrollFreezeDebugStuckGesture.inject()
+    }
+
+    @MainActor
+    func clearStuckGesture() {
+        actionResult = WebScrollFreezeDebugStuckGesture.clear()
+    }
+
     /// Safe diagnostic: drive the scroll view directly via `setContentOffset` (no recogniser or
     /// window-interaction changes, so it cannot make a freeze worse). Splits the field mystery in two:
     /// if the page MOVES, the scroll view is healthy and the block is in gesture/touch delivery; if it
@@ -166,4 +187,73 @@ final class InteractionDiagnosticsModel: ObservableObject {
             ? "Scroll probe: offset \(Int(before)) → \(Int(after)) — MOVED ✅ scroll view is fine; block is in gesture/touch delivery."
             : "Scroll probe: offset \(Int(before)) → \(Int(after)) (target \(Int(targetY))) — DID NOT MOVE ❌ scroll view / content itself is stuck."
     }
+}
+
+// MARK: - Stuck-gesture provocation (debug-only — used to confirm the freeze pixel fires)
+
+/// Debug-only tool to verify the production freeze pixel end-to-end. Installs a window-level recognizer
+/// that wedges once a drag starts and then prevents pans (scroll) while leaving taps alive — the
+/// "scroll dead, taps alive" signature. With it armed, dragging a long page repeatedly drives the real
+/// detection path in `WebScrollObserver`, so `m_debug_interaction_repeated_failed_scroll` fires
+/// (mechanism `wedged:*`) and can be confirmed in the pixel log.
+///
+/// NOT a shipping path: it only CREATES the freeze (recoverable by `clear()` or force-quit). It runs no
+/// recovery, so it can't brick taps. Reachable only from the internal/debug-gated diagnostics screen.
+@MainActor
+enum WebScrollFreezeDebugStuckGesture {
+
+    private static var injected: WebScrollFreezeDebugStuckGestureRecognizer?
+
+    static func inject() -> String {
+        guard injected == nil else { return "Already armed — clear it first." }
+        guard let window = WebScrollFreezeDebugProbe.keyWindow() else { return "No key window." }
+        let recognizer = WebScrollFreezeDebugStuckGestureRecognizer()
+        recognizer.cancelsTouchesInView = false
+        window.addGestureRecognizer(recognizer)
+        injected = recognizer
+        return "Armed. Leave this screen, then DRAG a long web page a few times across the screen — scroll "
+            + "stays dead (taps stay alive) and the freeze pixel fires after 3 drags across 2+ regions. Then tap Clear."
+    }
+
+    static func clear() -> String {
+        guard let recognizer = injected else { return "Nothing armed." }
+        recognizer.isEnabled = false
+        recognizer.view?.removeGestureRecognizer(recognizer)
+        injected = nil
+        return "Cleared."
+    }
+}
+
+/// Deliberately wedged recognizer for the stuck-gesture provocation. Never cancels touches (taps stay
+/// alive) and prevents only pans (scroll). Wedges once a DRAG starts (a tap never arms it), then stays in
+/// `.changed` with no touches.
+final class WebScrollFreezeDebugStuckGestureRecognizer: UIGestureRecognizer {
+
+    private var disarmed = false
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard !disarmed else { return }
+        state = (state == .possible) ? .began : .changed
+    }
+
+    /// Intentionally does not advance to a terminal state — that is the wedge under test.
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {}
+
+    /// Intentionally ignored — keeps the recognizer wedged.
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {}
+
+    /// Once an `isEnabled` toggle resets us, stay inert so a follow-up drag is unaffected — re-arm via the
+    /// debug screen to test again.
+    override func reset() {
+        super.reset()
+        disarmed = true
+    }
+
+    /// Prevent only pans (the scroll view's pan is a `UIPanGestureRecognizer`) so scrolling freezes while
+    /// taps keep recognising.
+    override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool {
+        preventedGestureRecognizer is UIPanGestureRecognizer
+    }
+
+    override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
 }

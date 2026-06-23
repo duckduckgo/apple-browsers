@@ -185,7 +185,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                                includedParameters: [.appVersion],
                                onComplete: { _ in })
                     self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
-                    AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                     self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
                     self.refreshDevices()
                     self.dismissVCAndShowRecoveryPDF()
@@ -212,7 +211,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                            includedParameters: [.appVersion],
                            onComplete: { _ in })
                 self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
-                AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
@@ -793,7 +791,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
                         self.syncSetupExperimentPixels.fireSyncDisabled()
-                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.viewModel.isSyncEnabled = false
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
@@ -829,7 +826,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
                         self.syncSetupExperimentPixels.fireSyncDisabled()
-                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
                     } catch {
@@ -859,7 +855,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         try await self?.syncService.deleteAccount()
                         Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
                         self?.syncSetupExperimentPixels.fireSyncDisabledAndDeleted()
-                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)

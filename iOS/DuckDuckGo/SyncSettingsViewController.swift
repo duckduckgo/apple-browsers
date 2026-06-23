@@ -490,7 +490,6 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireLogin()
-        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         presentSyncCompletionAfterDelay()
     }
 
@@ -604,7 +603,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireSignupConnect()
 
-        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         if shouldShowSyncEnabled {
             if useSimplifiedLayout {
                 dismissVCAndShowDeviceSyncedToast()
@@ -681,7 +679,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireLogin()
         handleSuccessfulSetupOutcome(.loginCompleted(setupRole: setupRole))
-        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         if case .receiver(.recovery, _) = setupRole {
             Task {
                 await connectionController.cancel()

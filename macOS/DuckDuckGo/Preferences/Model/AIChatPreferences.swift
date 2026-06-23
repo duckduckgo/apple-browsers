@@ -61,6 +61,17 @@ final class AIChatPreferences: ObservableObject {
 
         subscribeToShowInApplicationMenuSettingsChanges()
         subscribeToDuckAIChromeButtonsVisibilityChanges()
+        subscribeToSERPSettingsChanges()
+    }
+
+    // Refresh the Search Assist / Hide AI Images pickers when the SERP changes them on the web side.
+    private func subscribeToSERPSettingsChanges() {
+        NotificationCenter.default.publisher(for: .serpSettingsDidReceiveWebUpdate)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     func subscribeToShowInApplicationMenuSettingsChanges() {

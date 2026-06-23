@@ -154,6 +154,8 @@ public extension SERPSettingsProviding {
             let stringData = String(data: data, encoding: .utf8)
             do {
                 try keyValueStore?.set(stringData, forKey: SERPSettingsConstants.serpSettingsStorage)
+                // Let native settings UI re-read the stored values after a SERP-originated change.
+                NotificationCenter.default.post(name: .serpSettingsDidReceiveWebUpdate, object: nil)
             } catch {
                 eventMapper?.fire(.keyValueStoreWriteError, error: error)
             }

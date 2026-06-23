@@ -21,8 +21,19 @@ import Foundation
 import Bookmarks
 import Core
 import Onboarding
+import Persistence
 import WebExtensions
 import WidgetKit
+
+private enum CookiePopupProtectionStorageKeys: String, StorageKeyDescribing {
+    case cookiePopupPreference = "com.duckduckgo.ios.cookiePopupPreference"
+    case didMigrateCookiePopupPreference = "com.duckduckgo.ios.cookiePopupPreference.didMigrate"
+}
+
+private struct CookiePopupProtectionKeys: StoringKeys {
+    let cookiePopupPreference = StorageKey<String>(CookiePopupProtectionStorageKeys.cookiePopupPreference)
+    let didMigrateCookiePopupPreference = StorageKey<Bool>(CookiePopupProtectionStorageKeys.didMigrateCookiePopupPreference)
+}
 
 public class AppUserDefaults: AppSettings {
     
@@ -425,7 +436,7 @@ public class AppUserDefaults: AppSettings {
     var cookiePopupPreference: CookiePopupPreference {
         get {
             migrateCookiePopupPreferenceIfNeeded()
-            guard let rawValue = cookiePopupPreferenceSetting,
+            guard let rawValue = cookiePopupStorage.cookiePopupPreference,
                   let preference = CookiePopupPreference(rawValue: rawValue) else {
                 return .default
             }
@@ -434,7 +445,7 @@ public class AppUserDefaults: AppSettings {
 
         set {
             migrateCookiePopupPreferenceIfNeeded()
-            cookiePopupPreferenceSetting = newValue.rawValue
+            cookiePopupStorage.cookiePopupPreference = newValue.rawValue
         }
     }
 
@@ -446,21 +457,19 @@ public class AppUserDefaults: AppSettings {
     // Only for testing and `DebugViewController` purposes
     func clearAutoconsentUserSetting() {
         autoconsentEnabledSetting = nil
-        cookiePopupPreferenceSetting = nil
-        didMigrateCookiePopupPreferenceSetting = false
+        cookiePopupStorage.cookiePopupPreference = nil
+        cookiePopupStorage.didMigrateCookiePopupPreference = false
     }
 
     @UserDefaultsWrapper(key: .autoconsentEnabled, defaultValue: false)
     private var autoconsentEnabledSetting: Bool?
 
-    @UserDefaultsWrapper(key: .cookiePopupPreference, defaultValue: nil)
-    private var cookiePopupPreferenceSetting: String?
-
-    @UserDefaultsWrapper(key: .didMigrateCookiePopupPreference, defaultValue: false)
-    private var didMigrateCookiePopupPreferenceSetting: Bool
+    private var cookiePopupStorage: any KeyedStoring<CookiePopupProtectionKeys> {
+        UserDefaults.app.keyedStoring()
+    }
 
     private func migrateCookiePopupPreferenceIfNeeded() {
-        guard !didMigrateCookiePopupPreferenceSetting else { return }
+        guard cookiePopupStorage.didMigrateCookiePopupPreference != true else { return }
 
         let migratedPreference: CookiePopupPreference
         if autoconsentEnabledSetting == false {
@@ -469,8 +478,8 @@ public class AppUserDefaults: AppSettings {
             migratedPreference = .default
         }
 
-        cookiePopupPreferenceSetting = migratedPreference.rawValue
-        didMigrateCookiePopupPreferenceSetting = true
+        cookiePopupStorage.cookiePopupPreference = migratedPreference.rawValue
+        cookiePopupStorage.didMigrateCookiePopupPreference = true
     }
 
     var inspectableWebViewEnabled: Bool {

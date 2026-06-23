@@ -21,6 +21,7 @@ import AppKit
 import Bookmarks
 import Common
 import FoundationExtensions
+import Persistence
 import WebExtensions
 
 protocol CookiePopupProtectionPreferencesPersistor {
@@ -29,16 +30,31 @@ protocol CookiePopupProtectionPreferencesPersistor {
     var didMigrateCookiePopupPreference: Bool { get set }
 }
 
+struct CookiePopupProtectionSettings: StoringKeys {
+    let cookiePopupPreference = StorageKey<String>(UserDefaults.Key.cookiePopupPreference)
+    let didMigrateCookiePopupPreference = StorageKey<Bool>(UserDefaults.Key.didMigrateCookiePopupPreference)
+}
+
 struct CookiePopupProtectionPreferencesUserDefaultsPersistor: CookiePopupProtectionPreferencesPersistor {
 
     @UserDefaultsWrapper(key: .autoconsentEnabled, defaultValue: true)
     var autoconsentEnabled: Bool
 
-    @UserDefaultsWrapper(key: .cookiePopupPreference, defaultValue: nil)
-    var cookiePopupPreferenceRawValue: String?
+    private let storage: any KeyedStoring<CookiePopupProtectionSettings>
 
-    @UserDefaultsWrapper(key: .didMigrateCookiePopupPreference, defaultValue: false)
-    var didMigrateCookiePopupPreference: Bool
+    init(storage: (any KeyedStoring<CookiePopupProtectionSettings>)? = nil) {
+        self.storage = storage ?? UserDefaults.standard.keyedStoring()
+    }
+
+    var cookiePopupPreferenceRawValue: String? {
+        get { storage.cookiePopupPreference }
+        set { storage.cookiePopupPreference = newValue }
+    }
+
+    var didMigrateCookiePopupPreference: Bool {
+        get { storage.didMigrateCookiePopupPreference ?? false }
+        set { storage.didMigrateCookiePopupPreference = newValue }
+    }
 
 }
 

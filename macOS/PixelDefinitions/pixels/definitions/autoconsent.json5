@@ -394,6 +394,11 @@
                 "type": "string",
                 "enum": ["0s", "1-10s", "10-60s", "1-5min", "5-10min", "10-20min", "20-40min", "40-60min", "1-2hr", "2hr+", "unknown"]
             },
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["true"]
+            },
             "channel"
         ]
     },
@@ -423,7 +428,7 @@
         "owners": ["miasma13"],
         "triggers": ["user_submitted"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_autoconsent_popover-autodismissed_daily": {
         "description": "Fires when the autoconsent stats popover is automatically dismissed after the timeout period.",

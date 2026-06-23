@@ -43,7 +43,7 @@
         "key": "consentHeuristicEnabled",
         "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
         "type": "string",
-        "enum": ['', 'off', 'reject', 'tier1', 'tier2']
+        "enum": ["", "off", "reject", "tier1", "tier2"]
     },
     "isInternalUser": {
         "key": "is_internal_user",

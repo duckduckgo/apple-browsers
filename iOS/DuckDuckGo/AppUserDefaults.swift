@@ -26,8 +26,8 @@ import WebExtensions
 import WidgetKit
 
 private enum CookiePopupProtectionStorageKeys: String, StorageKeyDescribing {
-    case cookiePopupPreference = "com.duckduckgo.ios.cookiePopupPreference"
-    case didMigrateCookiePopupPreference = "com.duckduckgo.ios.cookiePopupPreference.didMigrate"
+    case cookiePopupPreference = "com_duckduckgo_ios_cookiePopupPreference"
+    case didMigrateCookiePopupPreference = "com_duckduckgo_ios_cookiePopupPreference_didMigrate"
 }
 
 private struct CookiePopupProtectionKeys: StoringKeys {

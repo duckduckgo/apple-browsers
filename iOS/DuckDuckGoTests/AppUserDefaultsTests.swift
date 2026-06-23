@@ -225,7 +225,7 @@ class AppUserDefaultsTests: XCTestCase {
 
     func testWhenMigratingFromExplicitlyDisabledAutoconsentThenPreferenceIsDoNotBlock() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.userDefaults?.set(false, forKey: "com.duckduckgo.ios.autoconsentEnabled")
+        customSuite.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autoconsentEnabled.rawValue)
 
         XCTAssertEqual(appUserDefaults.cookiePopupPreference, .off)
     }

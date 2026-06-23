@@ -298,24 +298,24 @@ final class WebScrollObserverBucketTests: XCTestCase {
         XCTAssertEqual(observer.webScrollPanTouches(sv), "0")
     }
 
-    // MARK: possibleZeroTouchCountBucket / windowActiveNoTouchBucket
-    // These walk UIApplication.shared.connectedScenes, which returns nothing useful in the test host
-    // (no UIWindowScene is set up by XCTest). The raw count will always be 0 in this context, so we
-    // can still assert the "0" branch returns the right bucket string.
+    // MARK: count → bucket mapping (possibleZeroTouchCountBucket / windowActiveNoTouchBucket)
+    // The live scans behind these params walk UIApplication.shared.connectedScenes, whose recognizer
+    // state isn't controllable in a test host (the app host has real WebKit recognizers), so we test the
+    // pure count→bucket mapping directly rather than asserting a host-dependent live count.
 
-    func testPossibleZeroTouchCountBucket_returnsZeroInTestHost() {
-        let observer = WebScrollObserver(container: UIView(),
-                                         scrollView: { nil },
-                                         currentURL: { nil })
-        // In the test host there are no WK/private recognizers visible to the scanner; "0" must come back.
-        XCTAssertEqual(observer.possibleZeroTouchCountBucket(), "0")
+    func testCountBucket3PlusThresholds() {
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(0), "0")
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(1), "1")
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(2), "2")
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(3), "3_plus")
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(99), "3_plus")
     }
 
-    func testWindowActiveNoTouchBucket_returnsZeroInTestHost() {
-        let observer = WebScrollObserver(container: UIView(),
-                                         scrollView: { nil },
-                                         currentURL: { nil })
-        XCTAssertEqual(observer.windowActiveNoTouchBucket(), "0")
+    func testCountBucket2PlusThresholds() {
+        XCTAssertEqual(WebScrollObserver.countBucket2Plus(0), "0")
+        XCTAssertEqual(WebScrollObserver.countBucket2Plus(1), "1")
+        XCTAssertEqual(WebScrollObserver.countBucket2Plus(2), "2_plus")
+        XCTAssertEqual(WebScrollObserver.countBucket2Plus(5), "2_plus")
     }
 
     // MARK: static bucket(for:)

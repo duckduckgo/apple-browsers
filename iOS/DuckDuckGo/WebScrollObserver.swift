@@ -270,15 +270,31 @@ final class WebScrollObserver: NSObject {
         }
     }
 
-    private func deferringCountBucket() -> String {
-        guard let container else { return "0" }
-        let count = WebScrollFreezeDebugProbe.deferringGates(in: container).count
+    /// Maps a raw recognizer count to the 4-level param bucket (deferring-gate + possible-zero-touch params).
+    /// Pure, so it is unit-tested directly — the live window scans that feed it read `UIApplication` state
+    /// that a test host can't control deterministically.
+    static func countBucket3Plus(_ count: Int) -> String {
         switch count {
         case 0:  return "0"
         case 1:  return "1"
         case 2:  return "2"
         default: return "3_plus"
         }
+    }
+
+    /// Maps a raw recognizer count to the 2-level param bucket (window-active-no-touch param, where a single
+    /// active-but-touchless recognizer is already a strong signal). Pure — see `countBucket3Plus`.
+    static func countBucket2Plus(_ count: Int) -> String {
+        switch count {
+        case 0:  return "0"
+        case 1:  return "1"
+        default: return "2_plus"
+        }
+    }
+
+    private func deferringCountBucket() -> String {
+        guard let container else { return "0" }
+        return Self.countBucket3Plus(WebScrollFreezeDebugProbe.deferringGates(in: container).count)
     }
 
     static func possibleZeroTouchCountRaw() -> Int {
@@ -307,13 +323,7 @@ final class WebScrollObserver: NSObject {
     }
 
     func possibleZeroTouchCountBucket() -> String {
-        let count = Self.possibleZeroTouchCountRaw()
-        switch count {
-        case 0:  return "0"
-        case 1:  return "1"
-        case 2:  return "2"
-        default: return "3_plus"
-        }
+        Self.countBucket3Plus(Self.possibleZeroTouchCountRaw())
     }
 
     static func windowActiveNoTouchCountRaw() -> Int {
@@ -332,12 +342,7 @@ final class WebScrollObserver: NSObject {
     }
 
     func windowActiveNoTouchBucket() -> String {
-        let count = Self.windowActiveNoTouchCountRaw()
-        switch count {
-        case 0:  return "0"
-        case 1:  return "1"
-        default: return "2_plus"
-        }
+        Self.countBucket2Plus(Self.windowActiveNoTouchCountRaw())
     }
 
     private static func forEachRecognizer(in view: UIView, _ body: (UIGestureRecognizer) -> Void) {

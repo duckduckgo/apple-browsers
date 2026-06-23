@@ -28911,7 +28911,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Disables Duck.ai, hides AI-assisted answers in search, and hides AI-generated images."
+            "value" : "Disables Duck.ai, hides AI-assisted answers in search, and hides AI-generated images in image search results."
           }
         }
       }
@@ -28923,7 +28923,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers or AI-generated images in search results."
+            "value" : "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers or AI-generated images in image search results."
           }
         }
       }
@@ -29493,7 +29493,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Filter out AI-generated images from image search results"
+            "value" : "Hides AI-generated images from image search results"
           }
         },
         "es" : {

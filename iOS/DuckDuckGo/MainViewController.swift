@@ -354,7 +354,7 @@ class MainViewController: UIViewController {
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
 
-    /// Tracks live Duck.ai voice sessions per tab. Created in `setUpDuckAIVoiceSessionTrackerIfNeeded()`.
+    /// Tracks live Duck.ai voice sessions per tab. Created in `setUpDuckAIVoiceSessionTracker()`.
     var duckAIVoiceSessionTracker: DuckAIVoiceSessionTracker?
 
     private var iPadAIChatQuery = ""
@@ -636,10 +636,9 @@ class MainViewController: UIViewController {
             productSurfaceTelemetry: productSurfaceTelemetry)
     }()
 
-    /// Creates the live voice-session tracker once on launch,
-    /// so it observes voice sessions that begin before the tab switcher is presented.
-    private func setUpDuckAIVoiceSessionTrackerIfNeeded() {
-        guard featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) else { return }
+    /// Creates the voice-session tracker on launch so it catches sessions before the switcher opens.
+    /// Always created — the rich-card flag gates rendering (in the resolver), not tracking.
+    private func setUpDuckAIVoiceSessionTracker() {
         duckAIVoiceSessionTracker = DuckAIVoiceSessionTracker(tabForWebView: { [weak self] webView in
             self?.tabManager.controller(forWebView: webView)?.tabModel
         })
@@ -683,7 +682,7 @@ class MainViewController: UIViewController {
         initTabButton()
         initBookmarksButton()
         setUpUnifiedToggleInputIfNeeded()
-        setUpDuckAIVoiceSessionTrackerIfNeeded()
+        setUpDuckAIVoiceSessionTracker()
         configureStartupPresentation()
         previewsSource.prepare()
         addLaunchTabNotificationObserver()

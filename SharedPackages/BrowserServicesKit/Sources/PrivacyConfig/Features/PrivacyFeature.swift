@@ -595,6 +595,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// settings screen with native controls, regroups the main AI settings at the top, and adds the
     /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
     case aiFeaturesNativeControls
+
+    /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
+    /// expanded Duck.ai input area.
+    case iPadDuckAIBarControls
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

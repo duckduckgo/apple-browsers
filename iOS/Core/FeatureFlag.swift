@@ -485,6 +485,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
     case aiChatChromeShortcutIPad
 
+    /// Gates the native Duck.ai bar controls (model picker) in the iPad address bar's
+    /// expanded Duck.ai input area.
+    case iPadDuckAIBarControls
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUI
 
@@ -690,6 +694,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadDuckaiOnTab))
         case .iPadAIToggle:
             Config(source: .remoteReleasable(AIChatSubfeature.iPadAIChatToggle))
+        case .iPadDuckAIBarControls:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadDuckAIBarControls))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingDuckAIFlow:

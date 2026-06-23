@@ -179,6 +179,21 @@ final class AIChatPreferences: ObservableObject {
         )
     }
 
+    // Duck.ai on/off, exposed as a dropdown in the native-controls layout. Fires the global-toggle
+    // pixel only on user-driven changes (not external/storage-driven updates to isAIFeaturesEnabled).
+    var duckAIEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { self.isAIFeaturesEnabled },
+            set: { newValue in
+                guard newValue != self.isAIFeaturesEnabled else { return }
+                self.isAIFeaturesEnabled = newValue
+                PixelKit.fire(newValue ? AIChatPixel.aiChatSettingsGlobalToggleTurnedOn : .aiChatSettingsGlobalToggleTurnedOff,
+                              frequency: .dailyAndCount,
+                              includeAppVersionParameter: true)
+            }
+        )
+    }
+
     // Duck.ai-only; `isAIFeaturesEnabled` is the legacy name (kept to avoid an app-wide rename).
     private var isDuckAIEnabled: Bool {
         get { isAIFeaturesEnabled }

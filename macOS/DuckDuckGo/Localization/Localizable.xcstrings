@@ -29540,6 +29540,30 @@
         }
       }
     },
+    "duckai.enabled.off" : {
+      "comment" : "Duck.ai dropdown option: off (Duck.ai disabled)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "duckai.enabled.on" : {
+      "comment" : "Duck.ai dropdown option: on (Duck.ai enabled)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On"
+          }
+        }
+      }
+    },
     "duckai.hide-ai-generated-images.off" : {
       "comment" : "Hide AI-Generated Images option: off (images shown)",
       "extractionState" : "extracted_with_value",

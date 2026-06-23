@@ -70,25 +70,29 @@ extension Preferences {
                             }
                         }
 
-                        Button(aiFeaturesButtonTitle) {
-                            if model.isAIFeaturesEnabled {
-                                if model.shouldShowNativeAIControls {
-                                    // Redesign: disable Duck.ai directly, no confirmation.
-                                    model.isAIFeaturesEnabled = false
-                                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOff,
+                        if model.shouldShowNativeAIControls {
+                            // Redesign: Duck.ai is an On/Off dropdown grouped with the pickers below.
+                            Spacer()
+                            Picker("", selection: model.duckAIEnabledBinding) {
+                                Text(UserText.aiChatEnabledOn).tag(true)
+                                Text(UserText.aiChatEnabledOff).tag(false)
+                            }
+                            .pickerStyle(.menu)
+                            .fixedSize()
+                            .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
+                        } else {
+                            Button(aiFeaturesButtonTitle) {
+                                if model.isAIFeaturesEnabled {
+                                    isShowingDisableAIChatDialog = true
+                                } else {
+                                    model.isAIFeaturesEnabled = true
+                                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOn,
                                                   frequency: .dailyAndCount,
                                                   includeAppVersionParameter: true)
-                                } else {
-                                    isShowingDisableAIChatDialog = true
                                 }
-                            } else {
-                                model.isAIFeaturesEnabled = true
-                                PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
                             }
+                            .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
                         }
-                        .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
                     }
                 }
 

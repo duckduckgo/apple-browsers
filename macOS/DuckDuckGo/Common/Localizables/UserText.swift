@@ -650,6 +650,8 @@ struct UserText {
     static let searchAssistOften = NSLocalizedString("duckai.search-assist.often", value: "Often", comment: "Search Assist frequency option: often show AI-assisted answers")
     static let hideAIGeneratedImagesOn = NSLocalizedString("duckai.hide-ai-generated-images.on", value: "On", comment: "Hide AI-Generated Images option: on (images hidden)")
     static let hideAIGeneratedImagesOff = NSLocalizedString("duckai.hide-ai-generated-images.off", value: "Off", comment: "Hide AI-Generated Images option: off (images shown)")
+    static let aiChatEnabledOn = NSLocalizedString("duckai.enabled.on", value: "On", comment: "Duck.ai dropdown option: on (Duck.ai enabled)")
+    static let aiChatEnabledOff = NSLocalizedString("duckai.enabled.off", value: "Off", comment: "Duck.ai dropdown option: off (Duck.ai disabled)")
     static let aiFeaturesDisableAllButton = NSLocalizedString("duckai.ai-features.disable-all.button", value: "Use DuckDuckGo Without AI", comment: "Button that turns off all AI features")
     static let aiFeaturesDisableAllFooter = NSLocalizedString("duckai.ai-features.disable-all.footer", value: "Disables Duck.ai, hides AI-assisted answers in search, and hides AI-generated images in image search results.", comment: "Footer text below the Disable AI Features button")
     static let aiFeaturesDisableAllFooterDisabled = NSLocalizedString("duckai.ai-features.disable-all.footer.disabled", value: "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers or AI-generated images in image search results.", comment: "Footer text shown once all AI features are already disabled")

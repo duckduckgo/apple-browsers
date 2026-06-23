@@ -35,8 +35,8 @@ import Core
 /// recognizer still receives the drag touches it needs to classify.
 ///
 /// Fires two pixels: the symptom signal (`debugInteractionRepeatedFailedScroll`) and a mechanism signal
-/// (`debugInteractionWedgedRecognizer`, via `checkForWedgedRecognizer`). Logs every failed attempt as a
-/// breadcrumb so the Interaction Diagnostics snapshot has the recent history even below the pixel threshold.
+/// (`debugInteractionWedgedRecognizer`, via `checkForWedgedRecognizer`). Logs every failed attempt so the
+/// Interaction Diagnostics snapshot has the recent history even below the pixel threshold.
 /// No Swift concurrency — the post-gesture and wedge re-checks use `asyncAfter` on the main queue.
 /// `firePixel*` closures are injected so the detectors are unit-testable without the static pipeline.
 @MainActor
@@ -202,7 +202,7 @@ final class WebScrollObserver: NSObject {
         guard failureStreak >= Constant.streakThreshold else { return }
 
         // Capture LIBERALLY (once per streak, before the precision gate) so a real freeze always leaves the
-        // touch/recognizer census. Injected closure: a no-op in production, the real capture only when the
+        // touch/recognizer snapshot. Injected closure: a no-op in production, the real capture only when the
         // debug flag `webScrollFreezeCapture` is on. The pixel below ships to everyone regardless.
         if !capturedThisStreak {
             capturedThisStreak = true
@@ -272,7 +272,7 @@ final class WebScrollObserver: NSObject {
 
     private func deferringCountBucket() -> String {
         guard let container else { return "0" }
-        let count = WebScrollFreezeProbe.deferringGates(in: container).count
+        let count = WebScrollFreezeDebugProbe.deferringGates(in: container).count
         switch count {
         case 0:  return "0"
         case 1:  return "1"
@@ -493,49 +493,49 @@ final class WebScrollObserverGestureRecognizer: UIGestureRecognizer {
     override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
 }
 
-// MARK: - Touch Census
+// MARK: - Active touch probe (internal-only)
 
-/// Passive window-level touch ledger that records when touches begin and end, keyed by touch identity.
+/// Passive window-level map of active touches, noting when touches begin and end, keyed by touch identity.
 /// Installed as a single bystander recognizer on a `UIWindow`; never recognizes or interferes.
 ///
-/// A non-zero `activeTouchCount` while no finger is on screen indicates an orphaned touch — the leading
+/// A non-zero active-touch count while no finger is on screen indicates an orphaned touch — the leading
 /// hypothesis for why WebKit's deferring gate stays blocked and scroll never begins.
 @MainActor
-enum TouchCensus {
+enum WebScrollFreezeDebugActiveTouchProbe {
 
-    private static var ledger: [ObjectIdentifier: Date] = [:]
+    private static var activeTouches: [ObjectIdentifier: Date] = [:]
     private static var lastBegan: Date?
     private static var lastEnded: Date?
     private static var lastCancelled: Date?
 
-    private static weak var installedRecognizer: TouchCensusRecognizer?
+    private static weak var installedRecognizer: WebScrollFreezeDebugActiveTouchRecognizer?
 
-    /// True once a `TouchCensusRecognizer` has been installed on a window.
+    /// True once a `WebScrollFreezeDebugActiveTouchRecognizer` has been installed on a window.
     static var isInstalled: Bool { installedRecognizer != nil }
 
-    /// Adds exactly one passive `TouchCensusRecognizer` to `window`. Idempotent — returns immediately if
+    /// Adds exactly one passive `WebScrollFreezeDebugActiveTouchRecognizer` to `window`. Idempotent — returns immediately if
     /// a recognizer is already installed and alive.
     static func installIfNeeded(on window: UIWindow) {
         if let existing = installedRecognizer, existing.view != nil { return }
-        let r = TouchCensusRecognizer()
+        let r = WebScrollFreezeDebugActiveTouchRecognizer()
         r.onBegan = { touches in
             let now = Date()
             for touch in touches {
-                ledger[ObjectIdentifier(touch)] = now
+                activeTouches[ObjectIdentifier(touch)] = now
             }
             lastBegan = now
         }
         r.onEnded = { touches in
             let now = Date()
             for touch in touches {
-                ledger.removeValue(forKey: ObjectIdentifier(touch))
+                activeTouches.removeValue(forKey: ObjectIdentifier(touch))
             }
             lastEnded = now
         }
         r.onCancelled = { touches in
             let now = Date()
             for touch in touches {
-                ledger.removeValue(forKey: ObjectIdentifier(touch))
+                activeTouches.removeValue(forKey: ObjectIdentifier(touch))
             }
             lastCancelled = now
         }
@@ -543,7 +543,7 @@ enum TouchCensus {
         installedRecognizer = r
     }
 
-    /// Returns the body lines for a "Touch ledger" capture section. If not installed, returns a
+    /// Returns the body lines for an "Active touches" capture section. If not installed, returns a
     /// single line noting the feature is off.
     static func report() -> String {
         guard isInstalled else {
@@ -551,9 +551,9 @@ enum TouchCensus {
         }
         let now = Date()
         var lines = ""
-        lines += "- active touch count: \(ledger.count)"
-        if !ledger.isEmpty {
-            let oldest = ledger.values.map { now.timeIntervalSince($0) }.max() ?? 0
+        lines += "- active touch count: \(activeTouches.count)"
+        if !activeTouches.isEmpty {
+            let oldest = activeTouches.values.map { now.timeIntervalSince($0) }.max() ?? 0
             lines += " (oldest \(String(format: "%.2f", oldest))s)"
             lines += " — NOTE: non-zero active touches while no finger is on screen = orphaned touch (leading hypothesis: may keep a deferring gate blocked below the recognizer layer; compare pre/post captures to assess)"
         }
@@ -571,9 +571,9 @@ enum TouchCensus {
     }
 }
 
-/// A pure bystander recognizer attached to a `UIWindow` by `TouchCensus`. Modeled on
+/// A pure bystander recognizer attached to a `UIWindow` by `WebScrollFreezeDebugActiveTouchProbe`. Modeled on
 /// `WebScrollObserverGestureRecognizer`: never recognizes; never cancels or blocks other gestures.
-final class TouchCensusRecognizer: UIGestureRecognizer {
+final class WebScrollFreezeDebugActiveTouchRecognizer: UIGestureRecognizer {
 
     var onBegan: ((Set<UITouch>) -> Void)?
     var onEnded: ((Set<UITouch>) -> Void)?
@@ -606,15 +606,15 @@ final class TouchCensusRecognizer: UIGestureRecognizer {
     override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
 }
 
-// MARK: - Transition Breadcrumbs
+// MARK: - Transition log (internal-only)
 
-/// Lightweight transition-event ledger for scroll-freeze diagnostics. Callers drop a breadcrumb before
+/// Lightweight transition-event log for scroll-freeze diagnostics. Callers add a note before
 /// and after any navigation or tab-switch transition so that a freeze capture includes recent activity.
 ///
-/// Each entry is a snapshot of observable UI state at the moment of the drop — not a proof of cause,
+/// Each entry is a snapshot of observable UI state at the moment it is noted — not a proof of cause,
 /// just evidence to compare across captures.
 @MainActor
-enum WebScrollFreezeBreadcrumb {
+enum WebScrollFreezeDebugTransitionLog {
 
     private struct Entry {
         let timestamp: Date
@@ -630,16 +630,16 @@ enum WebScrollFreezeBreadcrumb {
 
     /// Captures a lightweight snapshot and appends it to the in-memory ring buffer (capped at ~20 entries);
     /// logs a concise summary via `Logger.interaction`. `nonisolated` so non-`@MainActor` call sites (e.g.
-    /// `SwipeTabsCoordinator`) can drop a breadcrumb without each needing the annotation; `assumeIsolated`
-    /// bridges to the main actor — safe because every breadcrumb site (gesture handlers, view transitions)
+    /// `SwipeTabsCoordinator`) can add a note without each needing the annotation; `assumeIsolated`
+    /// bridges to the main actor — safe because every call site (gesture handlers, view transitions)
     /// already runs on the main thread.
-    nonisolated static func drop(_ label: String) {
+    nonisolated static func note(_ label: String) {
         MainActor.assumeIsolated {
             let touchInFlight = anyTouchInFlight()
             let activeCount = activeRecognizerCount()
             let panState = webScrollPanStateName()
             let suspectCount = wkSuspectCount()
-            Logger.interaction.debug("Breadcrumb [\(label, privacy: .public)]: touchInFlight=\(touchInFlight, privacy: .public) activeRecognizers=\(activeCount, privacy: .public) webScrollPan=\(panState, privacy: .public) wkSuspects=\(suspectCount, privacy: .public)")
+            Logger.interaction.debug("Transition [\(label, privacy: .public)]: touchInFlight=\(touchInFlight, privacy: .public) activeRecognizers=\(activeCount, privacy: .public) webScrollPan=\(panState, privacy: .public) wkSuspects=\(suspectCount, privacy: .public)")
             let entry = Entry(
                 timestamp: Date(),
                 label: label,
@@ -685,7 +685,7 @@ enum WebScrollFreezeBreadcrumb {
     }
 
     private static func webScrollPanStateName() -> String {
-        guard let pan = WebScrollFreezeProbe.findMainViewController()?.currentTab?.webView?.scrollView.panGestureRecognizer else {
+        guard let pan = WebScrollFreezeDebugProbe.findMainViewController()?.currentTab?.webView?.scrollView.panGestureRecognizer else {
             return "unavailable"
         }
         switch pan.state {
@@ -700,8 +700,8 @@ enum WebScrollFreezeBreadcrumb {
     }
 
     /// Count of WK/private-class recognizers (type name starts with `_` or `WK`, or contains `WebTouch`)
-    /// that are in `.possible` with zero tracked touches, window-wide. A non-zero count is a suspect
-    /// reading — compare across breadcrumbs rather than treating any single value as conclusive.
+    /// that are in `.possible` with zero active touches, window-wide. A non-zero count is a suspect
+    /// reading — compare across transition notes rather than treating any single value as conclusive.
     private static func wkSuspectCount() -> Int {
         var count = 0
         for window in windows() {
@@ -744,7 +744,7 @@ enum WebScrollFreezeBreadcrumb {
 /// `WKDeferringGestureRecognizer` becomes wedged in `.possible`, but that remains unconfirmed; recovery
 /// is intended to produce evidence (via captures), not to silently fix the problem.
 ///
-/// Both rungs are guarded against live touches: toggling `isEnabled` while a touch is tracked orphans
+/// Both rungs are guarded against live touches: toggling `isEnabled` while a touch is in flight orphans
 /// that touch and can re-trigger the freeze. Manual rungs are debug-only; `autoRecover()` is a
 /// gated scoped sequence intended for production when enabled by a feature flag in a calling layer.
 @MainActor
@@ -761,11 +761,11 @@ enum WebScrollFreezeRecovery {
     }
 
     private static func savePrePostCaptures(label: String, reset: () -> Void) -> String {
-        let pre = WebScrollFreezeProbe.captureNow()
-        FreezeCaptureStore.save(pre)
+        let pre = WebScrollFreezeDebugProbe.captureNow()
+        WebScrollFreezeDebugCaptureStore.save(pre)
         reset()
-        let post = WebScrollFreezeProbe.captureNow()
-        FreezeCaptureStore.save(post)
+        let post = WebScrollFreezeDebugProbe.captureNow()
+        WebScrollFreezeDebugCaptureStore.save(post)
         return "\(label); pre/post captures saved — compare them"
     }
 
@@ -776,7 +776,7 @@ enum WebScrollFreezeRecovery {
         guard !anyTouchInFlight() else {
             return "skipped — touch in flight (would orphan it)"
         }
-        guard let webView = WebScrollFreezeProbe.findMainViewController()?.currentTab?.webView else {
+        guard let webView = WebScrollFreezeDebugProbe.findMainViewController()?.currentTab?.webView else {
             return "deferring-gate reset: no webView found"
         }
         return savePrePostCaptures(label: "reset deferring gate(s)") {
@@ -792,7 +792,7 @@ enum WebScrollFreezeRecovery {
         guard !anyTouchInFlight() else {
             return "skipped — touch in flight (would orphan it)"
         }
-        guard let pan = WebScrollFreezeProbe.findMainViewController()?.currentTab?.webView?.scrollView.panGestureRecognizer else {
+        guard let pan = WebScrollFreezeDebugProbe.findMainViewController()?.currentTab?.webView?.scrollView.panGestureRecognizer else {
             return "scroll-pan reset: no webView found"
         }
         return savePrePostCaptures(label: "reset web scroll pan") {
@@ -812,10 +812,10 @@ enum WebScrollFreezeRecovery {
     static func autoRecover(scrollView: UIScrollView?) -> Bool {
         guard !anyTouchInFlight() else { return false }
         guard let scrollView else { return false }
-        FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow())
+        WebScrollFreezeDebugCaptureStore.save(WebScrollFreezeDebugProbe.captureNow())
         applyScrollPanReset(scrollView.panGestureRecognizer)
         applyDeferringGateReset(in: scrollView)
-        FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow())
+        WebScrollFreezeDebugCaptureStore.save(WebScrollFreezeDebugProbe.captureNow())
         Logger.interaction.error("Auto-recover: applied scroll-pan + deferring-gate resets; pre/post captures saved")
         return true
     }
@@ -831,7 +831,7 @@ enum WebScrollFreezeRecovery {
     /// Core: toggle all deferring-gate recognizers off then on. Does NOT save captures — callers are
     /// responsible for bracketing with pre/post saves.
     private static func applyDeferringGateReset(in webView: UIView) {
-        let gates = WebScrollFreezeProbe.deferringGates(in: webView)
+        let gates = WebScrollFreezeDebugProbe.deferringGates(in: webView)
         for gate in gates {
             gate.isEnabled = false
             gate.isEnabled = true
@@ -839,7 +839,7 @@ enum WebScrollFreezeRecovery {
         Logger.interaction.error("Deferring-gate reset: toggled \(gates.count, privacy: .public) deferring recognizer(s)")
     }
 
-    /// True if any recogniser in any window is currently tracking touches — i.e. a gesture is live and it is
+    /// True if any recogniser in any window currently has touches in flight — i.e. a gesture is live and it is
     /// NOT safe to toggle `isEnabled` (that would strand the touch).
     private static func anyTouchInFlight() -> Bool {
         var found = false

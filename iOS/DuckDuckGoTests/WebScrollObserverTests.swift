@@ -354,7 +354,7 @@ final class WebScrollObserverBucketTests: XCTestCase {
 
 // MARK: - Deferring-gate collection tests
 
-/// Tests for `WebScrollFreezeProbe.deferringGates(in:)`.
+/// Tests for `WebScrollFreezeDebugProbe.deferringGates(in:)`.
 /// The filter is purely by runtime class name — any recognizer whose type name contains "Deferring"
 /// is collected; all others are skipped. We use a custom subclass name that satisfies that check
 /// without requiring any private WebKit types.
@@ -372,7 +372,7 @@ final class DeferringGateCollectionTests: XCTestCase {
         view.addGestureRecognizer(deferring)
         view.addGestureRecognizer(plain)
 
-        let gates = WebScrollFreezeProbe.deferringGates(in: view)
+        let gates = WebScrollFreezeDebugProbe.deferringGates(in: view)
 
         XCTAssertEqual(gates.count, 1)
         XCTAssertTrue(gates.first === deferring)
@@ -384,7 +384,7 @@ final class DeferringGateCollectionTests: XCTestCase {
         view.addGestureRecognizer(UIPanGestureRecognizer())
         view.addGestureRecognizer(UILongPressGestureRecognizer())
 
-        let gates = WebScrollFreezeProbe.deferringGates(in: view)
+        let gates = WebScrollFreezeDebugProbe.deferringGates(in: view)
 
         XCTAssertTrue(gates.isEmpty)
     }
@@ -400,7 +400,7 @@ final class DeferringGateCollectionTests: XCTestCase {
         let deferring = SimulatedDeferringGestureRecognizer()
         grandchild.addGestureRecognizer(deferring)
 
-        let gates = WebScrollFreezeProbe.deferringGates(in: root)
+        let gates = WebScrollFreezeDebugProbe.deferringGates(in: root)
 
         XCTAssertEqual(gates.count, 1)
         XCTAssertTrue(gates.first === deferring)
@@ -408,7 +408,7 @@ final class DeferringGateCollectionTests: XCTestCase {
 
     func testDeferringGates_emptyViewTreeReturnsEmptyArray() {
         let view = UIView()
-        XCTAssertTrue(WebScrollFreezeProbe.deferringGates(in: view).isEmpty)
+        XCTAssertTrue(WebScrollFreezeDebugProbe.deferringGates(in: view).isEmpty)
     }
 
     func testDeferringGates_collectsMultipleDeferringRecognizersAcrossTree() {
@@ -421,7 +421,7 @@ final class DeferringGateCollectionTests: XCTestCase {
         root.addGestureRecognizer(d1)
         child.addGestureRecognizer(d2)
 
-        let gates = WebScrollFreezeProbe.deferringGates(in: root)
+        let gates = WebScrollFreezeDebugProbe.deferringGates(in: root)
 
         XCTAssertEqual(gates.count, 2)
         XCTAssertTrue(gates.contains { $0 === d1 })
@@ -434,7 +434,7 @@ final class DeferringGateCollectionTests: XCTestCase {
 
 /// Tests for the "not scrollable" guard in `InteractionDiagnosticsModel.probeProgrammaticScroll`.
 ///
-/// `probeProgrammaticScroll` calls `WebScrollFreezeProbe.findMainViewController()` to locate the
+/// `probeProgrammaticScroll` calls `WebScrollFreezeDebugProbe.findMainViewController()` to locate the
 /// web scroll view. That method walks `UIApplication.shared.connectedScenes` looking for a
 /// `MainViewController`, which does not exist in the XCTest host process. The method therefore
 /// returns `nil` and sets `actionResult = "Scroll probe: no web scroll view found"` — the scroll

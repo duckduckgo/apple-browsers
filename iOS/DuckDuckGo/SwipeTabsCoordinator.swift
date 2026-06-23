@@ -631,11 +631,11 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
         feedbackGenerator.selectionChanged()
         if index >= tabsModel.count {
-            WebScrollFreezeBreadcrumb.drop("swipeTabs.newTab")
+            WebScrollFreezeDebugTransitionLog.note("swipeTabs.newTab")
             newTab()
         } else {
             if let tab = tabsModel.get(tabAt: index) {
-                WebScrollFreezeBreadcrumb.drop("swipeTabs.selectTab")
+                WebScrollFreezeDebugTransitionLog.note("swipeTabs.selectTab")
                 selectTab(tab)
             }
         }
@@ -735,7 +735,7 @@ extension SwipeTabsCoordinator {
 
         switch gesture.state {
         case .began:
-            WebScrollFreezeBreadcrumb.drop("uti.swipe.begin")
+            WebScrollFreezeDebugTransitionLog.note("uti.swipe.begin")
             // A prior external pan's settling animation can still be in flight, or another
             // attached recognizer (UTI bar / AI header) may have left non-idle state behind.
             // Reset before starting so `scrollViewWillBeginDragging` (which only transitions
@@ -758,7 +758,7 @@ extension SwipeTabsCoordinator {
             collectionView.contentOffset = CGPoint(x: max(0, min(proposedX, maxX)), y: 0)
 
         case .ended, .cancelled, .failed:
-            WebScrollFreezeBreadcrumb.drop(gesture.state == .cancelled || gesture.state == .failed ? "uti.swipe.cancel" : "uti.swipe.end")
+            WebScrollFreezeDebugTransitionLog.note(gesture.state == .cancelled || gesture.state == .failed ? "uti.swipe.cancel" : "uti.swipe.end")
             let pageWidth = collectionView.frame.width
             guard pageWidth > 0 else {
                 scrollViewDidEndDecelerating(collectionView)

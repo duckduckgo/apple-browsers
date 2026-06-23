@@ -25,7 +25,7 @@ import Core
 ///
 /// The freeze is PERSISTENT (it stays until the app is force-closed), so a capture taken minutes later
 /// is still valid. Dumps the web scroll view's drag state, the WKWebView's internal gesture recognizers,
-/// presentation/transition state, and a full window census. Captures auto-persist to a ring buffer so
+/// presentation/transition state, and a full window scan. Captures auto-persist to a ring buffer so
 /// they can be diffed against a healthy baseline after the fact.
 struct InteractionDiagnosticsDebugScreen: View {
 
@@ -113,13 +113,13 @@ final class InteractionDiagnosticsModel: ObservableObject {
 
     @Published var report = ""
     @Published var actionResult = ""
-    @Published var savedCount = FreezeCaptureStore.count()
+    @Published var savedCount = WebScrollFreezeDebugCaptureStore.count()
 
     @MainActor
     func capture() {
-        report = WebScrollFreezeProbe.captureNow()
-        FreezeCaptureStore.save(report)
-        savedCount = FreezeCaptureStore.count()
+        report = WebScrollFreezeDebugProbe.captureNow()
+        WebScrollFreezeDebugCaptureStore.save(report)
+        savedCount = WebScrollFreezeDebugCaptureStore.count()
     }
 
     func copy() {
@@ -127,18 +127,18 @@ final class InteractionDiagnosticsModel: ObservableObject {
     }
 
     func copySaved() {
-        UIPasteboard.general.string = FreezeCaptureStore.exportAll()
+        UIPasteboard.general.string = WebScrollFreezeDebugCaptureStore.exportAll()
     }
 
     func clearSaved() {
-        FreezeCaptureStore.clear()
-        savedCount = FreezeCaptureStore.count()
+        WebScrollFreezeDebugCaptureStore.clear()
+        savedCount = WebScrollFreezeDebugCaptureStore.count()
     }
 
     @MainActor
     func runRecovery(_ rung: WebScrollFreezeRecovery.Rung) {
         actionResult = WebScrollFreezeRecovery.runRung(rung)
-        savedCount = FreezeCaptureStore.count()
+        savedCount = WebScrollFreezeDebugCaptureStore.count()
     }
 
     /// Safe diagnostic: drive the scroll view directly via `setContentOffset` (no recogniser or
@@ -147,7 +147,7 @@ final class InteractionDiagnosticsModel: ObservableObject {
     /// does NOT move, the scroll view / content itself is stuck.
     @MainActor
     func probeProgrammaticScroll() {
-        guard let scrollView = WebScrollFreezeProbe.findMainViewController()?.currentTab?.webView?.scrollView else {
+        guard let scrollView = WebScrollFreezeDebugProbe.findMainViewController()?.currentTab?.webView?.scrollView else {
             actionResult = "Scroll probe: no web scroll view found"
             return
         }

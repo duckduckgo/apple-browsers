@@ -1,5 +1,5 @@
 //
-//  WebScrollFreezeProbe.swift
+//  WebScrollFreezeDebugProbe.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -28,15 +28,15 @@ import Core
 /// tree), so it is callable from the Interaction Diagnostics debug screen, from the auto-capture in
 /// `WebScrollObserver` (gated by `webScrollFreezeCapture`, internal-only), and from lldb:
 ///
-///     expr -l Swift -O -- print(WebScrollFreezeProbe.captureNow())
-enum WebScrollFreezeProbe {
+///     expr -l Swift -O -- print(WebScrollFreezeDebugProbe.captureNow())
+enum WebScrollFreezeDebugProbe {
 
     @MainActor
     static func captureNow() -> String {
         var out = "# Interaction Diagnostics — \(Date())\n"
         out += "App: \(appVersion)\n\n"
         out += touchSection() + "\n"
-        out += breadcrumbSection() + "\n"
+        out += transitionLogSection() + "\n"
         out += featureFlagsSection() + "\n"
         out += currentTabSection() + "\n"
         out += scrollViewsSection() + "\n"
@@ -48,16 +48,16 @@ enum WebScrollFreezeProbe {
         return out
     }
 
-    // MARK: Touch ledger
+    // MARK: Active touches
 
     @MainActor
     private static func touchSection() -> String {
-        "## Touch ledger\n" + TouchCensus.report() + "\n"
+        "## Active touches\n" + WebScrollFreezeDebugActiveTouchProbe.report() + "\n"
     }
 
     @MainActor
-    private static func breadcrumbSection() -> String {
-        "## Recent transition breadcrumbs\n" + WebScrollFreezeBreadcrumb.recent() + "\n"
+    private static func transitionLogSection() -> String {
+        "## Recent transitions\n" + WebScrollFreezeDebugTransitionLog.recent() + "\n"
     }
 
     private static func featureFlagsSection() -> String {
@@ -149,7 +149,7 @@ enum WebScrollFreezeProbe {
     }
 
     /// Window-wide scan of all gesture recognizers, grouped into four buckets:
-    ///   (a) `.began` / `.changed` — actively tracking a gesture right now,
+    ///   (a) `.began` / `.changed` — actively recognizing a gesture right now,
     ///   (b) `.began` / `.changed` AND `numberOfTouches == 0` — active with no live touches, a suspect
     ///       pattern worth comparing against a healthy baseline (a recognizer in (b) also appears in (a)),
     ///   (c) `numberOfTouches > 0` — holding touch references without being active,
@@ -518,7 +518,7 @@ enum WebScrollFreezeProbe {
 
 /// Last N freeze captures, written to Caches so they survive leaving the debug screen and can be exported
 /// after the fact (the freeze persists, so the user has time). No pixel — purely on-device, no triage.
-enum FreezeCaptureStore {
+enum WebScrollFreezeDebugCaptureStore {
 
     private static let maxCaptures = 10
 

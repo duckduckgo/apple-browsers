@@ -51,6 +51,7 @@ final class DuckAIVoiceSessionTracker: NSObject, DuckAIVoiceSessionTracking {
     private let activeTabs: NSHashTable<Tab> = .weakObjects()
     private let notificationCenter: NotificationCenter
     private let tabForWebView: (WKWebView) -> Tab?
+    private let deactivationDelay: TimeInterval
     private let changesSubject = PassthroughSubject<Void, Never>()
 
     var changes: AnyPublisher<Void, Never> { changesSubject.eraseToAnyPublisher() }
@@ -59,10 +60,14 @@ final class DuckAIVoiceSessionTracker: NSObject, DuckAIVoiceSessionTracking {
     ///   - notificationCenter: Source of the voice-session notifications. Injectable for tests.
     ///   - tabForWebView: Resolves a source `WKWebView` to its owning `Tab`. Production wires this
     ///     to `tabManager.controller(forWebView:)?.tabModel`.
+    ///   - deactivationDelay: how long a tab stays "active" after its session ends, so the live card
+    ///     holds until the transcript persists. Pass 0 in tests for synchronous deactivation.
     init(notificationCenter: NotificationCenter = .default,
-         tabForWebView: @escaping (WKWebView) -> Tab?) {
+         tabForWebView: @escaping (WKWebView) -> Tab?,
+         deactivationDelay: TimeInterval = 0.5) {
         self.notificationCenter = notificationCenter
         self.tabForWebView = tabForWebView
+        self.deactivationDelay = deactivationDelay
         super.init()
         notificationCenter.addObserver(self, selector: #selector(voiceSessionStarted(_:)),
                                        name: .aiChatVoiceSessionStarted, object: nil)
@@ -90,11 +95,15 @@ final class DuckAIVoiceSessionTracker: NSObject, DuckAIVoiceSessionTracking {
         guard let tab = resolveTab(from: note) else { return }
         // Hold the tab active briefly so the live card holds until the transcript persists (avoids a screenshot flash).
         // TODO: replace the fixed delay with the native-storage persistence signal (chatUpdatesPublisher).
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self else { return }
-            self.activeTabs.remove(tab)
-            self.changesSubject.send()
+        guard deactivationDelay > 0 else { return deactivate(tab) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + deactivationDelay) { [weak self] in
+            self?.deactivate(tab)
         }
+    }
+
+    private func deactivate(_ tab: Tab) {
+        activeTabs.remove(tab)
+        changesSubject.send()
     }
 
     private func resolveTab(from note: Notification) -> Tab? {

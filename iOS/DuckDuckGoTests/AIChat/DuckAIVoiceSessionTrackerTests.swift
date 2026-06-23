@@ -39,7 +39,7 @@ final class DuckAIVoiceSessionTrackerTests: XCTestCase {
         tracker = DuckAIVoiceSessionTracker(notificationCenter: notificationCenter,
                                             tabForWebView: { [weak self] webView in
             self?.webViewToTab[ObjectIdentifier(webView)]
-        })
+        }, deactivationDelay: 0)
     }
 
     override func tearDown() {

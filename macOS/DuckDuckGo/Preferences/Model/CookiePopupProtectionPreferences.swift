@@ -40,10 +40,10 @@ struct CookiePopupProtectionPreferencesUserDefaultsPersistor: CookiePopupProtect
     @UserDefaultsWrapper(key: .autoconsentEnabled, defaultValue: true)
     var autoconsentEnabled: Bool
 
-    private let storage: any KeyedStoring<CookiePopupProtectionSettings>
+    private let storage: KeyedStorage<CookiePopupProtectionSettings>
 
-    init(storage: (any KeyedStoring<CookiePopupProtectionSettings>)? = nil) {
-        self.storage = storage ?? UserDefaults.standard.keyedStoring()
+    init(storage: KeyedStorage<CookiePopupProtectionSettings>? = nil) {
+        self.storage = storage ?? KeyedStorage(storage: UserDefaults.standard)
     }
 
     var cookiePopupPreferenceRawValue: String? {

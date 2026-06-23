@@ -1197,6 +1197,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
            images?.isEmpty ?? true, files?.isEmpty ?? true,
            let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
            url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
+            unifiedToggleInputCoordinator?.recordDuckAIPromptInterpretedAsURL()
             loadUrlRespectingAIBoundary(url)
             return
         }

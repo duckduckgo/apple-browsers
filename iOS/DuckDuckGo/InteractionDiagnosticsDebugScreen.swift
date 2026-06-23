@@ -138,6 +138,7 @@ final class InteractionDiagnosticsModel: ObservableObject {
     @MainActor
     func runRecovery(_ rung: WebScrollFreezeRecovery.Rung) {
         actionResult = WebScrollFreezeRecovery.runRung(rung)
+        savedCount = FreezeCaptureStore.count()
     }
 
     /// Safe diagnostic: drive the scroll view directly via `setContentOffset` (no recogniser or

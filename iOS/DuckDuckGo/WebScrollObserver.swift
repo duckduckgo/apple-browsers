@@ -190,14 +190,7 @@ final class WebScrollObserver: NSObject {
 
     private func registerFailedAttempt(direction: String, startScreenY: CGFloat) {
         if let last = lastFailureAt, now().timeIntervalSince(last) > Constant.streakWindow {
-            failureStreak = 0
-            streakDirections = []
-            streakRegions = []
-            highestBucketFired = nil
-            capturedThisStreak = false
-            autoRecoveredThisStreak = false
-            pendingOutcomeCheck = false
-            outcomeArmedAt = nil
+            reset()
         }
         failureStreak += 1
         lastFailureAt = now()
@@ -510,11 +503,7 @@ final class WebScrollObserverGestureRecognizer: UIGestureRecognizer {
 @MainActor
 enum TouchCensus {
 
-    private struct TouchEntry {
-        let began: Date
-    }
-
-    private static var ledger: [ObjectIdentifier: TouchEntry] = [:]
+    private static var ledger: [ObjectIdentifier: Date] = [:]
     private static var lastBegan: Date?
     private static var lastEnded: Date?
     private static var lastCancelled: Date?
@@ -532,7 +521,7 @@ enum TouchCensus {
         r.onBegan = { touches in
             let now = Date()
             for touch in touches {
-                ledger[ObjectIdentifier(touch)] = TouchEntry(began: now)
+                ledger[ObjectIdentifier(touch)] = now
             }
             lastBegan = now
         }
@@ -564,7 +553,7 @@ enum TouchCensus {
         var lines = ""
         lines += "- active touch count: \(ledger.count)"
         if !ledger.isEmpty {
-            let oldest = ledger.values.map { now.timeIntervalSince($0.began) }.max() ?? 0
+            let oldest = ledger.values.map { now.timeIntervalSince($0) }.max() ?? 0
             lines += " (oldest \(String(format: "%.2f", oldest))s)"
             lines += " — NOTE: non-zero active touches while no finger is on screen = orphaned touch (leading hypothesis: may keep a deferring gate blocked below the recognizer layer; compare pre/post captures to assess)"
         }

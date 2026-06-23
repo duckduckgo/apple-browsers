@@ -28892,6 +28892,66 @@
         }
       }
     },
+    "duckai.attach-selection.context-menu-action" : {
+      "comment" : "Context menu option that attaches the selected text to Duck.ai as page context",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai nach ausgewählten Inhalten fragen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask Duck.ai About Selected Content"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta a Duck.ai sobre el contenido seleccionado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poser des questions à Duck.ai sur le contenu sélectionné"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi a Duck.ai sul contenuto selezionato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag Duck.ai naar geselecteerde inhoud"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapytaj Duck.ai o wybrane treści"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pergunta ao Duck.ai sobre conteúdos selecionados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спросить у Duck.ai о выбранном контенте"
+          }
+        }
+      }
+    },
     "duckai.automatically-send-page-content.toggle-setting" : {
       "comment" : "Settings option to automatically send page content to the sidebar",
       "extractionState" : "extracted_with_value",
@@ -31467,6 +31527,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Краткий пересказ от Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.text-selection.context-title" : {
+      "comment" : "Generic title shown on the Duck.ai sidebar attachment chip when the attached content is a user text selection rather than a full web page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Textauswahl"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Text selection"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selección de texto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélection de texte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selezione del testo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekstselectie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybór tekstu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleção de texto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбор текста"
           }
         }
       }

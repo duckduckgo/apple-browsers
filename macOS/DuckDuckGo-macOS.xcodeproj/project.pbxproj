@@ -1278,7 +1278,9 @@
 		37A756EF2DD610930003C8C9 /* NewTabPageCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A756ED2DD6108E0003C8C9 /* NewTabPageCoordinatorTests.swift */; };
 		37A803DB27FD69D300052F4C /* DataImportResources in Resources */ = {isa = PBXBuildFile; fileRef = 37A803DA27FD69D300052F4C /* DataImportResources */; };
 		37AA00AC2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */; };
+		AA5E1EC72A0000000000C002 /* AIChatSelectionContextAttacher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5E1EC72A0000000000C001 /* AIChatSelectionContextAttacher.swift */; };
 		37AA00AD2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */; };
+		AA5E1EC72A0000000000C003 /* AIChatSelectionContextAttacher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5E1EC72A0000000000C001 /* AIChatSelectionContextAttacher.swift */; };
 		37AA01732E1FE8B200844427 /* CrashPixelAppIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */; };
 		37AA01742E1FE8B200844427 /* CrashPixelAppIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */; };
 		37AA017C2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */; };
@@ -5187,6 +5189,7 @@
 		37A756ED2DD6108E0003C8C9 /* NewTabPageCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageCoordinatorTests.swift; sourceTree = "<group>"; };
 		37A803DA27FD69D300052F4C /* DataImportResources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DataImportResources; sourceTree = "<group>"; };
 		37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSummarizer.swift; sourceTree = "<group>"; };
+		AA5E1EC72A0000000000C001 /* AIChatSelectionContextAttacher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSelectionContextAttacher.swift; sourceTree = "<group>"; };
 		37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashPixelAppIdentifier.swift; sourceTree = "<group>"; };
 		37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashPixelAppIdentifierTests.swift; sourceTree = "<group>"; };
 		37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandlerTests.swift; sourceTree = "<group>"; };
@@ -7767,6 +7770,7 @@
 				C150EB212F0D817100A98C97 /* AIChatFeatureFlagProvider.swift */,
 				3161D15C2DA02380008F59B5 /* AIChatPixel.swift */,
 				37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */,
+				AA5E1EC72A0000000000C001 /* AIChatSelectionContextAttacher.swift */,
 				1EB01D902E61DF2B006CB411 /* AIChatTranslator.swift */,
 				312E63962D9D821500806E2A /* AIChatURL.swift */,
 				319FCFF12CC81D54004F9288 /* AIChatRemoteSettings.swift */,
@@ -15698,6 +15702,7 @@
 				3706FBF0293F65D500E42796 /* PasswordManagementItemModel.swift in Sources */,
 				84A74E1E2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */,
 				37AA00AC2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */,
+				AA5E1EC72A0000000000C002 /* AIChatSelectionContextAttacher.swift in Sources */,
 				3706FBF2293F65D500E42796 /* FindInPageModel.swift in Sources */,
 				1D9A4E5B2B43213B00F449E2 /* TabSnapshotExtension.swift in Sources */,
 				9F56CFAE2B84326C00BB7F11 /* AddEditBookmarkDialogViewModel.swift in Sources */,
@@ -17335,6 +17340,7 @@
 				CCC87D6E2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */,
 				EEBF15C22E4CE72E0053D15B /* BookmarksEmptyStateView.swift in Sources */,
 				37AA00AD2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */,
+				AA5E1EC72A0000000000C003 /* AIChatSelectionContextAttacher.swift in Sources */,
 				84F1C8DE2C774D4200716446 /* NSTableViewExtension.swift in Sources */,
 				7B7F5D212C526CE600826256 /* AddExcludedDomainView.swift in Sources */,
 				4B92929E26670D2A00AD2C21 /* BookmarkSidebarTreeController.swift in Sources */,

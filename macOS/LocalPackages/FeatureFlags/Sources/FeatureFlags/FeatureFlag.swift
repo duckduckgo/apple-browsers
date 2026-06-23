@@ -131,6 +131,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
 
+    /// Enables the "Attach to Duck.ai" context-menu item that attaches selected text as the sidebar's page context
+    case aiChatSelectionContext
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617328244
     case aiChatKeepSession
 
@@ -535,6 +538,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.paidAIChat), category: .subscription)
         case .aiChatPageContext:
             Config(source: .remoteReleasable(AIChatSubfeature.pageContext), category: .duckAI)
+        case .aiChatSelectionContext:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.selectionContext), category: .duckAI)
         case .aiChatKeepSession:
             Config(source: .remoteReleasable(AIChatSubfeature.keepSession), category: .duckAI)
         case .aiChatOmnibarToggle:

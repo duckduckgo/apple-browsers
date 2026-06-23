@@ -850,7 +850,14 @@ class TabViewController: UIViewController {
 
     @objc
     private func onAddressBarPositionChanged() {
-        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            borderView.isHidden = true
+            borderView.isTopVisible = false
+            borderView.isBottomVisible = false
+        } else {
+            borderView.isHidden = false
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
         updateWebViewBottomAnchor()
     }
 
@@ -878,7 +885,15 @@ class TabViewController: UIViewController {
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
-        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            borderView.bottomAlpha = 0
+            borderView.isHidden = true
+            borderView.isTopVisible = false
+            borderView.isBottomVisible = false
+        } else {
+            borderView.isHidden = false
+            borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        }
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -1079,7 +1094,15 @@ class TabViewController: UIViewController {
 #endif
 
         borderView.insertSelf(into: webView)
-        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            borderView.isHidden = true
+            borderView.isTopVisible = false
+            borderView.isBottomVisible = false
+            borderView.bottomAlpha = 0
+        } else {
+            borderView.isHidden = false
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
     }
 
     private func addObservers() {

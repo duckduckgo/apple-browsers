@@ -179,7 +179,8 @@ class SwipeTabsCoordinator: NSObject {
 
     private func updateLayout() {
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
+        let collectionWidth = collectionView.bounds.width > 0 ? collectionView.bounds.width : coordinator.superview.frame.size.width
+        layout?.itemSize = CGSize(width: collectionWidth, height: omniBarHeight)
         layout?.minimumLineSpacing = 0
         layout?.minimumInteritemSpacing = 0
         layout?.scrollDirection = .horizontal

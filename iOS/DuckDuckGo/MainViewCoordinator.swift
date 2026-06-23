@@ -127,6 +127,7 @@ class MainViewCoordinator {
         case .top:
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+            omniBar.barView.makeGlass()
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
@@ -134,6 +135,7 @@ class MainViewCoordinator {
         case .bottom:
             toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
+            omniBar.barView.makeOpaque()
             omniBar.barView.alpha = 1
             omniBar.barView.isUserInteractionEnabled = true
             navigationBarContainer.isHidden = true
@@ -548,13 +550,17 @@ class MainViewCoordinator {
     }
 
     private func resolvedStatusBackgroundColor() -> UIColor {
+        if FloatingUIManager().isFloatingUIEnabled {
+            return .clear
+        }
+
         switch statusBackgroundPresentation {
         case .standard:
-            standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
+            return standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
         case .omnibarEditing, .aiTabSearchChromeHidden:
-            UIColor(designSystemColor: .panel)
+            return UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            UIColor(designSystemColor: .surfaceCanvas)
+            return UIColor(designSystemColor: .surfaceCanvas)
         }
     }
 

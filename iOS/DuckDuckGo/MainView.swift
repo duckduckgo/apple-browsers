@@ -184,8 +184,8 @@ extension MainViewFactory {
     }
     
     final class NavigationBarContainer: UIView {
-        private static let floatingInsets = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
-        private static let floatingCornerRadius: CGFloat = 24
+        private static let floatingInsets = UIEdgeInsets.zero
+        private static let floatingCornerRadius: CGFloat = 0
 
         private let floatingMaterialView: UIVisualEffectView = {
             let view = UIVisualEffectView(effect: nil)
@@ -290,16 +290,15 @@ extension MainViewFactory {
         private func applyFloatingStyle(animated: Bool) {
             let updates = {
                 if self.isFloatingStyleEnabled {
-                    self.floatingMaterialConstraints[0].constant = Self.floatingInsets.left
-                    self.floatingMaterialConstraints[1].constant = -Self.floatingInsets.right
-                    self.floatingMaterialConstraints[2].constant = Self.floatingInsets.top
-                    self.floatingMaterialConstraints[3].constant = -Self.floatingInsets.bottom
-                    self.floatingMaterialView.layer.cornerRadius = Self.floatingCornerRadius
-                    if #available(iOS 26.0, *) {
-                        self.floatingMaterialView.effect = UIGlassEffect(style: .regular)
-                    } else {
-                        self.floatingMaterialView.effect = UIBlurEffect(style: .systemThinMaterial)
-                    }
+                    // Floating UI should not add an extra bar-height effect layer here.
+                    // The omnibar itself is responsible for its own appearance.
+                    self.floatingMaterialConstraints[0].constant = 0
+                    self.floatingMaterialConstraints[1].constant = 0
+                    self.floatingMaterialConstraints[2].constant = 0
+                    self.floatingMaterialConstraints[3].constant = 0
+                    self.floatingMaterialView.layer.cornerRadius = 0
+                    self.floatingMaterialView.effect = nil
+                    self.floatingMaterialView.isHidden = true
                 } else {
                     self.floatingMaterialConstraints[0].constant = 0
                     self.floatingMaterialConstraints[1].constant = 0
@@ -307,6 +306,7 @@ extension MainViewFactory {
                     self.floatingMaterialConstraints[3].constant = 0
                     self.floatingMaterialView.layer.cornerRadius = 0
                     self.floatingMaterialView.effect = nil
+                    self.floatingMaterialView.isHidden = false
                 }
                 self.layoutIfNeeded()
             }
@@ -334,9 +334,9 @@ extension MainViewFactory {
     final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
         let floatingUIManager = FloatingUIManager()
-        if floatingUIManager.isFloatingUIEnabled, #available(iOS 26.1, *) {
-            let effect = UIColorEffect(color: UIColor(designSystemColor: .surface).withAlphaComponent(0.5))
-            let view = StatusBackgroundView(effect: effect)
+        if floatingUIManager.isFloatingUIEnabled {
+            let view = StatusBackgroundView(effect: nil)
+            view.backgroundColor = .clear
             coordinator.statusBackground = view
         } else {
             let view = StatusBackgroundView(effect: nil)

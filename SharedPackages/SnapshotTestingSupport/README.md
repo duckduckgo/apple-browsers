@@ -2,6 +2,14 @@
 
 DuckDuckGo wrapper around [Point-Free's `swift-snapshot-testing`](https://github.com/pointfreeco/swift-snapshot-testing) with conventions for iOS / macOS image snapshots and SwiftUI preview reuse.
 
+This package gives shared UI snapshot tests one consistent home for rendering SwiftUI views, validating the simulator or host environment, naming generated images, and keeping preview states reusable between Xcode previews and automated tests. It keeps the app-facing preview helpers separate from the test-only assertion helpers, so production targets can share preview configuration without taking a dependency on snapshot testing libraries.
+
+## Why snapshot testing?
+
+Snapshot testing records the rendered output of a view, data structure, or other value as a reference artifact, then compares future test runs against that reference. For UI work, this is useful because many regressions are visual rather than purely behavioral: spacing changes, missing states, clipped text, incorrect colors, light / dark appearance differences, or unexpected layout shifts can all be caught by comparing the final rendered image.
+
+Use snapshot tests as a focused regression safety net for stable UI states. They are especially valuable when a view has several meaningful configurations that can be represented by previews, because the same list of states can document the component, power Xcode previews, and verify the rendered output in tests. Snapshot tests complement unit and interaction tests; they prove that a known state still looks the way reviewers approved, while other tests should continue to cover logic, accessibility behavior, navigation, and user flows.
+
 ## Products
 
 | Product | Link from | Purpose |

@@ -105,6 +105,31 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertEqual(sut.currentModelLabel, "GPT-5")
     }
 
+    func testWhenModelSelectedThenCurrentModelIdReflectsSelection() async {
+        let updated = expectation(description: "models updated")
+        modelsService.result = .success(AIChatModelsResponse(models: [
+            makeRemoteModel(id: "gpt-5", shortName: "GPT-5"),
+            makeRemoteModel(id: "mistral", shortName: "Mistral")
+        ]))
+        sut.onModelsUpdated = { updated.fulfill() }
+        sut.activate()
+        await fulfillment(of: [updated], timeout: 1)
+
+        sut.selectModel("mistral")
+
+        XCTAssertEqual(sut.currentModelId, "mistral")
+    }
+
+    func testWhenNoSelectionThenCurrentModelIdFallsBackToFirstAccessibleModel() async {
+        let updated = expectation(description: "models updated")
+        modelsService.result = .success(AIChatModelsResponse(models: [makeRemoteModel(id: "gpt-5", shortName: "GPT-5")]))
+        sut.onModelsUpdated = { updated.fulfill() }
+        sut.activate()
+        await fulfillment(of: [updated], timeout: 1)
+
+        XCTAssertEqual(sut.currentModelId, "gpt-5")
+    }
+
     // MARK: - Helpers
 
     private func makeRemoteModel(id: String, shortName: String) -> AIChatRemoteModel {

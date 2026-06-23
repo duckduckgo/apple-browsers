@@ -48,6 +48,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
     private var modelPickerController: IPadOmnibarModelPickerController?
 
+    /// The Duck.ai model id selected in the iPad picker, forwarded into `openAIChat` on submission.
+    override var iPadDuckAISelectedModelId: String? {
+        modelPickerController?.currentModelId
+    }
+
     override func loadView() {
         view = omniBarView
     }
@@ -566,10 +571,6 @@ extension DefaultOmniBarViewController {
 // MARK: - iPad Duck.ai Model Picker
 
 extension DefaultOmniBarViewController {
-
-    var iPadDuckAISelectedModelId: String? {
-        modelPickerController?.currentModelId
-    }
 
     private func setUpModelPickerIfNeeded() {
         guard dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled,

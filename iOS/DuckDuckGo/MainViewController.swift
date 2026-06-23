@@ -3906,7 +3906,8 @@ extension MainViewController: OmniBarDelegate {
         // A Duck.ai submission IS Duck.ai mode — commit that directly rather than re-reading the live
         // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
         commitToggleMode(.aiChat)
-        let modelId = (viewCoordinator.omniBar as? DefaultOmniBarViewController)?.iPadDuckAISelectedModelId
+        
+        let modelId = viewCoordinator.omniBar.iPadDuckAISelectedModelId
         openAIChat(query, autoSend: true, tools: tools, modelId: modelId)
     }
 

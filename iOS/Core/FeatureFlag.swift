@@ -318,6 +318,13 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
 
+    /// Forward-only new-user cutoff for the unified toggle input rollout. On by default; ship a
+    /// privacy-config entry disabling it to stop *new* (un-granted) users from receiving UTI
+    /// without revoking it from anyone already granted. Distinct from `unifiedToggleInput`, which
+    /// is the full kill switch. See `UnifiedToggleInputFeature`.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
+    case unifiedToggleInputIncludeNewUsers
+
     /// Production kill switch (on by default) for web-scroll-freeze observability: the passive scroll-failure
     /// observer (bystander recognizer) + the symptom/mechanism pixels. Ship a privacy-config entry to roll back.
     case webScrollFreezeObservability
@@ -736,6 +743,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.unifiedToggleInput))
+        case .unifiedToggleInputIncludeNewUsers:
+            Config(defaultValue: .enabled,
+                   source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputIncludeNewUsers),
+                   supportsLocalOverriding: false)
         case .webScrollFreezeObservability:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeObservability))
         case .webScrollFreezeCapture:

@@ -457,6 +457,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case unifiedToggleInput
 
+    /// Forward-only lever for the unified toggle input rollout. When disabled, *new* (un-granted)
+    /// users stop receiving the unified toggle input; users who have already been granted it keep
+    /// it. Independent of the master `unifiedToggleInput` flag (which revokes from everyone when
+    /// turned off). See `UnifiedToggleInputFeature`.
+    case unifiedToggleInputIncludeNewUsers
+
     /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
     /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.

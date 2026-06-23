@@ -185,7 +185,6 @@ final class AIChatPreferences: ObservableObject {
         set { isAIFeaturesEnabled = newValue }
     }
 
-    // True when Duck.ai off + Search Assist Never + Hide AI on; hides the disable button.
     var isAllAIDisabled: Bool {
         !isDuckAIEnabled
             && serpSettings.searchAssistFrequency == .never

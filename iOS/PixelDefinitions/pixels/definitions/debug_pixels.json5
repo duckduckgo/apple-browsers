@@ -152,9 +152,7 @@
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": [
-            "appVersion"
-        ],
+        "parameters": ["appVersion"],
         "expires": "2026-09-21"
     },
     "m_debug_interaction_recovery_outcome": {

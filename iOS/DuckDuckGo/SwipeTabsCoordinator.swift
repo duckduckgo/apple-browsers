@@ -888,14 +888,23 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var omniBar: OmniBar? {
         willSet {
-            guard let currentBarView = omniBar?.barView, currentBarView.superview === self else { return }
-            (currentBarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
-            currentBarView.removeFromSuperview()
+            let isFloatingUIEnabled = FloatingUIManager().isFloatingUIEnabled
+            if isFloatingUIEnabled {
+                guard let currentBarView = omniBar?.barView, currentBarView.superview === self else { return }
+                (currentBarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
+                currentBarView.removeFromSuperview()
+            } else {
+                (omniBar?.barView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
+                omniBar?.barView.removeFromSuperview()
+            }
         }
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
-            guard coordinator?.isOmnibarInToolbar != true else { return }
-            guard omniBarView.superview == nil || omniBarView.superview === self else { return }
+            let isFloatingUIEnabled = FloatingUIManager().isFloatingUIEnabled
+            if isFloatingUIEnabled {
+                guard coordinator?.isOmnibarInToolbar != true else { return }
+                guard omniBarView.superview == nil || omniBarView.superview === self else { return }
+            }
 
             omniBarView.translatesAutoresizingMaskIntoConstraints = false
             (omniBarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = true

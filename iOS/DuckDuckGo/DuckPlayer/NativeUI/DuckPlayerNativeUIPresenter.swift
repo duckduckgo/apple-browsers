@@ -313,6 +313,10 @@ final class DuckPlayerNativeUIPresenter {
         timestamp: TimeInterval?,
         in hostViewController: DuckPlayerHosting
     ) -> Bool {
+        guard FloatingUIManager().isFloatingUIEnabled else {
+            return false
+        }
+
         guard let toolbar = resolveToolbar(for: hostViewController) else {
             return false
         }

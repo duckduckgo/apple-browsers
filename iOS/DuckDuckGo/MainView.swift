@@ -539,7 +539,8 @@ extension MainViewFactory {
     private func constrainToolbar() {
 
         // Changing this?  Best change TabSwitcherViewController too
-        let toolbarWidthMod = 0.0 // isiOS26 ? 14.0 : 4.0
+        let isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let toolbarWidthMod = isFloatingUIEnabled ? 0.0 : (isiOS26 ? 14.0 : 4.0)
 
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)

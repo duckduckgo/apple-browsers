@@ -70,6 +70,9 @@ class MainViewCoordinator {
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
+    private var isFloatingUIEnabled: Bool {
+        FloatingUIManager().isFloatingUIEnabled
+    }
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
         isNavBarContainerBottomKeyboardBased
@@ -123,6 +126,19 @@ class MainViewCoordinator {
 
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
         addressBarPosition = position
+        guard isFloatingUIEnabled else {
+            toolbar.setOmnibarView(nil, height: 0)
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+            navigationBarContainer.isHidden = false
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
+            if position.isBottom {
+                setContentContainerBottomAnchorMode(.toolbar)
+            }
+            isOmnibarInToolbar = false
+            return
+        }
+
         switch position {
         case .top:
             toolbar.setOmnibarView(nil, height: 0)
@@ -148,6 +164,7 @@ class MainViewCoordinator {
     }
 
     func ensureBottomOmnibarAttachedToToolbarIfNeeded() {
+        guard isFloatingUIEnabled else { return }
         guard addressBarPosition.isBottom else { return }
         guard !toolbar.isHostingOmnibarView(omniBar.barView) else { return }
 
@@ -188,11 +205,15 @@ class MainViewCoordinator {
 
         switch position {
         case .top:
-            omniBar.barView.makeGlass()
+            if isFloatingUIEnabled {
+                omniBar.barView.makeGlass()
+            }
             setAddressBarBottomActive(false)
             setAddressBarTopActive(true)
         case .bottom:
-            omniBar.barView.makeOpaque()
+            if isFloatingUIEnabled {
+                omniBar.barView.makeOpaque()
+            }
             setAddressBarTopActive(false)
             setAddressBarBottomActive(true)
         }
@@ -203,7 +224,7 @@ class MainViewCoordinator {
     func hideNavigationBarWithBottomPosition() {
         guard addressBarPosition.isBottom else { return }
 
-        if isOmnibarInToolbar {
+        if isFloatingUIEnabled, isOmnibarInToolbar {
             // Keep the bottom omnibar attached while hiding chrome.
             // Visibility is handled via alpha/offset animations in MainViewController.
         } else {
@@ -216,7 +237,7 @@ class MainViewCoordinator {
     func showNavigationBarWithBottomPosition() {
         guard addressBarPosition.isBottom else { return }
 
-        if isOmnibarInToolbar {
+        if isFloatingUIEnabled, isOmnibarInToolbar {
             ensureBottomOmnibarAttachedToToolbarIfNeeded()
         } else {
             navigationBarContainer.isHidden = false

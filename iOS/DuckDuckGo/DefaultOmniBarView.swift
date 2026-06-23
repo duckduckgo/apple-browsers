@@ -772,11 +772,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateShadows() {
-//        if isActiveState {
-//            searchAreaContainerView.applyActiveShadow()
-//        } else {
-//            searchAreaContainerView.applyDefaultShadow()
-//        }
+        if isActiveState {
+            searchAreaContainerView.applyActiveShadow()
+        } else {
+            searchAreaContainerView.applyDefaultShadow()
+        }
     }
 
     private func setUpAccessibility() {
@@ -1262,9 +1262,9 @@ extension DefaultOmniBarView {
 
     // Used to mask shadows going outside of bounds to prevent them covering other content
     func updateMaskLayer(maskTop: Bool, clip: Bool) {
-//        self.masksTop = maskTop
-//        self.clipsContent = clip
-//        updateMaskLayer()
+        self.masksTop = maskTop
+        self.clipsContent = clip
+        updateMaskLayer()
     }
 
     private func updateMaskLayer() {
@@ -1351,7 +1351,7 @@ extension DefaultOmniBarView {
         applyTextViewVisibility()
 
         guard animated else {
-//            searchAreaContainerView.applyShadowOpacityMultiplier(1)
+            searchAreaContainerView.applyShadowOpacityMultiplier(1)
             aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
             if !isSearchAreaExpanded {
                 aiChatSendButton.isHidden = true
@@ -1377,7 +1377,7 @@ extension DefaultOmniBarView {
         layoutIfNeeded()
 
         if isSearchAreaExpanded {
-//            searchAreaContainerView.applyShadowOpacityMultiplier(0)
+            searchAreaContainerView.applyShadowOpacityMultiplier(0)
             applyExpansionClipping()
         }
 
@@ -1385,17 +1385,17 @@ extension DefaultOmniBarView {
 
         UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             if self.isSearchAreaExpanded {
-//                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.alpha = 1
             } else {
-//                self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
                 self.aiChatSendButton.alpha = 0
             }
             self.layoutIfNeeded()
         } completion: { _ in
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
-//                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.isHidden = true
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil

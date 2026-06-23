@@ -3666,7 +3666,9 @@ extension MainViewController: BrowserChromeDelegate {
         }
 
         let updateBlock = {
-            self.viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
+            if self.isFloatingUIEnabled {
+                self.viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
+            }
             self.updateToolbarConstant(percent)
             self.updateNavBarConstant(percent)
             self.currentTab?.updateWebViewBottomAnchor(for: percent)
@@ -3705,7 +3707,9 @@ extension MainViewController: BrowserChromeDelegate {
 
     func setNavigationBarHidden(_ hidden: Bool) {
         if hidden { hideKeyboard() }
-        viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
+        if isFloatingUIEnabled {
+            viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
+        }
 
         if viewCoordinator.addressBarPosition.isBottom {
             if hidden {
@@ -3719,7 +3723,7 @@ extension MainViewController: BrowserChromeDelegate {
         // When the omnibar is locked (e.g. dimmed to 0.5 alpha during Duck.ai fire onboarding),
         // skip the chrome-hide alpha reset so we don't overwrite the dim.
         let isOmniBarLocked = !viewCoordinator.omniBar.barView.isUserInteractionEnabled
-        let isBottomOmnibarHostedInToolbar = viewCoordinator.addressBarPosition.isBottom && viewCoordinator.isOmnibarInToolbar
+        let isBottomOmnibarHostedInToolbar = isFloatingUIEnabled && viewCoordinator.addressBarPosition.isBottom && viewCoordinator.isOmnibarInToolbar
         if !isOmniBarLocked && !isBottomOmnibarHostedInToolbar {
             viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
         } else if isBottomOmnibarHostedInToolbar {
@@ -6395,6 +6399,9 @@ extension MainViewController: FireExecutorDelegate {
 }
 
 extension MainViewController {
+    private var isFloatingUIEnabled: Bool {
+        FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+    }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)

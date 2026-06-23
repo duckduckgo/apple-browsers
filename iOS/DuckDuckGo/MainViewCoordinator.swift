@@ -70,12 +70,18 @@ class MainViewCoordinator {
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
-    private var isFloatingUIEnabled: Bool {
-        FloatingUIManager().isFloatingUIEnabled
-    }
+    private var isFloatingUIEnabled = false
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
         isNavBarContainerBottomKeyboardBased
+    }
+
+    var isUnifiedToggleInputVisible: Bool {
+        !(unifiedToggleInputContainer?.isHidden ?? true) && (unifiedToggleInputContainer?.alpha ?? 0) > 0.01
+    }
+
+    func setFloatingUIEnabled(_ enabled: Bool) {
+        isFloatingUIEnabled = enabled
     }
 
     // The default after creating the hiearchy is top
@@ -139,6 +145,8 @@ class MainViewCoordinator {
             return
         }
 
+        navigationBarContainer.backgroundColor = .clear
+
         switch position {
         case .top:
             toolbar.setOmnibarView(nil, height: 0)
@@ -149,6 +157,15 @@ class MainViewCoordinator {
             navigationBarContainer.isUserInteractionEnabled = true
             isOmnibarInToolbar = false
         case .bottom:
+            guard !isUnifiedToggleInputVisible else {
+                toolbar.setOmnibarView(nil, height: 0)
+                constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+                navigationBarContainer.isHidden = false
+                navigationBarContainer.alpha = 1
+                navigationBarContainer.isUserInteractionEnabled = true
+                isOmnibarInToolbar = false
+                return
+            }
             toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
             omniBar.barView.makeOpaque()
@@ -165,6 +182,7 @@ class MainViewCoordinator {
 
     func ensureBottomOmnibarAttachedToToolbarIfNeeded() {
         guard isFloatingUIEnabled else { return }
+        guard !isUnifiedToggleInputVisible else { return }
         guard addressBarPosition.isBottom else { return }
         guard !toolbar.isHostingOmnibarView(omniBar.barView) else { return }
 
@@ -224,6 +242,12 @@ class MainViewCoordinator {
     func hideNavigationBarWithBottomPosition() {
         guard addressBarPosition.isBottom else { return }
 
+        if isUnifiedToggleInputVisible {
+            navigationBarContainer.isHidden = false
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            return
+        }
+
         if isFloatingUIEnabled, isOmnibarInToolbar {
             // Keep the bottom omnibar attached while hiding chrome.
             // Visibility is handled via alpha/offset animations in MainViewController.
@@ -236,6 +260,14 @@ class MainViewCoordinator {
 
     func showNavigationBarWithBottomPosition() {
         guard addressBarPosition.isBottom else { return }
+
+        if isUnifiedToggleInputVisible {
+            navigationBarContainer.isHidden = false
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            return
+        }
 
         if isFloatingUIEnabled, isOmnibarInToolbar {
             ensureBottomOmnibarAttachedToToolbarIfNeeded()
@@ -264,6 +296,16 @@ class MainViewCoordinator {
         constraints.navigationBarContainerBottom.isActive = active
         constraints.topSlideContainerBottomToStatusBackgroundBottom.isActive = active
         constraints.statusBackgroundBottomToSafeAreaTop.isActive = active
+    }
+
+    func ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded() {
+        guard isFloatingUIEnabled, addressBarPosition.isBottom, isOmnibarInToolbar else { return }
+        toolbar.setOmnibarView(nil, height: 0)
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+        navigationBarContainer.isHidden = false
+        navigationBarContainer.alpha = 1
+        navigationBarContainer.isUserInteractionEnabled = true
+        isOmnibarInToolbar = false
     }
 
     func updateToolbarWithState(_ state: ToolbarContentState) {
@@ -571,7 +613,7 @@ class MainViewCoordinator {
     }
 
     private func resolvedStatusBackgroundColor() -> UIColor {
-        if FloatingUIManager().isFloatingUIEnabled {
+        if isFloatingUIEnabled && !isUnifiedToggleInputVisible && !isNavigationChromeHidden {
             return .clear
         }
 

@@ -28,14 +28,18 @@ protocol FloatingUIManaging {
 final class FloatingUIManager: FloatingUIManaging {
 
     private let featureFlagger: any FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isPad: () -> Bool
 
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger, isPadProvider: @escaping () -> Bool = { DevicePlatform.isIpad }) {
+    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         isPadProvider: @escaping () -> Bool = { DevicePlatform.isIpad },
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
         self.featureFlagger = featureFlagger
         self.isPad = isPadProvider
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
     }
 
     var isFloatingUIEnabled: Bool {
-        featureFlagger.isFeatureOn(.floatingUI) && !isPad()
+        featureFlagger.isFeatureOn(.floatingUI) && unifiedToggleInputFeature.isAvailable && !isPad()
     }
 }

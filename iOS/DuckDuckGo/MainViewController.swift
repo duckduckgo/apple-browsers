@@ -1281,6 +1281,7 @@ class MainViewController: UIViewController {
     }
 
     func refreshViewsBasedOnAddressBarPosition(_ position: AddressBarPosition) {
+        viewCoordinator.setFloatingUIEnabled(isFloatingUIEnabled)
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
@@ -6459,6 +6460,7 @@ extension MainViewController {
 
     private func applyFloatingUIIfNeeded() {
         let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        viewCoordinator.setFloatingUIEnabled(floatingUIManager.isFloatingUIEnabled)
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)
     }

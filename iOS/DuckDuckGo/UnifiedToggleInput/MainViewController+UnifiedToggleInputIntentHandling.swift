@@ -83,6 +83,7 @@ private extension MainViewController {
             applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
             viewCoordinator.anchorContentContainerToInputTop()
         }
+        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         viewCoordinator.showUnifiedToggleInput()
         if let coordinator = unifiedToggleInputCoordinator,
            coordinator.isAITabState,
@@ -153,6 +154,7 @@ private extension MainViewController {
     /// updated. Whether this snaps or animates is decided by the caller (which wraps this in
     /// `UTIAnimationStyle.perform`).
     private func applyAITabExpandedPose() {
+        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         viewCoordinator.showUnifiedToggleInput()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         let renderState = coordinator.computeRenderState()
@@ -171,6 +173,7 @@ private extension MainViewController {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
         coordinator.contentViewController.refreshSuggestionsCaches()
+        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
 
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
@@ -276,6 +279,7 @@ private extension MainViewController {
         resetUnifiedInputContentAfterHide()
         // Avoid leaking text into the next input session.
         unifiedToggleInputCoordinator?.clearText()
+        reconcileFloatingLayoutAfterUTIExit()
     }
 
     func resetUnifiedInputContentAfterHide() {
@@ -292,6 +296,7 @@ private extension MainViewController {
             recomputeNavigationBarContainerHeightIfNeeded()
             return
         }
+        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         applyBottomOmnibarAnchor(state)
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         recomputeNavigationBarContainerHeightIfNeeded()
@@ -304,5 +309,15 @@ private extension MainViewController {
         case .inactive:
             viewCoordinator.restoreNavBarToToolbarForOmnibarInactive()
         }
+    }
+
+    func reconcileFloatingLayoutAfterUTIExit() {
+        let floatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        guard appSettings.currentAddressBarPosition.isBottom,
+              floatingUIEnabled,
+              currentTab?.isAITab != true else {
+            return
+        }
+        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
     }
 }

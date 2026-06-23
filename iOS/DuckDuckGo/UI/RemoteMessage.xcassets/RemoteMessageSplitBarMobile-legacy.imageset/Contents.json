@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "Split-Bar-Mobile.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

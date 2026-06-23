@@ -60,6 +60,7 @@ protocol DaxDialogsSettings: AnyObject {
 
     /// The current phase of the Duck.ai chat-first onboarding path, derived from persisted state flags.
     var chatPathPhase: DaxDialogs.ChatPathPhase { get }
+
 }
 
 class DefaultDaxDialogsSettings: DaxDialogsSettings {

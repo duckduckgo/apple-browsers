@@ -169,7 +169,7 @@ final class MainMenu: NSMenu {
     let toggleShareShortcutMenuItem = NSMenuItem(title: UserText.shareMenuItem, action: #selector(MainViewController.toggleShareShortcut), keyEquivalent: "")
         .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
     let toggleDownloadsShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowDownloadsShortcut, action: #selector(MainViewController.toggleDownloadsShortcut), keyEquivalent: "J")
-        .withImage(DesignSystemImages.Glyphs.Size12.downloads)
+        .withImage(DesignSystemImages.Glyphs.Size12.download)
     let toggleAutofillShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowAutofillShortcut, action: #selector(MainViewController.toggleAutofillShortcut), keyEquivalent: "A")
         .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
     let toggleBookmarksShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowBookmarksShortcut, action: #selector(MainViewController.toggleBookmarksShortcut), keyEquivalent: "K")
@@ -466,7 +466,7 @@ final class MainMenu: NSMenu {
             toggleBookmarksBarMenuItem
 
             NSMenuItem(title: UserText.openDownloads, action: #selector(MainViewController.toggleDownloads), keyEquivalent: "j")
-                .withImage(DesignSystemImages.Glyphs.Size12.downloads)
+                .withImage(DesignSystemImages.Glyphs.Size12.download)
             NSMenuItem.separator()
 
             homeButtonMenuItem
@@ -690,18 +690,24 @@ final class MainMenu: NSMenu {
     private var folderDelegates: [LazyBookmarkFolderMenuDelegate] = []
 
     var faviconsCancellable: AnyCancellable?
+    var faviconsCacheUpdateCancellable: AnyCancellable?
     @MainActor
     private func subscribeToFavicons(faviconManager: FaviconManagement) {
         faviconsCancellable = faviconManager.faviconsLoadedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loaded in
                 guard let self, loaded else { return }
-                if self.isLazyMenuRebuild {
-                    self.bookmarkFaviconsNeedUpdate = true
-                } else {
-                    self.updateFavicons(in: bookmarksMenu)
-                    self.updateFavicons(in: favoritesMenu)
-                }
+                self.bookmarkFaviconsNeedUpdate = true
+            }
+
+        // `faviconsLoadedPublisher` fires when favicon metadata loads, before the
+        // images are decoded. Favicon images become available lazily and post
+        // `.faviconCacheUpdated`, so also refresh the menus on that notification.
+        faviconsCacheUpdateCancellable = NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.bookmarkFaviconsNeedUpdate = true
             }
     }
 
@@ -910,6 +916,7 @@ final class MainMenu: NSMenu {
 
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
+            NSMenuItem(title: "Inspect Favicons", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "Performance Debugging") {
@@ -949,7 +956,6 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset Pinned Tabs", action: #selector(AppDelegate.resetPinnedTabs))
                 NSMenuItem(title: "Reset New Tab Page Customizations", action: #selector(AppDelegate.resetNewTabPageCustomization))
                 NSMenuItem(title: "Reset YouTube Overlay Interactions", action: #selector(AppDelegate.resetDuckPlayerOverlayInteractions))
-                NSMenuItem(title: "Reset MakeDuckDuckYours user settings", action: #selector(AppDelegate.resetMakeDuckDuckGoYoursUserSettings))
                 NSMenuItem(title: "Experiment Install Date more than 5 days ago", action: #selector(AppDelegate.changePixelExperimentInstalledDateToLessMoreThan5DayAgo(_:)))
                 NSMenuItem(title: "Change Activation Date") {
                     NSMenuItem(title: "Today", action: #selector(AppDelegate.changeInstallDateToToday))

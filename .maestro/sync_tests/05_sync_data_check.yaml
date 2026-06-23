@@ -48,9 +48,11 @@ name: 05_sync_data_check
 - runFlow:
     file: ../shared/sync_verify_unified_favorites.yaml
 
-# Ensure the keyboard is dismissed before continuing
-- tapOn:
-    id: "Browser.OmniBar.Button.Dismiss"
+# Ensure the keyboard is dismissed before continuing.
+# This flow sets internal user above, which enables the unified toggle input, so the
+# address-bar dismiss is the "Back" chevron rather than the classic "Cancel"/Dismiss button.
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 
 # Verify logins
 - tapOn: Browsing menu

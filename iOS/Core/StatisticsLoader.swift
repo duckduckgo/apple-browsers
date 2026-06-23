@@ -198,6 +198,8 @@ public class StatisticsLoader {
             group.enter()
             group.enter()
 
+            // The refreshSearchRetentionAtb call below fires the `.searches` OS-distribution pixel
+            // for a Duck.ai prompt, so Duck.ai usage is included in our search + AI-query traffic count.
             self.refreshSearchRetentionAtb {
                 group.leave()
             }
@@ -214,8 +216,6 @@ public class StatisticsLoader {
 
     private func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
-
-        fireOSDistributionPixel(.searches)
 
         guard !isDuckAIRetentionRequestInProgress else {
             completion()

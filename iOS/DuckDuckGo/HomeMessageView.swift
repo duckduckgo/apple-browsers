@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 import RemoteMessaging
 import Core
 
@@ -33,40 +34,44 @@ struct HomeMessageView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            VStack(spacing: 8) {
-                Group {
+            VStack(spacing: 0) {
+                VStack(spacing: 0) {
                     if case .promoSingleAction = viewModel.modelType {
                         title
                             .daxTitle3()
                             .padding(.top, 16)
                         image
+                            .padding(.top, Const.Spacing.imageAndTitle)
                     } else {
                         image
                         title
                             .daxHeadline()
+                            .padding(.top, Const.Spacing.imageAndTitle)
                     }
 
                     subtitle
-                        .padding(.top, 8)
+                        .padding(.top, Const.Spacing.titleAndSubtitle)
                 }
-                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.horizontal, 40)
 
-                HStack {
-                    buttons
+                // Button-less messages (small/medium) need their own bottom inset
+                .padding(.bottom, viewModel.buttons.isEmpty ? Const.Spacing.contentBottom : 0)
+
+                if !viewModel.buttons.isEmpty {
+                    HStack {
+                        buttons
+                    }
+                    .padding(.top, Const.Spacing.subtitleAndButtons)
+                    .padding([.horizontal, .bottom], AppRebrand.isAppRebranded() ? ButtonStackMetrics.containerPadding : 16)
                 }
-                .padding(.top, 8)
-                .padding(.horizontal, 8)
             }
             .multilineTextAlignment(.center)
-            .padding(.vertical)
-            .padding(.horizontal, 8)
 
-            closeButtonHeader
-                .alignmentGuide(.top) { dimension in
-                    dimension[.top]
-                }
+            closeButton
+                .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
-        .background(RoundedRectangle(cornerRadius: Const.Radius.cornerLarge)
+        .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
             .fill(Color.background)
             .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
             .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
@@ -76,16 +81,6 @@ struct HomeMessageView: View {
         }
     }
 
-    private var closeButtonHeader: some View {
-        VStack {
-            HStack {
-                Spacer()
-                closeButton
-                    .padding(0)
-            }
-        }
-    }
-    
     private var closeButton: some View {
         Button {
             Task {
@@ -93,10 +88,8 @@ struct HomeMessageView: View {
             }
         } label: {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                .foregroundColor(.primary)
         }
-        .frame(width: Const.Size.closeButtonWidth, height: Const.Size.closeButtonWidth)
-        .contentShape(Rectangle())
+        .buttonStyle(CloseButtonStyle())
     }
     
     @ViewBuilder
@@ -105,33 +98,46 @@ struct HomeMessageView: View {
             Image(uiImage: displayImage)
                 .resizable()
                 .scaledToFit()
-                .frame(maxHeight: Const.Size.imageMaxHeight)
+                .modifier(PictogramSize(legacyMaxHeight: Const.Size.imageMaxHeight))
         } else if let placeholderName = viewModel.image {
-            Image(placeholderName)
-                    .scaledToFit()
+            Image(rebrandable: placeholderName)
+                .scaledToFit()
+                .modifier(PictogramSize(legacyMaxHeight: nil))
                 .task {
                     loadedImage = await viewModel.loadRemoteImage?()
-            }
+                }
         }
     }
 
     private var title: some View {
         Text(viewModel.title)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, Const.Spacing.imageAndTitle)
             .frame(maxWidth: .infinity)
    }
+
+    private var subtitleColor: Color? {
+        AppRebrand.isAppRebranded() ? Color(designSystemColor: .textSecondary) : nil
+    }
+
+    @ViewBuilder
+    private func subtitleFont(_ text: Text) -> some View {
+        if AppRebrand.isAppRebranded() {
+            text.daxSubheadRegular()
+        } else {
+            text.daxBodyRegular()
+        }
+    }
 
     @ViewBuilder
     private var subtitle: some View {
         if let attributed = try? AttributedString(markdown: viewModel.subtitle) {
-            Text(attributed)
+            subtitleFont(Text(attributed))
                 .fixedSize(horizontal: false, vertical: true)
-                .daxBodyRegular()
+                .foregroundColor(subtitleColor)
         } else {
-            Text(viewModel.subtitle)
+            subtitleFont(Text(viewModel.subtitle))
                 .fixedSize(horizontal: false, vertical: true)
-                .daxBodyRegular()
+                .foregroundColor(subtitleColor)
         }
     }
 
@@ -148,12 +154,10 @@ struct HomeMessageView: View {
                             .resizable()
                             .frame(width: 24, height: 24)
                     }
-                    Text(buttonModel.title)
-                        .daxButton()
+                    buttonTitleView(for: buttonModel.title)
                 }
             }
             .modifier(HomeMessageButtonStyleModifier(actionStyle: buttonModel.actionStyle))
-            .padding([.bottom], Const.Padding.buttonVerticalInset)
             .sheet(item: $activityItem) { activityItem in
                 ActivityViewController(activityItems: [activityItem.item]) { _, result, _, _ in
                     var additionalParameters = [
@@ -168,10 +172,18 @@ struct HomeMessageView: View {
 
         }
     }
+
+    @ViewBuilder
+    private func buttonTitleView(for title: String) -> some View {
+        if AppRebrand.isAppRebranded() {
+            Text(title)
+        } else {
+            Text(title)
+                .daxButton()
+        }
+    }
 }
 
-/// Routes home-message buttons through `DuckUI`'s canonical styles: `SecondaryFillButtonStyle`
-/// for `.cancel` actions, `PrimaryButtonStyle` for everything else.
 private struct HomeMessageButtonStyleModifier: ViewModifier {
     let actionStyle: HomeMessageButtonViewModel.ActionStyle
 
@@ -179,8 +191,25 @@ private struct HomeMessageButtonStyleModifier: ViewModifier {
     func body(content: Content) -> some View {
         if case .cancel = actionStyle {
             content.buttonStyle(SecondaryFillButtonStyle(compact: true))
+        } else if AppRebrand.isAppRebranded() {
+            content.buttonStyle(BrandButtonStyle(compact: true))
         } else {
             content.buttonStyle(PrimaryButtonStyle(compact: true))
+        }
+    }
+}
+
+private struct PictogramSize: ViewModifier {
+    let legacyMaxHeight: CGFloat?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if AppRebrand.isAppRebranded() {
+            content.frame(width: Const.Size.rebrandedPictogram, height: Const.Size.rebrandedPictogram)
+        } else if let legacyMaxHeight {
+            content.frame(maxHeight: legacyMaxHeight)
+        } else {
+            content
         }
     }
 }
@@ -220,20 +249,18 @@ private enum Const {
     enum Radius {
         static let updatedShadow1: CGFloat = 12
         static let updatedShadow2: CGFloat = 48
-        static let cornerLarge: CGFloat = 16
-    }
-
-    enum Padding {
-        static let buttonVerticalInset: CGFloat = 8
     }
 
     enum Spacing {
         static let imageAndTitle: CGFloat = 8
+        static let titleAndSubtitle: CGFloat = 2
+        static let subtitleAndButtons: CGFloat = 24
+        static let contentBottom: CGFloat = 24
     }
 
     enum Size {
-        static let closeButtonWidth: CGFloat = 44
         static let imageMaxHeight: CGFloat = 48.0
+        static let rebrandedPictogram: CGFloat = 96
     }
 
     enum Offset {
@@ -299,15 +326,17 @@ private enum HomeMessagePreviewSamples {
 
     @ViewBuilder
     static var allMessages: some View {
-        Group {
-            makeView(id: "Small", modelType: small)
-            makeView(id: "Critical", modelType: critical)
-            makeView(id: "Big Single", modelType: bigSingle)
-            makeView(id: "Big Two", modelType: bigTwo)
-            makeView(id: "Promo", modelType: promo)
+        ScrollView {
+            VStack {
+                makeView(id: "Small", modelType: small)
+                makeView(id: "Critical", modelType: critical)
+                makeView(id: "Big Single", modelType: bigSingle)
+                makeView(id: "Big Two", modelType: bigTwo)
+                makeView(id: "Promo", modelType: promo)
+            }
+            .padding(.horizontal)
         }
-        .frame(height: 200)
-        .padding(.horizontal)
+        .background(Color.gray)
     }
 }
 

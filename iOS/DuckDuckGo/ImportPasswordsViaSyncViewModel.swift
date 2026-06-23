@@ -82,14 +82,6 @@ final class ImportPasswordsViaSyncViewModel {
     /// so that a pixel can be fired if the user navigates away without taking any action
     private(set) var buttonWasPressed: Bool = false
 
-    func maxButtonWidth() -> CGFloat {
-        let labelFont = AppRebrand.isAppRebranded()
-            ? UIFont.systemFont(ofSize: 17, weight: .medium)
-            : UIFont.boldAppFont(ofSize: 16)
-        let maxWidth = AutofillViews.maxWidthFor(title1: ButtonType.getBrowser.title, title2: ButtonType.sync.title, font: labelFont)
-        return min(maxWidth.rounded(.up), 300)
-    }
-
     func buttonPressed(_ type: ButtonType) {
         buttonWasPressed = true
 

@@ -94,11 +94,24 @@ public enum SyncErrorType {
     case unableCreateRecoveryPDF
     case unableToAuthenticateOnDevice
     case unableToRecognizeCode
+    case updateRequired
+    case unsupportedThirdPartyRecoveryCode
+    case thirdPartyAccountAlreadyUpgraded
+    case alreadyPairedWithAccount
+    case syncCancelledFromOtherDevice
 
     var title: String {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertTitle
+        case .updateRequired:
+            return UserText.syncUpdateRequiredTitle
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountTitle
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeTitle
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceTitle
         default:
             return UserText.syncErrorAlertTitle
         }
@@ -128,6 +141,16 @@ public enum SyncErrorType {
             return UserText.unableToAuthenticateDevice
         case .unableToRecognizeCode:
             return UserText.unableToRecognizeCode
+        case .updateRequired:
+            return UserText.syncUpdateRequiredDescription
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeDescription
+        case .thirdPartyAccountAlreadyUpgraded:
+            return UserText.syncThirdPartyAccountAlreadyUpgradedDescription
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountDescription
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceDescription
         }
     }
 
@@ -135,6 +158,10 @@ public enum SyncErrorType {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertButton
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountButton
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceButton
         default:
             return UserText.ok
         }

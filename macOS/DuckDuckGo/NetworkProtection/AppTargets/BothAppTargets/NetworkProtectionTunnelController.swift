@@ -285,6 +285,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         case .setExcludeLocalNetworks(let excludeLocalNetworks):
             try await handleSetExcludeLocalNetworks(excludeLocalNetworks)
         case .setConnectOnLogin,
+                .setExcludeCGNAT,
                 .setExcludeAPNs,
                 .setExcludeCellularServices,
                 .setExcludeDeviceCommunication,
@@ -317,6 +318,13 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         try await setupAndSave(tunnelManager)
+
+        // enforceRoutes is bound to the NECP session when it's created, so re-saving the protocol
+        // only affects the next connection. If a tunnel is currently up, fully restart it so the
+        // new value takes effect now rather than on the next manual connect.
+        if await isConnected {
+            await restart()
+        }
     }
 
     private func handleSetExcludeLocalNetworks(_ excludeLocalNetworks: Bool) async throws {
@@ -360,6 +368,13 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     @MainActor
     private func setup(_ tunnelManager: NETunnelProviderManager) async {
         Logger.networkProtection.log("Setting up tunnel manager")
+
+        // Scrub a stale enforceRoutes value before it reaches the protocol config, so it can't
+        // persist after the Strict routing flag is withdrawn. This is the authoritative reset: it
+        // runs on every connect, regardless of whether the user ever opens VPN settings.
+        settings.resetEnforceRoutesIfUnavailable(
+            strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle))
+
         if tunnelManager.localizedDescription == nil {
             tunnelManager.localizedDescription = UserText.networkProtectionTunnelName
         }
@@ -549,11 +564,15 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess,
                 frequency: .dailyAndCount,
                 includeAppVersionParameter: true)
+        } catch is CancellationError {
+            throw StartError.cancelled
         } catch {
             switch error {
             case OSSystemExtensionError.requestSuperseded:
                 // Even if the installation request is superseded we want to show the message that tells the user
                 // to go to System Settings to allow the extension
+                controllerErrorStore.lastErrorMessage = UserText.networkProtectionSystemSettings
+            case SystemExtensionRequestError.requestTimedOut:
                 controllerErrorStore.lastErrorMessage = UserText.networkProtectionSystemSettings
             case SystemExtensionRequestError.unknownRequestResult:
                 controllerErrorStore.lastErrorMessage = UserText.networkProtectionUnknownActivationError
@@ -686,18 +705,21 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             VPNOperationErrorRecorder().recordControllerStartFailure(error)
             knownFailureStore.lastKnownFailure = KnownFailure(error)
 
+            let isCancelled: Bool
             if case StartError.cancelled = error {
+                isCancelled = true
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionControllerStartCancelled, frequency: .legacyDailyAndCount, includeAppVersionParameter: true
                 )
             } else {
+                isCancelled = false
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionControllerStartFailure(error), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
                 )
             }
 
             // Always keep the first error message shown, as it's the more actionable one.
-            if controllerErrorStore.lastErrorMessage == nil {
+            if controllerErrorStore.lastErrorMessage == nil && !isCancelled {
                 controllerErrorStore.lastErrorMessage = error.localizedDescription
             }
 
@@ -780,6 +802,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
+        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
 
         let options = try await prepareStartupOptions()
 

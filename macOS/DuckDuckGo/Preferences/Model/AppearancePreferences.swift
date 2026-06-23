@@ -321,9 +321,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var maxNextStepsCardsDemonstrationDays: Int {
-        if let featureFlagger,
-           featureFlagger.isFeatureOn(.nextStepsListWidget) &&
-            featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) {
+        if let featureFlagger, featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) {
             return Constants.maxNextStepsCardsDemonstrationDays
         } else {
             return Constants.legacyDismissNextStepsCardsAfterDays
@@ -333,6 +331,25 @@ final class AppearancePreferences: ObservableObject {
     /// Number of active usage days the New Tab Page "Next Steps" cards have been shown.
     var nextStepsCardsDemonstrationDays: Int {
         persistor.continueSetUpCardsNumberOfDaysDemonstrated
+    }
+
+    /// Whether onboarding-related Next Steps cards may be shown.
+    ///
+    /// Onboarding cards are suppressed on the user's first calendar day of seeing Next Steps.
+    /// They become eligible when the demonstration-day counter reaches 1, or when the calendar
+    /// rolls past the first demonstration while the counter is still 0.
+    var isOnboardingNextStepsCardsDelayMet: Bool {
+        if nextStepsCardsDemonstrationDays >= 1 {
+            return true
+        }
+
+        guard let lastDemonstrated = persistor.continueSetUpCardsLastDemonstrated else {
+            return false
+        }
+
+        let daysSinceFirstDemonstration = Calendar.current.dateComponents([.day], from: lastDemonstrated, to: dateTimeProvider()).day ?? 0
+
+        return daysSinceFirstDemonstration > 0
     }
 
     private var shouldHideNextStepsCards: Bool {
@@ -446,11 +463,6 @@ final class AppearancePreferences: ObservableObject {
             darkReaderFeatureSettings?.setForceDarkModeEnabled(newValue)
             objectWillChange.send()
         }
-    }
-
-    var isContinueSetUpAvailable: Bool {
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        return (privacyConfigurationManager?.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) ?? true) && osVersion.majorVersion >= 12
     }
 
     func updateUserInterfaceStyle() {

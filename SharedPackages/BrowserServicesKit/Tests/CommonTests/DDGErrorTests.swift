@@ -62,6 +62,24 @@ final class DDGErrorTests: XCTestCase {
         let message: String
     }
 
+    enum TestLocalizedError: DDGError, LocalizedError {
+        case withErrorDescription
+        case withoutErrorDescription
+
+        static var errorDomain: String { "TestLocalizedErrorDomain" }
+
+        var errorCode: Int { 300 }
+
+        var description: String { "Debug description" }
+
+        var errorDescription: String? {
+            switch self {
+            case .withErrorDescription: return "Localized description"
+            case .withoutErrorDescription: return nil
+            }
+        }
+    }
+
     // MARK: - DDGError Protocol Tests
 
     func testDDGErrorBasicProperties() {
@@ -169,5 +187,42 @@ final class DDGErrorTests: XCTestCase {
 
         XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Main error")
         XCTAssertNil(userInfo[NSUnderlyingErrorKey]) // Should not be present when there is no underlying error
+    }
+
+    // MARK: - Localized Description Tests
+
+    func testDDGErrorUserInfoPopulatesLocalizedDescriptionKey() {
+        let error = TestError.simpleError(code: 100, description: "Main error")
+
+        let userInfo = error.errorUserInfo
+
+        XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "Main error")
+    }
+
+    func testDDGErrorBridgedToNSErrorSurfacesDescriptionAsLocalizedDescription() {
+        let error = TestError.simpleError(code: 100, description: "Readable description")
+
+        let nsError = error as NSError
+
+        XCTAssertEqual(nsError.localizedDescription, "Readable description")
+    }
+
+    func testLocalizedErrorDescriptionTakesPrecedenceOverDescription() {
+        let error = TestLocalizedError.withErrorDescription
+
+        let userInfo = error.errorUserInfo
+
+        // When a DDGError also conforms to LocalizedError, its errorDescription wins.
+        XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "Localized description")
+        XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Debug description")
+    }
+
+    func testLocalizedErrorFallsBackToDescriptionWhenErrorDescriptionIsNil() {
+        let error = TestLocalizedError.withoutErrorDescription
+
+        let userInfo = error.errorUserInfo
+
+        // errorDescription is nil here, so the debug description is used as the localized fallback.
+        XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "Debug description")
     }
 }

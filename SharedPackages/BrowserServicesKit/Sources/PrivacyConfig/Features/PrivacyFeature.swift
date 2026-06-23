@@ -40,7 +40,6 @@ public enum PrivacyFeature: String {
     case windowsWaitlist
     case windowsDownloadLink
     case incontextSignup
-    case newTabContinueSetUp
     case newTabSearchField
     case dbp
     case sync
@@ -131,6 +130,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Use WKDownload for favicon fetching to bypass App Transport Security restrictions on HTTP URLs
     case faviconWKDownload
+
+    /// Load favicon images from disk on demand and store them in an in-memory cache.
+    case faviconLazyImageLoading
+
+    /// Favicon storing improvements: store only the favicons the browser displays, dropping and downscaling larger ones.
+    case faviconStoringImprovements
 
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly
@@ -250,7 +255,19 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
     case escapeHatchFireButton
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215530020470713?focus=true
+    case escapeHatchHideShortcut
+
     case crashReportOptInStatusResetting
+
+    /// Production observability for the hard-to-reproduce "web view scroll frozen, taps still work" bug:
+    /// a passive scroll-failure observer plus the symptom/mechanism pixels. On by default for everyone;
+    /// ship a privacy-config entry to roll back.
+    case webScrollFreezeObservability
+
+    /// Internal-only gate for the heavier on-device freeze capture (snapshot + ring buffer), kept separate
+    /// from `webScrollFreezeObservability` so the production observer ships without the capture.
+    case webScrollFreezeCapture
 
     case screenTimeCleaning
 
@@ -292,6 +309,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
 
+    /// https://app.asana.com/1/137249556945/project/1215172677539195/task/1215631408578779
+    case vcardContactLinks
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -300,6 +320,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215385432113040?focus=true
     case removeChatHistory
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215816968312844?focus=true
+    case staleFaviconCleanup
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -454,6 +477,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
 
+    /// Controls pin/unpin updates of Synced chats
+    case supportsSyncChatsUpdate
+
     /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
     case settingsLinkInAiFeatures
 
@@ -484,6 +510,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
     case omnibarAttachMoreTabs
+
+    /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
+    case ntpAttachMoreTabs
 
     /// Enables page context feature on iPad
     case iPadPageContext
@@ -543,6 +572,26 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
     case nativeStoragePathMigration
+
+    /// Once the native-storage path migration is complete (or not needed), opens
+    /// the store on locked / background launches instead of deferring on the
+    /// protected-data gate. Off keeps the legacy behavior where any locked launch
+    /// nils the handler — which makes the Duck.ai front-end re-prompt T&C.
+    case nativeStorageMigrationLockedLaunchFix
+
+    /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
+    /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
+    /// screenshot preview.
+    case tabSwitcherRichCard
+
+    /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
+    /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
+    case onboardingToggleAffectsNtpAndDdg
+
+    /// Replaces the web-link Search Assist and Hide AI-Generated Images rows on the AI Features
+    /// settings screen with native controls, regroups the main AI settings at the top, and adds the
+    /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
+    case aiFeaturesNativeControls
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -555,9 +604,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
-
-    /// Controls whether the Next Steps List widget is enabled on New Tab Page
-    case nextStepsListWidget
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -588,6 +634,27 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Risky Domain Protection for VPN
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case riskyDomainsProtection
+
+    /// Surfaces the "Strict routing" VPN toggle so users can disable
+    /// NETunnelProviderProtocol.enforceRoutes if they're having trouble
+    /// reaching local devices or other networks.
+    case strictRoutingToggle
+
+    /// Exclude Carrier-Grade NAT (100.64.0.0/10) from the VPN tunnel.
+    /// Keeps Wi-Fi calling, Visual Voicemail, and mesh VPNs (Tailscale/ZeroTier) working.
+    case excludeCGNAT
+
+    /// Kill switch for the orphaned-proxy detection machinery (tunnel heartbeat + proxy detection loop + pixel).
+    /// Off by default → detection runs; enable remotely to disable it.
+    case orphanProxyDetectionKillSwitch
+
+    /// Kill switch for the orphaned-proxy full-bypass behavior.
+    /// Off by default → bypass engages when an orphaned proxy is detected; enable remotely to disable it.
+    case orphanProxyBypassKillSwitch
+
+    /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
+    case showCopyDiagnosticsButton
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -614,6 +681,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case aiChatSyncPromo
     case simplifiedSyncSetupExperiment
     case allowSingleDeviceOnConnectScreen
+    case scopedAccessCredentials
+    case canUseV2ConnectFlow
+    case canShowV2ConnectCode
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

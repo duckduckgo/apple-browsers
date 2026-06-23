@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Få DuckDuckGo på andre enheder";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Dine data er synkroniserede!";
+"device.synced.sheet.title" = "Enhed synkroniseret!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Færdig";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Opsætter Synkronisering og sikkerhedskopiering";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Forbereder synkronisering";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Gendan synkroniserede data";
@@ -388,8 +391,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Forbinder...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Hold DuckDuckGo åben på begge enheder";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Hold \"Sync & Backup\" åben på begge enheder";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Vend tilbage til denne enhed, når du har indsat koden.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Indsæt koden på din anden enhed";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Indtast kode manuelt";

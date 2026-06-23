@@ -6,7 +6,7 @@ tags:
 
 ---
 
-# Set up - force iPad-only feature flag ON and verify it does not affect iPhone behavior
+# Force iPad-only AI toggle ON and verify it does not affect iPhone behavior
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
     clearState: true
@@ -15,10 +15,11 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.browsingMenuSheetEnabledByDefault: "true"
+        isInternalUser: ${INTERNAL_USER_MODE}
         ff.iPadAIToggle: "true"
+        ff.unifiedToggleInput: "true"
 
-# iPhone address bar should still show Duck.ai button and never show iPad mode toggle controls
+# iPhone address bar shows Duck.ai button; iPad ModeToggle controls never appear on iPhone
 - assertVisible:
     id: "searchEntry"
 - assertVisible:
@@ -47,7 +48,7 @@ tags:
 - assertVisible: "Address Bar"
 - tapOn: "AI Features"
 
-# Select Search & Duck.ai and verify iPhone still does not show iPad mode toggle controls
+# Select Search & Duck.ai — iPhone still shows no iPad ModeToggle controls
 - tapOn:
     id: "Settings.AIFeatures.Picker.SearchAndDuckAI"
 - tapOn: "Settings"
@@ -59,7 +60,7 @@ tags:
 - assertNotVisible:
     id: "Browser.OmniBar.Button.ModeToggle.AIChat"
 
-# Select Search Only and verify iPhone remains unaffected by iPad-only feature behavior
+# Select Search Only — iPhone remains unaffected by iPad-only feature behavior
 - tapOn: "Browsing Menu"
 - tapOn: "Settings"
 - scrollUntilVisible:

@@ -22,6 +22,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 struct AutofillViews {
 
@@ -51,11 +52,9 @@ struct AutofillViews {
                             .resizable()
                             .scaledToFit()
                             .frame(width: Const.Size.closeButtonSize, height: Const.Size.closeButtonSize)
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
                     }
-                    .frame(width: Const.Size.closeButtonTappableArea, height: Const.Size.closeButtonTappableArea)
-                    .contentShape(Rectangle())
-                    .padding(Const.Size.closeButtonPadding)
+                    .buttonStyle(CloseButtonStyle())
+                    .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
                 }
                 Spacer()
             }
@@ -137,7 +136,7 @@ struct AutofillViews {
                         .daxButton()
                 }
             }
-            .buttonStyle(PrimaryButtonStyle())
+            .buttonStyle(PrimaryButtonStyle(fullWidth: true))
         }
     }
 
@@ -239,9 +238,7 @@ extension View {
 
 private enum Const {
     enum Size {
-        static let closeButtonPadding: CGFloat = 5.0
         static let closeButtonSize: CGFloat = 24.0
-        static let closeButtonTappableArea: CGFloat = 44.0
         static let smallDevice: CGFloat = 320.0
         static let maxWidth: CGFloat = 480.0
     }
@@ -249,4 +246,21 @@ private enum Const {
 
 private extension Image {
     static let close = Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+}
+
+#Preview {
+    ScrollView {
+        VStack(spacing: 16) {
+            AutofillViews.CloseButtonHeader(action: {})
+            AutofillViews.AppIconHeader()
+            AutofillViews.Headline(title: "Placeholder Title")
+            AutofillViews.Description(text: "Body text goes here describing the autofill feature.")
+            AutofillViews.SecureDescription(text: "Your data is encrypted and stored only on your device.")
+            AutofillViews.PrimaryButton(title: "Primary Button", action: {})
+            AutofillViews.SecondaryButton(title: "Secondary Button", action: {})
+            AutofillViews.TertiaryButton(title: "Tertiary Button", action: {})
+        }
+        .padding()
+    }
+    .background(Color(designSystemColor: .background))
 }

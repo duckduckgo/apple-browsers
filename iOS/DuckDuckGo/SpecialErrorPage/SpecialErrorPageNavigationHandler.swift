@@ -115,6 +115,7 @@ extension SpecialErrorPageNavigationHandler: WebViewNavigationHandling {
         failedURL = sslSpecialError.error.url
         sslErrorPageNavigationHandler.errorPageVisited(errorType: sslSpecialError.type)
         errorData = sslSpecialError.error.errorData
+        isSpecialErrorPageRequest = true
         loadSpecialErrorPage(url: sslSpecialError.error.url)
     }
 

@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import Common
+import DuckPlayer
 import FoundationExtensions
 import Foundation
 import Onboarding
@@ -111,6 +112,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
+    private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private var cancellables = Set<AnyCancellable>()
@@ -207,6 +209,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         startupPreferences: StartupPreferences,
         dataImportProvider: DataImportStatusProviding,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     ) {
@@ -217,6 +220,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
     }
@@ -292,6 +296,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func setDuckAiInAddressBar(enabled: Bool) {
         aiChatPreferencesStorage.showSearchAndDuckAIToggle = enabled
+        guard featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg) else { return }
+        aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
+        homepageSearchModeSeedPersistor.pendingShowSearchModeToggle = enabled
     }
 
     private func onMainThreadIfNeeded(_ function: @escaping () -> Void) {
@@ -436,7 +443,21 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
         }
 
+        Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
+
         fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
+    }
+
+    /// Applies the Duck Player default dictated by the ad-blocking defaults rollout for a
+    /// newly-onboarded user (Duck Player off). Static so every onboarding-completion path can invoke
+    /// it — normal completion, the debug "Skip Onboarding" action, and the automation/UI-test bypass
+    /// — keeping the behavior consistent regardless of how onboarding ends.
+    static func applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: FeatureFlagger) {
+        guard AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger) else { return }
+        DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool = DuckPlayerMode.disabled.boolValue
+        // Refresh any live DuckPlayerPreferences (e.g. the app delegate's) so its in-memory
+        // @Published mode reflects the new stored value without waiting for a cold relaunch.
+        NotificationCenter.default.post(name: DuckPlayerPreferences.duckPlayerModeDidChangeNotification, object: nil)
     }
 
     /// Returns true if the toggle onboarding step was shown to the user.

@@ -193,7 +193,7 @@ struct DataBrokerRunCustomJSONView: View {
 
             Text("macOS App version: \(viewModel.appVersion())")
             Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
-            Text("Web view applicationNameForUserAgent: \(viewModel.applicationNameForUserAgentDisplayValue)")
+            Text("Web view applicationNameForUserAgentProvider: \(viewModel.applicationNameForUserAgentDisplayValue)")
 
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(dbpFeatureFlagLines, id: \.name) { flag in

@@ -20,6 +20,7 @@
 import AIChat
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import MetricBuilder
 import UIKit
 
 // MARK: - AIChatRecentChatsPopupViewController
@@ -29,7 +30,6 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
     // MARK: - Constants
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 32
         static let shadowOffsetY: CGFloat = 8
         static let shadowRadius: CGFloat = 20
         static let shadowOpacity: Float = 1.0
@@ -38,7 +38,8 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         static let sectionHeaderTopPadding: CGFloat = 4
         static let sectionHeaderBottomPadding: CGFloat = 10
         static let sectionHeaderLeading: CGFloat = 8
-        static let cellIconSize: CGFloat = 20
+        static let cellIconSize: CGFloat = 16
+        static let viewAllChatsIconSize: CGFloat = 16
         static let cellIconGap: CGFloat = 8
         static let cellVerticalPadding: CGFloat = 10
         static let cellLeadingPadding: CGFloat = 6
@@ -70,7 +71,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
     private lazy var contentView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.layer.cornerRadius = Constants.cornerRadius
+        view.layer.cornerRadius = ContainerMetrics.cornerRadius
         view.layer.masksToBounds = true
         return view
     }()
@@ -112,7 +113,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         super.viewDidLayoutSubviews()
         shadowContainer.layer.shadowPath = UIBezierPath(
             roundedRect: shadowContainer.bounds,
-            cornerRadius: Constants.cornerRadius
+            cornerRadius: ContainerMetrics.cornerRadius
         ).cgPath
     }
 
@@ -120,7 +121,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
 
     /// Anchors the popup card overlapping the header pill using screen coordinates.
     func anchorContentView(pillFrame: CGRect) {
-        let cardTop = pillFrame.minY - Constants.cornerRadius
+        let cardTop = pillFrame.minY - ContainerMetrics.cornerRadius
         let cardLeading = pillFrame.minX + Constants.popupLeadingOffset
 
         let desiredTop = shadowContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: cardTop)
@@ -235,8 +236,8 @@ private extension AIChatRecentChatsPopupViewController {
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = UIColor(designSystemColor: .icons)
         iconView.image = (suggestion.isPinned
-            ? DesignSystemImages.Glyphs.Size24.pin
-            : DesignSystemImages.Glyphs.Size24.chat).withRenderingMode(.alwaysTemplate)
+            ? DesignSystemImages.Glyphs.Size16.pin
+            : DesignSystemImages.Glyphs.Size16.chat).withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -297,7 +298,8 @@ private extension AIChatRecentChatsPopupViewController {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = UIColor(designSystemColor: .icons)
-        iconView.image = DesignSystemImages.Glyphs.Size24.list.withRenderingMode(.alwaysTemplate)
+        // No `chats` glyph at 16px; fall back to `aiChatHistory` (same as the app menu).
+        iconView.image = DesignSystemImages.Glyphs.Size16.aiChatHistory.withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -311,10 +313,12 @@ private extension AIChatRecentChatsPopupViewController {
         NSLayoutConstraint.activate([
             iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Constants.cellLeadingPadding),
             iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: Constants.cellIconSize),
-            iconView.heightAnchor.constraint(equalToConstant: Constants.cellIconSize),
+            iconView.widthAnchor.constraint(equalToConstant: Constants.viewAllChatsIconSize),
+            iconView.heightAnchor.constraint(equalToConstant: Constants.viewAllChatsIconSize),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: Constants.cellIconGap),
+            // Keep the title aligned with the other rows despite the wider icon frame.
+            titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor,
+                                                constant: Constants.cellLeadingPadding + Constants.cellIconSize + Constants.cellIconGap),
             titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
 
@@ -335,7 +339,7 @@ private extension AIChatRecentChatsPopupViewController {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = UIColor(designSystemColor: .icons)
-        iconView.image = DesignSystemImages.Glyphs.Size24.compose.withRenderingMode(.alwaysTemplate)
+        iconView.image = DesignSystemImages.Glyphs.Size16.compose.withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false

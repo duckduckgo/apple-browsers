@@ -24,6 +24,8 @@ import BrowserServicesKitTestsUtils
 import WebKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+import PrivacyDashboard
+import WebExtensions
 
 final class AutoconsentMessageProtocolTests: XCTestCase {
 
@@ -263,4 +265,66 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
 
 class MockAutoconsentPreferences: AutoconsentPreferences {
     var autoconsentEnabled: Bool = true
+}
+
+final class AutoconsentDashboardStateRefreshTests: XCTestCase {
+
+    func testWhenDashboardStateRefreshMatchesHostAndPathThenPrivacyInfoUpdates() throws {
+        guard #available(iOS 18.4, *) else {
+            throw XCTSkip("Web extension Autoconsent dashboard state refresh requires iOS 18.4")
+        }
+
+        let matchingPrivacyInfo = makePrivacyInfo(url: URL(string: "https://example.com/articles/one?tab=query")!)
+        let consentStatus = ConsentStatusInfo(
+            consentManaged: true,
+            cosmetic: false,
+            optoutFailed: true,
+            selftestFailed: false,
+            consentReloadLoop: true,
+            consentRule: "test-rule",
+            consentHeuristicEnabled: false)
+        let refreshURL = URL(string: "https://example.com/articles/one?refresh=query")!
+
+        matchingPrivacyInfo.updateCookieConsentManagedForWebExtensionDashboardState(url: refreshURL, consentStatus: consentStatus)
+
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: matchingPrivacyInfo)
+        XCTAssertEqual(cookieConsentInfo["consentManaged"] as? Bool, true)
+        XCTAssertEqual(cookieConsentInfo["cosmetic"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["optoutFailed"] as? Bool, true)
+        XCTAssertEqual(cookieConsentInfo["selftestFailed"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["consentReloadLoop"] as? Bool, true)
+        XCTAssertEqual(cookieConsentInfo["consentRule"] as? String, "test-rule")
+        XCTAssertEqual(cookieConsentInfo["consentHeuristicEnabled"] as? Bool, false)
+    }
+
+    func testWhenDashboardStateRefreshMatchesHostButNotPathThenPrivacyInfoDoesNotUpdate() throws {
+        guard #available(iOS 18.4, *) else {
+            throw XCTSkip("Web extension Autoconsent dashboard state refresh requires iOS 18.4")
+        }
+
+        let privacyInfo = makePrivacyInfo(url: URL(string: "https://example.com/articles/two")!)
+        let consentStatus = ConsentStatusInfo(consentManaged: true)
+        let refreshURL = URL(string: "https://example.com/articles/one")!
+
+        privacyInfo.updateCookieConsentManagedForWebExtensionDashboardState(url: refreshURL, consentStatus: consentStatus)
+
+        XCTAssertNil(privacyInfo.cookieConsentManaged)
+    }
+
+    private func makePrivacyInfo(url: URL) -> PrivacyInfo {
+        PrivacyInfo(
+            url: url,
+            parentEntity: nil,
+            protectionStatus: ProtectionStatus(
+                unprotectedTemporary: false,
+                enabledFeatures: [],
+                allowlisted: false,
+                denylisted: false))
+    }
+
+    private func cookieConsentInfoDictionary(from privacyInfo: PrivacyInfo) throws -> [String: Any] {
+        let cookieConsentInfo = try XCTUnwrap(privacyInfo.cookieConsentManaged)
+        let data = try JSONEncoder().encode(cookieConsentInfo)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
 }

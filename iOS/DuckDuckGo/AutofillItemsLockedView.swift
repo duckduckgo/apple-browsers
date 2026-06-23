@@ -18,12 +18,12 @@
 //
 
 import UIKit
+import DesignResourcesKitIcons
 
 class AutofillItemsLockedView: UIView {
 
     private lazy var imageView: UIImageView = {
-        let image = UIImage(resource: .autofillLock)
-        let imageView = UIImageView(image: image)
+        let imageView = UIImageView(image: DesignSystemImages.Color.Size128.lockLocked)
         imageView.contentMode = .scaleAspectFit
         imageView.frame = CGRect(x: 0, y: 0, width: 128, height: 96)
         return imageView

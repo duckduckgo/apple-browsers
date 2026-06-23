@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "DuckDuckGo letöltése más eszközökre";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Az adatszinkronizálás megtörtént.";
+"device.synced.sheet.title" = "Eszköz szinkronizálva!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Kész";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Szinkronizálás és biztonsági mentés beállítása";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Felkészülés a szinkronizálásra";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Szinkronizált adatok helyreállítása";
@@ -388,8 +391,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Csatlakozás…";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Tartsd megnyitva a DuckDuckGo alkalmazást mindkét eszközön";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Mindkét eszközön hagyd megnyitva a „Sync & Backup” funkciót";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "A kód beillesztése után térj vissza erre az eszközre.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Illeszd be a kódot a másik eszközön";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Kód manuális megadása";
@@ -419,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Eszközök szinkronizálása";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Szkenneld be vagy illeszd be ezt a kódot a másik eszközön";
+"sync.simplified.scan-or-view-code.view.instructions" = "Olvasd be vagy illeszd be ezt a kódot a másik eszközön";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Szinkronizálás és biztonsági mentés";

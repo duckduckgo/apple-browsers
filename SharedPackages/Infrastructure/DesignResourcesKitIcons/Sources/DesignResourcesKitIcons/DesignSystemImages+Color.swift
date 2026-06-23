@@ -126,7 +126,11 @@ public extension DesignSystemImages {
             public static var videoPlayerBlocked: DesignSystemImage { .init(resource: .videoPlayerBlockedColor16) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor16) }
             public static var vpnGray: DesignSystemImage { .init(resource: .vpnGrayColor16) }
-            public static var searchFindToggle: DesignSystemImage { .init(resource: .searchFindToggleColor16) }
+            public static var searchFindToggle: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .searchFindColor16)
+                    : .init(resource: .searchFindToggleColor16)
+            }
         }
 
         public enum Size24 {
@@ -158,13 +162,21 @@ public extension DesignSystemImages {
             }
             public static var radar: DesignSystemImage { .init(resource: .radarColor24) }
             public static var adsFewer: DesignSystemImage { .init(resource: .adsFewerColor24) }
-            public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor24) }
+            public static var aiChat: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .aiChatColor24)
+                    : .init(resource: .aiChatColor24Legacy)
+            }
             public static var aiChatAdvanced: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .aiChatAdvancedColor24)
                     : .init(resource: .aiChatAdvancedColor24Legacy)
             }
-            public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatGradientColor24) }
+            public static var aiChatGradient: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .aiChatColor24)
+                    : .init(resource: .aiChatGradientColor24)
+            }
             public static var aiGeneral: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .aiGeneralColor24)
@@ -255,7 +267,11 @@ public extension DesignSystemImages {
                     : .init(resource: .exclamationColor24Legacy)
             }
             public static var exclamationHigh: DesignSystemImage { .init(resource: .exclamationHighColor24) }
-            public static var exclamationMedium: DesignSystemImage { .init(resource: .exclamationMediumColor24) }
+            public static var exclamationMedium: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .exclamationMediumColor24)
+                    : .init(resource: .exclamationMediumColor24Legacy)
+            }
             public static var favorite: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .favoriteColor24)
@@ -299,7 +315,11 @@ public extension DesignSystemImages {
                     ? .init(resource: .identityTheftRestorationColor24)
                     : .init(resource: .identityTheftRestorationColor24Legacy)
             }
-            public static var `import`: DesignSystemImage { .init(resource: .importColor24) }
+            public static var `import`: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .importColor24)
+                    : .init(resource: .importColor24Legacy)
+            }
             public static var info: DesignSystemImage { .init(resource: .infoRecolorable24)}
             public static var key: DesignSystemImage {
                 AppRebrand.isAppRebranded()
@@ -405,6 +425,7 @@ public extension DesignSystemImages {
                     : .init(resource: .announcement96Legacy)
             }
             public static var duckAIDDGHero: DesignSystemImage { .init(resource: .duckAIDDGHeroColor96) }
+            public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGo96) }
             public static var extensionChrome: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .extensionChrome96)
@@ -439,7 +460,11 @@ public extension DesignSystemImages {
         }
 
         public enum Size128 {
-            public static var duckAIPaid: DesignSystemImage { .init(resource: .duckAIPaid128) }
+            public static var duckAIPaid: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .duckDuckGoDuckAI128)
+                    : .init(resource: .duckAIPaid128)
+            }
             public static var success: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .success128)
@@ -457,14 +482,24 @@ public extension DesignSystemImages {
                     ? .init(resource: .bringStuff128)
                     : .init(resource: .bringStuff128Legacy)
             }
+            public static var bringStuffDownload: DesignSystemImage { .init(resource: .bringStuffDownload128) }
             public static var fire: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .fire128)
                     : .init(resource: .fire128Legacy)
             }
+            public static var lockLocked: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .lockLocked128)
+                    : .init(resource: .lockLocked128Legacy)
+            }
             public static var networkProtectionVPN: DesignSystemImage { .init(resource: .networkProtectionVPN128) }
             public static var networkProtectionVPNDisabled: DesignSystemImage { .init(resource: .networkProtectionVPNDisabled128) }
-            public static var youTubeAdBlockWarning: DesignSystemImage { .init(resource: .youTubeWarningFeature128) }
+            public static var youTubeAdBlockWarning: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .youTubeWarning128)
+                    : .init(resource: .youTubeWarningFeature128)
+            }
         }
     }
 }

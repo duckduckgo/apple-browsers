@@ -17,17 +17,28 @@
 //  limitations under the License.
 //
 
+import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Networking
 import SwiftUI
 import TipKit
 import UIComponents
+import UniformTypeIdentifiers
 import VPN
 
 struct NetworkProtectionStatusView: View {
 
     static let defaultImageSize = CGSize(width: 32, height: 32)
+    private static let supportInfoPasteboardExpirationInterval: TimeInterval = 10 * 60
+    private static let supportInfoCopyConfirmationResetDelay: UInt64 = 2_000_000_000
+
+    private enum CopySupportInfoState: Equatable {
+        case idle
+        case copying
+        case copied
+        case failed
+    }
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -36,6 +47,12 @@ struct NetworkProtectionStatusView: View {
 
     @ObservedObject
     public var feedbackFormModel: UnifiedFeedbackFormViewModel
+
+    @State private var copySupportInfoState = CopySupportInfoState.idle
+
+    private var showsCopyDiagnosticsButton: Bool {
+        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnShowCopyDiagnosticsButton)
+    }
 
     var tipsModel: VPNTipsModel {
         statusModel.tipsModel
@@ -62,6 +79,9 @@ struct NetworkProtectionStatusView: View {
 
             settings()
             about()
+            if showsCopyDiagnosticsButton {
+                diagnostics()
+            }
         }
         .padding(.top, statusModel.error == nil ? 0 : -20)
         .if(statusModel.animationsOn, transform: {
@@ -115,7 +135,7 @@ struct NetworkProtectionStatusView: View {
                     }
                 ))
                 .disabled(statusModel.shouldDisableToggle)
-                .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accent)))
+                .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
             }
             .padding([.top, .bottom], 2)
 
@@ -146,7 +166,7 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func statusBadge(isConnected: Bool) -> some View {
         Circle()
-            .foregroundStyle(isConnected ? .green : .yellow)
+            .foregroundStyle(isConnected ? Color(designSystemColor: .alertGreen) : Color(designSystemColor: .alertYellow))
             .frame(width: 8, height: 8)
     }
 
@@ -156,25 +176,15 @@ struct NetworkProtectionStatusView: View {
             Spacer(minLength: 0)
             VStack(alignment: .center, spacing: 8) {
                 if AppRebrand.isAppRebranded() {
-                    ZStack {
-                        Image(.vpnLock128)
-                            .resizable()
-                            .frame(width: 128, height: 96)
-                            .opacity(statusModel.isNetPEnabled ? 1 : 0)
-                        Image(.vpnDisabled128)
-                            .resizable()
-                            .frame(width: 128, height: 96)
-                            .opacity(statusModel.isNetPEnabled ? 0 : 1)
-                    }
-                    .animation(statusModel.animationsOn ? .easeInOut(duration: 0.3) : nil,
-                               value: statusModel.isNetPEnabled)
+                    headerAnimationView("vpn-animation", contentSize: CGSize(width: 128, height: 96))
+                        .frame(width: 128, height: 96)
                 } else if colorScheme == .light {
-                    headerAnimationView("vpn-light-mode")
+                    headerAnimationView("vpn-light-mode-legacy")
                 } else {
-                    headerAnimationView("vpn-dark-mode")
+                    headerAnimationView("vpn-dark-mode-legacy")
                 }
                 Text(statusModel.headerTitle)
-                    .daxHeadline()
+                    .daxTitle2()
                     .multilineTextAlignment(.center)
                     .foregroundColor(.init(designSystemColor: .textPrimary))
                 Text(statusModel.isNetPEnabled ? UserText.netPStatusHeaderMessageOn : UserText.netPStatusHeaderMessageOff)
@@ -199,7 +209,7 @@ struct NetworkProtectionStatusView: View {
                     await statusModel.cancelSnooze()
                 }
             }
-            .tint(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accentPrimary))
             .disabled(statusModel.snoozeRequestPending)
         } else if statusModel.hasServerInfo {
             Button(UserText.netPStatusViewSnooze) {
@@ -207,7 +217,7 @@ struct NetworkProtectionStatusView: View {
                     await statusModel.startSnooze()
                 }
             }
-            .tint(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accentPrimary))
             .disabled(statusModel.snoozeRequestPending)
         }
     }
@@ -333,20 +343,124 @@ struct NetworkProtectionStatusView: View {
     }
 
     @ViewBuilder
-    private func headerAnimationView(_ animationName: String) -> some View {
-        LottieView(
-            lottieFile: animationName,
-            loopMode: .withIntro(
+    private func diagnostics() -> some View {
+        Section {
+            Button {
+                Task {
+                    await copyVPNSupportInfo()
+                }
+            } label: {
+                HStack {
+                    copySupportInfoIcon
+                    Text(copySupportInfoTitle)
+                        .id(copySupportInfoTitle)
+                    Spacer()
+                }
+                .daxBodyRegular()
+                .foregroundColor(.init(designSystemColor: .textPrimary))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(copySupportInfoState != .idle)
+            .animation(.easeInOut(duration: 0.18), value: copySupportInfoState)
+        } footer: {
+            Text(UserText.netPVPNSettingsCopyDiagnosticsCaption)
+                .daxFootnoteRegular()
+                .foregroundColor(.init(designSystemColor: .textSecondary))
+        }
+        .listRowBackground(Color(designSystemColor: .surface))
+    }
+
+    private var copySupportInfoIcon: Image {
+        switch copySupportInfoState {
+        case .copied:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.check)
+        case .failed:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.alertRecolorable)
+        case .idle, .copying:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.copy)
+        }
+    }
+
+    private var copySupportInfoTitle: String {
+        switch copySupportInfoState {
+        case .copied:
+            return UserText.netPVPNSettingsCopyDiagnosticsCopiedToClipboard
+        case .failed:
+            return UserText.netPVPNSettingsCopyDiagnosticsFailedToCopyToClipboard
+        case .idle, .copying:
+            return UserText.netPVPNSettingsCopyDiagnostics
+        }
+    }
+
+    @MainActor
+    private func copyVPNSupportInfo() async {
+        guard copySupportInfoState != .copying else {
+            return
+        }
+
+        copySupportInfoState = .copying
+
+        guard let metadata = await DefaultVPNMetadataCollector().collectMetadata(),
+              let supportInfo = metadata.toPrettyPrintedJSON() else {
+            showCopySupportInfoConfirmation(.failed)
+            return
+        }
+
+        UIPasteboard.general.setItems(
+            [[UTType.plainText.identifier: supportInfo]],
+            options: [.expirationDate: Date().addingTimeInterval(Self.supportInfoPasteboardExpirationInterval)]
+        )
+        showCopySupportInfoConfirmation(.copied)
+    }
+
+    @MainActor
+    private func showCopySupportInfoConfirmation(_ state: CopySupportInfoState) {
+        withAnimation(.easeInOut(duration: 0.18)) {
+            copySupportInfoState = state
+        }
+
+        Task {
+            try? await Task.sleep(nanoseconds: Self.supportInfoCopyConfirmationResetDelay)
+
+            guard copySupportInfoState == state else {
+                return
+            }
+
+            withAnimation(.easeInOut(duration: 0.18)) {
+                copySupportInfoState = .idle
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func headerAnimationView(_ animationName: String, contentSize: CGSize? = nil) -> some View {
+        let loopMode: LottieView.LoopMode = AppRebrand.isAppRebranded() ?
+            .withIntro(
                 .init(
                     // Skip the intro if NetP is enabled, but the user didn't manually trigger it
+                    skipIntro: statusModel.isNetPEnabled && !statusModel.shouldDisableToggle,
+                    introStartFrame: 0,
+                    introEndFrame: 30,
+                    loopStartFrame: 31,
+                    loopEndFrame: 121
+                )
+            ) :
+            .withIntro(
+                .init(
                     skipIntro: statusModel.isNetPEnabled && !statusModel.shouldDisableToggle,
                     introStartFrame: 0,
                     introEndFrame: 100,
                     loopStartFrame: 130,
                     loopEndFrame: 370
                 )
-            ),
-            isAnimating: $statusModel.isNetPEnabled
+            )
+
+        LottieView(
+            lottieFile: animationName,
+            loopMode: loopMode,
+            isAnimating: $statusModel.isNetPEnabled,
+            contentSize: contentSize
         )
     }
 
@@ -386,7 +500,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
-                .tint(Color.init(designSystemColor: .accent))
+                .tint(Color.init(designSystemColor: .accentPrimary))
                 .onAppear {
                     tipsModel.handleSnoozeTipShown()
                 }
@@ -415,7 +529,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
-                .tint(Color.init(designSystemColor: .accent))
+                .tint(Color.init(designSystemColor: .accentPrimary))
                 .onAppear {
                     tipsModel.handleWidgetTipShown()
                 }

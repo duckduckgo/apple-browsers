@@ -117,7 +117,7 @@ struct VPNUpsellPopoverView: View {
     private var features: some View {
         VStack(spacing: Constants.featuresVerticalSpacing) {
             ForEach(viewModel.featureSet.core, id: \.title) { feature in
-                FeatureRow(text: feature.title, subtitle: feature.subtitle)
+                FeatureRow(text: feature.title)
             }
             HStack(spacing: Constants.plusRowHorizontalSpacing) {
                 horizontalLine
@@ -129,7 +129,7 @@ struct VPNUpsellPopoverView: View {
             .padding(.vertical, Constants.plusRowVerticalSpacing)
 
             ForEach(viewModel.featureSet.plus, id: \.title) { feature in
-                FeatureRow(text: feature.title, subtitle: feature.subtitle)
+                FeatureRow(text: feature.title)
             }
         }
     }
@@ -169,11 +169,9 @@ struct VPNUpsellPopoverView: View {
 
 private struct FeatureRow: View {
     let text: String
-    let subtitle: String?
 
-    init(text: String, subtitle: String? = nil) {
+    init(text: String) {
         self.text = text
-        self.subtitle = subtitle
     }
 
     var body: some View {
@@ -184,19 +182,10 @@ private struct FeatureRow: View {
                 .frame(width: Constants.featureRowImageSize.width, height: Constants.featureRowImageSize.height)
                 .padding(.top, Constants.featureRowImageTopPadding)
 
-            VStack(alignment: .leading, spacing: Constants.featureRowSubtitleVerticalSpacing) {
-                Text(text)
-                    .font(.body)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let subtitle = subtitle {
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
+            Text(text)
+                .font(.body)
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

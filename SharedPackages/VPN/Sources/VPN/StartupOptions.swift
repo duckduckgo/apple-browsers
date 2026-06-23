@@ -31,6 +31,19 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
     let selectedLocation: VPNSettings.SelectedLocation
     let dnsSettings: NetworkProtectionDNSSettings
     let excludeLocalNetworks: Bool
+    let excludeCGNAT: Bool
+    let isOrphanProxyDetectionEnabled: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case registrationKeyValidity
+        case selectedEnvironment
+        case selectedServer
+        case selectedLocation
+        case dnsSettings
+        case excludeLocalNetworks
+        case excludeCGNAT
+        case isOrphanProxyDetectionEnabled
+    }
 
     /// Create a snapshot of the current VPN settings
     public init(from settings: VPNSettings) {
@@ -40,6 +53,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.selectedLocation = settings.selectedLocation
         self.dnsSettings = settings.dnsSettings
         self.excludeLocalNetworks = settings.excludeLocalNetworks
+        self.excludeCGNAT = settings.excludeCGNAT
+        self.isOrphanProxyDetectionEnabled = settings.isOrphanProxyDetectionEnabled
     }
 
     /// Create a snapshot with explicit values
@@ -48,13 +63,32 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
                 selectedServer: VPNSettings.SelectedServer,
                 selectedLocation: VPNSettings.SelectedLocation,
                 dnsSettings: NetworkProtectionDNSSettings,
-                excludeLocalNetworks: Bool) {
+                excludeLocalNetworks: Bool,
+                excludeCGNAT: Bool = UserDefaults.excludeCGNATDefaultValue,
+                isOrphanProxyDetectionEnabled: Bool = UserDefaults.orphanProxyDetectionEnabledDefaultValue) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer
         self.selectedLocation = selectedLocation
         self.dnsSettings = dnsSettings
         self.excludeLocalNetworks = excludeLocalNetworks
+        self.excludeCGNAT = excludeCGNAT
+        self.isOrphanProxyDetectionEnabled = isOrphanProxyDetectionEnabled
+    }
+
+    /// Custom decoding so snapshots persisted by older versions still decode, falling back to default
+    /// behavior for settings that older payloads did not include.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        registrationKeyValidity = try container.decode(VPNSettings.RegistrationKeyValidity.self, forKey: .registrationKeyValidity)
+        selectedEnvironment = try container.decode(VPNSettings.SelectedEnvironment.self, forKey: .selectedEnvironment)
+        selectedServer = try container.decode(VPNSettings.SelectedServer.self, forKey: .selectedServer)
+        selectedLocation = try container.decode(VPNSettings.SelectedLocation.self, forKey: .selectedLocation)
+        dnsSettings = try container.decode(NetworkProtectionDNSSettings.self, forKey: .dnsSettings)
+        excludeLocalNetworks = try container.decode(Bool.self, forKey: .excludeLocalNetworks)
+        excludeCGNAT = try container.decodeIfPresent(Bool.self, forKey: .excludeCGNAT) ?? UserDefaults.excludeCGNATDefaultValue
+        isOrphanProxyDetectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyDetectionEnabled)
+            ?? UserDefaults.orphanProxyDetectionEnabledDefaultValue
     }
 
     /// Apply these settings to a VPNSettings instance
@@ -65,6 +99,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         settings.selectedLocation = selectedLocation
         settings.dnsSettings = dnsSettings
         settings.excludeLocalNetworks = excludeLocalNetworks
+        settings.excludeCGNAT = excludeCGNAT
+        settings.isOrphanProxyDetectionEnabled = isOrphanProxyDetectionEnabled
     }
 }
 

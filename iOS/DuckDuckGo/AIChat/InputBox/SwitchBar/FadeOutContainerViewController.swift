@@ -170,17 +170,23 @@ final class FadeOutContainerViewController: UIViewController {
 
         let isShowingSuggestions = delegate?.fadeOutContainerViewControllerIsShowingSuggestions(self) ?? false
         let shouldHideSearchImmediately = !isSearchMode && isShowingSuggestions
+        // Going to the Search favorites grid (blank query → not a suggestions list): drop the Duck.ai
+        // recents instantly so a recents row never crossfades on top of the grid. List↔list still fades.
+        let shouldHideChatImmediately = isSearchMode && !isShowingSuggestions
         let keepSearchVisible = delegate?.fadeOutContainerViewControllerShouldKeepSearchVisible(self) ?? false
 
         if shouldHideSearchImmediately && !keepSearchVisible {
             searchPageContainer.alpha = 0.0
+        }
+        if shouldHideChatImmediately {
+            chatPageContainer.alpha = 0.0
         }
 
         let animations = {
             if !shouldHideSearchImmediately && !keepSearchVisible {
                 self.searchPageContainer.alpha = isSearchMode ? 1.0 : 0.0
             }
-            if !keepSearchVisible {
+            if !keepSearchVisible && !shouldHideChatImmediately {
                 self.chatPageContainer.alpha = isSearchMode ? 0.0 : 1.0
             }
         }

@@ -59,6 +59,15 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         XCTAssertTrue(try sut.getAllChats().isEmpty)
     }
 
+    func testMemoryMode_deleteChatRecordsLocallyDeletedChatId() throws {
+        let sut = try DuckAiNativeStorageHandler(.memory())
+
+        try sut.deleteChat(chatId: "chat-1")
+
+        let recorded = try sut.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
+        XCTAssertEqual(recorded, ["chat-1"])
+    }
+
     func testMemoryMode_chatsPublisherEmitsCurrentStateOnce() throws {
         let sut = try DuckAiNativeStorageHandler(.memory())
         try sut.putChat(chatId: "chat-1", data: Data("one".utf8))

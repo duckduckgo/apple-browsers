@@ -70,6 +70,26 @@ extension UserText {
         value: "Send Feedback",
         comment: "The VPN status view's 'Send Feedback' menu item for our main app")
 
+    static let vpnSettingsCopyDiagnosticsButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics.button.title",
+        value: "Copy VPN Diagnostics",
+        comment: "The VPN settings button that copies VPN diagnostic information to the clipboard.")
+
+    static let vpnSettingsCopyDiagnosticsCaption = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics.caption",
+        value: "Include a copy of these anonymized VPN diagnostics when contacting Support to help us troubleshoot your connection.",
+        comment: "Caption beneath the Copy VPN Diagnostics button in VPN settings, explaining what the button does.")
+
+    static let vpnSettingsCopyDiagnosticsCopiedButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics-copied.button.title",
+        value: "Copied to clipboard",
+        comment: "Temporary VPN settings button title shown after VPN diagnostic information is copied to the clipboard.")
+
+    static let vpnSettingsCopyDiagnosticsFailedButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics-failed.button.title",
+        value: "Couldn't copy to clipboard",
+        comment: "Temporary VPN settings button title shown when VPN diagnostic information could not be copied to the clipboard.")
+
     static let vpnStatusViewFAQMenuItemTitle = NSLocalizedString(
         "vpn.status-view.faq.menu-item.title",
         value: "FAQs and Support",
@@ -320,6 +340,14 @@ extension UserText {
     static let vpnExcludeLocalNetworksSettingTitle = NSLocalizedString("vpn.setting.title.exclude.local.networks", value: "Exclude local networks", comment: "Exclude Local Networks setting title")
 
     static let vpnExcludeLocalNetworksSettingDescription = NSLocalizedString("vpn.setting.description.exclude.local.networks", value: "Bypass the VPN for local network connections, like to a printer.", comment: "Exclude Local Networks setting description")
+
+    static let vpnStrictRoutingSettingTitle = NSLocalizedString("vpn.setting.title.strict.routing", value: "Strict routing", comment: "Strict routing setting title")
+
+    static let vpnStrictRoutingSettingDescription = NSLocalizedString("vpn.setting.description.strict.routing", value: "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like AirDrop, Sidecar, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)", comment: "Strict routing setting description. The 'Learn more' text is a Markdown link.")
+
+    static let vpnExcludeCGNATSettingTitle = NSLocalizedString("vpn.setting.title.exclude.cgnat", value: "Exclude carrier services", comment: "Exclude CGNAT setting title")
+
+    static let vpnExcludeCGNATSettingDescription = NSLocalizedString("vpn.setting.description.exclude.cgnat", value: "Recommended off so all your traffic goes through the VPN. If you have problems connecting to online services, try turning it on.", comment: "Exclude CGNAT setting description")
 
     static let openVPNButtonTitle = NSLocalizedString("vpn.button.title.open.vpn", value: "Open VPN…", comment: "Uninstall VPN button title")
 

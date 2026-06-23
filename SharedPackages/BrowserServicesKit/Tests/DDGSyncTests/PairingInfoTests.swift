@@ -105,4 +105,17 @@ final class PairingInfoTests: XCTestCase {
             )
         }
     }
+
+    func testToURL_whenPairingV2URLThenReturnsPairingV2URL() throws {
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/sync/pairing/#&code2=abc"))
+        let pairingInfo = PairingInfo(pairingV2URL: url, deviceName: "iPhone")
+
+        XCTAssertEqual(pairingInfo.base64Code, url.absoluteString)
+        XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL), url)
+        if case .pairingV2(let pairingV2URL) = pairingInfo.kind {
+            XCTAssertEqual(pairingV2URL, url)
+        } else {
+            XCTFail("Expected Pairing V2 kind")
+        }
+    }
 }

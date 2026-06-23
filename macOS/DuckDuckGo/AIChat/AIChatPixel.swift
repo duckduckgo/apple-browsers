@@ -229,6 +229,11 @@ enum AIChatPixel: PixelKitEvent {
     /// the × on the carousel card.
     case aiChatAddressBarFileRemoved
 
+    /// Event Trigger: A file the user picked for the duck.ai omnibar failed validation and was
+    /// rejected (too large, too many pages, unsupported type, encrypted, or unreadable). `reason`
+    /// mirrors the iOS `m_aichat_unified_input_file_validation_failed` reason values.
+    case aiChatAddressBarFileValidationFailed(reason: String)
+
     /// Event Trigger: User submits a prompt that includes one or more file attachments.
     case aiChatAddressBarSubmitWithFiles(fileCount: Int)
 
@@ -399,6 +404,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: Duck.ai tab WebKit process terminates
     case aiChatTabDidTerminate(error: Error)
 
+    /// Event Trigger: Duck.ai tab enters a WebKit content-process crash loop (repeated terminations within the crash-loop window)
+    case aiChatTabTerminationLoop(error: Error)
+
     // MARK: - Daily
 
     /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
@@ -555,6 +563,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_file_attached"
         case .aiChatAddressBarFileRemoved:
             return "aichat_addressbar_file_removed"
+        case .aiChatAddressBarFileValidationFailed:
+            return "aichat_addressbar_file_validation_failed"
         case .aiChatAddressBarSubmitWithFiles:
             return "aichat_addressbar_submit_with_files"
         case .aiChatAddressBarAttachTabsPickerShown:
@@ -643,6 +653,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_view_all_chats_more_options_menu"
         case .aiChatTabDidTerminate:
             return "aichat_tab_did_terminate"
+        case .aiChatTabTerminationLoop:
+            return "aichat_tab_termination_loop"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
         case .aiChatVoiceChatStartFailed:
@@ -747,7 +759,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatDeleteAllChatsMoreOptionsMenu,
                 .aiChatViewAllChatsMainMenu,
                 .aiChatViewAllChatsMoreOptionsMenu,
-                .aiChatTabDidTerminate:
+                .aiChatTabDidTerminate,
+                .aiChatTabTerminationLoop:
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
@@ -758,6 +771,8 @@ enum AIChatPixel: PixelKitEvent {
             return ["tabCount": String(tabCount)]
         case .aiChatAddressBarSubmitWithFiles(let fileCount):
             return ["fileCount": String(fileCount)]
+        case .aiChatAddressBarFileValidationFailed(let reason):
+            return ["reason": reason]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
@@ -856,6 +871,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarSubmitWithTabs,
                 .aiChatAddressBarFileAttached,
                 .aiChatAddressBarFileRemoved,
+                .aiChatAddressBarFileValidationFailed,
                 .aiChatAddressBarSubmitWithFiles,
                 .aiChatAddressBarAttachTabsPickerShown,
                 .aiChatAddressBarAttachTabChosen,
@@ -904,7 +920,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchSubmitted,
                 .aiChatIsEnabled,
                 .aiChatVoiceChatStartFailed,
-                .aiChatTabDidTerminate:
+                .aiChatTabDidTerminate,
+                .aiChatTabTerminationLoop:
             return [.pixelSource]
         }
     }

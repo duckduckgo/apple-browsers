@@ -49,9 +49,10 @@ tags:
 - inputText: "pri"
 
 # Wildcard because identifiers of list items contain suffix to make them unique
-- assertVisible: 
+- assertVisible:
     id: "Autocomplete.Suggestions.ListItem.Favorite-pri.*"
-- tapOn: "Cancel"
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 
 # Check favorites from bookmarks screen
 - assertVisible: "Browsing menu"

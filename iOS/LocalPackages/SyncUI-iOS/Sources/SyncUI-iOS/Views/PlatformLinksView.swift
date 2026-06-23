@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 public struct PlatformLinksView: View {
 
@@ -53,13 +54,6 @@ public struct PlatformLinksView: View {
         .navigationTitle(UserText.syncGetOtherDevicesScreenTitle)
     }
 
-    private var isiOS26: Bool {
-        if #available(iOS 26, *) {
-            return true
-        }
-        return false
-    }
-
     private var content: some View {
         VStack(alignment: .center, spacing: 0) {
 
@@ -83,7 +77,7 @@ public struct PlatformLinksView: View {
 
                 Text(Constants.goToUrl)
                     .daxBodyBold()
-                    .foregroundColor(Color(designSystemColor: .accent))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
                     .overlay(
                         CopyActionOverlay(copyText: Constants.downloadUrl, onCopy: {
                             model.fireOtherPlatformLinksPixel(for: .copy, source: source)
@@ -117,12 +111,11 @@ public struct PlatformLinksView: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.bottom, 8)
 
         }
         .padding(.vertical, 24)
         .background(
-            RoundedRectangle(cornerRadius: isiOS26 ? 24 : 12)
+            RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                 .fill(Color(designSystemColor: .surface))
         )
         .onAppear {

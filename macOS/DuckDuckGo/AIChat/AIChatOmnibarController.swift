@@ -84,6 +84,11 @@ final class AIChatOmnibarController {
     /// Whether the user has an active paid subscription (plus or pro).
     private(set) var hasActiveSubscription = false
 
+    /// Per-tier attachment limits (file size / pages / counts, image counts, input-char) from the
+    /// models endpoint, resolved to the user's tier. `nil` until fetched, or when the endpoint
+    /// omits the block — callers fall back to the previously shipped defaults in that case.
+    private(set) var attachmentLimits: AIChatAttachmentTierLimits?
+
     /// Called after a successful submit so the container VC can cancel any in-flight image
     /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
     var onAttachmentsClearRequested: (() -> Void)?
@@ -209,10 +214,14 @@ final class AIChatOmnibarController {
     /// in the same window if one is active; otherwise opens a new selected Duck.ai tab and hands
     /// off `mode: voice-mode` via the prompt handler.
     func openNewVoiceChat() {
-        aiChatTabOpener.openVoiceSession(
-            inSourceCollection: tabCollectionViewModel,
-            behavior: .newTab(selected: true)
-        )
+        // Defer the tab open: synchronously it tears the panel down mid-click, so the click falls through to the bookmarks bar behind.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.aiChatTabOpener.openVoiceSession(
+                inSourceCollection: self.tabCollectionViewModel,
+                behavior: .newTab(selected: true)
+            )
+        }
         PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative, frequency: .dailyAndStandard, includeAppVersionParameter: true)
     }
 
@@ -291,6 +300,7 @@ final class AIChatOmnibarController {
                 let userTier = try await self.resolveUserTier()
                 guard !Task.isCancelled else { return }
                 self.hasActiveSubscription = userTier != .free
+                self.attachmentLimits = response.attachmentLimits?.limits(for: userTier)
                 self.models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()
@@ -417,18 +427,29 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
 
-    /// Maximum image attachments the duck.ai backend accepts per conversation.
-    static let maxImageAttachments: Int = 3
+    /// Fallback caps used until the API limits load (or when the endpoint omits them). These match
+    /// the values previously hardcoded here, so a missing-limits state degrades to prior behaviour.
+    static let fallbackMaxImageAttachments: Int = 3
+    static let fallbackMaxFileAttachments: Int = 3
+
+    /// Maximum images the omnibar accepts for a submission. The omnibar starts a *new* chat, so a
+    /// submission is a single turn — the per-turn limit governs (bounded by the per-conversation
+    /// limit as a safety net). Falls back to 3 until limits load.
+    var maxImageAttachments: Int {
+        guard let images = attachmentLimits?.images else { return Self.fallbackMaxImageAttachments }
+        return max(0, min(images.maxPerTurn, images.maxPerConversation))
+    }
     /// One above the cap — the picker / `addImageAttachmentToActiveTab` allow exactly one over
     /// so the user gets a visible "you've gone over" cue and the error label has something to
     /// anchor against. Submit blocks while in that state.
-    static let imageAttachmentsDisplayCap: Int = maxImageAttachments + 1
+    var imageAttachmentsDisplayCap: Int { maxImageAttachments + 1 }
 
-    /// Maximum file (PDF etc.) attachments the duck.ai backend accepts per conversation. Same
-    /// cap as images; the carousel and submit path both gate on this so the user can't
-    /// overshoot the server limit.
-    static let maxFileAttachments: Int = 3
-    static let fileAttachmentsDisplayCap: Int = maxFileAttachments + 1
+    /// Maximum file (PDF etc.) attachments per conversation. Files have no per-turn limit, so the
+    /// per-conversation value applies directly. Falls back to 3 until limits load.
+    var maxFileAttachments: Int {
+        attachmentLimits?.files.maxPerConversation ?? Self.fallbackMaxFileAttachments
+    }
+    var fileAttachmentsDisplayCap: Int { maxFileAttachments + 1 }
 
     /// Whether the currently selected model supports file (PDF etc.) upload.
     /// Returns `false` conservatively when models are unavailable — file upload is opt-in per model
@@ -444,6 +465,43 @@ final class AIChatOmnibarController {
         guard !models.isEmpty else { return [] }
         return models.first(where: { $0.id == persistedModelId })?.supportedFileTypes ?? []
     }
+
+    /// The currently selected model, or `nil` when models haven't loaded.
+    var selectedModel: AIChatModel? {
+        models.first(where: { $0.id == persistedModelId })
+    }
+
+    /// Builds a validator for the current model + limits against the supplied pending attachments.
+    /// The omnibar is the entry point to a brand-new chat, so prior conversation usage is always
+    /// zero — pending attachments are the whole picture.
+    func makeAttachmentValidator(
+        pendingImageCount: Int,
+        pendingFiles: [AIChatAttachmentValidator.FileDescriptor]
+    ) -> AIChatAttachmentValidator {
+        AIChatAttachmentValidator(
+            limits: attachmentLimits,
+            model: selectedModel,
+            usage: .zero,
+            pendingImageCount: pendingImageCount,
+            pendingFiles: pendingFiles,
+            messages: Self.attachmentValidatorMessages
+        )
+    }
+
+    static let attachmentValidatorMessages = AIChatAttachmentValidator.Messages(
+        unsupportedFileType: UserText.aiChatAttachmentUnsupportedFileType,
+        unavailable: UserText.aiChatAttachmentUnavailable,
+        fileEncrypted: UserText.aiChatAttachmentFileEncrypted,
+        fileUnreadable: UserText.aiChatAttachmentFileUnreadable,
+        promptTooLong: UserText.aiChatAttachmentPromptTooLong,
+        unsupportedFileTypeWithAccepted: { UserText.aiChatAttachmentUnsupportedFileType(acceptedFileTypes: $0) },
+        fileCountLimit: { UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: $0) },
+        fileTooLarge: { UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: $0) },
+        filesExceedTotalSizeLimit: { UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: $0) },
+        fileTooManyPages: { UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: $0) },
+        imageTurnLimit: { UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: $0) },
+        imageCountLimit: { UserText.aiChatAttachmentImageCountLimit(maxImagesPerConversation: $0) }
+    )
 
     /// Supported reasoning effort levels for the currently selected model. Unknown raw values
     /// returned by the backend are silently filtered out. This is the server-truth list — used to
@@ -593,8 +651,20 @@ final class AIChatOmnibarController {
             current.remove(at: index)
         } else {
             current.append(attachment)
+            prewarmAttachedTab(id: attachment.id)
         }
         persistTabAttachmentsToActiveTab(current)
+    }
+
+    /// Wakes a just-attached tab if it's suspended so its content is loaded by the time the user
+    /// submits, avoiding a submit-time wait. Fire-and-forget — `extractPageContextsForOmnibarSubmit`
+    /// re-resolves and wakes regardless, so this is purely a latency optimization.
+    private func prewarmAttachedTab(id: String) {
+        guard let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: tabCollectionViewModel, in: Application.appDelegate.windowControllersManager),
+              resolved.wasMaterialized else {
+            return
+        }
+        resolved.tab.reload()
     }
 
     /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
@@ -613,19 +683,19 @@ final class AIChatOmnibarController {
 
     /// At or above the per-conversation image cap.
     var isActiveTabImageAttachmentsFull: Bool {
-        activeImageAttachments.count >= Self.maxImageAttachments
+        activeImageAttachments.count >= maxImageAttachments
     }
 
     /// Strictly over the per-conversation image cap (one over, by `imageAttachmentsDisplayCap` design).
     var hasExcessActiveTabImageAttachments: Bool {
-        activeImageAttachments.count > Self.maxImageAttachments
+        activeImageAttachments.count > maxImageAttachments
     }
 
     /// Adds an image attachment to the active tab. No-op if at displayCap or if an attachment
     /// with the same id is already present.
     func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) {
         var current = activeImageAttachments
-        guard current.count < Self.imageAttachmentsDisplayCap else { return }
+        guard current.count < imageAttachmentsDisplayCap else { return }
         guard !current.contains(where: { $0.id == attachment.id }) else { return }
         current.append(attachment)
         sharedTextState?.setAIChatAttachments(current)
@@ -670,7 +740,7 @@ final class AIChatOmnibarController {
     /// paste, restore paths, tests) safe from overshooting `fileAttachmentsDisplayCap`.
     func addFileAttachmentToActiveTab(_ attachment: AIChatFileAttachment) {
         var current = activeFileAttachments
-        guard current.count < Self.fileAttachmentsDisplayCap else { return }
+        guard current.count < fileAttachmentsDisplayCap else { return }
         guard !current.contains(where: { $0.id == attachment.id }) else { return }
         current.append(attachment)
         persistFileAttachmentsToActiveTab(current)
@@ -692,33 +762,29 @@ final class AIChatOmnibarController {
         tabCollectionViewModel.selectedTabViewModel?.tab.uuid
     }
 
-    /// Returns the open browser tabs (pinned + regular) in this controller's window as candidate
-    /// attachments, with native `NSImage` favicons resolved from the favicon manager. Used by the
-    /// omnibar attach menu and the `@`-mention picker to populate their tab lists.
+    /// Returns the open browser tabs (pinned + regular) as candidate attachments, with native
+    /// `NSImage` favicons resolved from the favicon manager. Used by the omnibar attach menu and
+    /// the `@`-mention picker to populate their tab lists.
     ///
-    /// - Note: `tabCollectionViewModel` is the window-scoped TCVM injected at init, so the result
-    /// is intentionally restricted to **this window's** tabs — other browser windows aren't
-    /// surfaced. Non-URL tabs (settings, new-tab page, etc.) are filtered out, as are URLs the
-    /// sidebar's shared `AIChatTabMetadata.shouldExcludeFromTabPicker(_:)` rules out
-    /// (DDG homepage, `about:blank`, duck.ai itself). Internal testers who set a custom AI Chat
-    /// URL via Debug → AI Chat → Set custom URL also get tabs at that host filtered out — the
-    /// shared helper only knows about the hardcoded `duck.ai` host, so the omnibar checks the
-    /// debug override here to keep the picker meta-attachment-free for them too.
+    /// - Note: tabs are sourced across windows via the shared `AIChatTabPickerSource`, using this
+    /// controller's `tabCollectionViewModel` as the origin: a regular window surfaces tabs from all
+    /// regular windows, while a Fire Window surfaces only its own tabs (Fire Windows are never
+    /// pulled into a regular picker, and vice versa). Non-URL tabs and URLs ruled out by
+    /// `AIChatTabMetadata.shouldExcludeFromTabPicker(_:)` are already filtered by the source.
+    /// Internal testers who set a custom AI Chat URL via Debug → AI Chat → Set custom URL also get
+    /// tabs at that host filtered out here — the shared helper only knows the hardcoded `duck.ai`
+    /// host, so the omnibar checks the debug override too.
     ///
     /// The current tab (if it survives the filters) is hoisted to the front of the returned list
     /// so menus that pin "Current Tab" at the top get the right ordering for free.
     func openTabsForOmnibarPicker() -> [AIChatTabAttachment] {
-        let pinnedTabs = tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
-        let regularTabs = tabCollectionViewModel.tabCollection.tabs
-        let allTabs = pinnedTabs + regularTabs
         let faviconManager = NSApp.delegateTyped.faviconManager
         // Resolve the custom-URL host once per pick — `keyedStoring` reads from UserDefaults
         // every access, so caching avoids hitting it per-tab.
         let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
         let customAIChatURLHost = debugURLSettings.customURLHostname
-        let candidates = allTabs.compactMap { tab -> AIChatTabAttachment? in
+        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: tabCollectionViewModel, in: Application.appDelegate.windowControllersManager).compactMap { tab -> AIChatTabAttachment? in
             guard case .url(let url, _, _) = tab.content else { return nil }
-            guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
             if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
                 return nil
             }
@@ -865,14 +931,14 @@ final class AIChatOmnibarController {
 
         // Block submission if too many images are attached and would be sent
         let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
-        if canSendImages && activeImageAttachments.count > Self.maxImageAttachments {
+        if canSendImages && activeImageAttachments.count > maxImageAttachments {
             return
         }
 
         // Block submission if too many files are attached. The picker caps picks at one over the
         // limit (`+1`) so the user gets a visible "you've gone over" cue; if they actually try to
         // submit while in that state, hold the submit until they remove the excess.
-        if selectedModelSupportsFileUpload && activeFileAttachments.count > Self.maxFileAttachments {
+        if selectedModelSupportsFileUpload && activeFileAttachments.count > maxFileAttachments {
             return
         }
 
@@ -1032,9 +1098,10 @@ final class AIChatOmnibarController {
     /// stripped to the no-`tabId` form, marking it as "the page you're chatting about" per
     /// the tech design discriminator).
     ///
-    /// Per-tab extraction runs in parallel (`withTaskGroup`) with the same 5s timeout the
-    /// sidebar's JS-bridge uses. Suspended / unreachable tabs return `nil` from the shared
-    /// extractor and are dropped silently from the payload — same behavior the JS-bridge has.
+    /// Per-tab extraction runs in parallel (`withTaskGroup`). Each task resolves the tab by id via
+    /// the shared cross-window source (scoped to this controller's window as origin) and **wakes a
+    /// suspended tab** if needed so its content is extracted rather than dropped. Tabs that genuinely
+    /// can't be loaded return `nil` and are dropped from the payload — same as the JS-bridge.
     @MainActor
     private func extractPageContextsForOmnibarSubmit(
         tabAttachments: [AIChatTabAttachment],
@@ -1042,25 +1109,13 @@ final class AIChatOmnibarController {
     ) async -> AIChatPageContextPayload? {
         guard !tabAttachments.isEmpty else { return nil }
 
-        // Look up the actual `Tab` objects from this controller's tabCollectionViewModel,
-        // matching the JS-bridge's `getAIChatTabContent` lookup (which only considers loaded
-        // tabs). Unloaded tabs have no `PageContextUserScript` to invoke, so they'd return
-        // `nil` from the extractor anyway — restricting to `loadedTabs` makes that explicit.
-        let pinned: [Tab] = tabCollectionViewModel.pinnedTabsCollection?.loadedTabs ?? []
-        let regular: [Tab] = tabCollectionViewModel.tabCollection.loadedTabs
-        let allTabs: [Tab] = pinned + regular
-        var tabsByUUID: [String: Tab] = [:]
-        for tab in allTabs {
-            tabsByUUID[tab.uuid] = tab
-        }
-
+        let origin = tabCollectionViewModel
+        let windowControllersManager = Application.appDelegate.windowControllersManager
         let extracted: [(String, AIChatPageContextData?)] = await withTaskGroup(of: (String, AIChatPageContextData?).self) { group in
             for attachment in tabAttachments {
                 let tabId: String = attachment.id
-                let tab: Tab? = tabsByUUID[tabId]
                 group.addTask { @MainActor in
-                    guard let tab else { return (tabId, nil) }
-                    let ctx = await AIChatUserScriptHandler.extractPageContext(from: tab)
+                    let ctx = await AIChatUserScriptHandler.extractPageContext(forTabId: tabId, origin: origin, in: windowControllersManager)
                     return (tabId, ctx)
                 }
             }

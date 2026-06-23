@@ -62,7 +62,7 @@ final class JobQueueManagerTests: XCTestCase {
                                                         emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
                                                         featureFlagger: MockDBPFeatureFlagger(),
-                                                        applicationNameForUserAgent: nil)
+                                                        applicationNameForUserAgentProvider: { nil })
     }
 
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {

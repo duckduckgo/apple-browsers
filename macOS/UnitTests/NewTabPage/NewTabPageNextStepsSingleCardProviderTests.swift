@@ -58,11 +58,9 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         legacyPersistor = MockHomePageContinueSetUpModelPersisting()
         legacySubscriptionCardPersistor = MockHomePageSubscriptionCardPersisting()
 
-        appearancePreferences = AppearancePreferences(
-            persistor: MockAppearancePreferencesPersistor(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger(),
-            aiChatMenuConfig: MockAIChatConfig()
+        appearancePreferences = createAppearancePrefs(
+            demonstrationDays: 1,
+            lastDemonstrated: Date()
         )
 
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -298,6 +296,51 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         cancellable.cancel()
 
         XCTAssertFalse(cardsEvents.isEmpty)
+    }
+
+    @MainActor
+    func testWhenNewTabPageWebViewAppearsThenTimesShownIsIncrementedForFirstCard() {
+        // GIVEN
+        let firstCard = NewTabPageNextStepsSingleCardProvider.defaultStandardCards[0]
+        let secondCard = NewTabPageNextStepsSingleCardProvider.defaultStandardCards[1]
+        persistor.setTimesShown(0, for: firstCard)
+        persistor.setTimesShown(0, for: secondCard)
+        let testProvider = createProvider()
+
+        // WHEN
+        triggerNewTabPageView(on: testProvider)
+
+        // THEN
+        XCTAssertEqual(persistor.timesShown(for: firstCard), 1)
+        // Second card should not be incremented
+        XCTAssertEqual(persistor.timesShown(for: secondCard), 0)
+    }
+
+    @MainActor
+    func testWhenNewTabPageWebViewAppearsThenNtpImpressionCountIsIncremented() {
+        // GIVEN
+        persistor.ntpImpressionCount = 0
+        let testProvider = createProvider()
+
+        // WHEN
+        triggerNewTabPageView(on: testProvider)
+
+        // THEN
+        XCTAssertEqual(persistor.ntpImpressionCount, 1)
+    }
+
+    @MainActor
+    func testWhenNewTabPageWebViewAppearsThenNtpImpressionCountIsNotIncrementedIfNextStepsCardsComplete() {
+        // GIVEN
+        persistor.ntpImpressionCount = 0
+        appearancePreferences.isContinueSetUpCardsViewOutdated = true
+        let testProvider = createProvider()
+
+        // WHEN
+        triggerNewTabPageView(on: testProvider)
+
+        // THEN
+        XCTAssertEqual(persistor.ntpImpressionCount, 0)
     }
 
     func testWhenNewTabPageWebViewAppearsThenCardListRefreshes() {
@@ -600,19 +643,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(pixelHandler.fireAddToDockPresentedPixelIfNeededCalledWith, [.addAppToDockMac])
     }
 
-    @MainActor
-    func testWhenWillDisplayCardsIsCalledThenTimesShownIsIncrementedForFirstCard() {
-        let testProvider = createProvider()
-        let cards: [NewTabPageDataModel.CardID] = [.defaultApp, .emailProtection]
-        let initialTimesShown = persistor.timesShown(for: .defaultApp)
-
-        testProvider.willDisplayCards(cards)
-
-        XCTAssertEqual(persistor.timesShown(for: .defaultApp), initialTimesShown + 1)
-        // Email protection should not be incremented (only first card)
-        XCTAssertEqual(persistor.timesShown(for: .emailProtection), 0)
-    }
-
     // MARK: - Edge Cases
 
     func testWhenAllCardsArePermanentlyDismissedThenCardsListIsEmpty() {
@@ -797,11 +827,26 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenCardShownFewerThanMaxTimes_WithAdvancedOrderingEnabled_ThenCardOrderRemainsTheSame() throws {
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        let timesShown = NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown - 1
+        testPersistor.setTimesShown(timesShown, for: .personalizeBrowser)
+        testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
+        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
+
+        let cards = testProvider.cards
+
+        XCTAssertEqual(cards.first, .personalizeBrowser, "Card should remain in the same position until max times shown is reached")
+    }
+
+    @MainActor
     func testWhenCardShownMaxTimes_WithAdvancedOrderingEnabled_ThenCardMovesToBack() throws {
         let testFeatureFlagger = MockFeatureFlagger()
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
-        testPersistor.setTimesShown(10, for: .personalizeBrowser)
+        testPersistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: .personalizeBrowser)
         testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
         let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
 
@@ -812,17 +857,61 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenCardShownMaxTimes_WithAdvancedOrderingEnabled_ThenTimesShownResets() {
+    func testWhenCardShownMoreThanMaxTimes_WithAdvancedOrderingEnabled_ThenCardOrderOnlyUpdatesOnMultiplesOfMaxTimesShown() throws {
         let testFeatureFlagger = MockFeatureFlagger()
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
-        testPersistor.setTimesShown(10, for: .personalizeBrowser)
+        testPersistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown + 1, for: .personalizeBrowser)
         testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
         let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
 
-        _ = testProvider.cards
+        // Card order is unchanged
+        let cards = testProvider.cards
+        XCTAssertEqual(cards.first, .personalizeBrowser, "Card should remain in the same position until multiple of max times shown is reached")
 
-        XCTAssertEqual(testPersistor.timesShown(for: .personalizeBrowser), 0, "Times shown should reset to 0")
+        // Simulate more views and trigger card list refresh
+        var cardsEvents = [[NewTabPageDataModel.CardID]]()
+        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                cardsEvents.append(cards)
+                expectation.fulfill()
+            }
+
+        testPersistor.setTimesShown(2 * NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: .personalizeBrowser)
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
+
+        // Card order is updated
+        let updatedCards = testProvider.cards
+        XCTAssertEqual(updatedCards.last, .personalizeBrowser, "Card should move to back of list after multiple of max times shown is reached")
+    }
+
+    @MainActor
+    func testWhenCardsAreRefreshedWithNewFirstCardThenTimesShownIsIncrementedForFirstCard() {
+        // GIVEN
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
+        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
+
+        var cardList = [NewTabPageDataModel.CardID]()
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                cardList = cards
+            }
+
+        // Trigger card list refresh by dismissing card
+        testProvider.dismiss(.personalizeBrowser)
+
+        cancellable.cancel()
+
+        // THEN
+        XCTAssertEqual(cardList.first, .sync, "Next card should be first after dismissing the first card")
+        XCTAssertEqual(testPersistor.timesShown(for: .sync), 1)
     }
 
     // MARK: - Card Ordering Tests (nextStepsListAdvancedCardOrdering disabled)
@@ -857,18 +946,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(cards.first, .defaultApp, "DefaultApp should be first in subsequent sessions")
     }
 
-    func testFirstSession_WhenNewHomePageTabOpens_ThenCardsAreNotShuffled_AndIsFirstSessionIsSet() {
+    func testFirstSession_WhenNewTabPageOpens_ThenCardsAreNotShuffled_AndIsFirstSessionIsSet() {
         featureFlagger.enabledFeatureFlags = []
         let testProvider = createProvider(isFirstSession: true)
         let initialCards = testProvider.standardCards
         let expectation = XCTestExpectation(description: "New tab page open notification is published")
-        let cancellable = NotificationCenter.default.publisher(for: HomePage.Models.newHomePageTabOpen)
+        let cancellable = NotificationCenter.default.publisher(for: .newTabPageOpen)
             .receive(on: DispatchQueue.main)
             .sink { _ in
                 expectation.fulfill()
             }
 
-        NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
+        NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
         wait(for: [expectation], timeout: 1.0)
         cancellable.cancel()
 
@@ -876,18 +965,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(testProvider.standardCards, initialCards, "Standard cards should remain the same when new tab page open notification is received in the first session")
     }
 
-    func testSubsequentSession_WhenNewHomePageTabOpens_ThenCardsAreShuffled() {
+    func testSubsequentSession_WhenNewTabPageOpens_ThenCardsAreShuffled() {
         featureFlagger.enabledFeatureFlags = []
         let testProvider = createProvider(isFirstSession: false)
         let initialCards = testProvider.standardCards
         let expectation = XCTestExpectation(description: "New tab page open notification is published")
-        let cancellable = NotificationCenter.default.publisher(for: HomePage.Models.newHomePageTabOpen)
+        let cancellable = NotificationCenter.default.publisher(for: .newTabPageOpen)
             .receive(on: DispatchQueue.main)
             .sink { _ in
                 expectation.fulfill()
             }
 
-        NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
+        NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
         wait(for: [expectation], timeout: 1.0)
         cancellable.cancel()
 
@@ -944,6 +1033,191 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         )
 
         XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
+    }
+
+    // MARK: - Onboarding cards day-0 delay
+
+    func testWhenOnboardingDelayNotMetThenOnboardingCardsAreExcluded() {
+        let now = Date()
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 0,
+            lastDemonstrated: now,
+            now: now
+        )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            dataImportDidImport: false,
+            dockStatus: false,
+            appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
+            isAppStoreBuild: false
+        )
+
+        let cards = testProvider.cards
+        XCTAssertFalse(cards.contains(.defaultApp))
+        XCTAssertFalse(cards.contains(.addAppToDockMac))
+        XCTAssertFalse(cards.contains(.bringStuff))
+        XCTAssertFalse(cards.isEmpty)
+    }
+
+    func testWhenOnboardingDelayMetViaDemonstrationDaysThenOnboardingCardsAreIncluded() {
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 1,
+            lastDemonstrated: Date()
+        )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
+            isAppStoreBuild: false
+        )
+
+        let cards = testProvider.cards
+        XCTAssertTrue(cards.contains(.defaultApp))
+        XCTAssertTrue(cards.contains(.bringStuff))
+    }
+
+    func testWhenOnboardingDelayMetViaCalendarRollThenOnboardingCardsAreIncluded() {
+        let now = Date()
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: now)!
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 0,
+            lastDemonstrated: yesterday,
+            now: now
+        )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
+            isAppStoreBuild: false
+        )
+
+        let cards = testProvider.cards
+        XCTAssertTrue(cards.contains(.defaultApp))
+    }
+
+    func testWhenNonOnboardingCardsExhaustedButOnboardingPendingThenContinueSetUpCardsNotClosed() {
+        let now = Date()
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 0,
+            lastDemonstrated: now,
+            now: now
+        )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        for card in NewTabPageDataModel.CardID.allCases where card != .defaultApp && card != .addAppToDockMac && card != .bringStuff {
+            testPersistor.setTimesDismissed(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardDismissed, for: card)
+        }
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            persistor: testPersistor,
+            featureFlagger: testFeatureFlagger,
+            isAppStoreBuild: false
+        )
+
+        XCTAssertTrue(testProvider.cards.isEmpty)
+        XCTAssertFalse(appearancePrefs.continueSetUpCardsClosed)
+    }
+
+    @MainActor
+    func testWhenOnboardingDelayMetAfterEmptyListThenTimesShownIsIncrementedForFirstOnboardingCard() {
+        // GIVEN
+        var now = Date()
+        let appearancePersistor = MockAppearancePreferencesPersistor(
+            continueSetUpCardsLastDemonstrated: now,
+            continueSetUpCardsNumberOfDaysDemonstrated: 0
+        )
+        let appearancePrefs = AppearancePreferences(
+            persistor: appearancePersistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            dateTimeProvider: { now },
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        for card in NewTabPageDataModel.CardID.allCases where card != .defaultApp && card != .addAppToDockMac && card != .bringStuff {
+            testPersistor.setTimesDismissed(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardDismissed, for: card)
+        }
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            persistor: testPersistor,
+            featureFlagger: testFeatureFlagger,
+            isAppStoreBuild: false
+        )
+
+        // WHEN - simulate opening the New Tab Page with delay not yet met
+        triggerNewTabPageView(on: testProvider)
+
+        // THEN
+        XCTAssertTrue(testProvider.cards.isEmpty)
+        XCTAssertEqual(testPersistor.timesShown(for: .defaultApp), 0)
+
+        // WHEN - simulate time passing to meet onboarding delay requirement
+        now = now.addingTimeInterval(.day)
+        triggerNewTabPageView(on: testProvider)
+
+        // THEN
+        XCTAssertEqual(testProvider.cards.first, .defaultApp)
+        XCTAssertEqual(testPersistor.timesShown(for: .defaultApp), 1)
+    }
+
+    func testWhenNonOnboardingCardsExhaustedAndOnboardingIneligibleThenContinueSetUpCardsClosed() {
+        let now = Date()
+        let appearancePrefs = createAppearancePrefs(
+            didChangeAnyCustomizationSetting: true,
+            demonstrationDays: 0,
+            lastDemonstrated: now,
+            now: now
+        )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: true,
+            dataImportDidImport: true,
+            dockStatus: true,
+            emailManagerSignedIn: true,
+            subscriptionCardShouldShow: false,
+            syncConnected: true,
+            appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
+            isAppStoreBuild: true
+        )
+
+        XCTAssertTrue(testProvider.cards.isEmpty)
+        XCTAssertTrue(appearancePrefs.continueSetUpCardsClosed)
+    }
+
+    func testWhenOnboardingDelayNotMetAndAdvancedOrderingDisabledThenOnboardingCardsAreIncluded() {
+        let now = Date()
+        let appearancePrefs = createAppearancePrefs(
+            demonstrationDays: 0,
+            lastDemonstrated: now,
+            now: now
+        )
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = []
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: appearancePrefs,
+            featureFlagger: testFeatureFlagger,
+            isAppStoreBuild: false
+        )
+
+        let cards = testProvider.cards
+        XCTAssertTrue(cards.contains(.defaultApp))
+        XCTAssertTrue(cards.contains(.addAppToDockMac))
+        XCTAssertTrue(cards.contains(.bringStuff))
     }
 
     // MARK: - Helper Functions
@@ -1073,17 +1347,34 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     private func createAppearancePrefs(didChangeAnyCustomizationSetting: Bool = false,
-                                       demonstrationDays: Int = 0) -> AppearancePreferences {
+                                       demonstrationDays: Int = 0,
+                                       lastDemonstrated: Date? = nil,
+                                       now: Date = Date()) -> AppearancePreferences {
         let persistor = MockAppearancePreferencesPersistor(
+            continueSetUpCardsLastDemonstrated: lastDemonstrated,
             continueSetUpCardsNumberOfDaysDemonstrated: demonstrationDays,
             didChangeAnyNewTabPageCustomizationSetting: didChangeAnyCustomizationSetting
         )
         return AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            dateTimeProvider: { now },
             featureFlagger: MockFeatureFlagger(),
             aiChatMenuConfig: MockAIChatConfig()
         )
+    }
+
+    private func triggerNewTabPageView(on testProvider: NewTabPageNextStepsSingleCardProvider) {
+        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                expectation.fulfill()
+            }
+
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
+        cancellable.cancel()
     }
 }
 

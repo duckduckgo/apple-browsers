@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Αποκτήστε το DuckDuckGo σε άλλες συσκευές";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Τα δεδομένα σας είναι συγχρονισμένα!";
+"device.synced.sheet.title" = "Η συσκευή συγχρονίστηκε!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Ολοκληρώθηκε";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Ρύθμιση συγχρονισμού και δημιουργίας αντιγράφων ασφάλειας";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Προετοιμασία για συγχρονισμό";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Ανάκτηση συγχρονισμένων δεδομένων";
@@ -388,8 +391,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Σύνδεση...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Κρατήστε το DuckDuckGo ανοιχτό και στις δύο συσκευές";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Διατήρησε ανοιχτό το «Sync & Backup» και στις δύο συσκευές";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Επιστρέψτε σε αυτή τη συσκευή αφού επικολλήσετε τον κωδικό.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Επικολλήστε τον τον κωδικό στην άλλη συσκευή σας";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Μη αυτόματη εισαγωγή κωδικού";

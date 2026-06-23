@@ -1,0 +1,19 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_chat_tab_model_picker
+
+---
+
+- runFlow:
+    file: ../shared/open_chat_tab.yaml
+
+# The model chip opens the model picker, which is a UIButton-backed UIMenu
+# (showsMenuAsPrimaryAction). Its items are NOT reachable via Maestro's a11y bridge
+# (and there is no "Plus" tier label in the picker), so asserting the picker's contents is
+# not possible. This verifies the chip is present with the correct id; the picker contents
+# would need an a11y-reachable popover or a UI snapshot test to assert.
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"

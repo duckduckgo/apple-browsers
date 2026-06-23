@@ -25,6 +25,15 @@
 /* No comment provided by engineer. */
 "%@s" = "%@s";
 
+/* Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\". */
+"accessibility.label.aiChat.openDuckAI" = "Duck.aiを開く";
+
+/* Accessibility value when the Duck.ai contextual sheet is closed. */
+"accessibility.value.aiChat.contextualSheet.closed" = "閉じている";
+
+/* Accessibility value when the Duck.ai contextual sheet is open. */
+"accessibility.value.aiChat.contextualSheet.open" = "開いている";
+
 /* No comment provided by engineer. */
 "Account" = "アカウント";
 
@@ -55,14 +64,32 @@
 /* Add action - button shown in alert */
 "action.title.add" = "追加する";
 
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
+"action.title.aiChat.hideContextualSheetButton" = "「下部シートを非表示」のショートカット";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the Duck.ai (open) button half. */
+"action.title.aiChat.hideDuckAIButton" = "「Duck.aiを非表示」のショートカット";
+
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.aiチャット";
 
 /* Start new AI Chat action in the menu list */
 "action.title.aiChat.new" = "新しいチャット";
 
+/* Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. */
+"action.title.aiChat.openSettings" = "AI設定を開く";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai 設定";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the bottom-sheet button half. */
+"action.title.aiChat.showContextualSheetButton" = "「下部シートを表示」のショートカット";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
+"action.title.aiChat.showDuckAIButton" = "「Duck.aiを表示」のショートカット";
+
+/* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
+"action.title.aiChat.toggleContextualSheet" = "Duck.aiシートを切り替え";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "パスワード";
@@ -220,6 +247,15 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI機能";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "チャット";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "チャット履歴";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "チャット設定";
+
 /* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
 "aichat.attachment.file.count.limit" = "ファイルは会話ごとに点しか添付できません。";
 
@@ -268,6 +304,21 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "このファイル形式はサポートされていません。%@を添付してください。";
 
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "新規";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "新しいFireタブ";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "新規検索";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "新しいタブ";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "新しいボイスチャット";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "分析タスク用";
 
@@ -307,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Sync & Backupを使って、デバイス間でチャットにアクセスできます。";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "トーン、長さ、挙動を設定";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "応答をカスタマイズする";
 
@@ -325,6 +379,15 @@
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "既存のブックマークは複製されません。";
 
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "了解";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "すでに両方のデバイスで、このアカウントとペアリングされています。";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "すでにペアリング済み";
+
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "一部のブックマークは形式が誤っているか長すぎるため、同期されませんでした。";
 
@@ -333,6 +396,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "ブックマーク同期が一時停止中です";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "了解";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "もう一度お試しください。";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "他のデバイスから同期がキャンセルされました。";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "お使いのブラウザでduck.aiにアクセスして、「設定」に移動し、「Sync & Backup」で「オンにする」、「別のデバイスと同期」の順に選択します。";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Duck.aiの設定からこのコードをスキャンしてください。";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "一部のパスワードは形式が誤っているか長すぎるため、同期されませんでした。";
@@ -357,6 +435,9 @@
 
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "同期設定";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "別のデバイスで接続済みのDuckDuckGoブラウザを開き、このデバイスと同期してください。";
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "同期が一時停止されました。このデバイスの同期を続行する場合は、別のデバイスまたはリカバリーコードを使用して再接続してください。";
@@ -390,6 +471,12 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backupは一時的に利用できません。";
+
+/* Description for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-description" = "このコードは現在のアプリバージョンではサポートされていません。";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "DuckDuckGoブラウザを再読み込みして、もう一度お試しください。";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "同期エラー";
@@ -1720,6 +1807,15 @@
 /* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
 "duckai.quick.action.summarize.page" = "ページを要約する";
 
+/* Destructive button confirming deletion of a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.button" = "削除";
+
+/* Message of the confirmation alert shown before deleting a recent Duck.ai chat. %@ is the chat title. */
+"duckai.recent.chat.remove.confirmation.message" = "「%@」はあらゆる場所で永久に削除されます。";
+
+/* Title of the confirmation alert shown before deleting a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.title" = "このチャットを削除しますか？";
+
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Duck.aiをコントロールセンターに追加";
 
@@ -1747,8 +1843,14 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "ブラウザメニュー";
 
+/* Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings */
+"duckai.settings.enable.tab-bar-subtitle" = "ウィンドウのサイズに合わせて、ブラウザのタブバーかアドレスバーに表示します。";
+
+/* Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar) */
+"duckai.settings.enable.tab-bar-toggle" = "タブバー";
+
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "タブ画面";
+"duckai.settings.enable.tab-switcher-toggle" = "タブマネージャー画面";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "音声検索";
@@ -2593,11 +2695,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "再読み込み";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "ズームをリセット";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "選択";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "すべてのタブを表示";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "ズームイン";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "ズームアウト";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "最終処理日：%@";
@@ -2890,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "データ量";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "すべてのトラフィックがVPNを通るように、オフにすることをおすすめします。Wi-Fi通話、メッセージ、留守番電話などの機能に問題がある場合は、オンにしてみてください。";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "キャリアサービスを除外";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "ローカルトラフィックがVPNをバイパスし、プリンターなどのローカルネットワーク上のデバイスに接続できるようにします。";
 
@@ -2938,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGoは当社のDNSサーバーを介してDNSクエリをルーティングするため、インターネットプロバイダーはお客様がアクセスしたウェブサイトを見ることができません。";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "VPN診断をコピー";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "接続の問題解決を支援するため、サポートにお問い合わせいただく際はこれらの匿名化されたVPN診断情報のコピーを添付してください。";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "クリップボードにコピーされました";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "クリップボードにコピーできませんでした";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "よくある質問とサポート";
 
@@ -2949,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "ショートカット";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "ホテルやバーなどの公共Wi-Fiなど、信頼できないネットワークでの使用をおすすめします。CarPlayやAirDropなどの機能に問題がある場合や、他のデバイスとの接続に問題がある場合は、この機能をオフにしてみてください。[詳細](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "厳格なルーティング";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "確認";
@@ -3663,6 +3798,9 @@
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "アドレスバーで検索とDuck.aiを切り替える新しいオプションを試してください。";
+
+/* Settings row that opens Duck.ai in a new tab */
+"settings.aichat.duckai.settings" = "Duck.ai 設定";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Duck.aiショートカットを管理する";
@@ -4498,6 +4636,21 @@
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "サーバーデータを削除しますか？";
 
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "今すぐ同期";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "「%@」が同期済みのDuckDuckGoパスワード、自動入力データ、Duck.aiチャットにアクセス可能になります。";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "「%@」が同期済みのDuck.aiチャットにアクセス可能になります。";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "新しいデバイスを同期しますか？";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "もう一方のデバイス";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "アカウントは必要ありません。エンドツーエンドの暗号化により、お客様以外は誰もブックマークを見ることができません。当社ですらアクセスできません。";
 
@@ -4560,9 +4713,6 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "デバイスを削除しますか？";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "コードがコピーされました";
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "デバイスが正常に同期されました！";
@@ -4719,6 +4869,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "連絡先を追加できません。代わりにダウンロードから連絡先ファイルを開いてみてください。";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "連絡先が追加されました";
 
 /* No comment provided by engineer. */
 "Version: %@" = "バージョン：%@";
@@ -5119,26 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
-/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
-"aichat.appMenu.chats" = "チャット";
 
-/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
-"aichat.appMenu.header.chatHistory" = "チャット履歴";
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "「%@」に一致するものはありません";
 
-/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
-"aichat.appMenu.header.chatSettings" = "チャット設定";
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "サイトを検索してアクセスするにはアドレスバーを使用するか、Duck.aiに切り替えてプライベートなAIチャットを利用してください。\n\nDuck.aiはチャットアイコン[[chat_icon]]が表示されている場所ならどこからでも使えます";
 
-/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
-"aichat.header.plusMenu.a11y" = "新規";
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "プライベートなAIチャットは、Fire Buttonを使っていつでも削除できます。ぜひお試しください！🔥";
 
-/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
-"aichat.header.plusMenu.newFireTab" = "新しいFireタブ";
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "それがDuck.aiです！";
 
-/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
-"aichat.header.plusMenu.newSearch" = "新規検索";
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "非公開でなんでも聞いてください";
 
-/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
-"aichat.header.plusMenu.newTab" = "新しいタブ";
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "検索時にプライバシーを保護する";
 
-/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
-"aichat.header.plusMenu.newVoiceChat" = "新しいボイスチャット";
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "株式市場を10歳の子どもにも分かるように説明してください";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "ロンドンで完璧な一日を計画しましょう";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "科学、自然、歴史に関する興味深い事実を10個教えてください";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "開始する準備はできていますか？\n検索またはAIチャットをお試しください！";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "AIに聞いてみよう";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "コードがコピーされました";

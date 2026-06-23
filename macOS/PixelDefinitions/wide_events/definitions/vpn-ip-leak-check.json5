@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "macos-vpn-ip-leak-check",
-            "version": "2.0"
+            "version": "2.1"
         },
         "feature": {
             "name": "vpn-ip-leak-check",
@@ -18,8 +18,8 @@
                     },
                     "status_reason": {
                         "type": "string",
-                        "description": "Reason attached to an UNKNOWN status: one or more probes errored without a leak, or the cycle did not complete",
-                        "enum": ["checks_errored", "check_interrupted"]
+                        "description": "Reason attached to an UNKNOWN status: one or more probes errored without a leak; the cycle did not complete; or the tunnel interface resolved to a non-tunnel interface and the check was skipped",
+                        "enum": ["checks_errored", "check_interrupted", "unexpected_tunnel_interface"]
                     },
                     "latency_ms_bucketed": {
                         "type": "integer",

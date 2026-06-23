@@ -154,6 +154,7 @@ final class TunnelMonitors: TunnelMonitoring {
             await self.failureRecoveryHandler.attemptRecovery(
                 to: server,
                 excludeLocalNetworks: excludeLocalNetworks,
+                excludeCGNAT: self.settings.excludeCGNAT,
                 dnsSettings: self.settings.dnsSettings) { [weak self] generateConfigResult in
 
                 try await self?.onFailureRecoveryConfigUpdate(generateConfigResult)
